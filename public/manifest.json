@@ -1,0 +1,25 @@
+{
+  "short_name": "Luxury Listings Portal",
+  "name": "Luxury Listings Portal - Content Leadership Platform",
+  "icons": [
+    {
+      "src": "Luxury-listings-logo-CLR.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "Luxury-listings-logo-CLR.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "Luxury-listings-logo-CLR.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
