@@ -50,6 +50,15 @@ const RoleSwitcher = () => {
     return colors[color] || colors.blue;
   };
 
+  const getBadgeColor = (color) => {
+    const colors = {
+      blue: 'bg-blue-500',
+      purple: 'bg-purple-500',
+      green: 'bg-green-500'
+    };
+    return colors[color] || colors.blue;
+  };
+
   return (
     <div className="relative">
       {/* Profile Tab Button */}
@@ -101,7 +110,7 @@ const RoleSwitcher = () => {
                             key={index}
                             className={`text-xs px-2 py-1 rounded-full ${
                               isActive 
-                                ? 'bg-current bg-opacity-20 text-white' 
+                                ? `${getBadgeColor(option.color)} bg-opacity-20 text-white` 
                                 : 'bg-gray-100 text-gray-600'
                             }`}
                           >
@@ -111,7 +120,7 @@ const RoleSwitcher = () => {
                         {option.features.length > 2 && (
                           <span className={`text-xs px-2 py-1 rounded-full ${
                             isActive 
-                              ? 'bg-current bg-opacity-20 text-white' 
+                              ? `${getBadgeColor(option.color)} bg-opacity-20 text-white` 
                               : 'bg-gray-100 text-gray-600'
                           }`}>
                             +{option.features.length - 2} more
