@@ -98,10 +98,10 @@ const RoleSwitcher = () => {
                   <div className="flex items-start space-x-3">
                     <span className="text-2xl">{option.icon}</span>
                     <div className="flex-1">
-                      <div className={`font-medium ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                      <div className={`font-medium ${isActive ? 'text-gray-900' : 'text-gray-900'}`}>
                         {option.label}
                       </div>
-                      <div className={`text-xs mt-1 ${isActive ? 'text-white' : 'text-gray-500'}`}>
+                      <div className={`text-xs mt-1 ${isActive ? 'text-gray-700' : 'text-gray-500'}`}>
                         {option.description}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
