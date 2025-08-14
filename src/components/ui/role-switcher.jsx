@@ -55,7 +55,7 @@ const RoleSwitcher = () => {
       {/* Profile Tab Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center space-x-3 px-4 py-2 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${getRoleColor(currentRoleData.color)}`}
+        className={`flex items-center space-x-3 px-4 py-2 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${getRoleColor(currentRoleData.color)} hover:shadow-lg`}
         title="Switch Profile Role"
       >
         <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -89,10 +89,10 @@ const RoleSwitcher = () => {
                   <div className="flex items-start space-x-3">
                     <span className="text-2xl">{option.icon}</span>
                     <div className="flex-1">
-                      <div className={`font-medium ${isActive ? 'text-current' : 'text-gray-900'}`}>
+                      <div className={`font-medium ${isActive ? 'text-white' : 'text-gray-900'}`}>
                         {option.label}
                       </div>
-                      <div className={`text-xs mt-1 ${isActive ? 'opacity-75' : 'text-gray-500'}`}>
+                      <div className={`text-xs mt-1 ${isActive ? 'text-white' : 'text-gray-500'}`}>
                         {option.description}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
@@ -101,7 +101,7 @@ const RoleSwitcher = () => {
                             key={index}
                             className={`text-xs px-2 py-1 rounded-full ${
                               isActive 
-                                ? 'bg-current bg-opacity-20 text-current' 
+                                ? 'bg-current bg-opacity-20 text-white' 
                                 : 'bg-gray-100 text-gray-600'
                             }`}
                           >
@@ -111,7 +111,7 @@ const RoleSwitcher = () => {
                         {option.features.length > 2 && (
                           <span className={`text-xs px-2 py-1 rounded-full ${
                             isActive 
-                              ? 'bg-current bg-opacity-20 text-current' 
+                              ? 'bg-current bg-opacity-20 text-white' 
                               : 'bg-gray-100 text-gray-600'
                           }`}>
                             +{option.features.length - 2} more
