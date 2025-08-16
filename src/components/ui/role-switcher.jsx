@@ -10,14 +10,6 @@ const RoleSwitcher = () => {
   
   const currentRoleData = getCurrentRolePermissions();
   
-  // Get allowed roles for current user
-  const allowedRoles = currentUser?.email ? getAllowedRolesForUser(currentUser.email) : [];
-  
-  // Filter role options based on user permissions
-  const filteredRoleOptions = roleOptions.filter(option => 
-    allowedRoles.includes(option.role)
-  );
-  
   const roleOptions = [
     {
       role: USER_ROLES.ADMIN,
@@ -60,6 +52,14 @@ const RoleSwitcher = () => {
       features: ['CRM Management', 'Lead Generation', 'Sales Pipeline', 'Deal Tracking']
     }
   ];
+
+  // Get allowed roles for current user
+  const allowedRoles = currentUser?.email ? getAllowedRolesForUser(currentUser.email) : [];
+  
+  // Filter role options based on user permissions
+  const filteredRoleOptions = roleOptions.filter(option => 
+    allowedRoles.includes(option.role)
+  );
 
   const handleRoleSwitch = (newRole) => {
     switchRole(newRole);
