@@ -19,7 +19,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole }) => {
       case 'content_director':
         return {
           title: 'Content Leadership',
-          role: 'Content Director — @luxury_listings',
+          role: 'Content Manager — @luxury_listings',
           department: 'Content & Creative',
           journey: 'Content Strategy Mastery',
           journeyDesc: 'Building your foundation in luxury real estate content excellence',
