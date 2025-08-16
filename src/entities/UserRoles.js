@@ -1,5 +1,6 @@
 // User Roles and Permissions System
 export const USER_ROLES = {
+  ADMIN: 'admin',
   CONTENT_DIRECTOR: 'content_director',
   SOCIAL_MEDIA_MANAGER: 'social_media_manager',
   HR_MANAGER: 'hr_manager',
@@ -7,6 +8,47 @@ export const USER_ROLES = {
 };
 
 export const ROLE_PERMISSIONS = {
+  [USER_ROLES.ADMIN]: {
+    name: 'System Administrator',
+    displayName: 'Admin',
+    description: 'Full system access and user management',
+    permissions: {
+      canViewDashboard: true,
+      canManageTutorials: true,
+      canCreateTutorials: true,
+      canEditTutorials: true,
+      canDeleteTutorials: true,
+      canViewTasks: true,
+      canCreateTasks: true,
+      canAssignTasks: true,
+      canViewAllTasks: true,
+      canManageClientPackages: true,
+      canViewResources: true,
+      canUploadResources: true,
+      canViewAnalytics: true,
+      canManageTeam: true,
+      canViewHRData: true,
+      canManageHRData: true,
+      canViewSocialMetrics: true,
+      canManageSocialContent: true,
+      canManageUsers: true,
+      canAssignRoles: true,
+      canApproveUsers: true,
+      canViewAllProfiles: true,
+      canSwitchProfiles: true
+    },
+    features: [
+      'User Management',
+      'Role Assignment',
+      'System Administration',
+      'Full Profile Access',
+      'All Features Access',
+      'System Monitoring'
+    ],
+    color: 'red',
+    icon: '👑'
+  },
+  
   [USER_ROLES.CONTENT_DIRECTOR]: {
     name: 'Content Manager',
     displayName: 'Content Manager',
@@ -156,6 +198,26 @@ export const ROLE_PERMISSIONS = {
 };
 
 export const MOCK_USERS = {
+  [USER_ROLES.ADMIN]: {
+    uid: 'admin-001',
+    email: 'admin@luxuryrealestate.com',
+    displayName: 'System Administrator',
+    firstName: 'Admin',
+    lastName: 'User',
+    role: USER_ROLES.ADMIN,
+    department: 'System Administration',
+    startDate: '2023-01-01',
+    avatar: null,
+    bio: 'System administrator with full access to all features and user management capabilities.',
+    skills: ['System Administration', 'User Management', 'Role Assignment', 'Security Management', 'System Monitoring'],
+    stats: {
+      totalUsers: 24,
+      activeUsers: 22,
+      pendingApprovals: 3,
+      systemUptime: '99.9%'
+    }
+  },
+  
   [USER_ROLES.CONTENT_DIRECTOR]: {
     uid: 'content-director-001',
     email: 'joshua.mitchell@luxuryrealestate.com',

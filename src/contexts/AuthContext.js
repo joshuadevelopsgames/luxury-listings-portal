@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
     const savedRole = localStorage.getItem('luxury-listings-role');
     return savedRole && Object.values(USER_ROLES).includes(savedRole) 
       ? savedRole 
-      : USER_ROLES.CONTENT_DIRECTOR;
+      : USER_ROLES.ADMIN;
   });
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Calendar, Target, Trophy, Users, TrendingUp, BookOpen } from 'lucide-react';
+import { Calendar, Target, Trophy, Users, TrendingUp, BookOpen, Shield, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 const WelcomeCard = ({ user, overallProgress, currentRole }) => {
@@ -16,6 +16,22 @@ const WelcomeCard = ({ user, overallProgress, currentRole }) => {
 
   const getRoleSpecificContent = () => {
     switch (currentRole) {
+      case 'admin':
+        return {
+          title: 'System Administration',
+          role: 'System Administrator — @luxury_listings',
+          department: 'System Administration',
+          journey: 'System Management & User Control',
+          journeyDesc: 'Managing the Luxury Listings Portal and all user accounts',
+          progressDesc: 'You have full access to all system features and user management capabilities.',
+          motivationalMessage: (progress) => `You're managing a system with ${currentUser?.stats?.totalUsers || 0} users and ${currentUser?.stats?.pendingApprovals || 0} pending approvals. Keep the system running smoothly!`,
+          readinessScore: (progress) => `System Status: ${currentUser?.stats?.systemUptime || '99.9%'} Uptime`,
+          quickActions: [
+            { text: 'User Management', icon: Users },
+            { text: 'System Monitoring', icon: Shield },
+            { text: 'Role Assignment', icon: UserCheck }
+          ]
+        };
       case 'content_director':
         return {
           title: 'Content Leadership',

@@ -13,7 +13,10 @@ import {
   Users,
   Star,
   FileText,
-  Heart
+  Heart,
+  Shield,
+  UserCheck,
+  Settings
 } from 'lucide-react';
 
 const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRole }) => {
@@ -30,6 +33,37 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
 
   const getRoleSpecificContent = () => {
     switch (currentRole) {
+      case 'admin':
+        return {
+          contentTools: [
+            { name: 'User Management', icon: Users, status: 'active' },
+            { name: 'Role Assignment', icon: Shield, status: 'active' },
+            { name: 'System Monitoring', icon: BarChart3, status: 'active' },
+            { name: 'Security Dashboard', icon: UserCheck, status: 'active' },
+            { name: 'Admin Panel', icon: Settings, status: 'active' },
+            { name: 'System Logs', icon: FileText, status: 'active' }
+          ],
+          trainingModules: {
+            title: 'Admin Training',
+            subtitle: 'Modules Available',
+            description: 'System administration and user management training'
+          },
+          contentTasks: {
+            title: 'Today\'s Admin Tasks',
+            subtitle: 'Tasks Assigned',
+            description: 'User management and system administration'
+          },
+          contentToolbox: {
+            title: 'Admin Toolbox',
+            subtitle: 'Tools Available',
+            description: 'Essential system administration tools'
+          },
+          contentReadiness: {
+            title: 'Admin Readiness',
+            subtitle: 'Ready to Admin',
+            description: 'Your system administration expertise level'
+          }
+        };
       case 'content_director':
         return {
           contentTools: [

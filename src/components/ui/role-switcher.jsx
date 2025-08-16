@@ -11,6 +11,14 @@ const RoleSwitcher = () => {
   
   const roleOptions = [
     {
+      role: USER_ROLES.ADMIN,
+      label: 'System Admin',
+      icon: '👑',
+      color: 'red',
+      description: 'Full system access & user management',
+      features: ['User Management', 'Role Assignment', 'System Administration', 'All Profiles']
+    },
+    {
       role: USER_ROLES.CONTENT_DIRECTOR,
       label: 'Content Manager',
       icon: '🎨',
@@ -51,6 +59,7 @@ const RoleSwitcher = () => {
 
   const getRoleColor = (color) => {
     const colors = {
+      red: 'bg-red-100 text-red-800 border-red-200',
       blue: 'bg-blue-100 text-blue-800 border-blue-200',
       purple: 'bg-purple-100 text-purple-800 border-purple-200',
       green: 'bg-green-100 text-green-800 border-green-200',
@@ -61,6 +70,7 @@ const RoleSwitcher = () => {
 
   const getBadgeColor = (color) => {
     const colors = {
+      red: 'bg-red-500',
       blue: 'bg-blue-500',
       purple: 'bg-purple-500',
       green: 'bg-green-500',

@@ -19,6 +19,11 @@ class AIService {
         programs: "App setup and configuration management"
       },
       roles: {
+        admin: {
+          name: "System Administrator",
+          responsibilities: ["User management", "Role assignment", "System administration", "Security management", "System monitoring", "All profile access"],
+          access: ["Dashboard", "User Management", "All Profiles", "All Features", "System Administration", "Role Assignment"]
+        },
         contentDirector: {
           name: "Content Director",
           responsibilities: ["Content strategy", "Editorial planning", "Client package management", "Content performance tracking"],
@@ -42,6 +47,7 @@ class AIService {
       },
       navigation: {
         main: ["Dashboard", "Tutorials", "Tasks", "Resources"],
+        admin: ["User Management", "All Profiles", "System Administration"],
         contentDirector: ["Client Packages", "Programs"],
         hrManager: ["HR Calendar", "Team Management", "HR Analytics"],
         salesManager: ["CRM Dashboard", "Sales Pipeline", "Lead Management"]
@@ -471,6 +477,8 @@ What would you like to know about the platform?`;
   // Get role information
   getRoleInfo(userRole) {
     switch (userRole) {
+      case 'admin':
+        return this.context.roles.admin;
       case 'content_director':
         return this.context.roles.contentDirector;
       case 'social_media_manager':

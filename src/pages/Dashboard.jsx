@@ -19,7 +19,9 @@ import {
   Users,
   TrendingUp,
   BarChart3,
-  FileText
+  FileText,
+  Shield,
+  UserCheck
 } from "lucide-react";
 import { format, isToday, isPast } from "date-fns";
 
@@ -92,6 +94,13 @@ export default function Dashboard() {
 
   const getRoleSpecificStats = () => {
     switch (currentRole) {
+      case 'admin':
+        return [
+          { label: 'Total Users', value: currentUser?.stats?.totalUsers || 0, icon: Users, color: 'blue' },
+          { label: 'Active Users', value: currentUser?.stats?.activeUsers || 0, icon: UserCheck, color: 'green' },
+          { label: 'Pending Approvals', value: currentUser?.stats?.pendingApprovals || 0, icon: Clock, color: 'yellow' },
+          { label: 'System Uptime', value: currentUser?.stats?.systemUptime || '99.9%', icon: Shield, color: 'purple' }
+        ];
       case 'content_director':
         return [
           { label: 'Tutorials Created', value: currentUser?.stats?.tutorialsCreated || 0, icon: BookOpen, color: 'blue' },

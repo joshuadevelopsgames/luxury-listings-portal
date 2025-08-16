@@ -35,7 +35,7 @@ const ChatWidget = () => {
       {
         id: Date.now(),
         type: 'ai',
-        text: `Hi! I'm your AI assistant for the Luxury Listings Portal. I can see you're now logged in as a ${currentRole === 'content_manager' ? 'Content Manager' : currentRole === 'social_media_manager' ? 'Social Media Manager' : currentRole === 'hr_manager' ? 'HR Manager' : 'Sales Manager'}. How can I help you with your role-specific features?`,
+        text: `Hi! I'm your AI assistant for the Luxury Listings Portal. I can see you're now logged in as a ${currentRole === 'admin' ? 'System Administrator' : currentRole === 'content_manager' ? 'Content Manager' : currentRole === 'social_media_manager' ? 'Social Media Manager' : currentRole === 'hr_manager' ? 'HR Manager' : 'Sales Manager'}. How can I help you with your role-specific features?`,
         timestamp: new Date()
       }
     ]);
@@ -149,8 +149,9 @@ const ChatWidget = () => {
                 <div className="text-xs text-blue-100 opacity-80">
                   {currentRole === 'content_director' && 'Content Director'}
                   {currentRole === 'social_media_manager' && 'Social Media Manager'}
-                  {currentRole === 'hr_manager' && 'HR Manager'}
-                  {currentRole === 'sales_manager' && 'Sales Manager'}
+                          {currentRole === 'admin' && 'System Admin'}
+        {currentRole === 'hr_manager' && 'HR Manager'}
+        {currentRole === 'sales_manager' && 'Sales Manager'}
                 </div>
               </div>
             </div>
