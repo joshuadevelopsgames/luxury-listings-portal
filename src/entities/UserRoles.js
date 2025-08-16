@@ -7,8 +7,8 @@ export const USER_ROLES = {
 
 export const ROLE_PERMISSIONS = {
   [USER_ROLES.CONTENT_DIRECTOR]: {
-    name: 'Content Director',
-    displayName: 'Content Director',
+    name: 'Content Manager',
+    displayName: 'Content Manager',
     description: 'Oversees all content strategy and creative direction',
     permissions: {
       canViewDashboard: true,

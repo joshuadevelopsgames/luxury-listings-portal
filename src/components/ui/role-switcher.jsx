@@ -12,7 +12,7 @@ const RoleSwitcher = () => {
   const roleOptions = [
     {
       role: USER_ROLES.CONTENT_DIRECTOR,
-      label: 'Content Director',
+      label: 'Content Manager',
       icon: '🎨',
       color: 'blue',
       description: 'Content strategy & creative direction',
