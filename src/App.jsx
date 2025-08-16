@@ -16,7 +16,7 @@ import CRMPage from './pages/CRMPage';
 import SalesPipelinePage from './pages/SalesPipelinePage';
 import LeadManagementPage from './pages/LeadManagementPage';
 import ChatWidget from './components/ui/chat-widget';
-import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target } from 'lucide-react';
+import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
 import { USER_ROLES } from './entities/UserRoles';
