@@ -49,12 +49,18 @@ export function AuthProvider({ children }) {
   }
 
   function switchRole(newRole) {
+    console.log('🔍 switchRole called with:', newRole);
+    console.log('🔍 Available roles:', Object.values(USER_ROLES));
+    
     if (Object.values(USER_ROLES).includes(newRole)) {
+      console.log('✅ Role is valid, switching to:', newRole);
       setCurrentRole(newRole);
       // Save role to localStorage for persistence
       localStorage.setItem('luxury-listings-role', newRole);
       
       const userData = getUserByRole(newRole);
+      console.log('🔍 User data for role:', userData);
+      
       setCurrentUser({
         ...currentUser,
         ...userData,
@@ -69,12 +75,17 @@ export function AuthProvider({ children }) {
         window.location.href = '/dashboard';
       }
       
-      console.log(`Switched to role: ${newRole}`);
+      console.log(`✅ Successfully switched to role: ${newRole}`);
+    } else {
+      console.error('❌ Invalid role:', newRole);
     }
   }
 
   function getCurrentRolePermissions() {
-    return getRolePermissions(currentRole);
+    console.log('🔍 getCurrentRolePermissions called with currentRole:', currentRole);
+    const permissions = getRolePermissions(currentRole);
+    console.log('🔍 Retrieved permissions:', permissions);
+    return permissions;
   }
 
   function hasPermission(permission) {

@@ -239,7 +239,16 @@ export const MOCK_USERS = {
 
 // Helper function to get role permissions
 export function getRolePermissions(role) {
-  return ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS[USER_ROLES.SOCIAL_MEDIA_MANAGER];
+  console.log('🔍 getRolePermissions called with role:', role);
+  console.log('🔍 Available roles in ROLE_PERMISSIONS:', Object.keys(ROLE_PERMISSIONS));
+  
+  if (ROLE_PERMISSIONS[role]) {
+    console.log('✅ Found permissions for role:', role);
+    return ROLE_PERMISSIONS[role];
+  } else {
+    console.warn('⚠️ Role not found in ROLE_PERMISSIONS, falling back to CONTENT_DIRECTOR');
+    return ROLE_PERMISSIONS[USER_ROLES.CONTENT_DIRECTOR];
+  }
 }
 
 // Helper function to check if user has permission
@@ -250,7 +259,16 @@ export function hasPermission(userRole, permission) {
 
 // Helper function to get user by role
 export function getUserByRole(role) {
-  return MOCK_USERS[role] || MOCK_USERS[USER_ROLES.SOCIAL_MEDIA_MANAGER];
+  console.log('🔍 getUserByRole called with role:', role);
+  console.log('🔍 Available roles in MOCK_USERS:', Object.keys(MOCK_USERS));
+  
+  if (MOCK_USERS[role]) {
+    console.log('✅ Found user for role:', role);
+    return MOCK_USERS[role];
+  } else {
+    console.warn('⚠️ Role not found in MOCK_USERS, falling back to CONTENT_DIRECTOR');
+    return MOCK_USERS[USER_ROLES.CONTENT_DIRECTOR];
+  }
 }
 
 // Helper function to get all available roles
