@@ -195,20 +195,20 @@ function AppLayout() {
       {/* Main Content */}
       <main>
         <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/tutorials" element={<TutorialsPage />} />
-          <Route path="/tasks" element={<TasksPage />} />
-          <Route path="/programs" element={<AppSetupPage />} />
-          <Route path="/resources" element={<ResourcesPage />} />
-          <Route path="/client-packages" element={<ClientPackages />} />
-          <Route path="/hr-calendar" element={<HRCalendar />} />
-          <Route path="/team" element={<TeamManagement />} />
-                  <Route path="/hr-analytics" element={<HRAnalytics />} />
-        <Route path="/user-management" element={<UserManagement />} />
-        <Route path="/crm" element={<CRMPage />} />
-        <Route path="/sales-pipeline" element={<SalesPipelinePage />} />
-        <Route path="/leads" element={<LeadManagementPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/tutorials" element={<ProtectedRoute><TutorialsPage /></ProtectedRoute>} />
+        <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+        <Route path="/programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
+        <Route path="/resources" element={<ProtectedRoute><ResourcesPage /></ProtectedRoute>} />
+        <Route path="/client-packages" element={<ProtectedRoute><ClientPackages /></ProtectedRoute>} />
+        <Route path="/hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
+        <Route path="/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
+        <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
+        <Route path="/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+        <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
+        <Route path="/sales-pipeline" element={<ProtectedRoute><SalesPipelinePage /></ProtectedRoute>} />
+        <Route path="/leads" element={<ProtectedRoute><LeadManagementPage /></ProtectedRoute>} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </main>
 
@@ -225,7 +225,7 @@ function App() {
       <Router>
         <Routes>
           {/* Login page is commented out but code is preserved */}
-          {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="/login" element={<Login />} />
           
           {/* Direct access to dashboard - no login required */}
           <Route path="/*" element={<AppLayout />} />

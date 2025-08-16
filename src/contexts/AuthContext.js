@@ -7,9 +7,10 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
+import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAULT_ROLE } from '../entities/UserRoleMapping';
 
 // Flag to disable Google authentication
-const GOOGLE_AUTH_DISABLED = true;
+const GOOGLE_AUTH_DISABLED = false;
 
 const AuthContext = createContext();
 
@@ -24,7 +25,7 @@ export function AuthProvider({ children }) {
     const savedRole = localStorage.getItem('luxury-listings-role');
     return savedRole && Object.values(USER_ROLES).includes(savedRole) 
       ? savedRole 
-      : USER_ROLES.ADMIN;
+      : USER_ROLES.CONTENT_DIRECTOR; // Default to content director for new users
   });
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -51,6 +52,18 @@ export function AuthProvider({ children }) {
   function switchRole(newRole) {
     console.log('🔍 switchRole called with:', newRole);
     console.log('🔍 Available roles:', Object.values(USER_ROLES));
+    
+    if (!currentUser || !currentUser.email) {
+      console.error('❌ No user logged in');
+      return;
+    }
+    
+    // Check if user can switch to this role
+    if (!canUserSwitchToRole(currentUser.email, newRole)) {
+      console.error('❌ User not authorized to switch to role:', newRole);
+      alert('You are not authorized to switch to this role. Please contact your administrator.');
+      return;
+    }
     
     if (Object.values(USER_ROLES).includes(newRole)) {
       console.log('✅ Role is valid, switching to:', newRole);
@@ -121,7 +134,64 @@ export function AuthProvider({ children }) {
 
     if (!GOOGLE_AUTH_DISABLED) {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setCurrentUser(user);
+        if (user) {
+          // User is signed in - get their role mapping
+          const roleMapping = getUserRoleMapping(user.email);
+          
+          if (roleMapping) {
+            // User has a role mapping - set their assigned role
+            const assignedRole = roleMapping.role;
+            setCurrentRole(assignedRole);
+            localStorage.setItem('luxury-listings-role', assignedRole);
+            
+            // Get user data for the assigned role
+            const userData = getUserByRole(assignedRole);
+            
+            // Merge Firebase user data with role data
+            const mergedUser = {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName || userData.displayName,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              role: assignedRole,
+              department: userData.department,
+              startDate: userData.startDate,
+              avatar: user.photoURL || userData.avatar,
+              bio: userData.bio,
+              skills: userData.skills,
+              stats: userData.stats
+            };
+            
+            setCurrentUser(mergedUser);
+          } else {
+            // New user - assign default role
+            setCurrentRole(DEFAULT_ROLE);
+            localStorage.setItem('luxury-listings-role', DEFAULT_ROLE);
+            
+            const userData = getUserByRole(DEFAULT_ROLE);
+            const defaultUser = {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName || userData.displayName,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              role: DEFAULT_ROLE,
+              department: userData.department,
+              startDate: userData.startDate,
+              avatar: user.photoURL || userData.avatar,
+              bio: userData.bio,
+              skills: userData.skills,
+              stats: userData.stats
+            };
+            
+            setCurrentUser(defaultUser);
+          }
+        } else {
+          // User is signed out
+          setCurrentUser(null);
+          setCurrentRole(DEFAULT_ROLE);
+        }
         setLoading(false);
       });
 

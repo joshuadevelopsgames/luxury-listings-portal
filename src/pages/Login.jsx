@@ -6,7 +6,7 @@ import { Chrome, Mail, Shield, Users, TrendingUp, AlertTriangle } from 'lucide-r
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signInWithGoogle, isGoogleAuthDisabled } = useAuth();
+  const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
@@ -23,10 +23,7 @@ const Login = () => {
     }
   };
 
-  const handleDevBypass = () => {
-    // This will work because the AuthContext is set to bypass authentication
-    navigate('/dashboard');
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -91,46 +88,20 @@ const Login = () => {
             </div>
           )}
 
-          {/* Google Auth Disabled Notice */}
-          {isGoogleAuthDisabled && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-yellow-800 font-medium">Google Authentication Disabled</p>
-                  <p className="text-xs text-yellow-700 mt-1">
-                    Google sign-in is currently disabled for development purposes.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+
 
           <button
             onClick={handleGoogleSignIn}
-            disabled={loading || isGoogleAuthDisabled}
-            className={`w-full flex items-center justify-center space-x-3 rounded-lg px-6 py-3 font-medium transition-all duration-200 ${
-              isGoogleAuthDisabled 
-                ? 'bg-gray-100 border-2 border-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={loading}
+            className={`w-full flex items-center justify-center space-x-3 rounded-lg px-6 py-3 font-medium transition-all duration-200 bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Chrome className="w-5 h-5" />
             <span>
-              {loading ? 'Signing in...' : isGoogleAuthDisabled ? 'Google Sign-in Disabled' : 'Continue with Google'}
+              {loading ? 'Signing in...' : 'Continue with Google'}
             </span>
           </button>
 
-          {/* Development Bypass Button */}
-          {isGoogleAuthDisabled && (
-            <button
-              onClick={handleDevBypass}
-              className="w-full mt-4 flex items-center justify-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
-            >
-              <Shield className="w-5 h-5" />
-              <span>Continue to Dashboard (Dev Mode)</span>
-            </button>
-          )}
+
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">

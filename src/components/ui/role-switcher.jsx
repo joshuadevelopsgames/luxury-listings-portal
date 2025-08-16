@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES, ROLE_PERMISSIONS } from '../../entities/UserRoles';
+import { getAllowedRolesForUser } from '../../entities/UserRoleMapping';
 import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield } from 'lucide-react';
 
 const RoleSwitcher = () => {
-  const { currentRole, switchRole, getCurrentRolePermissions } = useAuth();
+  const { currentRole, switchRole, getCurrentRolePermissions, currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   
   const currentRoleData = getCurrentRolePermissions();
+  
+  // Get allowed roles for current user
+  const allowedRoles = currentUser?.email ? getAllowedRolesForUser(currentUser.email) : [];
+  
+  // Filter role options based on user permissions
+  const filteredRoleOptions = roleOptions.filter(option => 
+    allowedRoles.includes(option.role)
+  );
   
   const roleOptions = [
     {
@@ -103,7 +112,7 @@ const RoleSwitcher = () => {
           <div className="p-4">
             <div className="text-sm font-medium text-gray-700 mb-4">Switch Profile Role</div>
             
-            {roleOptions.map((option) => {
+            {filteredRoleOptions.map((option) => {
               const isActive = option.role === currentRole;
               return (
                 <button
