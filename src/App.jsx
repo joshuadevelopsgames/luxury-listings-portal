@@ -12,6 +12,9 @@ import ClientPackages from './pages/ClientPackages';
 import HRCalendar from './pages/HRCalendar';
 import TeamManagement from './pages/TeamManagement';
 import HRAnalytics from './pages/HRAnalytics';
+import CRMPage from './pages/CRMPage';
+import SalesPipelinePage from './pages/SalesPipelinePage';
+import LeadManagementPage from './pages/LeadManagementPage';
 import ChatWidget from './components/ui/chat-widget';
 import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
@@ -106,6 +109,16 @@ function AppLayout() {
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
         ];
       
+      case USER_ROLES.SALES_MANAGER:
+        return [
+          { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
+          { id: 'crm', name: 'CRM', icon: User, path: '/crm' },
+          { id: 'sales-pipeline', name: 'Sales Pipeline', icon: TrendingUp, path: '/sales-pipeline' },
+          { id: 'leads', name: 'Lead Management', icon: Target, path: '/leads' },
+          { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
+          { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
+        ];
+      
       default:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
@@ -173,6 +186,9 @@ function AppLayout() {
           <Route path="/hr-calendar" element={<HRCalendar />} />
           <Route path="/team" element={<TeamManagement />} />
           <Route path="/hr-analytics" element={<HRAnalytics />} />
+          <Route path="/crm" element={<CRMPage />} />
+          <Route path="/sales-pipeline" element={<SalesPipelinePage />} />
+          <Route path="/leads" element={<LeadManagementPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
