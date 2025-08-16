@@ -7,6 +7,8 @@ import { Calendar, Target, Trophy, Users, TrendingUp, BookOpen, Shield, UserChec
 import { format } from 'date-fns';
 
 const WelcomeCard = ({ user, overallProgress, currentRole }) => {
+  // Use the user prop instead of currentUser
+  const currentUser = user;
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
