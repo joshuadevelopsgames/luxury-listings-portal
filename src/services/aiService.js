@@ -33,12 +33,18 @@ class AIService {
           name: "HR Manager",
           responsibilities: ["Team management", "Performance tracking", "Leave management", "HR analytics", "Employee development"],
           access: ["Dashboard", "Tasks", "Tutorials", "Resources", "HR Calendar", "Team Management", "HR Analytics"]
+        },
+        salesManager: {
+          name: "Sales Manager",
+          responsibilities: ["CRM management", "Lead generation", "Sales pipeline", "Deal tracking", "Client relationships", "Sales analytics"],
+          access: ["Dashboard", "Tasks", "Tutorials", "Resources", "CRM Dashboard", "Sales Pipeline", "Lead Management"]
         }
       },
       navigation: {
         main: ["Dashboard", "Tutorials", "Tasks", "Resources"],
         contentDirector: ["Client Packages", "Programs"],
-        hrManager: ["HR Calendar", "Team Management", "HR Analytics"]
+        hrManager: ["HR Calendar", "Team Management", "HR Analytics"],
+        salesManager: ["CRM Dashboard", "Sales Pipeline", "Lead Management"]
       }
     };
   }
@@ -471,6 +477,8 @@ What would you like to know about the platform?`;
         return this.context.roles.socialMediaManager;
       case 'hr_manager':
         return this.context.roles.hrManager;
+      case 'sales_manager':
+        return this.context.roles.salesManager;
       default:
         return this.context.roles.contentDirector; // Default fallback
     }

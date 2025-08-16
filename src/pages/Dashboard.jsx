@@ -113,6 +113,13 @@ export default function Dashboard() {
           { label: 'Training Programs', value: currentUser?.stats?.trainingPrograms || 0, icon: BookOpen, color: 'purple' },
           { label: 'Satisfaction Score', value: currentUser?.stats?.satisfactionScore || 0, icon: Star, color: 'yellow' }
         ];
+      case 'sales_manager':
+        return [
+          { label: 'Deals Closed', value: currentUser?.stats?.dealsClosed || 0, icon: Target, color: 'green' },
+          { label: 'Total Revenue', value: currentUser?.stats?.totalRevenue || '$0', icon: TrendingUp, color: 'blue' },
+          { label: 'Conversion Rate', value: currentUser?.stats?.conversionRate || '0%', icon: BarChart3, color: 'purple' },
+          { label: 'Satisfaction Score', value: currentUser?.stats?.satisfactionScore || 0, icon: Star, color: 'yellow' }
+        ];
       default:
         return [];
     }

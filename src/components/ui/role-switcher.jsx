@@ -33,6 +33,14 @@ const RoleSwitcher = () => {
       color: 'green',
       description: 'Team development & HR',
       features: ['Team Development', 'Performance Management', 'HR Analytics', 'Training']
+    },
+    {
+      role: USER_ROLES.SALES_MANAGER,
+      label: 'Sales Manager',
+      icon: '💼',
+      color: 'orange',
+      description: 'Sales pipeline & CRM',
+      features: ['CRM Management', 'Lead Generation', 'Sales Pipeline', 'Deal Tracking']
     }
   ];
 
@@ -45,7 +53,8 @@ const RoleSwitcher = () => {
     const colors = {
       blue: 'bg-blue-100 text-blue-800 border-blue-200',
       purple: 'bg-purple-100 text-purple-800 border-purple-200',
-      green: 'bg-green-100 text-green-800 border-green-200'
+      green: 'bg-green-100 text-green-800 border-green-200',
+      orange: 'bg-orange-100 text-orange-800 border-orange-200'
     };
     return colors[color] || colors.blue;
   };
@@ -54,7 +63,8 @@ const RoleSwitcher = () => {
     const colors = {
       blue: 'bg-blue-500',
       purple: 'bg-purple-500',
-      green: 'bg-green-500'
+      green: 'bg-green-500',
+      orange: 'bg-orange-500'
     };
     return colors[color] || colors.blue;
   };

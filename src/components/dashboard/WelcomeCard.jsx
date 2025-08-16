@@ -97,6 +97,33 @@ const WelcomeCard = ({ user, overallProgress, currentRole }) => {
           ]
         };
 
+      case 'sales_manager':
+        return {
+          title: 'Sales Excellence',
+          role: 'Sales Manager — @luxury_listings',
+          department: 'Sales & Business Development',
+          journey: 'Sales Pipeline Mastery',
+          journeyDesc: 'Building your foundation in luxury real estate sales management',
+          progressDesc: 'You\'re {progress}% of the way to being fully ramped up on our CRM systems, sales processes, and client management.',
+          motivationalMessage: (progress) => {
+            if (progress < 25) return "Welcome to sales leadership! You're beginning your journey in luxury real estate sales.";
+            if (progress < 50) return "Great progress! Your sales skills are developing and you're learning our CRM systems.";
+            if (progress < 75) return "Excellent work! You're becoming a skilled sales professional.";
+            return "Outstanding! You're fully equipped to lead our sales initiatives and drive revenue growth.";
+          },
+          readinessScore: (progress) => {
+            if (progress < 25) return "Sales Rookie";
+            if (progress < 50) return "Sales Apprentice";
+            if (progress < 75) return "Sales Professional";
+            return "Sales Master";
+          },
+          quickActions: [
+            { text: 'CRM Dashboard', icon: TrendingUp },
+            { text: 'Sales Pipeline', icon: Target },
+            { text: 'Lead Management', icon: Users }
+          ]
+        };
+
       default:
         return {
           title: 'Professional Development',

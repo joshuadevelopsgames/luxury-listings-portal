@@ -2,7 +2,8 @@
 export const USER_ROLES = {
   CONTENT_DIRECTOR: 'content_director',
   SOCIAL_MEDIA_MANAGER: 'social_media_manager',
-  HR_MANAGER: 'hr_manager'
+  HR_MANAGER: 'hr_manager',
+  SALES_MANAGER: 'sales_manager'
 };
 
 export const ROLE_PERMISSIONS = {
@@ -110,6 +111,47 @@ export const ROLE_PERMISSIONS = {
     ],
     color: 'green',
     icon: '👥'
+  },
+  
+  [USER_ROLES.SALES_MANAGER]: {
+    name: 'Sales Manager',
+    displayName: 'Sales Manager',
+    description: 'Manages sales pipeline and client relationships',
+    permissions: {
+      canViewDashboard: true,
+      canManageTutorials: false,
+      canCreateTutorials: false,
+      canEditTutorials: false,
+      canDeleteTutorials: false,
+      canViewTasks: true,
+      canCreateTasks: true,
+      canAssignTasks: true,
+      canViewAllTasks: true,
+      canManageClientPackages: true,
+      canViewResources: true,
+      canUploadResources: false,
+      canViewAnalytics: true,
+      canManageTeam: false,
+      canViewHRData: false,
+      canManageHRData: false,
+      canViewSocialMetrics: false,
+      canManageSocialContent: false,
+      canViewCRM: true,
+      canManageLeads: true,
+      canViewSalesPipeline: true,
+      canManageDeals: true,
+      canViewSalesReports: true
+    },
+    features: [
+      'CRM Management',
+      'Lead Generation',
+      'Sales Pipeline',
+      'Deal Tracking',
+      'Client Relationships',
+      'Sales Analytics'
+    ],
+    color: 'orange',
+    icon: '💼'
   }
 };
 
@@ -171,6 +213,26 @@ export const MOCK_USERS = {
       retentionRate: '94%',
       satisfactionScore: 4.8,
       trainingPrograms: 8
+    }
+  },
+  
+  [USER_ROLES.SALES_MANAGER]: {
+    uid: 'sales-manager-001',
+    email: 'emily.watson@luxuryrealestate.com',
+    displayName: 'Emily Watson',
+    firstName: 'Emily',
+    lastName: 'Watson',
+    role: USER_ROLES.SALES_MANAGER,
+    department: 'Sales & Business Development',
+    startDate: '2023-03-15',
+    avatar: null,
+    bio: 'Sales professional with 10+ years in luxury real estate. Expert in client relationship management and sales pipeline optimization.',
+    skills: ['CRM Management', 'Lead Generation', 'Sales Strategy', 'Client Relations', 'Pipeline Management', 'Sales Analytics'],
+    stats: {
+      dealsClosed: 47,
+      totalRevenue: '$12.8M',
+      conversionRate: '23%',
+      satisfactionScore: 4.9
     }
   }
 };

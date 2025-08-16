@@ -126,6 +126,38 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
           }
         };
 
+      case 'sales_manager':
+        return {
+          contentTools: [
+            { name: 'Salesforce CRM', icon: Target, status: 'active' },
+            { name: 'HubSpot', icon: Star, status: 'active' },
+            { name: 'Zoom', icon: Calendar, status: 'active' },
+            { name: 'LinkedIn Sales', icon: TrendingUp, status: 'active' },
+            { name: 'Google Workspace', icon: BarChart3, status: 'active' },
+            { name: 'Sales Analytics', icon: BookOpen, status: 'active' }
+          ],
+          trainingModules: {
+            title: 'Sales Training',
+            subtitle: 'Modules Available',
+            description: 'Sales process and CRM management training'
+          },
+          contentTasks: {
+            title: 'Today\'s Sales Tasks',
+            subtitle: 'Tasks Assigned',
+            description: 'Lead management and sales operations'
+          },
+          contentToolbox: {
+            title: 'Sales Toolbox',
+            subtitle: 'Tools Available',
+            description: 'Essential sales management tools'
+          },
+          contentReadiness: {
+            title: 'Sales Readiness',
+            subtitle: 'Ready to Sell',
+            description: 'Your sales leadership expertise level'
+          }
+        };
+
       default:
         return {
           contentTools: [
