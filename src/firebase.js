@@ -4,12 +4,12 @@ import { getFirestore } from 'firebase/firestore';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "luxury-listings-portal.firebaseapp.com",
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "luxury-listings-portal",
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "luxury-listings-portal.appspot.com",
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:123456789:web:abcdef123456"
+  apiKey: "AIzaSyCNTi85Mc9Bpxiz_B9YKmQHsbkmkpaJzLQ",
+  authDomain: "luxury-listings-portal-e56de.firebaseapp.com",
+  projectId: "luxury-listings-portal-e56de",
+  storageBucket: "luxury-listings-portal-e56de.firebasestorage.app",
+  messagingSenderId: "660966083126",
+  appId: "1:660966083126:web:ece8041e9d9cc016b7a697"
 };
 
 // Initialize Firebase
