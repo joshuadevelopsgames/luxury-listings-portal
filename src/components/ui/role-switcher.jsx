@@ -53,8 +53,8 @@ const RoleSwitcher = () => {
     }
   ];
 
-  // Get allowed roles for current user
-  const allowedRoles = currentUser?.email ? getAllowedRolesForUser(currentUser.email) : [];
+  // Get user's assigned roles (support both old single-role and new multi-role systems)
+  const userAssignedRoles = currentUser?.roles || [currentUser?.primaryRole || currentUser?.role] || ['content_director'];
   
   // Admin users should always have access to all roles
   // Check if the user is the admin user (jrsschroeder@gmail.com) - this should never change
@@ -69,13 +69,13 @@ const RoleSwitcher = () => {
     isAdminUser,
     shouldShowAllRoles,
     currentRole,
-    allowedRoles,
-    filteredRoleOptionsCount: shouldShowAllRoles ? roleOptions.length : roleOptions.filter(option => allowedRoles.includes(option.role)).length
+    userAssignedRoles,
+    filteredRoleOptionsCount: shouldShowAllRoles ? roleOptions.length : roleOptions.filter(option => userAssignedRoles.includes(option.role)).length
   });
   
-  // Filter role options based on user permissions
+  // Filter role options based on user's assigned roles
   const filteredRoleOptions = shouldShowAllRoles ? roleOptions : roleOptions.filter(option => 
-    allowedRoles.includes(option.role)
+    userAssignedRoles.includes(option.role)
   );
 
   const handleRoleSwitch = (newRole) => {
@@ -105,6 +105,18 @@ const RoleSwitcher = () => {
     return colors[color] || colors.blue;
   };
 
+  // Function to get display name for roles
+  const getRoleDisplayName = (role) => {
+    const roleMap = {
+      'content_director': 'Content Manager',
+      'social_media_manager': 'Social Media Manager',
+      'hr_manager': 'HR Manager',
+      'sales_manager': 'Sales Manager',
+      'admin': 'System Admin'
+    };
+    return roleMap[role] || role;
+  };
+
   return (
     <div className="relative">
       {/* Profile Tab Button */}
@@ -122,6 +134,11 @@ const RoleSwitcher = () => {
             {currentUser?.email === 'jrsschroeder@gmail.com' && (
               <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Admin</span>
             )}
+            {!isAdminUser && userAssignedRoles.length > 1 && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                {userAssignedRoles.length} Roles
+              </span>
+            )}
           </div>
           <div className="text-xs opacity-75">{currentRoleData.displayName}</div>
         </div>
@@ -133,6 +150,13 @@ const RoleSwitcher = () => {
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
           <div className="p-4">
             <div className="text-sm font-medium text-gray-700 mb-4">Switch Profile Role</div>
+            
+            {/* Show available roles info for non-admin users */}
+            {!isAdminUser && (
+              <div className="text-xs text-gray-500 mb-3 p-2 bg-gray-50 rounded">
+                You have access to {userAssignedRoles.length} role{userAssignedRoles.length !== 1 ? 's' : ''}: {userAssignedRoles.map(role => getRoleDisplayName(role)).join(', ')}
+              </div>
+            )}
             
             {filteredRoleOptions.map((option) => {
               const isActive = option.role === currentRole;

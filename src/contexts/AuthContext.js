@@ -82,8 +82,9 @@ export function AuthProvider({ children }) {
     if (currentUser.email === 'jrsschroeder@gmail.com') {
       console.log('✅ Admin user - allowing role switch to:', newRole);
     } else {
-      // Check if user can switch to this role
-      if (!canUserSwitchToRole(currentUser.email, newRole)) {
+      // Check if user has this role in their assigned roles
+      const userRoles = currentUser.roles || [currentUser.primaryRole || currentUser.role] || ['content_director'];
+      if (!userRoles.includes(newRole)) {
         console.error('❌ User not authorized to switch to role:', newRole);
         alert('You are not authorized to switch to this role. Please contact your administrator.');
         return;
@@ -102,7 +103,8 @@ export function AuthProvider({ children }) {
       setCurrentUser({
         ...currentUser,
         ...userData,
-        role: newRole,
+        role: newRole, // Keep for backward compatibility
+        primaryRole: newRole, // Update primary role
         // Preserve the original email - this is crucial for admin access
         email: currentUser.email
       });
@@ -204,22 +206,25 @@ export function AuthProvider({ children }) {
             
             if (approvedUser && approvedUser.isApproved) {
               console.log('✅ User approved by admin:', approvedUser);
-              // User was approved by admin - set their approved role
-              const assignedRole = approvedUser.role;
-              setCurrentRole(assignedRole);
-              localStorage.setItem('luxury-listings-role', assignedRole);
+              // User was approved by admin - set their approved roles
+              const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
+              const primaryRole = assignedRoles[0] || 'content_director';
+              setCurrentRole(primaryRole);
+              localStorage.setItem('luxury-listings-role', primaryRole);
               
-              // Get user data for the assigned role
-              const userData = getUserByRole(assignedRole);
+              // Get user data for the primary role
+              const userData = getUserByRole(primaryRole);
               
               // Merge Firebase user data with role data
               const mergedUser = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName || userData.displayName,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-                role: assignedRole,
+                firstName: approvedUser.firstName || userData.firstName,
+                lastName: approvedUser.lastName || userData.lastName,
+                role: primaryRole, // Keep for backward compatibility
+                roles: assignedRoles, // Store all assigned roles
+                primaryRole: primaryRole, // Store primary role
                 department: userData.department,
                 startDate: userData.startDate,
                 avatar: user.photoURL || userData.avatar,
