@@ -9,6 +9,15 @@ import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
 import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAULT_ROLE } from '../entities/UserRoleMapping';
 
+// Helper function to navigate based on user role
+const navigateBasedOnRole = (role) => {
+  if (role === 'pending') {
+    window.location.href = '/waiting-for-approval';
+  } else if (role && role !== 'pending') {
+    window.location.href = '/dashboard';
+  }
+};
+
 // Flag to disable Google authentication
 const GOOGLE_AUTH_DISABLED = false;
 
@@ -168,6 +177,8 @@ export function AuthProvider({ children }) {
             };
             
             setCurrentUser(mergedUser);
+            console.log('🔄 Navigating approved user to dashboard...');
+            navigateBasedOnRole(assignedRole);
           } else {
             console.log('🆕 New user - no role mapping found, setting to pending');
             // New user - no role assigned yet, they need approval
@@ -191,6 +202,8 @@ export function AuthProvider({ children }) {
             setCurrentUser(newUser);
             setCurrentRole('pending');
             localStorage.setItem('luxury-listings-role', 'pending');
+            console.log('🔄 Navigating pending user to approval page...');
+            navigateBasedOnRole('pending');
           }
         } else {
           // User is signed out

@@ -4,7 +4,8 @@ export const USER_ROLES = {
   CONTENT_DIRECTOR: 'content_director',
   SOCIAL_MEDIA_MANAGER: 'social_media_manager',
   HR_MANAGER: 'hr_manager',
-  SALES_MANAGER: 'sales_manager'
+  SALES_MANAGER: 'sales_manager',
+  PENDING: 'pending'
 };
 
 export const ROLE_PERMISSIONS = {
@@ -194,10 +195,63 @@ export const ROLE_PERMISSIONS = {
     ],
     color: 'orange',
     icon: '💼'
+  },
+
+  [USER_ROLES.PENDING]: {
+    name: 'Pending Approval',
+    displayName: 'Pending',
+    description: 'Account pending administrator approval',
+    permissions: {
+      canViewDashboard: false,
+      canManageTutorials: false,
+      canCreateTutorials: false,
+      canEditTutorials: false,
+      canDeleteTutorials: false,
+      canViewTasks: false,
+      canCreateTasks: false,
+      canAssignTasks: false,
+      canViewAllTasks: false,
+      canManageClientPackages: false,
+      canViewResources: false,
+      canUploadResources: false,
+      canViewAnalytics: false,
+      canManageTeam: false,
+      canViewHRData: false,
+      canManageHRData: false,
+      canViewSocialMetrics: false,
+      canManageSocialContent: false,
+      canViewCRM: false,
+      canManageLeads: false,
+      canViewSalesPipeline: false,
+      canManageDeals: false,
+      canViewSalesReports: false
+    },
+    features: [
+      'Account Pending Approval',
+      'Limited Access',
+      'Waiting for Role Assignment'
+    ],
+    color: 'gray',
+    icon: '⏳'
   }
 };
 
 export const MOCK_USERS = {
+  [USER_ROLES.PENDING]: {
+    uid: 'pending-001',
+    email: 'pending@luxuryrealestate.com',
+    displayName: 'Pending User',
+    firstName: 'Pending',
+    lastName: 'User',
+    role: USER_ROLES.PENDING,
+    department: 'Pending Approval',
+    startDate: new Date().toISOString().split('T')[0],
+    avatar: null,
+    bio: 'Account pending administrator approval and role assignment.',
+    skills: [],
+    stats: {}
+  },
+
   [USER_ROLES.ADMIN]: {
     uid: 'admin-001',
     email: 'admin@luxuryrealestate.com',
