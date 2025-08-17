@@ -21,7 +21,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build": "DISABLE_ESLINT_PLUGIN=true PUBLIC_URL=https://smmluxurylistings.info react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
