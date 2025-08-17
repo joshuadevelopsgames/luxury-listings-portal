@@ -57,10 +57,21 @@ const RoleSwitcher = () => {
   const allowedRoles = currentUser?.email ? getAllowedRolesForUser(currentUser.email) : [];
   
   // Admin users should always have access to all roles
-  // If user is admin OR if they're switching from admin role, show all options
-  const shouldShowAllRoles = currentUser?.email === 'jrsschroeder@gmail.com' || 
-                            currentRole === USER_ROLES.ADMIN ||
-                            allowedRoles.includes(USER_ROLES.ADMIN);
+  // Check if the user is the admin user (jrsschroeder@gmail.com) - this should never change
+  const isAdminUser = currentUser?.email === 'jrsschroeder@gmail.com';
+  
+  // Admin users can always see all roles, regardless of current role
+  const shouldShowAllRoles = isAdminUser;
+  
+  // Debug logging
+  console.log('🔍 Role Switcher Debug:', {
+    userEmail: currentUser?.email,
+    isAdminUser,
+    shouldShowAllRoles,
+    currentRole,
+    allowedRoles,
+    filteredRoleOptionsCount: shouldShowAllRoles ? roleOptions.length : roleOptions.filter(option => allowedRoles.includes(option.role)).length
+  });
   
   // Filter role options based on user permissions
   const filteredRoleOptions = shouldShowAllRoles ? roleOptions : roleOptions.filter(option => 

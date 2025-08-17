@@ -96,7 +96,9 @@ export function AuthProvider({ children }) {
       setCurrentUser({
         ...currentUser,
         ...userData,
-        role: newRole
+        role: newRole,
+        // Preserve the original email - this is crucial for admin access
+        email: currentUser.email
       });
       
       // Trigger chatbot reset
