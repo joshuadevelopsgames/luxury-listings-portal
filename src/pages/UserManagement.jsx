@@ -245,10 +245,7 @@ const UserManagement = () => {
     }
   };
 
-  const handleChangeRole = (userId, newRole) => {
-    // In a real app, this would update the database
-    console.log('Changing role for user:', userId, 'to:', newRole);
-  };
+
 
   const filteredPendingUsers = pendingUsers.filter(user =>
     user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
