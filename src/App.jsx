@@ -87,17 +87,6 @@ function AppLayout() {
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
-          { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
-          { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          { id: 'programs', name: 'Programs', icon: Settings, path: '/programs' },
-          { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
-          { id: 'hr-calendar', name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
-          { id: 'team', name: 'Team Management', icon: Users, path: '/team' },
-          { id: 'hr-analytics', name: 'HR Analytics', icon: BarChart3, path: '/hr-analytics' },
-          { id: 'crm', name: 'CRM', icon: User, path: '/crm' },
-          { id: 'sales-pipeline', name: 'Sales Pipeline', icon: TrendingUp, path: '/sales-pipeline' },
-          { id: 'leads', name: 'Lead Management', icon: Target, path: '/leads' },
         ];
       
       case USER_ROLES.CONTENT_DIRECTOR:

@@ -12,6 +12,9 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Admin note: Use the profile switcher (top right) to access other role-specific features
+  // This page is for user management only - other features are available through role switching
+  
   // Mock data for pending users and existing users
   const pendingUsers = [
     {
@@ -175,6 +178,20 @@ const UserManagement = () => {
           <Plus className="w-4 h-4 mr-2" />
           Add New User
         </Button>
+      </div>
+
+      {/* Admin Note */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-medium text-blue-900">Admin Access Note</h3>
+            <p className="text-sm text-blue-700 mt-1">
+              This page is for user management only. To access other role-specific features (Tutorials, HR Calendar, CRM, etc.), 
+              use the <strong>Profile Switcher</strong> in the top-right corner to switch between different roles.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Key Metrics */}

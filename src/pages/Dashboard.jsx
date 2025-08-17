@@ -160,6 +160,22 @@ export default function Dashboard() {
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
       <WelcomeCard user={currentUser} overallProgress={getOverallProgress()} currentRole={currentRole} />
       
+      {/* Admin Note - Only show for admin users */}
+      {currentRole === 'admin' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-medium text-blue-900">Admin Dashboard</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                You're viewing the admin dashboard. Use the <strong>Profile Switcher</strong> in the top-right corner 
+                to switch to other roles (Content Manager, HR Manager, Sales Manager) and access their specific features.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <QuickStats 
         tutorials={tutorials}
         progress={progress}
