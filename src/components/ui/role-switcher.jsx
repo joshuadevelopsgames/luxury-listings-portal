@@ -8,7 +8,7 @@ const RoleSwitcher = () => {
   const { currentRole, switchRole, getCurrentRolePermissions, currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   
-  const currentRoleData = getCurrentRolePermissions();
+  const currentRoleData = getCurrentRolePermissions() || { color: 'blue', displayName: 'Loading...' };
   
   const roleOptions = [
     {
@@ -56,6 +56,9 @@ const RoleSwitcher = () => {
   // Get user's assigned roles (support both old single-role and new multi-role systems)
   const userAssignedRoles = currentUser?.roles || [currentUser?.primaryRole || currentUser?.role] || ['content_director'];
   
+  // Safety check - ensure userAssignedRoles is always an array
+  const safeUserAssignedRoles = Array.isArray(userAssignedRoles) ? userAssignedRoles : ['content_director'];
+  
   // Admin users should always have access to all roles
   // Check if the user is the admin user (jrsschroeder@gmail.com) - this should never change
   const isAdminUser = currentUser?.email === 'jrsschroeder@gmail.com';
@@ -69,13 +72,13 @@ const RoleSwitcher = () => {
     isAdminUser,
     shouldShowAllRoles,
     currentRole,
-    userAssignedRoles,
-    filteredRoleOptionsCount: shouldShowAllRoles ? roleOptions.length : roleOptions.filter(option => userAssignedRoles.includes(option.role)).length
+    userAssignedRoles: safeUserAssignedRoles,
+    filteredRoleOptionsCount: shouldShowAllRoles ? roleOptions.length : roleOptions.filter(option => safeUserAssignedRoles.includes(option.role)).length
   });
   
   // Filter role options based on user's assigned roles
   const filteredRoleOptions = shouldShowAllRoles ? roleOptions : roleOptions.filter(option => 
-    userAssignedRoles.includes(option.role)
+    safeUserAssignedRoles.includes(option.role)
   );
 
   const handleRoleSwitch = (newRole) => {
@@ -134,9 +137,9 @@ const RoleSwitcher = () => {
             {currentUser?.email === 'jrsschroeder@gmail.com' && (
               <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Admin</span>
             )}
-            {!isAdminUser && userAssignedRoles.length > 1 && (
+            {!isAdminUser && safeUserAssignedRoles.length > 1 && (
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                {userAssignedRoles.length} Roles
+                {safeUserAssignedRoles.length} Roles
               </span>
             )}
           </div>
@@ -154,7 +157,7 @@ const RoleSwitcher = () => {
             {/* Show available roles info for non-admin users */}
             {!isAdminUser && (
               <div className="text-xs text-gray-500 mb-3 p-2 bg-gray-50 rounded">
-                You have access to {userAssignedRoles.length} role{userAssignedRoles.length !== 1 ? 's' : ''}: {userAssignedRoles.map(role => getRoleDisplayName(role)).join(', ')}
+                You have access to {safeUserAssignedRoles.length} role{safeUserAssignedRoles.length !== 1 ? 's' : ''}: {safeUserAssignedRoles.map(role => getRoleDisplayName(role)).join(', ')}
               </div>
             )}
             

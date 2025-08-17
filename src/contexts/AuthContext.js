@@ -236,7 +236,7 @@ export function AuthProvider({ children }) {
               
               setCurrentUser(mergedUser);
               console.log('🔄 Navigating approved user to dashboard...');
-              navigateBasedOnRole(assignedRole);
+              navigateBasedOnRole(primaryRole);
             } else {
               console.log('🆕 New user - no role mapping found, setting to pending');
               // New user - no role assigned yet, they need approval
