@@ -90,48 +90,7 @@ const UserManagement = () => {
     }
   };
 
-  const existingUsers = [
-    {
-      id: 'user-001',
-      email: 'joshua.mitchell@luxuryrealestate.com',
-      firstName: 'Joshua',
-      lastName: 'Mitchell',
-      role: 'content_director',
-      status: 'active',
-      joinedAt: '2023-01-15',
-      lastActive: '2025-01-15'
-    },
-    {
-      id: 'user-002',
-      email: 'michelle.chen@luxuryrealestate.com',
-      firstName: 'Michelle',
-      lastName: 'Chen',
-      role: 'social_media_manager',
-      status: 'active',
-      joinedAt: '2023-06-20',
-      lastActive: '2025-01-15'
-    },
-    {
-      id: 'user-003',
-      email: 'matthew.rodriguez@luxuryrealestate.com',
-      firstName: 'Matthew',
-      lastName: 'Rodriguez',
-      role: 'hr_manager',
-      status: 'active',
-      joinedAt: '2022-09-10',
-      lastActive: '2025-01-14'
-    },
-    {
-      id: 'user-004',
-      email: 'emily.watson@luxuryrealestate.com',
-      firstName: 'Emily',
-      lastName: 'Watson',
-      role: 'sales_manager',
-      status: 'active',
-      joinedAt: '2023-03-15',
-      lastActive: '2025-01-15'
-    }
-  ];
+
 
   const getRoleDisplayName = (role) => {
     const roleNames = {
