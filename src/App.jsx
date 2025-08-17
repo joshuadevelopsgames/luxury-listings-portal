@@ -197,19 +197,18 @@ function AppLayout() {
       <main>
         <Routes>
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/tutorials" element={<ProtectedRoute><TutorialsPage /></ProtectedRoute>} />
-        <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
-        <Route path="/programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
-        <Route path="/resources" element={<ProtectedRoute><ResourcesPage /></ProtectedRoute>} />
-        <Route path="/client-packages" element={<ProtectedRoute><ClientPackages /></ProtectedRoute>} />
-        <Route path="/hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
-        <Route path="/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
-        <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
-        <Route path="/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-        <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
-        <Route path="/sales-pipeline" element={<ProtectedRoute><SalesPipelinePage /></ProtectedRoute>} />
-        <Route path="/leads" element={<ProtectedRoute><LeadManagementPage /></ProtectedRoute>} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/tutorials" element={<ProtectedRoute><TutorialsPage /></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+          <Route path="/programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
+          <Route path="/resources" element={<ProtectedRoute><ResourcesPage /></ProtectedRoute>} />
+          <Route path="/client-packages" element={<ProtectedRoute><ClientPackages /></ProtectedRoute>} />
+          <Route path="/hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
+          <Route path="/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
+          <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
+          <Route path="/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+          <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
+          <Route path="/sales-pipeline" element={<ProtectedRoute><SalesPipelinePage /></ProtectedRoute>} />
+          <Route path="/leads" element={<ProtectedRoute><LeadManagementPage /></ProtectedRoute>} />
         </Routes>
       </main>
 
@@ -225,11 +224,12 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Login page is commented out but code is preserved */}
+          {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
           
-          {/* Direct access to dashboard - no login required */}
+          {/* Protected routes - redirect root to login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/*" element={<AppLayout />} />
         </Routes>
       </Router>

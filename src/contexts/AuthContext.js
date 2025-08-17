@@ -11,9 +11,14 @@ import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAUL
 
 // Helper function to navigate based on user role
 const navigateBasedOnRole = (role) => {
-  if (role === 'pending') {
+  // Prevent navigation loops by checking current path
+  const currentPath = window.location.pathname;
+  
+  if (role === 'pending' && currentPath !== '/waiting-for-approval') {
+    console.log('🔄 Navigating pending user to approval page...');
     window.location.href = '/waiting-for-approval';
-  } else if (role && role !== 'pending') {
+  } else if (role && role !== 'pending' && currentPath !== '/dashboard') {
+    console.log('🔄 Navigating approved user to dashboard...');
     window.location.href = '/dashboard';
   }
 };
