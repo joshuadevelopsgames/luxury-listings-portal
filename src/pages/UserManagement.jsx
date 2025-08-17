@@ -16,6 +16,15 @@ const UserManagement = () => {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [userToAssignRole, setUserToAssignRole] = useState(null);
   const [selectedRole, setSelectedRole] = useState('');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userToEdit, setUserToEdit] = useState(null);
+  const [editingUserData, setEditingUserData] = useState({
+    firstName: '',
+    lastName: '',
+    role: '',
+    status: ''
+  });
 
   // Admin note: Use the profile switcher (top right) to access other role-specific features
   // This page is for user management only - other features are available through role switching
@@ -72,6 +81,66 @@ const UserManagement = () => {
     setUserToAssignRole(user);
     setSelectedRole(user.requestedRole || 'content_director');
     setShowRoleModal(true);
+  };
+
+  // Function to view user profile
+  const handleViewProfile = (user) => {
+    setSelectedUser(user);
+    setShowProfileModal(true);
+  };
+
+  // Function to edit user
+  const handleEditUser = (user) => {
+    setUserToEdit(user);
+    setEditingUserData({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      status: user.status
+    });
+    setShowEditModal(true);
+  };
+
+  // Function to save user edits
+  const handleSaveUserEdit = () => {
+    if (userToEdit && editingUserData) {
+      // Update the user in existingUsers
+      setExistingUsers(prev => prev.map(user => 
+        user.id === userToEdit.id 
+          ? { 
+              ...user, 
+              firstName: editingUserData.firstName,
+              lastName: editingUserData.lastName,
+              role: editingUserData.role,
+              status: editingUserData.status
+            }
+          : user
+      ));
+
+      // If this was an approved user, update localStorage
+      if (userToEdit.id.startsWith('approved-')) {
+        const approvedUsers = JSON.parse(localStorage.getItem('luxury-listings-approved-users') || '[]');
+        const updatedApprovedUsers = approvedUsers.map(u => 
+          u.email === userToEdit.email 
+            ? { ...u, role: editingUserData.role }
+            : u
+        );
+        localStorage.setItem('luxury-listings-approved-users', JSON.stringify(updatedApprovedUsers));
+      }
+
+      // Show success message
+      alert(`User ${userToEdit.email} updated successfully!`);
+      
+      // Close modal and reset
+      setShowEditModal(false);
+      setUserToEdit(null);
+      setEditingUserData({
+        firstName: '',
+        lastName: '',
+        role: '',
+        status: ''
+      });
+    }
   };
 
   // Function to assign custom role
@@ -501,10 +570,10 @@ const UserManagement = () => {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedUser(user)} className="text-blue-600 hover:text-blue-700">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewProfile(user)} className="text-blue-600 hover:text-blue-700">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedUser(user)} className="text-green-600 hover:text-green-700">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)} className="text-green-600 hover:text-green-700">
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button 
@@ -525,8 +594,8 @@ const UserManagement = () => {
         </CardContent>
       </Card>
 
-      {/* User Detail Modal */}
-      {selectedUser && (() => {
+      {/* User Profile View Modal */}
+      {showProfileModal && selectedUser && (() => {
         // Get the current user data from existingUsers to show real-time updates
         const currentUserData = existingUsers.find(u => u.id === selectedUser.id);
         if (!currentUserData) return null;
@@ -535,63 +604,155 @@ const UserManagement = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold">User Details</h3>
-                <Button variant="ghost" onClick={() => setSelectedUser(null)}>
+                <h3 className="text-xl font-semibold">User Profile</h3>
+                <Button variant="ghost" onClick={() => {
+                  setShowProfileModal(false);
+                  setSelectedUser(null);
+                }}>
                   <XCircle className="w-4 h-4" />
                 </Button>
               </div>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <p className="text-gray-900">{currentUserData.firstName} {currentUserData.lastName}</p>
+              <div className="space-y-6">
+                {/* Profile Header */}
+                <div className="text-center pb-4 border-b border-gray-200">
+                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl font-bold text-blue-600">
+                      {currentUserData.firstName.charAt(0)}{currentUserData.lastName.charAt(0)}
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900">{currentUserData.firstName} {currentUserData.lastName}</h2>
+                  <p className="text-gray-600">{currentUserData.email}</p>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <p className="text-gray-900">{currentUserData.email}</p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                  <select 
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={currentUserData.role}
-                    onChange={(e) => handleChangeRole(currentUserData.id, e.target.value)}
-                  >
-                    <option value="content_director">Content Manager</option>
-                    <option value="social_media_manager">Social Media Manager</option>
-                    <option value="hr_manager">HR Manager</option>
-                    <option value="sales_manager">Sales Manager</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select 
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={currentUserData.status}
-                    onChange={(e) => handleChangeStatus(currentUserData.id, e.target.value)}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
+                {/* Profile Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      {getRoleDisplayName(currentUserData.role)}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <Badge className={getStatusColor(currentUserData.status)}>
+                      {currentUserData.status.charAt(0).toUpperCase() + currentUserData.status.slice(1)}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Joined Date</label>
+                    <p className="text-gray-900">{new Date(currentUserData.joinedAt).toLocaleDateString()}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Active</label>
+                    <p className="text-gray-900">{new Date(currentUserData.lastActive).toLocaleDateString()}</p>
+                  </div>
                 </div>
               </div>
               
               <div className="flex justify-end gap-3 mt-6">
-                <Button variant="outline" onClick={() => setSelectedUser(null)}>
-                  Cancel
+                <Button variant="outline" onClick={() => {
+                  setShowProfileModal(false);
+                  setSelectedUser(null);
+                }}>
+                  Close
                 </Button>
-                <Button onClick={handleSaveUserChanges}>
-                  Save Changes
+                <Button onClick={() => {
+                  setShowProfileModal(false);
+                  handleEditUser(currentUserData);
+                }} className="bg-blue-600 hover:bg-blue-700">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit User
                 </Button>
               </div>
             </div>
           </div>
         );
       })()}
+
+      {/* Edit User Modal */}
+      {showEditModal && userToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">Edit User</h3>
+              <Button variant="ghost" onClick={() => setShowEditModal(false)}>
+                <XCircle className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={editingUserData.firstName}
+                    onChange={(e) => setEditingUserData(prev => ({ ...prev, firstName: e.target.value }))}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={editingUserData.lastName}
+                    onChange={(e) => setEditingUserData(prev => ({ ...prev, lastName: e.target.value }))}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border">{userToEdit.email}</p>
+                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={editingUserData.role}
+                  onChange={(e) => setEditingUserData(prev => ({ ...prev, role: e.target.value }))}
+                >
+                  <option value="content_director">Content Manager</option>
+                  <option value="social_media_manager">Social Media Manager</option>
+                  <option value="hr_manager">HR Manager</option>
+                  <option value="sales_manager">Sales Manager</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={editingUserData.status}
+                  onChange={(e) => setEditingUserData(prev => ({ ...prev, status: e.target.value }))}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="outline" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveUserEdit} className="bg-green-600 hover:bg-green-700">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Role Assignment Modal */}
       {showRoleModal && userToAssignRole && (
