@@ -49,6 +49,13 @@ const UserManagement = () => {
     }
   ];
 
+  // Function to get real pending users from Firebase (when implemented)
+  const getRealPendingUsers = () => {
+    // This would fetch real pending users from Firebase
+    // For now, return mock data
+    return pendingUsers;
+  };
+
   const existingUsers = [
     {
       id: 'user-001',
@@ -116,7 +123,20 @@ const UserManagement = () => {
   const handleApproveUser = (userId) => {
     // In a real app, this would update the database
     console.log('Approving user:', userId);
-    // Remove from pending, add to existing users
+    
+    // Find the pending user
+    const pendingUser = pendingUsers.find(user => user.id === userId);
+    if (pendingUser) {
+      // In a real app, this would:
+      // 1. Update Firebase user document with assigned role
+      // 2. Remove from pending users
+      // 3. Add to existing users with the assigned role
+      
+      console.log('User approved:', pendingUser.email, 'Role assigned:', pendingUser.requestedRole);
+      
+      // For now, just show a success message
+      alert(`User ${pendingUser.email} approved with role: ${getRoleDisplayName(pendingUser.requestedRole)}`);
+    }
   };
 
   const handleRejectUser = (userId) => {

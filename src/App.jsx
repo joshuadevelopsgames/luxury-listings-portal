@@ -16,6 +16,7 @@ import CRMPage from './pages/CRMPage';
 import SalesPipelinePage from './pages/SalesPipelinePage';
 import LeadManagementPage from './pages/LeadManagementPage';
 import UserManagement from './pages/UserManagement';
+import WaitingForApproval from './pages/WaitingForApproval';
 import ChatWidget from './components/ui/chat-widget';
 import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
@@ -226,6 +227,7 @@ function App() {
         <Routes>
           {/* Login page is commented out but code is preserved */}
           <Route path="/login" element={<Login />} />
+          <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
           
           {/* Direct access to dashboard - no login required */}
           <Route path="/*" element={<AppLayout />} />

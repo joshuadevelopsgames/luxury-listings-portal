@@ -160,32 +160,33 @@ export function AuthProvider({ children }) {
               avatar: user.photoURL || userData.avatar,
               bio: userData.bio,
               skills: userData.skills,
-              stats: userData.stats
+              stats: userData.stats,
+              isApproved: true
             };
             
             setCurrentUser(mergedUser);
           } else {
-            // New user - assign default role
-            setCurrentRole(DEFAULT_ROLE);
-            localStorage.setItem('luxury-listings-role', DEFAULT_ROLE);
-            
-            const userData = getUserByRole(DEFAULT_ROLE);
-            const defaultUser = {
+            // New user - no role assigned yet, they need approval
+            const newUser = {
               uid: user.uid,
               email: user.email,
-              displayName: user.displayName || userData.displayName,
-              firstName: userData.firstName,
-              lastName: userData.lastName,
-              role: DEFAULT_ROLE,
-              department: userData.department,
-              startDate: userData.startDate,
-              avatar: user.photoURL || userData.avatar,
-              bio: userData.bio,
-              skills: userData.skills,
-              stats: userData.stats
+              displayName: user.displayName || 'New User',
+              firstName: user.displayName?.split(' ')[0] || 'New',
+              lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
+              role: 'pending',
+              department: 'Pending Approval',
+              startDate: new Date().toISOString().split('T')[0],
+              avatar: user.photoURL,
+              bio: 'Account pending administrator approval',
+              skills: [],
+              stats: {},
+              isApproved: false,
+              createdAt: new Date().toISOString()
             };
             
-            setCurrentUser(defaultUser);
+            setCurrentUser(newUser);
+            setCurrentRole('pending');
+            localStorage.setItem('luxury-listings-role', 'pending');
           }
         } else {
           // User is signed out

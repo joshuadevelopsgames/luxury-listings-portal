@@ -25,6 +25,10 @@ googleProvider.setCustomParameters({
   redirect_uri: 'https://www.smmluxurylistings.info'
 });
 
+// Set custom OAuth scopes
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+
 export const db = getFirestore(app);
 
 export default app;

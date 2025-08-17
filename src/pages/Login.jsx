@@ -15,8 +15,9 @@ const Login = () => {
       setLoading(true);
       await signInWithGoogle();
       
-      // Force redirect to dashboard on your custom domain
-      window.location.href = 'https://www.smmluxurylistings.info/dashboard';
+      // The AuthContext will handle redirecting based on user role
+      // If user is pending, they'll go to waiting page
+      // If user is approved, they'll go to dashboard
     } catch (error) {
       console.error('Sign-in error:', error);
       setError('Failed to sign in with Google. Please try again.');

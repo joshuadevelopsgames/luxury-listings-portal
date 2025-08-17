@@ -9,6 +9,11 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // If user is pending approval, redirect to waiting page
+  if (currentUser.role === 'pending' || currentUser.role === 'pending_approval') {
+    return <Navigate to="/waiting-for-approval" replace />;
+  }
+
   return children;
 };
 
