@@ -25,6 +25,8 @@ const UserManagement = () => {
     role: '',
     status: ''
   });
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Admin note: Use the profile switcher (top right) to access other role-specific features
   // This page is for user management only - other features are available through role switching
@@ -101,6 +103,13 @@ const UserManagement = () => {
     setShowEditModal(true);
   };
 
+  // Function to show success notification
+  const showSuccessNotification = (message) => {
+    setSuccessMessage(message);
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 3000); // Auto-hide after 3 seconds
+  };
+
   // Function to save user edits
   const handleSaveUserEdit = () => {
     if (userToEdit && editingUserData) {
@@ -128,8 +137,8 @@ const UserManagement = () => {
         localStorage.setItem('luxury-listings-approved-users', JSON.stringify(updatedApprovedUsers));
       }
 
-      // Show success message
-      alert(`User ${userToEdit.email} updated successfully!`);
+      // Show success notification
+      showSuccessNotification(`User ${userToEdit.email} updated successfully!`);
       
       // Close modal and reset
       setShowEditModal(false);
@@ -153,7 +162,7 @@ const UserManagement = () => {
       setUserToAssignRole(null);
       setSelectedRole('');
       
-      alert(`Role updated to: ${getRoleDisplayName(selectedRole)}`);
+      showSuccessNotification(`Role updated to: ${getRoleDisplayName(selectedRole)}`);
     }
   };
 
@@ -165,11 +174,11 @@ const UserManagement = () => {
         : user
     ));
     
-    // Show success message
-    const user = existingUsers.find(u => u.id === userId);
-    if (user) {
-      alert(`Role updated for ${user.email} to: ${getRoleDisplayName(newRole)}`);
-    }
+          // Show success notification
+      const user = existingUsers.find(u => u.id === userId);
+      if (user) {
+        showSuccessNotification(`Role updated for ${user.email} to: ${getRoleDisplayName(newRole)}`);
+      }
   };
 
   // Function to handle status changes for existing users
@@ -180,11 +189,11 @@ const UserManagement = () => {
         : user
     ));
     
-    // Show success message
-    const user = existingUsers.find(u => u.id === userId);
-    if (user) {
-      alert(`Status updated for ${user.email} to: ${newStatus}`);
-    }
+          // Show success notification
+      const user = existingUsers.find(u => u.id === userId);
+      if (user) {
+        showSuccessNotification(`Status updated for ${user.email} to: ${newStatus}`);
+      }
   };
 
   // Function to save all changes for a user
@@ -197,8 +206,8 @@ const UserManagement = () => {
         // In a real app, this would update Firebase
         console.log('Saving user changes:', updatedUser);
         
-        // Show success message
-        alert(`Changes saved for ${updatedUser.email}`);
+        // Show success notification
+        showSuccessNotification(`Changes saved for ${updatedUser.email}`);
         
         // Close the modal
         setSelectedUser(null);
@@ -219,8 +228,8 @@ const UserManagement = () => {
         // Remove user from existing users
         setExistingUsers(prev => prev.filter(u => u.id !== userId));
         
-        // Show success message
-        alert(`User ${user.email} has been deleted.`);
+        // Show success notification
+        showSuccessNotification(`User ${user.email} has been deleted.`);
         
         // Close modal if it was open for this user
         if (selectedUser && selectedUser.id === userId) {
@@ -286,8 +295,8 @@ const UserManagement = () => {
       // Refresh the existing users list to show the newly approved user
       refreshExistingUsers();
       
-      // Show success message
-      alert(`User ${pendingUser.email} approved with role: ${getRoleDisplayName(pendingUser.requestedRole)}. They can now login!`);
+      // Show success notification
+      showSuccessNotification(`User ${pendingUser.email} approved with role: ${getRoleDisplayName(pendingUser.requestedRole)}. They can now login!`);
       
       // In a real app, you would also:
       // 1. Update the user's role in Firebase
@@ -307,8 +316,8 @@ const UserManagement = () => {
       // Remove from pending users using context
       removePendingUser(userId);
       
-      // Show rejection message
-      alert(`User ${pendingUser.email} has been rejected. They will need to re-apply.`);
+      // Show success notification
+      showSuccessNotification(`User ${pendingUser.email} has been rejected. They will need to re-apply.`);
       
       // In a real app, you would also:
       // 1. Update Firebase to mark user as rejected
@@ -795,6 +804,16 @@ const UserManagement = () => {
                 Assign Role
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast Notification */}
+      {showSuccessToast && (
+        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">{successMessage}</span>
           </div>
         </div>
       )}
