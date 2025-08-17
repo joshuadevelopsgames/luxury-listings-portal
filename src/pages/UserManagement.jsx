@@ -90,6 +90,79 @@ const UserManagement = () => {
     }
   };
 
+  // Function to handle role changes for existing users
+  const handleChangeRole = (userId, newRole) => {
+    setExistingUsers(prev => prev.map(user => 
+      user.id === userId 
+        ? { ...user, role: newRole }
+        : user
+    ));
+    
+    // Show success message
+    const user = existingUsers.find(u => u.id === userId);
+    if (user) {
+      alert(`Role updated for ${user.email} to: ${getRoleDisplayName(newRole)}`);
+    }
+  };
+
+  // Function to handle status changes for existing users
+  const handleChangeStatus = (userId, newStatus) => {
+    setExistingUsers(prev => prev.map(user => 
+      user.id === userId 
+        ? { ...user, status: newStatus }
+        : user
+    ));
+    
+    // Show success message
+    const user = existingUsers.find(u => u.id === userId);
+    if (user) {
+      alert(`Status updated for ${user.email} to: ${newStatus}`);
+    }
+  };
+
+  // Function to save all changes for a user
+  const handleSaveUserChanges = () => {
+    if (selectedUser) {
+      // Find the updated user data
+      const updatedUser = existingUsers.find(u => u.id === selectedUser.id);
+      
+      if (updatedUser) {
+        // In a real app, this would update Firebase
+        console.log('Saving user changes:', updatedUser);
+        
+        // Show success message
+        alert(`Changes saved for ${updatedUser.email}`);
+        
+        // Close the modal
+        setSelectedUser(null);
+      }
+    }
+  };
+
+  // Function to delete a user
+  const handleDeleteUser = (userId) => {
+    const user = existingUsers.find(u => u.id === userId);
+    
+    if (user) {
+      const confirmDelete = window.confirm(
+        `Are you sure you want to delete ${user.email}? This action cannot be undone.`
+      );
+      
+      if (confirmDelete) {
+        // Remove user from existing users
+        setExistingUsers(prev => prev.filter(u => u.id !== userId));
+        
+        // Show success message
+        alert(`User ${user.email} has been deleted.`);
+        
+        // Close modal if it was open for this user
+        if (selectedUser && selectedUser.id === userId) {
+          setSelectedUser(null);
+        }
+      }
+    }
+  };
+
 
 
   const getRoleDisplayName = (role) => {
@@ -428,7 +501,12 @@ const UserManagement = () => {
                         <Button variant="ghost" size="sm" onClick={() => setSelectedUser(user)} className="text-green-600 hover:text-green-700">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -482,6 +560,7 @@ const UserManagement = () => {
                 <select 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={selectedUser.status}
+                  onChange={(e) => handleChangeStatus(selectedUser.id, e.target.value)}
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -494,7 +573,7 @@ const UserManagement = () => {
               <Button variant="outline" onClick={() => setSelectedUser(null)}>
                 Cancel
               </Button>
-              <Button onClick={() => setSelectedUser(null)}>
+              <Button onClick={handleSaveUserChanges}>
                 Save Changes
               </Button>
             </div>
