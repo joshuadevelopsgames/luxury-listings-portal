@@ -22,7 +22,7 @@ const UserManagement = () => {
   const [editingUserData, setEditingUserData] = useState({
     firstName: '',
     lastName: '',
-    role: '',
+    roles: [], // Changed from single role to array of roles
     status: ''
   });
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -42,7 +42,8 @@ const UserManagement = () => {
       email: user.email,
       firstName: user.firstName || user.email.split('@')[0], // Use stored firstName or fallback to email prefix
       lastName: user.lastName || 'User', // Use stored lastName or fallback to 'User'
-      role: user.role,
+      roles: user.roles || [user.primaryRole || user.role] || ['content_director'], // Support multiple roles
+      primaryRole: user.primaryRole || user.role || 'content_director', // Keep primary role for display
       status: 'active',
       joinedAt: user.approvedAt || new Date().toISOString().split('T')[0],
       lastActive: new Date().toISOString().split('T')[0]
@@ -68,7 +69,8 @@ const UserManagement = () => {
       email: user.email,
       firstName: user.firstName || user.email.split('@')[0], // Use stored firstName or fallback to email prefix
       lastName: user.lastName || 'User', // Use stored lastName or fallback to 'User'
-      role: user.role,
+      roles: user.roles || [user.primaryRole || user.role] || ['content_director'], // Support multiple roles
+      primaryRole: user.primaryRole || user.role || 'content_director', // Keep primary role for display
       status: 'active',
       joinedAt: user.approvedAt || new Date().toISOString().split('T')[0],
       lastActive: new Date().toISOString().split('T')[0]
@@ -97,7 +99,7 @@ const UserManagement = () => {
     setEditingUserData({
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
+      roles: user.roles || [user.primaryRole || user.role] || ['content_director'], // Support multiple roles
       status: user.status
     });
     setShowEditModal(true);
@@ -120,7 +122,8 @@ const UserManagement = () => {
               ...user, 
               firstName: editingUserData.firstName,
               lastName: editingUserData.lastName,
-              role: editingUserData.role,
+              roles: editingUserData.roles, // Support multiple roles
+              primaryRole: editingUserData.roles[0] || 'content_director', // Set first role as primary
               status: editingUserData.status
             }
           : user
@@ -133,7 +136,8 @@ const UserManagement = () => {
           u.email === userToEdit.email 
             ? { 
                 ...u, 
-                role: editingUserData.role,
+                roles: editingUserData.roles, // Store multiple roles
+                primaryRole: editingUserData.roles[0] || 'content_director', // Set first role as primary
                 // Store the edited names in localStorage
                 firstName: editingUserData.firstName,
                 lastName: editingUserData.lastName
@@ -282,12 +286,13 @@ const UserManagement = () => {
       // Remove from pending users using context
       removePendingUser(userId);
       
-      // Update the user's role in localStorage so they can login
+      // Update the user's roles in localStorage so they can login
       const approvedUserData = {
         email: pendingUser.email,
         firstName: pendingUser.firstName,
         lastName: pendingUser.lastName,
-        role: pendingUser.requestedRole,
+        roles: [pendingUser.requestedRole], // Store as array with initial role
+        primaryRole: pendingUser.requestedRole, // Keep primary role for backward compatibility
         isApproved: true,
         approvedAt: new Date().toISOString()
       };
@@ -570,9 +575,13 @@ const UserManagement = () => {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        {getRoleDisplayName(user.role)}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {(user.roles || [user.primaryRole || user.role] || ['content_director']).map(role => (
+                          <Badge key={role} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                            {getRoleDisplayName(role)}
+                          </Badge>
+                        ))}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <Badge className={getStatusColor(user.status)}>
@@ -645,10 +654,14 @@ const UserManagement = () => {
                 {/* Profile Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {getRoleDisplayName(currentUserData.role)}
-                    </Badge>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Roles</label>
+                    <div className="flex flex-wrap gap-2">
+                      {(currentUserData.roles || [currentUserData.primaryRole || currentUserData.role] || ['content_director']).map(role => (
+                        <Badge key={role} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {getRoleDisplayName(role)}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                   
                   <div>
@@ -731,17 +744,38 @@ const UserManagement = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={editingUserData.role}
-                  onChange={(e) => setEditingUserData(prev => ({ ...prev, role: e.target.value }))}
-                >
-                  <option value="content_director">Content Manager</option>
-                  <option value="social_media_manager">Social Media Manager</option>
-                  <option value="hr_manager">HR Manager</option>
-                  <option value="sales_manager">Sales Manager</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Roles (Multiple Selection)</label>
+                <div className="space-y-2">
+                  {[
+                    { value: 'content_director', label: 'Content Manager' },
+                    { value: 'social_media_manager', label: 'Social Media Manager' },
+                    { value: 'hr_manager', label: 'HR Manager' },
+                    { value: 'sales_manager', label: 'Sales Manager' }
+                  ].map(roleOption => (
+                    <label key={roleOption.value} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={editingUserData.roles.includes(roleOption.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setEditingUserData(prev => ({
+                              ...prev,
+                              roles: [...prev.roles, roleOption.value]
+                            }));
+                          } else {
+                            setEditingUserData(prev => ({
+                              ...prev,
+                              roles: prev.roles.filter(r => r !== roleOption.value)
+                            }));
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{roleOption.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Select multiple roles for this user</p>
               </div>
               
               <div>
