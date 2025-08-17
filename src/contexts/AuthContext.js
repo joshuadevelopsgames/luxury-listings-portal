@@ -134,11 +134,14 @@ export function AuthProvider({ children }) {
 
     if (!GOOGLE_AUTH_DISABLED) {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
+        console.log('🔐 Auth state changed - User:', user);
         if (user) {
+          console.log('✅ User signed in:', user.email);
           // User is signed in - get their role mapping
           const roleMapping = getUserRoleMapping(user.email);
           
           if (roleMapping) {
+            console.log('✅ User has role mapping:', roleMapping);
             // User has a role mapping - set their assigned role
             const assignedRole = roleMapping.role;
             setCurrentRole(assignedRole);
@@ -166,6 +169,7 @@ export function AuthProvider({ children }) {
             
             setCurrentUser(mergedUser);
           } else {
+            console.log('🆕 New user - no role mapping found, setting to pending');
             // New user - no role assigned yet, they need approval
             const newUser = {
               uid: user.uid,
@@ -198,7 +202,7 @@ export function AuthProvider({ children }) {
 
       return unsubscribe;
     }
-  }, [currentRole, isInitialized]);
+  }, [isInitialized]);
 
   const value = {
     currentUser,

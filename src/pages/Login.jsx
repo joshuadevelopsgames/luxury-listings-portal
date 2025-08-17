@@ -13,13 +13,17 @@ const Login = () => {
     try {
       setError('');
       setLoading(true);
+      console.log('🚀 Starting Google sign-in...');
+      
       await signInWithGoogle();
+      console.log('✅ Google sign-in successful');
       
       // The AuthContext will handle redirecting based on user role
       // If user is pending, they'll go to waiting page
       // If user is approved, they'll go to dashboard
+      console.log('🔄 AuthContext will handle redirect...');
     } catch (error) {
-      console.error('Sign-in error:', error);
+      console.error('❌ Sign-in error:', error);
       setError('Failed to sign in with Google. Please try again.');
     } finally {
       setLoading(false);
