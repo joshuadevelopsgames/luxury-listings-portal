@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -210,19 +211,21 @@ function AppLayout() {
 // Main App Component
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
-          
-          {/* Protected routes - redirect root to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/*" element={<AppLayout />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <PendingUsersProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
+            
+            {/* Protected routes - redirect root to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/*" element={<AppLayout />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </PendingUsersProvider>
   );
 }
 

@@ -9,6 +9,9 @@ import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
 import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAULT_ROLE } from '../entities/UserRoleMapping';
 
+// Import the pending users context
+import { usePendingUsers } from './PendingUsersContext';
+
 // Helper function to navigate based on user role
 const navigateBasedOnRole = (role) => {
   // Prevent navigation loops by checking current path
@@ -44,6 +47,9 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
+  
+  // Get pending users functions
+  const { addPendingUser } = usePendingUsers();
 
   function signInWithGoogle() {
     if (GOOGLE_AUTH_DISABLED) {
@@ -214,6 +220,25 @@ export function AuthProvider({ children }) {
             setCurrentUser(newUser);
             setCurrentRole('pending');
             localStorage.setItem('luxury-listings-role', 'pending');
+            
+            // Add this user to the pending users system
+            const pendingUserData = {
+              id: `pending-${Date.now()}`,
+              email: newUser.email,
+              firstName: newUser.firstName,
+              lastName: newUser.lastName,
+              requestedRole: 'content_director', // Default role
+              requestedAt: new Date().toISOString().split('T')[0],
+              status: 'pending',
+              bio: newUser.bio,
+              skills: newUser.skills,
+              uid: newUser.uid,
+              displayName: newUser.displayName
+            };
+            
+            addPendingUser(pendingUserData);
+            console.log('✅ Added user to pending users system:', pendingUserData);
+            
             console.log('🔄 Navigating pending user to approval page...');
             navigateBasedOnRole('pending');
           }

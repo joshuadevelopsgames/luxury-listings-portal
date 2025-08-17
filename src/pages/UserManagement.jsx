@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -7,6 +8,7 @@ import { Users, UserPlus, UserCheck, UserX, Shield, Mail, Calendar, CheckCircle,
 
 const UserManagement = () => {
   const { currentUser, currentRole } = useAuth();
+  const { pendingUsers, removePendingUser, updatePendingUserRole } = usePendingUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -18,59 +20,53 @@ const UserManagement = () => {
   // Admin note: Use the profile switcher (top right) to access other role-specific features
   // This page is for user management only - other features are available through role switching
   
-  // State for pending users and existing users
-  const [pendingUsers, setPendingUsers] = useState([
+  // Mock data for existing users (in a real app, this would come from Firebase)
+  const [existingUsers, setExistingUsers] = useState([
     {
-      id: 'pending-001',
-      email: 'john.doe@luxuryrealestate.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      requestedRole: 'content_director',
-      requestedAt: '2025-01-15',
-      status: 'pending',
-      bio: 'Content strategist with 5+ years in luxury real estate marketing.',
-      skills: ['Content Strategy', 'Creative Writing', 'Brand Development']
+      id: 'user-001',
+      email: 'joshua.mitchell@luxuryrealestate.com',
+      firstName: 'Joshua',
+      lastName: 'Mitchell',
+      role: 'content_director',
+      status: 'active',
+      joinedAt: '2023-01-15',
+      lastActive: '2025-01-15'
     },
     {
-      id: 'pending-002',
-      email: 'sarah.wilson@luxuryrealestate.com',
-      firstName: 'Sarah',
-      lastName: 'Wilson',
-      requestedRole: 'social_media_manager',
-      requestedAt: '2025-01-14',
-      status: 'pending',
-      bio: 'Social media specialist focusing on luxury brand engagement.',
-      skills: ['Social Media Management', 'Content Creation', 'Analytics']
-    },
-    {
-      id: 'pending-003',
-      email: 'mike.chen@luxuryrealestate.com',
-      firstName: 'Mike',
+      id: 'user-002',
+      email: 'michelle.chen@luxuryrealestate.com',
+      firstName: 'Michelle',
       lastName: 'Chen',
-      requestedRole: 'hr_manager',
-      requestedAt: '2025-01-13',
-      status: 'pending',
-      bio: 'HR professional with expertise in team development and performance management.',
-      skills: ['HR Management', 'Team Development', 'Performance Analytics']
+      role: 'social_media_manager',
+      status: 'active',
+      joinedAt: '2023-06-20',
+      lastActive: '2025-01-15'
+    },
+    {
+      id: 'user-003',
+      email: 'matthew.rodriguez@luxuryrealestate.com',
+      firstName: 'Matthew',
+      lastName: 'Rodriguez',
+      role: 'hr_manager',
+      status: 'active',
+      joinedAt: '2022-09-10',
+      lastActive: '2025-01-14'
+    },
+    {
+      id: 'user-004',
+      email: 'emily.watson@luxuryrealestate.com',
+      firstName: 'Emily',
+      lastName: 'Watson',
+      role: 'sales_manager',
+      status: 'active',
+      joinedAt: '2023-03-15',
+      lastActive: '2025-01-15'
     }
   ]);
 
-  // Add the real pending user from your system
-  const [realPendingUser, setRealPendingUser] = useState({
-    id: 'real-pending-001',
-    email: 'joshua@luxury-listings.com',
-    firstName: 'Joshua',
-    lastName: 'Luxury',
-    requestedRole: 'content_director', // Default role, can be changed
-    requestedAt: new Date().toISOString().split('T')[0],
-    status: 'pending',
-    bio: 'New user waiting for role assignment.',
-    skills: []
-  });
-
-  // Function to get all pending users including real ones
+  // Function to get all pending users (now using the real context)
   const getAllPendingUsers = () => {
-    return [...pendingUsers, realPendingUser].filter(Boolean); // Filter out null values
+    return pendingUsers;
   };
 
   // Function to open role assignment modal
@@ -83,16 +79,8 @@ const UserManagement = () => {
   // Function to assign custom role
   const assignCustomRole = () => {
     if (userToAssignRole && selectedRole) {
-      // Update the user's requested role
-      if (userToAssignRole.id === realPendingUser.id) {
-        setRealPendingUser(prev => ({ ...prev, requestedRole: selectedRole }));
-      } else {
-        setPendingUsers(prev => prev.map(user => 
-          user.id === userToAssignRole.id 
-            ? { ...user, requestedRole: selectedRole }
-            : user
-        ));
-      }
+      // Update the user's requested role using context
+      updatePendingUserRole(userToAssignRole.id, selectedRole);
       
       setShowRoleModal(false);
       setUserToAssignRole(null);
@@ -177,12 +165,8 @@ const UserManagement = () => {
       // In a real app, this would update Firebase
       console.log('User approved:', pendingUser.email, 'Role assigned:', pendingUser.requestedRole);
       
-      // Remove from pending users
-      if (pendingUser.id === realPendingUser.id) {
-        setRealPendingUser(null); // Remove real pending user
-      } else {
-        setPendingUsers(prev => prev.filter(user => user.id !== userId));
-      }
+      // Remove from pending users using context
+      removePendingUser(userId);
       
       // Add to existing users
       const newExistingUser = {
@@ -216,12 +200,8 @@ const UserManagement = () => {
     const pendingUser = allPendingUsers.find(user => user.id === userId);
     
     if (pendingUser) {
-      // Remove from pending users
-      if (pendingUser.id === realPendingUser.id) {
-        setRealPendingUser(null); // Remove real pending user
-      } else {
-        setPendingUsers(prev => prev.filter(user => user.id !== userId));
-      }
+      // Remove from pending users using context
+      removePendingUser(userId);
       
       // Show rejection message
       alert(`User ${pendingUser.email} has been rejected. They will need to re-apply.`);
