@@ -40,8 +40,8 @@ const UserManagement = () => {
     const approvedExistingUsers = approvedUsers.map(user => ({
       id: `approved-${user.email}`,
       email: user.email,
-      firstName: user.email.split('@')[0], // Use email prefix as first name
-      lastName: 'User',
+      firstName: user.firstName || user.email.split('@')[0], // Use stored firstName or fallback to email prefix
+      lastName: user.lastName || 'User', // Use stored lastName or fallback to 'User'
       role: user.role,
       status: 'active',
       joinedAt: user.approvedAt || new Date().toISOString().split('T')[0],
@@ -66,8 +66,8 @@ const UserManagement = () => {
     const approvedExistingUsers = approvedUsers.map(user => ({
       id: `approved-${user.email}`,
       email: user.email,
-      firstName: user.email.split('@')[0], // Use email prefix as first name
-      lastName: 'User',
+      firstName: user.firstName || user.email.split('@')[0], // Use stored firstName or fallback to email prefix
+      lastName: user.lastName || 'User', // Use stored lastName or fallback to 'User'
       role: user.role,
       status: 'active',
       joinedAt: user.approvedAt || new Date().toISOString().split('T')[0],
@@ -126,12 +126,18 @@ const UserManagement = () => {
           : user
       ));
 
-      // If this was an approved user, update localStorage
+      // Always update localStorage for approved users
       if (userToEdit.id.startsWith('approved-')) {
         const approvedUsers = JSON.parse(localStorage.getItem('luxury-listings-approved-users') || '[]');
         const updatedApprovedUsers = approvedUsers.map(u => 
           u.email === userToEdit.email 
-            ? { ...u, role: editingUserData.role }
+            ? { 
+                ...u, 
+                role: editingUserData.role,
+                // Store the edited names in localStorage
+                firstName: editingUserData.firstName,
+                lastName: editingUserData.lastName
+              }
             : u
         );
         localStorage.setItem('luxury-listings-approved-users', JSON.stringify(updatedApprovedUsers));
@@ -279,6 +285,8 @@ const UserManagement = () => {
       // Update the user's role in localStorage so they can login
       const approvedUserData = {
         email: pendingUser.email,
+        firstName: pendingUser.firstName,
+        lastName: pendingUser.lastName,
         role: pendingUser.requestedRole,
         isApproved: true,
         approvedAt: new Date().toISOString()
