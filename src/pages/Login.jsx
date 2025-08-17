@@ -14,7 +14,9 @@ const Login = () => {
       setError('');
       setLoading(true);
       await signInWithGoogle();
-      navigate('/dashboard');
+      
+      // Force redirect to dashboard on your custom domain
+      window.location.href = 'https://www.smmluxurylistings.info/dashboard';
     } catch (error) {
       console.error('Sign-in error:', error);
       setError('Failed to sign in with Google. Please try again.');
