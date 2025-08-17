@@ -4,7 +4,7 @@ import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Users, UserPlus, UserCheck, UserX, Shield, Mail, Calendar, CheckCircle, XCircle, Clock, Search, Filter, Eye, Edit, Trash2, Plus } from 'lucide-react';
+import { Users, UserPlus, UserCheck, UserX, Shield, Mail, Calendar, CheckCircle, XCircle, Clock, Search, Filter, Eye, Edit, Trash2, Plus, RefreshCw } from 'lucide-react';
 
 const UserManagement = () => {
   const { currentUser, currentRole } = useAuth();
@@ -20,53 +20,153 @@ const UserManagement = () => {
   // Admin note: Use the profile switcher (top right) to access other role-specific features
   // This page is for user management only - other features are available through role switching
   
-  // Mock data for existing users (in a real app, this would come from Firebase)
-  const [existingUsers, setExistingUsers] = useState([
-    {
-      id: 'user-001',
-      email: 'joshua.mitchell@luxuryrealestate.com',
-      firstName: 'Joshua',
-      lastName: 'Mitchell',
-      role: 'content_director',
+  // Load existing users from localStorage (approved users + mock data)
+  const [existingUsers, setExistingUsers] = useState(() => {
+    // Load approved users from localStorage
+    const approvedUsers = JSON.parse(localStorage.getItem('luxury-listings-approved-users') || '[]');
+    
+    // Convert approved users to existing users format
+    const approvedExistingUsers = approvedUsers.map(user => ({
+      id: `approved-${user.email}`,
+      email: user.email,
+      firstName: user.email.split('@')[0], // Use email prefix as first name
+      lastName: 'User',
+      role: user.role,
       status: 'active',
-      joinedAt: '2023-01-15',
-      lastActive: '2025-01-15'
-    },
-    {
-      id: 'user-002',
-      email: 'michelle.chen@luxuryrealestate.com',
-      firstName: 'Michelle',
-      lastName: 'Chen',
-      role: 'social_media_manager',
-      status: 'active',
-      joinedAt: '2023-06-20',
-      lastActive: '2025-01-15'
-    },
-    {
-      id: 'user-003',
-      email: 'matthew.rodriguez@luxuryrealestate.com',
-      firstName: 'Matthew',
-      lastName: 'Rodriguez',
-      role: 'hr_manager',
-      status: 'active',
-      joinedAt: '2022-09-10',
-      lastActive: '2025-01-14'
-    },
-    {
-      id: 'user-004',
-      email: 'emily.watson@luxuryrealestate.com',
-      firstName: 'Emily',
-      lastName: 'Watson',
-      role: 'sales_manager',
-      status: 'active',
-      joinedAt: '2023-03-15',
-      lastActive: '2025-01-15'
-    }
-  ]);
+      joinedAt: user.approvedAt || new Date().toISOString().split('T')[0],
+      lastActive: new Date().toISOString().split('T')[0]
+    }));
+    
+    // Mock data for existing users (in a real app, this would come from Firebase)
+    const mockUsers = [
+      {
+        id: 'user-001',
+        email: 'joshua.mitchell@luxuryrealestate.com',
+        firstName: 'Joshua',
+        lastName: 'Mitchell',
+        role: 'content_director',
+        status: 'active',
+        joinedAt: '2023-01-15',
+        lastActive: '2025-01-15'
+      },
+      {
+        id: 'user-002',
+        email: 'michelle.chen@luxuryrealestate.com',
+        firstName: 'Michelle',
+        lastName: 'Chen',
+        role: 'social_media_manager',
+        status: 'active',
+        joinedAt: '2023-06-20',
+        lastActive: '2025-01-15'
+      },
+      {
+        id: 'user-003',
+        email: 'matthew.rodriguez@luxuryrealestate.com',
+        firstName: 'Matthew',
+        lastName: 'Rodriguez',
+        role: 'hr_manager',
+        status: 'active',
+        joinedAt: '2022-09-10',
+        lastActive: '2025-01-14'
+      },
+      {
+        id: 'user-004',
+        email: 'emily.watson@luxuryrealestate.com',
+        firstName: 'Emily',
+        lastName: 'Watson',
+        role: 'sales_manager',
+        status: 'active',
+        joinedAt: '2023-03-15',
+        lastActive: '2025-01-15'
+      }
+    ];
+    
+    // Combine approved users with mock users, avoiding duplicates
+    const allUsers = [...approvedExistingUsers];
+    mockUsers.forEach(mockUser => {
+      if (!allUsers.find(u => u.email === mockUser.email)) {
+        allUsers.push(mockUser);
+      }
+    });
+    
+    return allUsers;
+  });
 
   // Function to get all pending users (now using the real context)
   const getAllPendingUsers = () => {
     return pendingUsers;
+  };
+
+  // Function to refresh existing users from localStorage
+  const refreshExistingUsers = () => {
+    // Load approved users from localStorage
+    const approvedUsers = JSON.parse(localStorage.getItem('luxury-listings-approved-users') || '[]');
+    
+    // Convert approved users to existing users format
+    const approvedExistingUsers = approvedUsers.map(user => ({
+      id: `approved-${user.email}`,
+      email: user.email,
+      firstName: user.email.split('@')[0], // Use email prefix as first name
+      lastName: 'User',
+      role: user.role,
+      status: 'active',
+      joinedAt: user.approvedAt || new Date().toISOString().split('T')[0],
+      lastActive: new Date().toISOString().split('T')[0]
+    }));
+    
+    // Mock data for existing users (in a real app, this would come from Firebase)
+    const mockUsers = [
+      {
+        id: 'user-001',
+        email: 'joshua.mitchell@luxuryrealestate.com',
+        firstName: 'Joshua',
+        lastName: 'Mitchell',
+        role: 'content_director',
+        status: 'active',
+        joinedAt: '2023-01-15',
+        lastActive: '2025-01-15'
+      },
+      {
+        id: 'user-002',
+        email: 'michelle.chen@luxuryrealestate.com',
+        firstName: 'Michelle',
+        lastName: 'Chen',
+        role: 'social_media_manager',
+        status: 'active',
+        joinedAt: '2023-06-20',
+        lastActive: '2025-01-15'
+      },
+      {
+        id: 'user-003',
+        email: 'matthew.rodriguez@luxuryrealestate.com',
+        firstName: 'Matthew',
+        lastName: 'Rodriguez',
+        role: 'hr_manager',
+        status: 'active',
+        joinedAt: '2022-09-10',
+        lastActive: '2025-01-14'
+      },
+      {
+        id: 'user-004',
+        email: 'emily.watson@luxuryrealestate.com',
+        firstName: 'Emily',
+        lastName: 'Watson',
+        role: 'sales_manager',
+        status: 'active',
+        joinedAt: '2023-03-15',
+        lastActive: '2025-01-15'
+      }
+    ];
+    
+    // Combine approved users with mock users, avoiding duplicates
+    const allUsers = [...approvedExistingUsers];
+    mockUsers.forEach(mockUser => {
+      if (!allUsers.find(u => u.email === mockUser.email)) {
+        allUsers.push(mockUser);
+      }
+    });
+    
+    setExistingUsers(allUsers);
   };
 
   // Function to open role assignment modal
@@ -200,20 +300,6 @@ const UserManagement = () => {
       // Remove from pending users using context
       removePendingUser(userId);
       
-      // Add to existing users
-      const newExistingUser = {
-        id: `user-${Date.now()}`,
-        email: pendingUser.email,
-        firstName: pendingUser.firstName,
-        lastName: pendingUser.lastName,
-        role: pendingUser.requestedRole,
-        status: 'active',
-        joinedAt: new Date().toISOString().split('T')[0],
-        lastActive: new Date().toISOString().split('T')[0]
-      };
-      
-      setExistingUsers(prev => [...prev, newExistingUser]);
-      
       // Update the user's role in localStorage so they can login
       const approvedUserData = {
         email: pendingUser.email,
@@ -229,6 +315,9 @@ const UserManagement = () => {
       localStorage.setItem('luxury-listings-approved-users', JSON.stringify(updatedApprovedUsers));
       
       console.log('✅ User approved and role stored:', approvedUserData);
+      
+      // Refresh the existing users list to show the newly approved user
+      refreshExistingUsers();
       
       // Show success message
       alert(`User ${pendingUser.email} approved with role: ${getRoleDisplayName(pendingUser.requestedRole)}. They can now login!`);
@@ -284,10 +373,16 @@ const UserManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-2">Manage user accounts, roles, and permissions</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Add New User
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={refreshExistingUsers} variant="outline" className="border-gray-300 hover:bg-gray-50">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Users
+          </Button>
+          <Button onClick={() => setShowAddModal(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add New User
+          </Button>
+        </div>
       </div>
 
       {/* Admin Note */}
