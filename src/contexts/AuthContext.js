@@ -72,11 +72,16 @@ export function AuthProvider({ children }) {
       return;
     }
     
-    // Check if user can switch to this role
-    if (!canUserSwitchToRole(currentUser.email, newRole)) {
-      console.error('❌ User not authorized to switch to role:', newRole);
-      alert('You are not authorized to switch to this role. Please contact your administrator.');
-      return;
+    // Admin users (jrsschroeder@gmail.com) can always switch to any role
+    if (currentUser.email === 'jrsschroeder@gmail.com') {
+      console.log('✅ Admin user - allowing role switch to:', newRole);
+    } else {
+      // Check if user can switch to this role
+      if (!canUserSwitchToRole(currentUser.email, newRole)) {
+        console.error('❌ User not authorized to switch to role:', newRole);
+        alert('You are not authorized to switch to this role. Please contact your administrator.');
+        return;
+      }
     }
     
     if (Object.values(USER_ROLES).includes(newRole)) {

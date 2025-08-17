@@ -56,8 +56,14 @@ const RoleSwitcher = () => {
   // Get allowed roles for current user
   const allowedRoles = currentUser?.email ? getAllowedRolesForUser(currentUser.email) : [];
   
+  // Admin users should always have access to all roles
+  // If user is admin OR if they're switching from admin role, show all options
+  const shouldShowAllRoles = currentUser?.email === 'jrsschroeder@gmail.com' || 
+                            currentRole === USER_ROLES.ADMIN ||
+                            allowedRoles.includes(USER_ROLES.ADMIN);
+  
   // Filter role options based on user permissions
-  const filteredRoleOptions = roleOptions.filter(option => 
+  const filteredRoleOptions = shouldShowAllRoles ? roleOptions : roleOptions.filter(option => 
     allowedRoles.includes(option.role)
   );
 
@@ -100,7 +106,12 @@ const RoleSwitcher = () => {
           <User className="w-4 h-4 text-white" />
         </div>
         <div className="text-left">
-          <div className="font-medium text-sm">Profile</div>
+          <div className="font-medium text-sm flex items-center gap-2">
+            Profile
+            {currentUser?.email === 'jrsschroeder@gmail.com' && (
+              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Admin</span>
+            )}
+          </div>
           <div className="text-xs opacity-75">{currentRoleData.displayName}</div>
         </div>
         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -167,9 +178,15 @@ const RoleSwitcher = () => {
           </div>
           
           <div className="px-4 py-3 bg-gray-50 rounded-b-lg border-t border-gray-200">
-            <div className="text-xs text-gray-500">
-              Each role has different permissions and access levels. Switch to explore different perspectives.
-            </div>
+            {currentUser?.email === 'jrsschroeder@gmail.com' ? (
+              <div className="text-xs text-gray-500">
+                <span className="font-medium text-red-600">Admin Access:</span> You can switch to any role and always return to admin.
+              </div>
+            ) : (
+              <div className="text-xs text-gray-500">
+                Each role has different permissions and access levels. Switch to explore different perspectives.
+              </div>
+            )}
           </div>
         </div>
       )}
