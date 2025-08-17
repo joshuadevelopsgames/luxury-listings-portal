@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
 
 const PendingUsersContext = createContext();
 
@@ -9,7 +8,6 @@ export function usePendingUsers() {
 
 export function PendingUsersProvider({ children }) {
   const [pendingUsers, setPendingUsers] = useState([]);
-  const { currentUser } = useAuth();
 
   // Load pending users from localStorage on mount
   useEffect(() => {
