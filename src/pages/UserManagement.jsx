@@ -11,12 +11,15 @@ const UserManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [userToAssignRole, setUserToAssignRole] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('');
 
   // Admin note: Use the profile switcher (top right) to access other role-specific features
   // This page is for user management only - other features are available through role switching
   
-  // Mock data for pending users and existing users
-  const pendingUsers = [
+  // State for pending users and existing users
+  const [pendingUsers, setPendingUsers] = useState([
     {
       id: 'pending-001',
       email: 'john.doe@luxuryrealestate.com',
@@ -50,13 +53,53 @@ const UserManagement = () => {
       bio: 'HR professional with expertise in team development and performance management.',
       skills: ['HR Management', 'Team Development', 'Performance Analytics']
     }
-  ];
+  ]);
 
-  // Function to get real pending users from Firebase (when implemented)
-  const getRealPendingUsers = () => {
-    // This would fetch real pending users from Firebase
-    // For now, return mock data
-    return pendingUsers;
+  // Add the real pending user from your system
+  const [realPendingUser, setRealPendingUser] = useState({
+    id: 'real-pending-001',
+    email: 'joshua@luxury-listings.com',
+    firstName: 'Joshua',
+    lastName: 'Luxury',
+    requestedRole: 'content_director', // Default role, can be changed
+    requestedAt: new Date().toISOString().split('T')[0],
+    status: 'pending',
+    bio: 'New user waiting for role assignment.',
+    skills: []
+  });
+
+  // Function to get all pending users including real ones
+  const getAllPendingUsers = () => {
+    return [...pendingUsers, realPendingUser].filter(Boolean); // Filter out null values
+  };
+
+  // Function to open role assignment modal
+  const openRoleAssignment = (user) => {
+    setUserToAssignRole(user);
+    setSelectedRole(user.requestedRole || 'content_director');
+    setShowRoleModal(true);
+  };
+
+  // Function to assign custom role
+  const assignCustomRole = () => {
+    if (userToAssignRole && selectedRole) {
+      // Update the user's requested role
+      if (userToAssignRole.id === realPendingUser.id) {
+        setRealPendingUser(prev => ({ ...prev, requestedRole: selectedRole }));
+      } else {
+        setPendingUsers(prev => prev.map(user => 
+          user.id === userToAssignRole.id 
+            ? { ...user, requestedRole: selectedRole }
+            : user
+        ));
+      }
+      
+      setShowRoleModal(false);
+      setUserToAssignRole(null);
+      setSelectedRole('');
+      
+      alert(`Role updated to: ${getRoleDisplayName(selectedRole)}`);
+    }
   };
 
   const existingUsers = [
@@ -124,28 +167,70 @@ const UserManagement = () => {
   };
 
   const handleApproveUser = (userId) => {
-    // In a real app, this would update the database
     console.log('Approving user:', userId);
     
     // Find the pending user
-    const pendingUser = pendingUsers.find(user => user.id === userId);
+    const allPendingUsers = getAllPendingUsers();
+    const pendingUser = allPendingUsers.find(user => user.id === userId);
+    
     if (pendingUser) {
-      // In a real app, this would:
-      // 1. Update Firebase user document with assigned role
-      // 2. Remove from pending users
-      // 3. Add to existing users with the assigned role
-      
+      // In a real app, this would update Firebase
       console.log('User approved:', pendingUser.email, 'Role assigned:', pendingUser.requestedRole);
       
-      // For now, just show a success message
+      // Remove from pending users
+      if (pendingUser.id === realPendingUser.id) {
+        setRealPendingUser(null); // Remove real pending user
+      } else {
+        setPendingUsers(prev => prev.filter(user => user.id !== userId));
+      }
+      
+      // Add to existing users
+      const newExistingUser = {
+        id: `user-${Date.now()}`,
+        email: pendingUser.email,
+        firstName: pendingUser.firstName,
+        lastName: pendingUser.lastName,
+        role: pendingUser.requestedRole,
+        status: 'active',
+        joinedAt: new Date().toISOString().split('T')[0],
+        lastActive: new Date().toISOString().split('T')[0]
+      };
+      
+      setExistingUsers(prev => [...prev, newExistingUser]);
+      
+      // Show success message
       alert(`User ${pendingUser.email} approved with role: ${getRoleDisplayName(pendingUser.requestedRole)}`);
+      
+      // In a real app, you would also:
+      // 1. Update the user's role in Firebase
+      // 2. Update the UserRoleMapping
+      // 3. Send email notification to user
     }
   };
 
   const handleRejectUser = (userId) => {
-    // In a real app, this would update the database
     console.log('Rejecting user:', userId);
-    // Remove from pending users
+    
+    // Find the pending user
+    const allPendingUsers = getAllPendingUsers();
+    const pendingUser = allPendingUsers.find(user => user.id === userId);
+    
+    if (pendingUser) {
+      // Remove from pending users
+      if (pendingUser.id === realPendingUser.id) {
+        setRealPendingUser(null); // Remove real pending user
+      } else {
+        setPendingUsers(prev => prev.filter(user => user.id !== userId));
+      }
+      
+      // Show rejection message
+      alert(`User ${pendingUser.email} has been rejected. They will need to re-apply.`);
+      
+      // In a real app, you would also:
+      // 1. Update Firebase to mark user as rejected
+      // 2. Send email notification to user
+      // 3. Log the rejection reason
+    }
   };
 
   const handleChangeRole = (userId, newRole) => {
@@ -472,6 +557,51 @@ const UserManagement = () => {
               </Button>
               <Button onClick={() => setSelectedUser(null)}>
                 Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Assignment Modal */}
+      {showRoleModal && userToAssignRole && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">Assign Role</h3>
+              <Button variant="ghost" onClick={() => setShowRoleModal(false)}>
+                <XCircle className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
+                <p className="text-gray-900">{userToAssignRole.firstName} {userToAssignRole.lastName}</p>
+                <p className="text-sm text-gray-500">{userToAssignRole.email}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assign Role</label>
+                <select 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                >
+                  <option value="content_director">Content Manager</option>
+                  <option value="social_media_manager">Social Media Manager</option>
+                  <option value="hr_manager">HR Manager</option>
+                  <option value="sales_manager">Sales Manager</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="outline" onClick={() => setShowRoleModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={assignCustomRole}>
+                Assign Role
               </Button>
             </div>
           </div>
