@@ -35,9 +35,9 @@ npx vercel --prod
 if [ $? -eq 0 ]; then
     echo "✅ Deployment successful!"
     
-    # Get the deployment URL
-    DEPLOYMENT_URL=$(npx vercel --prod --json | grep -o '"url":"[^"]*"' | cut -d'"' -f4)
-    echo "🌐 Your app is live at: $DEPLOYMENT_URL"
+    # Show custom domain information
+    echo "🌐 Your app is live at: https://smmluxurylistings.info"
+    echo "🔗 Also available at: https://www.smmluxurylistings.info"
     
     # Create a deployment tag
     TAG_NAME="deploy-$(date '+%Y%m%d-%H%M%S')"
@@ -45,6 +45,7 @@ if [ $? -eq 0 ]; then
     echo "🏷️  Created deployment tag: $TAG_NAME"
     
     echo "🎉 Deployment complete!"
+    echo "📱 Your custom domain should be working now!"
 else
     echo "❌ Deployment failed"
     exit 1

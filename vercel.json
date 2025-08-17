@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "name": "luxury-listings-portal",
+  "domains": ["smmluxurylistings.info", "www.smmluxurylistings.info"],
   "builds": [
     {
       "src": "package.json",
