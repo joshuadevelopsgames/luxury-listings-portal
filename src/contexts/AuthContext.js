@@ -198,49 +198,85 @@ export function AuthProvider({ children }) {
             console.log('🔄 Navigating approved user to dashboard...');
             navigateBasedOnRole(assignedRole);
           } else {
-            console.log('🆕 New user - no role mapping found, setting to pending');
-            // New user - no role assigned yet, they need approval
-            const newUser = {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName || 'New User',
-              firstName: user.displayName?.split(' ')[0] || 'New',
-              lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
-              role: 'pending',
-              department: 'Pending Approval',
-              startDate: new Date().toISOString().split('T')[0],
-              avatar: user.photoURL,
-              bio: 'Account pending administrator approval',
-              skills: [],
-              stats: {},
-              isApproved: false,
-              createdAt: new Date().toISOString()
-            };
+            // Check if user has been approved by admin
+            const approvedUsers = JSON.parse(localStorage.getItem('luxury-listings-approved-users') || '[]');
+            const approvedUser = approvedUsers.find(u => u.email === user.email);
             
-            setCurrentUser(newUser);
-            setCurrentRole('pending');
-            localStorage.setItem('luxury-listings-role', 'pending');
-            
-            // Add this user to the pending users system
-            const pendingUserData = {
-              id: `pending-${Date.now()}`,
-              email: newUser.email,
-              firstName: newUser.firstName,
-              lastName: newUser.lastName,
-              requestedRole: 'content_director', // Default role
-              requestedAt: new Date().toISOString().split('T')[0],
-              status: 'pending',
-              bio: newUser.bio,
-              skills: newUser.skills,
-              uid: newUser.uid,
-              displayName: newUser.displayName
-            };
-            
-            addPendingUser(pendingUserData);
-            console.log('✅ Added user to pending users system:', pendingUserData);
-            
-            console.log('🔄 Navigating pending user to approval page...');
-            navigateBasedOnRole('pending');
+            if (approvedUser && approvedUser.isApproved) {
+              console.log('✅ User approved by admin:', approvedUser);
+              // User was approved by admin - set their approved role
+              const assignedRole = approvedUser.role;
+              setCurrentRole(assignedRole);
+              localStorage.setItem('luxury-listings-role', assignedRole);
+              
+              // Get user data for the assigned role
+              const userData = getUserByRole(assignedRole);
+              
+              // Merge Firebase user data with role data
+              const mergedUser = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || userData.displayName,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                role: assignedRole,
+                department: userData.department,
+                startDate: userData.startDate,
+                avatar: user.photoURL || userData.avatar,
+                bio: userData.bio,
+                skills: userData.skills,
+                stats: userData.stats,
+                isApproved: true
+              };
+              
+              setCurrentUser(mergedUser);
+              console.log('🔄 Navigating approved user to dashboard...');
+              navigateBasedOnRole(assignedRole);
+            } else {
+              console.log('🆕 New user - no role mapping found, setting to pending');
+              // New user - no role assigned yet, they need approval
+              const newUser = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || 'New User',
+                firstName: user.displayName?.split(' ')[0] || 'New',
+                lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
+                role: 'pending',
+                department: 'Pending Approval',
+                startDate: new Date().toISOString().split('T')[0],
+                avatar: user.photoURL,
+                bio: 'Account pending administrator approval',
+                skills: [],
+                stats: {},
+                isApproved: false,
+                createdAt: new Date().toISOString()
+              };
+              
+              setCurrentUser(newUser);
+              setCurrentRole('pending');
+              localStorage.setItem('luxury-listings-role', 'pending');
+              
+              // Add this user to the pending users system
+              const pendingUserData = {
+                id: `pending-${Date.now()}`,
+                email: newUser.email,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                requestedRole: 'content_director', // Default role
+                requestedAt: new Date().toISOString().split('T')[0],
+                status: 'pending',
+                bio: newUser.bio,
+                skills: newUser.skills,
+                uid: newUser.uid,
+                displayName: newUser.displayName
+              };
+              
+              addPendingUser(pendingUserData);
+              console.log('✅ Added user to pending users system:', pendingUserData);
+              
+              console.log('🔄 Navigating pending user to approval page...');
+              navigateBasedOnRole('pending');
+            }
           }
         } else {
           // User is signed out

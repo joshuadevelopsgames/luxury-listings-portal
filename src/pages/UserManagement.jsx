@@ -214,8 +214,24 @@ const UserManagement = () => {
       
       setExistingUsers(prev => [...prev, newExistingUser]);
       
+      // Update the user's role in localStorage so they can login
+      const approvedUserData = {
+        email: pendingUser.email,
+        role: pendingUser.requestedRole,
+        isApproved: true,
+        approvedAt: new Date().toISOString()
+      };
+      
+      // Store approved user data in localStorage
+      const approvedUsers = JSON.parse(localStorage.getItem('luxury-listings-approved-users') || '[]');
+      const updatedApprovedUsers = approvedUsers.filter(u => u.email !== pendingUser.email);
+      updatedApprovedUsers.push(approvedUserData);
+      localStorage.setItem('luxury-listings-approved-users', JSON.stringify(updatedApprovedUsers));
+      
+      console.log('✅ User approved and role stored:', approvedUserData);
+      
       // Show success message
-      alert(`User ${pendingUser.email} approved with role: ${getRoleDisplayName(pendingUser.requestedRole)}`);
+      alert(`User ${pendingUser.email} approved with role: ${getRoleDisplayName(pendingUser.requestedRole)}. They can now login!`);
       
       // In a real app, you would also:
       // 1. Update the user's role in Firebase
