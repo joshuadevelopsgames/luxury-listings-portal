@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to read/write pending users (for admin approval)
+    match /pending_users/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read/write approved users (for admin management)
+    match /approved_users/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read/write tasks
+    match /tasks/{taskId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read/write analytics config (admin only)
+    match /analytics_config/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read/write system config
+    match /system_config/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

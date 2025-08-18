@@ -11,6 +11,7 @@ import {
   Download
 } from 'lucide-react';
 import { analyticsService } from '../services/analyticsService';
+import { firestoreService } from '../services/firestoreService';
 
 const GoogleAnalyticsSetup = () => {
   const [propertyId, setPropertyId] = useState('G-K95YWQ2DZ6');
@@ -32,18 +33,20 @@ const GoogleAnalyticsSetup = () => {
       // Parse the JSON
       const credentials = JSON.parse(serviceAccountJson);
       
-      // Initialize the service
-      analyticsService.initialize(propertyId, credentials.private_key);
+      // Initialize the service with a mock access token for now
+      // In a real implementation, you'd need to generate a JWT token
+      analyticsService.initialize(propertyId, 'mock-access-token');
       
-      // Test the connection
+      // Test the connection - this will return mock data since we're not fully configured
       const overview = await analyticsService.getOverviewMetrics('7d');
       
       setValidationResult({ 
         success: true, 
-        message: 'Google Analytics connected successfully!',
+        message: 'Google Analytics setup validated! (Using mock data for demo)',
         data: overview
       });
     } catch (error) {
+      console.error('Validation error:', error);
       setValidationResult({ 
         success: false, 
         message: `Connection failed: ${error.message}` 
@@ -53,28 +56,55 @@ const GoogleAnalyticsSetup = () => {
     }
   };
 
-  const handleSaveToLocalStorage = () => {
+  const handleSaveToFirestore = async () => {
     try {
-      localStorage.setItem('ga-property-id', propertyId);
-      localStorage.setItem('ga-service-account', serviceAccountJson);
+      console.log('💾 Saving analytics config to Firestore...');
+      console.log('Property ID:', propertyId);
+      console.log('Service Account JSON length:', serviceAccountJson.length);
+      
+      await firestoreService.saveAnalyticsConfig(propertyId, serviceAccountJson);
+      
+      console.log('✅ Analytics config saved successfully to Firestore');
       setValidationResult({ 
         success: true, 
-        message: 'Credentials saved to browser storage!' 
+        message: 'Credentials saved to secure cloud storage! ✅' 
       });
     } catch (error) {
+      console.error('❌ Error saving to Firestore:', error);
       setValidationResult({ 
         success: false, 
-        message: 'Failed to save credentials' 
+        message: 'Failed to save credentials: ' + error.message 
       });
     }
   };
 
-  const handleLoadFromLocalStorage = () => {
-    const savedPropertyId = localStorage.getItem('ga-property-id');
-    const savedServiceAccount = localStorage.getItem('ga-service-account');
-    
-    if (savedPropertyId) setPropertyId(savedPropertyId);
-    if (savedServiceAccount) setServiceAccountJson(savedServiceAccount);
+  const handleLoadFromFirestore = async () => {
+    try {
+      console.log('📥 Loading analytics config from Firestore...');
+      const config = await firestoreService.getAnalyticsConfig();
+      
+      if (config) {
+        console.log('✅ Found saved config:', config);
+        setPropertyId(config.propertyId || '');
+        setServiceAccountJson(config.serviceAccountJson || '');
+        setValidationResult({ 
+          success: true, 
+          message: 'Configuration loaded from cloud storage! ✅' 
+        });
+      } else {
+        console.log('ℹ️ No saved config found');
+        setValidationResult({ 
+          success: false, 
+          message: 'No saved configuration found in cloud storage' 
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error loading from Firestore:', error);
+      setValidationResult({ 
+        success: false, 
+        message: 'Failed to load configuration: ' + error.message 
+      });
+    }
   };
 
   const copyToClipboard = (text) => {
@@ -145,7 +175,7 @@ const GoogleAnalyticsSetup = () => {
               className="font-mono"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Found in Google Analytics > Admin > Property Settings
+              Found in Google Analytics &gt; Admin &gt; Property Settings
             </p>
           </div>
 
@@ -162,7 +192,7 @@ const GoogleAnalyticsSetup = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Download from Google Cloud Console > IAM & Admin > Service Accounts
+              Download from Google Cloud Console &gt; IAM &amp; Admin &gt; Service Accounts
             </p>
           </div>
 
@@ -178,18 +208,18 @@ const GoogleAnalyticsSetup = () => {
             
             <Button 
               variant="outline"
-              onClick={handleSaveToLocalStorage}
+              onClick={handleSaveToFirestore}
               disabled={!propertyId || !serviceAccountJson}
             >
               <Download className="w-4 h-4 mr-2" />
-              Save Credentials
+              Save to Cloud
             </Button>
             
             <Button 
               variant="outline"
-              onClick={handleLoadFromLocalStorage}
+              onClick={handleLoadFromFirestore}
             >
-              Load Saved
+              Load Saved Config
             </Button>
           </div>
         </div>

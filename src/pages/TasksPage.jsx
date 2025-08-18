@@ -15,7 +15,7 @@ const TasksPage = () => {
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load initial data
+  // Load initial data and set up real-time listener
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -30,6 +30,16 @@ const TasksPage = () => {
     };
 
     loadData();
+
+    // Set up real-time listener for user's tasks
+    const unsubscribe = DailyTask.onUserTasksChange(currentUser.email, (tasksData) => {
+      console.log('📡 Tasks updated via real-time listener:', tasksData);
+      setTasks(tasksData);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [currentUser.email]);
 
   // Filter tasks whenever activeFilter or tasks change
@@ -133,9 +143,7 @@ const TasksPage = () => {
         status: 'pending'
       });
       
-      // Reload data to show new task
-      const tasksData = await DailyTask.filter({ assigned_to: currentUser.email }, '-due_date');
-      setTasks(tasksData);
+      // No need to reload data - real-time listener will update automatically
       setShowForm(false);
     } catch (error) {
       console.error("Error creating task:", error);
@@ -146,9 +154,7 @@ const TasksPage = () => {
   const updateTaskStatus = async (taskId, newStatus) => {
     try {
       await DailyTask.update(taskId, { status: newStatus });
-      // Reload data to show updated task
-      const tasksData = await DailyTask.filter({ assigned_to: currentUser.email }, '-due_date');
-      setTasks(tasksData);
+      // No need to reload data - real-time listener will update automatically
     } catch (error) {
       console.error("Error updating task status:", error);
       alert('Failed to update task status. Please try again.');

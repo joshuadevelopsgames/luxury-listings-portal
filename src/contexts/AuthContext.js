@@ -8,6 +8,7 @@ import {
 import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
 import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAULT_ROLE } from '../entities/UserRoleMapping';
+import { firestoreService } from '../services/firestoreService';
 
 // Import the pending users context
 import { usePendingUsers } from './PendingUsersContext';
@@ -36,14 +37,8 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
+  const [currentRole, setCurrentRole] = useState(USER_ROLES.CONTENT_DIRECTOR);
   const [currentUser, setCurrentUser] = useState(null);
-  const [currentRole, setCurrentRole] = useState(() => {
-    // Try to get role from localStorage first, fallback to default
-    const savedRole = localStorage.getItem('luxury-listings-role');
-    return savedRole && Object.values(USER_ROLES).includes(savedRole) 
-      ? savedRole 
-      : USER_ROLES.CONTENT_DIRECTOR; // Default to content director for new users
-  });
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
@@ -69,8 +64,10 @@ export function AuthProvider({ children }) {
     return signOut(auth);
   }
 
-  function switchRole(newRole) {
+  async function switchRole(newRole) {
     console.log('🔍 switchRole called with:', newRole);
+    console.log('🔍 Current user:', currentUser);
+    console.log('🔍 Current role before switch:', currentRole);
     console.log('🔍 Available roles:', Object.values(USER_ROLES));
     
     if (!currentUser || !currentUser.email) {
@@ -82,44 +79,61 @@ export function AuthProvider({ children }) {
     if (currentUser.email === 'jrsschroeder@gmail.com') {
       console.log('✅ Admin user - allowing role switch to:', newRole);
     } else {
-      // Check if user has this role in their assigned roles
-      const userRoles = currentUser.roles || [currentUser.primaryRole || currentUser.role] || ['content_director'];
-      if (!userRoles.includes(newRole)) {
+      // Check if user has this role in their assigned roles from Firestore
+      const assignedRoles = currentUser.roles || [currentUser.primaryRole || currentUser.role] || ['content_director'];
+      if (!assignedRoles.includes(newRole)) {
         console.error('❌ User not authorized to switch to role:', newRole);
+        console.error('❌ User assigned roles:', assignedRoles);
         alert('You are not authorized to switch to this role. Please contact your administrator.');
         return;
       }
     }
     
-    if (Object.values(USER_ROLES).includes(newRole)) {
+    const validRoles = Object.values(USER_ROLES);
+    
+    if (validRoles.includes(newRole)) {
       console.log('✅ Role is valid, switching to:', newRole);
-      setCurrentRole(newRole);
-      // Save role to localStorage for persistence
-      localStorage.setItem('luxury-listings-role', newRole);
       
+      // Update the current role first
+      setCurrentRole(newRole);
+      console.log('✅ Current role updated to:', newRole);
+      
+      // Save role to Firestore for persistence
+      try {
+        await firestoreService.saveSystemConfig('currentRole', newRole);
+        console.log('✅ Role saved to Firestore:', newRole);
+      } catch (error) {
+        console.error('❌ Error saving role to Firestore:', error);
+      }
+      
+      // Update current user with new role data
       const userData = getUserByRole(newRole);
       console.log('🔍 User data for role:', userData);
       
-      setCurrentUser({
+      const updatedUser = {
         ...currentUser,
         ...userData,
         role: newRole, // Keep for backward compatibility
         primaryRole: newRole, // Update primary role
         // Preserve the original email - this is crucial for admin access
         email: currentUser.email
-      });
+      };
+      
+      setCurrentUser(updatedUser);
+      console.log('✅ Current user updated with new role data');
       
       // Trigger chatbot reset
       setChatbotResetTrigger(prev => prev + 1);
       
-      // Navigate to dashboard
-      if (window.location.pathname !== '/dashboard') {
-        window.location.href = '/dashboard';
-      }
+      // Navigate to dashboard after role switch
+      console.log('🔄 Navigating to dashboard after role switch...');
+      navigateBasedOnRole(newRole);
       
       console.log(`✅ Successfully switched to role: ${newRole}`);
     } else {
       console.error('❌ Invalid role:', newRole);
+      console.error('❌ Valid roles are:', validRoles);
+      alert(`Invalid role: ${newRole}. Please try again.`);
     }
   }
 
@@ -131,9 +145,38 @@ export function AuthProvider({ children }) {
   }
 
   function hasPermission(permission) {
+    // Special handling for admin user - always grant all permissions
+    if (currentUser?.email === 'jrsschroeder@gmail.com') {
+      return true;
+    }
+    
     const permissions = getCurrentRolePermissions();
     return permissions.permissions[permission] || false;
   }
+
+  // Load current role from Firestore on mount
+  useEffect(() => {
+    const loadCurrentRole = async () => {
+      try {
+        const savedRole = await firestoreService.getSystemConfig('currentRole');
+        console.log('🔍 Loaded role from Firestore:', savedRole);
+        
+        if (savedRole && Object.values(USER_ROLES).includes(savedRole)) {
+          console.log('✅ Using saved role from Firestore:', savedRole);
+          setCurrentRole(savedRole);
+        } else {
+          console.log('ℹ️ No valid saved role found, using default:', USER_ROLES.CONTENT_DIRECTOR);
+          setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+        }
+      } catch (error) {
+        console.error('❌ Error loading role from Firestore:', error);
+        console.log('ℹ️ Using default role due to error:', USER_ROLES.CONTENT_DIRECTOR);
+        setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+      }
+    };
+
+    loadCurrentRole();
+  }, []);
 
   useEffect(() => {
     if (GOOGLE_AUTH_DISABLED && !isInitialized) {
@@ -162,69 +205,49 @@ export function AuthProvider({ children }) {
     }
 
     if (!GOOGLE_AUTH_DISABLED) {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
         console.log('🔐 Auth state changed - User:', user);
-        if (user) {
-          console.log('✅ User signed in:', user.email);
-          // User is signed in - get their role mapping
-          const roleMapping = getUserRoleMapping(user.email);
-          
-          if (roleMapping) {
-            console.log('✅ User has role mapping:', roleMapping);
-            // User has a role mapping - set their assigned role
-            const assignedRole = roleMapping.role;
-            setCurrentRole(assignedRole);
-            localStorage.setItem('luxury-listings-role', assignedRole);
+        try {
+          if (user) {
+            console.log('✅ User signed in:', user.email);
             
-            // Get user data for the assigned role
-            const userData = getUserByRole(assignedRole);
-            
-            // Merge Firebase user data with role data
-            const mergedUser = {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName || userData.displayName,
-              firstName: userData.firstName,
-              lastName: userData.lastName,
-              role: assignedRole,
-              department: userData.department,
-              startDate: userData.startDate,
-              avatar: user.photoURL || userData.avatar,
-              bio: userData.bio,
-              skills: userData.skills,
-              stats: userData.stats,
-              isApproved: true
-            };
-            
-            setCurrentUser(mergedUser);
-            console.log('🔄 Navigating approved user to dashboard...');
-            navigateBasedOnRole(assignedRole);
-          } else {
-            // Check if user has been approved by admin
-            const approvedUsers = JSON.parse(localStorage.getItem('luxury-listings-approved-users') || '[]');
-            const approvedUser = approvedUsers.find(u => u.email === user.email);
-            
-            if (approvedUser && approvedUser.isApproved) {
-              console.log('✅ User approved by admin:', approvedUser);
-              // User was approved by admin - set their approved roles
-              const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
-              const primaryRole = assignedRoles[0] || 'content_director';
-              setCurrentRole(primaryRole);
-              localStorage.setItem('luxury-listings-role', primaryRole);
+            // Special handling for admin user
+            if (user.email === 'jrsschroeder@gmail.com') {
+              console.log('✅ Admin user detected - setting up admin access');
               
-              // Get user data for the primary role
-              const userData = getUserByRole(primaryRole);
+              // Load saved role from Firestore or use admin as default
+              let savedRole;
+              try {
+                savedRole = await firestoreService.getSystemConfig('currentRole');
+              } catch (error) {
+                console.warn('⚠️ Could not load saved role from Firestore:', error);
+                savedRole = null;
+              }
               
-              // Merge Firebase user data with role data
-              const mergedUser = {
+              // Use saved role if valid, otherwise use admin
+              const roleToUse = savedRole && Object.values(USER_ROLES).includes(savedRole) ? savedRole : USER_ROLES.ADMIN;
+              setCurrentRole(roleToUse);
+              
+              // Save role to Firestore for persistence (with error handling)
+              try {
+                await firestoreService.saveSystemConfig('currentRole', roleToUse);
+              } catch (error) {
+                console.warn('⚠️ Could not save role to Firestore:', error);
+              }
+              
+              // Get user data for the role
+              const userData = getUserByRole(roleToUse);
+              
+              // Create admin user object
+              const adminUser = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName || userData.displayName,
-                firstName: approvedUser.firstName || userData.firstName,
-                lastName: approvedUser.lastName || userData.lastName,
-                role: primaryRole, // Keep for backward compatibility
-                roles: assignedRoles, // Store all assigned roles
-                primaryRole: primaryRole, // Store primary role
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                role: roleToUse,
+                roles: Object.values(USER_ROLES), // Admin can access all roles
+                primaryRole: USER_ROLES.ADMIN, // Keep admin as primary
                 department: userData.department,
                 startDate: userData.startDate,
                 avatar: user.photoURL || userData.avatar,
@@ -234,59 +257,142 @@ export function AuthProvider({ children }) {
                 isApproved: true
               };
               
-              setCurrentUser(mergedUser);
-              console.log('🔄 Navigating approved user to dashboard...');
-              navigateBasedOnRole(primaryRole);
-            } else {
-              console.log('🆕 New user - no role mapping found, setting to pending');
-              // New user - no role assigned yet, they need approval
-              const newUser = {
+              setCurrentUser(adminUser);
+              console.log('🔄 Navigating admin user to dashboard...');
+              navigateBasedOnRole(roleToUse);
+              setLoading(false);
+              return;
+            }
+            
+            // Check if user has been approved by admin (from Firestore)
+            try {
+              const approvedUsers = await firestoreService.getApprovedUsers();
+              const approvedUser = approvedUsers.find(u => u.email === user.email);
+              
+              if (approvedUser && approvedUser.isApproved) {
+                console.log('✅ User approved by admin:', approvedUser);
+                // User was approved by admin - set their approved roles
+                const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
+                const primaryRole = assignedRoles[0] || 'content_director';
+                
+                // Load saved role from Firestore or use primary role
+                let savedRole;
+                try {
+                  savedRole = await firestoreService.getSystemConfig('currentRole');
+                } catch (error) {
+                  console.warn('⚠️ Could not load saved role from Firestore:', error);
+                  savedRole = null;
+                }
+                
+                const roleToUse = savedRole && assignedRoles.includes(savedRole) ? savedRole : primaryRole;
+                
+                setCurrentRole(roleToUse);
+                
+                // Save role to Firestore for persistence
+                try {
+                  await firestoreService.saveSystemConfig('currentRole', roleToUse);
+                } catch (error) {
+                  console.warn('⚠️ Could not save role to Firestore:', error);
+                }
+                
+                // Get user data for the role
+                const userData = getUserByRole(roleToUse);
+                
+                // Merge Firebase user data with role data
+                const mergedUser = {
+                  uid: user.uid,
+                  email: user.email,
+                  displayName: user.displayName || userData.displayName,
+                  firstName: approvedUser.firstName || userData.firstName,
+                  lastName: approvedUser.lastName || userData.lastName,
+                  role: roleToUse, // Keep for backward compatibility
+                  roles: assignedRoles, // Store all assigned roles
+                  primaryRole: primaryRole, // Store primary role
+                  department: userData.department,
+                  startDate: userData.startDate,
+                  avatar: user.photoURL || userData.avatar,
+                  bio: userData.bio,
+                  skills: userData.skills,
+                  stats: userData.stats,
+                  isApproved: true
+                };
+                
+                setCurrentUser(mergedUser);
+                console.log('🔄 Navigating approved user to dashboard...');
+                navigateBasedOnRole(roleToUse);
+              } else {
+                console.log('🆕 New user - no approval found, setting to pending');
+                // New user - no approval yet, they need admin approval
+                const newUser = {
+                  uid: user.uid,
+                  email: user.email,
+                  displayName: user.displayName || 'New User',
+                  firstName: user.displayName?.split(' ')[0] || 'New',
+                  lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
+                  role: 'pending',
+                  department: 'Pending Approval',
+                  startDate: new Date().toISOString().split('T')[0],
+                  avatar: user.photoURL,
+                  bio: 'Account pending administrator approval',
+                  skills: [],
+                  stats: {},
+                  isApproved: false,
+                  createdAt: new Date().toISOString()
+                };
+                
+                setCurrentUser(newUser);
+                setCurrentRole('pending');
+                
+                // Add this user to the pending users system
+                const pendingUserData = {
+                  id: `pending-${Date.now()}`,
+                  email: user.email,
+                  displayName: user.displayName || 'New User',
+                  firstName: user.displayName?.split(' ')[0] || 'New',
+                  lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
+                  role: 'pending',
+                  department: 'Pending Approval',
+                  startDate: new Date().toISOString().split('T')[0],
+                  avatar: user.photoURL,
+                  bio: 'Account pending administrator approval',
+                  skills: [],
+                  stats: {},
+                  isApproved: false,
+                  createdAt: new Date().toISOString()
+                };
+                
+                // Add to pending users in Firestore
+                try {
+                  await firestoreService.addPendingUser(pendingUserData);
+                } catch (error) {
+                  console.warn('⚠️ Could not add user to pending users:', error);
+                }
+                
+                console.log('🔄 Navigating pending user to approval page...');
+                navigateBasedOnRole('pending');
+              }
+            } catch (error) {
+              console.error('❌ Error checking user approval status:', error);
+              // Fallback to pending status
+              setCurrentRole('pending');
+              setCurrentUser({
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName || 'New User',
-                firstName: user.displayName?.split(' ')[0] || 'New',
-                lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
                 role: 'pending',
-                department: 'Pending Approval',
-                startDate: new Date().toISOString().split('T')[0],
-                avatar: user.photoURL,
-                bio: 'Account pending administrator approval',
-                skills: [],
-                stats: {},
-                isApproved: false,
-                createdAt: new Date().toISOString()
-              };
-              
-              setCurrentUser(newUser);
-              setCurrentRole('pending');
-              localStorage.setItem('luxury-listings-role', 'pending');
-              
-              // Add this user to the pending users system
-              const pendingUserData = {
-                id: `pending-${Date.now()}`,
-                email: newUser.email,
-                firstName: newUser.firstName,
-                lastName: newUser.lastName,
-                requestedRole: 'content_director', // Default role
-                requestedAt: new Date().toISOString().split('T')[0],
-                status: 'pending',
-                bio: newUser.bio,
-                skills: newUser.skills,
-                uid: newUser.uid,
-                displayName: newUser.displayName
-              };
-              
-              addPendingUser(pendingUserData);
-              console.log('✅ Added user to pending users system:', pendingUserData);
-              
-              console.log('🔄 Navigating pending user to approval page...');
-              navigateBasedOnRole('pending');
+                isApproved: false
+              });
             }
+          } else {
+            console.log('❌ User signed out');
+            setCurrentUser(null);
+            setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
           }
-        } else {
-          // User is signed out
+        } catch (error) {
+          console.error('❌ Error in auth state change handler:', error);
+          // Fallback to prevent blank page
           setCurrentUser(null);
-          setCurrentRole(DEFAULT_ROLE);
+          setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
         }
         setLoading(false);
       });

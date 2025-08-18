@@ -20,6 +20,7 @@ import UserManagement from './pages/UserManagement';
 import Analytics from './pages/Analytics';
 import WaitingForApproval from './pages/WaitingForApproval';
 import ChatWidget from './components/ui/chat-widget';
+import MigrationBanner from './components/MigrationBanner';
 import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
@@ -207,6 +208,9 @@ function AppLayout() {
 
       {/* AI Chat Widget - Available on all pages */}
       <ChatWidget />
+      
+      {/* Migration Banner - Shows once to migrate localStorage to Firestore */}
+      <MigrationBanner />
     </div>
   );
 }

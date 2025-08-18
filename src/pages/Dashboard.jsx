@@ -6,6 +6,7 @@ import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../contexts/AuthContext";
+import { firestoreService } from "../services/firestoreService";
 
 import { 
   CheckCircle2, 
@@ -21,7 +22,9 @@ import {
   BarChart3,
   FileText,
   Shield,
-  UserCheck
+  UserCheck,
+  UserX,
+  Activity
 } from "lucide-react";
 import { format, isToday, isPast } from "date-fns";
 
@@ -37,15 +40,59 @@ export default function Dashboard() {
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    pendingApprovals: 0,
+    systemUptime: '99.9%'
+  });
 
   const rolePermissions = getCurrentRolePermissions();
 
+  // Load dashboard data
   useEffect(() => {
     loadDashboardData();
   }, [currentRole]);
 
+  // Add real-time listeners for admin stats
+  useEffect(() => {
+    if (currentRole === 'admin') {
+      console.log('📡 Setting up real-time admin stats listeners...');
+      
+      // Listen for approved users changes
+      const approvedUsersUnsubscribe = firestoreService.onApprovedUsersChange((users) => {
+        console.log('📡 Approved users updated:', users.length);
+        setAdminStats(prev => ({
+          ...prev,
+          totalUsers: users.length
+        }));
+      });
+
+      // Listen for pending users changes
+      const pendingUsersUnsubscribe = firestoreService.onPendingUsersChange((users) => {
+        console.log('📡 Pending users updated:', users.length);
+        setAdminStats(prev => ({
+          ...prev,
+          pendingApprovals: users.length
+        }));
+      });
+
+      // Cleanup listeners on unmount
+      return () => {
+        console.log('🧹 Cleaning up admin stats listeners...');
+        approvedUsersUnsubscribe();
+        pendingUsersUnsubscribe();
+      };
+    }
+  }, [currentRole]);
+
   const loadDashboardData = async () => {
     try {
+      // Load admin-specific data if user is admin
+      if (currentRole === 'admin') {
+        await loadAdminStats();
+      }
+
       const [tutorialsData, progressData, tasksData, integrationsData] = await Promise.all([
         Tutorial.list('order_index'),
         TutorialProgress.filter({ user_email: currentUser.email }),
@@ -63,6 +110,45 @@ export default function Dashboard() {
       console.error("Error loading dashboard:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAdminStats = async () => {
+    try {
+      console.log('📊 Loading admin statistics...');
+      
+      // Get approved users count
+      const approvedUsers = await firestoreService.getApprovedUsers();
+      
+      // Get pending users count
+      const pendingUsers = await firestoreService.getPendingUsers();
+      
+      // Calculate active users (users who have been active in the last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const activeUsers = approvedUsers.filter(user => {
+        if (user.lastActive) {
+          return new Date(user.lastActive) > thirtyDaysAgo;
+        }
+        // If no lastActive date, consider them active if they were approved recently
+        return user.approvedAt && new Date(user.approvedAt) > thirtyDaysAgo;
+      }).length;
+
+      setAdminStats({
+        totalUsers: approvedUsers.length,
+        activeUsers: activeUsers,
+        pendingApprovals: pendingUsers.length,
+        systemUptime: '99.9%' // This could be calculated from actual system metrics
+      });
+
+      console.log('✅ Admin stats loaded:', {
+        totalUsers: approvedUsers.length,
+        activeUsers,
+        pendingApprovals: pendingUsers.length
+      });
+    } catch (error) {
+      console.error('❌ Error loading admin stats:', error);
     }
   };
 
@@ -96,10 +182,10 @@ export default function Dashboard() {
     switch (currentRole) {
       case 'admin':
         return [
-          { label: 'Total Users', value: currentUser?.stats?.totalUsers || 0, icon: Users, color: 'blue' },
-          { label: 'Active Users', value: currentUser?.stats?.activeUsers || 0, icon: UserCheck, color: 'green' },
-          { label: 'Pending Approvals', value: currentUser?.stats?.pendingApprovals || 0, icon: Clock, color: 'yellow' },
-          { label: 'System Uptime', value: currentUser?.stats?.systemUptime || '99.9%', icon: Shield, color: 'purple' }
+          { label: 'Total Users', value: adminStats.totalUsers, icon: Users, color: 'blue' },
+          { label: 'Active Users', value: adminStats.activeUsers, icon: UserCheck, color: 'green' },
+          { label: 'Pending Approvals', value: adminStats.pendingApprovals, icon: Clock, color: 'yellow' },
+          { label: 'System Uptime', value: adminStats.systemUptime, icon: Shield, color: 'purple' }
         ];
       case 'content_director':
         return [

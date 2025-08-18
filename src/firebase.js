@@ -12,8 +12,12 @@ const firebaseConfig = {
   appId: "1:660966083126:web:ece8041e9d9cc016b7a697"
 };
 
+console.log('🔥 Firebase config:', firebaseConfig);
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+console.log('🔥 Firebase app initialized:', app);
+console.log('🔥 Firebase app options:', app.options);
 
 // Initialize Firebase services
 export const auth = getAuth(app);
@@ -30,6 +34,9 @@ googleProvider.addScope('email');
 googleProvider.addScope('profile');
 
 export const db = getFirestore(app);
+console.log('🔥 Firestore database initialized:', db);
+console.log('🔥 Firestore database name:', db.name);
+console.log('🔥 Firestore database app:', db.app);
 
 export default app;
 

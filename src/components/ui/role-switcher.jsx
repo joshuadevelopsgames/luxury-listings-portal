@@ -77,13 +77,31 @@ const RoleSwitcher = () => {
   });
   
   // Filter role options based on user's assigned roles
+  // For admin users, show all roles. For others, only show their assigned roles
   const filteredRoleOptions = shouldShowAllRoles ? roleOptions : roleOptions.filter(option => 
     safeUserAssignedRoles.includes(option.role)
   );
 
   const handleRoleSwitch = (newRole) => {
-    switchRole(newRole);
-    setIsOpen(false);
+    console.log('🔄 Role Switcher - Switching to:', newRole);
+    
+    // For admin users, always allow role switching
+    if (isAdminUser) {
+      console.log('✅ Admin user - switching role');
+      switchRole(newRole);
+      setIsOpen(false);
+      return;
+    }
+    
+    // For regular users, check if they have this role
+    if (safeUserAssignedRoles.includes(newRole)) {
+      console.log('✅ User has this role - switching');
+      switchRole(newRole);
+      setIsOpen(false);
+    } else {
+      console.log('❌ User does not have this role');
+      alert('You do not have permission to switch to this role.');
+    }
   };
 
   const getRoleColor = (color) => {
@@ -122,7 +140,6 @@ const RoleSwitcher = () => {
 
   return (
     <div className="relative">
-      {/* Profile Tab Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center space-x-3 px-4 py-2 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${getRoleColor(currentRoleData.color)} hover:shadow-lg`}
