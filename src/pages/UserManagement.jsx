@@ -31,6 +31,7 @@ const UserManagement = () => {
   const { pendingUsers, removePendingUser, approveUser, updatePendingUserRole, refreshPendingUsers } = usePendingUsers();
   const [approvedUsers, setApprovedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [firestoreStatus, setFirestoreStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
@@ -340,6 +341,7 @@ const UserManagement = () => {
     try {
       console.log('🔄 Refreshing pending users from Firestore...');
       setLoading(true);
+      setFirestoreStatus('loading');
       
       // Load current pending users from Firestore
       const currentPendingUsers = await firestoreService.getPendingUsers();
@@ -348,13 +350,25 @@ const UserManagement = () => {
       // Update the context with the fresh data
       await refreshPendingUsers();
       
+      // Show success message with count
+      const message = `✅ Refreshed! Found ${currentPendingUsers.length} pending users in Firestore`;
+      console.log(message);
+      setFirestoreStatus('success');
+      
+      // Auto-clear success status after 3 seconds
+      setTimeout(() => setFirestoreStatus('idle'), 3000);
+      
       console.log('✅ Pending users refreshed successfully');
       setLoading(false);
       
     } catch (error) {
       console.error('❌ Error refreshing pending users:', error);
+      setFirestoreStatus('error');
       alert('Failed to refresh pending users. Please try again.');
       setLoading(false);
+      
+      // Auto-clear error status after 5 seconds
+      setTimeout(() => setFirestoreStatus('idle'), 5000);
     }
   };
 
@@ -646,20 +660,48 @@ const UserManagement = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">User Management</h1>
-          <p className="text-slate-600">Manage team members and access permissions</p>
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-1">Manage user approvals and roles</p>
         </div>
-        <div className="flex items-center gap-4">
+        
+        {/* Prominent Refresh Button */}
+        <Button
+          onClick={handleRefreshUsers}
+          variant="outline"
+          className={`font-semibold ${
+            firestoreStatus === 'loading' 
+              ? 'bg-blue-50 border-blue-300 text-blue-700' 
+              : firestoreStatus === 'success'
+              ? 'bg-green-50 border-green-300 text-green-700'
+              : firestoreStatus === 'error'
+              ? 'bg-red-50 border-red-300 text-red-700'
+              : 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100'
+          }`}
+          disabled={loading || firestoreStatus === 'loading'}
+        >
+          {firestoreStatus === 'loading' ? '🔄 Loading...' : 
+           firestoreStatus === 'success' ? '✅ Refreshed!' :
+           firestoreStatus === 'error' ? '❌ Error' :
+           '🔄 Refresh from Firestore'}
+        </Button>
+      </div>
+
+      {/* Stats and Management Buttons */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-6">
           <div className="text-right">
-            <div className="text-2xl font-bold text-slate-900">{approvedUsers.length}</div>
-            <div className="text-sm text-slate-600">Approved Users</div>
+            <div className="text-2xl font-bold text-gray-900">{approvedUsers.length}</div>
+            <div className="text-sm text-gray-600">Approved Users</div>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-orange-600">{pendingUsers.length}</div>
-            <div className="text-sm text-slate-600">Pending Approval</div>
+            <div className="text-sm text-gray-600">Pending Approval</div>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
           <Button
             onClick={handleFixUserRoles}
             variant="outline"
@@ -673,13 +715,6 @@ const UserManagement = () => {
             className="bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
           >
             🧹 Clean Duplicates
-          </Button>
-          <Button
-            onClick={handleRefreshUsers}
-            variant="outline"
-            className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
-          >
-            🔄 Refresh Pending Users
           </Button>
         </div>
       </div>
