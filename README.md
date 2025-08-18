@@ -1,68 +1,22 @@
 # Luxury Listings Portal
 
-A comprehensive content leadership platform for luxury real estate professionals.
+A comprehensive portal for managing luxury real estate listings with user management, analytics, and task tracking.
 
-## 🚀 Deployment to smmluxurylistings.info
+## 🚀 **Deployment Status**
+- ✅ **GitHub Repository**: Connected
+- ✅ **Vercel Project**: Imported
+- 🔄 **Auto-Deployment**: Ready
+- 📅 **Last Updated**: August 18, 2025
 
-### Option 1: Vercel Deployment (Recommended)
+## 🎯 **Key Features**
+- **User Management**: Approve/reject users with permanent Firestore updates
+- **Analytics Dashboard**: Real Google Analytics integration
+- **Task Management**: Real-time task tracking
+- **Role-Based Access**: Admin, Content Manager, HR, Sales, Social Media roles
+- **Firebase Integration**: Persistent data storage
 
-1. **Install Vercel CLI:**
-   ```bash
-   npm install -g vercel
-   ```
+## 🔧 **Setup**
+See `FIREBASE_FIRESTORE_SETUP.md` for detailed setup instructions.
 
-2. **Login to Vercel:**
-   ```bash
-   vercel login
-   ```
-
-3. **Deploy the app:**
-   ```bash
-   vercel
-   ```
-
-4. **Add custom domain:**
-   - Go to Vercel dashboard
-   - Select your project
-   - Go to Settings → Domains
-   - Add `smmluxurylistings.info`
-   - Update DNS records as instructed
-
-### Option 2: Manual Build & Deploy
-
-1. **Build the app:**
-   ```bash
-   npm run build
-   ```
-
-2. **Upload the `build` folder** to your web hosting provider
-
-3. **Configure your domain** to point to the hosting provider
-
-## 🔧 Google Apps Script Setup
-
-1. **Deploy the Google Apps Script** from `google-apps-script.js`
-2. **Update the script URL** in `src/pages/ClientPackages.jsx`
-3. **Test the integration** with your domain
-
-## 🎯 Features
-
-- ✅ Client package management
-- ✅ Google Sheets integration
-- ✅ Real-time data sync
-- ✅ Professional onboarding interface
-- ✅ Mobile responsive design
-
-## 🛠️ Development
-
-```bash
-npm start          # Start development server
-npm run build      # Build for production
-npm test           # Run tests
-```
-
-## 📱 Access
-
-Once deployed, your app will be available at:
-- **Production**: https://smmluxurylistings.info
-- **Development**: http://localhost:3000
+## 🚀 **Deployment**
+This project is configured for automatic deployment via Vercel.
