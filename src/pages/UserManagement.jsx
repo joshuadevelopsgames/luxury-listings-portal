@@ -664,7 +664,7 @@ const UserManagement = () => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-blue-900">Firestore Status</h2>
+            <h2 className="text-lg font-semibold text-blue-900">Firestore Status - UPDATED 8/18/2025</h2>
             <p className="text-blue-700 text-sm">Click to refresh pending users from database</p>
           </div>
           <Button
