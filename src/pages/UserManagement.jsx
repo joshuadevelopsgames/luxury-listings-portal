@@ -660,32 +660,39 @@ const UserManagement = () => {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Super Prominent Refresh Button */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-blue-900">Firestore Status</h2>
+            <p className="text-blue-700 text-sm">Click to refresh pending users from database</p>
+          </div>
+          <Button
+            onClick={handleRefreshUsers}
+            className={`px-6 py-3 font-bold text-lg ${
+              firestoreStatus === 'loading' 
+                ? 'bg-blue-600 text-white' 
+                : firestoreStatus === 'success'
+                ? 'bg-green-600 text-white'
+                : firestoreStatus === 'error'
+                ? 'bg-red-600 text-white'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+            disabled={loading || firestoreStatus === 'loading'}
+          >
+            {firestoreStatus === 'loading' ? '🔄 Loading...' : 
+             firestoreStatus === 'success' ? '✅ Refreshed!' :
+             firestoreStatus === 'error' ? '❌ Error' :
+             '🔄 Refresh from Firestore'}
+          </Button>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Manage user approvals and roles</p>
         </div>
-        
-        {/* Prominent Refresh Button */}
-        <Button
-          onClick={handleRefreshUsers}
-          variant="outline"
-          className={`font-semibold ${
-            firestoreStatus === 'loading' 
-              ? 'bg-blue-50 border-blue-300 text-blue-700' 
-              : firestoreStatus === 'success'
-              ? 'bg-green-50 border-green-300 text-green-700'
-              : firestoreStatus === 'error'
-              ? 'bg-red-50 border-red-300 text-red-700'
-              : 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100'
-          }`}
-          disabled={loading || firestoreStatus === 'loading'}
-        >
-          {firestoreStatus === 'loading' ? '🔄 Loading...' : 
-           firestoreStatus === 'success' ? '✅ Refreshed!' :
-           firestoreStatus === 'error' ? '❌ Error' :
-           '🔄 Refresh from Firestore'}
-        </Button>
       </div>
 
       {/* Stats and Management Buttons */}
