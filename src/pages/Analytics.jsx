@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import GoogleAnalyticsSetup from '../components/GoogleAnalyticsSetup';
+import { gtagService } from '../services/gtagService';
 import { 
   Users, 
   Eye, 
@@ -68,11 +69,18 @@ const Analytics = () => {
   // Mock function to refresh analytics data
   const refreshAnalytics = () => {
     setIsLoading(true);
+    gtagService.trackAnalyticsUsage('refresh_data');
+    
     setTimeout(() => {
       setIsLoading(false);
       // In a real implementation, this would fetch from Google Analytics API
     }, 1000);
   };
+
+  // Track page view when component mounts
+  useEffect(() => {
+    gtagService.trackPageView('Analytics Dashboard', '/analytics');
+  }, []);
 
   const StatCard = ({ title, value, change, icon: Icon, color = 'blue' }) => (
     <Card className="p-6">
