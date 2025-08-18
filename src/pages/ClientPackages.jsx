@@ -98,6 +98,42 @@ export default function ClientPackages() {
     }
   };
 
+  // Enhanced test function with detailed diagnostics
+  const testGoogleAppsScriptDetailed = async () => {
+    try {
+      console.log('🔍 Running detailed Google Apps Script diagnostics...');
+      
+      // Test 1: Basic connectivity
+      console.log('📡 Testing basic connectivity...');
+      const response = await fetch(GOOGLE_APPS_SCRIPT_URL);
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', response.headers);
+      
+      // Test 2: Parse response
+      const result = await response.json();
+      console.log('📡 Response body:', result);
+      
+      // Test 3: Check for specific errors
+      if (result.error) {
+        console.error('❌ Google Apps Script error:', result.error);
+        if (result.error.includes('insertRow')) {
+          console.error('❌ insertRow function not found - script may not be properly deployed');
+        }
+      }
+      
+      setScriptTestResult(result);
+      return result.success;
+    } catch (error) {
+      console.error('❌ Detailed test failed:', error);
+      setScriptTestResult({ 
+        success: false, 
+        error: error.message,
+        details: 'Check if Google Apps Script is properly deployed and accessible'
+      });
+      return false;
+    }
+  };
+
   // Test GET request specifically
   const testPostRequest = async () => {
     try {
@@ -1173,6 +1209,33 @@ export default function ClientPackages() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Client Packages</h1>
         <p className="text-slate-600">Manage luxury real estate client relationships and package delivery</p>
+        
+        {/* Google Apps Script Test Button */}
+        <div className="mt-4">
+          <Button
+            onClick={testGoogleAppsScriptDetailed}
+            variant="outline"
+            className="bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+          >
+            🔧 Test Google Apps Script
+          </Button>
+          {scriptTestResult && (
+            <div className="mt-2 p-2 text-sm rounded">
+              {scriptTestResult.success ? (
+                <div className="text-green-700 bg-green-50 border border-green-200 rounded p-2">
+                  ✅ Script working: {scriptTestResult.message || 'Connection successful'}
+                </div>
+              ) : (
+                <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2">
+                  ❌ Script error: {scriptTestResult.error || 'Unknown error'}
+                  {scriptTestResult.details && (
+                    <div className="mt-1 text-xs">{scriptTestResult.details}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats Overview */}
