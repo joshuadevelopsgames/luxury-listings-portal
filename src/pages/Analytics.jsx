@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import GoogleAnalyticsSetup from '../components/GoogleAnalyticsSetup';
 import { 
   Users, 
   Eye, 
@@ -62,6 +63,7 @@ const Analytics = () => {
 
   const [timeRange, setTimeRange] = useState('7d');
   const [isLoading, setIsLoading] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
 
   // Mock function to refresh analytics data
   const refreshAnalytics = () => {
@@ -133,6 +135,8 @@ const Analytics = () => {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Google Analytics Setup */}
+      {showSetup && <GoogleAnalyticsSetup />}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -153,6 +157,14 @@ const Analytics = () => {
           <Button onClick={refreshAnalytics} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
             <Activity className="w-4 h-4 mr-2" />
             {isLoading ? 'Refreshing...' : 'Refresh Data'}
+          </Button>
+          <Button 
+            onClick={() => setShowSetup(!showSetup)} 
+            variant="outline"
+            className="border-orange-300 text-orange-700 hover:bg-orange-50"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            {showSetup ? 'Hide Setup' : 'Setup GA'}
           </Button>
         </div>
       </div>

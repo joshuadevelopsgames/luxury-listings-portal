@@ -6,6 +6,21 @@ class AnalyticsService {
     this.isConfigured = false;
     this.propertyId = null;
     this.accessToken = null;
+    
+    // Try to auto-initialize from environment variables
+    this.autoInitialize();
+  }
+
+  // Auto-initialize from environment variables
+  autoInitialize() {
+    const propertyId = process.env.REACT_APP_GA_PROPERTY_ID;
+    const serviceAccountEmail = process.env.REACT_APP_GA_SERVICE_ACCOUNT_EMAIL;
+    
+    if (propertyId && serviceAccountEmail) {
+      console.log('🔍 Found GA environment variables, attempting auto-initialization...');
+      // Note: In a real implementation, you'd need to handle JWT token generation
+      // For now, we'll use the manual initialization method
+    }
   }
 
   // Initialize the service with Google Analytics credentials
