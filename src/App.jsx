@@ -17,6 +17,7 @@ import CRMPage from './pages/CRMPage';
 import SalesPipelinePage from './pages/SalesPipelinePage';
 import LeadManagementPage from './pages/LeadManagementPage';
 import UserManagement from './pages/UserManagement';
+import Analytics from './pages/Analytics';
 import WaitingForApproval from './pages/WaitingForApproval';
 import ChatWidget from './components/ui/chat-widget';
 import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp } from 'lucide-react';
@@ -88,6 +89,7 @@ function AppLayout() {
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
+          { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/analytics' },
         ];
       
       case USER_ROLES.CONTENT_DIRECTOR:
@@ -196,6 +198,7 @@ function AppLayout() {
           <Route path="/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
           <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
           <Route path="/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
           <Route path="/sales-pipeline" element={<ProtectedRoute><SalesPipelinePage /></ProtectedRoute>} />
           <Route path="/leads" element={<ProtectedRoute><LeadManagementPage /></ProtectedRoute>} />
