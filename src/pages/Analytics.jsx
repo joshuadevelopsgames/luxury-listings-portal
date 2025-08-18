@@ -21,7 +21,8 @@ import {
   Settings,
   CheckCircle,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -433,7 +434,7 @@ const Analytics = () => {
             <div className="p-2 bg-blue-100 rounded-lg">
               <Activity className="w-5 h-5 text-blue-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <h3 className="font-semibold text-blue-900">Google Analytics Integration</h3>
               <p className="text-blue-700 mt-1">
                 This dashboard shows demo analytics data. To integrate real Google Analytics data, 
@@ -450,9 +451,33 @@ const Analytics = () => {
                   <li>Replace demo data with real API calls</li>
                 </ul>
               </div>
+              <div className="mt-4">
+                <Button 
+                  onClick={() => setShowSetup(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Setup Google Analytics
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
+      )}
+
+      {/* Google Analytics Setup Modal */}
+      {showSetup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Setup Google Analytics</h2>
+              <button onClick={() => setShowSetup(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <GoogleAnalyticsSetup />
+          </div>
+        </div>
       )}
     </div>
   );
