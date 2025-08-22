@@ -372,7 +372,7 @@ const CRMPage = () => {
       
       const results = await Promise.allSettled(
         selectedTabKeys.map(tabKey => 
-          service.addNewLead(newLead, [tabKey])
+          service.addNewLead(newLead, { [tabKey]: true })
         )
       );
 
@@ -436,6 +436,26 @@ const CRMPage = () => {
       alert(`❌ Error adding lead: ${error.message}`);
     } finally {
       setIsAddingLead(false);
+    }
+  };
+
+  // Save CRM data to Firebase
+  const saveCRMDataToFirebase = async () => {
+    if (!currentUser?.uid) return;
+
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, {
+        crmData: {
+          warmLeads,
+          contactedClients,
+          coldLeads,
+          lastSyncTime: new Date().toLocaleString()
+        }
+      }, { merge: true });
+      console.log('💾 CRM data saved to Firebase');
+    } catch (error) {
+      console.error('Error saving CRM data to Firebase:', error);
     }
   };
 
