@@ -40,6 +40,24 @@ const CRMPage = () => {
   const [activeTab, setActiveTab] = useState('warm-leads');
   const [selectedClient, setSelectedClient] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({
+    contactName: '',
+    email: '',
+    phone: '',
+    instagram: '',
+    organization: '',
+    website: '',
+    notes: ''
+  });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Toast notification helper
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    // Auto-hide after 3 seconds
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
   const [showGoogleSheetsSetup, setShowGoogleSheetsSetup] = useState(false);
   const [isConnectedToGoogleSheets, setIsConnectedToGoogleSheets] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
@@ -418,7 +436,7 @@ const CRMPage = () => {
         // Save to Firebase
         await saveCRMDataToFirebase();
 
-        alert(`✅ Lead added successfully to ${successfulTabs.length} tab(s): ${successfulTabs.join(', ')}`);
+        showToast(`✅ Lead added successfully to ${successfulTabs.length} tab(s): ${successfulTabs.join(', ')}`);
         
         // Reset form
         resetNewLeadForm();
@@ -1187,6 +1205,22 @@ const CRMPage = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : toast.type === 'error' 
+            ? 'bg-red-500 text-white' 
+            : 'bg-blue-500 text-white'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
+            <span className="font-medium">{toast.message}</span>
           </div>
         </div>
       )}
