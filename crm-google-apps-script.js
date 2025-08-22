@@ -38,12 +38,7 @@ function doOptions(e) {
     const output = ContentService.createTextOutput('')
       .setMimeType(ContentService.MimeType.TEXT);
     
-    // Add CORS headers for preflight
-    output.setHeader('Access-Control-Allow-Origin', '*');
-    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    output.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
-    
+    // Google Apps Script automatically handles CORS for web apps
     return output;
     
   } catch (error) {
@@ -107,11 +102,8 @@ function doPost(e) {
     const output = ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
     
-    // Add CORS headers using the correct method
-    output.setHeader('Access-Control-Allow-Origin', '*');
-    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
+    // Google Apps Script automatically handles CORS for web apps
+    // Just return the output directly
     return output;
       
   } catch (error) {
@@ -127,11 +119,7 @@ function doPost(e) {
     const output = ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
     
-    // Add CORS headers even for errors
-    output.setHeader('Access-Control-Allow-Origin', '*');
-    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
+    // Google Apps Script automatically handles CORS for web apps
     return output;
   }
 }
@@ -367,11 +355,7 @@ function doGet(e) {
     const output = ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
     
-    // Add CORS headers
-    output.setHeader('Access-Control-Allow-Origin', '*');
-    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
+    // Google Apps Script automatically handles CORS for web apps
     return output;
       
   } catch (error) {
@@ -395,11 +379,7 @@ function doGet(e) {
     const output = ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
     
-    // Add CORS headers
-    output.setHeader('Access-Control-Allow-Origin', '*');
-    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
+    // Google Apps Script automatically handles CORS for web apps
     return output;
   }
 }
