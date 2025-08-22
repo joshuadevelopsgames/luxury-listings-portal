@@ -677,7 +677,7 @@ const CRMPage = () => {
     const colors = {
       warm: 'bg-red-100 text-red-800',
       contacted: '!bg-purple-100 !text-purple-800',
-      cold: 'bg-blue-50 text-blue-700'
+      cold: 'bg-blue-100 text-blue-600'
     };
     const result = colors[status] || colors.cold;
     console.log('🎨 Returning color classes:', result);
