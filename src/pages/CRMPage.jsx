@@ -603,24 +603,117 @@ const CRMPage = () => {
               )}
               
               <div className="flex items-center gap-2 pt-4">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    if (selectedClient.phone) {
+                      window.open(`tel:${selectedClient.phone.replace(/\D/g, '')}`, '_self');
+                    } else {
+                      alert('No phone number available for this lead');
+                    }
+                  }}
+                >
                   <Phone className="w-4 h-4 mr-2" />
                   Call Lead
                 </Button>
-                <Button variant="outline">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    if (selectedClient.email) {
+                      const subject = encodeURIComponent(`Follow up - ${selectedClient.contactName}`);
+                      const body = encodeURIComponent(`Hi ${selectedClient.contactName},\n\nI hope this email finds you well. I wanted to follow up regarding our previous conversation.\n\nBest regards,\n[Your Name]`);
+                      window.open(`mailto:${selectedClient.email}?subject=${subject}&body=${body}`, '_self');
+                    } else {
+                      alert('No email address available for this lead');
+                    }
+                  }}
+                >
                   <Mail className="w-4 h-4 mr-2" />
                   Send Email
                 </Button>
-                <Button variant="outline">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    // Create Google Calendar event
+                    const eventTitle = encodeURIComponent(`Meeting with ${selectedClient.contactName}`);
+                    const eventDetails = encodeURIComponent(`Follow up meeting with ${selectedClient.contactName}\n\nNotes: ${selectedClient.notes || 'No additional notes'}`);
+                    const startDate = new Date();
+                    startDate.setDate(startDate.getDate() + 1); // Tomorrow
+                    startDate.setHours(10, 0, 0, 0); // 10 AM
+                    
+                    const endDate = new Date(startDate);
+                    endDate.setHours(11, 0, 0, 0); // 11 AM
+                    
+                    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&details=${eventDetails}&dates=${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`;
+                    
+                    window.open(googleCalendarUrl, '_blank');
+                  }}
+                >
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule Meeting
                 </Button>
                 {selectedClient.instagram && (
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const instagramUrl = `https://www.instagram.com/${selectedClient.instagram.replace('@', '')}`;
+                      window.open(instagramUrl, '_blank');
+                    }}
+                  >
                     <Instagram className="w-4 h-4 mr-2" />
                     View Instagram
                   </Button>
                 )}
+              </div>
+
+              {/* Quick Actions Section */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Quick Actions</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      if (selectedClient.website) {
+                        window.open(selectedClient.website.startsWith('http') ? selectedClient.website : `https://${selectedClient.website}`, '_blank');
+                      } else {
+                        alert('No website available for this lead');
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Visit Website
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      const notes = `Follow up with ${selectedClient.contactName} - ${new Date().toLocaleDateString()}`;
+                      navigator.clipboard.writeText(notes).then(() => {
+                        alert('Notes copied to clipboard!');
+                      });
+                    }}
+                    className="text-xs"
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
+                    Copy Notes
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      const contactInfo = `Name: ${selectedClient.contactName}\nEmail: ${selectedClient.email}\nPhone: ${selectedClient.phone}\nInstagram: ${selectedClient.instagram || 'N/A'}\nWebsite: ${selectedClient.website || 'N/A'}`;
+                      navigator.clipboard.writeText(contactInfo).then(() => {
+                        alert('Contact info copied to clipboard!');
+                      });
+                    }}
+                    className="text-xs"
+                  >
+                    <Users className="w-3 h-3 mr-1" />
+                    Copy Contact Info
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
