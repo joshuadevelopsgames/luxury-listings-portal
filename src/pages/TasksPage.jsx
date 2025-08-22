@@ -15,6 +15,24 @@ const TasksPage = () => {
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Helper function to parse dates as local dates (same as form validation)
+  const parseLocalDate = (dateString) => {
+    if (!dateString) return null;
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month is 0-indexed
+  };
+  
+  // Helper function to check if date is today (local date comparison)
+  const isTodayLocal = (dateString) => {
+    if (!dateString) return false;
+    const taskDate = parseLocalDate(dateString);
+    const today = new Date();
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return taskDate.getTime() === todayOnly.getTime();
+  };
+  
+  
+
   // Load initial data and set up real-time listener
   useEffect(() => {
     const loadData = async () => {
@@ -57,27 +75,8 @@ const TasksPage = () => {
       title: task.title,
       due_date: task.due_date,
       due_date_obj: new Date(task.due_date),
-      isToday: isTodayLocal(task.due_date),
-      isTomorrow: isTomorrowLocal(task.due_date),
-      isPast: isPastLocal(task.due_date),
       status: task.status
     })));
-    
-    // Helper function to parse dates as local dates (same as form validation)
-    const parseLocalDate = (dateString) => {
-      if (!dateString) return null;
-      const [year, month, day] = dateString.split('-').map(Number);
-      return new Date(year, month - 1, day); // month is 0-indexed
-    };
-    
-    // Helper function to check if date is today (local date comparison)
-    const isTodayLocal = (dateString) => {
-      if (!dateString) return false;
-      const taskDate = parseLocalDate(dateString);
-      const today = new Date();
-      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      return taskDate.getTime() === todayOnly.getTime();
-    };
     
     // Helper function to check if date is tomorrow (local date comparison)
     const isTomorrowLocal = (dateString) => {
@@ -162,41 +161,6 @@ const TasksPage = () => {
   };
 
   const getTaskCounts = () => {
-    // Helper function to parse dates as local dates (same as filtering logic)
-    const parseLocalDate = (dateString) => {
-      if (!dateString) return null;
-      const [year, month, day] = dateString.split('-').map(Number);
-      return new Date(year, month - 1, day); // month is 0-indexed
-    };
-    
-    // Helper function to check if date is today (local date comparison)
-    const isTodayLocal = (dateString) => {
-      if (!dateString) return false;
-      const taskDate = parseLocalDate(dateString);
-      const today = new Date();
-      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      return taskDate.getTime() === todayOnly.getTime();
-    };
-    
-    // Helper function to check if date is tomorrow (local date comparison)
-    const isTomorrowLocal = (dateString) => {
-      if (!dateString) return false;
-      const taskDate = parseLocalDate(dateString);
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowOnly = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
-      return taskDate.getTime() === tomorrowOnly.getTime();
-    };
-    
-    // Helper function to check if date is in the past (local date comparison)
-    const isPastLocal = (dateString) => {
-      if (!dateString) return false;
-      const taskDate = parseLocalDate(dateString);
-      const today = new Date();
-      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      return taskDate < todayOnly;
-    };
-    
     return {
       today: tasks.filter(task => task.due_date && isTodayLocal(task.due_date)).length,
       upcoming: tasks.filter(task => task.due_date && (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date())).length,
