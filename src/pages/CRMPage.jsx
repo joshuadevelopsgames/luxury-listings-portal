@@ -323,8 +323,8 @@ const CRMPage = () => {
 
   // Add new lead to Google Sheets
   const handleAddNewLead = async () => {
-    if (!newLead.name || !newLead.email) {
-      alert('Please fill in at least Name and Email');
+    if (!newLead.contactName || !newLead.email) {
+      alert('Please fill in at least Contact Name and Email');
       return;
     }
 
