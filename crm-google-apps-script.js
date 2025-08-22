@@ -28,6 +28,39 @@ const COLUMN_MAPPING = {
 };
 
 /**
+ * Handle OPTIONS request for CORS preflight
+ */
+function doOptions(e) {
+  try {
+    console.log('📥 Received OPTIONS request (CORS preflight)');
+    
+    // Create response with CORS headers
+    const output = ContentService.createTextOutput('')
+      .setMimeType(ContentService.MimeType.TEXT);
+    
+    // Add CORS headers for preflight
+    output.addHeader('Access-Control-Allow-Origin', '*');
+    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    output.addHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+    
+    return output;
+    
+  } catch (error) {
+    console.error('❌ Error in doOptions:', error);
+    
+    const output = ContentService.createTextOutput('')
+      .setMimeType(ContentService.MimeType.TEXT);
+    
+    output.addHeader('Access-Control-Allow-Origin', '*');
+    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    return output;
+  }
+}
+
+/**
  * Main function to handle web requests
  */
 function doPost(e) {
@@ -69,8 +102,17 @@ function doPost(e) {
     };
     
     console.log('📤 Sending response:', response);
-    return ContentService.createTextOutput(JSON.stringify(response))
+    
+    // Set CORS headers to allow cross-origin requests
+    const output = ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
+    
+    // Add CORS headers
+    output.addHeader('Access-Control-Allow-Origin', '*');
+    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    return output;
       
   } catch (error) {
     console.error('❌ Error in doPost:', error);
@@ -82,8 +124,15 @@ function doPost(e) {
       stack: error.stack
     };
     
-    return ContentService.createTextOutput(JSON.stringify(errorResponse))
+    const output = ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
+    
+    // Add CORS headers even for errors
+    output.addHeader('Access-Control-Allow-Origin', '*');
+    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    return output;
   }
 }
 
@@ -219,8 +268,15 @@ function doGet(e) {
       availableActions: ['test']
     };
     
-    return ContentService.createTextOutput(JSON.stringify(response))
+    const output = ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
+    
+    // Add CORS headers
+    output.addHeader('Access-Control-Allow-Origin', '*');
+    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    return output;
       
   } catch (error) {
     console.error('❌ Error in doGet:', error);
@@ -230,7 +286,14 @@ function doGet(e) {
       error: error.message
     };
     
-    return ContentService.createTextOutput(JSON.stringify(errorResponse))
+    const output = ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
+    
+    // Add CORS headers
+    output.addHeader('Access-Control-Allow-Origin', '*');
+    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    return output;
   }
 }
