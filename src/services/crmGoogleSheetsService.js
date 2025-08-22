@@ -27,9 +27,8 @@ class CRMGoogleSheetsService {
       coldLeads: 0
     };
 
-    // Google Apps Script endpoint URL (you'll get this after deploying the script)
-    // TODO: Replace with your actual Google Apps Script web app URL
-    this.googleAppsScriptUrl = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+      // Google Apps Script endpoint URL
+  this.googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbxyWrZ2yCeyUR0ZnOYuk2a9ZlxU0p-4PC9kwResF9h4R68FPgXqE6RPyi-jXvGD4hYVdA/exec';
   }
 
   // Set service account credentials for write operations
