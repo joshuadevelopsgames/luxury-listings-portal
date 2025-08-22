@@ -173,21 +173,21 @@ const CRMPage = () => {
   }, []);
 
   // Handle Google Sheets data loading
-  const handleGoogleSheetsDataLoaded = (leads) => {
-    if (leads && Array.isArray(leads)) {
+  const handleGoogleSheetsDataLoaded = (data) => {
+    if (data && typeof data === 'object') {
       // Update the leads state with the fetched data
-      setWarmLeads(leads.filter(lead => lead.category === 'warmLeads'));
-      setContactedClients(leads.filter(lead => lead.category === 'contactedClients'));
-      setColdLeads(leads.filter(lead => lead.category === 'coldLeads'));
+      setWarmLeads(data.warmLeads || []);
+      setContactedClients(data.contactedClients || []);
+      setColdLeads(data.coldLeads || []);
       
       // Update connection status
       setIsConnectedToGoogleSheets(true);
       setLastSyncTime(new Date().toLocaleString());
       
       console.log('✅ CRM data loaded from Google Sheets:', {
-        warmLeads: leads.filter(lead => lead.category === 'warmLeads').length,
-        contactedClients: leads.filter(lead => lead.category === 'contactedClients').length,
-        coldLeads: leads.filter(lead => lead.category === 'coldLeads').length
+        warmLeads: data.warmLeads?.length || 0,
+        contactedClients: data.contactedClients?.length || 0,
+        coldLeads: data.coldLeads?.length || 0
       });
     }
   };

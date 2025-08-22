@@ -113,14 +113,20 @@ const CRMGoogleSheetsSetup = ({ onDataLoaded, onConnectionStatusChange }) => {
       
       const data = await service.fetchCRMData();
       
-      if (data.success) {
-        setLastSyncTime(new Date().toLocaleString());
-        setLeadCounts(data.leadCounts);
-        onDataLoaded?.(data.leads);
-        console.log('✅ Data synced successfully');
-      } else {
-        setError(data.error || 'Failed to sync data');
-      }
+      // The service returns data directly, not wrapped in success/leads
+      setLastSyncTime(new Date().toLocaleString());
+      
+      // Calculate lead counts from the data
+      const leadCounts = {
+        warmLeads: data.warmLeads?.length || 0,
+        contactedClients: data.contactedClients?.length || 0,
+        coldLeads: data.coldLeads?.length || 0
+      };
+      setLeadCounts(leadCounts);
+      
+      // Pass the full data object to the parent component
+      onDataLoaded?.(data);
+      console.log('✅ Data synced successfully');
     } catch (error) {
       setError(`Sync error: ${error.message}`);
     } finally {
