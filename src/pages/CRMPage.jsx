@@ -409,14 +409,14 @@ const CRMPage = () => {
       });
 
       if (successfulTabs.length > 0) {
-        // Update local state for successful additions
+        // Create new lead data object
         const newLeadData = {
-          id: `new-${Date.now()}`,
-          organization: newLead.organization || '',
-          name: newLead.contactName, // Fixed: use contactName from form
-          email: newLead.email,
-          instagram: newLead.instagram || '',
+          id: Date.now() + Math.random(), // Generate unique ID
+          contactName: newLead.contactName || '',
+          email: newLead.email || '',
           phone: newLead.phone || '',
+          instagram: newLead.instagram || '',
+          organization: newLead.organization || '',
           website: newLead.website || '',
           notes: newLead.notes || '',
           status: 'New Lead',
@@ -424,12 +424,14 @@ const CRMPage = () => {
           category: successfulTabs[0] // Use first successful tab as category
         };
 
-        // Add to appropriate local state based on first successful tab
+        // Add to ALL selected tabs (not just the first one)
         if (successfulTabs.includes('warmLeads')) {
           setWarmLeads(prev => [newLeadData, ...prev]);
-        } else if (successfulTabs.includes('contactedClients')) {
+        }
+        if (successfulTabs.includes('contactedClients')) {
           setContactedClients(prev => [newLeadData, ...prev]);
-        } else if (successfulTabs.includes('coldLeads')) {
+        }
+        if (successfulTabs.includes('coldLeads')) {
           setColdLeads(prev => [newLeadData, ...prev]);
         }
 
@@ -451,7 +453,7 @@ const CRMPage = () => {
 
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
-      alert(`❌ Error adding lead: ${error.message}`);
+      showToast(`❌ Error adding lead: ${error.message}`, 'error');
     } finally {
       setIsAddingLead(false);
     }
