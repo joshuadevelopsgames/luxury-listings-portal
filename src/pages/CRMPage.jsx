@@ -186,15 +186,26 @@ const CRMPage = () => {
   // Load service account credentials for write operations
   const loadServiceAccountCredentials = async () => {
     try {
+      console.log('🔍 Attempting to load service account credentials...');
       const docRef = doc(db, 'crm_config', 'google_sheets');
       const docSnap = await getDoc(docRef);
       
-      if (docSnap.exists() && docSnap.data().serviceAccountCredentials) {
-        const credentials = docSnap.data().serviceAccountCredentials;
-        console.log('🔐 Loaded service account credentials:', credentials.client_email);
-        return credentials;
+      console.log('🔍 Firestore document exists:', docSnap.exists());
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log('🔍 Firestore document data:', data);
+        console.log('🔍 Has serviceAccountCredentials:', !!data.serviceAccountCredentials);
+        
+        if (data.serviceAccountCredentials) {
+          const credentials = data.serviceAccountCredentials;
+          console.log('🔐 Loaded service account credentials:', credentials.client_email);
+          return credentials;
+        } else {
+          console.log('🔐 No serviceAccountCredentials field in document');
+          return null;
+        }
       } else {
-        console.log('🔐 No service account credentials found');
+        console.log('🔐 No crm_config document found');
         return null;
       }
     } catch (error) {
