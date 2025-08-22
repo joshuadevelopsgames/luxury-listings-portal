@@ -176,6 +176,125 @@ function addLeadToSheet(leadData, tabKey) {
 }
 
 /**
+ * Update a lead in a specific sheet
+ */
+function updateLeadInSheet(leadData, tabKey) {
+  try {
+    console.log(`🔍 Updating lead in sheet: ${tabKey}`);
+    
+    // Get the sheet name
+    const sheetName = SHEET_NAMES[tabKey];
+    if (!sheetName) {
+      throw new Error(`Unknown tab key: ${tabKey}`);
+    }
+    
+    // Open the spreadsheet and sheet
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      throw new Error(`Sheet not found: ${sheetName}`);
+    }
+    
+    console.log(`📋 Found sheet: ${sheetName}`);
+    
+    // Find the row by contact name
+    const contactNames = sheet.getRange(1, 2, sheet.getLastRow(), 1).getValues().flat(); // Column B (contact name)
+    let rowNumber = -1;
+    
+    for (let i = 0; i < contactNames.length; i++) {
+      if (contactNames[i] && contactNames[i].toString().toLowerCase() === leadData.contactName.toLowerCase()) {
+        rowNumber = i + 1;
+        break;
+      }
+    }
+    
+    if (rowNumber === -1) {
+      throw new Error(`Lead "${leadData.contactName}" not found in ${sheetName}`);
+    }
+    
+    console.log(`📋 Found lead at row: ${rowNumber}`);
+    
+    // Prepare the updated row data
+    const rowData = prepareRowData(leadData);
+    console.log(`📊 Updated row data:`, rowData);
+    
+    // Update the row
+    const range = sheet.getRange(rowNumber, 1, 1, rowData.length);
+    range.setValues([rowData]);
+    
+    console.log(`✅ Lead updated successfully in ${sheetName} at row ${rowNumber}`);
+    
+    return {
+      sheetName: sheetName,
+      rowNumber: rowNumber,
+      message: `Lead updated in ${sheetName} successfully`
+    };
+    
+  } catch (error) {
+    console.error(`❌ Error updating lead in sheet ${tabKey}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a lead from a specific sheet
+ */
+function deleteLeadFromSheet(leadData, tabKey) {
+  try {
+    console.log(`🔍 Deleting lead from sheet: ${tabKey}`);
+    
+    // Get the sheet name
+    const sheetName = SHEET_NAMES[tabKey];
+    if (!sheetName) {
+      throw new Error(`Unknown tab key: ${tabKey}`);
+    }
+    
+    // Open the spreadsheet and sheet
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      throw new Error(`Sheet not found: ${sheetName}`);
+    }
+    
+    console.log(`📋 Found sheet: ${sheetName}`);
+    
+    // Find the row by contact name
+    const contactNames = sheet.getRange(1, 2, sheet.getLastRow(), 1).getValues().flat(); // Column B (contact name)
+    let rowNumber = -1;
+    
+    for (let i = 0; i < contactNames.length; i++) {
+      if (contactNames[i] && contactNames[i].toString().toLowerCase() === leadData.contactName.toLowerCase()) {
+        rowNumber = i + 1;
+        break;
+      }
+    }
+    
+    if (rowNumber === -1) {
+      throw new Error(`Lead "${leadData.contactName}" not found in ${sheetName}`);
+    }
+    
+    console.log(`📋 Found lead at row: ${rowNumber}`);
+    
+    // Delete the row
+    sheet.deleteRow(rowNumber);
+    
+    console.log(`✅ Lead deleted successfully from ${sheetName} at row ${rowNumber}`);
+    
+    return {
+      sheetName: sheetName,
+      rowNumber: rowNumber,
+      message: `Lead deleted from ${sheetName} successfully`
+    };
+    
+  } catch (error) {
+    console.error(`❌ Error deleting lead from sheet ${tabKey}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Prepare row data in the correct column order
  */
 function prepareRowData(leadData) {
@@ -327,6 +446,88 @@ function doGet(e) {
         
       } catch (error) {
         console.error('❌ Error processing addLead request:', error);
+        response = {
+          success: false,
+          error: error.message
+        };
+      }
+    } else if (params.action === 'updateLead') {
+      // Handle updateLead action via GET request
+      console.log('📥 updateLead action received via GET');
+      
+      try {
+        const leadData = JSON.parse(params.leadData);
+        
+        console.log('📊 Update lead data:', leadData);
+        
+        if (!leadData || !leadData.id) {
+          throw new Error('Missing leadData or id in updateLead request');
+        }
+        
+        // Update lead in all tabs (since we don't know which tab it's in)
+        const results = [];
+        for (const [tabKey, sheetName] of Object.entries(SHEET_NAMES)) {
+          try {
+            const result = updateLeadInSheet(leadData, tabKey);
+            if (result.success) {
+              results.push({ tab: tabKey, success: true, result });
+              console.log(`✅ Lead updated in ${tabKey} successfully`);
+            }
+          } catch (error) {
+            console.log(`ℹ️ Lead not found in ${tabKey}:`, error.message);
+            // This is expected if the lead isn't in this tab
+          }
+        }
+        
+        response = {
+          success: results.length > 0,
+          results: results,
+          message: `Lead updated in ${results.length} tab(s)`
+        };
+        
+      } catch (error) {
+        console.error('❌ Error processing updateLead request:', error);
+        response = {
+          success: false,
+          error: error.message
+        };
+      }
+    } else if (params.action === 'deleteLead') {
+      // Handle deleteLead action via GET request
+      console.log('📥 deleteLead action received via GET');
+      
+      try {
+        const leadData = JSON.parse(params.leadData);
+        
+        console.log('📊 Delete lead data:', leadData);
+        
+        if (!leadData || !leadData.contactName) {
+          throw new Error('Missing leadData or contactName in deleteLead request');
+        }
+        
+        // Delete lead from all tabs (since we don't know which tab it's in)
+        const results = [];
+        for (const [tabKey, sheetName] of Object.entries(SHEET_NAMES)) {
+          try {
+            const result = deleteLeadFromSheet(leadData, tabKey);
+            if (result.success) {
+              results.push({ tab: tabKey, success: true, result });
+              console.log(`✅ Lead deleted from ${tabKey} successfully`);
+            }
+          } catch (error) {
+            console.log(`ℹ️ Lead not found in ${tabKey}:`, error.message);
+            // This is expected if the lead isn't in this tab
+          }
+        }
+        
+        response = {
+          success: results.length > 0,
+          results: results,
+          message: `Lead deleted from ${results.length} tab(s)`
+        };
+        
+      } catch (error) {
+        console.error('❌ Error processing deleteLead request:', error);
         response = {
           success: false,
           error: error.message

@@ -27,7 +27,9 @@ import {
   Database,
   RefreshCw,
   Settings,
-  Building
+  Building,
+  Save,
+  X
 } from 'lucide-react';
 import CRMGoogleSheetsSetup from '../components/CRMGoogleSheetsSetup';
 import { CRMGoogleSheetsService } from '../services/crmGoogleSheetsService';
@@ -50,6 +52,19 @@ const CRMPage = () => {
     notes: ''
   });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  const [editForm, setEditForm] = useState({
+    contactName: '',
+    email: '',
+    phone: '',
+    instagram: '',
+    organization: '',
+    website: '',
+    notes: ''
+  });
 
   // Toast notification helper
   const showToast = (message, type = 'success') => {
@@ -501,6 +516,162 @@ const CRMPage = () => {
     });
   };
 
+  // Open edit modal
+  const openEditModal = (client) => {
+    setEditingClient(client);
+    setEditForm({
+      contactName: client.contactName || '',
+      email: client.email || '',
+      phone: client.phone || '',
+      instagram: client.instagram || '',
+      organization: client.organization || '',
+      website: client.website || '',
+      notes: client.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  // Handle edit submit
+  const handleEditSubmit = async () => {
+    if (!editingClient) return;
+
+    try {
+      // Update the client data in Google Sheets via Google Apps Script
+      const params = new URLSearchParams({
+        action: 'updateLead',
+        leadData: JSON.stringify({
+          id: editingClient.id,
+          contactName: editForm.contactName,
+          email: editForm.email,
+          phone: editForm.phone,
+          instagram: editForm.instagram,
+          organization: editForm.organization,
+          website: editForm.website,
+          notes: editForm.notes
+        })
+      });
+
+      const response = await fetch(`${crmService.googleAppsScriptUrl}?${params.toString()}`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update lead: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Update failed');
+      }
+
+      // Update local state
+      const updateClientInArray = (array, setArray) => {
+        setArray(prev => prev.map(client => 
+          client.id === editingClient.id 
+            ? { ...client, ...editForm }
+            : client
+        ));
+      };
+
+      // Update in all arrays (in case the lead is in multiple tabs)
+      updateClientInArray(warmLeads, setWarmLeads);
+      updateClientInArray(contactedClients, setContactedClients);
+      updateClientInArray(coldLeads, setColdLeads);
+
+      // Save to Firebase
+      await saveCRMDataToFirebase();
+
+      showToast(`✅ Lead "${editForm.contactName}" updated successfully!`);
+      
+      // Close modal and reset state
+      setShowEditModal(false);
+      setEditingClient(null);
+      setEditForm({
+        contactName: '',
+        email: '',
+        phone: '',
+        instagram: '',
+        organization: '',
+        website: '',
+        notes: ''
+      });
+
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      showToast(`❌ Error updating lead: ${error.message}`, 'error');
+    }
+  };
+
+  // Handle edit cancel
+  const handleEditCancel = () => {
+    setShowEditModal(false);
+    setEditingClient(null);
+    setEditForm({
+      contactName: '',
+      email: '',
+      phone: '',
+      instagram: '',
+      organization: '',
+      website: '',
+      notes: ''
+    });
+  };
+
+  // Delete lead
+  const deleteLead = async (client) => {
+    if (!client) return;
+
+    if (!window.confirm(`Are you sure you want to permanently delete "${client.contactName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Delete from Google Sheets via Google Apps Script
+      const params = new URLSearchParams({
+        action: 'deleteLead',
+        leadData: JSON.stringify({
+          id: client.id,
+          contactName: client.contactName
+        })
+      });
+
+      const response = await fetch(`${crmService.googleAppsScriptUrl}?${params.toString()}`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete lead: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Delete failed');
+      }
+
+      // Remove from all local arrays
+      setWarmLeads(prev => prev.filter(c => c.id !== client.id));
+      setContactedClients(prev => prev.filter(c => c.id !== client.id));
+      setColdLeads(prev => prev.filter(c => c.id !== client.id));
+
+      // Save to Firebase
+      await saveCRMDataToFirebase();
+
+      showToast(`✅ Lead "${client.contactName}" deleted successfully!`);
+      
+      // Close modal if it was open
+      if (showEditModal && editingClient?.id === client.id) {
+        setShowEditModal(false);
+        setEditingClient(null);
+      }
+
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      showToast(`❌ Error deleting lead: ${error.message}`, 'error');
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       warm: 'bg-red-100 text-red-800',
@@ -628,7 +799,12 @@ const CRMPage = () => {
             <Eye className="w-4 h-4 mr-2" />
             View Details
           </Button>
-          <Button variant="outline" size="sm" className="flex-1">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => openEditModal(client)}
+            className="flex-1"
+          >
             <Edit className="w-4 h-4 mr-2" />
             Edit
           </Button>
@@ -1210,6 +1386,142 @@ const CRMPage = () => {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && editingClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Edit Lead</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleEditCancel}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact Name *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.contactName}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, contactName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Instagram
+                </label>
+                <input
+                  type="text"
+                  value={editForm.instagram}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, instagram: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Organization
+                </label>
+                <input
+                  type="text"
+                  value={editForm.organization}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, organization: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  value={editForm.website}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, website: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 mt-6">
+              <Button
+                onClick={handleEditSubmit}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+              <Button
+                onClick={handleEditCancel}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+
+            {/* Delete Button */}
+            <div className="mt-4 pt-4 border-t">
+              <Button
+                onClick={() => deleteLead(editingClient)}
+                variant="destructive"
+                className="w-full"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Lead
+              </Button>
             </div>
           </div>
         </div>
