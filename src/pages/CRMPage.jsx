@@ -667,11 +667,15 @@ const CRMPage = () => {
                     if (selectedClient.email) {
                       const subject = encodeURIComponent(`Follow up - ${selectedClient.contactName}`);
                       const body = encodeURIComponent(`Hi ${selectedClient.contactName},\n\nI hope this email finds you well. I wanted to follow up regarding our previous conversation.\n\nBest regards,\n[Your Name]`);
-                      window.open(`mailto:${selectedClient.email}?subject=${subject}&body=${body}`, '_self');
+                      
+                      // Open Gmail compose with pre-filled details
+                      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(selectedClient.email)}&su=${subject}&body=${body}`;
+                      window.open(gmailUrl, '_blank');
                     } else {
                       alert('No email address available for this lead');
                     }
                   }}
+                  title="Opens Gmail compose with pre-filled details"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Send Email
