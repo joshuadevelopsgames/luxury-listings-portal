@@ -169,10 +169,8 @@ class CRMGoogleSheetsService {
     // If no notes from the NOTES column, build notes from available information
     if (!lead.notes) {
       let notes = [];
-      if (lead.organization) notes.push(`Organization: ${lead.organization}`);
-      if (lead.website) notes.push(`Website: ${lead.website}`);
       
-      // Add category-specific context
+      // Add category-specific context only
       if (category === 'warmLeads') {
         notes.push('Warm lead from social media outreach');
       } else if (category === 'coldLeads') {

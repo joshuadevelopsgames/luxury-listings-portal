@@ -700,11 +700,6 @@ const CRMPage = () => {
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule Meeting
                 </Button>
-                {selectedClient.email && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    📧 {selectedClient.contactName} will be automatically invited
-                  </div>
-                )}
                 {selectedClient.instagram && (
                   <Button 
                     variant="outline"
