@@ -7,6 +7,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../contexts/AuthContext";
 import { firestoreService } from "../services/firestoreService";
+import { remoteConfigService } from "../services/remoteConfigService";
 
 import { 
   CheckCircle2, 
@@ -59,6 +60,11 @@ export default function Dashboard() {
     if (currentRole === 'admin') {
       console.log('📡 Setting up real-time admin stats listeners...');
       
+      // Initialize Remote Config for system uptime
+      remoteConfigService.initialize().then(() => {
+        console.log('✅ Remote Config initialized for admin dashboard');
+      });
+      
       // Listen for approved users changes
       const approvedUsersUnsubscribe = firestoreService.onApprovedUsersChange((users) => {
         console.log('📡 Approved users updated:', users.length);
@@ -77,11 +83,21 @@ export default function Dashboard() {
         }));
       });
 
+      // Listen to system uptime from Remote Config
+      const uptimeUnsubscribe = remoteConfigService.addListener((values) => {
+        console.log('📡 System uptime updated from Remote Config:', values.systemUptime);
+        setAdminStats(prev => ({
+          ...prev,
+          systemUptime: values.systemUptime
+        }));
+      });
+
       // Cleanup listeners on unmount
       return () => {
         console.log('🧹 Cleaning up admin stats listeners...');
         approvedUsersUnsubscribe();
         pendingUsersUnsubscribe();
+        uptimeUnsubscribe();
       };
     }
   }, [currentRole]);
@@ -94,7 +110,7 @@ export default function Dashboard() {
       }
 
       const [tutorialsData, progressData, tasksData, integrationsData] = await Promise.all([
-        Tutorial.list('order_index'),
+        Tutorial.list('order_index', currentRole),
         TutorialProgress.filter({ user_email: currentUser.email }),
         DailyTask.filter({ assigned_to: currentUser.email }, '-created_date'),
         AppIntegration.list('priority')
@@ -123,6 +139,18 @@ export default function Dashboard() {
       // Get pending users count
       const pendingUsers = await firestoreService.getPendingUsers();
       
+      // Get system uptime from Remote Config
+      let systemUptime = '99.9%';
+      try {
+        // Initialize Remote Config if not already done
+        if (!remoteConfigService.isInitialized) {
+          await remoteConfigService.initialize();
+        }
+        systemUptime = remoteConfigService.getSystemUptime();
+      } catch (e) {
+        console.warn('⚠️ Could not read systemUptime from Remote Config; using fallback');
+      }
+      
       // Calculate active users (users who have been active in the last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -139,13 +167,14 @@ export default function Dashboard() {
         totalUsers: approvedUsers.length,
         activeUsers: activeUsers,
         pendingApprovals: pendingUsers.length,
-        systemUptime: '99.9%' // This could be calculated from actual system metrics
+        systemUptime
       });
 
       console.log('✅ Admin stats loaded:', {
         totalUsers: approvedUsers.length,
         activeUsers,
-        pendingApprovals: pendingUsers.length
+        pendingApprovals: pendingUsers.length,
+        systemUptime
       });
     } catch (error) {
       console.error('❌ Error loading admin stats:', error);
@@ -244,7 +273,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
-      <WelcomeCard user={currentUser} overallProgress={getOverallProgress()} currentRole={currentRole} />
+      <WelcomeCard user={currentUser} overallProgress={getOverallProgress()} currentRole={currentRole} systemUptime={adminStats.systemUptime} adminStats={adminStats} />
       
       {/* Admin Note - Only show for admin users */}
       {currentRole === 'admin' && (

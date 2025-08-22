@@ -92,8 +92,10 @@ class FirestoreService {
   // Add a new pending user
   async addPendingUser(userData) {
     try {
+      // Never persist an internal `id` field; Firestore will assign the document ID
+      const { id: _ignoredInternalId, ...safeData } = userData || {};
       const docRef = await addDoc(collection(db, this.collections.PENDING_USERS), {
-        ...userData,
+        ...safeData,
         createdAt: serverTimestamp(),
         status: 'pending'
       });
@@ -108,17 +110,29 @@ class FirestoreService {
   // Get all pending users
   async getPendingUsers() {
     try {
+      console.log('🔍 DEBUG: getPendingUsers called');
+      console.log('🔍 DEBUG: Stack trace:', new Error().stack);
+      
       const querySnapshot = await getDocs(collection(db, this.collections.PENDING_USERS));
       const pendingUsers = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        // Never allow an internal `id` field to overwrite the Firestore document id
+        const { id: _ignoredInternalId, ...rest } = data;
         pendingUsers.push({
-          id: doc.id,
-          ...doc.data()
+          id: docSnap.id,
+          ...rest
         });
       });
+      
+      console.log('🔍 DEBUG: getPendingUsers returning', pendingUsers.length, 'users');
+      console.log('🔍 DEBUG: Pending users IDs:', pendingUsers.map(u => u.id));
+      console.log('🔍 DEBUG: Pending users emails:', pendingUsers.map(u => u.email));
+      
       return pendingUsers;
     } catch (error) {
       console.error('❌ Error getting pending users:', error);
+      console.error('🔍 DEBUG: Error stack:', error.stack);
       throw error;
     }
   }
@@ -137,8 +151,10 @@ class FirestoreService {
   // Update pending user
   async updatePendingUser(userId, updates) {
     try {
+      // Prevent `id` from being written into the document
+      const { id: _ignoredInternalId, ...safeUpdates } = updates || {};
       await updateDoc(doc(db, this.collections.PENDING_USERS, userId), {
-        ...updates,
+        ...safeUpdates,
         updatedAt: serverTimestamp()
       });
       console.log('✅ Pending user updated:', userId);
@@ -171,6 +187,9 @@ class FirestoreService {
   // Get all approved users
   async getApprovedUsers() {
     try {
+      console.log('🔍 DEBUG: getApprovedUsers called');
+      console.log('🔍 DEBUG: Stack trace:', new Error().stack);
+      
       const querySnapshot = await getDocs(collection(db, this.collections.APPROVED_USERS));
       const approvedUsers = [];
       querySnapshot.forEach((doc) => {
@@ -179,9 +198,15 @@ class FirestoreService {
           ...doc.data()
         });
       });
+      
+      console.log('🔍 DEBUG: getApprovedUsers returning', approvedUsers.length, 'users');
+      console.log('🔍 DEBUG: Approved users IDs:', approvedUsers.map(u => u.id));
+      console.log('🔍 DEBUG: Approved users emails:', approvedUsers.map(u => u.email));
+      
       return approvedUsers;
     } catch (error) {
       console.error('❌ Error getting approved users:', error);
+      console.error('🔍 DEBUG: Error stack:', error.stack);
       throw error;
     }
   }
@@ -344,6 +369,11 @@ class FirestoreService {
     }
   }
 
+  // Convenience: save system uptime
+  async saveSystemUptime(value) {
+    return this.saveSystemConfig('systemUptime', value);
+  }
+
   // Get system config
   async getSystemConfig(key) {
     try {
@@ -359,6 +389,18 @@ class FirestoreService {
       console.error('❌ Error getting system config:', error);
       throw error;
     }
+  }
+
+  // Listen to a system config key in real-time
+  onSystemConfigChange(key, callback) {
+    const docRef = doc(db, this.collections.SYSTEM_CONFIG, key);
+    return onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        callback(docSnap.data().value);
+      } else {
+        callback(null);
+      }
+    });
   }
 
   // ===== MIGRATION HELPERS =====
@@ -434,10 +476,13 @@ class FirestoreService {
   onPendingUsersChange(callback) {
     return onSnapshot(collection(db, this.collections.PENDING_USERS), (snapshot) => {
       const pendingUsers = [];
-      snapshot.forEach((doc) => {
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        // Never allow an internal `id` field to overwrite the Firestore document id
+        const { id: _ignoredInternalId, ...rest } = data;
         pendingUsers.push({
-          id: doc.id,
-          ...doc.data()
+          id: docSnap.id,
+          ...rest
         });
       });
       callback(pendingUsers);

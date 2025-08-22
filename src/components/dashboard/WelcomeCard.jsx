@@ -5,8 +5,10 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Calendar, Target, Trophy, Users, TrendingUp, BookOpen, Shield, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
-const WelcomeCard = ({ user, overallProgress, currentRole }) => {
+const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminStats }) => {
+  const navigate = useNavigate();
   // Use the user prop instead of currentUser
   const currentUser = user;
   const getGreeting = () => {
@@ -26,12 +28,11 @@ const WelcomeCard = ({ user, overallProgress, currentRole }) => {
           journey: 'System Management & User Control',
           journeyDesc: 'Managing the Luxury Listings Portal and all user accounts',
           progressDesc: 'You have full access to all system features and user management capabilities.',
-          motivationalMessage: (progress) => `You're managing a system with ${currentUser?.stats?.totalUsers || 0} users and ${currentUser?.stats?.pendingApprovals || 0} pending approvals. Keep the system running smoothly!`,
-          readinessScore: (progress) => `System Status: ${currentUser?.stats?.systemUptime || '99.9%'} Uptime`,
+          motivationalMessage: (progress) => `You're managing a system with ${adminStats?.totalUsers || 0} users and ${adminStats?.pendingApprovals || 0} pending approvals. Keep the system running smoothly!`,
+          readinessScore: (progress) => `System Status: ${systemUptime || '99.9%'} Uptime`,
           quickActions: [
             { text: 'User Management', icon: Users },
-            { text: 'System Monitoring', icon: Shield },
-            { text: 'Role Assignment', icon: UserCheck }
+            { text: 'System Monitoring', icon: Shield }
           ]
         };
       case 'content_director':
@@ -82,7 +83,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole }) => {
             return "Social Media Master";
           },
           quickActions: [
-            { text: 'Content Calendar', icon: Calendar },
+            { text: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
             { text: 'Brand Guidelines', icon: BookOpen },
             { text: 'Analytics Dashboard', icon: TrendingUp }
           ]
@@ -173,6 +174,66 @@ const WelcomeCard = ({ user, overallProgress, currentRole }) => {
 
   const roleContent = getRoleSpecificContent();
 
+  // Handle quick action button clicks
+  const handleQuickAction = (actionText) => {
+    switch (actionText) {
+      case 'User Management':
+        navigate('/user-management');
+        break;
+      case 'System Monitoring':
+        navigate('/analytics');
+        break;
+      case 'View Style Guide':
+        navigate('/resources');
+        break;
+      case 'Meet with Pankaj':
+        navigate('/team');
+        break;
+      case 'Review Competitors':
+        navigate('/analytics');
+        break;
+      case 'Content Calendar':
+        navigate('/content-calendar');
+        break;
+      case 'Brand Guidelines':
+        navigate('/resources');
+        break;
+      case 'Analytics Dashboard':
+        navigate('/analytics');
+        break;
+      case 'Team Directory':
+        navigate('/team');
+        break;
+      case 'HR Policies':
+        navigate('/resources');
+        break;
+      case 'Performance Reviews':
+        navigate('/hr-analytics');
+        break;
+      case 'CRM Dashboard':
+        navigate('/crm');
+        break;
+      case 'Sales Pipeline':
+        navigate('/sales-pipeline');
+        break;
+      case 'Lead Management':
+        navigate('/leads');
+        break;
+      case 'Company Handbook':
+        navigate('/resources');
+        break;
+      case 'Meet the Team':
+        navigate('/team');
+        break;
+      case 'Training Modules':
+        navigate('/tutorials');
+        break;
+      default:
+        console.log('Action not implemented:', actionText);
+        break;
+    }
+  };
+
   return (
     <Card className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white border-none">
       <CardHeader className="pb-4">
@@ -244,7 +305,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole }) => {
           {roleContent.quickActions.map((action, index) => {
             const Icon = action.icon;
             return (
-              <Button key={index} variant="outline" size="sm" className="border-white/30 text-black bg-white hover:bg-white/90">
+              <Button key={index} variant="outline" size="sm" className="border-white/30 text-black bg-white hover:bg-white/90" onClick={() => handleQuickAction(action.text)}>
                 <Icon className="w-4 h-4 mr-2" />
                 {action.text}
               </Button>

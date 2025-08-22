@@ -101,3 +101,5 @@ The Google Sheets API **does not allow write operations** with API keys. API key
 
 **Need help?** The Google Apps Script approach is much more reliable than trying to use API keys for write operations. Once set up, your app will have full read/write access to Google Sheets!
 
+
+

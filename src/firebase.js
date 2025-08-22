@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getRemoteConfig, fetchAndActivate, getValue } from 'firebase/remote-config';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -37,6 +38,20 @@ export const db = getFirestore(app);
 console.log('🔥 Firestore database initialized:', db);
 console.log('🔥 Firestore database name:', db.name);
 console.log('🔥 Firestore database app:', db.app);
+
+// Initialize Remote Config
+export const remoteConfig = getRemoteConfig(app);
+
+// Set minimum fetch interval to 0 for development (default is 12 hours)
+remoteConfig.settings.minimumFetchIntervalMillis = 0;
+
+// Set default values
+remoteConfig.defaultConfig = {
+  systemUptime: '99.9%'
+};
+
+// Export Remote Config functions
+export { fetchAndActivate, getValue } from 'firebase/remote-config';
 
 export default app;
 

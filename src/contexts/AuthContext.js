@@ -111,12 +111,17 @@ export function AuthProvider({ children }) {
       console.log('🔍 User data for role:', userData);
       
       const updatedUser = {
-        ...currentUser,
-        ...userData,
+        ...currentUser, // Preserve all existing user data
+        ...userData, // Override with role-specific data
         role: newRole, // Keep for backward compatibility
         primaryRole: newRole, // Update primary role
-        // Preserve the original email - this is crucial for admin access
-        email: currentUser.email
+        // Preserve the original email and user-specific data - this is crucial for admin access
+        email: currentUser.email,
+        firstName: currentUser.firstName, // Keep actual user's first name
+        lastName: currentUser.lastName, // Keep actual user's last name
+        displayName: currentUser.displayName, // Keep actual user's display name
+        avatar: currentUser.avatar, // Keep actual user's avatar
+        uid: currentUser.uid // Keep actual user's UID
       };
       
       setCurrentUser(updatedUser);
@@ -243,8 +248,8 @@ export function AuthProvider({ children }) {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName || userData.displayName,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
+                firstName: user.displayName?.split(' ')[0] || userData.firstName,
+                lastName: user.displayName?.split(' ').slice(1).join(' ') || userData.lastName,
                 role: roleToUse,
                 roles: Object.values(USER_ROLES), // Admin can access all roles
                 primaryRole: USER_ROLES.ADMIN, // Keep admin as primary
@@ -302,18 +307,18 @@ export function AuthProvider({ children }) {
                 const mergedUser = {
                   uid: user.uid,
                   email: user.email,
-                  displayName: user.displayName || userData.displayName,
-                  firstName: approvedUser.firstName || userData.firstName,
-                  lastName: approvedUser.lastName || userData.lastName,
+                  displayName: approvedUser.displayName || user.displayName || userData.displayName,
+                  firstName: approvedUser.firstName || user.displayName?.split(' ')[0] || userData.firstName,
+                  lastName: approvedUser.lastName || user.displayName?.split(' ').slice(1).join(' ') || userData.lastName,
                   role: roleToUse, // Keep for backward compatibility
                   roles: assignedRoles, // Store all assigned roles
                   primaryRole: primaryRole, // Store primary role
-                  department: userData.department,
-                  startDate: userData.startDate,
-                  avatar: user.photoURL || userData.avatar,
-                  bio: userData.bio,
-                  skills: userData.skills,
-                  stats: userData.stats,
+                  department: approvedUser.department || userData.department,
+                  startDate: approvedUser.startDate || userData.startDate,
+                  avatar: approvedUser.avatar || user.photoURL || userData.avatar,
+                  bio: approvedUser.bio || userData.bio,
+                  skills: approvedUser.skills || userData.skills,
+                  stats: approvedUser.stats || userData.stats, // Use actual user stats from Firestore
                   isApproved: true
                 };
                 
@@ -363,8 +368,29 @@ export function AuthProvider({ children }) {
                 
                 // Add to pending users in Firestore
                 try {
-                  await firestoreService.addPendingUser(pendingUserData);
+                  console.log('🔍 DEBUG: Checking for existing pending user for:', user.email);
+                  console.log('🔍 DEBUG: Current stack trace:', new Error().stack);
+                  
+                  // Prevent duplicates: check if a pending user with this email already exists
+                  const existingPending = await firestoreService.getPendingUsers();
+                  console.log('🔍 DEBUG: Found existing pending users:', existingPending.length);
+                  console.log('🔍 DEBUG: Existing pending emails:', existingPending.map(u => u.email));
+                  
+                  const alreadyPending = existingPending.some(u => u.email === user.email);
+                  console.log('🔍 DEBUG: User already pending?', alreadyPending);
+                  
+                  if (alreadyPending) {
+                    console.log('ℹ️ Pending user already exists for', user.email, '- skipping add');
+                    console.log('🔍 DEBUG: Skipping duplicate pending user creation');
+                  } else {
+                    console.log('🔍 DEBUG: No existing pending user found, adding new one');
+                    console.log('🔍 DEBUG: Pending user data to add:', pendingUserData);
+                    await firestoreService.addPendingUser(pendingUserData);
+                    console.log('✅ Added user to pending users:', user.email);
+                  }
                 } catch (error) {
+                  console.error('❌ ERROR adding pending user:', error);
+                  console.error('❌ ERROR stack:', error.stack);
                   console.warn('⚠️ Could not add user to pending users:', error);
                 }
                 
@@ -400,6 +426,49 @@ export function AuthProvider({ children }) {
       return unsubscribe;
     }
   }, [isInitialized]);
+
+  const handleApproveUser = async (pendingUser) => {
+    try {
+      console.log('✅ Approving user:', pendingUser);
+      
+      // Create approved user data with support for multiple roles
+      const approvedUserData = {
+        email: pendingUser.email,
+        firstName: pendingUser.firstName || 'User',
+        lastName: pendingUser.lastName || 'Name',
+        role: pendingUser.requestedRole || 'content_director', // Keep for backward compatibility
+        primaryRole: pendingUser.requestedRole || 'content_director', // Primary role
+        roles: [pendingUser.requestedRole || 'content_director'], // Array of all roles
+        bio: pendingUser.bio || '',
+        skills: pendingUser.skills || [],
+        isApproved: true,
+        approvedAt: new Date().toISOString(),
+        approvedBy: currentUser.email,
+        uid: pendingUser.uid || `user-${Date.now()}`, // Generate uid if not present
+        displayName: pendingUser.displayName || `${pendingUser.firstName || 'User'} ${pendingUser.lastName || 'Name'}`,
+        department: getDepartmentForRole(pendingUser.requestedRole || 'content_director'),
+        startDate: new Date().toISOString().split('T')[0],
+        phone: pendingUser.phone || '',
+        location: pendingUser.location || 'Remote',
+        avatar: pendingUser.avatar || ''
+      };
+
+      // Remove any undefined values to prevent Firestore errors
+      Object.keys(approvedUserData).forEach(key => {
+        if (approvedUserData[key] === undefined) {
+          delete approvedUserData[key];
+        }
+      });
+
+      // Approve the user (this will move them from pending to approved)
+      await firestoreService.approveUser(pendingUser.id, approvedUserData);
+      
+      console.log('✅ User approved successfully');
+    } catch (error) {
+      console.error('❌ Error approving user:', error);
+      alert('Failed to approve user. Please try again.');
+    }
+  };
 
   const value = {
     currentUser,

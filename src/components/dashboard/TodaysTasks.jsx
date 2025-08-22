@@ -3,20 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
-import { 
-  Clock, 
-  CheckCircle2, 
-  Target,
-  BookOpen,
-  Palette,
-  BarChart3,
-  TrendingUp,
-  Users,
-  Eye
-} from 'lucide-react';
+import { CheckCircle2, Clock, BookOpen, Target, Calendar, TrendingUp, FileText, Users, BarChart3, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const TodaysTasks = ({ tasks }) => {
+const TodaysTasks = ({ tasks = [] }) => {
   const [completedTasks, setCompletedTasks] = useState(new Set());
+  const navigate = useNavigate();
 
   const handleTaskToggle = (taskId) => {
     const newCompleted = new Set(completedTasks);
@@ -189,8 +181,8 @@ const TodaysTasks = ({ tasks }) => {
               <span className="font-medium">Content Excellence</span>
               <p className="text-xs mt-1">Complete tasks to build your luxury content foundation</p>
             </div>
-            <Button variant="outline" size="sm">
-              View All Tasks
+            <Button variant="outline" size="sm" onClick={() => navigate('/tasks')}>
+              View All Tasks <ArrowRight className="w-3 h-3 ml-1" />
             </Button>
           </div>
         </div>

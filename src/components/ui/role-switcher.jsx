@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES, ROLE_PERMISSIONS } from '../../entities/UserRoles';
 import { getAllowedRolesForUser } from '../../entities/UserRoleMapping';
-import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield } from 'lucide-react';
+import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield, Edit } from 'lucide-react';
+import EditProfileModal from './EditProfileModal';
 
 const RoleSwitcher = () => {
   const { currentRole, switchRole, getCurrentRolePermissions, currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   
   const currentRoleData = getCurrentRolePermissions() || { color: 'blue', displayName: 'Loading...' };
   
@@ -138,6 +140,17 @@ const RoleSwitcher = () => {
     return roleMap[role] || role;
   };
 
+  const getRoleIcon = (role) => {
+    const iconMap = {
+      'admin': '👑',
+      'content_director': '🎨',
+      'social_media_manager': '📱',
+      'hr_manager': '👥',
+      'sales_manager': '💼'
+    };
+    return iconMap[role] || '👤';
+  };
+
   return (
     <div className="relative">
       <button
@@ -145,8 +158,21 @@ const RoleSwitcher = () => {
         className={`flex items-center space-x-3 px-4 py-2 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${getRoleColor(currentRoleData.color)} hover:shadow-lg`}
         title="Switch Profile Role"
       >
-        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-          <User className="w-4 h-4 text-white" />
+        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+          {currentUser?.avatar ? (
+            <img 
+              src={currentUser.avatar} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div className={`w-full h-full flex items-center justify-center ${currentUser?.avatar ? 'hidden' : ''}`}>
+            <User className="w-4 h-4 text-white" />
+          </div>
         </div>
         <div className="text-left">
           <div className="font-medium text-sm flex items-center gap-2">
@@ -167,7 +193,65 @@ const RoleSwitcher = () => {
 
       {/* Profile Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+          {/* User Profile Card */}
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                {currentUser?.avatar ? (
+                  <img 
+                    src={currentUser.avatar} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div className={`w-full h-full flex items-center justify-center text-2xl ${currentUser?.avatar ? 'hidden' : ''}`}>
+                  <User className="w-8 h-8 text-gray-500" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  {currentUser?.firstName} {currentUser?.lastName}
+                </h3>
+                <p className="text-sm text-gray-600 truncate">{currentUser?.email}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                    {currentUser?.department || 'General'}
+                  </span>
+                  {currentUser?.email === 'jrsschroeder@gmail.com' && (
+                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                      Admin
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <button
+                  onClick={() => setIsEditOpen(true)}
+                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 p-2"
+                  title="Edit Profile"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+              </div>
+            </div>
+            
+            {/* Current Role Display */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div className="text-xs text-gray-500 mb-1">Current Role</div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{getRoleIcon(currentRole)}</span>
+                <span className="font-medium text-gray-900">{getRoleDisplayName(currentRole)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Role Switching Section */}
           <div className="p-4">
             <div className="text-sm font-medium text-gray-700 mb-4">Switch Profile Role</div>
             
@@ -184,47 +268,26 @@ const RoleSwitcher = () => {
                 <button
                   key={option.role}
                   onClick={() => handleRoleSwitch(option.role)}
-                  className={`w-full text-left p-4 rounded-lg border transition-all duration-200 mb-3 ${
+                  className={`w-full text-left p-3 rounded-lg border transition-all duration-200 mb-2 ${
                     isActive 
                       ? `${getRoleColor(option.color)} border-2` 
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-start space-x-3">
-                    <span className="text-2xl">{option.icon}</span>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                      <span className="text-lg">{option.icon}</span>
+                    </div>
                     <div className="flex-1">
-                      <div className={`font-medium ${isActive ? 'text-gray-900' : 'text-gray-900'}`}>
+                      <div className={`font-medium text-sm ${isActive ? 'text-gray-900' : 'text-gray-900'}`}>
                         {option.label}
                       </div>
-                      <div className={`text-xs mt-1 ${isActive ? 'text-gray-700' : 'text-gray-500'}`}>
+                      <div className={`text-xs mt-0.5 ${isActive ? 'text-gray-700' : 'text-gray-500'}`}>
                         {option.description}
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {option.features.slice(0, 2).map((feature, index) => (
-                          <span 
-                            key={index}
-                            className={`text-xs px-2 py-1 rounded-full ${
-                              isActive 
-                                ? `${getBadgeColor(option.color)} bg-opacity-20 text-white` 
-                                : 'bg-gray-100 text-gray-600'
-                            }`}
-                          >
-                            {feature}
-                          </span>
-                        ))}
-                        {option.features.length > 2 && (
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            isActive 
-                              ? `${getBadgeColor(option.color)} bg-opacity-20 text-white` 
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            +{option.features.length - 2} more
-                          </span>
-                        )}
                       </div>
                     </div>
                     {isActive && (
-                      <div className="w-2 h-2 bg-current rounded-full mt-2"></div>
+                      <div className="w-2 h-2 bg-current rounded-full"></div>
                     )}
                   </div>
                 </button>
@@ -253,6 +316,24 @@ const RoleSwitcher = () => {
           onClick={() => setIsOpen(false)}
         />
       )}
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        user={currentUser}
+        isAdmin={currentUser?.email === 'jrsschroeder@gmail.com'}
+        onSave={async (updates) => {
+          try {
+            const { firestoreService } = await import('../../services/firestoreService');
+            await firestoreService.updateApprovedUser(currentUser.email, updates);
+            setIsEditOpen(false);
+          } catch (e) {
+            console.error('Failed to update profile', e);
+            alert('Failed to update profile.');
+          }
+        }}
+      />
     </div>
   );
 };

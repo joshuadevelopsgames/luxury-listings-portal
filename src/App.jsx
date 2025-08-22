@@ -18,6 +18,9 @@ import SalesPipelinePage from './pages/SalesPipelinePage';
 import LeadManagementPage from './pages/LeadManagementPage';
 import UserManagement from './pages/UserManagement';
 import Analytics from './pages/Analytics';
+import GoogleAnalyticsSetup from './components/GoogleAnalyticsSetup';
+import ContentCalendar from './pages/ContentCalendar';
+import MetaCallback from './pages/MetaCallback';
 import WaitingForApproval from './pages/WaitingForApproval';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
@@ -89,6 +92,7 @@ function AppLayout() {
       case USER_ROLES.ADMIN:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
+          { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
           { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/analytics' },
         ];
@@ -106,6 +110,7 @@ function AppLayout() {
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
+          { id: 'content-calendar', name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
           { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
@@ -203,6 +208,9 @@ function AppLayout() {
           <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
           <Route path="/sales-pipeline" element={<ProtectedRoute><SalesPipelinePage /></ProtectedRoute>} />
           <Route path="/leads" element={<ProtectedRoute><LeadManagementPage /></ProtectedRoute>} />
+          <Route path="/content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
+          <Route path="/meta-callback" element={<MetaCallback />} />
+          <Route path="/setup-ga" element={<ProtectedRoute><GoogleAnalyticsSetup /></ProtectedRoute>} />
         </Routes>
       </main>
 

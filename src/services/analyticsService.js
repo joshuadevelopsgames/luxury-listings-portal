@@ -196,11 +196,10 @@ class AnalyticsService {
     return responseData;
   }
 
-  // Get overview metrics (users, pageviews, sessions, etc.)
+  // Get overview metrics
   async getOverviewMetrics(dateRange = '7d') {
     try {
       if (!this.isReady()) {
-        console.warn('⚠️ Analytics service not configured, returning mock data');
         return this.getMockOverviewData();
       }
 
@@ -208,7 +207,7 @@ class AnalyticsService {
       
       const dateRangeObj = this.getDateRange(dateRange);
       
-      // Get users metric
+      // Get main metrics in a single request
       const usersResponse = await this.makeAnalyticsApiCall({
         dateRanges: [{
           startDate: dateRangeObj.startDate,
@@ -224,28 +223,20 @@ class AnalyticsService {
         ]
       });
 
-      // Get returning users (users who had sessions in previous period)
-      const returningUsersResponse = await this.makeAnalyticsApiCall({
-        dateRanges: [{
-          startDate: dateRangeObj.startDate,
-          endDate: dateRangeObj.endDate
-        }],
-        metrics: [
-          { name: 'returningUsers' }
-        ]
-      });
-
+      // Calculate returning users as the difference between total and new users
       const data = usersResponse.rows?.[0]?.metricValues || [];
-      const returningData = returningUsersResponse.rows?.[0]?.metricValues || [];
+      const totalUsers = parseInt(data[0]?.value || '0');
+      const newUsers = parseInt(data[1]?.value || '0');
+      const returningUsers = Math.max(0, totalUsers - newUsers);
 
       const result = {
-        totalUsers: parseInt(data[0]?.value || '0'),
-        newUsers: parseInt(data[1]?.value || '0'),
+        totalUsers: totalUsers,
+        newUsers: newUsers,
         sessions: parseInt(data[2]?.value || '0'),
         pageViews: parseInt(data[3]?.value || '0'),
         bounceRate: parseFloat(data[4]?.value || '0'),
         avgSessionDuration: this.formatDuration(parseFloat(data[5]?.value || '0')),
-        returningUsers: parseInt(returningData[0]?.value || '0'),
+        returningUsers: returningUsers,
         fromSavedConfig: true,
         propertyId: this.propertyId
       };
@@ -373,8 +364,8 @@ class AnalyticsService {
         ],
         metrics: [
           { name: 'screenPageViews' },
-          { name: 'uniquePageviews' },
-          { name: 'averageSessionDuration' }
+          { name: 'totalUsers' },
+          { name: 'userEngagementDuration' }
         ],
         limit: limit
       });
@@ -382,13 +373,15 @@ class AnalyticsService {
       const pages = (response.rows || []).map(row => {
         const title = row.dimensionValues[0].value;
         const views = parseInt(row.metricValues[0].value);
-        const uniqueViews = parseInt(row.metricValues[1].value);
-        const avgTime = this.formatDuration(parseFloat(row.metricValues[2].value));
+        const uniqueUsers = parseInt(row.metricValues[1].value);
+        const engagementDuration = parseFloat(row.metricValues[2].value);
+        const avgTimeSeconds = views > 0 ? engagementDuration / views : 0;
+        const avgTime = this.formatDuration(avgTimeSeconds);
         
         return {
           name: title || 'Untitled Page',
           views,
-          uniqueViews,
+          uniqueViews: uniqueUsers,
           avgTime
         };
       });

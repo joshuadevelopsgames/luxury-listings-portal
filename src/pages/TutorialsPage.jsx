@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { User } from "../entities/User";
 import { Tutorial, TutorialProgress } from "../entities/index";
+import { useAuth } from "../contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -28,10 +29,12 @@ const categoryColors = {
   "influencer-marketing": "bg-pink-100 text-pink-800",
   "crisis-management": "bg-yellow-100 text-yellow-800",
   tools: "bg-teal-100 text-teal-800",
-  trends: "bg-cyan-100 text-cyan-800"
+  trends: "bg-cyan-100 text-cyan-800",
+  "admin-portal": "bg-red-100 text-red-800"
 };
 
 export default function TutorialsPage() {
+  const { currentRole } = useAuth();
   const [user, setUser] = useState(null);
   const [tutorials, setTutorials] = useState([]);
   const [progress, setProgress] = useState([]);
@@ -65,7 +68,7 @@ export default function TutorialsPage() {
       setUser(currentUser);
 
       const [tutorialsData, progressData] = await Promise.all([
-        Tutorial.list('order_index'),
+        Tutorial.list('order_index', currentRole),
         TutorialProgress.filter({ user_email: currentUser.email })
       ]);
 

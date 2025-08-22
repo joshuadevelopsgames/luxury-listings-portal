@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -19,7 +19,8 @@ import {
   MapPin,
   Briefcase,
   Clock,
-  User
+  User,
+  X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePendingUsers } from '../contexts/PendingUsersContext';
@@ -37,18 +38,38 @@ const UserManagement = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false); // Prevent multiple simultaneous operations
+  const approvedUsersListenerIdRef = useRef(null);
+  const [showRoleAssignmentModal, setShowRoleAssignmentModal] = useState(false);
+  const [selectedUserForRoles, setSelectedUserForRoles] = useState(null);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+
+  // Debug logging for component renders
+  console.log('🔍 DEBUG: UserManagement component rendered');
+  console.log('🔍 DEBUG: pendingUsers count:', pendingUsers.length);
+  console.log('🔍 DEBUG: approvedUsers count:', approvedUsers.length);
+  console.log('🔍 DEBUG: loading state:', loading);
+  console.log('🔍 DEBUG: isProcessing state:', isProcessing);
+  console.log('🔍 DEBUG: firestoreStatus:', firestoreStatus);
 
   // Load approved users from Firestore
   useEffect(() => {
+    console.log('🔍 DEBUG: loadApprovedUsers useEffect triggered');
     const loadApprovedUsers = async () => {
       try {
+        console.log('🔍 DEBUG: Starting loadApprovedUsers...');
         setLoading(true);
         const users = await firestoreService.getApprovedUsers();
+        console.log('🔍 DEBUG: Loaded approved users:', users.length);
+        console.log('🔍 DEBUG: Approved users emails:', users.map(u => u.email));
         setApprovedUsers(users);
+        console.log('🔍 DEBUG: Approved users state updated');
       } catch (error) {
         console.error('Error loading approved users:', error);
+        console.error('🔍 DEBUG: Error stack:', error.stack);
       } finally {
         setLoading(false);
+        console.log('🔍 DEBUG: Loading set to false');
       }
     };
 
@@ -57,15 +78,44 @@ const UserManagement = () => {
 
   // Subscribe to real-time approved users changes
   useEffect(() => {
+    console.log('🔄 Setting up approved users real-time listener...');
+    
+    // TEMPORARILY DISABLED: Use manual loading only to prevent infinite loops
+    console.log('⚠️ Approved users real-time listener temporarily disabled to prevent infinite loops');
+    
+    // Return empty cleanup function since listener is disabled
+    return () => {
+      console.log('🔄 Approved users real-time listener cleanup (disabled)');
+    };
+    
+    /* DISABLED REAL-TIME LISTENER CODE:
+    // Generate a unique listener ID to prevent multiple listeners
+    const listenerId = `approved-users-${Date.now()}-${Math.random()}`;
+    approvedUsersListenerIdRef.current = listenerId;
+    
     const unsubscribe = firestoreService.onApprovedUsersChange((users) => {
+      // Only process updates from this listener instance
+      if (approvedUsersListenerIdRef.current !== listenerId) {
+        console.log('📡 Ignoring approved users update from old listener instance');
+        return;
+      }
+      
       console.log('📡 Approved users updated:', users);
       setApprovedUsers(users);
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('🔄 Cleaning up approved users listener...');
+      // Clear the listener ID to prevent processing updates from this listener
+      if (approvedUsersListenerIdRef.current === listenerId) {
+        approvedUsersListenerIdRef.current = null;
+      }
+      unsubscribe();
+    };
+    */
   }, []);
 
-  // Debug function to show all pending users
+  // Debug function to show all pending users (only call manually if needed)
   const debugPendingUsers = () => {
     console.log('🔍 DEBUG: All pending users:');
     pendingUsers.forEach((user, index) => {
@@ -73,17 +123,18 @@ const UserManagement = () => {
     });
   };
 
-  // Call debug function when component loads
-  useEffect(() => {
-    debugPendingUsers();
-  }, [pendingUsers]);
-
   const handleApproveUserAsAdmin = async (pendingUser) => {
+    if (isProcessing) {
+      console.log('⏳ Already processing an operation, skipping...');
+      return;
+    }
+    
     try {
+      setIsProcessing(true);
       console.log('✅ Approving user as admin:', pendingUser);
       console.log('🔍 Pending user ID:', pendingUser.id);
       console.log('🔍 Pending user email:', pendingUser.email);
-      
+
       // Create approved user data with admin role
       const approvedUserData = {
         email: pendingUser.email,
@@ -118,14 +169,12 @@ const UserManagement = () => {
       console.log('🔍 Cleaned approved user data:', approvedUserData);
 
       // Approve the user as admin
-      console.log('🔄 Calling firestoreService.approveUser...');
+      console.log('🔄 Calling approveUser from context...');
       await approveUser(pendingUser.id, approvedUserData);
-      
+
       console.log('✅ User approved as admin successfully');
       
-      // Refresh from Firestore to ensure permanent changes are loaded
-      console.log('🔄 Refreshing from Firestore to confirm permanent changes...');
-      await handleRefreshUsers();
+      // Don't call handleRefreshUsers here - let the real-time listener handle it
       
     } catch (error) {
       console.error('❌ Error approving user as admin:', error);
@@ -135,6 +184,8 @@ const UserManagement = () => {
         stack: error.stack
       });
       alert('Failed to approve user as admin. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -142,14 +193,14 @@ const UserManagement = () => {
     try {
       console.log('✅ Approving user:', pendingUser);
       
-      // Create approved user data
+      // Create approved user data with support for multiple roles
       const approvedUserData = {
         email: pendingUser.email,
         firstName: pendingUser.firstName || 'User',
         lastName: pendingUser.lastName || 'Name',
-        role: pendingUser.requestedRole || 'content_director',
-        primaryRole: pendingUser.requestedRole || 'content_director',
-        roles: [pendingUser.requestedRole || 'content_director'],
+        role: pendingUser.requestedRole || 'content_director', // Keep for backward compatibility
+        primaryRole: pendingUser.requestedRole || 'content_director', // Primary role
+        roles: [pendingUser.requestedRole || 'content_director'], // Array of all roles
         bio: pendingUser.bio || '',
         skills: pendingUser.skills || [],
         isApproved: true,
@@ -182,7 +233,13 @@ const UserManagement = () => {
   };
 
   const handleRejectUser = async (pendingUser) => {
+    if (isProcessing) {
+      console.log('⏳ Already processing an operation, skipping...');
+      return;
+    }
+    
     try {
+      setIsProcessing(true);
       console.log('❌ Rejecting user:', pendingUser);
       console.log('🔍 Pending user ID:', pendingUser.id);
       console.log('🔍 Pending user email:', pendingUser.email);
@@ -210,9 +267,7 @@ const UserManagement = () => {
       
       console.log('✅ User rejected successfully');
       
-      // Refresh from Firestore to ensure permanent changes are loaded
-      console.log('🔄 Refreshing from Firestore to confirm permanent changes...');
-      await handleRefreshUsers();
+      // Don't call handleRefreshUsers here - let the real-time listener handle it
       
     } catch (error) {
       console.error('❌ Error rejecting user:', error);
@@ -222,6 +277,8 @@ const UserManagement = () => {
         stack: error.stack
       });
       alert('Failed to reject user. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -297,7 +354,12 @@ const UserManagement = () => {
 
   // Function to clean up duplicate pending users
   const handleCleanDuplicates = async () => {
+    if (isProcessing) {
+      console.log('⏳ Already processing an operation, skipping...');
+      return;
+    }
     try {
+      setIsProcessing(true);
       console.log('🧹 Cleaning up duplicate pending users...');
       
       // Group users by email
@@ -317,8 +379,12 @@ const UserManagement = () => {
           // Keep the first user, remove the rest
           for (let i = 1; i < users.length; i++) {
             console.log(`🗑️ Removing duplicate user: ${users[i].id}`);
-            await removePendingUser(users[i].id);
-            removedCount++;
+            try {
+              await removePendingUser(users[i].id);
+              removedCount++;
+            } catch (error) {
+              console.error('❌ Failed to remove user:', users[i].id, error);
+            }
           }
         }
       }
@@ -326,45 +392,61 @@ const UserManagement = () => {
       console.log(`✅ Cleaned up ${removedCount} duplicate users`);
       alert(`Cleaned up ${removedCount} duplicate users`);
       
-      // Refresh from Firestore to ensure permanent changes are loaded
-      console.log('🔄 Refreshing from Firestore to confirm permanent changes...');
-      await handleRefreshUsers();
+      // Don't call handleRefreshUsers here - let the real-time listener handle it
       
     } catch (error) {
       console.error('❌ Error cleaning duplicates:', error);
       alert('Failed to clean duplicates. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   // Function to refresh pending users from Firestore
   const handleRefreshUsers = async () => {
+    console.log('🔍 DEBUG: handleRefreshUsers called');
+    console.log('🔍 DEBUG: Current pendingUsers count before refresh:', pendingUsers.length);
+    console.log('🔍 DEBUG: Current approvedUsers count before refresh:', approvedUsers.length);
+    
     try {
-      console.log('🔄 Refreshing pending users from Firestore...');
+      console.log('🔄 Refreshing users from Firestore...');
       setLoading(true);
       setFirestoreStatus('loading');
       
       // Load current pending users from Firestore
       const currentPendingUsers = await firestoreService.getPendingUsers();
       console.log('📡 Loaded pending users from Firestore:', currentPendingUsers);
+      console.log('🔍 DEBUG: Pending users from Firestore:', currentPendingUsers.map(u => ({ id: u.id, email: u.email })));
+      
+      // Load current approved users from Firestore
+      const currentApprovedUsers = await firestoreService.getApprovedUsers();
+      console.log('📡 Loaded approved users from Firestore:', currentApprovedUsers);
+      console.log('🔍 DEBUG: Approved users from Firestore:', currentApprovedUsers.map(u => ({ id: u.id, email: u.email })));
       
       // Update the context with the fresh data
+      console.log('🔍 DEBUG: Calling refreshPendingUsers from context...');
       await refreshPendingUsers();
       
+      // Update approved users state
+      console.log('🔍 DEBUG: Setting approved users state...');
+      setApprovedUsers(currentApprovedUsers);
+      
       // Show success message with count
-      const message = `✅ Refreshed! Found ${currentPendingUsers.length} pending users in Firestore`;
+      const message = `✅ Refreshed! Found ${currentPendingUsers.length} pending users and ${currentApprovedUsers.length} approved users in Firestore`;
       console.log(message);
       setFirestoreStatus('success');
       
       // Auto-clear success status after 3 seconds
       setTimeout(() => setFirestoreStatus('idle'), 3000);
       
-      console.log('✅ Pending users refreshed successfully');
+      console.log('✅ Users refreshed successfully');
       setLoading(false);
       
     } catch (error) {
-      console.error('❌ Error refreshing pending users:', error);
+      console.error('❌ Error refreshing users:', error);
+      console.error('🔍 DEBUG: Error stack:', error.stack);
       setFirestoreStatus('error');
-      alert('Failed to refresh pending users. Please try again.');
+      alert('Failed to refresh users. Please try again.');
       setLoading(false);
       
       // Auto-clear error status after 5 seconds
@@ -405,9 +487,67 @@ const UserManagement = () => {
       'social_media_manager': 'bg-purple-100 text-purple-800',
       'hr_manager': 'bg-green-100 text-green-800',
       'sales_manager': 'bg-orange-100 text-orange-800',
-      'pending': 'bg-yellow-100 text-yellow-800'
+      'pending': 'bg-gray-100 text-gray-800'
     };
     return colors[role] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Function to handle role assignment modal
+  const handleAssignRoles = (user) => {
+    setSelectedUserForRoles(user);
+    setSelectedRoles(user.roles || [user.role] || []);
+    setShowRoleAssignmentModal(true);
+  };
+
+  // Function to save role assignments
+  const handleSaveRoleAssignment = async () => {
+    if (!selectedUserForRoles || selectedRoles.length === 0) return;
+    
+    try {
+      setIsProcessing(true);
+      console.log('🔍 DEBUG: Assigning roles to user:', selectedUserForRoles.email);
+      console.log('🔍 DEBUG: Selected roles:', selectedRoles);
+      
+      // Update the user's roles in Firestore
+      await handleUpdateApprovedUser(selectedUserForRoles.email, {
+        roles: selectedRoles,
+        primaryRole: selectedRoles[0] // First role becomes primary
+      });
+      
+      console.log('✅ Roles assigned successfully');
+      setShowRoleAssignmentModal(false);
+      setSelectedUserForRoles(null);
+      setSelectedRoles([]);
+      
+      // Refresh the data
+      await handleRefreshUsers();
+      
+    } catch (error) {
+      console.error('❌ Error assigning roles:', error);
+      alert('Failed to assign roles. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Function to render multiple roles for a user
+  const renderUserRoles = (user) => {
+    const roles = user.roles || [user.role] || [];
+    const primaryRole = user.primaryRole || roles[0];
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {roles.map((role, index) => (
+          <Badge 
+            key={role} 
+            className={`${getRoleBadgeColor(role)} ${role === primaryRole ? 'ring-2 ring-blue-300' : ''}`}
+          >
+            {getRoleDisplayName(role)}
+            {role === primaryRole && <span className="ml-1">⭐</span>}
+          </Badge>
+        ))}
+      </div>
+    );
   };
 
   const getDepartmentForRole = (role) => {
@@ -720,8 +860,9 @@ const UserManagement = () => {
             onClick={handleCleanDuplicates}
             variant="outline"
             className="bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
+            disabled={isProcessing}
           >
-            🧹 Clean Duplicates
+            {isProcessing ? '🧹 Processing...' : '🧹 Clean Duplicates'}
           </Button>
         </div>
       </div>
@@ -795,18 +936,20 @@ const UserManagement = () => {
                           size="sm"
                           onClick={() => handleApproveUserAsAdmin(user)}
                           className="flex-1 bg-red-600 hover:bg-red-700"
+                          disabled={isProcessing}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Approve as Admin
+                          {isProcessing ? 'Processing...' : 'Approve as Admin'}
                         </Button>
                       ) : (
                         <Button
                           size="sm"
                           onClick={() => handleApproveUser(user)}
                           className="flex-1 bg-green-600 hover:bg-green-700"
+                          disabled={isProcessing}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Approve
+                          {isProcessing ? 'Processing...' : 'Approve'}
                         </Button>
                       )}
                       <Button
@@ -814,9 +957,10 @@ const UserManagement = () => {
                         variant="outline"
                         onClick={() => handleRejectUser(user)}
                         className="flex-1"
+                        disabled={isProcessing}
                       >
                         <XCircle className="w-4 h-4 mr-1" />
-                        Reject
+                        {isProcessing ? 'Processing...' : 'Reject'}
                       </Button>
                     </div>
                   </CardContent>
@@ -858,10 +1002,8 @@ const UserManagement = () => {
                         {user.email}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Role:</span>
-                        <Badge className={getRoleBadgeColor(user.role)}>
-                          {getRoleDisplayName(user.role)}
-                        </Badge>
+                        <span className="text-sm text-gray-600">Roles:</span>
+                        {renderUserRoles(user)}
                       </div>
                       {user.approvedAt && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -880,6 +1022,15 @@ const UserManagement = () => {
                       >
                         <Eye className="w-4 h-4 mr-1" />
                         View Profile
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAssignRoles(user)}
+                        className="flex-1 bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                      >
+                        <Users className="w-4 h-4 mr-1" />
+                        Assign Roles
                       </Button>
                       <Button
                         size="sm"
@@ -920,6 +1071,74 @@ const UserManagement = () => {
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
       />
+
+      {/* Role Assignment Modal */}
+      {showRoleAssignmentModal && selectedUserForRoles && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Assign Roles to {selectedUserForRoles.firstName} {selectedUserForRoles.lastName}</h2>
+              <button 
+                onClick={() => setShowRoleAssignmentModal(false)} 
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Roles (First role will be primary)
+                </label>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {Object.entries(USER_ROLES).filter(([key, value]) => value !== 'pending').map(([key, role]) => (
+                    <label key={role} className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedRoles.includes(role)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRoles([...selectedRoles, role]);
+                          } else {
+                            setSelectedRoles(selectedRoles.filter(r => r !== role));
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Badge className={getRoleBadgeColor(role)}>
+                          {getRoleDisplayName(role)}
+                        </Badge>
+                        {selectedRoles.includes(role) && selectedRoles.indexOf(role) === 0 && (
+                          <span className="text-xs text-blue-600">⭐ Primary</span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRoleAssignmentModal(false)}
+                  disabled={isProcessing}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveRoleAssignment}
+                  disabled={isProcessing || selectedRoles.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isProcessing ? 'Saving...' : 'Save Roles'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

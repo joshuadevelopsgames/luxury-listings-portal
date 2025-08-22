@@ -260,7 +260,7 @@ export const MOCK_USERS = {
     lastName: 'User',
     role: USER_ROLES.ADMIN,
     department: 'System Administration',
-    startDate: '2023-01-01',
+    startDate: '2021-10-13',
     avatar: null,
     bio: 'System administrator with full access to all features and user management capabilities.',
     skills: ['System Administration', 'User Management', 'Role Assignment', 'Security Management', 'System Monitoring'],

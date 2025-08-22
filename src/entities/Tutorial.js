@@ -31,7 +31,7 @@ export class Tutorial {
     return colors[this.difficulty] || colors.beginner;
   }
 
-  static async list(sortBy = 'order_index') {
+  static async list(sortBy = 'order_index', userRole = null) {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -346,11 +346,274 @@ export class Tutorial {
             }
           ]
         }
+      },
+
+      // =========================
+      // Admin Portal Build Track
+      // =========================
+      {
+        id: 101,
+        title: "Admin Track Overview — Building This Portal",
+        description: "Understand the architecture of this portal and the milestones to build it end-to-end.",
+        category: "admin-portal",
+        difficulty: "beginner",
+        estimated_time: 25,
+        order_index: 11,
+        is_required: true,
+        prerequisites: [],
+        content: {
+          sections: [
+            {
+              title: "High-Level Architecture",
+              content: "This portal uses a modern React stack: Vite for fast development, Firebase for backend services (Auth + Firestore), and Vercel for deployment. The architecture follows a service-oriented pattern with clear separation of concerns. Key services include firestoreService (data operations), analyticsService (GA4 integration), and remoteConfigService (dynamic config). State management uses React Context (AuthContext, PendingUsersContext) for global state and local useState for component state. The routing system is role-based, with ProtectedRoute components ensuring users only access authorized pages."
+            },
+            {
+              title: "Data Domains & Collections",
+              content: "Firestore collections are designed for specific use cases: approved_users (doc id = email) for authenticated users, pending_users (auto-generated ids) for approval workflow, tasks for daily assignments, analytics_config for GA4 credentials, and system_config for dynamic settings. Critical design principle: never persist internal 'id' fields to Firestore - always use doc.id for operations. Separate read/write flows for pending vs approved users to maintain data integrity and security."
+            },
+            {
+              title: "Critical UX Patterns",
+              content: "Multi-role profile switching allows users to access different dashboards while preserving identity. Admin dashboard shows real-time stats (total users, pending approvals, system uptime). User management provides approve/reject workflows with immediate UI updates. Analytics dashboard integrates real GA4 data with proper error handling. Tutorials and tasks provide structured learning and task management experiences. All interactions use optimistic UI updates for better perceived performance."
+            },
+            {
+              title: "Development Milestones",
+              content: "1) Project Setup: Scaffold React app, install dependencies, establish UI components and routing. 2) Firebase Integration: Configure Auth, Firestore, and security rules. 3) Authentication & RBAC: Implement Google Auth, approval workflows, and role-based access control. 4) User Management: Build admin interfaces for user approval and role assignment. 5) Analytics Integration: Connect GA4 API with proper authentication and data validation. 6) Realtime Features: Implement Firestore listeners with proper cleanup and state management. 7) Deployment & Config: Deploy to Vercel and implement Remote Config for dynamic settings."
+            }
+          ]
+        }
+      },
+      {
+        id: 102,
+        title: "Project Setup & UI Foundation",
+        description: "Initialize the app, establish UI components, routing, and code organization.",
+        category: "admin-portal",
+        difficulty: "beginner",
+        estimated_time: 40,
+        order_index: 12,
+        is_required: true,
+        prerequisites: [101],
+        content: {
+          sections: [
+            {
+              title: "Project Initialization with AI",
+              content: "Start by asking AI to 'Create a React admin portal with role-based access control, user management, and analytics dashboard.' Specify requirements: Vite for fast development, Tailwind CSS for styling, Lucide React for icons, React Router for navigation. AI will scaffold the project structure with proper folder organization: src/components/ui for reusable components, src/pages for route components, src/services for API calls, src/contexts for state management, and src/entities for data models. Install dependencies: npm install react-router-dom lucide-react date-fns @headlessui/react."
+            },
+            {
+              title: "UI Component System",
+              content: "Ask AI to 'Create a design system with Button, Card, Badge, and Input components using Tailwind CSS.' Specify variants: primary/secondary buttons, different card layouts, colored badges for status/roles. AI will create src/components/ui/ with consistent styling and proper TypeScript interfaces. Include accessibility features: proper ARIA labels, keyboard navigation, and focus management. Use a consistent color palette and spacing system throughout the application."
+            },
+            {
+              title: "Routing Architecture",
+              content: "Request AI to 'Set up role-based routing with protected routes and navigation.' Create App.jsx with BrowserRouter, define routes for each role (admin, content_director, hr_manager, etc.), and implement ProtectedRoute component that checks user authentication and role permissions. Build AppLayout component with responsive navigation, role switcher, and main content area. Use useLocation hook for active navigation highlighting and breadcrumb generation."
+            },
+            {
+              title: "Code Organization & Patterns",
+              content: "Establish clear patterns: services for external API calls (firestoreService, analyticsService), contexts for global state (AuthContext, PendingUsersContext), pages for route components, and entities for data models. Use consistent naming conventions: camelCase for variables, PascalCase for components, kebab-case for files. Implement proper error boundaries, loading states, and error handling throughout the application. Document component APIs and service interfaces for maintainability."
+            }
+          ]
+        }
+      },
+      {
+        id: 103,
+        title: "Firebase & Firestore Setup",
+        description: "Connect Firebase, create Firestore collections, and prepare secure data flows.",
+        category: "admin-portal",
+        difficulty: "beginner",
+        estimated_time: 45,
+        order_index: 13,
+        is_required: true,
+        prerequisites: [102],
+        content: {
+          sections: [
+            {
+              title: "Firebase Project Setup with AI",
+              content: "Ask AI to 'Help me set up Firebase for a React admin portal with authentication and Firestore database.' AI will guide you through: 1) Creating a Firebase project in the console, 2) Adding a web app and getting the config object, 3) Enabling Authentication (Google provider) and Firestore Database, 4) Setting up security rules. Create src/firebase.js with the config and export auth, db, and other Firebase services. AI will provide the exact configuration code and security rules for your use case."
+            },
+            {
+              title: "Firestore Collections Design",
+              content: "Request AI to 'Design Firestore collections for user management with approval workflow.' AI will suggest: approved_users (doc id = user email) for authenticated users, pending_users (auto-generated ids) for approval queue, tasks for daily assignments, analytics_config for GA4 credentials, and system_config for dynamic settings. AI will provide the exact collection structure with proper field types and indexing recommendations. Include validation rules and data integrity constraints."
+            },
+            {
+              title: "Critical ID Management",
+              content: "Ask AI to 'Help me implement proper Firestore document ID management to avoid conflicts.' Key principle: never persist internal 'id' fields to Firestore documents. Always use the actual Firestore document ID (doc.id) for operations. When reading documents, strip any internal 'id' field from the data before processing. When writing documents, ensure no 'id' field is included in the payload. AI will provide code examples for proper ID handling in CRUD operations."
+            },
+            {
+              title: "Service Layer Implementation",
+              content: "Request AI to 'Create a firestoreService with CRUD operations and real-time listeners.' AI will build src/services/firestoreService.js with methods for get/add/update/delete operations, onSnapshot listeners for real-time updates, and proper error handling. Include methods for user management (approveUser, rejectUser), role assignment, and data validation. AI will provide TypeScript interfaces and proper error handling patterns for production use."
+            }
+          ]
+        }
+      },
+      {
+        id: 104,
+        title: "Authentication & RBAC",
+        description: "Implement Google Auth, approval gate, and multi-role access with a role switcher.",
+        category: "admin-portal",
+        difficulty: "intermediate",
+        estimated_time: 60,
+        order_index: 14,
+        is_required: true,
+        prerequisites: [103],
+        content: {
+          sections: [
+            {
+              title: "Authentication Flow with AI",
+              content: "Ask AI to 'Implement Firebase Google authentication with user approval workflow.' AI will create: 1) AuthContext for global auth state management, 2) Login component with Google sign-in, 3) User approval logic (first-time users go to pending queue), 4) ProtectedRoute component for role-based access. AI will provide the exact code for handling authentication state, user profile merging, and automatic navigation based on user role. Include proper error handling for auth failures and loading states."
+            },
+            {
+              title: "User Approval & Role Management",
+              content: "Request AI to 'Build a user approval system with multi-role assignment.' AI will design: 1) PendingUsersContext for managing approval queue, 2) Admin interface for approving/rejecting users, 3) Role assignment modal with multiple role selection, 4) Data structure for storing roles array and primaryRole. AI will provide code for the approval workflow, role assignment UI, and data validation. Include proper state management for optimistic updates and error handling."
+            },
+            {
+              title: "Role-Based Access Control",
+              content: "Ask AI to 'Implement role-based routing and access control.' AI will create: 1) USER_ROLES constants and ROLE_PERMISSIONS mapping, 2) ProtectedRoute component that checks authentication and role permissions, 3) Navigation filtering based on user role, 4) Permission checking utilities. AI will provide the exact routing logic, permission checking functions, and navigation filtering code. Include proper fallbacks for unauthorized access and role-based UI rendering."
+            },
+            {
+              title: "Multi-Role Profile Switching",
+              content: "Request AI to 'Create a role switcher component for users with multiple roles.' AI will build: 1) RoleSwitcher component with dropdown interface, 2) Role switching logic that preserves user identity, 3) Dynamic navigation updates based on selected role, 4) Visual indicators for current role and available roles. AI will provide the complete component with proper state management, role validation, and UI feedback. Include accessibility features and proper keyboard navigation."
+            }
+          ]
+        }
+      },
+      {
+        id: 105,
+        title: "User Management (Approve/Reject, Multi-Role)",
+        description: "Build the admin User Management page: approve/reject, assign multiple roles, and keep Firestore consistent.",
+        category: "admin-portal",
+        difficulty: "intermediate",
+        estimated_time: 60,
+        order_index: 15,
+        is_required: true,
+        prerequisites: [104],
+        content: {
+          sections: [
+            {
+              title: "User Management Interface with AI",
+              content: "Ask AI to 'Create an admin user management page for approving and rejecting users.' AI will build: 1) UserManagement component with pending users list, 2) Approve/Reject buttons with confirmation dialogs, 3) User details display (email, name, signup date), 4) Real-time updates using Firestore listeners. AI will provide the complete UI with proper loading states, error handling, and success feedback. Include pagination for large user lists and search/filter functionality."
+            },
+            {
+              title: "Critical ID Management in Operations",
+              content: "Request AI to 'Help me fix Firestore ID conflicts in user management operations.' AI will identify the common pitfall: using internal 'id' fields instead of Firestore document IDs. AI will provide code for: 1) Proper document reading (strip internal 'id' fields), 2) Correct delete operations (use doc.id), 3) Update operations (avoid ID field conflicts), 4) Data validation before writes. AI will show debugging techniques and error handling for ID-related issues."
+            },
+            {
+              title: "Multi-Role Assignment System",
+              content: "Ask AI to 'Build a role assignment modal for assigning multiple roles to users.' AI will create: 1) RoleAssignmentModal component with role selection interface, 2) Checkbox list for multiple role selection, 3) Primary role designation (radio button), 4) Role validation and conflict resolution. AI will provide the complete modal with proper form handling, validation, and submission logic. Include role descriptions, permission previews, and confirmation dialogs."
+            },
+            {
+              title: "State Management & Real-time Updates",
+              content: "Request AI to 'Implement stable real-time updates for user management with proper state handling.' AI will design: 1) Local state updates for immediate UI feedback, 2) Firestore listener management with proper cleanup, 3) Optimistic updates for better UX, 4) Conflict resolution between local and server state. AI will provide code for managing listener subscriptions, preventing infinite loops, and handling concurrent updates. Include proper error recovery and state synchronization."
+            }
+          ]
+        }
+      },
+      {
+        id: 106,
+        title: "Analytics (GA4) Integration",
+        description: "Wire up GA4 via Service Account + Data API with valid metrics/dimensions and a setup page.",
+        category: "admin-portal",
+        difficulty: "intermediate",
+        estimated_time: 75,
+        order_index: 16,
+        is_required: true,
+        prerequisites: [105],
+        content: {
+          sections: [
+            {
+              title: "Google Analytics Setup with AI",
+              content: "Ask AI to 'Help me set up Google Analytics 4 integration with service account authentication.' AI will guide you through: 1) Creating a Google Cloud project and enabling Analytics Data API, 2) Creating a service account and downloading the JSON key file, 3) Granting GA4 Property Viewer access to the service account email, 4) Setting up proper authentication flow. AI will provide the exact steps, required permissions, and security best practices for GA4 integration."
+            },
+            {
+              title: "GA4 API Schema & Valid Metrics",
+              content: "Request AI to 'Help me implement GA4 Data API with correct metrics and dimensions.' AI will provide the valid GA4 schema: metrics (totalUsers, newUsers, sessions, screenPageViews, bounceRate, averageSessionDuration, userEngagementDuration), dimensions (pageTitle, date), and computed metrics (returningUsers = totalUsers - newUsers, avgTimePerPage = userEngagementDuration / screenPageViews). AI will show how to structure API requests, handle responses, and validate data. Include error handling for invalid metrics and rate limiting."
+            },
+            {
+              title: "Analytics Dashboard Implementation",
+              content: "Ask AI to 'Create an analytics dashboard that displays GA4 data with proper error handling.' AI will build: 1) Analytics component with data visualization, 2) Data fetching logic with proper authentication, 3) Error handling for API failures and invalid data, 4) Loading states and data refresh functionality. AI will provide the complete dashboard with charts, metrics cards, and proper data formatting. Include fallback displays for when GA4 is not configured."
+            },
+            {
+              title: "Analytics Configuration Management",
+              content: "Request AI to 'Build a GA4 setup page for configuring analytics credentials.' AI will create: 1) GoogleAnalyticsSetup component with form inputs, 2) Credential validation and testing functionality, 3) Secure storage of credentials in Firestore, 4) JWT token generation for API authentication. AI will provide the complete setup flow with proper validation, error handling, and success feedback. Include credential rotation and security best practices."
+            }
+          ]
+        }
+      },
+      {
+        id: 107,
+        title: "Realtime Listeners & State Management",
+        description: "Design stable realtime flows with Firestore listeners, debouncing, and optimistic updates.",
+        category: "admin-portal",
+        difficulty: "intermediate",
+        estimated_time: 50,
+        order_index: 17,
+        is_required: false,
+        prerequisites: [105],
+        content: {
+          sections: [
+            {
+              title: "Real-time Architecture with AI",
+              content: "Ask AI to 'Help me design a real-time architecture using Firestore listeners with proper state management.' AI will explain when to use onSnapshot listeners: 1) For data that must auto-refresh (user counts, pending approvals), 2) For collaborative features, 3) For live updates. AI will provide patterns for: listener lifecycle management, proper cleanup, and avoiding feedback loops. AI will show how to structure listeners to minimize unnecessary re-renders and optimize performance."
+            },
+            {
+              title: "Infinite Loop Prevention",
+              content: "Request AI to 'Help me fix infinite loops in React components with Firestore listeners.' AI will identify common causes: 1) useEffect dependencies that change on every render, 2) Re-attaching listeners when array lengths change, 3) State updates that trigger re-renders and re-attach listeners. AI will provide solutions: proper dependency arrays, useCallback for stable references, and immutable state updates. AI will show debugging techniques and prevention strategies."
+            },
+            {
+              title: "Optimistic UI Updates",
+              content: "Ask AI to 'Implement optimistic UI updates for better user experience.' AI will design patterns for: 1) Immediate local state updates for user actions, 2) Background server synchronization, 3) Conflict resolution between local and server state, 4) Error handling and rollback strategies. AI will provide code examples for optimistic updates in user management, task completion, and other interactive features. Include proper error recovery and state reconciliation."
+            },
+            {
+              title: "Debugging & Diagnostics",
+              content: "Request AI to 'Help me implement proper debugging and diagnostics for real-time features.' AI will provide: 1) Structured logging with stack traces and context, 2) Performance monitoring for listener efficiency, 3) Error boundary implementation for graceful failures, 4) Development tools for state inspection. AI will show how to instrument components for debugging, track listener performance, and identify bottlenecks. Include production-ready logging and monitoring strategies."
+            }
+          ]
+        }
+      },
+      {
+        id: 108,
+        title: "Deployment, Remote Config, and Environments",
+        description: "Ship with Vercel (Git-based), manage environment config, and use Remote Config for live settings.",
+        category: "admin-portal",
+        difficulty: "intermediate",
+        estimated_time: 45,
+        order_index: 18,
+        is_required: false,
+        prerequisites: [106],
+        content: {
+          sections: [
+            {
+              title: "Deployment Strategy with AI",
+              content: "Ask AI to 'Help me set up Git-based deployment with Vercel for continuous integration.' AI will guide you through: 1) Connecting your Git repository to Vercel, 2) Setting up automatic deployments on push, 3) Configuring environment variables and build settings, 4) Setting up preview deployments for pull requests. AI will provide the exact configuration, deployment scripts, and best practices for production deployments. Include rollback strategies and deployment monitoring."
+            },
+            {
+              title: "Remote Config Implementation",
+              content: "Request AI to 'Help me implement Firebase Remote Config for dynamic application settings.' AI will create: 1) Remote Config initialization and setup, 2) Default configuration values, 3) Dynamic value fetching and caching, 4) Real-time configuration updates. AI will provide the complete implementation for managing dynamic settings like system uptime, feature flags, and configuration parameters. Include proper error handling, fallback values, and configuration validation."
+            },
+            {
+              title: "Security & Secrets Management",
+              content: "Ask AI to 'Help me implement secure secrets management for production deployment.' AI will provide: 1) Environment variable configuration for sensitive data, 2) Secure storage of API keys and credentials, 3) Key rotation strategies and procedures, 4) Security best practices for credential management. AI will show how to properly handle secrets in Vercel, avoid committing sensitive data to Git, and implement secure credential storage patterns."
+            },
+            {
+              title: "Monitoring & Observability",
+              content: "Request AI to 'Help me implement monitoring and observability for the admin portal.' AI will design: 1) Structured logging throughout the application, 2) Error tracking and alerting systems, 3) Performance monitoring and metrics collection, 4) Health checks and uptime monitoring. AI will provide implementation for error boundaries, performance monitoring, and diagnostic tools. Include production-ready logging strategies and monitoring dashboards."
+            }
+          ]
+        }
       }
     ];
 
+    // Apply role-based filtering
+    let filteredTutorials = [...mockTutorials];
+    
+    if (userRole === 'admin') {
+      // Admin users only see admin-portal tutorials
+      filteredTutorials = mockTutorials.filter(tutorial => tutorial.category === 'admin-portal');
+    } else {
+      // Non-admin users see all tutorials EXCEPT admin-portal
+      filteredTutorials = mockTutorials.filter(tutorial => tutorial.category !== 'admin-portal');
+    }
+    
     // Apply sorting
-    let sortedTutorials = [...mockTutorials];
+    let sortedTutorials = [...filteredTutorials];
     
     if (sortBy === 'order_index') {
       sortedTutorials.sort((a, b) => a.order_index - b.order_index);

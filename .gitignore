@@ -76,3 +76,4 @@ firebase-debug.*.log
 # Temporary files
 *.tmp
 *.temp
+.env*.local

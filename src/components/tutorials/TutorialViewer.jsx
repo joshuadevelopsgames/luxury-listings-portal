@@ -26,157 +26,31 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizScore, setQuizScore] = useState(0);
 
-  // Simulate tutorial sections - in a real app, this would come from the tutorial data
-  const tutorialSections = [
+  // Prefer real tutorial content from the entity; fallback to placeholders
+  const hasCustomSections = Array.isArray(tutorial?.content?.sections) && tutorial.content.sections.length > 0;
+  const perSectionMinutes = hasCustomSections
+    ? Math.max(1, Math.round((tutorial.estimated_time || 0) / tutorial.content.sections.length))
+    : 5;
+
+  const fallbackSections = [
     {
       id: 1,
-      title: "Introduction",
-      content: `# Welcome to ${tutorial.title}
-
-This tutorial will guide you through the essential concepts and practical steps to get you up and running.
-
-## What You'll Learn
-
-- Key concepts and terminology
-- Step-by-step procedures
-- Best practices and tips
-- Common pitfalls to avoid
-
-## Prerequisites
-
-${tutorial.prerequisites.length > 0 ? `Make sure you've completed the following tutorials first:
-${tutorial.prerequisites.map(id => `- Tutorial ${id}`).join('\n')}` : 'No prerequisites required - you can start right away!'}
-
-## Estimated Time
-
-This tutorial should take approximately **${tutorial.formattedTime}** to complete.`,
+      title: 'Introduction',
+      content: `# Welcome to ${tutorial.title}\n\nThis tutorial will guide you through the essential concepts and practical steps to get you up and running.\n\n## What You'll Learn\n\n- Key concepts and terminology\n- Step-by-step procedures\n- Best practices and tips\n- Common pitfalls to avoid\n\n## Prerequisites\n\n${tutorial.prerequisites.length > 0 ? `Make sure you've completed the following tutorials first:\n${tutorial.prerequisites.map(id => `- Tutorial ${id}`).join('\n')}` : 'No prerequisites required - you can start right away!'}\n\n## Estimated Time\n\nThis tutorial should take approximately **${tutorial.formattedTime}** to complete.`,
       type: 'markdown',
-      duration: 5
-    },
-    {
-      id: 2,
-      title: "Core Concepts",
-      content: `## Understanding the Basics
-
-Let's start with the fundamental concepts that form the foundation of this topic.
-
-### Key Terms
-
-- **Concept A**: Definition and explanation
-- **Concept B**: How it relates to other concepts
-- **Concept C**: Why it's important
-
-### Visual Example
-
-Here's a simple diagram to help you understand:
-
-\`\`\`
-┌─────────────────┐
-│   Input Data    │
-├─────────────────┤
-│  Process Logic  │
-├─────────────────┤
-│  Output Result  │
-└─────────────────┘
-\`\`\`
-
-Take your time to understand these concepts before moving forward.`,
-      type: 'markdown',
-      duration: 8
-    },
-    {
-      id: 3,
-      title: "Practical Steps",
-      content: `## Step-by-Step Guide
-
-Now let's put theory into practice with these hands-on steps.
-
-### Step 1: Preparation
-1. Gather necessary materials
-2. Set up your workspace
-3. Review safety guidelines
-
-### Step 2: Execution
-1. Follow the procedure carefully
-2. Document your progress
-3. Note any issues or questions
-
-### Step 3: Verification
-1. Check your results
-2. Compare with expected outcomes
-3. Troubleshoot if needed
-
-### Tips for Success
-
-- Take notes as you go
-- Don't rush through the steps
-- Ask for help if you're stuck`,
-      type: 'markdown',
-      duration: 12
-    },
-    {
-      id: 4,
-      title: "Best Practices",
-      content: `## Industry Standards
-
-Learn the established best practices that professionals use every day.
-
-### Do's ✅
-- Follow established procedures
-- Document everything
-- Ask questions when unsure
-- Practice regularly
-
-### Don'ts ❌
-- Skip safety steps
-- Assume you know everything
-- Rush through important details
-- Ignore warning signs
-
-### Pro Tips
-
-> "The best way to learn is by doing, but the best way to do is by learning first."
-
-- **Expert Tip 1**: Always start with the basics
-- **Expert Tip 2**: Practice in a safe environment
-- **Expert Tip 3**: Learn from mistakes (yours and others')`,
-      type: 'markdown',
-      duration: 10
-    },
-    {
-      id: 5,
-      title: "Quiz & Assessment",
-      content: `## Test Your Knowledge
-
-Complete this quiz to verify your understanding of the material.
-
-### Question 1
-What is the most important first step in any procedure?
-
-**A)** Start immediately  
-**B)** Review safety guidelines  
-**C)** Ask a colleague  
-**D)** Skip to the end
-
-### Question 2
-Which of the following is a best practice?
-
-**A)** Rushing through steps  
-**B)** Documenting your progress  
-**C)** Ignoring warnings  
-**D)** Working alone always
-
-### Question 3
-What should you do if you're unsure about a step?
-
-**A)** Guess and continue  
-**B)** Skip it entirely  
-**C)** Ask for clarification  
-**D)** Pretend you understand`,
-      type: 'quiz',
-      duration: 5
+      duration: perSectionMinutes
     }
   ];
+
+  const tutorialSections = hasCustomSections
+    ? tutorial.content.sections.map((section, index) => ({
+        id: index + 1,
+        title: section.title || `Section ${index + 1}`,
+        content: section.content || '',
+        type: 'markdown',
+        duration: perSectionMinutes
+      }))
+    : fallbackSections;
 
   // Timer effect for tracking time spent
   useEffect(() => {
@@ -215,6 +89,8 @@ What should you do if you're unsure about a step?
 
   const currentSectionData = tutorialSections[currentSection];
   const progressPercentage = ((currentSection + 1) / tutorialSections.length) * 100;
+  const isLastSection = currentSection === tutorialSections.length - 1;
+  const requiresQuiz = tutorialSections.some(s => s.type === 'quiz');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -503,11 +379,11 @@ What should you do if you're unsure about a step?
               </Button>
               
               <div className="flex items-center gap-3">
-                {currentSection === tutorialSections.length - 1 ? (
+                {isLastSection ? (
                   <Button 
                     onClick={handleComplete}
                     className="bg-green-600 hover:bg-green-700"
-                    disabled={quizScore === 0}
+                    disabled={requiresQuiz && quizScore === 0}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Complete Tutorial

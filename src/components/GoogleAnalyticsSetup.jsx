@@ -14,7 +14,7 @@ import { analyticsService } from '../services/analyticsService';
 import { firestoreService } from '../services/firestoreService';
 
 const GoogleAnalyticsSetup = () => {
-  const [propertyId, setPropertyId] = useState('G-K95YWQ2DZ6');
+  const [propertyId, setPropertyId] = useState('501624524');
   const [serviceAccountJson, setServiceAccountJson] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState(null);
@@ -33,23 +33,26 @@ const GoogleAnalyticsSetup = () => {
       // Parse the JSON
       const credentials = JSON.parse(serviceAccountJson);
       
-      // Initialize the service with a mock access token for now
-      // In a real implementation, you'd need to generate a JWT token
-      analyticsService.initialize(propertyId, 'mock-access-token');
+      // Initialize the analytics service with the credentials
+      analyticsService.propertyId = propertyId;
+      analyticsService.serviceAccountJson = serviceAccountJson;
       
-      // Test the connection - this will return mock data since we're not fully configured
+      // Generate a real JWT token from the service account
+      await analyticsService.generateAccessToken(credentials);
+      
+      // Test the connection with real credentials
       const overview = await analyticsService.getOverviewMetrics('7d');
       
       setValidationResult({ 
         success: true, 
-        message: 'Google Analytics setup validated! (Using mock data for demo)',
+        message: '✅ Google Analytics connection successful! Real data is now available.',
         data: overview
       });
     } catch (error) {
       console.error('Validation error:', error);
       setValidationResult({ 
         success: false, 
-        message: `Connection failed: ${error.message}` 
+        message: `❌ Connection failed: ${error.message}. Please check your Property ID and Service Account permissions.` 
       });
     } finally {
       setIsValidating(false);

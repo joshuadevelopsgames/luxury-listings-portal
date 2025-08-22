@@ -21,151 +21,318 @@ import {
   Star,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Instagram,
+  ExternalLink,
+  Database,
+  RefreshCw,
+  Settings
 } from 'lucide-react';
+import CRMGoogleSheetsSetup from '../components/CRMGoogleSheetsSetup';
+import { CRMGoogleSheetsService } from '../services/crmGoogleSheetsService';
 
 const CRMPage = () => {
   const { currentUser, currentRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [activeTab, setActiveTab] = useState('warm-leads');
   const [selectedClient, setSelectedClient] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showGoogleSheetsSetup, setShowGoogleSheetsSetup] = useState(false);
+  const [isConnectedToGoogleSheets, setIsConnectedToGoogleSheets] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Mock CRM data
-  const [clients, setClients] = useState([
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      company: 'Luxury Estates Inc.',
-      email: 'sarah.johnson@luxuryestates.com',
-      phone: '+1 (555) 123-4567',
-      status: 'active',
-      value: '$2.5M',
-      lastContact: '2025-08-10',
-      deals: 3,
-      priority: 'high',
-      notes: 'Interested in luxury waterfront properties'
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      company: 'Chen Properties',
-      email: 'michael.chen@chenproperties.com',
-      phone: '+1 (555) 234-5678',
-      status: 'prospect',
-      value: '$1.8M',
-      lastContact: '2025-08-08',
-      deals: 1,
-      priority: 'medium',
-      notes: 'Looking for investment opportunities'
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      company: 'Rodriguez Real Estate',
-      email: 'emily.rodriguez@rodriguezre.com',
-      phone: '+1 (555) 345-6789',
-      status: 'lead',
-      value: '$3.2M',
-      lastContact: '2025-08-05',
-      deals: 0,
-      priority: 'high',
-      notes: 'High-net-worth individual seeking luxury homes'
-    },
-    {
-      id: 4,
-      name: 'David Thompson',
-      company: 'Thompson Holdings',
-      email: 'david.thompson@thompsonholdings.com',
-      phone: '+1 (555) 456-7890',
-      status: 'active',
-      value: '$4.1M',
-      lastContact: '2025-08-12',
-      deals: 2,
-      priority: 'medium',
-      notes: 'Corporate client with multiple property needs'
-    }
-  ]);
+  // CRM data state
+  const [warmLeads, setWarmLeads] = useState([]);
+  const [contactedClients, setContactedClients] = useState([]);
+  const [coldLeads, setColdLeads] = useState([]);
 
-  const [deals, setDeals] = useState([
-    {
-      id: 1,
-      clientName: 'Sarah Johnson',
-      property: 'Waterfront Villa - Malibu',
-      value: '$2.5M',
-      stage: 'negotiation',
-      probability: 75,
-      expectedClose: '2025-09-15',
-      lastActivity: '2025-08-10'
-    },
-    {
-      id: 2,
-      clientName: 'Michael Chen',
-      property: 'Downtown Penthouse',
-      value: '$1.8M',
-      stage: 'proposal',
-      probability: 60,
-      expectedClose: '2025-10-01',
-      lastActivity: '2025-08-08'
-    },
-    {
-      id: 3,
-      clientName: 'Emily Rodriguez',
-      property: 'Beverly Hills Mansion',
-      value: '$3.2M',
-      stage: 'qualification',
-      probability: 40,
-      expectedClose: '2025-11-15',
-      lastActivity: '2025-08-05'
+  // Mock CRM data as fallback
+  const mockData = {
+    warmLeads: [
+      {
+        id: 1,
+        contactName: 'Eddie Escobido',
+        phone: '(623) 225-8893',
+        email: 'eddie.escobido@theagencyre.com',
+        instagram: 'escobidoluxurygroup',
+        status: 'warm',
+        lastContact: '2025-08-15',
+        notes: 'Interested in luxury listings, has high-end clientele'
+      },
+      {
+        id: 2,
+        contactName: 'Shawnalei Tamayose',
+        phone: '(808) 339-0254',
+        email: 'shawna@apt212.com',
+        instagram: 'shawnalei808',
+        status: 'warm',
+        lastContact: '2025-08-12',
+        notes: 'Looking for luxury properties in Hawaii market'
+      },
+      {
+        id: 3,
+        contactName: 'ATR Luxury Homes',
+        phone: '(786) 723-6041',
+        email: 'morella@atrluxuryhomes.com',
+        instagram: 'atrluxuryhomes',
+        status: 'warm',
+        lastContact: '2025-08-10',
+        notes: 'Corporate client, multiple property portfolio'
+      },
+      {
+        id: 4,
+        contactName: 'Devin Kay',
+        phone: '(301) 602-1172',
+        email: 'Devin.Kay@elliman.com',
+        instagram: 'devin__kay',
+        status: 'warm',
+        lastContact: '2025-08-08',
+        notes: 'Douglas Elliman agent, luxury market specialist'
+      },
+      {
+        id: 5,
+        contactName: 'Shawn Shirdel',
+        phone: '(310) 770-2262',
+        email: 'shawn@shawnshirdel.com',
+        instagram: 'shawnshirdel',
+        status: 'warm',
+        lastContact: '2025-08-05',
+        notes: 'Beverly Hills luxury real estate expert'
+      },
+      {
+        id: 6,
+        contactName: 'Ryan Kaplan',
+        phone: '(631) 834-8523',
+        email: 'ryan.kaplan@corcoran.com',
+        instagram: 'ryan.kaplan',
+        status: 'warm',
+        lastContact: '2025-08-03',
+        notes: 'Corcoran agent, East Coast luxury market'
+      }
+    ],
+    contactedClients: [
+      {
+        id: 7,
+        contactName: 'Jennifer Martinez',
+        phone: '(212) 555-0123',
+        email: 'jennifer@luxuryestatesny.com',
+        instagram: 'jenluxury',
+        status: 'contacted',
+        lastContact: '2025-07-28',
+        notes: 'Sent proposal for luxury penthouse, awaiting response',
+        proposalSent: '2025-07-28',
+        followUpDate: '2025-08-20'
+      },
+      {
+        id: 8,
+        contactName: 'Robert Chen',
+        phone: '(415) 555-0456',
+        email: 'robert@sanfranluxury.com',
+        instagram: 'robchenluxury',
+        status: 'contacted',
+        lastContact: '2025-07-25',
+        notes: 'Discussed portfolio management services',
+        proposalSent: '2025-07-25',
+        followUpDate: '2025-08-18'
+      }
+    ],
+    coldLeads: [
+      {
+        id: 9,
+        contactName: 'Amanda Rodriguez',
+        phone: '(305) 555-0789',
+        email: 'amanda@miamiluxury.com',
+        instagram: 'amandamiami',
+        status: 'cold',
+        lastContact: '2025-06-15',
+        notes: 'Initial outreach, no response yet',
+        outreachDate: '2025-06-15',
+        nextOutreach: '2025-08-25'
+      },
+      {
+        id: 10,
+        contactName: 'Michael Thompson',
+        phone: '(312) 555-0321',
+        email: 'michael@chicagoluxury.com',
+        instagram: 'mthompsonchi',
+        status: 'cold',
+        lastContact: '2025-06-10',
+        notes: 'Cold email sent, no engagement',
+        outreachDate: '2025-06-10',
+        nextOutreach: '2025-08-30'
+      }
+    ]
+  };
+
+  // Initialize with mock data
+  useEffect(() => {
+    setWarmLeads(mockData.warmLeads);
+    setContactedClients(mockData.contactedClients);
+    setColdLeads(mockData.coldLeads);
+  }, []);
+
+  // Handle Google Sheets data loading
+  const handleGoogleSheetsDataLoaded = (leads) => {
+    if (leads && Array.isArray(leads)) {
+      // Update the leads state with the fetched data
+      setWarmLeads(leads.filter(lead => lead.category === 'warmLeads'));
+      setContactedClients(leads.filter(lead => lead.category === 'contactedClients'));
+      setColdLeads(leads.filter(lead => lead.category === 'coldLeads'));
+      
+      // Update connection status
+      setIsConnectedToGoogleSheets(true);
+      setLastSyncTime(new Date().toLocaleString());
+      
+      console.log('✅ CRM data loaded from Google Sheets:', {
+        warmLeads: leads.filter(lead => lead.category === 'warmLeads').length,
+        contactedClients: leads.filter(lead => lead.category === 'contactedClients').length,
+        coldLeads: leads.filter(lead => lead.category === 'coldLeads').length
+      });
     }
-  ]);
+  };
+
+  const handleConnectionStatusChange = (isConnected) => {
+    setIsConnectedToGoogleSheets(isConnected);
+    if (!isConnected) {
+      setLastSyncTime(null);
+    }
+    console.log('🔄 CRM connection status changed:', isConnected);
+  };
+
+  // Manual sync with Google Sheets
+  const handleManualSync = async () => {
+    if (!isConnectedToGoogleSheets) {
+      setShowGoogleSheetsSetup(true);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const service = new CRMGoogleSheetsService();
+      const data = await service.fetchCRMData();
+      handleGoogleSheetsDataLoaded(data);
+      setLastSyncTime(new Date().toLocaleString());
+    } catch (error) {
+      console.error('❌ Manual sync failed:', error);
+      // Fall back to mock data on error
+      setWarmLeads(mockData.warmLeads);
+      setContactedClients(mockData.contactedClients);
+      setColdLeads(mockData.coldLeads);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     const colors = {
-      active: 'bg-green-100 text-green-800',
-      prospect: 'bg-blue-100 text-blue-800',
-      lead: 'bg-yellow-100 text-yellow-800',
-      inactive: 'bg-gray-100 text-gray-800'
+      warm: 'bg-green-100 text-green-800',
+      contacted: 'bg-blue-100 text-blue-800',
+      cold: 'bg-gray-100 text-gray-800'
     };
-    return colors[status] || colors.lead;
+    return colors[status] || colors.cold;
   };
 
-  const getPriorityColor = (priority) => {
-    const colors = {
-      high: 'bg-red-100 text-red-800',
-      medium: 'bg-yellow-100 text-yellow-800',
-      low: 'bg-green-100 text-green-800'
-    };
-    return colors[priority] || colors.medium;
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'warm':
+        return <Star className="w-4 h-4 text-green-600" />;
+      case 'contacted':
+        return <CheckCircle className="w-4 h-4 text-blue-600" />;
+      case 'cold':
+        return <Clock className="w-4 h-4 text-gray-600" />;
+      default:
+        return <AlertCircle className="w-4 h-4 text-gray-600" />;
+    }
   };
 
-  const getStageColor = (stage) => {
-    const colors = {
-      qualification: 'bg-gray-100 text-gray-800',
-      proposal: 'bg-blue-100 text-blue-800',
-      negotiation: 'bg-yellow-100 text-yellow-800',
-      closed: 'bg-green-100 text-green-800',
-      lost: 'bg-red-100 text-red-800'
-    };
-    return colors[stage] || colors.qualification;
-  };
+  const filteredWarmLeads = warmLeads.filter(client => 
+    client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || client.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  const filteredContactedClients = contactedClients.filter(client => 
+    client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  const totalValue = clients.reduce((sum, client) => {
-    const value = parseFloat(client.value.replace('$', '').replace('M', '000000'));
-    return sum + value;
-  }, 0);
+  const filteredColdLeads = coldLeads.filter(client => 
+    client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  const activeClients = clients.filter(client => client.status === 'active').length;
-  const totalDeals = deals.length;
-  const conversionRate = ((activeClients / clients.length) * 100).toFixed(1);
+  const totalWarmLeads = warmLeads.length;
+  const totalContacted = contactedClients.length;
+  const totalColdLeads = coldLeads.length;
+  const totalLeads = totalWarmLeads + totalContacted + totalColdLeads;
+
+  const renderClientCard = (client) => (
+    <Card key={client.id} className="hover:shadow-md transition-shadow">
+      <CardContent className="p-6 pt-8">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <h4 className="font-medium text-gray-900">{client.contactName}</h4>
+            <div className="flex items-center gap-2 mt-2">
+              <Mail className="w-3 h-3 text-gray-400" />
+              <p className="text-sm text-gray-600">{client.email}</p>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <Phone className="w-3 h-3 text-gray-400" />
+              <p className="text-sm text-gray-600">{client.phone}</p>
+            </div>
+            {client.instagram && (
+              <div className="flex items-center gap-2 mt-2">
+                <Instagram className="w-3 h-3 text-gray-400" />
+                <p className="text-sm text-gray-600">@{client.instagram}</p>
+              </div>
+            )}
+          </div>
+          <Badge className={getStatusColor(client.status)}>
+            {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+          </Badge>
+        </div>
+        
+        <div className="space-y-3 mb-5">
+          <p className="text-sm text-gray-700">{client.notes}</p>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Clock className="w-3 h-3" />
+            <span>Last contact: {client.lastContact}</span>
+          </div>
+          {client.followUpDate && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Calendar className="w-3 h-3" />
+              <span>Follow up: {client.followUpDate}</span>
+            </div>
+          )}
+          {client.nextOutreach && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <AlertCircle className="w-3 h-3" />
+              <span>Next outreach: {client.nextOutreach}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedClient(client)}
+            className="flex-1"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            View Details
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1">
+            <Edit className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -173,39 +340,94 @@ const CRMPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">CRM Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage your client relationships and sales pipeline</p>
+          <p className="text-gray-600 mt-2">Manage your leads and client relationships</p>
+          {isConnectedToGoogleSheets && (
+            <div className="flex items-center gap-2 mt-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-sm text-green-600">Connected to Google Sheets</span>
+              {lastSyncTime && (
+                <span className="text-xs text-gray-500">
+                  • Last synced: {lastSyncTime}
+                </span>
+              )}
+            </div>
+          )}
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Client
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => setShowGoogleSheetsSetup(!showGoogleSheetsSetup)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Database className="w-4 h-4" />
+            {showGoogleSheetsSetup ? 'Hide Setup' : 'Google Sheets Setup'}
+          </Button>
+          <Button
+            onClick={handleManualSync}
+            disabled={isLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isLoading ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            {isLoading ? 'Syncing...' : 'Sync Data'}
+          </Button>
+          <Button onClick={() => setShowAddModal(true)} className="bg-green-600 hover:bg-green-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Lead
+          </Button>
+        </div>
       </div>
 
+      {/* Google Sheets Setup */}
+      {showGoogleSheetsSetup && (
+        <CRMGoogleSheetsSetup
+          onDataLoaded={handleGoogleSheetsDataLoaded}
+          onConnectionStatusChange={handleConnectionStatusChange}
+        />
+      )}
+
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-600 mb-2">Total Portfolio Value</p>
-                <p className="text-3xl font-bold text-blue-900">${(totalValue / 1000000).toFixed(1)}M</p>
+                <p className="text-sm font-medium text-green-600 mb-2">Warm Leads</p>
+                <p className="text-3xl font-bold text-green-900">{totalWarmLeads}</p>
               </div>
-              <div className="p-3 rounded-full bg-blue-200">
-                <DollarSign className="w-6 h-6 text-blue-600" />
+              <div className="p-3 rounded-full bg-green-200">
+                <Star className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600 mb-2">Active Clients</p>
-                <p className="text-3xl font-bold text-green-900">{activeClients}</p>
+                <p className="text-sm font-medium text-blue-600 mb-2">Contacted</p>
+                <p className="text-3xl font-bold text-blue-900">{totalContacted}</p>
               </div>
-              <div className="p-3 rounded-full bg-green-200">
-                <Users className="w-6 h-6 text-green-600" />
+              <div className="p-3 rounded-full bg-blue-200">
+                <CheckCircle className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200">
+          <CardContent className="p-6 pt-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-2">Cold Leads</p>
+                <p className="text-3xl font-bold text-gray-900">{totalColdLeads}</p>
+              </div>
+              <div className="p-3 rounded-full bg-gray-200">
+                <Clock className="w-6 h-6 text-gray-600" />
               </div>
             </div>
           </CardContent>
@@ -215,199 +437,110 @@ const CRMPage = () => {
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-600 mb-2">Active Deals</p>
-                <p className="text-3xl font-bold text-purple-900">{totalDeals}</p>
+                <p className="text-sm font-medium text-purple-600 mb-2">Total Leads</p>
+                <p className="text-3xl font-bold text-purple-900">{totalLeads}</p>
               </div>
               <div className="p-3 rounded-full bg-purple-200">
-                <Target className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
-          <CardContent className="p-6 pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-600 mb-2">Conversion Rate</p>
-                <p className="text-3xl font-bold text-orange-900">{conversionRate}%</p>
-              </div>
-              <div className="p-3 rounded-full bg-orange-200">
-                <TrendingUp className="w-6 h-6 text-orange-600" />
+                <Users className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search clients by name, company, or email..."
+            placeholder="Search leads by name, email, or Instagram..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="all">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="prospect">Prospect</option>
-          <option value="lead">Lead</option>
-          <option value="inactive">Inactive</option>
-        </select>
       </div>
 
-      {/* Clients Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Client Database ({filteredClients.length} clients)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Client</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Company</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Portfolio Value</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Active Deals</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Last Contact</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Priority</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredClients.map((client) => (
-                  <tr key={client.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{client.name}</p>
-                        <p className="text-sm text-gray-500">{client.email}</p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-700">{client.company}</td>
-                    <td className="py-3 px-4">
-                      <Badge className={getStatusColor(client.status)}>
-                        {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 font-medium text-gray-900">{client.value}</td>
-                    <td className="py-3 px-4 text-gray-700">{client.deals}</td>
-                    <td className="py-3 px-4 text-gray-700">{client.lastContact}</td>
-                    <td className="py-3 px-4">
-                      <Badge className={getPriorityColor(client.priority)}>
-                        {client.priority.charAt(0).toUpperCase() + client.priority.slice(1)}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedClient(client)}
-                          className="text-blue-600 hover:text-blue-700"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-green-600 hover:text-green-700"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('warm-leads')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'warm-leads'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Warm Leads ({totalWarmLeads})
+          </button>
+          <button
+            onClick={() => setActiveTab('contacted')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'contacted'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Contacted Before ({totalContacted})
+          </button>
+          <button
+            onClick={() => setActiveTab('cold-leads')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'cold-leads'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Cold Leads ({totalColdLeads})
+          </button>
+        </nav>
+      </div>
 
-      {/* Active Deals */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5" />
-            Active Deals ({deals.length} deals)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {deals.map((deal) => (
-              <Card key={deal.id} className="border-l-4 border-blue-500">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-medium text-gray-900">{deal.clientName}</h4>
-                      <p className="text-sm text-gray-600">{deal.property}</p>
-                    </div>
-                    <Badge className={getStageColor(deal.stage)}>
-                      {deal.stage.charAt(0).toUpperCase() + deal.stage.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Deal Value:</span>
-                      <span className="font-medium text-gray-900">{deal.value}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Probability:</span>
-                      <span className="font-medium text-gray-900">{deal.probability}%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Expected Close:</span>
-                      <span className="font-medium text-gray-900">{deal.expectedClose}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Last Activity:</span>
-                      <span className="font-medium text-gray-900">{deal.lastActivity}</span>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Details
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Update
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      {/* Content based on active tab */}
+      {activeTab === 'warm-leads' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Warm Leads</h2>
+            <p className="text-sm text-gray-600">Leads showing interest and engagement</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredWarmLeads.map(renderClientCard)}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'contacted' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Clients We've Contacted Before</h2>
+            <p className="text-sm text-gray-600">Leads with previous communication history</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredContactedClients.map(renderClientCard)}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'cold-leads' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Cold Leads</h2>
+            <p className="text-sm text-gray-600">Leads requiring initial outreach or re-engagement</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredColdLeads.map(renderClientCard)}
+          </div>
+        </div>
+      )}
 
       {/* Client Detail Modal */}
       {selectedClient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Client Details</h3>
+              <h3 className="text-xl font-bold text-gray-900">Lead Details</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -421,12 +554,14 @@ const CRMPage = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <p className="text-gray-900">{selectedClient.name}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
+                  <p className="text-gray-900">{selectedClient.contactName}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                  <p className="text-gray-900">{selectedClient.company}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <Badge className={getStatusColor(selectedClient.status)}>
+                    {selectedClient.status.charAt(0).toUpperCase() + selectedClient.status.slice(1)}
+                  </Badge>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -436,15 +571,15 @@ const CRMPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <p className="text-gray-900">{selectedClient.phone}</p>
                 </div>
+                {selectedClient.instagram && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+                    <p className="text-gray-900">@{selectedClient.instagram}</p>
+                  </div>
+                )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <Badge className={getStatusColor(selectedClient.status)}>
-                    {selectedClient.status.charAt(0).toUpperCase() + selectedClient.status.slice(1)}
-                  </Badge>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Portfolio Value</label>
-                  <p className="text-gray-900 font-medium">{selectedClient.value}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Contact</label>
+                  <p className="text-gray-900">{selectedClient.lastContact}</p>
                 </div>
               </div>
               
@@ -452,11 +587,25 @@ const CRMPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <p className="text-gray-900">{selectedClient.notes}</p>
               </div>
+
+              {selectedClient.followUpDate && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Follow Up Date</label>
+                  <p className="text-gray-900">{selectedClient.followUpDate}</p>
+                </div>
+              )}
+
+              {selectedClient.nextOutreach && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Next Outreach</label>
+                  <p className="text-gray-900">{selectedClient.nextOutreach}</p>
+                </div>
+              )}
               
               <div className="flex items-center gap-2 pt-4">
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Phone className="w-4 h-4 mr-2" />
-                  Call Client
+                  Call Lead
                 </Button>
                 <Button variant="outline">
                   <Mail className="w-4 h-4 mr-2" />
@@ -466,6 +615,12 @@ const CRMPage = () => {
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule Meeting
                 </Button>
+                {selectedClient.instagram && (
+                  <Button variant="outline">
+                    <Instagram className="w-4 h-4 mr-2" />
+                    View Instagram
+                  </Button>
+                )}
               </div>
             </div>
           </div>
