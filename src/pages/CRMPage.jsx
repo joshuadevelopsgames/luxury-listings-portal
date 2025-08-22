@@ -342,10 +342,13 @@ const CRMPage = () => {
         throw new Error('Service account credentials not found. Please set up Google Sheets integration first.');
       }
 
+      console.log('🔐 Service account credentials loaded:', credentials.client_email);
+
       // Create a new service instance with credentials
       const service = new CRMGoogleSheetsService();
       service.setServiceAccountCredentials(credentials);
 
+      console.log('🔐 Service instance created with credentials');
       console.log('➕ Adding new lead to Google Sheets:', newLead);
       console.log('📋 Selected tabs:', selectedTabs);
 
@@ -374,7 +377,7 @@ const CRMPage = () => {
         const newLeadData = {
           id: `new-${Date.now()}`,
           organization: newLead.organization || '',
-          name: newLead.name,
+          name: newLead.contactName, // Fixed: use contactName from form
           email: newLead.email,
           instagram: newLead.instagram || '',
           phone: newLead.phone || '',
