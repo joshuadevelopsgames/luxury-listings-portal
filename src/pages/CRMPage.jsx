@@ -500,27 +500,27 @@ const CRMPage = () => {
   };
 
   const filteredWarmLeads = warmLeads.filter(client => 
-    (client.contactName && client.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
+    (client.contactName && client.contactName.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.email && client.email.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.instagram && client.instagram.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.organization && client.organization.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.website && client.website.toLowerCase().includes((searchTerm || '').toLowerCase()))
   );
 
   const filteredContactedClients = contactedClients.filter(client => 
-    (client.contactName && client.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
+    (client.contactName && client.contactName.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.email && client.email.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.instagram && client.instagram.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.organization && client.organization.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.website && client.website.toLowerCase().includes((searchTerm || '').toLowerCase()))
   );
 
   const filteredColdLeads = coldLeads.filter(client => 
-    (client.contactName && client.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
+    (client.contactName && client.contactName.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.email && client.email.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.instagram && client.instagram.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.organization && client.organization.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.website && client.website.toLowerCase().includes((searchTerm || '').toLowerCase()))
   );
 
   const totalWarmLeads = warmLeads.length;
@@ -567,7 +567,7 @@ const CRMPage = () => {
             )}
           </div>
           <Badge className={getStatusColor(client.status)}>
-            {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+            {client.status ? client.status.charAt(0).toUpperCase() + client.status.slice(1) : 'Unknown'}
           </Badge>
         </div>
         
@@ -992,7 +992,7 @@ const CRMPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                   <Badge className={getStatusColor(selectedClient.status)}>
-                    {selectedClient.status.charAt(0).toUpperCase() + selectedClient.status.slice(1)}
+                    {selectedClient.status ? selectedClient.status.charAt(0).toUpperCase() + selectedClient.status.slice(1) : 'Unknown'}
                   </Badge>
                 </div>
                 
