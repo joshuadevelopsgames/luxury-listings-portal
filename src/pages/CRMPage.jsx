@@ -332,39 +332,53 @@ const CRMPage = () => {
 
     setIsAddingLead(true);
     try {
-      // For now, we'll add to local state and Firebase
-      // In a full implementation, you'd also add to Google Sheets via API
+      // Prepare lead data
       const leadData = {
-        id: Date.now(), // Generate unique ID
         contactName: newLead.contactName,
         email: newLead.email,
-        phone: newLead.phone || 'No phone',
-        instagram: newLead.instagram || null,
-        organization: newLead.organization || null,
-        website: newLead.website || null,
-        notes: newLead.notes || '',
+        phone: newLead.phone || '',
+        instagram: newLead.instagram || '',
+        organization: newLead.organization || '',
+        website: newLead.website || '',
+        notes: newLead.notes || ''
+      };
+
+      // Add to Google Sheets first
+      const service = new CRMGoogleSheetsService();
+      const sheetsResult = await service.addNewLead(leadData, selectedTabs);
+      
+      if (!sheetsResult.success) {
+        throw new Error(`Failed to add lead to Google Sheets: ${sheetsResult.message}`);
+      }
+
+      console.log('✅ Lead added to Google Sheets:', sheetsResult);
+
+      // If Google Sheets update was successful, update local state and Firebase
+      const leadDataWithId = {
+        id: Date.now(), // Generate unique ID
+        ...leadData,
         lastContact: 'Never',
         status: 'warm' // Default status
       };
 
       // Add to appropriate local state based on selected tabs
       if (selectedTabs.warmLeads) {
-        setWarmLeads(prev => [...prev, { ...leadData, status: 'warm' }]);
+        setWarmLeads(prev => [...prev, { ...leadDataWithId, status: 'warm' }]);
       }
       if (selectedTabs.contactedClients) {
-        setContactedClients(prev => [...prev, { ...leadData, status: 'contacted' }]);
+        setContactedClients(prev => [...prev, { ...leadDataWithId, status: 'contacted' }]);
       }
       if (selectedTabs.coldLeads) {
-        setColdLeads(prev => [...prev, { ...leadData, status: 'cold' }]);
+        setColdLeads(prev => [...prev, { ...leadDataWithId, status: 'cold' }]);
       }
 
       // Save updated data to Firebase
       if (currentUser?.uid) {
         const userDocRef = doc(db, 'users', currentUser.uid);
         await setDoc(userDocRef, {
-          warmLeads: selectedTabs.warmLeads ? [...warmLeads, { ...leadData, status: 'warm' }] : warmLeads,
-          contactedClients: selectedTabs.contactedClients ? [...contactedClients, { ...leadData, status: 'contacted' }] : contactedClients,
-          coldLeads: selectedTabs.coldLeads ? [...coldLeads, { ...leadData, status: 'cold' }] : coldLeads,
+          warmLeads: selectedTabs.warmLeads ? [...warmLeads, { ...leadDataWithId, status: 'warm' }] : warmLeads,
+          contactedClients: selectedTabs.contactedClients ? [...contactedClients, { ...leadDataWithId, status: 'contacted' }] : contactedClients,
+          coldLeads: selectedTabs.coldLeads ? [...coldLeads, { ...leadDataWithId, status: 'cold' }] : coldLeads,
           lastSyncTime: new Date().toLocaleString(),
           isConnectedToGoogleSheets: true
         }, { merge: true });
@@ -388,10 +402,10 @@ const CRMPage = () => {
       });
       setShowAddModal(false);
 
-      alert(`✅ Lead added successfully to ${selectedTabCount} tab(s)!`);
+      alert(`✅ Lead added successfully to ${selectedTabCount} tab(s) in Google Sheets!`);
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
-      alert('❌ Error adding lead. Please try again.');
+      alert(`❌ Error adding lead: ${error.message}`);
     } finally {
       setIsAddingLead(false);
     }

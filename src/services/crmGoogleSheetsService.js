@@ -284,6 +284,98 @@ class CRMGoogleSheetsService {
     // It will use the first tab only
     return this.fetchSheetData(this.sheetTabs.warmLeads, 'warm', this.headerRows.warmLeads);
   }
+
+  // Add new lead to Google Sheets
+  async addNewLead(leadData, selectedTabs) {
+    try {
+      if (!this.apiKey) {
+        throw new Error('Google Sheets API key not configured');
+      }
+
+      console.log('➕ Adding new lead to Google Sheets:', leadData);
+      console.log('📋 Selected tabs:', selectedTabs);
+
+      const results = [];
+
+      // Add lead to each selected tab
+      for (const [tabKey, isSelected] of Object.entries(selectedTabs)) {
+        if (isSelected) {
+          try {
+            const tabName = this.sheetTabs[tabKey];
+            const result = await this.appendLeadToTab(leadData, tabName, tabKey);
+            results.push({ tab: tabName, success: true, result });
+            console.log(`✅ Lead added to ${tabName} successfully`);
+          } catch (error) {
+            console.error(`❌ Error adding lead to ${this.sheetTabs[tabKey]}:`, error);
+            results.push({ tab: this.sheetTabs[tabKey], success: false, error: error.message });
+          }
+        }
+      }
+
+      return {
+        success: results.some(r => r.success),
+        results,
+        message: `Lead added to ${results.filter(r => r.success).length} tab(s)`
+      };
+    } catch (error) {
+      console.error('❌ Error adding new lead:', error);
+      throw error;
+    }
+  }
+
+  // Append lead to a specific tab
+  async appendLeadToTab(leadData, tabName, tabKey) {
+    try {
+      // Prepare the row data in the correct order for the sheet
+      const rowData = this.prepareLeadRow(leadData, tabKey);
+      
+      // Use Google Sheets append API
+      const url = `${this.baseUrl}/${this.spreadsheetId}/values/${encodeURIComponent(tabName)}:append?valueInputOption=RAW&key=${this.apiKey}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          values: [rowData]
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to append to ${tabName}: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log(`📝 Lead appended to ${tabName}:`, result);
+      
+      return result;
+    } catch (error) {
+      console.error(`❌ Error appending to ${tabName}:`, error);
+      throw error;
+    }
+  }
+
+  // Prepare lead data row in the correct column order
+  prepareLeadRow(leadData, tabKey) {
+    // Define the column order for each tab (matching the sheet structure)
+    const columnOrder = [
+      'organization',    // Organization
+      'contactName',     // NAME
+      'email',          // EMAIL
+      'instagram',      // Instagram
+      'phone',          // PHONE
+      'website',        // WEBSITE
+      'notes'           // NOTES
+    ];
+
+    // Map the lead data to the correct column order
+    return columnOrder.map(field => {
+      const value = leadData[field];
+      return value || ''; // Return empty string if field is null/undefined
+    });
+  }
 }
 
 // Create and export a singleton instance
