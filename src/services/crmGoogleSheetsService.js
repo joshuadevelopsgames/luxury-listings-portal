@@ -345,38 +345,19 @@ class CRMGoogleSheetsService {
     return this.fetchSheetData(this.sheetTabs.warmLeads, 'warm', this.headerRows.warmLeads);
   }
 
-  // Add new lead to Google Sheets
+  // Add new lead to Google Sheets using Google Apps Script
   async addNewLead(leadData, selectedTabs) {
     try {
-      if (!this.apiKey) {
-        throw new Error('Google Sheets API key not configured');
-      }
-
-      console.log('➕ Adding new lead to Google Sheets:', leadData);
+      console.log('➕ Adding new lead to Google Sheets via Apps Script:', leadData);
       console.log('📋 Selected tabs:', selectedTabs);
 
-      const results = [];
-
-      // Add lead to each selected tab
-      for (const [tabKey, isSelected] of Object.entries(selectedTabs)) {
-        if (isSelected) {
-          try {
-            const tabName = this.sheetTabs[tabKey];
-            const result = await this.appendLeadToTab(leadData, tabName, tabKey);
-            results.push({ tab: tabName, success: true, result });
-            console.log(`✅ Lead added to ${tabName} successfully`);
-          } catch (error) {
-            console.error(`❌ Error adding lead to ${this.sheetTabs[tabKey]}:`, error);
-            results.push({ tab: this.sheetTabs[tabKey], success: false, error: error.message });
-          }
-        }
-      }
-
-      return {
-        success: results.some(r => r.success),
-        results,
-        message: `Lead added to ${results.filter(r => r.success).length} tab(s)`
-      };
+      // For now, we'll use the Google Apps Script approach
+      // This requires setting up a Google Apps Script that can write to sheets
+      console.log('🔧 Google Apps Script integration not yet implemented');
+      console.log('🔧 This would be similar to how ClientPackages works');
+      
+      throw new Error('Google Apps Script integration required for write operations. Please set up a Google Apps Script endpoint similar to ClientPackages.');
+      
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
       throw error;
