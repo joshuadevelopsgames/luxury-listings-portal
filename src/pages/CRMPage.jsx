@@ -328,7 +328,7 @@ const CRMPage = () => {
       return;
     }
 
-    if (selectedTabs.length === 0) {
+    if (Object.values(selectedTabs).filter(Boolean).length === 0) {
       alert('Please select at least one tab to add the lead to');
       return;
     }
@@ -354,8 +354,8 @@ const CRMPage = () => {
 
       // Add lead to each selected tab
       const results = await Promise.allSettled(
-        selectedTabs.map(tabKey => 
-          service.addNewLead(newLead, [tabKey])
+        Object.entries(selectedTabs).filter(([key, value]) => value).map(([key]) => 
+          service.addNewLead(newLead, [key])
         )
       );
 
@@ -365,10 +365,10 @@ const CRMPage = () => {
 
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
-          successfulTabs.push(selectedTabs[index]);
+          successfulTabs.push(Object.keys(selectedTabs)[index]);
         } else {
-          failedTabs.push(selectedTabs[index]);
-          console.error(`❌ Failed to add to ${selectedTabs[index]}:`, result.reason);
+          failedTabs.push(Object.keys(selectedTabs)[index]);
+          console.error(`❌ Failed to add to ${Object.keys(selectedTabs)[index]}:`, result.reason);
         }
       });
 
