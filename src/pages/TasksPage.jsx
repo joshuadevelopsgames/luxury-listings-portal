@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { DailyTask } from '../entities/DailyTask';
 
 const TasksPage = () => {
+  console.log('🚀 TasksPage component initializing...'); // Debug log
   const { currentUser } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [activeFilter, setActiveFilter] = useState('today');
@@ -33,6 +34,7 @@ const TasksPage = () => {
   
   // Helper function to check if date is tomorrow (local date comparison)
   const isTomorrowLocal = (dateString) => {
+    console.log('🔍 isTomorrowLocal called with:', dateString); // Debug log
     if (!dateString) return false;
     const taskDate = parseLocalDate(dateString);
     const tomorrow = new Date();
