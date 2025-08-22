@@ -668,14 +668,28 @@ const CRMPage = () => {
                       const subject = encodeURIComponent(`Follow up - ${selectedClient.contactName}`);
                       const body = encodeURIComponent(`Hi ${selectedClient.contactName},\n\nI hope this email finds you well. I wanted to follow up regarding our previous conversation.\n\nBest regards,\n[Your Name]`);
                       
-                      // Open Gmail compose with pre-filled details
-                      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(selectedClient.email)}&su=${subject}&body=${body}`;
-                      window.open(gmailUrl, '_blank');
+                      // Try multiple Gmail URL formats to ensure it opens Gmail
+                      const gmailUrls = [
+                        `https://mail.google.com/mail/u/0/#compose?to=${encodeURIComponent(selectedClient.email)}&subject=${subject}&body=${body}`,
+                        `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(selectedClient.email)}&su=${subject}&body=${body}`,
+                        `https://mail.google.com/mail/u/0/#compose?to=${encodeURIComponent(selectedClient.email)}&su=${subject}&body=${body}`
+                      ];
+                      
+                      // Try the first URL, if it fails, fall back to mailto
+                      const gmailWindow = window.open(gmailUrls[0], '_blank');
+                      
+                      // Fallback: if Gmail doesn't open properly, use mailto
+                      setTimeout(() => {
+                        if (!gmailWindow || gmailWindow.closed) {
+                          const mailtoUrl = `mailto:${selectedClient.email}?subject=${subject}&body=${body}`;
+                          window.open(mailtoUrl, '_self');
+                        }
+                      }, 1000);
                     } else {
                       alert('No email address available for this lead');
                     }
                   }}
-                  title="Opens Gmail compose with pre-filled details"
+                  title="Opens Gmail compose with pre-filled details (fallback to default email client)"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Send Email
