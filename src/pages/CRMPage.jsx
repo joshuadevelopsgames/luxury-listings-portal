@@ -500,24 +500,24 @@ const CRMPage = () => {
   };
 
   const filteredWarmLeads = warmLeads.filter(client => 
-    client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.contactName && client.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const filteredContactedClients = contactedClients.filter(client => 
-    client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.contactName && client.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const filteredColdLeads = coldLeads.filter(client => 
-    client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (client.contactName && client.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
