@@ -673,12 +673,15 @@ const CRMPage = () => {
   };
 
   const getStatusColor = (status) => {
+    console.log('🔍 getStatusColor called with status:', status);
     const colors = {
       warm: 'bg-red-100 text-red-800',
-      contacted: 'bg-purple-100 text-purple-800',
+      contacted: '!bg-purple-100 !text-purple-800',
       cold: 'bg-blue-50 text-blue-700'
     };
-    return colors[status] || colors.cold;
+    const result = colors[status] || colors.cold;
+    console.log('🎨 Returning color classes:', result);
+    return result;
   };
 
   const getStatusIcon = (status) => {
