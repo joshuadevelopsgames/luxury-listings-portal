@@ -31,7 +31,24 @@ const TasksPage = () => {
     return taskDate.getTime() === todayOnly.getTime();
   };
   
+  // Helper function to check if date is tomorrow (local date comparison)
+  const isTomorrowLocal = (dateString) => {
+    if (!dateString) return false;
+    const taskDate = parseLocalDate(dateString);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowOnly = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+    return taskDate.getTime() === tomorrowOnly.getTime();
+  };
   
+  // Helper function to check if date is in the past (local date comparison)
+  const isPastLocal = (dateString) => {
+    if (!dateString) return false;
+    const taskDate = parseLocalDate(dateString);
+    const today = new Date();
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return taskDate < todayOnly;
+  };
 
   // Load initial data and set up real-time listener
   useEffect(() => {
