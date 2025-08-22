@@ -644,7 +644,10 @@ const CRMPage = () => {
                     const endDate = new Date(startDate);
                     endDate.setHours(11, 0, 0, 0); // 11 AM
                     
-                    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&details=${eventDetails}&dates=${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`;
+                    // Include lead's email as attendee if available
+                    const attendees = selectedClient.email ? `&add=${encodeURIComponent(selectedClient.email)}` : '';
+                    
+                    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&details=${eventDetails}&dates=${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}${attendees}`;
                     
                     window.open(googleCalendarUrl, '_blank');
                   }}
@@ -652,6 +655,11 @@ const CRMPage = () => {
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule Meeting
                 </Button>
+                {selectedClient.email && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    📧 {selectedClient.contactName} will be automatically invited
+                  </div>
+                )}
                 {selectedClient.instagram && (
                   <Button 
                     variant="outline"
