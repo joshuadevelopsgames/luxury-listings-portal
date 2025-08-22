@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import CRMGoogleSheetsSetup from '../components/CRMGoogleSheetsSetup';
 import { CRMGoogleSheetsService } from '../services/crmGoogleSheetsService';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const CRMPage = () => {
   const { currentUser, currentRole } = useAuth();
@@ -99,82 +101,93 @@ const CRMPage = () => {
         instagram: 'shawnshirdel',
         status: 'warm',
         lastContact: '2025-08-05',
-        notes: 'Beverly Hills luxury real estate expert'
-      },
-      {
-        id: 6,
-        contactName: 'Ryan Kaplan',
-        phone: '(631) 834-8523',
-        email: 'ryan.kaplan@corcoran.com',
-        instagram: 'ryan.kaplan',
-        status: 'warm',
-        lastContact: '2025-08-03',
-        notes: 'Corcoran agent, East Coast luxury market'
+        notes: 'Luxury real estate specialist, Beverly Hills market'
       }
     ],
     contactedClients: [
       {
-        id: 7,
-        contactName: 'Jennifer Martinez',
-        phone: '(212) 555-0123',
-        email: 'jennifer@luxuryestatesny.com',
-        instagram: 'jenluxury',
+        id: 6,
+        contactName: 'Maritt Bird',
+        phone: '(310) 555-0123',
+        email: 'maritt@luxuryrealty.com',
+        instagram: 'marittbird',
         status: 'contacted',
-        lastContact: '2025-07-28',
-        notes: 'Sent proposal for luxury penthouse, awaiting response',
-        proposalSent: '2025-07-28',
-        followUpDate: '2025-08-20'
-      },
-      {
-        id: 8,
-        contactName: 'Robert Chen',
-        phone: '(415) 555-0456',
-        email: 'robert@sanfranluxury.com',
-        instagram: 'robchenluxury',
-        status: 'contacted',
-        lastContact: '2025-07-25',
-        notes: 'Discussed portfolio management services',
-        proposalSent: '2025-07-25',
-        followUpDate: '2025-08-18'
+        lastContact: '2025-08-14',
+        notes: 'Follow up scheduled for next week'
       }
     ],
     coldLeads: [
       {
-        id: 9,
-        contactName: 'Amanda Rodriguez',
-        phone: '(305) 555-0789',
-        email: 'amanda@miamiluxury.com',
-        instagram: 'amandamiami',
+        id: 7,
+        contactName: 'Alex Johnson',
+        phone: '(212) 555-0456',
+        email: 'alex@premiumproperties.com',
+        instagram: 'alexjohnson',
         status: 'cold',
-        lastContact: '2025-06-15',
-        notes: 'Initial outreach, no response yet',
-        outreachDate: '2025-06-15',
-        nextOutreach: '2025-08-25'
-      },
-      {
-        id: 10,
-        contactName: 'Michael Thompson',
-        phone: '(312) 555-0321',
-        email: 'michael@chicagoluxury.com',
-        instagram: 'mthompsonchi',
-        status: 'cold',
-        lastContact: '2025-06-10',
-        notes: 'Cold email sent, no engagement',
-        outreachDate: '2025-06-10',
-        nextOutreach: '2025-08-30'
+        lastContact: 'Never',
+        notes: 'New lead from website inquiry'
       }
     ]
   };
 
-  // Initialize with mock data
+  // Load CRM data from local storage on component mount
   useEffect(() => {
-    setWarmLeads(mockData.warmLeads);
-    setContactedClients(mockData.contactedClients);
-    setColdLeads(mockData.coldLeads);
-  }, []);
+    const loadStoredData = async () => {
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          setWarmLeads(userData.warmLeads || []);
+          setContactedClients(userData.contactedClients || []);
+          setColdLeads(userData.coldLeads || []);
+          setLastSyncTime(userData.lastSyncTime || null);
+          setIsConnectedToGoogleSheets(userData.isConnectedToGoogleSheets || false);
+          console.log('📱 Loaded CRM data from Firebase for user:', currentUser.uid);
+        } else {
+          // No stored data, use mock data
+          setWarmLeads(mockData.warmLeads);
+          setContactedClients(mockData.contactedClients);
+          setColdLeads(mockData.coldLeads);
+          console.log('📱 Using mock CRM data (no stored data found for user)');
+        }
+      } catch (error) {
+        console.error('❌ Error loading stored CRM data:', error);
+        // Fallback to mock data
+        setWarmLeads(mockData.warmLeads);
+        setContactedClients(mockData.contactedClients);
+        setColdLeads(mockData.coldLeads);
+      }
+    };
+
+    loadStoredData();
+  }, [currentUser.uid]);
+
+  // Auto-sync on page refresh if connected to Google Sheets
+  useEffect(() => {
+    if (isConnectedToGoogleSheets && !isLoading && currentUser?.uid) {
+      const autoSync = async () => {
+        console.log('🔄 Auto-syncing CRM data on page refresh...');
+        try {
+          const service = new CRMGoogleSheetsService();
+          const data = await service.fetchCRMData();
+          await handleGoogleSheetsDataLoaded(data);
+          console.log('✅ Auto-sync completed successfully');
+        } catch (error) {
+          console.error('❌ Auto-sync failed:', error);
+          // Don't show error to user for auto-sync
+        }
+      };
+
+      // Small delay to ensure component is fully loaded
+      const timer = setTimeout(autoSync, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isConnectedToGoogleSheets, isLoading, currentUser?.uid]);
 
   // Handle Google Sheets data loading
-  const handleGoogleSheetsDataLoaded = (data) => {
+  const handleGoogleSheetsDataLoaded = async (data) => {
     if (data && typeof data === 'object') {
       // Update the leads state with the fetched data
       setWarmLeads(data.warmLeads || []);
@@ -183,7 +196,23 @@ const CRMPage = () => {
       
       // Update connection status
       setIsConnectedToGoogleSheets(true);
-      setLastSyncTime(new Date().toLocaleString());
+      const syncTime = new Date().toLocaleString();
+      setLastSyncTime(syncTime);
+      
+      // Save data to local storage for persistence
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userDocRef, {
+          warmLeads: data.warmLeads || [],
+          contactedClients: data.contactedClients || [],
+          coldLeads: data.coldLeads || [],
+          lastSyncTime: syncTime,
+          isConnectedToGoogleSheets: true
+        });
+        console.log('💾 CRM data saved to Firebase for user:', currentUser.uid);
+      } catch (error) {
+        console.error('❌ Error saving CRM data to Firebase:', error);
+      }
       
       console.log('✅ CRM data loaded from Google Sheets:', {
         warmLeads: data.warmLeads?.length || 0,
@@ -197,8 +226,29 @@ const CRMPage = () => {
     setIsConnectedToGoogleSheets(isConnected);
     if (!isConnected) {
       setLastSyncTime(null);
+      // Clear Firebase CRM data when disconnecting
+      clearFirebaseCRMData();
     }
     console.log('🔄 CRM connection status changed:', isConnected);
+  };
+
+  // Clear Firebase CRM data
+  const clearFirebaseCRMData = async () => {
+    try {
+      if (currentUser?.uid) {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userDocRef, {
+          warmLeads: [],
+          contactedClients: [],
+          coldLeads: [],
+          lastSyncTime: null,
+          isConnectedToGoogleSheets: false
+        }, { merge: true });
+        console.log('🗑️ Cleared Firebase CRM data for user:', currentUser.uid);
+      }
+    } catch (error) {
+      console.error('❌ Error clearing Firebase CRM data:', error);
+    }
   };
 
   // Manual sync with Google Sheets
