@@ -435,13 +435,17 @@ const CRMPage = () => {
           setColdLeads(prev => [newLeadData, ...prev]);
         }
 
+        // Debug: Log the newLeadData to see what's in it
+        console.log('🔍 New lead data being added to state:', newLeadData);
+
         // Save to Firebase
         await saveCRMDataToFirebase();
 
         showToast(`✅ Lead added successfully to ${successfulTabs.length} tab(s): ${successfulTabs.join(', ')}`);
         
-        // Reset form
+        // Reset form and close modal
         resetNewLeadForm();
+        setShowAddModal(false);
         setIsAddingLead(false);
       } else {
         throw new Error('Failed to add lead to any tabs');
