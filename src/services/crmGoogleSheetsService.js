@@ -2,7 +2,7 @@
 class CRMGoogleSheetsService {
   constructor() {
     // CRM Google Sheets Integration Service - UPDATED WITH SERVICE ACCOUNT AUTH
-    this.spreadsheetId = '1wM8g4bPituJoJFVp_Ndlv7o4p3NZMNEM2_WwuUnGvyE';
+    this.spreadsheetId = '1wM8g4bPituJoJFVp_Ndlv7o4p3NZMNEM2-WwuUnGvyE';
     this.baseUrl = 'https://sheets.googleapis.com/v4/spreadsheets';
     
     // For read operations, we can still use API key
