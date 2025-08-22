@@ -41,7 +41,9 @@ class CRMGoogleSheetsService {
     }
 
     try {
-      // Create JWT token
+      console.log('🔐 Generating OAuth2 access token for service account...');
+      
+      // Create JWT token for service account authentication
       const header = {
         alg: 'RS256',
         typ: 'JWT'
@@ -56,13 +58,22 @@ class CRMGoogleSheetsService {
         iat: now
       };
 
-      // For now, we'll use a simpler approach with the service account
-      // In production, you'd want to properly sign the JWT
-      console.log('🔐 Using service account for authentication');
+      // For now, we'll use a simpler approach since we can't sign JWT in browser
+      // The proper solution would be to implement JWT signing with the private key
+      // and exchange it for an OAuth2 access token
       
-      // Return the service account email as a temporary solution
-      // This will be replaced with proper OAuth2 flow
-      return this.serviceAccountCredentials.client_email;
+      console.log('🔐 Service account authentication requires server-side JWT signing');
+      console.log('🔐 For now, using alternative authentication method');
+      
+      // Since we can't sign JWT in the browser, let's use the API key approach
+      // but with proper error handling
+      if (this.apiKey) {
+        console.log('🔑 Falling back to API key authentication (read-only)');
+        throw new Error('Service account authentication requires server-side implementation. API keys are read-only and cannot write to Google Sheets.');
+      } else {
+        throw new Error('No authentication method available. Please implement proper OAuth2 flow or use server-side service account authentication.');
+      }
+      
     } catch (error) {
       console.error('❌ Error getting access token:', error);
       throw error;
