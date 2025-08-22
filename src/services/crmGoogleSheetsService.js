@@ -26,6 +26,10 @@ class CRMGoogleSheetsService {
       contactedClients: 0,
       coldLeads: 0
     };
+
+    // Google Apps Script endpoint URL (you'll get this after deploying the script)
+    // TODO: Replace with your actual Google Apps Script web app URL
+    this.googleAppsScriptUrl = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
   }
 
   // Set service account credentials for write operations
@@ -351,13 +355,45 @@ class CRMGoogleSheetsService {
       console.log('➕ Adding new lead to Google Sheets via Apps Script:', leadData);
       console.log('📋 Selected tabs:', selectedTabs);
 
-      // For now, we'll use the Google Apps Script approach
-      // This requires setting up a Google Apps Script that can write to sheets
-      console.log('🔧 Google Apps Script integration not yet implemented');
-      console.log('🔧 This would be similar to how ClientPackages works');
-      
-      throw new Error('Google Apps Script integration required for write operations. Please set up a Google Apps Script endpoint similar to ClientPackages.');
-      
+      // Check if we have the Google Apps Script URL configured
+      if (!this.googleAppsScriptUrl || this.googleAppsScriptUrl.includes('YOUR_SCRIPT_ID')) {
+        throw new Error('Google Apps Script URL not configured. Please deploy the CRM script and update the URL.');
+      }
+
+      // Prepare the request data
+      const requestData = {
+        leadData: leadData,
+        selectedTabs: selectedTabs
+      };
+
+      console.log('📤 Sending request to Google Apps Script:', requestData);
+
+      // Make POST request to Google Apps Script
+      const response = await fetch(this.googleAppsScriptUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Google Apps Script error:', errorText);
+        throw new Error(`Google Apps Script error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Google Apps Script response:', result);
+
+      if (!result.success) {
+        throw new Error(`Google Apps Script failed: ${result.error || result.message}`);
+      }
+
+      return result;
+
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
       throw error;
