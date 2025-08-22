@@ -675,7 +675,7 @@ const CRMPage = () => {
   const getStatusColor = (status) => {
     const colors = {
       warm: 'bg-red-100 text-red-800',
-      contacted: 'bg-green-100 text-green-800',
+      contacted: 'bg-purple-100 text-purple-800',
       cold: 'bg-blue-50 text-blue-700'
     };
     return colors[status] || colors.cold;
@@ -686,7 +686,7 @@ const CRMPage = () => {
       case 'warm':
         return <Star className="w-4 h-4 text-green-600" />;
       case 'contacted':
-        return <CheckCircle className="w-4 h-4 text-blue-600" />;
+        return <CheckCircle className="w-4 h-4 text-purple-600" />;
       case 'cold':
         return <Clock className="w-4 h-4 text-gray-600" />;
       default:
