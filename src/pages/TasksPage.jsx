@@ -57,9 +57,9 @@ const TasksPage = () => {
       title: task.title,
       due_date: task.due_date,
       due_date_obj: new Date(task.due_date),
-      isToday: isToday(new Date(task.due_date)),
-      isTomorrow: isTomorrow(new Date(task.due_date)),
-      isPast: isPast(new Date(task.due_date)),
+      isToday: isTodayLocal(task.due_date),
+      isTomorrow: isTomorrowLocal(task.due_date),
+      isPast: isPastLocal(task.due_date),
       status: task.status
     })));
     
