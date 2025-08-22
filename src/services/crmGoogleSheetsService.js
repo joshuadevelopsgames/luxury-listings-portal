@@ -329,21 +329,35 @@ class CRMGoogleSheetsService {
       // Prepare the row data in the correct order for the sheet
       const rowData = this.prepareLeadRow(leadData, tabKey);
       
+      console.log(`🔍 Preparing to append to tab: ${tabName}`);
+      console.log(`📊 Row data:`, rowData);
+      
       // Use Google Sheets append API
       const url = `${this.baseUrl}/${this.spreadsheetId}/values/${encodeURIComponent(tabName)}:append?valueInputOption=RAW&key=${this.apiKey}`;
+      
+      console.log(`🌐 API URL:`, url);
+      console.log(`🔑 Using API key: ${this.apiKey.substring(0, 10)}...`);
+      
+      const requestBody = {
+        values: [rowData]
+      };
+      
+      console.log(`📤 Request body:`, requestBody);
       
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          values: [rowData]
-        })
+        body: JSON.stringify(requestBody)
       });
+
+      console.log(`📡 Response status:`, response.status);
+      console.log(`📡 Response headers:`, Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`❌ API Error Response:`, errorText);
         throw new Error(`Failed to append to ${tabName}: ${response.status} - ${errorText}`);
       }
 
@@ -353,6 +367,13 @@ class CRMGoogleSheetsService {
       return result;
     } catch (error) {
       console.error(`❌ Error appending to ${tabName}:`, error);
+      console.error(`❌ Error details:`, {
+        message: error.message,
+        stack: error.stack,
+        tabName,
+        tabKey,
+        leadData
+      });
       throw error;
     }
   }
