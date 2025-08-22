@@ -26,7 +26,8 @@ import {
   ExternalLink,
   Database,
   RefreshCw,
-  Settings
+  Settings,
+  Building
 } from 'lucide-react';
 import CRMGoogleSheetsSetup from '../components/CRMGoogleSheetsSetup';
 import { CRMGoogleSheetsService } from '../services/crmGoogleSheetsService';
@@ -249,19 +250,25 @@ const CRMPage = () => {
   const filteredWarmLeads = warmLeads.filter(client => 
     client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase()))
+    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const filteredContactedClients = contactedClients.filter(client => 
     client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase()))
+    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const filteredColdLeads = coldLeads.filter(client => 
     client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase()))
+    (client.instagram && client.instagram.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.organization && client.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.website && client.website.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const totalWarmLeads = warmLeads.length;
@@ -275,6 +282,15 @@ const CRMPage = () => {
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h4 className="font-medium text-gray-900">{client.contactName}</h4>
+            
+            {/* Organization - New prominent field */}
+            {client.organization && (
+              <div className="flex items-center gap-2 mt-2">
+                <Building className="w-3 h-3 text-gray-400" />
+                <p className="text-sm text-gray-600 font-medium">{client.organization}</p>
+              </div>
+            )}
+            
             <div className="flex items-center gap-2 mt-2">
               <Mail className="w-3 h-3 text-gray-400" />
               <p className="text-sm text-gray-600">{client.email}</p>
@@ -289,6 +305,14 @@ const CRMPage = () => {
                 <p className="text-sm text-gray-600">@{client.instagram}</p>
               </div>
             )}
+            
+            {/* Website - New prominent field */}
+            {client.website && (
+              <div className="flex items-center gap-2 mt-2">
+                <ExternalLink className="w-3 h-3 text-gray-400" />
+                <p className="text-sm text-gray-600">{client.website}</p>
+              </div>
+            )}
           </div>
           <Badge className={getStatusColor(client.status)}>
             {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
@@ -296,7 +320,10 @@ const CRMPage = () => {
         </div>
         
         <div className="space-y-3 mb-5">
-          <p className="text-sm text-gray-700">{client.notes}</p>
+          {/* Notes section - now cleaner without organization/website clutter */}
+          {client.notes && client.notes !== 'No additional information' && (
+            <p className="text-sm text-gray-700">{client.notes}</p>
+          )}
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Clock className="w-3 h-3" />
             <span>Last contact: {client.lastContact}</span>
@@ -563,6 +590,15 @@ const CRMPage = () => {
                     {selectedClient.status.charAt(0).toUpperCase() + selectedClient.status.slice(1)}
                   </Badge>
                 </div>
+                
+                {/* Organization - New prominent field */}
+                {selectedClient.organization && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                    <p className="text-gray-900">{selectedClient.organization}</p>
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <p className="text-gray-900">{selectedClient.email}</p>
@@ -577,6 +613,15 @@ const CRMPage = () => {
                     <p className="text-gray-900">@{selectedClient.instagram}</p>
                   </div>
                 )}
+                
+                {/* Website - New prominent field */}
+                {selectedClient.website && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                    <p className="text-gray-900">{selectedClient.website}</p>
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Contact</label>
                   <p className="text-gray-900">{selectedClient.lastContact}</p>
