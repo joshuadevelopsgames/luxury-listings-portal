@@ -130,27 +130,43 @@ const CRMPage = () => {
     ]
   };
 
-  // Load CRM data from local storage on component mount
+  // Load CRM data from Firebase on component mount
   useEffect(() => {
     const loadStoredData = async () => {
       try {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
+        if (currentUser?.uid) {
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
 
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          setWarmLeads(userData.warmLeads || []);
-          setContactedClients(userData.contactedClients || []);
-          setColdLeads(userData.coldLeads || []);
-          setLastSyncTime(userData.lastSyncTime || null);
-          setIsConnectedToGoogleSheets(userData.isConnectedToGoogleSheets || false);
-          console.log('📱 Loaded CRM data from Firebase for user:', currentUser.uid);
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            if (userData.warmLeads && userData.warmLeads.length > 0) {
+              setWarmLeads(userData.warmLeads || []);
+              setContactedClients(userData.contactedClients || []);
+              setColdLeads(userData.coldLeads || []);
+              setLastSyncTime(userData.lastSyncTime || null);
+              setIsConnectedToGoogleSheets(userData.isConnectedToGoogleSheets || false);
+              console.log('📱 Loaded CRM data from Firebase for user:', currentUser.uid);
+            } else {
+              // Stored data exists but is empty, use mock data
+              setWarmLeads(mockData.warmLeads);
+              setContactedClients(mockData.contactedClients);
+              setColdLeads(mockData.coldLeads);
+              console.log('📱 Using mock CRM data (stored data is empty)');
+            }
+          } else {
+            // No stored data, use mock data
+            setWarmLeads(mockData.warmLeads);
+            setContactedClients(mockData.contactedClients);
+            setColdLeads(mockData.coldLeads);
+            console.log('📱 Using mock CRM data (no stored data found for user)');
+          }
         } else {
-          // No stored data, use mock data
+          // No user authenticated, use mock data
           setWarmLeads(mockData.warmLeads);
           setContactedClients(mockData.contactedClients);
           setColdLeads(mockData.coldLeads);
-          console.log('📱 Using mock CRM data (no stored data found for user)');
+          console.log('📱 Using mock CRM data (no user authenticated)');
         }
       } catch (error) {
         console.error('❌ Error loading stored CRM data:', error);
@@ -162,11 +178,12 @@ const CRMPage = () => {
     };
 
     loadStoredData();
-  }, [currentUser.uid]);
+  }, [currentUser?.uid]);
 
   // Auto-sync on page refresh if connected to Google Sheets
   useEffect(() => {
-    if (isConnectedToGoogleSheets && !isLoading && currentUser?.uid) {
+    // Auto-sync should run when component mounts and user is authenticated
+    if (currentUser?.uid && !isLoading) {
       const autoSync = async () => {
         console.log('🔄 Auto-syncing CRM data on page refresh...');
         try {
@@ -176,7 +193,8 @@ const CRMPage = () => {
           console.log('✅ Auto-sync completed successfully');
         } catch (error) {
           console.error('❌ Auto-sync failed:', error);
-          // Don't show error to user for auto-sync
+          // Don't show error to user for auto-sync, but log it
+          console.log('📱 Auto-sync failed, using stored data or mock data');
         }
       };
 
@@ -184,7 +202,7 @@ const CRMPage = () => {
       const timer = setTimeout(autoSync, 1000);
       return () => clearTimeout(timer);
     }
-  }, [isConnectedToGoogleSheets, isLoading, currentUser?.uid]);
+  }, [currentUser?.uid, isLoading]); // Removed isConnectedToGoogleSheets dependency
 
   // Handle Google Sheets data loading
   const handleGoogleSheetsDataLoaded = async (data) => {
