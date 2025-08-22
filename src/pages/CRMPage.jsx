@@ -45,6 +45,23 @@ const CRMPage = () => {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Add New Lead modal state
+  const [newLead, setNewLead] = useState({
+    contactName: '',
+    email: '',
+    phone: '',
+    instagram: '',
+    organization: '',
+    website: '',
+    notes: ''
+  });
+  const [selectedTabs, setSelectedTabs] = useState({
+    warmLeads: false,
+    contactedClients: false,
+    coldLeads: false
+  });
+  const [isAddingLead, setIsAddingLead] = useState(false);
+
   // CRM data state
   const [warmLeads, setWarmLeads] = useState([]);
   const [contactedClients, setContactedClients] = useState([]);
@@ -293,11 +310,116 @@ const CRMPage = () => {
     }
   };
 
+  // Add new lead to Google Sheets
+  const handleAddNewLead = async () => {
+    if (!isConnectedToGoogleSheets) {
+      alert('Please connect to Google Sheets first');
+      return;
+    }
+
+    // Validate that at least one tab is selected
+    const selectedTabCount = Object.values(selectedTabs).filter(Boolean).length;
+    if (selectedTabCount === 0) {
+      alert('Please select at least one tab to add the lead to');
+      return;
+    }
+
+    // Validate required fields
+    if (!newLead.contactName || !newLead.email) {
+      alert('Contact Name and Email are required fields');
+      return;
+    }
+
+    setIsAddingLead(true);
+    try {
+      // For now, we'll add to local state and Firebase
+      // In a full implementation, you'd also add to Google Sheets via API
+      const leadData = {
+        id: Date.now(), // Generate unique ID
+        contactName: newLead.contactName,
+        email: newLead.email,
+        phone: newLead.phone || 'No phone',
+        instagram: newLead.instagram || null,
+        organization: newLead.organization || null,
+        website: newLead.website || null,
+        notes: newLead.notes || '',
+        lastContact: 'Never',
+        status: 'warm' // Default status
+      };
+
+      // Add to appropriate local state based on selected tabs
+      if (selectedTabs.warmLeads) {
+        setWarmLeads(prev => [...prev, { ...leadData, status: 'warm' }]);
+      }
+      if (selectedTabs.contactedClients) {
+        setContactedClients(prev => [...prev, { ...leadData, status: 'contacted' }]);
+      }
+      if (selectedTabs.coldLeads) {
+        setColdLeads(prev => [...prev, { ...leadData, status: 'cold' }]);
+      }
+
+      // Save updated data to Firebase
+      if (currentUser?.uid) {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userDocRef, {
+          warmLeads: selectedTabs.warmLeads ? [...warmLeads, { ...leadData, status: 'warm' }] : warmLeads,
+          contactedClients: selectedTabs.contactedClients ? [...contactedClients, { ...leadData, status: 'contacted' }] : contactedClients,
+          coldLeads: selectedTabs.coldLeads ? [...coldLeads, { ...leadData, status: 'cold' }] : coldLeads,
+          lastSyncTime: new Date().toLocaleString(),
+          isConnectedToGoogleSheets: true
+        }, { merge: true });
+        console.log('💾 New lead saved to Firebase');
+      }
+
+      // Reset form and close modal
+      setNewLead({
+        contactName: '',
+        email: '',
+        phone: '',
+        instagram: '',
+        organization: '',
+        website: '',
+        notes: ''
+      });
+      setSelectedTabs({
+        warmLeads: false,
+        contactedClients: false,
+        coldLeads: false
+      });
+      setShowAddModal(false);
+
+      alert(`✅ Lead added successfully to ${selectedTabCount} tab(s)!`);
+    } catch (error) {
+      console.error('❌ Error adding new lead:', error);
+      alert('❌ Error adding lead. Please try again.');
+    } finally {
+      setIsAddingLead(false);
+    }
+  };
+
+  // Reset new lead form
+  const resetNewLeadForm = () => {
+    setNewLead({
+      contactName: '',
+      email: '',
+      phone: '',
+      instagram: '',
+      organization: '',
+      website: '',
+      notes: ''
+    });
+    setSelectedTabs({
+      warmLeads: false,
+      contactedClients: false,
+      coldLeads: false
+    });
+  };
+
   const getStatusColor = (status) => {
     const colors = {
-      warm: 'bg-green-100 text-green-800',
-      contacted: 'bg-blue-100 text-blue-800',
-      cold: 'bg-gray-100 text-gray-800'
+      warm: 'bg-red-100 text-red-800',
+      contacted: 'bg-green-100 text-green-800',
+      cold: 'bg-blue-50 text-blue-700'
     };
     return colors[status] || colors.cold;
   };
@@ -626,6 +748,159 @@ const CRMPage = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredColdLeads.map(renderClientCard)}
+          </div>
+        </div>
+      )}
+
+      {/* Add New Lead Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Add New Lead</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowAddModal(false);
+                  resetNewLeadForm();
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Tab Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Tabs to Add Lead To:</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedTabs.warmLeads}
+                      onChange={(e) => setSelectedTabs(prev => ({ ...prev, warmLeads: e.target.checked }))}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Warm Leads</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedTabs.contactedClients}
+                      onChange={(e) => setSelectedTabs(prev => ({ ...prev, contactedClients: e.target.checked }))}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Contacted Clients</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedTabs.coldLeads}
+                      onChange={(e) => setSelectedTabs(prev => ({ ...prev, coldLeads: e.target.checked }))}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Cold Leads</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Form Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name *</label>
+                  <input
+                    type="text"
+                    value={newLead.contactName}
+                    onChange={(e) => setNewLead(prev => ({ ...prev, contactName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter contact name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    value={newLead.email}
+                    onChange={(e) => setNewLead(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={newLead.phone}
+                    onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+                  <input
+                    type="text"
+                    value={newLead.instagram}
+                    onChange={(e) => setNewLead(prev => ({ ...prev, instagram: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter Instagram handle"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                  <input
+                    type="text"
+                    value={newLead.organization}
+                    onChange={(e) => setNewLead(prev => ({ ...prev, organization: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter organization name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                  <input
+                    type="url"
+                    value={newLead.website}
+                    onChange={(e) => setNewLead(prev => ({ ...prev, website: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter website URL"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={newLead.notes}
+                  onChange={(e) => setNewLead(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                  placeholder="Enter any additional notes"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-4">
+                <Button 
+                  onClick={handleAddNewLead}
+                  disabled={isAddingLead}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isAddingLead ? 'Adding...' : 'Add Lead'}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    resetNewLeadForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
