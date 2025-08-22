@@ -676,7 +676,7 @@ const CRMPage = () => {
     const colors = {
       warm: 'bg-red-100 text-red-800',
       contacted: '!bg-purple-100 !text-purple-800',
-      cold: '!bg-orange-200 !text-orange-800'
+      cold: '!bg-orange-200 !text-orange-800' // Force rebuild
     };
     return colors[status] || colors.cold;
   };
