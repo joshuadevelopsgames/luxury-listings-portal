@@ -236,7 +236,7 @@ function testAddLead() {
 }
 
 /**
- * Handle GET requests (for testing)
+ * Handle GET requests (for testing and JSONP)
  */
 function doGet(e) {
   try {
@@ -245,29 +245,82 @@ function doGet(e) {
     // Parse query parameters
     const params = e.parameter;
     const action = params.action || 'test';
+    const callback = params.callback; // JSONP callback parameter
+    const data = params.data; // JSONP data parameter
+    
+    let response;
     
     if (action === 'test') {
       // Run test function
       testAddLead();
       
-      const response = {
+      response = {
         success: true,
         message: 'Test completed successfully',
         timestamp: new Date().toISOString()
       };
+    } else if (callback && data) {
+      // Handle JSONP request for adding leads
+      console.log('📥 JSONP request received with callback:', callback);
+      console.log('📊 JSONP data:', data);
       
-      return ContentService.createTextOutput(JSON.stringify(response))
-        .setMimeType(ContentService.MimeType.JSON);
+      try {
+        const requestData = JSON.parse(data);
+        const leadData = requestData.leadData;
+        const selectedTabs = requestData.selectedTabs;
+        
+        if (!leadData || !selectedTabs) {
+          throw new Error('Missing leadData or selectedTabs in JSONP request');
+        }
+        
+        // Add lead to each selected tab
+        const results = [];
+        for (const [tabKey, isSelected] of Object.entries(selectedTabs)) {
+          if (isSelected) {
+            try {
+              const result = addLeadToSheet(leadData, tabKey);
+              results.push({ tab: tabKey, success: true, result });
+              console.log(`✅ Lead added to ${tabKey} successfully via JSONP`);
+            } catch (error) {
+              console.error(`❌ Error adding lead to ${tabKey}:`, error);
+              results.push({ tab: tabKey, success: false, error: error.message });
+            }
+          }
+        }
+        
+        response = {
+          success: results.some(r => r.success),
+          results: results,
+          message: `Lead added to ${results.filter(r => r.success).length} tab(s) via JSONP`
+        };
+        
+      } catch (error) {
+        console.error('❌ Error processing JSONP request:', error);
+        response = {
+          success: false,
+          error: error.message
+        };
+      }
+    } else {
+      // Default response
+      response = {
+        success: true,
+        message: 'CRM Google Apps Script is running',
+        timestamp: new Date().toISOString(),
+        availableActions: ['test', 'jsonp']
+      };
     }
     
-    // Default response
-    const response = {
-      success: true,
-      message: 'CRM Google Apps Script is running',
-      timestamp: new Date().toISOString(),
-      availableActions: ['test']
-    };
+    // Handle JSONP callback
+    if (callback) {
+      console.log('📤 Sending JSONP response with callback:', callback);
+      const jsonpResponse = `${callback}(${JSON.stringify(response)})`;
+      return ContentService.createTextOutput(jsonpResponse)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
     
+    // Regular JSON response
+    console.log('📤 Sending regular JSON response:', response);
     const output = ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
     
@@ -285,6 +338,16 @@ function doGet(e) {
       success: false,
       error: error.message
     };
+    
+    // Handle JSONP callback for errors too
+    const params = e.parameter;
+    const callback = params.callback;
+    
+    if (callback) {
+      const jsonpResponse = `${callback}(${JSON.stringify(errorResponse)})`;
+      return ContentService.createTextOutput(jsonpResponse)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
     
     const output = ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
