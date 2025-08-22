@@ -364,9 +364,15 @@ const CRMPage = () => {
       console.log('📋 Selected tabs:', selectedTabs);
 
       // Add lead to each selected tab
+      const selectedTabKeys = Object.entries(selectedTabs)
+        .filter(([key, value]) => value)
+        .map(([key]) => key);
+      
+      console.log('📋 Processing selected tab keys:', selectedTabKeys);
+      
       const results = await Promise.allSettled(
-        Object.entries(selectedTabs).filter(([key, value]) => value).map(([key]) => 
-          service.addNewLead(newLead, [key])
+        selectedTabKeys.map(tabKey => 
+          service.addNewLead(newLead, [tabKey])
         )
       );
 
@@ -375,11 +381,12 @@ const CRMPage = () => {
       const failedTabs = [];
 
       results.forEach((result, index) => {
+        const tabKey = selectedTabKeys[index];
         if (result.status === 'fulfilled') {
-          successfulTabs.push(Object.keys(selectedTabs)[index]);
+          successfulTabs.push(tabKey);
         } else {
-          failedTabs.push(Object.keys(selectedTabs)[index]);
-          console.error(`❌ Failed to add to ${Object.keys(selectedTabs)[index]}:`, result.reason);
+          failedTabs.push(tabKey);
+          console.error(`❌ Failed to add to ${tabKey}:`, result.reason);
         }
       });
 
