@@ -147,53 +147,64 @@ const CRMPage = () => {
     ]
   };
 
-  // Load CRM data from Firebase on component mount
-  useEffect(() => {
-    const loadStoredData = async () => {
-      try {
-        if (currentUser?.uid) {
-          const userDocRef = doc(db, 'users', currentUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
+  // Load stored data from Firebase
+  const loadStoredData = async () => {
+    if (!currentUser?.uid) return;
 
-          if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            if (userData.warmLeads && userData.warmLeads.length > 0) {
-              setWarmLeads(userData.warmLeads || []);
-              setContactedClients(userData.contactedClients || []);
-              setColdLeads(userData.coldLeads || []);
-              setLastSyncTime(userData.lastSyncTime || null);
-              setIsConnectedToGoogleSheets(userData.isConnectedToGoogleSheets || false);
-              console.log('📱 Loaded CRM data from Firebase for user:', currentUser.uid);
-            } else {
-              // Stored data exists but is empty, use mock data
-              setWarmLeads(mockData.warmLeads);
-              setContactedClients(mockData.contactedClients);
-              setColdLeads(mockData.coldLeads);
-              console.log('📱 Using mock CRM data (stored data is empty)');
-            }
-          } else {
-            // No stored data, use mock data
-            setWarmLeads(mockData.warmLeads);
-            setContactedClients(mockData.contactedClients);
-            setColdLeads(mockData.coldLeads);
-            console.log('📱 Using mock CRM data (no stored data found for user)');
-          }
-        } else {
-          // No user authenticated, use mock data
-          setWarmLeads(mockData.warmLeads);
-          setContactedClients(mockData.contactedClients);
-          setColdLeads(mockData.coldLeads);
-          console.log('📱 Using mock CRM data (no user authenticated)');
+    try {
+      const docRef = doc(db, 'users', currentUser.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists() && docSnap.data().crmData) {
+        const storedData = docSnap.data().crmData;
+        console.log('📂 Loaded CRM data from Firebase:', storedData);
+        
+        if (storedData.warmLeads && storedData.warmLeads.length > 0) {
+          setWarmLeads(storedData.warmLeads);
         }
-      } catch (error) {
-        console.error('❌ Error loading stored CRM data:', error);
-        // Fallback to mock data
+        if (storedData.contactedClients && storedData.contactedClients.length > 0) {
+          setContactedClients(storedData.contactedClients);
+        }
+        if (storedData.coldLeads && storedData.coldLeads.length > 0) {
+          setColdLeads(storedData.coldLeads);
+        }
+      } else {
+        console.log('📂 No stored CRM data found, using mock data');
         setWarmLeads(mockData.warmLeads);
         setContactedClients(mockData.contactedClients);
         setColdLeads(mockData.coldLeads);
       }
-    };
+    } catch (error) {
+      console.error('Error loading stored CRM data:', error);
+      // Fallback to mock data
+      setWarmLeads(mockData.warmLeads);
+      setContactedClients(mockData.contactedClients);
+      setColdLeads(mockData.coldLeads);
+    }
+  };
 
+  // Load service account credentials for write operations
+  const loadServiceAccountCredentials = async () => {
+    try {
+      const docRef = doc(db, 'crm_config', 'google_sheets');
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists() && docSnap.data().serviceAccountCredentials) {
+        const credentials = docSnap.data().serviceAccountCredentials;
+        console.log('🔐 Loaded service account credentials:', credentials.client_email);
+        return credentials;
+      } else {
+        console.log('🔐 No service account credentials found');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error loading service account credentials:', error);
+      return null;
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
     loadStoredData();
   }, [currentUser?.uid]);
 
@@ -312,97 +323,93 @@ const CRMPage = () => {
 
   // Add new lead to Google Sheets
   const handleAddNewLead = async () => {
-    if (!isConnectedToGoogleSheets) {
-      alert('Please connect to Google Sheets first');
+    if (!newLead.name || !newLead.email) {
+      alert('Please fill in at least Name and Email');
       return;
     }
 
-    // Validate that at least one tab is selected
-    const selectedTabCount = Object.values(selectedTabs).filter(Boolean).length;
-    if (selectedTabCount === 0) {
+    if (selectedTabs.length === 0) {
       alert('Please select at least one tab to add the lead to');
       return;
     }
 
-    // Validate required fields
-    if (!newLead.contactName || !newLead.email) {
-      alert('Contact Name and Email are required fields');
-      return;
-    }
-
     setIsAddingLead(true);
+
     try {
-      // Prepare lead data
-      const leadData = {
-        contactName: newLead.contactName,
-        email: newLead.email,
-        phone: newLead.phone || '',
-        instagram: newLead.instagram || '',
-        organization: newLead.organization || '',
-        website: newLead.website || '',
-        notes: newLead.notes || ''
-      };
+      // Load service account credentials for write operations
+      const credentials = await loadServiceAccountCredentials();
+      if (!credentials) {
+        throw new Error('Service account credentials not found. Please set up Google Sheets integration first.');
+      }
 
-      // Add to Google Sheets first
+      // Create a new service instance with credentials
       const service = new CRMGoogleSheetsService();
-      const sheetsResult = await service.addNewLead(leadData, selectedTabs);
-      
-      if (!sheetsResult.success) {
-        throw new Error(`Failed to add lead to Google Sheets: ${sheetsResult.message}`);
-      }
+      service.setServiceAccountCredentials(credentials);
 
-      console.log('✅ Lead added to Google Sheets:', sheetsResult);
+      console.log('➕ Adding new lead to Google Sheets:', newLead);
+      console.log('📋 Selected tabs:', selectedTabs);
 
-      // If Google Sheets update was successful, update local state and Firebase
-      const leadDataWithId = {
-        id: Date.now(), // Generate unique ID
-        ...leadData,
-        lastContact: 'Never',
-        status: 'warm' // Default status
-      };
+      // Add lead to each selected tab
+      const results = await Promise.allSettled(
+        selectedTabs.map(tabKey => 
+          service.addNewLead(newLead, [tabKey])
+        )
+      );
 
-      // Add to appropriate local state based on selected tabs
-      if (selectedTabs.warmLeads) {
-        setWarmLeads(prev => [...prev, { ...leadDataWithId, status: 'warm' }]);
-      }
-      if (selectedTabs.contactedClients) {
-        setContactedClients(prev => [...prev, { ...leadDataWithId, status: 'contacted' }]);
-      }
-      if (selectedTabs.coldLeads) {
-        setColdLeads(prev => [...prev, { ...leadDataWithId, status: 'cold' }]);
-      }
+      // Check results
+      const successfulTabs = [];
+      const failedTabs = [];
 
-      // Save updated data to Firebase
-      if (currentUser?.uid) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        await setDoc(userDocRef, {
-          warmLeads: selectedTabs.warmLeads ? [...warmLeads, { ...leadDataWithId, status: 'warm' }] : warmLeads,
-          contactedClients: selectedTabs.contactedClients ? [...contactedClients, { ...leadDataWithId, status: 'contacted' }] : contactedClients,
-          coldLeads: selectedTabs.coldLeads ? [...coldLeads, { ...leadDataWithId, status: 'cold' }] : coldLeads,
-          lastSyncTime: new Date().toLocaleString(),
-          isConnectedToGoogleSheets: true
-        }, { merge: true });
-        console.log('💾 New lead saved to Firebase');
-      }
-
-      // Reset form and close modal
-      setNewLead({
-        contactName: '',
-        email: '',
-        phone: '',
-        instagram: '',
-        organization: '',
-        website: '',
-        notes: ''
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          successfulTabs.push(selectedTabs[index]);
+        } else {
+          failedTabs.push(selectedTabs[index]);
+          console.error(`❌ Failed to add to ${selectedTabs[index]}:`, result.reason);
+        }
       });
-      setSelectedTabs({
-        warmLeads: false,
-        contactedClients: false,
-        coldLeads: false
-      });
-      setShowAddModal(false);
 
-      alert(`✅ Lead added successfully to ${selectedTabCount} tab(s) in Google Sheets!`);
+      if (successfulTabs.length > 0) {
+        // Update local state for successful additions
+        const newLeadData = {
+          id: `new-${Date.now()}`,
+          organization: newLead.organization || '',
+          name: newLead.name,
+          email: newLead.email,
+          instagram: newLead.instagram || '',
+          phone: newLead.phone || '',
+          website: newLead.website || '',
+          notes: newLead.notes || '',
+          status: 'New Lead',
+          lastContact: new Date().toISOString(),
+          category: successfulTabs[0] // Use first successful tab as category
+        };
+
+        // Add to appropriate local state based on first successful tab
+        if (successfulTabs.includes('warmLeads')) {
+          setWarmLeads(prev => [newLeadData, ...prev]);
+        } else if (successfulTabs.includes('contactedClients')) {
+          setContactedClients(prev => [newLeadData, ...prev]);
+        } else if (successfulTabs.includes('coldLeads')) {
+          setColdLeads(prev => [newLeadData, ...prev]);
+        }
+
+        // Save to Firebase
+        await saveCRMDataToFirebase();
+
+        alert(`✅ Lead added successfully to ${successfulTabs.length} tab(s): ${successfulTabs.join(', ')}`);
+        
+        // Reset form
+        resetNewLeadForm();
+        setIsAddingLead(false);
+      } else {
+        throw new Error('Failed to add lead to any tabs');
+      }
+
+      if (failedTabs.length > 0) {
+        console.warn(`⚠️ Failed to add to ${failedTabs.length} tab(s): ${failedTabs.join(', ')}`);
+      }
+
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
       alert(`❌ Error adding lead: ${error.message}`);
