@@ -39,10 +39,10 @@ function doOptions(e) {
       .setMimeType(ContentService.MimeType.TEXT);
     
     // Add CORS headers for preflight
-    output.addHeader('Access-Control-Allow-Origin', '*');
-    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
-    output.addHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    output.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
     
     return output;
     
@@ -52,9 +52,9 @@ function doOptions(e) {
     const output = ContentService.createTextOutput('')
       .setMimeType(ContentService.MimeType.TEXT);
     
-    output.addHeader('Access-Control-Allow-Origin', '*');
-    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
     return output;
   }
@@ -107,10 +107,10 @@ function doPost(e) {
     const output = ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
     
-    // Add CORS headers
-    output.addHeader('Access-Control-Allow-Origin', '*');
-    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    // Add CORS headers using the correct method
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
     return output;
       
@@ -128,9 +128,9 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
     
     // Add CORS headers even for errors
-    output.addHeader('Access-Control-Allow-Origin', '*');
-    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
     return output;
   }
@@ -368,9 +368,9 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
     
     // Add CORS headers
-    output.addHeader('Access-Control-Allow-Origin', '*');
-    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
     return output;
       
@@ -396,9 +396,9 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
     
     // Add CORS headers
-    output.addHeader('Access-Control-Allow-Origin', '*');
-    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
     return output;
   }
