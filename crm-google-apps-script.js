@@ -301,6 +301,49 @@ function doGet(e) {
           error: error.message
         };
       }
+    } else if (params.action === 'addLead') {
+      // Handle addLead action via GET request (like ClientPackages)
+      console.log('📥 addLead action received via GET');
+      
+      try {
+        const leadData = JSON.parse(params.leadData);
+        const selectedTabs = JSON.parse(params.selectedTabs);
+        
+        console.log('📊 Lead data:', leadData);
+        console.log('📋 Selected tabs:', selectedTabs);
+        
+        if (!leadData || !selectedTabs) {
+          throw new Error('Missing leadData or selectedTabs in addLead request');
+        }
+        
+        // Add lead to each selected tab
+        const results = [];
+        for (const [tabKey, isSelected] of Object.entries(selectedTabs)) {
+          if (isSelected) {
+            try {
+              const result = addLeadToSheet(leadData, tabKey);
+              results.push({ tab: tabKey, success: true, result });
+              console.log(`✅ Lead added to ${tabKey} successfully via GET`);
+            } catch (error) {
+              console.error(`❌ Error adding lead to ${tabKey}:`, error);
+              results.push({ tab: tabKey, success: false, error: error.message });
+            }
+          }
+        }
+        
+        response = {
+          success: results.some(r => r.success),
+          results: results,
+          message: `Lead added to ${results.filter(r => r.success).length} tab(s) via GET`
+        };
+        
+      } catch (error) {
+        console.error('❌ Error processing addLead request:', error);
+        response = {
+          success: false,
+          error: error.message
+        };
+      }
     } else {
       // Default response
       response = {

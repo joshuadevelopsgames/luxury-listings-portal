@@ -359,67 +359,36 @@ class CRMGoogleSheetsService {
         throw new Error('Google Apps Script URL not configured. Please deploy the CRM script and update the URL.');
       }
 
-      // Use JSONP approach to bypass CORS
-      return new Promise((resolve, reject) => {
-        // Create a unique callback name
-        const callbackName = 'crmCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        
-        // Create the global callback function
-        window[callbackName] = (response) => {
-          console.log('✅ JSONP response received:', response);
-          
-          // Clean up
-          delete window[callbackName];
-          document.head.removeChild(script);
-          
-          if (response && response.success) {
-            resolve(response);
-          } else {
-            reject(new Error(response?.error || 'Unknown error from Google Apps Script'));
-          }
-        };
-
-        // Prepare the request data
-        const requestData = {
-          leadData: leadData,
-          selectedTabs: selectedTabs
-        };
-
-        console.log('📤 Sending request to Google Apps Script via JSONP:', requestData);
-
-        // Create script tag for JSONP
-        const script = document.createElement('script');
-        const params = new URLSearchParams({
-          callback: callbackName,
-          data: JSON.stringify(requestData)
-        });
-        
-        script.src = `${this.googleAppsScriptUrl}?${params.toString()}`;
-        script.onerror = () => {
-          console.error('❌ JSONP script failed to load');
-          delete window[callbackName];
-          document.head.removeChild(script);
-          reject(new Error('Failed to load Google Apps Script'));
-        };
-
-        // Set timeout for JSONP request
-        const timeout = setTimeout(() => {
-          console.error('❌ JSONP request timed out');
-          delete window[callbackName];
-          document.head.removeChild(script);
-          reject(new Error('Google Apps Script request timed out'));
-        }, 30000); // 30 second timeout
-
-        // Override callback to clear timeout
-        const originalCallback = window[callbackName];
-        window[callbackName] = (response) => {
-          clearTimeout(timeout);
-          originalCallback(response);
-        };
-
-        // Add script to page to trigger request
-        document.head.appendChild(script);
+      // Use GET request with URL parameters like ClientPackages does
+      const params = new URLSearchParams({
+        action: 'addLead',
+        leadData: JSON.stringify(leadData),
+        selectedTabs: JSON.stringify(selectedTabs)
       });
+
+      console.log('📤 Sending request to Google Apps Script via GET:', params.toString());
+
+      // Make GET request to Google Apps Script (no CORS issues)
+      const response = await fetch(`${this.googleAppsScriptUrl}?${params.toString()}`, {
+        method: 'GET'
+      });
+
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Google Apps Script error:', errorText);
+        throw new Error(`Google Apps Script error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Google Apps Script response:', result);
+
+      if (!result.success) {
+        throw new Error(`Google Apps Script failed: ${result.error || result.message}`);
+      }
+
+      return result;
 
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
