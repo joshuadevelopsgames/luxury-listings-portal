@@ -144,12 +144,20 @@ class CRMGoogleSheetsService {
 
   // Create a lead object from a spreadsheet row
   createLeadFromRow(row, columnMap, id, category) {
+    const rawInstagram = this.getCellValue(row, columnMap.instagram);
+    const extractedInstagram = this.extractInstagramUsername(rawInstagram);
+    
+    // Log Instagram extraction for debugging
+    if (rawInstagram && rawInstagram !== extractedInstagram) {
+      console.log(`🔍 Instagram extraction: "${rawInstagram}" → "${extractedInstagram}"`);
+    }
+    
     const lead = {
       id,
       contactName: this.getCellValue(row, columnMap.contactName) || 'Unknown',
       phone: this.getCellValue(row, columnMap.phone) || 'No phone',
       email: this.getCellValue(row, columnMap.email) || 'No email',
-      instagram: this.getCellValue(row, columnMap.instagram) || null,
+      instagram: extractedInstagram,
       organization: this.getCellValue(row, columnMap.organization) || null,
       website: this.getCellValue(row, columnMap.website) || null,
       status: category, // Use category as default status
@@ -183,6 +191,40 @@ class CRMGoogleSheetsService {
   getCellValue(row, columnIndex) {
     if (columnIndex === undefined || columnIndex === null) return null;
     return row[columnIndex] ? row[columnIndex].trim() : null;
+  }
+
+  // Extract Instagram username from various formats
+  extractInstagramUsername(instagramValue) {
+    if (!instagramValue) return null;
+    
+    const value = instagramValue.trim();
+    
+    // If it's already just a username (starts with @)
+    if (value.startsWith('@')) {
+      return value.substring(1); // Remove the @ symbol
+    }
+    
+    // If it's a full Instagram URL
+    if (value.includes('instagram.com/')) {
+      const match = value.match(/instagram\.com\/([^\/\?]+)/);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    // If it's a username without @ symbol
+    if (value.match(/^[a-zA-Z0-9._]+$/)) {
+      return value;
+    }
+    
+    // If it contains @ symbol somewhere in the text, extract the username
+    const atMatch = value.match(/@([a-zA-Z0-9._]+)/);
+    if (atMatch && atMatch[1]) {
+      return atMatch[1];
+    }
+    
+    // If none of the above, return the original value (could be a custom format)
+    return value;
   }
 
   // Test the connection to Google Sheets
