@@ -16,7 +16,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 
-const TaskCard = ({ task, onStatusChange }) => {
+const TaskCard = ({ task, onStatusChange, onEdit, onDelete }) => {
   const [showActions, setShowActions] = useState(false);
 
   // Helper function to parse dates as local dates (same as TasksPage)
@@ -176,7 +176,7 @@ const TaskCard = ({ task, onStatusChange }) => {
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     onClick={() => {
                       setShowActions(false);
-                      // Handle edit - you can implement this later
+                      onEdit(task);
                     }}
                   >
                     <Edit className="w-3 h-3" />
@@ -186,7 +186,7 @@ const TaskCard = ({ task, onStatusChange }) => {
                     className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                     onClick={() => {
                       setShowActions(false);
-                      // Handle delete - you can implement this later
+                      onDelete(task);
                     }}
                   >
                     <Trash2 className="w-3 h-3" />

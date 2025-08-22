@@ -4,6 +4,7 @@ import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Plus, Clock, CheckCircle2 } from 'lucide-react';
 import TaskForm from '../components/tasks/TaskForm';
 import TaskCard from '../components/tasks/TaskCard';
+import TaskEditModal from '../components/tasks/TaskEditModal';
 import { useAuth } from '../contexts/AuthContext';
 import { DailyTask } from '../entities/DailyTask';
 
@@ -11,6 +12,8 @@ const TasksPage = () => {
   console.log('🚀 TasksPage component initializing...'); // Debug log
   const { currentUser } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [activeFilter, setActiveFilter] = useState('today');
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
@@ -162,6 +165,47 @@ const TasksPage = () => {
     }
   };
 
+  // Handle edit task
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setShowEditModal(true);
+  };
+
+  // Handle save edited task
+  const handleSaveTask = async (updatedTask) => {
+    try {
+      await DailyTask.update(updatedTask.id, {
+        title: updatedTask.title,
+        description: updatedTask.description,
+        category: updatedTask.category,
+        priority: updatedTask.priority,
+        due_date: updatedTask.dueDate,
+        estimated_time: updatedTask.estimatedTime
+      });
+      
+      // No need to reload data - real-time listener will update automatically
+      setShowEditModal(false);
+      setEditingTask(null);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      alert('Failed to update task. Please try again.');
+    }
+  };
+
+  // Handle delete task
+  const handleDeleteTask = async (task) => {
+    try {
+      await DailyTask.delete(task.id);
+      
+      // No need to reload data - real-time listener will update automatically
+      setShowEditModal(false);
+      setEditingTask(null);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      alert('Failed to delete task. Please try again.');
+    }
+  };
+
   const getTaskCounts = () => {
     return {
       today: tasks.filter(task => task.due_date && isTodayLocal(task.due_date)).length,
@@ -227,6 +271,18 @@ const TasksPage = () => {
         />
       )}
 
+      {/* Edit Task Modal */}
+      <TaskEditModal
+        task={editingTask}
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingTask(null);
+        }}
+        onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredTasks.length === 0 ? (
           <div className="col-span-full text-center py-12">
@@ -250,6 +306,8 @@ const TasksPage = () => {
               key={task.id}
               task={task}
               onStatusChange={updateTaskStatus}
+              onEdit={handleEditTask}
+              onDelete={handleDeleteTask}
             />
           ))
         )}
