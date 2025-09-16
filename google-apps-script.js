@@ -302,13 +302,20 @@ function deleteClient(sheet, clientData) {
   let rowNumber = -1; // Declare outside try block
   
   try {
+    // Validate input data
+    if (!clientData || !clientData.clientName) {
+      throw new Error('Invalid client data: clientName is required');
+    }
+    
     // Find the row by client name (column A)
     const lastRow = sheet.getLastRow();
+    console.log('📊 Searching in sheet with', lastRow, 'rows');
     
     for (let i = 2; i <= lastRow; i++) {
       const cellValue = sheet.getRange(i, 1).getValue(); // Check column A (Client Name)
       if (cellValue && cellValue.toString().trim().toLowerCase() === clientData.clientName.toLowerCase()) {
         rowNumber = i;
+        console.log('📋 Found client at row:', rowNumber);
         break;
       }
     }
@@ -325,6 +332,7 @@ function deleteClient(sheet, clientData) {
     console.log('✅ Client deleted successfully from row:', rowNumber);
   } catch (error) {
     console.error('❌ Error deleting client:', error.message);
+    console.error('❌ Error details:', error);
     throw error;
   }
   
