@@ -318,6 +318,7 @@ export default function ClientPackages() {
       
       console.log('🔍 Column mapping:', columnMap);
       console.log('📋 Headers found:', headers);
+      console.log('📧 Email column index:', columnMap.clientEmail);
       
       // Map the data to our client structure
       const fetchedClients = rows
@@ -348,6 +349,11 @@ export default function ClientPackages() {
           
           // Determine status based on data
           client.status = determineStatus(client.approvalStatus, client.paymentStatus, client.postsRemaining);
+          
+          // Debug email data
+          if (client.clientName && client.clientName !== 'Unknown Client') {
+            console.log(`📧 Client: ${client.clientName}, Email: "${client.clientEmail}", Email column index: ${columnMap.clientEmail}, Raw row data:`, row);
+          }
           
           return client;
         });
