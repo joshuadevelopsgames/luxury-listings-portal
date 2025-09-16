@@ -59,15 +59,19 @@ function doGet(e) {
         };
         break;
       case 'update':
+        console.log('🔄 Executing updateClient function');
         result = updateClient(sheet, clientData);
         break;
       case 'add':
+        console.log('➕ Executing addClient function');
         result = addClient(sheet, clientData);
         break;
       case 'approve':
+        console.log('✅ Executing approveClient function');
         result = approveClient(sheet, clientData);
         break;
       case 'delete':
+        console.log('🗑️ Executing deleteClient function');
         result = deleteClient(sheet, clientData);
         break;
       case 'archive':
@@ -281,7 +285,16 @@ function addClient(sheet, clientData) {
 }
 
 function approveClient(sheet, clientData) {
+  console.log('✅ Starting approveClient function');
+  console.log('📊 Client data received:', clientData);
+  
+  // Validate input data
+  if (!clientData || clientData.id === undefined || clientData.id === null) {
+    throw new Error('Invalid client data: id is required for approval');
+  }
+  
   const rowNumber = clientData.id + 1; // Add 1 for header row
+  console.log('📋 Using row number:', rowNumber);
   
   // Update only the approval status (column H)
   const approvalStatus = clientData.approved ? 'Approved' : 'Rejected';
