@@ -68,11 +68,25 @@ function doGet(e) {
         break;
       case 'approve':
         console.log('✅ Executing approveClient function');
-        result = approveClient(sheet, clientData);
+        console.log('✅ Client data for approve:', clientData);
+        try {
+          result = approveClient(sheet, clientData);
+          console.log('✅ ApproveClient result:', result);
+        } catch (approveError) {
+          console.error('✅ Error in approveClient:', approveError);
+          throw approveError;
+        }
         break;
       case 'delete':
         console.log('🗑️ Executing deleteClient function');
-        result = deleteClient(sheet, clientData);
+        console.log('🗑️ Client data for delete:', clientData);
+        try {
+          result = deleteClient(sheet, clientData);
+          console.log('🗑️ DeleteClient result:', result);
+        } catch (deleteError) {
+          console.error('🗑️ Error in deleteClient:', deleteError);
+          throw deleteError;
+        }
         break;
       case 'archive':
         result = archiveClient(sheet, clientData);
