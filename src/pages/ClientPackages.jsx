@@ -312,6 +312,7 @@ export default function ClientPackages() {
         else if (headerLower.includes('notes')) columnMap.notes = index;
         else if (headerLower.includes('date') && headerLower.includes('added')) columnMap.startDate = index;
         else if (headerLower.includes('last') && headerLower.includes('post')) columnMap.lastContact = index;
+        else if (headerLower.includes('price') && headerLower.includes('paid')) columnMap.customPrice = index;
       });
       
       console.log('🔍 Column mapping:', columnMap);
@@ -335,6 +336,7 @@ export default function ClientPackages() {
             notes: row[columnMap.notes] || '',
             startDate: row[columnMap.startDate] || new Date().toISOString().split('T')[0],
             lastContact: row[columnMap.lastContact] || new Date().toISOString().split('T')[0],
+            customPrice: parseFloat(row[columnMap.customPrice]) || 0,
           };
           
           // Calculate remaining posts if not provided
@@ -889,7 +891,8 @@ export default function ClientPackages() {
       postsRemaining: client.postsRemaining,
       notes: client.notes || '',
       postedOn: client.postedOn,
-      paymentStatus: client.paymentStatus
+      paymentStatus: client.paymentStatus,
+      customPrice: client.customPrice || 0
     });
     setShowEditModal(true);
   };
@@ -940,7 +943,8 @@ export default function ClientPackages() {
           approvalStatus: editingClient.approvalStatus,
           notes: editForm.notes,
           startDate: editingClient.startDate,
-          lastContact: editingClient.lastContact
+          lastContact: editingClient.lastContact,
+          customPrice: editForm.customPrice || 0
         }
       };
       
@@ -981,6 +985,7 @@ export default function ClientPackages() {
           client.id === editingClient.id 
             ? { 
                 ...client, 
+                clientEmail: editForm.clientEmail,
                 packageType: editForm.packageType,
                 packageSize: editForm.packageSize,
                 postsUsed: editForm.postsUsed,
@@ -988,6 +993,7 @@ export default function ClientPackages() {
                 notes: editForm.notes,
                 postedOn: editForm.postedOn,
                 paymentStatus: editForm.paymentStatus,
+                customPrice: editForm.customPrice || 0,
                 // Update status based on new data
                 status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
               }
@@ -1187,8 +1193,10 @@ export default function ClientPackages() {
     pending: clients.filter(c => c.status === 'pending').length,
     completed: clients.filter(c => c.status === 'completed').length,
     revenue: clients.reduce((sum, c) => {
-      const packageValues = { Standard: 199, Silver: 399, Gold: 699, Platinum: 1299, Seven: 899, Custom: 1500 };
-      return sum + (packageValues[c.packageType] || 0);
+      const packageValues = { Standard: 199, Silver: 1689, Gold: 3190, Platinum: 1299, Seven: 899, Custom: 1500 };
+      // Use custom price if available, otherwise use default package value
+      const price = c.packageType === 'Custom' && c.customPrice ? c.customPrice : (packageValues[c.packageType] || 0);
+      return sum + price;
     }, 0)
   };
 
@@ -1869,6 +1877,25 @@ export default function ClientPackages() {
                   <option value="Overdue">Overdue</option>
                 </select>
               </div>
+
+              {/* Custom Price - Only show for Custom packages */}
+              {editForm.packageType === 'Custom' && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Custom Price (USD) *
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.customPrice}
+                    onChange={(e) => setEditForm({...editForm, customPrice: parseFloat(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter custom price"
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Enter the custom price for this package</p>
+                </div>
+              )}
             </div>
 
             {/* Notes */}

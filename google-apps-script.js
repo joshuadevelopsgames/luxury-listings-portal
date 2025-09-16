@@ -172,7 +172,7 @@ function updateClient(sheet, clientData) {
     currentRow[13] = clientData.postsRemaining; // N - Posts Remaining
     // currentRow[14] = package completed (preserve existing)
     // currentRow[15] = approval email recipient (preserve existing)
-    // currentRow[16] = price paid (preserve existing)
+    currentRow[16] = clientData.customPrice || 0; // Q - Price Paid (USD) - use custom price for custom packages
     // currentRow[17] = post insights sent (preserve existing)
     
     console.log('📋 Updated row data:', currentRow);
