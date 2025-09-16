@@ -744,6 +744,8 @@ export default function ClientPackages() {
       console.log('📊 Delete response status:', response.status);
       const result = await response.json();
       console.log('📊 Delete response:', result);
+      console.log('📊 Delete response error:', result.error);
+      console.log('📊 Delete response success:', result.success);
       
       if (result.success) {
         // Remove from active clients list
