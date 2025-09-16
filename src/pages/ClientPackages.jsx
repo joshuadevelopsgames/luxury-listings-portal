@@ -302,6 +302,7 @@ export default function ClientPackages() {
         console.log(`Mapping header "${header}" (${headerLower}) to index ${index}`);
         
         if (headerLower.includes('client') && headerLower.includes('name')) columnMap.clientName = index;
+        else if (headerLower.includes('email')) columnMap.clientEmail = index;
         else if (headerLower.includes('package') && headerLower.includes('type')) columnMap.packageType = index;
         else if (headerLower.includes('package') && headerLower.includes('size')) columnMap.packageSize = index;
         else if (headerLower.includes('posts') && headerLower.includes('used')) columnMap.postsUsed = index;
@@ -326,6 +327,7 @@ export default function ClientPackages() {
           const client = {
             id: index + 1,
             clientName: row[columnMap.clientName] || 'Unknown Client',
+            clientEmail: row[columnMap.clientEmail] || '',
             packageType: row[columnMap.packageType] || 'Standard',
             packageSize: parseInt(row[columnMap.packageSize]) || 0,
             postsUsed: parseInt(row[columnMap.postsUsed]) || 0,
