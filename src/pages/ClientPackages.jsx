@@ -1383,6 +1383,11 @@ export default function ClientPackages() {
                     <h3 className="text-xl font-semibold text-gray-900 mb-1">
                       {client.clientName}
                     </h3>
+                    {client.clientEmail && (
+                      <p className="text-sm text-gray-600 mb-2">
+                        📧 {client.clientEmail}
+                      </p>
+                    )}
                     <div className="flex items-center gap-3 flex-wrap">
                       <Badge className={getPackageTypeColor(client.packageType)}>
                         {client.packageType}
@@ -1586,6 +1591,11 @@ export default function ClientPackages() {
                               Archived
                             </Badge>
                           </div>
+                          {client.clientEmail && (
+                            <p className="text-sm text-gray-600 mb-2">
+                              📧 {client.clientEmail}
+                            </p>
+                          )}
                           <div className="flex items-center gap-3 flex-wrap">
                             <Badge className={getPackageTypeColor(client.packageType)}>
                               {client.packageType}
