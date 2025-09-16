@@ -1173,6 +1173,23 @@ export default function ClientPackages() {
                 notes: addForm.notes
               });
               
+              // Reset form and close modal
+              setAddForm({
+                clientName: '',
+                clientEmail: '',
+                packageType: 'Standard',
+                packageSize: 1,
+                postsUsed: 0,
+                postsRemaining: 1,
+                postedOn: 'Luxury Listings',
+                paymentStatus: 'Pending',
+                approvalStatus: 'Pending',
+                notes: '',
+                startDate: new Date().toISOString().split('T')[0],
+                lastContact: new Date().toISOString().split('T')[0]
+              });
+              setShowAddModal(false);
+              
               if (crmResult.success) {
                 showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
               } else {
@@ -1193,6 +1210,23 @@ export default function ClientPackages() {
                 packageType: addForm.packageType,
                 notes: addForm.notes
               });
+              
+              // Reset form and close modal
+              setAddForm({
+                clientName: '',
+                clientEmail: '',
+                packageType: 'Standard',
+                packageSize: 1,
+                postsUsed: 0,
+                postsRemaining: 1,
+                postedOn: 'Luxury Listings',
+                paymentStatus: 'Pending',
+                approvalStatus: 'Pending',
+                notes: '',
+                startDate: new Date().toISOString().split('T')[0],
+                lastContact: new Date().toISOString().split('T')[0]
+              });
+              setShowAddModal(false);
               
               if (crmResult.success) {
                 showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
