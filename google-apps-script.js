@@ -79,6 +79,31 @@ function doGet(e) {
       case 'deleteArchived':
         result = deleteArchivedClient(sheet, clientData);
         break;
+      case 'addLead':
+        const leadDataStr = e.parameter.leadData;
+        const selectedTabsStr = e.parameter.selectedTabs;
+        
+        let leadData = {};
+        let selectedTabs = {};
+        
+        if (leadDataStr) {
+          try {
+            leadData = JSON.parse(decodeURIComponent(leadDataStr));
+          } catch (error) {
+            console.error('Error parsing leadData:', error);
+          }
+        }
+        
+        if (selectedTabsStr) {
+          try {
+            selectedTabs = JSON.parse(decodeURIComponent(selectedTabsStr));
+          } catch (error) {
+            console.error('Error parsing selectedTabs:', error);
+          }
+        }
+        
+        result = addLead(leadData, selectedTabs);
+        break;
       default:
         result = { 
           success: true, 
@@ -480,4 +505,82 @@ function deleteArchivedClient(sheet, clientData) {
     success: true,
     message: 'Archived client deleted successfully'
   };
+}
+
+// Add new lead to CRM sheets
+function addLead(leadData, selectedTabs) {
+  try {
+    console.log('➕ Adding new lead to CRM sheets');
+    console.log('📊 Lead data:', leadData);
+    console.log('📋 Selected tabs:', selectedTabs);
+    
+    // Get the CRM spreadsheet
+    const crmSpreadsheetId = '1wM8g4bPituJoJFVp_Ndlv7o4p3NZMNEM2-WwuUnGvyE';
+    const crmSpreadsheet = SpreadsheetApp.openById(crmSpreadsheetId);
+    
+    // Define sheet names
+    const sheetNames = {
+      warmLeads: 'Warm Leads',
+      contactedClients: 'Have Contacted Before with Proposals',
+      coldLeads: 'Cold Leads'
+    };
+    
+    const results = [];
+    
+    // Add to each selected tab
+    for (const [tabKey, isSelected] of Object.entries(selectedTabs)) {
+      if (isSelected && sheetNames[tabKey]) {
+        try {
+          const sheet = crmSpreadsheet.getSheetByName(sheetNames[tabKey]);
+          if (!sheet) {
+            console.error(`❌ Sheet "${sheetNames[tabKey]}" not found`);
+            continue;
+          }
+          
+          // Prepare row data in the correct order: Organization, NAME, EMAIL, Instagram, PHONE, WEBSITE, NOTES
+          const rowData = [
+            leadData.organization || '',
+            leadData.contactName || '',
+            leadData.email || '',
+            leadData.instagram || '',
+            leadData.phone || '',
+            leadData.website || '',
+            leadData.notes || ''
+          ];
+          
+          // Append the row to the sheet
+          sheet.appendRow(rowData);
+          
+          console.log(`✅ Lead added to ${sheetNames[tabKey]}`);
+          results.push({
+            tab: tabKey,
+            sheetName: sheetNames[tabKey],
+            success: true
+          });
+          
+        } catch (error) {
+          console.error(`❌ Error adding to ${sheetNames[tabKey]}:`, error);
+          results.push({
+            tab: tabKey,
+            sheetName: sheetNames[tabKey],
+            success: false,
+            error: error.message
+          });
+        }
+      }
+    }
+    
+    return {
+      success: true,
+      message: 'Lead added to CRM sheets successfully',
+      results: results
+    };
+    
+  } catch (error) {
+    console.error('❌ Error adding lead to CRM:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 }

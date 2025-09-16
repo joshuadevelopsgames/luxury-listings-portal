@@ -1035,6 +1035,57 @@ export default function ClientPackages() {
     setShowAddModal(true);
   };
 
+  // Add client to CRM when new package is added
+  const addClientToCRM = async (clientData) => {
+    try {
+      console.log('🔄 Adding client to CRM:', clientData);
+      
+      // Prepare lead data for CRM
+      const leadData = {
+        contactName: clientData.clientName,
+        email: clientData.clientEmail || '',
+        organization: '', // Will be empty for now
+        phone: '', // Will be empty for now
+        instagram: '', // Will be empty for now
+        website: '', // Will be empty for now
+        notes: `New ${clientData.packageType} package client - ${clientData.notes || 'No additional notes'}`
+      };
+      
+      // Default to adding to "Warm Leads" tab
+      const selectedTabs = {
+        warmLeads: true,
+        contactedClients: false,
+        coldLeads: false
+      };
+      
+      // Use the same Google Apps Script URL but with addLead action
+      const params = new URLSearchParams({
+        action: 'addLead',
+        leadData: JSON.stringify(leadData),
+        selectedTabs: JSON.stringify(selectedTabs)
+      });
+      
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ CRM add failed:', errorText);
+        return { success: false, error: errorText };
+      }
+      
+      const result = await response.json();
+      console.log('✅ CRM add result:', result);
+      
+      return result;
+      
+    } catch (error) {
+      console.error('❌ Error adding client to CRM:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const handleAddSubmit = async () => {
     if (!addForm.clientName.trim()) {
       alert('Please enter a client name');
@@ -1108,20 +1159,46 @@ export default function ClientPackages() {
         if (fetchError.message.includes('CORS') || fetchError.message.includes('Failed to fetch')) {
           // Try using a simple image request to trigger the action
           const img = new Image();
-          img.onload = () => {
+          img.onload = async () => {
             console.log('✅ Add request sent successfully via image method');
             // Refresh the client list after a short delay
-            setTimeout(() => {
-              fetchClients(false);
-              showToast(`New client "${addForm.clientName}" has been added to Google Sheets!`);
+            setTimeout(async () => {
+              await fetchClients(false);
+              
+              // Add client to CRM
+              const crmResult = await addClientToCRM({
+                clientName: addForm.clientName,
+                clientEmail: addForm.clientEmail,
+                packageType: addForm.packageType,
+                notes: addForm.notes
+              });
+              
+              if (crmResult.success) {
+                showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+              } else {
+                showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmResult.error})`);
+              }
             }, 1000);
           };
-          img.onerror = () => {
+          img.onerror = async () => {
             console.log('✅ Add request sent successfully via image method (error expected)');
             // Refresh the client list after a short delay
-            setTimeout(() => {
-              fetchClients(false);
-              showToast(`New client "${addForm.clientName}" has been added to Google Sheets!`);
+            setTimeout(async () => {
+              await fetchClients(false);
+              
+              // Add client to CRM
+              const crmResult = await addClientToCRM({
+                clientName: addForm.clientName,
+                clientEmail: addForm.clientEmail,
+                packageType: addForm.packageType,
+                notes: addForm.notes
+              });
+              
+              if (crmResult.success) {
+                showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+              } else {
+                showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmResult.error})`);
+              }
             }, 1000);
           };
           img.src = `${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`;
@@ -1133,6 +1210,14 @@ export default function ClientPackages() {
 
       // Refresh the client list to get the updated data
       await fetchClients(false);
+
+      // Add client to CRM
+      const crmResult = await addClientToCRM({
+        clientName: addForm.clientName,
+        clientEmail: addForm.clientEmail,
+        packageType: addForm.packageType,
+        notes: addForm.notes
+      });
 
       // Reset form and close modal
       setAddForm({
@@ -1151,7 +1236,12 @@ export default function ClientPackages() {
       });
       setShowAddModal(false);
 
-      showToast(`New client "${addForm.clientName}" has been added to Google Sheets!`);
+      // Show success message with CRM status
+      if (crmResult.success) {
+        showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+      } else {
+        showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmResult.error})`);
+      }
 
     } catch (error) {
       console.error('Error adding client to Google Sheets:', error);
