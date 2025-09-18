@@ -300,8 +300,8 @@ export function AuthProvider({ children }) {
               setLoading(false);
               return;
             }
-            
-            if (approvedUser && approvedUser.isApproved) {
+              
+              if (approvedUser && approvedUser.isApproved) {
                 console.log('✅ User approved by admin:', approvedUser);
                 // User was approved by admin - set their approved roles
                 const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
@@ -424,7 +424,7 @@ export function AuthProvider({ children }) {
                 console.log('🔄 Navigating pending user to approval page...');
                 navigateBasedOnRole('pending');
               }
-          }            } catch (error) {
+            } catch (error) {
               console.error('❌ Error checking user approval status:', error);
               // Fallback to pending status
               setCurrentRole('pending');
@@ -446,10 +446,8 @@ export function AuthProvider({ children }) {
           // Fallback to prevent blank page
           setCurrentUser(null);
           setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
-        } finally {
-          // Always set loading to false to prevent infinite loading
-          setLoading(false);
         }
+        setLoading(false);
       });
 
       return unsubscribe;
