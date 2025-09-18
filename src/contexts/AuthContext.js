@@ -353,7 +353,6 @@ export function AuthProvider({ children }) {
                 console.log('🔄 Navigating approved user to dashboard...');
                 navigateBasedOnRole(roleToUse);
               } else {
-              } else {
                 console.log('🆕 New user - no approval found, setting to pending');
                 // New user - no approval yet, they need admin approval
                 const newUser = {
