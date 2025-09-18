@@ -209,7 +209,9 @@ class FirestoreService {
     } catch (error) {
       console.error('❌ Error getting approved users:', error);
       console.error('🔍 DEBUG: Error stack:', error.stack);
-      throw error;
+      console.warn('⚠️ Firestore permissions issue, returning empty approved users list');
+      // Return empty array instead of throwing to prevent app crashes
+      return [];
     }
   }
 

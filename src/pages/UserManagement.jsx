@@ -67,6 +67,8 @@ const UserManagement = () => {
       } catch (error) {
         console.error('Error loading approved users:', error);
         console.error('🔍 DEBUG: Error stack:', error.stack);
+        console.warn('⚠️ Setting empty approved users list due to error');
+        setApprovedUsers([]);
       } finally {
         setLoading(false);
         console.log('🔍 DEBUG: Loading set to false');
