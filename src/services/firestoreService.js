@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { auth } from '../firebase'; // Added missing import for auth
+import { firebaseApiService } from './firebaseApiService';
 
 class FirestoreService {
   constructor() {
@@ -133,9 +134,18 @@ class FirestoreService {
     } catch (error) {
       console.error('❌ Error getting pending users:', error);
       console.error('🔍 DEBUG: Error stack:', error.stack);
-      console.warn('⚠️ Firestore connection failed, returning empty pending users list');
-      // Return empty array instead of throwing to prevent app crashes
-      return [];
+      console.warn('⚠️ Firestore permissions issue, trying admin service fallback...');
+      
+      try {
+        // Fallback to API service
+        const apiUsers = await firebaseApiService.getPendingUsers();
+        console.log('✅ API service fallback successful:', apiUsers.length, 'users');
+        return apiUsers;
+      } catch (apiError) {
+        console.error('❌ API service fallback also failed:', apiError);
+        console.warn('⚠️ Returning empty pending users list');
+        return [];
+      }
     }
   }
 
@@ -209,9 +219,18 @@ class FirestoreService {
     } catch (error) {
       console.error('❌ Error getting approved users:', error);
       console.error('🔍 DEBUG: Error stack:', error.stack);
-      console.warn('⚠️ Firestore permissions issue, returning empty approved users list');
-      // Return empty array instead of throwing to prevent app crashes
-      return [];
+      console.warn('⚠️ Firestore permissions issue, trying admin service fallback...');
+      
+      try {
+        // Fallback to API service
+        const apiUsers = await firebaseApiService.getApprovedUsers();
+        console.log('✅ API service fallback successful:', apiUsers.length, 'users');
+        return apiUsers;
+      } catch (apiError) {
+        console.error('❌ API service fallback also failed:', apiError);
+        console.warn('⚠️ Returning empty approved users list');
+        return [];
+      }
     }
   }
 

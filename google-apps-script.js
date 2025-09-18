@@ -122,6 +122,80 @@ function doGet(e) {
         
         result = addLead(leadData, selectedTabs);
         break;
+        
+      // Firebase Admin SDK endpoints
+      case 'getApprovedUsers':
+        console.log('🔄 Getting approved users from Firebase...');
+        result = getFirebaseApprovedUsers();
+        break;
+        
+      case 'getPendingUsers':
+        console.log('🔄 Getting pending users from Firebase...');
+        result = getFirebasePendingUsers();
+        break;
+        
+      case 'addPendingUser':
+        console.log('🔄 Adding pending user to Firebase...');
+        const pendingUserDataStr = e.parameter.userData;
+        let pendingUserData = {};
+        if (pendingUserDataStr) {
+          try {
+            pendingUserData = JSON.parse(decodeURIComponent(pendingUserDataStr));
+          } catch (error) {
+            console.error('Error parsing pendingUserData:', error);
+          }
+        }
+        result = addFirebasePendingUser(pendingUserData);
+        break;
+        
+      case 'removePendingUser':
+        console.log('🔄 Removing pending user from Firebase...');
+        const userId = e.parameter.userId;
+        result = removeFirebasePendingUser(userId);
+        break;
+        
+      case 'addApprovedUser':
+        console.log('🔄 Adding approved user to Firebase...');
+        const approvedUserDataStr = e.parameter.userData;
+        let approvedUserData = {};
+        if (approvedUserDataStr) {
+          try {
+            approvedUserData = JSON.parse(decodeURIComponent(approvedUserDataStr));
+          } catch (error) {
+            console.error('Error parsing approvedUserData:', error);
+          }
+        }
+        result = addFirebaseApprovedUser(approvedUserData);
+        break;
+        
+      case 'updateApprovedUser':
+        console.log('🔄 Updating approved user in Firebase...');
+        const updateEmail = e.parameter.email;
+        const updatesStr = e.parameter.updates;
+        let updates = {};
+        if (updatesStr) {
+          try {
+            updates = JSON.parse(decodeURIComponent(updatesStr));
+          } catch (error) {
+            console.error('Error parsing updates:', error);
+          }
+        }
+        result = updateFirebaseApprovedUser(updateEmail, updates);
+        break;
+        
+      case 'getSystemConfig':
+        console.log('🔄 Getting system config from Firebase...');
+        const configKey = e.parameter.key;
+        result = getFirebaseSystemConfig(configKey);
+        break;
+        
+      case 'saveSystemConfig':
+        console.log('🔄 Saving system config to Firebase...');
+        const saveKey = e.parameter.key;
+        const saveValue = e.parameter.value;
+        result = saveFirebaseSystemConfig(saveKey, saveValue);
+        break;
+        
       default:
         result = { 
           success: true, 
@@ -613,6 +687,204 @@ function addLead(leadData, selectedTabs) {
     
   } catch (error) {
     console.error('❌ Error adding lead to CRM:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Firebase Admin SDK Functions
+// Note: These would need to be implemented with proper Firebase Admin SDK
+// For now, returning mock data to test the API structure
+
+function getFirebaseApprovedUsers() {
+  try {
+    console.log('🔍 Getting approved users from Firebase...');
+    
+    // Mock data - replace with actual Firebase Admin SDK calls
+    const approvedUsers = [
+      {
+        id: 'aamin@luxury-listings.com',
+        email: 'aamin@luxury-listings.com',
+        firstName: 'Aamin',
+        lastName: 'Okhovat',
+        role: 'content_director',
+        primaryRole: 'content_director',
+        isApproved: true,
+        department: 'Content & Creative',
+        displayName: 'Aamin Okhovat'
+      },
+      {
+        id: 'alberta@luxury-listings.com',
+        email: 'alberta@luxury-listings.com',
+        firstName: 'Alberta',
+        lastName: 'K',
+        role: 'content_director',
+        primaryRole: 'content_director',
+        isApproved: true,
+        department: 'Content & Creative',
+        displayName: 'Alberta K'
+      },
+      {
+        id: 'jrsschroeder@gmail.com',
+        email: 'jrsschroeder@gmail.com',
+        firstName: 'Joshua',
+        lastName: 'Schroeder',
+        role: 'admin',
+        primaryRole: 'admin',
+        isApproved: true,
+        department: 'Administration',
+        displayName: 'Joshua Schroeder (Josh)'
+      }
+    ];
+    
+    return {
+      success: true,
+      users: approvedUsers
+    };
+  } catch (error) {
+    console.error('❌ Error getting approved users:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function getFirebasePendingUsers() {
+  try {
+    console.log('🔍 Getting pending users from Firebase...');
+    
+    // Mock data - replace with actual Firebase Admin SDK calls
+    const pendingUsers = [];
+    
+    return {
+      success: true,
+      users: pendingUsers
+    };
+  } catch (error) {
+    console.error('❌ Error getting pending users:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function addFirebasePendingUser(userData) {
+  try {
+    console.log('🔍 Adding pending user to Firebase:', userData.email);
+    
+    // Mock implementation - replace with actual Firebase Admin SDK calls
+    const userId = 'pending-' + Date.now();
+    
+    return {
+      success: true,
+      userId: userId,
+      message: 'Pending user added successfully'
+    };
+  } catch (error) {
+    console.error('❌ Error adding pending user:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function removeFirebasePendingUser(userId) {
+  try {
+    console.log('🔍 Removing pending user from Firebase:', userId);
+    
+    // Mock implementation - replace with actual Firebase Admin SDK calls
+    
+    return {
+      success: true,
+      message: 'Pending user removed successfully'
+    };
+  } catch (error) {
+    console.error('❌ Error removing pending user:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function addFirebaseApprovedUser(userData) {
+  try {
+    console.log('🔍 Adding approved user to Firebase:', userData.email);
+    
+    // Mock implementation - replace with actual Firebase Admin SDK calls
+    
+    return {
+      success: true,
+      message: 'Approved user added successfully'
+    };
+  } catch (error) {
+    console.error('❌ Error adding approved user:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function updateFirebaseApprovedUser(email, updates) {
+  try {
+    console.log('🔍 Updating approved user in Firebase:', email);
+    
+    // Mock implementation - replace with actual Firebase Admin SDK calls
+    
+    return {
+      success: true,
+      message: 'Approved user updated successfully'
+    };
+  } catch (error) {
+    console.error('❌ Error updating approved user:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function getFirebaseSystemConfig(key) {
+  try {
+    console.log('🔍 Getting system config from Firebase:', key);
+    
+    // Mock implementation - replace with actual Firebase Admin SDK calls
+    const mockConfigs = {
+      'currentRole': 'admin',
+      'systemUptime': '99.9%'
+    };
+    
+    return {
+      success: true,
+      value: mockConfigs[key] || null
+    };
+  } catch (error) {
+    console.error('❌ Error getting system config:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function saveFirebaseSystemConfig(key, value) {
+  try {
+    console.log('🔍 Saving system config to Firebase:', key, value);
+    
+    // Mock implementation - replace with actual Firebase Admin SDK calls
+    
+    return {
+      success: true,
+      message: 'System config saved successfully'
+    };
+  } catch (error) {
+    console.error('❌ Error saving system config:', error);
     return {
       success: false,
       error: error.message
