@@ -196,6 +196,11 @@ function doGet(e) {
         result = saveFirebaseSystemConfig(saveKey, saveValue);
         break;
         
+      case 'getTasks':
+        console.log('🔄 Getting tasks from Firebase...');
+        result = getFirebaseTasks();
+        break;
+        
       default:
         result = { 
           success: true, 
@@ -885,6 +890,51 @@ function saveFirebaseSystemConfig(key, value) {
     };
   } catch (error) {
     console.error('❌ Error saving system config:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function getFirebaseTasks() {
+  try {
+    console.log('🔍 Getting tasks from Firebase...');
+    
+    // Mock data - replace with actual Firebase Admin SDK calls
+    const tasks = [
+      {
+        id: 'task-1',
+        title: 'Review and update your ClickUp task status',
+        description: 'Update progress on all assigned tasks in the project management system',
+        category: 'Administrative',
+        priority: 'low',
+        due_date: '2025-08-15',
+        estimated_time: 20,
+        assigned_to: 'joshua@luxurylistings.com',
+        status: 'pending',
+        created_date: '2025-08-10T10:00:00.000Z'
+      },
+      {
+        id: 'task-2',
+        title: 'Create your first luxury post using the Luxe Post Kit',
+        description: 'Design a high-quality post following the brand guidelines',
+        category: 'Content Creation',
+        priority: 'high',
+        due_date: '2025-08-14',
+        estimated_time: 90,
+        assigned_to: 'joshua@luxurylistings.com',
+        status: 'pending',
+        created_date: '2025-08-10T10:00:00.000Z'
+      }
+    ];
+    
+    return {
+      success: true,
+      tasks: tasks
+    };
+  } catch (error) {
+    console.error('❌ Error getting tasks:', error);
     return {
       success: false,
       error: error.message

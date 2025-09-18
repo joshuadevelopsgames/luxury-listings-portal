@@ -290,7 +290,18 @@ class FirestoreService {
       return tasks;
     } catch (error) {
       console.error('❌ Error getting tasks:', error);
-      throw error;
+      console.warn('⚠️ Firestore permissions issue, trying API service fallback...');
+      
+      try {
+        // Fallback to API service
+        const apiTasks = await firebaseApiService.getTasks();
+        console.log('✅ API service fallback successful:', apiTasks.length, 'tasks');
+        return apiTasks;
+      } catch (apiError) {
+        console.error('❌ API service fallback also failed:', apiError);
+        console.warn('⚠️ Returning empty tasks list');
+        return [];
+      }
     }
   }
 

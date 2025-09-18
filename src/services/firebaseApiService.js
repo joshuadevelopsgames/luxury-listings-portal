@@ -14,11 +14,11 @@ class FirebaseApiService {
       const response = await fetch(`${this.baseUrl}?action=getApprovedUsers`);
       const data = await response.json();
       
-      if (data.success) {
+      if (data.success && data.users) {
         console.log(`✅ API: Found ${data.users.length} approved users`);
         return data.users;
       } else {
-        console.error('❌ API: Error getting approved users:', data.error);
+        console.error('❌ API: Error getting approved users:', data.error || 'No users data');
         return [];
       }
     } catch (error) {
@@ -34,11 +34,11 @@ class FirebaseApiService {
       const response = await fetch(`${this.baseUrl}?action=getPendingUsers`);
       const data = await response.json();
       
-      if (data.success) {
+      if (data.success && data.users) {
         console.log(`✅ API: Found ${data.users.length} pending users`);
         return data.users;
       } else {
-        console.error('❌ API: Error getting pending users:', data.error);
+        console.error('❌ API: Error getting pending users:', data.error || 'No users data');
         return [];
       }
     } catch (error) {
@@ -145,6 +145,26 @@ class FirebaseApiService {
     } catch (error) {
       console.error('❌ API: Network error updating approved user:', error);
       throw error;
+    }
+  }
+
+  // Get tasks via API
+  async getTasks() {
+    try {
+      console.log('🔍 API: Getting tasks...');
+      const response = await fetch(`${this.baseUrl}?action=getTasks`);
+      const data = await response.json();
+      
+      if (data.success && data.tasks) {
+        console.log(`✅ API: Found ${data.tasks.length} tasks`);
+        return data.tasks;
+      } else {
+        console.error('❌ API: Error getting tasks:', data.error || 'No tasks data');
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ API: Network error getting tasks:', error);
+      return [];
     }
   }
 
