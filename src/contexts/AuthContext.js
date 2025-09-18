@@ -436,7 +436,7 @@ export function AuthProvider({ children }) {
                 isApproved: false
               });
             }
-          }          } else {
+          } else {
             console.log('❌ User signed out');
             setCurrentUser(null);
             setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
