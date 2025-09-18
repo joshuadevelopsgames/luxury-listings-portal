@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Diagnostic Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Firebase Diagnostic Tool</h1>
+    <p>This tool will help diagnose Firebase connection and permissions issues.</p>
+    
+    <div class="section">
+        <h2>Firebase Configuration</h2>
+        <div id="config-info">Loading...</div>
+    </div>
+    
+    <div class="section">
+        <h2>Authentication Test</h2>
+        <button onclick="testAuth()">Test Google Authentication</button>
+        <div id="auth-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Firestore Connection Test</h2>
+        <button onclick="testFirestore()">Test Firestore Connection</button>
+        <div id="firestore-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Firestore Collections Test</h2>
+        <button onclick="testCollections()">Test Collections Access</button>
+        <div id="collections-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>User Data Recovery</h2>
+        <button onclick="attemptRecovery()">Attempt to Recover User Data</button>
+        <div id="recovery-result"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNTi85Mc9Bpxiz_B9YKmQHsbkmkpaJzLQ",
+            authDomain: "luxury-listings-portal-e56de.firebaseapp.com",
+            projectId: "luxury-listings-portal-e56de",
+            storageBucket: "luxury-listings-portal-e56de.firebasestorage.app",
+            messagingSenderId: "660966083126",
+            appId: "1:660966083126:web:ece8041e9d9cc016b7a697"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // Display configuration
+        document.getElementById('config-info').innerHTML = `
+            <pre>${JSON.stringify(firebaseConfig, null, 2)}</pre>
+            <p><strong>Project ID:</strong> ${firebaseConfig.projectId}</p>
+            <p><strong>Auth Domain:</strong> ${firebaseConfig.authDomain}</p>
+        `;
+
+        // Test authentication
+        window.testAuth = async function() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<p>Testing authentication...</p>';
+            
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                resultDiv.innerHTML = `
+                    <div class="section success">
+                        <h3>✅ Authentication Successful</h3>
+                        <p><strong>User:</strong> ${result.user.email}</p>
+                        <p><strong>UID:</strong> ${result.user.uid}</p>
+                        <p><strong>Display Name:</strong> ${result.user.displayName}</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="section error">
+                        <h3>❌ Authentication Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Code:</strong> ${error.code}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        };
+
+        // Test Firestore connection
+        window.testFirestore = async function() {
+            const resultDiv = document.getElementById('firestore-result');
+            resultDiv.innerHTML = '<p>Testing Firestore connection...</p>';
+            
+            try {
+                // Try to create a test document
+                const testDoc = doc(db, 'test', 'connection-test');
+                await setDoc(testDoc, { 
+                    timestamp: new Date().toISOString(),
+                    test: true 
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="section success">
+                        <h3>✅ Firestore Connection Successful</h3>
+                        <p>Successfully created test document</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="section error">
+                        <h3>❌ Firestore Connection Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Code:</strong> ${error.code}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        };
+
+        // Test collections access
+        window.testCollections = async function() {
+            const resultDiv = document.getElementById('collections-result');
+            resultDiv.innerHTML = '<p>Testing collections access...</p>';
+            
+            const collections = ['users', 'pending_users', 'approved_users', 'tasks', 'analytics_config', 'system_config'];
+            let results = [];
+            
+            for (const collectionName of collections) {
+                try {
+                    const collectionRef = collection(db, collectionName);
+                    const snapshot = await getDocs(collectionRef);
+                    results.push(`✅ ${collectionName}: ${snapshot.size} documents`);
+                } catch (error) {
+                    results.push(`❌ ${collectionName}: ${error.message}`);
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="section">
+                    <h3>Collection Access Results</h3>
+                    <pre>${results.join('\n')}</pre>
+                </div>
+            `;
+        };
+
+        // Attempt to recover user data
+        window.attemptRecovery = async function() {
+            const resultDiv = document.getElementById('recovery-result');
+            resultDiv.innerHTML = '<p>Attempting to recover user data...</p>';
+            
+            try {
+                // Try to access approved users
+                const approvedUsersRef = collection(db, 'approved_users');
+                const approvedSnapshot = await getDocs(approvedUsersRef);
+                
+                // Try to access pending users
+                const pendingUsersRef = collection(db, 'pending_users');
+                const pendingSnapshot = await getDocs(pendingUsersRef);
+                
+                const approvedUsers = [];
+                const pendingUsers = [];
+                
+                approvedSnapshot.forEach(doc => {
+                    approvedUsers.push({ id: doc.id, ...doc.data() });
+                });
+                
+                pendingSnapshot.forEach(doc => {
+                    pendingUsers.push({ id: doc.id, ...doc.data() });
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="section success">
+                        <h3>✅ Data Recovery Successful</h3>
+                        <p><strong>Approved Users:</strong> ${approvedUsers.length}</p>
+                        <p><strong>Pending Users:</strong> ${pendingUsers.length}</p>
+                        <details>
+                            <summary>Approved Users Data</summary>
+                            <pre>${JSON.stringify(approvedUsers, null, 2)}</pre>
+                        </details>
+                        <details>
+                            <summary>Pending Users Data</summary>
+                            <pre>${JSON.stringify(pendingUsers, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="section error">
+                        <h3>❌ Data Recovery Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Code:</strong> ${error.code}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        };
+
+        // Monitor auth state
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log('User signed in:', user.email);
+            } else {
+                console.log('User signed out');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -270,11 +270,38 @@ export function AuthProvider({ children }) {
             }
             
             // Check if user has been approved by admin (from Firestore)
+            let approvedUser = null;
             try {
               const approvedUsers = await firestoreService.getApprovedUsers();
-              const approvedUser = approvedUsers.find(u => u.email === user.email);
-              
-              if (approvedUser && approvedUser.isApproved) {
+              approvedUser = approvedUsers.find(u => u.email === user.email);
+            } catch (error) {
+              console.warn('⚠️ Could not check approved users due to Firestore error:', error);
+              console.warn('⚠️ Treating user as pending due to Firestore connection issue');
+              // Set user as pending and continue with login
+              setCurrentUser({
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || 'New User',
+                firstName: user.displayName?.split(' ')[0] || 'New',
+                lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
+                role: 'pending',
+                department: 'Pending Approval',
+                startDate: new Date().toISOString().split('T')[0],
+                avatar: user.photoURL,
+                bio: 'Account pending administrator approval',
+                skills: [],
+                stats: {},
+                isApproved: false,
+                createdAt: new Date().toISOString()
+              });
+              setCurrentRole('pending');
+              console.log('🔄 Navigating pending user to approval page...');
+              navigateBasedOnRole('pending');
+              setLoading(false);
+              return;
+            }
+            
+            if (approvedUser && approvedUser.isApproved) {
                 console.log('✅ User approved by admin:', approvedUser);
                 // User was approved by admin - set their approved roles
                 const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
@@ -419,8 +446,10 @@ export function AuthProvider({ children }) {
           // Fallback to prevent blank page
           setCurrentUser(null);
           setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+        } finally {
+          // Always set loading to false to prevent infinite loading
+          setLoading(false);
         }
-        setLoading(false);
       });
 
       return unsubscribe;
