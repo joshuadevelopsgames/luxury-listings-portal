@@ -424,7 +424,7 @@ export function AuthProvider({ children }) {
                 console.log('🔄 Navigating pending user to approval page...');
                 navigateBasedOnRole('pending');
               }
-            } catch (error) {
+              }            } catch (error) {
               console.error('❌ Error checking user approval status:', error);
               // Fallback to pending status
               setCurrentRole('pending');
