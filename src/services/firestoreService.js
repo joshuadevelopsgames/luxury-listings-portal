@@ -133,7 +133,9 @@ class FirestoreService {
     } catch (error) {
       console.error('❌ Error getting pending users:', error);
       console.error('🔍 DEBUG: Error stack:', error.stack);
-      throw error;
+      console.warn('⚠️ Firestore connection failed, returning empty pending users list');
+      // Return empty array instead of throwing to prevent app crashes
+      return [];
     }
   }
 

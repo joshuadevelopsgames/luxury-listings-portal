@@ -39,6 +39,9 @@ export function PendingUsersProvider({ children }) {
       } catch (error) {
         console.error('❌ Error loading initial pending users:', error);
         console.error('🔍 DEBUG: Error stack:', error.stack);
+        console.warn('⚠️ Firestore connection failed, using empty pending users list');
+        // Set empty array instead of failing
+        setPendingUsers([]);
         setLoading(false);
       }
     };
