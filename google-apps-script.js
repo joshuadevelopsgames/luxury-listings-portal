@@ -25,7 +25,12 @@ function doGet(e) {
     
     // Get the spreadsheet and sheet
     const spreadsheetId = '10MGYVVpccxgCsvcYIBeWNtu3xWvlT8GlXNecv8LAQ6g';
-    const sheetName = 'Social Media Packages';
+    
+    // Determine which sheet to use based on package type
+    let sheetName = 'Social Media Packages';
+    if (clientData.packageType === 'Monthly') {
+      sheetName = 'Monthly Recurring';
+    }
     
     console.log('🔍 Opening spreadsheet:', spreadsheetId);
     const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
@@ -274,32 +279,53 @@ function updateClient(sheet, clientData) {
     const currentRow = sheet.getRange(rowNumber, 1, 1, sheet.getLastColumn()).getValues()[0];
     console.log('📋 Current row data:', currentRow);
     
-    // Update only the specific columns based on the actual sheet structure
-    // Column mapping from the actual sheet:
-    // A=Client Name, B=Package Type, C=Email, D=Date Added, E=Posted On (Page), F=Payment Status, G=Sales Stage, H=Approval Status, I=Notes, J=Status Change Date, K=Package Size, L=Posts Used, M=Last Post Date, N=Posts Remaining, O=Package Completed, P=Approval Email Recipient, Q=Price Paid (USD), R=Post Insights Sent, S=Overdue Posts
-    
-    currentRow[0] = clientData.clientName;     // A - Client Name
-    currentRow[1] = clientData.packageType;    // B - Package Type
-    currentRow[2] = clientData.clientEmail || ''; // C - Email
-    // currentRow[3] = date added (preserve existing)
-    currentRow[4] = clientData.postedOn;       // E - Posted On (Page)
-    currentRow[5] = clientData.paymentStatus;  // F - Payment Status
-    // currentRow[6] = sales stage (preserve existing)
-    currentRow[7] = clientData.approvalStatus; // H - Approval Status
-    currentRow[8] = clientData.notes || '';    // I - Notes
-    // currentRow[9] = status change date (preserve existing)
-    currentRow[10] = clientData.packageSize;   // K - Package Size
-    currentRow[11] = clientData.postsUsed;     // L - Posts Used
-    // currentRow[12] = last post date (preserve existing)
-    currentRow[13] = clientData.postsRemaining; // N - Posts Remaining
-    // currentRow[14] = package completed (preserve existing)
-    // currentRow[15] = approval email recipient (preserve existing)
-    currentRow[16] = clientData.customPrice || 0; // Q - Price Paid (USD) - use custom price for custom packages
-    // currentRow[17] = post insights sent (preserve existing)
-    
-    // Add overdue posts if column exists (column S)
-    if (currentRow.length >= 19) {
-      currentRow[18] = clientData.overduePosts || 0; // S - Overdue Posts (new column)
+    // Update only the specific columns based on the sheet type
+    if (sheetName === 'Monthly Recurring') {
+      // Monthly Recurring sheet structure: Client Name, Package Type, Email, Date Added, Posted On Page, Payment Status, Approval Status, Notes, Package Size, Posts Used, Posts Remaining, Last Contact, Next Billing Date, Billing Cycle, Price Paid, Auto Renew, Overdue Posts
+      currentRow[0] = clientData.clientName;     // A - Client Name
+      currentRow[1] = clientData.packageType;    // B - Package Type
+      currentRow[2] = clientData.clientEmail || ''; // C - Email
+      // currentRow[3] = date added (preserve existing)
+      currentRow[4] = clientData.postedOn;       // E - Posted On Page
+      currentRow[5] = clientData.paymentStatus;  // F - Payment Status
+      currentRow[6] = clientData.approvalStatus; // G - Approval Status
+      currentRow[7] = clientData.notes || '';    // H - Notes
+      currentRow[8] = clientData.packageSize;    // I - Package Size
+      currentRow[9] = clientData.postsUsed;      // J - Posts Used
+      currentRow[10] = clientData.postsRemaining; // K - Posts Remaining
+      currentRow[11] = clientData.lastContact || new Date().toISOString().split('T')[0]; // L - Last Contact
+      // currentRow[12] = next billing date (preserve existing)
+      // currentRow[13] = billing cycle (preserve existing)
+      currentRow[14] = clientData.customPrice || 0; // O - Price Paid
+      // currentRow[15] = auto renew (preserve existing)
+      currentRow[16] = clientData.overduePosts || 0; // Q - Overdue Posts
+    } else {
+      // Main Social Media Packages sheet structure
+      // A=Client Name, B=Package Type, C=Email, D=Date Added, E=Posted On (Page), F=Payment Status, G=Sales Stage, H=Approval Status, I=Notes, J=Status Change Date, K=Package Size, L=Posts Used, M=Last Post Date, N=Posts Remaining, O=Package Completed, P=Approval Email Recipient, Q=Price Paid (USD), R=Post Insights Sent, S=Overdue Posts
+      
+      currentRow[0] = clientData.clientName;     // A - Client Name
+      currentRow[1] = clientData.packageType;    // B - Package Type
+      currentRow[2] = clientData.clientEmail || ''; // C - Email
+      // currentRow[3] = date added (preserve existing)
+      currentRow[4] = clientData.postedOn;       // E - Posted On (Page)
+      currentRow[5] = clientData.paymentStatus;  // F - Payment Status
+      // currentRow[6] = sales stage (preserve existing)
+      currentRow[7] = clientData.approvalStatus; // H - Approval Status
+      currentRow[8] = clientData.notes || '';    // I - Notes
+      // currentRow[9] = status change date (preserve existing)
+      currentRow[10] = clientData.packageSize;   // K - Package Size
+      currentRow[11] = clientData.postsUsed;     // L - Posts Used
+      // currentRow[12] = last post date (preserve existing)
+      currentRow[13] = clientData.postsRemaining; // N - Posts Remaining
+      // currentRow[14] = package completed (preserve existing)
+      // currentRow[15] = approval email recipient (preserve existing)
+      currentRow[16] = clientData.customPrice || 0; // Q - Price Paid (USD) - use custom price for custom packages
+      // currentRow[17] = post insights sent (preserve existing)
+      
+      // Add overdue posts if column exists (column S)
+      if (currentRow.length >= 19) {
+        currentRow[18] = clientData.overduePosts || 0; // S - Overdue Posts (new column)
+      }
     }
     
     console.log('📋 Updated row data:', currentRow);
@@ -343,31 +369,57 @@ function addClient(sheet, clientData) {
     
     console.log('📋 Inserting new client at row:', insertRow);
     
-    // Prepare the new row data matching your sheet structure
-    const newRow = [
-      clientData.clientName,     // A - Client Name
-      clientData.packageType,    // B - Package Type
-      clientData.clientEmail || '', // C - Email
-      new Date().toISOString().split('T')[0], // D - Date Added (today)
-      clientData.postedOn,       // E - Posted On (Page)
-      clientData.paymentStatus,  // F - Payment Status
-      'Ready for Approval',      // G - Sales Stage (default)
-      clientData.approvalStatus, // H - Approval Status
-      clientData.notes || '',    // I - Notes
-      new Date().toISOString().split('T')[0], // J - Status Change Date (today)
-      clientData.packageSize,    // K - Package Size
-      clientData.postsUsed,      // L - Posts Used
-      '',                        // M - Last Post Date (empty)
-      clientData.postsRemaining, // N - Posts Remaining
-      'FALSE',                   // O - Package Completed
-      '',                        // P - Approval Email Recipient
-      clientData.customPrice || '', // Q - Price Paid (USD) - use custom price
-      'FALSE'                    // R - Post Insights Sent
-    ];
+    // Prepare the new row data based on sheet type
+    let newRow;
     
-    // Add overdue posts column if it exists (column S)
-    if (sheet.getLastColumn() >= 19) {
-      newRow.push(clientData.overduePosts || 0); // S - Overdue Posts
+    if (sheetName === 'Monthly Recurring') {
+      // Monthly Recurring sheet structure: Client Name, Package Type, Email, Date Added, Posted On Page, Payment Status, Approval Status, Notes, Package Size, Posts Used, Posts Remaining, Last Contact, Next Billing Date, Billing Cycle, Price Paid, Auto Renew, Overdue Posts
+      newRow = [
+        clientData.clientName,     // A - Client Name
+        clientData.packageType,    // B - Package Type
+        clientData.clientEmail || '', // C - Email
+        new Date().toISOString().split('T')[0], // D - Date Added (today)
+        clientData.postedOn,       // E - Posted On Page
+        clientData.paymentStatus,  // F - Payment Status
+        clientData.approvalStatus, // G - Approval Status
+        clientData.notes || '',    // H - Notes
+        clientData.packageSize,    // I - Package Size
+        clientData.postsUsed,      // J - Posts Used
+        clientData.postsRemaining, // K - Posts Remaining
+        clientData.lastContact || new Date().toISOString().split('T')[0], // L - Last Contact
+        '',                        // M - Next Billing Date (empty for now)
+        'Monthly',                 // N - Billing Cycle
+        clientData.customPrice || '', // O - Price Paid
+        'TRUE',                    // P - Auto Renew (default for monthly)
+        clientData.overduePosts || 0 // Q - Overdue Posts
+      ];
+    } else {
+      // Main Social Media Packages sheet structure
+      newRow = [
+        clientData.clientName,     // A - Client Name
+        clientData.packageType,    // B - Package Type
+        clientData.clientEmail || '', // C - Email
+        new Date().toISOString().split('T')[0], // D - Date Added (today)
+        clientData.postedOn,       // E - Posted On (Page)
+        clientData.paymentStatus,  // F - Payment Status
+        'Ready for Approval',      // G - Sales Stage (default)
+        clientData.approvalStatus, // H - Approval Status
+        clientData.notes || '',    // I - Notes
+        new Date().toISOString().split('T')[0], // J - Status Change Date (today)
+        clientData.packageSize,    // K - Package Size
+        clientData.postsUsed,      // L - Posts Used
+        '',                        // M - Last Post Date (empty)
+        clientData.postsRemaining, // N - Posts Remaining
+        'FALSE',                   // O - Package Completed
+        '',                        // P - Approval Email Recipient
+        clientData.customPrice || '', // Q - Price Paid (USD) - use custom price
+        'FALSE'                    // R - Post Insights Sent
+      ];
+      
+      // Add overdue posts column if it exists (column S)
+      if (sheet.getLastColumn() >= 19) {
+        newRow.push(clientData.overduePosts || 0); // S - Overdue Posts
+      }
     }
     
     // Insert the new row at the found position
