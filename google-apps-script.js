@@ -23,21 +23,32 @@ function doGet(e) {
     console.log('Parsed action:', action);
     console.log('Parsed clientData:', clientData);
     
-    // Get the spreadsheet and sheet
+    // Get the spreadsheet
     const spreadsheetId = '10MGYVVpccxgCsvcYIBeWNtu3xWvlT8GlXNecv8LAQ6g';
-    
-    // Determine which sheet to use based on package type
-    let sheetName = 'Social Media Packages';
-    if (clientData.packageType === 'Monthly') {
-      sheetName = 'Monthly Recurring';
-    }
     
     console.log('🔍 Opening spreadsheet:', spreadsheetId);
     const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
     console.log('📋 Spreadsheet title:', spreadsheet.getName());
     
-    console.log('🔍 Getting sheet:', sheetName);
-    const sheet = spreadsheet.getSheetByName(sheetName);
+    // For actions that need a specific sheet, we'll determine it in the individual functions
+    let sheet = null;
+    let sheetName = 'Social Media Packages'; // default
+    
+    // Only get sheet for actions that need it
+    if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived'].includes(action)) {
+      // Determine which sheet to use based on package type
+      console.log('🔍 Determining sheet based on package type:', clientData.packageType);
+      if (clientData.packageType === 'Monthly') {
+        sheetName = 'Monthly Recurring';
+        console.log('✅ Monthly package detected - using Monthly Recurring sheet');
+      } else {
+        console.log('📋 Non-monthly package - using Social Media Packages sheet');
+      }
+      
+      console.log('🔍 Getting sheet:', sheetName);
+      console.log('📊 Client package type:', clientData.packageType);
+      sheet = spreadsheet.getSheetByName(sheetName);
+    }
     
     if (!sheet) {
       console.error('❌ Sheet not found:', sheetName);
@@ -280,7 +291,9 @@ function updateClient(sheet, clientData) {
     console.log('📋 Current row data:', currentRow);
     
     // Update only the specific columns based on the sheet type
-    if (sheetName === 'Monthly Recurring') {
+    const currentSheetName = sheet.getName();
+    
+    if (currentSheetName === 'Monthly Recurring') {
       // Monthly Recurring sheet structure: Client Name, Package Type, Email, Date Added, Posted On Page, Payment Status, Approval Status, Notes, Package Size, Posts Used, Posts Remaining, Last Contact, Next Billing Date, Billing Cycle, Price Paid, Auto Renew, Overdue Posts
       currentRow[0] = clientData.clientName;     // A - Client Name
       currentRow[1] = clientData.packageType;    // B - Package Type
@@ -350,6 +363,7 @@ function updateClient(sheet, clientData) {
 function addClient(sheet, clientData) {
   console.log('🔄 Starting addClient function');
   console.log('📊 Client data received:', clientData);
+  console.log('📋 Sheet name:', sheet.getName());
   
   let insertRow = 2; // Declare insertRow at function scope
   
@@ -371,8 +385,9 @@ function addClient(sheet, clientData) {
     
     // Prepare the new row data based on sheet type
     let newRow;
+    const currentSheetName = sheet.getName();
     
-    if (sheetName === 'Monthly Recurring') {
+    if (currentSheetName === 'Monthly Recurring') {
       // Monthly Recurring sheet structure: Client Name, Package Type, Email, Date Added, Posted On Page, Payment Status, Approval Status, Notes, Package Size, Posts Used, Posts Remaining, Last Contact, Next Billing Date, Billing Cycle, Price Paid, Auto Renew, Overdue Posts
       newRow = [
         clientData.clientName,     // A - Client Name
