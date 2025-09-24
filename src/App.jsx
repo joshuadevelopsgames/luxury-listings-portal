@@ -20,11 +20,12 @@ import UserManagement from './pages/UserManagement';
 import Analytics from './pages/Analytics';
 import GoogleAnalyticsSetup from './components/GoogleAnalyticsSetup';
 import ContentCalendar from './pages/ContentCalendar';
+import ContentManagerMessage from './pages/ContentManagerMessage';
 import MetaCallback from './pages/MetaCallback';
 import WaitingForApproval from './pages/WaitingForApproval';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
-import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp } from 'lucide-react';
+import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
 import { USER_ROLES } from './entities/UserRoles';
@@ -100,7 +101,7 @@ function AppLayout() {
       case USER_ROLES.CONTENT_DIRECTOR:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
-          { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
+          { id: 'content-manager-message', name: 'Manager Message', icon: MessageSquare, path: '/content-manager-message' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'programs', name: 'Programs', icon: Settings, path: '/programs' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
@@ -196,6 +197,7 @@ function AppLayout() {
         <Routes>
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/tutorials" element={<ProtectedRoute><TutorialsPage /></ProtectedRoute>} />
+          <Route path="/content-manager-message" element={<ProtectedRoute><ContentManagerMessage /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
           <Route path="/programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
           <Route path="/resources" element={<ProtectedRoute><ResourcesPage /></ProtectedRoute>} />
