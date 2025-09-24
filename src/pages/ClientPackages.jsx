@@ -49,7 +49,8 @@ export default function ClientPackages() {
     notes: '',
     startDate: new Date().toISOString().split('T')[0],
     lastContact: new Date().toISOString().split('T')[0],
-    customPrice: 0
+    customPrice: 0,
+    overduePosts: 0
   });
   const [refreshing, setRefreshing] = useState(false);
   const [lastSync, setLastSync] = useState(null);
@@ -64,6 +65,7 @@ export default function ClientPackages() {
   const [restoreLoading, setRestoreLoading] = useState({});
   const [deleteArchivedLoading, setDeleteArchivedLoading] = useState({});
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [autoResetChecked, setAutoResetChecked] = useState(false);
 
   // Google Sheets API configuration
   const GOOGLE_SHEETS_API_KEY = 'AIzaSyDxiQTlAv1UHxGYRXaZvxi2HulXBHTca3E';
@@ -317,6 +319,7 @@ export default function ClientPackages() {
         else if (headerLower.includes('date') && headerLower.includes('added')) columnMap.startDate = index;
         else if (headerLower.includes('last') && headerLower.includes('post')) columnMap.lastContact = index;
         else if (headerLower.includes('price') && headerLower.includes('paid')) columnMap.customPrice = index;
+        else if (headerLower.includes('overdue') && headerLower.includes('posts')) columnMap.overduePosts = index;
       });
       
       console.log('🔍 Column mapping:', columnMap);
@@ -343,6 +346,7 @@ export default function ClientPackages() {
             startDate: row[columnMap.startDate] || new Date().toISOString().split('T')[0],
             lastContact: row[columnMap.lastContact] || new Date().toISOString().split('T')[0],
             customPrice: parseFloat(row[columnMap.customPrice]) || 0,
+            overduePosts: columnMap.overduePosts !== undefined ? parseInt(row[columnMap.overduePosts]) || 0 : 0,
           };
           
           // Calculate remaining posts if not provided
@@ -629,6 +633,13 @@ export default function ClientPackages() {
     fetchArchivedClients(); // Fetch archived clients on mount
     fetchMonthlyClients(); // Fetch monthly clients on mount
   }, []);
+
+  // Check for auto-reset when clients are loaded
+  useEffect(() => {
+    if (clients.length > 0 && !autoResetChecked) {
+      checkAndAutoResetMonthly();
+    }
+  }, [clients, autoResetChecked]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -1013,7 +1024,8 @@ export default function ClientPackages() {
       notes: client.notes || '',
       postedOn: client.postedOn,
       paymentStatus: client.paymentStatus,
-      customPrice: client.customPrice || 0
+      customPrice: client.customPrice || 0,
+      overduePosts: client.overduePosts || 0
     });
     setShowEditModal(true);
   };
@@ -1071,7 +1083,8 @@ export default function ClientPackages() {
           notes: editForm.notes,
           startDate: editingClient.startDate,
           lastContact: editingClient.lastContact,
-          customPrice: editForm.customPrice || 0
+          customPrice: editForm.customPrice || 0,
+          overduePosts: editForm.overduePosts || 0
         }
       };
       
@@ -1256,7 +1269,8 @@ export default function ClientPackages() {
           notes: addForm.notes,
           startDate: addForm.startDate,
           lastContact: addForm.lastContact,
-          customPrice: addForm.customPrice
+          customPrice: addForm.customPrice,
+          overduePosts: addForm.overduePosts
         })
       });
       
@@ -1411,6 +1425,191 @@ export default function ClientPackages() {
     }
   };
 
+  const handleMonthlyReset = async (clientId) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client || client.packageType !== 'Monthly') {
+      alert('This function is only available for Monthly packages');
+      return;
+    }
+
+    if (!window.confirm(`Reset monthly posts for ${client.clientName}? This will:\n- Reset posts used to 0\n- Add ${client.postsRemaining} posts to overdue\n- Reset posts remaining to ${client.packageSize}`)) {
+      return;
+    }
+
+    setApprovalLoading({ ...approvalLoading, [clientId]: true });
+
+    try {
+      // Calculate new values
+      const newOverduePosts = (client.overduePosts || 0) + client.postsRemaining;
+      const newPostsUsed = 0;
+      const newPostsRemaining = client.packageSize;
+
+      // Update the client data
+      const requestBody = {
+        action: 'update',
+        clientData: {
+          id: clientId,
+          clientName: client.clientName,
+          clientEmail: client.clientEmail,
+          packageType: client.packageType,
+          packageSize: client.packageSize,
+          postsUsed: newPostsUsed,
+          postsRemaining: newPostsRemaining,
+          postedOn: client.postedOn,
+          paymentStatus: client.paymentStatus,
+          approvalStatus: client.approvalStatus,
+          notes: client.notes,
+          startDate: client.startDate,
+          lastContact: client.lastContact,
+          customPrice: client.customPrice || 0,
+          overduePosts: newOverduePosts
+        }
+      };
+
+      const params = new URLSearchParams({
+        action: 'update',
+        clientData: JSON.stringify(requestBody.clientData)
+      });
+
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to reset monthly posts: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Refresh the clients list
+        await fetchClients(false);
+        alert(`Monthly reset successful for ${client.clientName}!\n- Posts used: 0\n- Overdue posts: ${newOverduePosts}\n- Posts remaining: ${newPostsRemaining}`);
+      } else {
+        alert(`Failed to reset monthly posts: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Error resetting monthly posts:', error);
+      alert('Failed to reset monthly posts. Please try again.');
+    } finally {
+      setApprovalLoading({ ...approvalLoading, [clientId]: false });
+    }
+  };
+
+  const checkAndAutoResetMonthly = async () => {
+    // Check if we've already done auto-reset today
+    const today = new Date().toDateString();
+    const lastAutoReset = localStorage.getItem('lastAutoReset');
+    
+    if (lastAutoReset === today) {
+      return; // Already checked today
+    }
+
+    // Check if it's the first day of the month
+    const now = new Date();
+    const isFirstDayOfMonth = now.getDate() === 1;
+    
+    if (!isFirstDayOfMonth) {
+      return; // Not the first day of the month
+    }
+
+    // Get all Monthly packages that need reset
+    const monthlyPackages = clients.filter(client => 
+      client.packageType === 'Monthly' && 
+      (client.postsUsed > 0 || client.postsRemaining < client.packageSize)
+    );
+
+    if (monthlyPackages.length === 0) {
+      setAutoResetChecked(true);
+      localStorage.setItem('lastAutoReset', today);
+      return; // No Monthly packages need reset
+    }
+
+    // Show notification about auto-reset
+    const confirmed = window.confirm(
+      `🔄 Monthly Reset Detected!\n\nIt's the first day of the month and ${monthlyPackages.length} Monthly package(s) need to be reset:\n\n${monthlyPackages.map(p => `• ${p.clientName} (${p.postsRemaining} posts remaining)`).join('\n')}\n\nWould you like to automatically reset all Monthly packages now?`
+    );
+
+    if (!confirmed) {
+      setAutoResetChecked(true);
+      localStorage.setItem('lastAutoReset', today);
+      return;
+    }
+
+    // Auto-reset all Monthly packages
+    let resetCount = 0;
+    let errorCount = 0;
+
+    for (const client of monthlyPackages) {
+      try {
+        // Calculate new values
+        const newOverduePosts = (client.overduePosts || 0) + client.postsRemaining;
+        const newPostsUsed = 0;
+        const newPostsRemaining = client.packageSize;
+
+        // Update the client data
+        const requestBody = {
+          action: 'update',
+          clientData: {
+            id: client.id,
+            clientName: client.clientName,
+            clientEmail: client.clientEmail,
+            packageType: client.packageType,
+            packageSize: client.packageSize,
+            postsUsed: newPostsUsed,
+            postsRemaining: newPostsRemaining,
+            postedOn: client.postedOn,
+            paymentStatus: client.paymentStatus,
+            approvalStatus: client.approvalStatus,
+            notes: client.notes,
+            startDate: client.startDate,
+            lastContact: client.lastContact,
+            customPrice: client.customPrice || 0,
+            overduePosts: newOverduePosts
+          }
+        };
+
+        const params = new URLSearchParams({
+          action: 'update',
+          clientData: JSON.stringify(requestBody.clientData)
+        });
+
+        const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
+          method: 'GET'
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            resetCount++;
+          } else {
+            errorCount++;
+          }
+        } else {
+          errorCount++;
+        }
+      } catch (error) {
+        console.error(`❌ Error auto-resetting ${client.clientName}:`, error);
+        errorCount++;
+      }
+    }
+
+    // Refresh the clients list
+    await fetchClients(false);
+    
+    // Show results
+    if (resetCount > 0) {
+      showToast(`✅ Auto-reset complete! ${resetCount} Monthly package(s) reset successfully.${errorCount > 0 ? ` (${errorCount} failed)` : ''}`, 'success');
+    } else if (errorCount > 0) {
+      showToast(`❌ Auto-reset failed for all ${errorCount} package(s). Please try manual reset.`, 'error');
+    }
+
+    // Mark as checked for today
+    setAutoResetChecked(true);
+    localStorage.setItem('lastAutoReset', today);
+  };
+
   const handleAddCancel = () => {
     setShowAddModal(false);
     setAddForm({
@@ -1424,7 +1623,9 @@ export default function ClientPackages() {
       approvalStatus: 'Pending',
       notes: '',
       startDate: new Date().toISOString().split('T')[0],
-      lastContact: new Date().toISOString().split('T')[0]
+      lastContact: new Date().toISOString().split('T')[0],
+      customPrice: 0,
+      overduePosts: 0
     });
   };
 
@@ -1822,6 +2023,12 @@ export default function ClientPackages() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Monthly Recurring Packages</h2>
                 <p className="text-gray-600">Manage ongoing monthly subscription packages</p>
+                {autoResetChecked && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-green-600">Auto-reset checked for today</span>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button 
@@ -1915,10 +2122,16 @@ export default function ClientPackages() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                         <div>
                           <div className="text-sm text-gray-500">Posts Remaining</div>
                           <div className="font-semibold">{client.postsRemaining}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500">Overdue Posts</div>
+                          <div className={`font-semibold ${(client.overduePosts || 0) > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                            {client.overduePosts || 0}
+                          </div>
                         </div>
                         <div>
                           <div className="text-sm text-gray-500">Monthly Price</div>
@@ -1989,6 +2202,17 @@ export default function ClientPackages() {
                       >
                         <Mail className="w-4 h-4 mr-2" />
                         Follow Up
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                        onClick={() => handleMonthlyReset(client.id)}
+                        disabled={approvalLoading[client.id]}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Monthly Reset
                       </Button>
                       
                       <Button 
@@ -2383,6 +2607,26 @@ export default function ClientPackages() {
                       ? 'Enter the monthly price for this package' 
                       : 'Enter the custom price for this package'
                     }
+                  </p>
+                </div>
+              )}
+
+              {/* Overdue Posts - Show for Monthly packages */}
+              {editForm.packageType === 'Monthly' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Overdue Posts
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.overduePosts || 0}
+                    onChange={(e) => setEditForm({...editForm, overduePosts: parseInt(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter overdue posts count"
+                    min="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Posts from previous months that weren't completed
                   </p>
                 </div>
               )}

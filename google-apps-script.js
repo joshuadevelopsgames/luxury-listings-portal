@@ -276,7 +276,7 @@ function updateClient(sheet, clientData) {
     
     // Update only the specific columns based on the actual sheet structure
     // Column mapping from the actual sheet:
-    // A=Client Name, B=Package Type, C=Email, D=Date Added, E=Posted On (Page), F=Payment Status, G=Sales Stage, H=Approval Status, I=Notes, J=Status Change Date, K=Package Size, L=Posts Used, M=Last Post Date, N=Posts Remaining, O=Package Completed, P=Approval Email Recipient, Q=Price Paid (USD), R=Post Insights Sent
+    // A=Client Name, B=Package Type, C=Email, D=Date Added, E=Posted On (Page), F=Payment Status, G=Sales Stage, H=Approval Status, I=Notes, J=Status Change Date, K=Package Size, L=Posts Used, M=Last Post Date, N=Posts Remaining, O=Package Completed, P=Approval Email Recipient, Q=Price Paid (USD), R=Post Insights Sent, S=Overdue Posts
     
     currentRow[0] = clientData.clientName;     // A - Client Name
     currentRow[1] = clientData.packageType;    // B - Package Type
@@ -296,6 +296,11 @@ function updateClient(sheet, clientData) {
     // currentRow[15] = approval email recipient (preserve existing)
     currentRow[16] = clientData.customPrice || 0; // Q - Price Paid (USD) - use custom price for custom packages
     // currentRow[17] = post insights sent (preserve existing)
+    
+    // Add overdue posts if column exists (column S)
+    if (currentRow.length >= 19) {
+      currentRow[18] = clientData.overduePosts || 0; // S - Overdue Posts (new column)
+    }
     
     console.log('📋 Updated row data:', currentRow);
     
@@ -320,13 +325,14 @@ function addClient(sheet, clientData) {
   console.log('🔄 Starting addClient function');
   console.log('📊 Client data received:', clientData);
   
+  let insertRow = 2; // Declare insertRow at function scope
+  
   try {
     // Find the first empty row after existing data
     const lastRow = sheet.getLastRow();
     console.log('📋 Last row with data:', lastRow);
     
     // Look for the first empty row starting from row 2 (after header)
-    let insertRow = 2;
     for (let i = 2; i <= lastRow + 1; i++) {
       const cellValue = sheet.getRange(i, 1).getValue(); // Check column A (Client Name)
       if (!cellValue || cellValue.toString().trim() === '') {
@@ -355,9 +361,14 @@ function addClient(sheet, clientData) {
       clientData.postsRemaining, // N - Posts Remaining
       'FALSE',                   // O - Package Completed
       '',                        // P - Approval Email Recipient
-      '',                        // Q - Price Paid (USD)
+      clientData.customPrice || '', // Q - Price Paid (USD) - use custom price
       'FALSE'                    // R - Post Insights Sent
     ];
+    
+    // Add overdue posts column if it exists (column S)
+    if (sheet.getLastColumn() >= 19) {
+      newRow.push(clientData.overduePosts || 0); // S - Overdue Posts
+    }
     
     // Insert the new row at the found position
     sheet.insertRowBefore(insertRow);
