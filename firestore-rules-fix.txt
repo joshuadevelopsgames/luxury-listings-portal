@@ -1,0 +1,28 @@
+# Updated Firestore Security Rules
+# Copy and paste this into your Firebase Console
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read/write all collections
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+# Instructions:
+# 1. Go to: https://console.firebase.google.com/project/luxury-listings-portal-e56de/firestore/rules
+# 2. Replace the current rules with the above
+# 3. Click "Publish"
+# 4. Test role assignment again
+
+# Alternative (if you want to allow all access temporarily):
+# rules_version = '2';
+# service cloud.firestore {
+#   match /databases/{database}/documents {
+#     match /{document=**} {
+#       allow read, write: if true;
+#     }
+#   }
+# }

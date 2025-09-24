@@ -842,6 +842,13 @@ const CRMPage = () => {
             {showGoogleSheetsSetup ? 'Hide Setup' : 'Google Sheets Setup'}
           </Button>
           <Button
+            onClick={() => window.open('https://docs.google.com/spreadsheets/d/1wM8g4bPituJoJFVp_Ndlv7o4p3NZMNEM2-WwuUnGvyE/edit', '_blank')}
+            variant="outline"
+            className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+          >
+            📊 Open CRM Sheets
+          </Button>
+          <Button
             onClick={handleManualSync}
             disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700"

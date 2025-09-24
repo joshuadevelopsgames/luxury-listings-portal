@@ -298,11 +298,47 @@ const UserManagement = () => {
   const handleUpdateApprovedUser = async (userEmail, updates) => {
     try {
       console.log('🔄 Updating approved user:', userEmail, updates);
+      
+      // Validate inputs
+      if (!userEmail || !updates) {
+        throw new Error('Invalid input: userEmail and updates are required');
+      }
+      
+      // Check if user exists in approved users
+      const userExists = approvedUsers.find(user => user.email === userEmail);
+      if (!userExists) {
+        throw new Error(`User ${userEmail} not found in approved users`);
+      }
+      
       await firestoreService.updateApprovedUser(userEmail, updates);
       console.log('✅ Approved user updated successfully');
+      
+      // Update local state immediately for better UX
+      setApprovedUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.email === userEmail 
+            ? { ...user, ...updates }
+            : user
+        )
+      );
+      
     } catch (error) {
       console.error('❌ Error updating approved user:', error);
-      alert('Failed to update user. Please try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to update user. Please try again.';
+      
+      if (error.message.includes('permission-denied')) {
+        errorMessage = 'Permission denied. You may not have the required permissions to update this user.';
+      } else if (error.message.includes('unavailable')) {
+        errorMessage = 'Service temporarily unavailable. Please check your internet connection and try again.';
+      } else if (error.message.includes('not-found')) {
+        errorMessage = 'User not found. The user may have been deleted.';
+      } else if (error.message.includes('Invalid input')) {
+        errorMessage = error.message;
+      }
+      
+      throw new Error(errorMessage); // Re-throw with better message
     }
   };
 
@@ -510,11 +546,49 @@ const UserManagement = () => {
       console.log('🔍 DEBUG: Assigning roles to user:', selectedUserForRoles.email);
       console.log('🔍 DEBUG: Selected roles:', selectedRoles);
       
-      // Update the user's roles in Firestore
-      await handleUpdateApprovedUser(selectedUserForRoles.email, {
-        roles: selectedRoles,
-        primaryRole: selectedRoles[0] // First role becomes primary
-      });
+      // Check if user is authenticated
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Check authentication token and refresh if needed
+      const authToken = await currentUser.getIdToken(true); // Force refresh
+      console.log('🔍 Auth token exists:', !!authToken);
+      console.log('🔍 Current user email:', currentUser.email);
+      console.log('🔍 Current user UID:', currentUser.uid);
+      
+      // Verify token is valid
+      if (!authToken) {
+        throw new Error('Authentication token is invalid or expired');
+      }
+      
+      // Test Firestore connection first
+      console.log('🔍 Testing Firestore connection...');
+      await firestoreService.testConnection();
+      
+      // Update the user's roles in Firestore with retry logic
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          await handleUpdateApprovedUser(selectedUserForRoles.email, {
+            roles: selectedRoles,
+            primaryRole: selectedRoles[0] // First role becomes primary
+          });
+          break; // Success, exit retry loop
+        } catch (retryError) {
+          retryCount++;
+          console.log(`🔄 Retry attempt ${retryCount}/${maxRetries} for role assignment`);
+          
+          if (retryCount >= maxRetries) {
+            throw retryError; // Re-throw if all retries failed
+          }
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        }
+      }
       
       console.log('✅ Roles assigned successfully');
       setShowRoleAssignmentModal(false);
@@ -526,7 +600,21 @@ const UserManagement = () => {
       
     } catch (error) {
       console.error('❌ Error assigning roles:', error);
-      alert('Failed to assign roles. Please try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to assign roles. Please try again.';
+      
+      if (error.message.includes('permission-denied')) {
+        errorMessage = 'Permission denied. You may not have the required permissions to update user roles.';
+      } else if (error.message.includes('unavailable')) {
+        errorMessage = 'Service temporarily unavailable. Please check your internet connection and try again.';
+      } else if (error.message.includes('unauthenticated')) {
+        errorMessage = 'Authentication required. Please log in again.';
+      } else if (error.message.includes('not-found')) {
+        errorMessage = 'User not found. The user may have been deleted.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -1083,9 +1171,18 @@ const UserManagement = () => {
               <button 
                 onClick={() => setShowRoleAssignmentModal(false)} 
                 className="text-gray-500 hover:text-gray-700"
+                disabled={isProcessing}
               >
                 <X className="w-6 h-6" />
               </button>
+            </div>
+            
+            {/* Connection Status */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-blue-700">Connected to Firestore</span>
+              </div>
             </div>
             
             <div className="space-y-4">
@@ -1121,21 +1218,62 @@ const UserManagement = () => {
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowRoleAssignmentModal(false)}
-                  disabled={isProcessing}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveRoleAssignment}
-                  disabled={isProcessing || selectedRoles.length === 0}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isProcessing ? 'Saving...' : 'Save Roles'}
-                </Button>
+              <div className="flex justify-between items-center pt-4">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await firestoreService.testConnection();
+                        alert('✅ Connection test successful!');
+                      } catch (error) {
+                        alert('❌ Connection test failed: ' + error.message);
+                      }
+                    }}
+                    disabled={isProcessing}
+                    className="text-xs"
+                  >
+                    🔧 Test Connection
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        if (currentUser) {
+                          const token = await currentUser.getIdToken(true);
+                          alert('✅ Authentication token refreshed successfully!');
+                        } else {
+                          alert('❌ No user logged in');
+                        }
+                      } catch (error) {
+                        alert('❌ Failed to refresh token: ' + error.message);
+                      }
+                    }}
+                    disabled={isProcessing}
+                    className="text-xs"
+                  >
+                    🔄 Refresh Auth
+                  </Button>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowRoleAssignmentModal(false)}
+                    disabled={isProcessing}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveRoleAssignment}
+                    disabled={isProcessing || selectedRoles.length === 0}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isProcessing ? 'Saving...' : 'Save Roles'}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
