@@ -55,9 +55,11 @@ export default function ClientPackages() {
   const [scriptTestResult, setScriptTestResult] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState({});
   const [archiveLoading, setArchiveLoading] = useState({});
-  const [activeTab, setActiveTab] = useState('clients'); // 'clients' or 'archives'
+  const [activeTab, setActiveTab] = useState('clients'); // 'clients', 'monthly', or 'archives'
   const [archivedClients, setArchivedClients] = useState([]);
+  const [monthlyClients, setMonthlyClients] = useState([]);
   const [archivesLoading, setArchivesLoading] = useState(false);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState({});
   const [deleteArchivedLoading, setDeleteArchivedLoading] = useState({});
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -518,15 +520,122 @@ export default function ClientPackages() {
     }
   };
 
+  const fetchMonthlyClients = async () => {
+    try {
+      setMonthlyLoading(true);
+      console.log('📅 Fetching monthly recurring clients from Monthly Recurring tab...');
+      
+      // Fetch from Monthly Recurring tab using Google Sheets API
+      const monthlyUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Monthly%20Recurring?key=${GOOGLE_SHEETS_API_KEY}`;
+      
+      const response = await fetch(monthlyUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch monthly clients: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('📅 Monthly API response:', data);
+      
+      if (!data.values || data.values.length === 0) {
+        console.log('📅 No monthly clients found');
+        setMonthlyClients([]);
+        return;
+      }
+      
+      // Parse the monthly data (assuming first row contains headers)
+      const headers = data.values[0];
+      const rows = data.values.slice(1);
+      
+      console.log('📅 Monthly headers:', headers);
+      console.log('📅 Monthly data rows:', rows);
+      
+      // Create dynamic column mapping for monthly data
+      const monthlyColumnMap = {};
+      headers.forEach((header, index) => {
+        const headerLower = header.toLowerCase().trim();
+        console.log(`📅 Mapping monthly header "${header}" (${headerLower}) to index ${index}`);
+        
+        if (headerLower.includes('client') && headerLower.includes('name')) monthlyColumnMap.clientName = index;
+        else if (headerLower.includes('package') && headerLower.includes('type')) monthlyColumnMap.packageType = index;
+        else if (headerLower.includes('email')) monthlyColumnMap.clientEmail = index;
+        else if (headerLower.includes('date') && headerLower.includes('added')) monthlyColumnMap.startDate = index;
+        else if (headerLower.includes('posted') && headerLower.includes('page')) monthlyColumnMap.postedOn = index;
+        else if (headerLower.includes('payment') && headerLower.includes('status')) monthlyColumnMap.paymentStatus = index;
+        else if (headerLower.includes('approval') && headerLower.includes('status')) monthlyColumnMap.approvalStatus = index;
+        else if (headerLower.includes('notes')) monthlyColumnMap.notes = index;
+        else if (headerLower.includes('package') && headerLower.includes('size')) monthlyColumnMap.packageSize = index;
+        else if (headerLower.includes('posts') && headerLower.includes('used')) monthlyColumnMap.postsUsed = index;
+        else if (headerLower.includes('posts') && headerLower.includes('remaining')) monthlyColumnMap.postsRemaining = index;
+        else if (headerLower.includes('last') && headerLower.includes('contact')) monthlyColumnMap.lastContact = index;
+        else if (headerLower.includes('next') && headerLower.includes('billing')) monthlyColumnMap.nextBillingDate = index;
+        else if (headerLower.includes('billing') && headerLower.includes('cycle')) monthlyColumnMap.billingCycle = index;
+        else if (headerLower.includes('price') && headerLower.includes('paid')) monthlyColumnMap.monthlyPrice = index;
+        else if (headerLower.includes('auto') && headerLower.includes('renew')) monthlyColumnMap.autoRenew = index;
+      });
+      
+      console.log('📅 Monthly column mapping:', monthlyColumnMap);
+      
+      // Map the monthly data to our client structure
+      const fetchedMonthlyClients = rows
+        .filter(row => row.length > 0 && row[0]) // Filter out empty rows
+        .map((row, index) => {
+          const monthlyClient = {
+            id: `monthly-${index + 1}`,
+            clientName: row[monthlyColumnMap.clientName] || 'Unknown Client',
+            clientEmail: row[monthlyColumnMap.clientEmail] || '',
+            packageType: row[monthlyColumnMap.packageType] || 'Monthly Standard',
+            packageSize: parseInt(row[monthlyColumnMap.packageSize]) || 0,
+            postsUsed: parseInt(row[monthlyColumnMap.postsUsed]) || 0,
+            postsRemaining: parseInt(row[monthlyColumnMap.postsRemaining]) || 0,
+            postedOn: row[monthlyColumnMap.postedOn] || 'Luxury Listings',
+            paymentStatus: row[monthlyColumnMap.paymentStatus] || 'Pending',
+            approvalStatus: row[monthlyColumnMap.approvalStatus] || 'Pending',
+            notes: row[monthlyColumnMap.notes] || '',
+            startDate: row[monthlyColumnMap.startDate] || new Date().toISOString().split('T')[0],
+            lastContact: row[monthlyColumnMap.lastContact] || new Date().toISOString().split('T')[0],
+            nextBillingDate: row[monthlyColumnMap.nextBillingDate] || '',
+            billingCycle: row[monthlyColumnMap.billingCycle] || 'Monthly',
+            monthlyPrice: parseFloat(row[monthlyColumnMap.monthlyPrice]) || 0,
+            autoRenew: row[monthlyColumnMap.autoRenew] || 'TRUE',
+            isMonthly: true
+          };
+          
+          // Calculate remaining posts if not provided
+          if (monthlyClient.postsRemaining === 0 && monthlyClient.packageSize > 0) {
+            monthlyClient.postsRemaining = Math.max(0, monthlyClient.packageSize - monthlyClient.postsUsed);
+          }
+          
+          // Determine status based on data
+          monthlyClient.status = determineStatus(monthlyClient.approvalStatus, monthlyClient.paymentStatus, monthlyClient.postsRemaining);
+          
+          return monthlyClient;
+        });
+      
+      console.log('📅 Mapped monthly clients:', fetchedMonthlyClients);
+      setMonthlyClients(fetchedMonthlyClients);
+      
+    } catch (error) {
+      console.error('❌ Error fetching monthly clients:', error);
+      setMonthlyClients([]);
+    } finally {
+      setMonthlyLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchClients();
     fetchArchivedClients(); // Fetch archived clients on mount
+    fetchMonthlyClients(); // Fetch monthly clients on mount
   }, []);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (tab === 'archives' && archivedClients.length === 0) {
       fetchArchivedClients();
+    }
+    if (tab === 'monthly' && monthlyClients.length === 0) {
+      fetchMonthlyClients();
     }
   };
 
@@ -1353,7 +1462,7 @@ export default function ClientPackages() {
         <p className="text-slate-600">Manage luxury real estate client relationships and package delivery</p>
         
         {/* Google Apps Script Test Button */}
-        <div className="mt-4">
+        <div className="mt-4 flex gap-3 justify-center">
           <Button
             onClick={testGoogleAppsScriptDetailed}
             variant="outline"
@@ -1361,23 +1470,30 @@ export default function ClientPackages() {
           >
             🔧 Test Google Apps Script
           </Button>
-          {scriptTestResult && (
-            <div className="mt-2 p-2 text-sm rounded">
-              {scriptTestResult.success ? (
-                <div className="text-green-700 bg-green-50 border border-green-200 rounded p-2">
-                  ✅ Script working: {scriptTestResult.message || 'Connection successful'}
-                </div>
-              ) : (
-                <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2">
-                  ❌ Script error: {scriptTestResult.error || 'Unknown error'}
-                  {scriptTestResult.details && (
-                    <div className="mt-1 text-xs">{scriptTestResult.details}</div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          <Button
+            onClick={() => window.open(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`, '_blank')}
+            variant="outline"
+            className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+          >
+            📊 Open Google Sheets
+          </Button>
         </div>
+        {scriptTestResult && (
+          <div className="mt-2 p-2 text-sm rounded">
+            {scriptTestResult.success ? (
+              <div className="text-green-700 bg-green-50 border border-green-200 rounded p-2">
+                ✅ Script working: {scriptTestResult.message || 'Connection successful'}
+              </div>
+            ) : (
+              <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2">
+                ❌ Script error: {scriptTestResult.error || 'Unknown error'}
+                {scriptTestResult.details && (
+                  <div className="mt-1 text-xs">{scriptTestResult.details}</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Stats Overview */}
@@ -1415,7 +1531,18 @@ export default function ClientPackages() {
           }`}
         >
           <Package className="w-4 h-4 inline mr-2" />
-          Client Packages ({clients.length})
+          Single Packages ({clients.length})
+        </button>
+        <button
+          onClick={() => handleTabChange('monthly')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'monthly'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
+        >
+          <RefreshCw className="w-4 h-4 inline mr-2" />
+          Monthly Recurring ({monthlyClients.length})
         </button>
         <button
           onClick={() => handleTabChange('archives')}
@@ -1668,6 +1795,203 @@ export default function ClientPackages() {
           </Card>
         )}
       </div>
+      )}
+
+      {/* Monthly Recurring Tab Content */}
+      {activeTab === 'monthly' && (
+        <div className="space-y-6">
+          {/* Monthly Header */}
+          <Card className="p-6">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Monthly Recurring Packages</h2>
+                <p className="text-gray-600">Manage ongoing monthly subscription packages</p>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={fetchMonthlyClients}
+                  disabled={monthlyLoading}
+                  variant="outline"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${monthlyLoading ? 'animate-spin' : ''}`} />
+                  {monthlyLoading ? 'Refreshing...' : 'Refresh Monthly'}
+                </Button>
+                <Button 
+                  onClick={handleAddClient}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Monthly Client
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Monthly List */}
+          <div className="space-y-4">
+            {monthlyLoading ? (
+              <Card className="p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading monthly clients...</p>
+              </Card>
+            ) : monthlyClients.length === 0 ? (
+              <Card className="p-12 text-center">
+                <RefreshCw className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No monthly clients</h3>
+                <p className="text-gray-600 mb-4">
+                  Monthly recurring clients will appear here when you add them to the Monthly Recurring tab in Google Sheets.
+                </p>
+                <Button 
+                  onClick={handleAddClient}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Monthly Client
+                </Button>
+              </Card>
+            ) : (
+              monthlyClients.map(client => (
+                <Card key={client.id} className="p-6 border-blue-200 bg-blue-50">
+                  <div className="flex flex-col lg:flex-row gap-6">
+                    {/* Client Info */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-xl font-semibold text-gray-900">
+                              {client.clientName}
+                            </h3>
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                              Monthly
+                            </Badge>
+                          </div>
+                          {client.clientEmail && (
+                            <p className="text-sm text-gray-600 mb-2">
+                              📧 {client.clientEmail}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <Badge className={getPackageTypeColor(client.packageType)}>
+                              {client.packageType}
+                            </Badge>
+                            <Badge className={getStatusColor(client.status)}>
+                              {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+                            </Badge>
+                            <Badge className={getPaymentStatusColor(client.paymentStatus)}>
+                              {client.paymentStatus}
+                            </Badge>
+                            <Badge className={client.autoRenew === 'TRUE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                              {client.autoRenew === 'TRUE' ? 'Auto Renew' : 'Manual'}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="text-right">
+                          <div className="text-sm text-gray-500 mb-1">Monthly Progress</div>
+                          <div className="text-2xl font-bold text-blue-600">
+                            {client.postsUsed}/{client.packageSize}
+                          </div>
+                          <Progress 
+                            value={(client.postsUsed / client.packageSize) * 100} 
+                            className="w-24 mt-2"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                          <div className="text-sm text-gray-500">Posts Remaining</div>
+                          <div className="font-semibold">{client.postsRemaining}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500">Monthly Price</div>
+                          <div className="font-semibold">${client.monthlyPrice || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500">Next Billing</div>
+                          <div className="font-semibold">
+                            {client.nextBillingDate ? new Date(client.nextBillingDate).toLocaleDateString() : 'N/A'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500">Billing Cycle</div>
+                          <div className="font-semibold">{client.billingCycle || 'Monthly'}</div>
+                        </div>
+                      </div>
+                      
+                      {client.notes && (
+                        <div className="bg-white p-3 rounded-md border border-blue-200">
+                          <div className="text-sm text-gray-600 mb-1">Notes:</div>
+                          <div className="text-sm">{client.notes}</div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Monthly Actions */}
+                    <div className="flex flex-col gap-2 min-w-fit">
+                      {client.approvalStatus === 'Pending' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => openApprovalModal(client, 'approve')}
+                            disabled={approvalLoading[client.id]}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Approve
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="border-red-300 text-red-700 hover:bg-red-50"
+                            onClick={() => openApprovalModal(client, 'reject')}
+                            disabled={approvalLoading[client.id]}
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                        onClick={() => openEditModal(client)}
+                        disabled={approvalLoading[client.id]}
+                      >
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        Edit Package
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => openFollowUpEmail(client)}
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Follow Up
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                        onClick={() => archiveCompletedPackage(client)}
+                        disabled={archiveLoading[client.id]}
+                      >
+                        <Archive className="w-4 h-4 mr-2" />
+                        Archive
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
       )}
 
       {/* Archives Tab Content */}
