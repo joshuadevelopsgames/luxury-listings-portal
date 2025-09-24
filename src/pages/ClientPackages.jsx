@@ -48,7 +48,8 @@ export default function ClientPackages() {
     approvalStatus: 'Pending',
     notes: '',
     startDate: new Date().toISOString().split('T')[0],
-    lastContact: new Date().toISOString().split('T')[0]
+    lastContact: new Date().toISOString().split('T')[0],
+    customPrice: 0
   });
   const [refreshing, setRefreshing] = useState(false);
   const [lastSync, setLastSync] = useState(null);
@@ -657,6 +658,7 @@ export default function ClientPackages() {
       case 'Standard': return 'bg-blue-100 text-blue-800';
       case 'Seven': return 'bg-indigo-100 text-indigo-800';
       case 'Custom': return 'bg-pink-100 text-pink-800';
+      case 'Monthly': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -1027,6 +1029,12 @@ export default function ClientPackages() {
         alert('Posts Used + Posts Remaining must equal Package Size');
         return;
       }
+
+      // Validate custom price for Custom and Monthly packages
+      if ((editForm.packageType === 'Custom' || editForm.packageType === 'Monthly') && (!editForm.customPrice || editForm.customPrice <= 0)) {
+        alert(`Please enter a valid ${editForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`);
+        return;
+      }
       
       // Calculate the row number in Google Sheets (add 2 for header row + 0-based index)
       const rowNumber = editingClient.id + 1;
@@ -1208,6 +1216,12 @@ export default function ClientPackages() {
       return;
     }
 
+    // Validate custom price for Custom and Monthly packages
+    if ((addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0)) {
+      alert(`Please enter a valid ${addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`);
+      return;
+    }
+
     setApprovalLoading({ ...approvalLoading, 'new': true });
 
     try {
@@ -1241,7 +1255,8 @@ export default function ClientPackages() {
           approvalStatus: addForm.approvalStatus,
           notes: addForm.notes,
           startDate: addForm.startDate,
-          lastContact: addForm.lastContact
+          lastContact: addForm.lastContact,
+          customPrice: addForm.customPrice
         })
       });
       
@@ -1436,9 +1451,9 @@ export default function ClientPackages() {
     pending: clients.filter(c => c.status === 'pending').length,
     completed: clients.filter(c => c.status === 'completed').length,
     revenue: clients.reduce((sum, c) => {
-      const packageValues = { Standard: 199, Silver: 1689, Gold: 3190, Platinum: 1299, Seven: 899, Custom: 1500 };
-      // Use custom price if available, otherwise use default package value
-      const price = c.packageType === 'Custom' && c.customPrice ? c.customPrice : (packageValues[c.packageType] || 0);
+      const packageValues = { Standard: 199, Silver: 1689, Gold: 3190, Platinum: 1299, Seven: 899, Custom: 1500, Monthly: 299 };
+      // Use custom price if available for Custom or Monthly packages, otherwise use default package value
+      const price = (c.packageType === 'Custom' || c.packageType === 'Monthly') && c.customPrice ? c.customPrice : (packageValues[c.packageType] || 0);
       return sum + price;
     }, 0)
   };
@@ -1597,6 +1612,7 @@ export default function ClientPackages() {
                 <option value="Platinum">Platinum</option>
                 <option value="Seven">Seven</option>
                 <option value="Custom">Custom</option>
+                <option value="Monthly">Monthly</option>
               </select>
             </div>
             
@@ -2245,6 +2261,7 @@ export default function ClientPackages() {
                   <option value="Platinum">Platinum</option>
                   <option value="Seven">Seven</option>
                   <option value="Custom">Custom</option>
+                  <option value="Monthly">Monthly</option>
                 </select>
               </div>
 
@@ -2346,22 +2363,27 @@ export default function ClientPackages() {
                 </select>
               </div>
 
-              {/* Custom Price - Only show for Custom packages */}
-              {editForm.packageType === 'Custom' && (
+              {/* Custom Price - Show for Custom and Monthly packages */}
+              {(editForm.packageType === 'Custom' || editForm.packageType === 'Monthly') && (
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Custom Price (USD) *
+                    {editForm.packageType === 'Monthly' ? 'Monthly Price (USD)' : 'Custom Price (USD)'} *
                   </label>
                   <input
                     type="number"
                     value={editForm.customPrice}
                     onChange={(e) => setEditForm({...editForm, customPrice: parseFloat(e.target.value) || 0})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter custom price"
+                    placeholder={`Enter ${editForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`}
                     min="0"
                     step="0.01"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Enter the custom price for this package</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {editForm.packageType === 'Monthly' 
+                      ? 'Enter the monthly price for this package' 
+                      : 'Enter the custom price for this package'
+                    }
+                  </p>
                 </div>
               )}
             </div>
@@ -2474,6 +2496,7 @@ export default function ClientPackages() {
                   <option value="Platinum">Platinum</option>
                   <option value="Seven">Seven</option>
                   <option value="Custom">Custom</option>
+                  <option value="Monthly">Monthly</option>
                 </select>
               </div>
 
@@ -2616,6 +2639,30 @@ export default function ClientPackages() {
               </div>
             </div>
 
+            {/* Custom Price - Show for Custom and Monthly packages */}
+            {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {addForm.packageType === 'Monthly' ? 'Monthly Price (USD)' : 'Custom Price (USD)'} *
+                </label>
+                <input
+                  type="number"
+                  value={addForm.customPrice || ''}
+                  onChange={(e) => setAddForm({...addForm, customPrice: parseFloat(e.target.value) || 0})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={`Enter ${addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`}
+                  min="0"
+                  step="0.01"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {addForm.packageType === 'Monthly' 
+                    ? 'Enter the monthly price for this package' 
+                    : 'Enter the custom price for this package'
+                  }
+                </p>
+              </div>
+            )}
+
             {/* Notes */}
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2630,11 +2677,19 @@ export default function ClientPackages() {
               />
             </div>
 
-            {/* Validation Message */}
+            {/* Validation Messages */}
             {addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-700">
                   ⚠️ Posts Used ({addForm.postsUsed}) + Posts Remaining ({addForm.postsRemaining}) must equal Package Size ({addForm.packageSize})
+                </p>
+              </div>
+            )}
+            
+            {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0) && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-700">
+                  ⚠️ Please enter a valid {addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price
                 </p>
               </div>
             )}
@@ -2643,7 +2698,12 @@ export default function ClientPackages() {
             <div className="flex items-center gap-3 mt-6">
               <Button
                 onClick={handleAddSubmit}
-                disabled={approvalLoading['new'] || addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize || !addForm.clientName.trim()}
+                disabled={
+                  approvalLoading['new'] || 
+                  addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize || 
+                  !addForm.clientName.trim() ||
+                  ((addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0))
+                }
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400"
               >
                 <Plus className="w-4 h-4 mr-2" />
