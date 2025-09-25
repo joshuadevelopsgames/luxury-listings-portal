@@ -3,7 +3,7 @@
 
 class FirebaseApiService {
   constructor() {
-    this.baseUrl = 'https://script.google.com/macros/s/AKfycbwLSYk9XRwTSZkA0KScaBYD5kttD0uPg7NX0AzSHtytzNhskrmI-DLiZTFuQFozBwh3mg/exec';
+    this.baseUrl = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
     console.log('🔧 FirebaseApiService initialized');
   }
 

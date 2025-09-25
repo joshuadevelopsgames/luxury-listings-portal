@@ -483,7 +483,7 @@ function deleteClient(sheet, clientData) {
   console.log('🗑️ Starting deleteClient function');
   console.log('📊 Client data received:', clientData);
   
-  let rowNumber = -1; // Declare outside try block
+  let rowNumber = -1; // Declare at function scope
   
   try {
     // Validate input data
@@ -531,26 +531,24 @@ function archiveClient(sheet, clientData) {
   console.log('📦 Starting archiveClient function');
   console.log('📊 Client data received:', clientData);
   
+  let rowNumber = -1; // Declare at function scope
+  
   try {
     // Get the main sheet and archive sheet
     const spreadsheet = sheet.getParent();
-    const archiveSheet = spreadsheet.getSheetByName('Archived Clients');
+    let archiveSheet = spreadsheet.getSheetByName('Archived Clients');
     
     if (!archiveSheet) {
       // Create archive sheet if it doesn't exist
-      const newArchiveSheet = spreadsheet.insertSheet('Archived Clients');
+      archiveSheet = spreadsheet.insertSheet('Archived Clients');
       console.log('📋 Created new Archived Clients sheet');
       
       // Copy headers from main sheet
       const mainHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-      newArchiveSheet.getRange(1, 1, 1, mainHeaders.length).setValues([mainHeaders]);
-      
-      // Set archive sheet reference
-      const archiveSheet = newArchiveSheet;
+      archiveSheet.getRange(1, 1, 1, mainHeaders.length).setValues([mainHeaders]);
     }
     
     // Find the row by client name (column A) in main sheet
-    let rowNumber = -1;
     const lastRow = sheet.getLastRow();
     
     for (let i = 2; i <= lastRow; i++) {
@@ -595,6 +593,8 @@ function restoreClient(sheet, clientData) {
   console.log('🔄 Starting restoreClient function');
   console.log('📊 Client data received:', clientData);
   
+  let rowNumber = -1; // Declare at function scope
+  
   try {
     // Get the main sheet and archive sheet
     const spreadsheet = sheet.getParent();
@@ -611,7 +611,6 @@ function restoreClient(sheet, clientData) {
     console.log('📋 Archive sheet dimensions:', archiveSheet.getLastRow(), 'rows x', archiveSheet.getLastColumn(), 'columns');
     
     // Find the row by client name (column A) in archive sheet
-    let rowNumber = -1;
     const lastRow = archiveSheet.getLastRow();
     
     for (let i = 2; i <= lastRow; i++) {
@@ -657,6 +656,8 @@ function deleteArchivedClient(sheet, clientData) {
   console.log('🗑️ Starting deleteArchivedClient function');
   console.log('📊 Client data received:', clientData);
   
+  let rowNumber = -1; // Declare at function scope
+  
   try {
     // Get the archive sheet
     const spreadsheet = sheet.getParent();
@@ -667,7 +668,6 @@ function deleteArchivedClient(sheet, clientData) {
     }
     
     // Find the row by client name (column A) in archive sheet
-    let rowNumber = -1;
     const lastRow = archiveSheet.getLastRow();
     
     for (let i = 2; i <= lastRow; i++) {

@@ -78,7 +78,7 @@ export default function ClientPackages() {
   const SHEET_NAME_QUOTED = '"Social Media Packages"';
   
   // Google Apps Script Web App URL
-  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLSYk9XRwTSZkA0KScaBYD5kttD0uPg7NX0AzSHtytzNhskrmI-DLiZTFuQFozBwh3mg/exec';
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
 
   // Toast notification helper
   const showToast = (message, type = 'success') => {
