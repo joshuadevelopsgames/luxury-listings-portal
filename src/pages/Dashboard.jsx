@@ -33,6 +33,7 @@ import WelcomeCard from "../components/dashboard/WelcomeCard";
 import QuickStats from "../components/dashboard/QuickStats";
 import TodaysTasks from "../components/dashboard/TodaysTasks";
 import NextTutorials from "../components/dashboard/NextTutorials";
+import HRQuickActions from "../components/dashboard/HRQuickActions";
 
 export default function Dashboard() {
   const { currentUser, currentRole, getCurrentRolePermissions } = useAuth();
@@ -232,10 +233,10 @@ export default function Dashboard() {
         ];
       case 'hr_manager':
         return [
-          { label: 'Team Members', value: currentUser?.stats?.teamMembers || 0, icon: Users, color: 'green' },
-          { label: 'Retention Rate', value: currentUser?.stats?.retentionRate || '0%', icon: TrendingUp, color: 'blue' },
-          { label: 'Training Programs', value: currentUser?.stats?.trainingPrograms || 0, icon: BookOpen, color: 'purple' },
-          { label: 'Satisfaction Score', value: currentUser?.stats?.satisfactionScore || 0, icon: Star, color: 'yellow' }
+          { label: 'Team Members', value: 25, icon: Users, color: 'green' },
+          { label: 'Pending Leave Requests', value: 3, icon: Clock, color: 'yellow' },
+          { label: 'Retention Rate', value: '96%', icon: TrendingUp, color: 'blue' },
+          { label: 'Team Satisfaction', value: '4.4/5', icon: Star, color: 'purple' }
         ];
       case 'sales_manager':
         return [
@@ -299,10 +300,15 @@ export default function Dashboard() {
         currentRole={currentRole}
       />
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        <TodaysTasks tasks={getUpcomingTasks()} />
-        <NextTutorials tutorials={getNextTutorials()} />
-      </div>
+      {/* HR Manager gets specialized dashboard widgets */}
+      {currentRole === 'hr_manager' ? (
+        <HRQuickActions />
+      ) : (
+        <div className="grid lg:grid-cols-2 gap-8">
+          <TodaysTasks tasks={getUpcomingTasks()} />
+          <NextTutorials tutorials={getNextTutorials()} />
+        </div>
+      )}
 
       {/* Role-Specific Stats - Moved to bottom above profile overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

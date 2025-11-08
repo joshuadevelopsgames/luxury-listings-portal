@@ -124,7 +124,7 @@ export const ROLE_PERMISSIONS = {
   [USER_ROLES.HR_MANAGER]: {
     name: 'HR Manager',
     displayName: 'HR Manager',
-    description: 'Manages human resources and team development',
+    description: 'Manages HR operations, leave requests, and employee relations',
     permissions: {
       canViewDashboard: true,
       canManageTutorials: false,
@@ -146,11 +146,12 @@ export const ROLE_PERMISSIONS = {
       canManageSocialContent: false
     },
     features: [
-      'Team Development',
-      'Performance Management',
-      'HR Analytics',
-      'Task Assignment',
-      'Resource Access'
+      'Leave Request Management',
+      'Performance Reviews',
+      'HR Analytics & Reports',
+      'Team Calendar Management',
+      'Employee Relations',
+      'Attendance Tracking'
     ],
     color: 'green',
     icon: '👥'
@@ -322,13 +323,13 @@ export const MOCK_USERS = {
     department: 'Human Resources',
     startDate: '2022-09-10',
     avatar: null,
-    bio: 'HR professional focused on team development and performance optimization. Building strong, productive teams.',
-    skills: ['Team Development', 'Performance Management', 'Recruitment', 'Employee Relations', 'HR Analytics'],
+    bio: 'HR professional managing daily operations, leave requests, and employee relations. Focused on maintaining a positive work environment.',
+    skills: ['HR Operations', 'Performance Management', 'Leave Management', 'Employee Relations', 'HR Analytics'],
     stats: {
-      teamMembers: 12,
-      retentionRate: '94%',
-      satisfactionScore: 4.8,
-      trainingPrograms: 8
+      teamMembers: 25,
+      pendingLeaveRequests: 3,
+      retentionRate: '96%',
+      teamSatisfaction: '4.4/5'
     }
   },
   

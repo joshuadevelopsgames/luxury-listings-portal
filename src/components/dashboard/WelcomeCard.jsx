@@ -91,28 +91,22 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
 
       case 'hr_manager':
         return {
-          title: 'HR Leadership',
+          title: 'HR Operations',
           role: 'HR Manager — @luxury_listings',
           department: 'Human Resources',
-          journey: 'HR Excellence Journey',
-          journeyDesc: 'Building your foundation in luxury real estate HR management',
-          progressDesc: 'You\'re {progress}% of the way to being fully ramped up on our HR systems, team management, and company policies.',
+          journey: 'HR Operations',
+          journeyDesc: 'Managing team operations, leave requests, and employee experience',
+          progressDesc: 'You have 3 pending leave requests and 2 upcoming performance reviews this week.',
           motivationalMessage: (progress) => {
-            if (progress < 25) return "Welcome to HR leadership! You're beginning your journey in luxury real estate team development.";
-            if (progress < 50) return "Great progress! Your HR skills are developing and you're learning our company culture.";
-            if (progress < 75) return "Excellent work! You're becoming a skilled HR professional.";
-            return "Outstanding! You're fully equipped to lead our HR initiatives and team development.";
+            return "Your team is running smoothly! Keep up the great work managing our people operations.";
           },
           readinessScore: (progress) => {
-            if (progress < 25) return "HR Rookie";
-            if (progress < 50) return "HR Apprentice";
-            if (progress < 75) return "HR Professional";
-            return "HR Master";
+            return "Active Manager";
           },
           quickActions: [
-            { text: 'Team Directory', icon: Users },
-            { text: 'HR Policies', icon: BookOpen },
-            { text: 'Performance Reviews', icon: TrendingUp }
+            { text: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
+            { text: 'Team Analytics', icon: TrendingUp, path: '/hr-analytics' },
+            { text: 'Pending Leave Requests', icon: Users, path: '/hr-calendar' }
           ]
         };
 
@@ -210,6 +204,15 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
       case 'Performance Reviews':
         navigate('/hr-analytics');
         break;
+      case 'HR Calendar':
+        navigate('/hr-calendar');
+        break;
+      case 'Team Analytics':
+        navigate('/hr-analytics');
+        break;
+      case 'Pending Leave Requests':
+        navigate('/hr-calendar');
+        break;
       case 'CRM Dashboard':
         navigate('/crm');
         break;
@@ -274,31 +277,64 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
           </div>
         </div>
 
-        {/* Day Counter */}
-        <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm font-medium text-slate-300">Onboarding Journey</span>
+        {/* Day Counter or HR-specific Status */}
+        {currentRole !== 'hr_manager' ? (
+          <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Trophy className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm font-medium text-slate-300">Onboarding Journey</span>
+            </div>
+            <p className="text-white font-semibold text-lg">
+              Day 1 of {roleContent.journey}
+            </p>
+            <p className="text-slate-300 text-sm mt-1">
+              {roleContent.journeyDesc}
+            </p>
           </div>
-          <p className="text-white font-semibold text-lg">
-            Day 1 of {roleContent.journey}
-          </p>
-          <p className="text-slate-300 text-sm mt-1">
-            {roleContent.journeyDesc}
-          </p>
-        </div>
+        ) : (
+          <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium text-slate-300">{roleContent.journey}</span>
+            </div>
+            <p className="text-white font-semibold text-lg">
+              Managing {adminStats?.totalUsers || 25} Team Members
+            </p>
+            <p className="text-slate-300 text-sm mt-1">
+              {roleContent.journeyDesc}
+            </p>
+          </div>
+        )}
 
-        {/* Onboarding Progress */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-300">{roleContent.title} Progress</span>
-            <span className="text-white font-bold">{overallProgress}%</span>
+        {/* Onboarding Progress or HR Status */}
+        {currentRole !== 'hr_manager' ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-300">{roleContent.title} Progress</span>
+              <span className="text-white font-bold">{overallProgress}%</span>
+            </div>
+            <Progress value={overallProgress} className="h-3 bg-white/20" />
+            <p className="text-slate-200 text-sm leading-relaxed">
+              {roleContent.progressDesc.replace('{progress}', overallProgress)}
+            </p>
           </div>
-          <Progress value={overallProgress} className="h-3 bg-white/20" />
-          <p className="text-slate-200 text-sm leading-relaxed">
-            {roleContent.progressDesc.replace('{progress}', overallProgress)}
-          </p>
-        </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-300">Current Priorities</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/10 rounded p-3">
+                <p className="text-2xl font-bold text-white">3</p>
+                <p className="text-xs text-slate-300">Pending Leave Requests</p>
+              </div>
+              <div className="bg-white/10 rounded p-3">
+                <p className="text-2xl font-bold text-white">2</p>
+                <p className="text-xs text-slate-300">Reviews This Week</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-3">
