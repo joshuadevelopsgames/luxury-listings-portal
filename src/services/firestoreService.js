@@ -45,7 +45,8 @@ class FirestoreService {
     SYSTEM_CONFIG: 'system_config',
     EMPLOYEES: 'employees',
     LEAVE_REQUESTS: 'leave_requests',
-    CLIENTS: 'clients'
+    CLIENTS: 'clients',
+    SUPPORT_TICKETS: 'support_tickets'
   };
 
   // Test connection method
@@ -821,6 +822,123 @@ class FirestoreService {
         });
       });
       callback(clients);
+    });
+  }
+
+  // ===== IT SUPPORT TICKET MANAGEMENT =====
+
+  // Get support tickets for a user
+  async getSupportTicketsByUser(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.SUPPORT_TICKETS),
+        where('requesterEmail', '==', userEmail),
+        orderBy('submittedDate', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const tickets = [];
+      snapshot.forEach((doc) => {
+        tickets.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Fetched support tickets:', tickets.length);
+      return tickets;
+    } catch (error) {
+      console.error('❌ Error fetching support tickets:', error);
+      throw error;
+    }
+  }
+
+  // Get all support tickets (for IT Support/Admin)
+  async getAllSupportTickets() {
+    try {
+      const snapshot = await getDocs(collection(db, this.collections.SUPPORT_TICKETS));
+      const tickets = [];
+      snapshot.forEach((doc) => {
+        tickets.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Fetched all support tickets:', tickets.length);
+      return tickets;
+    } catch (error) {
+      console.error('❌ Error fetching support tickets:', error);
+      throw error;
+    }
+  }
+
+  // Submit a support ticket
+  async submitSupportTicket(ticketData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.SUPPORT_TICKETS), {
+        ...ticketData,
+        status: 'pending',
+        submittedDate: serverTimestamp(),
+        createdAt: serverTimestamp()
+      });
+      console.log('✅ Support ticket submitted:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error submitting support ticket:', error);
+      throw error;
+    }
+  }
+
+  // Update support ticket status (for IT Support)
+  async updateSupportTicketStatus(ticketId, status, resolvedBy, notes = '') {
+    try {
+      const docRef = doc(db, this.collections.SUPPORT_TICKETS, ticketId);
+      const updateData = {
+        status,
+        updatedAt: serverTimestamp()
+      };
+      
+      if (status === 'resolved' || status === 'closed') {
+        updateData.resolvedBy = resolvedBy;
+        updateData.resolvedDate = serverTimestamp();
+      }
+      
+      if (notes) {
+        updateData.notes = notes;
+      }
+      
+      await updateDoc(docRef, updateData);
+      console.log('✅ Support ticket status updated:', ticketId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating support ticket:', error);
+      throw error;
+    }
+  }
+
+  // Listen to support tickets changes
+  onSupportTicketsChange(callback, userEmail = null) {
+    let q;
+    if (userEmail) {
+      q = query(
+        collection(db, this.collections.SUPPORT_TICKETS),
+        where('requesterEmail', '==', userEmail),
+        orderBy('submittedDate', 'desc')
+      );
+    } else {
+      q = query(
+        collection(db, this.collections.SUPPORT_TICKETS),
+        orderBy('submittedDate', 'desc')
+      );
+    }
+    
+    return onSnapshot(q, (snapshot) => {
+      const tickets = [];
+      snapshot.forEach((doc) => {
+        tickets.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(tickets);
     });
   }
 }

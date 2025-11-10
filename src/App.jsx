@@ -25,6 +25,7 @@ import MetaCallback from './pages/MetaCallback';
 import WaitingForApproval from './pages/WaitingForApproval';
 import MyTimeOff from './pages/MyTimeOff';
 import EmployeeSelfService from './pages/EmployeeSelfService';
+import ITSupportPage from './pages/ITSupportPage';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, Briefcase } from 'lucide-react';
@@ -218,6 +219,7 @@ function AppLayout() {
           <Route path="/content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
           <Route path="/my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
           <Route path="/self-service" element={<ProtectedRoute><EmployeeSelfService /></ProtectedRoute>} />
+          <Route path="/it-support" element={<ProtectedRoute><ITSupportPage /></ProtectedRoute>} />
           <Route path="/meta-callback" element={<MetaCallback />} />
           <Route path="/setup-ga" element={<ProtectedRoute><GoogleAnalyticsSetup /></ProtectedRoute>} />
         </Routes>

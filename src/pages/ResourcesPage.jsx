@@ -63,11 +63,11 @@ const resources = [
   {
     id: 2,
     title: "IT Support Portal",
-    description: "Submit tickets and get technical support",
-    type: "link",
+    description: "Submit technical support tickets with screenshots and page details",
+    type: "internal",
     category: "support",
-    url: "https://example.com/support",
-    contact: "it-support@company.com"
+    internalPath: "/it-support",
+    important: true
   },
   {
     id: 3,
