@@ -13,10 +13,18 @@ import { firestoreService } from '../services/firestoreService';
 // Import the pending users context
 import { usePendingUsers } from './PendingUsersContext';
 
-// Helper function to navigate based on user role
+// Helper function to navigate based on user role (only from login page)
 const navigateBasedOnRole = (role) => {
-  // Prevent navigation loops by checking current path
+  // Only navigate if user is on login or waiting page, not on page reloads
   const currentPath = window.location.pathname;
+  
+  // Only redirect from login page or waiting page
+  const shouldRedirect = currentPath === '/login' || currentPath === '/waiting-for-approval' || currentPath === '/';
+  
+  if (!shouldRedirect) {
+    console.log('🔍 Skipping redirect - user is already on a page:', currentPath);
+    return;
+  }
   
   if (role === 'pending' && currentPath !== '/waiting-for-approval') {
     console.log('🔄 Navigating pending user to approval page...');
@@ -130,11 +138,8 @@ export function AuthProvider({ children }) {
       // Trigger chatbot reset
       setChatbotResetTrigger(prev => prev + 1);
       
-      // Navigate to dashboard after role switch
-      console.log('🔄 Navigating to dashboard after role switch...');
-      navigateBasedOnRole(newRole);
-      
-      console.log(`✅ Successfully switched to role: ${newRole}`);
+      // Don't navigate - keep user on current page when switching roles
+      console.log(`✅ Successfully switched to role: ${newRole} - staying on current page`);
     } else {
       console.error('❌ Invalid role:', newRole);
       console.error('❌ Valid roles are:', validRoles);
