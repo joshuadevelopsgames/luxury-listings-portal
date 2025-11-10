@@ -31,6 +31,8 @@ const EmployeeSelfService = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isEditingPersonal, setIsEditingPersonal] = useState(false);
+  const [editedPersonalInfo, setEditedPersonalInfo] = useState({});
 
   // Mock data
   const employeeData = {
@@ -73,6 +75,26 @@ const EmployeeSelfService = () => {
       { id: 1, type: 'Time Off', description: 'Vacation: Mar 10-12', status: 'Pending', date: '2024-01-25' },
       { id: 2, type: 'Time Off', description: 'Vacation: Feb 15-19', status: 'Approved', date: '2024-01-20' }
     ]
+  };
+
+  const handleEditPersonal = () => {
+    setIsEditingPersonal(true);
+    setEditedPersonalInfo({
+      phone: employeeData.personalInfo.phone,
+      address: employeeData.personalInfo.address
+    });
+  };
+
+  const handleSavePersonal = () => {
+    // In production, this would save to Firestore
+    console.log('Saving personal info:', editedPersonalInfo);
+    alert('Personal information updated successfully!\n\n(In production, this would save to your employee profile)');
+    setIsEditingPersonal(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingPersonal(false);
+    setEditedPersonalInfo({});
   };
 
   const quickActions = [
@@ -259,10 +281,21 @@ const EmployeeSelfService = () => {
                   <User className="w-5 h-5" />
                   <span>Personal Information</span>
                 </CardTitle>
-                <Button size="sm" variant="outline">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
+                {!isEditingPersonal ? (
+                  <Button size="sm" variant="outline" onClick={handleEditPersonal}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleSavePersonal}>
+                      Save Changes
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -270,22 +303,43 @@ const EmployeeSelfService = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-600">First Name</label>
                   <p className="text-gray-900 mt-1">{employeeData.personalInfo.firstName}</p>
+                  <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Last Name</label>
                   <p className="text-gray-900 mt-1">{employeeData.personalInfo.lastName}</p>
+                  <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Email</label>
                   <p className="text-gray-900 mt-1">{employeeData.personalInfo.email}</p>
+                  <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Phone</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.phone}</p>
+                  {isEditingPersonal ? (
+                    <input
+                      type="tel"
+                      value={editedPersonalInfo.phone || employeeData.personalInfo.phone}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.phone}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-gray-600">Address</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.address}</p>
+                  {isEditingPersonal ? (
+                    <input
+                      type="text"
+                      value={editedPersonalInfo.address || employeeData.personalInfo.address}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, address: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.address}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Employee ID</label>
@@ -308,6 +362,14 @@ const EmployeeSelfService = () => {
                   <p className="text-gray-900 mt-1">{employeeData.personalInfo.manager}</p>
                 </div>
               </div>
+              
+              {isEditingPersonal && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    <strong>Note:</strong> You can update your phone and address. For changes to name, email, or employment details, please contact HR.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
