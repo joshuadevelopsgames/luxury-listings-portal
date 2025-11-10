@@ -598,6 +598,21 @@ The logout button is always visible in the top navigation for easy access.`;
   getNavigationResponse(message, userRole) {
     const role = this.getRoleInfo(userRole);
     
+    // Check if they're asking about IT Support related things
+    if (message.includes('bug') || message.includes('problem') || message.includes('issue') || message.includes('technical') || message.includes('support') || message.includes('report')) {
+      return this.getITSupportResponse(userRole);
+    }
+    
+    // Check if they're asking about time off
+    if (message.includes('time off') || message.includes('vacation') || message.includes('sick leave') || message.includes('pto') || message.includes('leave')) {
+      return this.getTimeOffResponse(userRole);
+    }
+    
+    // Check if they're asking about profile or personal info
+    if (message.includes('profile') || message.includes('personal info') || message.includes('edit') || message.includes('update')) {
+      return this.getSelfServiceResponse(userRole);
+    }
+    
     if (message.includes('dashboard')) {
       return "The Dashboard is accessible from the main navigation at the top of every page. It's the first item in the navigation menu.";
     }
