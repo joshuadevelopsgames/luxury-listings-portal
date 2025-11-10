@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
+import PersonCard from '../components/PersonCard';
 import { 
   Users, 
   Plus, 
@@ -35,13 +36,15 @@ import {
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
 
 const TeamManagement = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, currentRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  
+  const isHRManager = currentRole === 'hr_manager';
 
   // Mock team data
   const [teamMembers, setTeamMembers] = useState([
@@ -535,38 +538,29 @@ const TeamManagement = () => {
             </div>
             
             <div className="p-6 space-y-6">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-2xl">
-                    {selectedEmployee.avatar}
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">{selectedEmployee.name}</h3>
-                    <p className="text-lg text-gray-600">{selectedEmployee.position}</p>
-                    <p className="text-gray-500">{selectedEmployee.department}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">{selectedEmployee.email}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">{selectedEmployee.phone}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">Started {format(new Date(selectedEmployee.startDate), 'MMMM dd, yyyy')}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Building className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">Reports to {selectedEmployee.manager}</span>
-                  </div>
-                </div>
-              </div>
+              {/* Personal Information Card */}
+              <PersonCard 
+                person={{
+                  firstName: selectedEmployee.name.split(' ')[0],
+                  lastName: selectedEmployee.name.split(' ').slice(1).join(' '),
+                  email: selectedEmployee.email,
+                  phone: selectedEmployee.phone,
+                  address: selectedEmployee.address || 'Not provided',
+                  department: selectedEmployee.department,
+                  position: selectedEmployee.position,
+                  manager: selectedEmployee.manager,
+                  startDate: selectedEmployee.startDate,
+                  employeeId: selectedEmployee.employeeId || `EMP-${selectedEmployee.id}`
+                }}
+                editable={isHRManager}
+                isHRView={isHRManager}
+                onSave={(updatedData) => {
+                  console.log('Saving employee data:', updatedData);
+                  alert('Employee information updated successfully!\n\n(In production, this would save to Firestore)');
+                  // In production, update the employee in Firestore
+                }}
+                showAvatar={true}
+              />
 
               {/* Performance Metrics */}
               <Card>

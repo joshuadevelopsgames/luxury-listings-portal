@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import PersonCard from '../components/PersonCard';
 import { 
   Calendar, 
   User, 
@@ -79,41 +80,14 @@ const EmployeeSelfService = () => {
     ]
   };
 
-  const handleEditPersonal = () => {
-    setIsEditingPersonal(true);
-    if (isHRManager) {
-      // HR managers can edit all fields
-      setEditedPersonalInfo({
-        firstName: employeeData.personalInfo.firstName,
-        lastName: employeeData.personalInfo.lastName,
-        email: employeeData.personalInfo.email,
-        phone: employeeData.personalInfo.phone,
-        address: employeeData.personalInfo.address,
-        department: employeeData.personalInfo.department,
-        position: employeeData.personalInfo.position,
-        manager: employeeData.personalInfo.manager,
-        startDate: employeeData.personalInfo.startDate
-      });
-    } else {
-      // Regular employees can only edit phone and address
-      setEditedPersonalInfo({
-        phone: employeeData.personalInfo.phone,
-        address: employeeData.personalInfo.address
-      });
-    }
-  };
-
-  const handleSavePersonal = () => {
+  const handleSavePersonal = (updatedData) => {
     // In production, this would save to Firestore
-    console.log('Saving personal info:', editedPersonalInfo);
+    console.log('Saving personal info:', updatedData);
     const rolePrefix = isHRManager ? '(HR Manager editing)' : '';
     alert(`Personal information updated successfully! ${rolePrefix}\n\n(In production, this would save to the employee profile in Firestore)`);
-    setIsEditingPersonal(false);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditingPersonal(false);
-    setEditedPersonalInfo({});
+    
+    // In production, you would update employeeData here
+    // For now, just log it
   };
 
   const quickActions = [
@@ -293,178 +267,13 @@ const EmployeeSelfService = () => {
 
         {/* Personal Info Tab */}
         <TabsContent value="personal">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5" />
-                  <span>Personal Information</span>
-                </CardTitle>
-                {!isEditingPersonal ? (
-                  <Button size="sm" variant="outline" onClick={handleEditPersonal}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={handleSavePersonal}>
-                      Save Changes
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">First Name</label>
-                  {isEditingPersonal && isHRManager ? (
-                    <input
-                      type="text"
-                      value={editedPersonalInfo.firstName || employeeData.personalInfo.firstName}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, firstName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <>
-                      <p className="text-gray-900 mt-1">{employeeData.personalInfo.firstName}</p>
-                      {!isHRManager && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
-                    </>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Last Name</label>
-                  {isEditingPersonal && isHRManager ? (
-                    <input
-                      type="text"
-                      value={editedPersonalInfo.lastName || employeeData.personalInfo.lastName}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, lastName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <>
-                      <p className="text-gray-900 mt-1">{employeeData.personalInfo.lastName}</p>
-                      {!isHRManager && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
-                    </>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Email</label>
-                  {isEditingPersonal && isHRManager ? (
-                    <input
-                      type="email"
-                      value={editedPersonalInfo.email || employeeData.personalInfo.email}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, email: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <>
-                      <p className="text-gray-900 mt-1">{employeeData.personalInfo.email}</p>
-                      {!isHRManager && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
-                    </>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Phone</label>
-                  {isEditingPersonal ? (
-                    <input
-                      type="tel"
-                      value={editedPersonalInfo.phone || employeeData.personalInfo.phone}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, phone: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.phone}</p>
-                  )}
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-gray-600">Address</label>
-                  {isEditingPersonal ? (
-                    <input
-                      type="text"
-                      value={editedPersonalInfo.address || employeeData.personalInfo.address}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, address: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.address}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Employee ID</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.employeeId}</p>
-                  {isHRManager && <p className="text-xs text-gray-500 mt-1">System-generated, cannot be changed</p>}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Start Date</label>
-                  {isEditingPersonal && isHRManager ? (
-                    <input
-                      type="date"
-                      value={editedPersonalInfo.startDate || employeeData.personalInfo.startDate}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, startDate: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900 mt-1">{format(new Date(employeeData.personalInfo.startDate), 'MMMM dd, yyyy')}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Department</label>
-                  {isEditingPersonal && isHRManager ? (
-                    <input
-                      type="text"
-                      value={editedPersonalInfo.department || employeeData.personalInfo.department}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, department: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.department}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Position</label>
-                  {isEditingPersonal && isHRManager ? (
-                    <input
-                      type="text"
-                      value={editedPersonalInfo.position || employeeData.personalInfo.position}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, position: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.position}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Manager</label>
-                  {isEditingPersonal && isHRManager ? (
-                    <input
-                      type="text"
-                      value={editedPersonalInfo.manager || employeeData.personalInfo.manager}
-                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, manager: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.manager}</p>
-                  )}
-                </div>
-              </div>
-              
-              {isEditingPersonal && (
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-700">
-                    {isHRManager ? (
-                      <><strong>HR Manager:</strong> You can update all employee information fields except Employee ID.</>
-                    ) : (
-                      <><strong>Note:</strong> You can update your phone and address. For changes to name, email, or employment details, please contact HR.</>
-                    )}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PersonCard 
+            person={employeeData.personalInfo}
+            editable={true}
+            isHRView={isHRManager}
+            onSave={handleSavePersonal}
+            showAvatar={false}
+          />
         </TabsContent>
 
         {/* Time Off Tab */}
