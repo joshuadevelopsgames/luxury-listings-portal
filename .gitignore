@@ -72,6 +72,13 @@ jspm_packages/
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
+*firebase-admin*.json
+*serviceAccountKey*.json
+*service-account*.json
+
+# Test files with secrets
+test-*.js
+*-test.js
 
 # Temporary files
 *.tmp
