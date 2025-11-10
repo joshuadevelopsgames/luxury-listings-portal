@@ -156,11 +156,11 @@ export default function ResourcesPage() {
             <CardContent>
               <Button 
                 onClick={() => navigate(featuredResource.internalPath)}
-                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold"
+                className="bg-white !text-blue-600 hover:bg-blue-50 hover:!text-blue-700 font-semibold"
                 size="lg"
               >
-                Go to My Time Off
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <span className="text-blue-600">Go to My Time Off</span>
+                <ArrowRight className="w-4 h-4 ml-2 text-blue-600" />
               </Button>
             </CardContent>
           </Card>
