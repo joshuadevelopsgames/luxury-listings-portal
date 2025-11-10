@@ -255,7 +255,7 @@ const MyTimeOff = () => {
 
       {/* Company Policy Info */}
       <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="px-6 pt-10 pb-8">
+        <CardContent className="px-6 pt-7 pb-7">
           <div className="flex items-center space-x-3">
             <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
             <div>
