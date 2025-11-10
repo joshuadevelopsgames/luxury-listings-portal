@@ -26,6 +26,9 @@ const ITSupportPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   // Google Apps Script URL for email notifications
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
@@ -178,6 +181,95 @@ const ITSupportPage = () => {
       description: '',
       screenshotUrl: ''
     });
+    setPreviewImage(null);
+  };
+
+  // Handle drag events
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  // Handle drop
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await handleImageUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Handle file input change
+  const handleFileSelect = async (e) => {
+    if (e.target.files && e.target.files[0]) {
+      await handleImageUpload(e.target.files[0]);
+    }
+  };
+
+  // Upload image to Imgur
+  const handleImageUpload = async (file) => {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, GIF, etc.)');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image size must be less than 10MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload to Imgur (anonymous upload)
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('https://api.imgur.com/3/image', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Client-ID 4e150f9f6cddc14' // Imgur anonymous client ID
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        handleFormChange('screenshotUrl', data.data.link);
+        console.log('✅ Image uploaded to Imgur:', data.data.link);
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('❌ Error uploading image:', error);
+      alert('Failed to upload image. You can still paste a URL manually.');
+      // Keep the preview even if upload fails
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Remove uploaded image
+  const handleRemoveImage = () => {
+    setPreviewImage(null);
+    handleFormChange('screenshotUrl', '');
   };
 
   return (
@@ -401,22 +493,91 @@ const ITSupportPage = () => {
                 />
               </div>
 
-              {/* Screenshot URL */}
+              {/* Screenshot Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <ImageIcon className="w-4 h-4 inline mr-1" />
-                  Screenshot URL (Optional)
+                  Screenshot (Optional)
                 </label>
-                <input
-                  type="url"
-                  value={supportForm.screenshotUrl}
-                  onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
-                  placeholder="https://example.com/screenshot.png or upload to imgur.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Take a screenshot and upload to <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">imgur.com</a>, then paste the link here
-                </p>
+                
+                {/* Image Preview */}
+                {previewImage && (
+                  <div className="mb-3 relative">
+                    <img 
+                      src={previewImage} 
+                      alt="Preview" 
+                      className="max-h-48 rounded-lg border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    {supportForm.screenshotUrl && (
+                      <p className="text-xs text-green-600 mt-1">✓ Uploaded successfully</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Drag & Drop Zone */}
+                {!previewImage && (
+                  <div
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      dragActive 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {uploading ? (
+                      <div className="space-y-2">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-sm text-gray-600">Uploading...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-gray-700 mb-1">
+                          Drag & drop your screenshot here
+                        </p>
+                        <p className="text-xs text-gray-500 mb-3">or</p>
+                        <label className="inline-block">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                          />
+                          <span className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer inline-block">
+                            Browse Files
+                          </span>
+                        </label>
+                        <p className="text-xs text-gray-500 mt-3">
+                          PNG, JPG, GIF up to 10MB
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Manual URL Input (fallback) */}
+                {!previewImage && (
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-600 mb-2">Or paste an image URL:</p>
+                    <input
+                      type="url"
+                      value={supportForm.screenshotUrl}
+                      onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
+                      placeholder="https://example.com/screenshot.png"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Form Actions */}
