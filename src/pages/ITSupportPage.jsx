@@ -26,6 +26,9 @@ const ITSupportPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
 
   // Google Apps Script URL for email notifications
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
@@ -186,6 +189,71 @@ const ITSupportPage = () => {
       description: '',
       screenshotUrl: ''
     });
+    setPreviewImage(null);
+    setPreviewFile(null);
+  };
+
+  // Handle drag events
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  // Handle drop
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFilePreview(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Handle file input change
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFilePreview(e.target.files[0]);
+    }
+  };
+
+  // Create preview (no upload yet)
+  const handleFilePreview = (file) => {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, GIF, etc.)');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image size must be less than 10MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPreviewImage(e.target.result);
+      setPreviewFile(file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove preview
+  const handleRemovePreview = () => {
+    setPreviewImage(null);
+    setPreviewFile(null);
+  };
+
+  // Open Imgur upload in new tab
+  const handleOpenImgur = () => {
+    window.open('https://imgur.com/upload', '_blank');
   };
 
   return (
@@ -409,30 +477,112 @@ const ITSupportPage = () => {
                 />
               </div>
 
-              {/* Screenshot URL */}
+              {/* Screenshot Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <ImageIcon className="w-4 h-4 inline mr-1" />
-                  Screenshot URL (Optional)
+                  Screenshot (Optional)
                 </label>
-                <input
-                  type="url"
-                  value={supportForm.screenshotUrl}
-                  onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
-                  placeholder="https://i.imgur.com/example.png"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-xs text-blue-800">
-                    <strong>📸 How to add a screenshot:</strong>
-                  </p>
-                  <ol className="text-xs text-blue-700 mt-1 ml-4 space-y-1 list-decimal">
-                    <li>Take a screenshot (Cmd+Shift+4 on Mac, Win+Shift+S on Windows)</li>
-                    <li>Go to <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="underline font-medium">imgur.com/upload</a></li>
-                    <li>Upload your screenshot</li>
-                    <li>Copy the image URL and paste it above</li>
-                  </ol>
-                </div>
+
+                {/* Show preview if image is selected */}
+                {previewImage ? (
+                  <div className="space-y-3">
+                    {/* Preview */}
+                    <div className="relative">
+                      <img 
+                        src={previewImage} 
+                        alt="Preview" 
+                        className="max-h-48 rounded-lg border border-gray-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemovePreview}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Instructions after preview */}
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm font-medium text-yellow-900 mb-2">
+                        📤 Now upload this image to get a URL:
+                      </p>
+                      <div className="flex gap-2 mb-2">
+                        <Button
+                          type="button"
+                          onClick={handleOpenImgur}
+                          className="bg-green-600 hover:bg-green-700 text-sm"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          Open Imgur Upload
+                        </Button>
+                      </div>
+                      <p className="text-xs text-yellow-700">
+                        Upload your screenshot on Imgur, then copy the image URL and paste it below ⬇️
+                      </p>
+                    </div>
+
+                    {/* URL input after preview */}
+                    <input
+                      type="url"
+                      value={supportForm.screenshotUrl}
+                      onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
+                      placeholder="Paste the Imgur URL here (https://i.imgur.com/...)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {supportForm.screenshotUrl && (
+                      <p className="text-xs text-green-600">✓ URL added! Your screenshot will be included with the ticket.</p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {/* Drag & Drop Zone */}
+                    <div
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                        dragActive 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-sm font-medium text-gray-700 mb-1">
+                        Drag & drop your screenshot here
+                      </p>
+                      <p className="text-xs text-gray-500 mb-3">or</p>
+                      <label className="inline-block">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        <span className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer inline-block">
+                          Browse Files
+                        </span>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-3">
+                        PNG, JPG, GIF up to 10MB
+                      </p>
+                    </div>
+
+                    {/* Alternative: paste URL directly */}
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-600 mb-2">Or paste an image URL directly:</p>
+                      <input
+                        type="url"
+                        value={supportForm.screenshotUrl}
+                        onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
+                        placeholder="https://i.imgur.com/example.png"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Form Actions */}
