@@ -256,6 +256,7 @@ const ITSupportPage = () => {
       formData.append('image', file);
 
       console.log('📤 Uploading to Imgur...');
+      console.log('📦 File details:', { name: file.name, size: file.size, type: file.type });
       
       const response = await fetch('https://api.imgur.com/3/image', {
         method: 'POST',
@@ -265,20 +266,31 @@ const ITSupportPage = () => {
         body: formData
       });
 
+      console.log('📡 Imgur response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`Imgur API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Imgur API error response:', errorText);
+        throw new Error(`Imgur API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('📊 Imgur response data:', data);
 
-      if (data.success && data.data.link) {
+      if (data.success && data.data && data.data.link) {
         handleFormChange('screenshotUrl', data.data.link);
         console.log('✅ Image uploaded to Imgur:', data.data.link);
       } else {
-        throw new Error('Upload failed');
+        console.error('❌ Unexpected Imgur response:', data);
+        throw new Error('Upload failed: No image link returned');
       }
     } catch (error) {
       console.error('❌ Imgur upload failed:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       setUploadError(error.message);
       // Don't alert - just show fallback UI
     } finally {
