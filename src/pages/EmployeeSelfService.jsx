@@ -178,7 +178,7 @@ const EmployeeSelfService = () => {
               className="cursor-pointer hover:shadow-md transition-shadow"
               onClick={action.action}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-6 pt-8">
                 <div className={`p-3 rounded-lg bg-${action.color}-100 w-fit mb-3`}>
                   <Icon className={`w-6 h-6 text-${action.color}-600`} />
                 </div>
