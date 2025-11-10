@@ -255,12 +255,12 @@ const MyTimeOff = () => {
 
       {/* Company Policy Info */}
       <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-3">
+            <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
             <div>
-              <h3 className="text-sm font-medium text-blue-900 mb-1">Time Off Policy</h3>
-              <p className="text-sm text-blue-700">
+              <h3 className="text-sm font-medium text-blue-900 mb-2">Time Off Policy</h3>
+              <p className="text-sm text-blue-700 leading-relaxed">
                 Vacation requests should be submitted at least 2 weeks in advance. Sick leave can be requested same-day. 
                 Unused vacation days roll over up to 5 days per year. Contact HR if you have questions.
               </p>
