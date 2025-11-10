@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
@@ -12,10 +13,22 @@ import {
   Users,
   Phone,
   Mail,
-  Globe
+  Globe,
+  Calendar,
+  ArrowRight
 } from "lucide-react";
 
 const resources = [
+  {
+    id: 0,
+    title: "My Time Off",
+    description: "Request vacation, sick leave, and manage your time-off balance",
+    type: "internal",
+    category: "employee",
+    internalPath: "/my-time-off",
+    important: true,
+    featured: true
+  },
   {
     id: 1,
     title: "Employee Handbook",
@@ -70,6 +83,7 @@ const resources = [
 ];
 
 const typeIcons = {
+  internal: Calendar,
   document: FileText,
   link: Globe,
   video: Video,
@@ -78,7 +92,8 @@ const typeIcons = {
 };
 
 const categoryColors = {
-  policy: "bg-blue-100 text-blue-800",
+  employee: "bg-blue-100 text-blue-800",
+  policy: "bg-slate-100 text-slate-800",
   support: "bg-green-100 text-green-800", 
   contacts: "bg-purple-100 text-purple-800",
   training: "bg-orange-100 text-orange-800",
@@ -87,6 +102,7 @@ const categoryColors = {
 };
 
 export default function ResourcesPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   
   const filteredResources = resources.filter(resource =>
@@ -95,8 +111,9 @@ export default function ResourcesPage() {
     resource.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const importantResources = filteredResources.filter(r => r.important);
-  const otherResources = filteredResources.filter(r => !r.important);
+  const featuredResource = filteredResources.find(r => r.featured);
+  const importantResources = filteredResources.filter(r => r.important && !r.featured);
+  const otherResources = filteredResources.filter(r => !r.important && !r.featured);
 
   return (
     <div className="p-6 space-y-8 max-w-6xl mx-auto">
@@ -115,6 +132,41 @@ export default function ResourcesPage() {
         />
       </div>
 
+      {/* Featured Resource - My Time Off */}
+      {featuredResource && (
+        <section>
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-xl">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <Calendar className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold mb-2">
+                      {featuredResource.title}
+                    </CardTitle>
+                    <p className="text-blue-100 text-base">
+                      {featuredResource.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => navigate(featuredResource.internalPath)}
+                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold"
+                size="lg"
+              >
+                Go to My Time Off
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </section>
+      )}
+
       {/* Important Resources */}
       {importantResources.length > 0 && (
         <section>
@@ -124,7 +176,7 @@ export default function ResourcesPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {importantResources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} />
+              <ResourceCard key={resource.id} resource={resource} navigate={navigate} />
             ))}
           </div>
         </section>
@@ -144,7 +196,7 @@ export default function ResourcesPage() {
             </div>
           ) : (
             otherResources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} />
+              <ResourceCard key={resource.id} resource={resource} navigate={navigate} />
             ))
           )}
         </div>
@@ -188,7 +240,7 @@ export default function ResourcesPage() {
   );
 }
 
-function ResourceCard({ resource }) {
+function ResourceCard({ resource, navigate }) {
   const Icon = typeIcons[resource.type];
   
   return (
@@ -215,6 +267,17 @@ function ResourceCard({ resource }) {
         <Badge className={categoryColors[resource.category]} variant="secondary">
           {resource.category}
         </Badge>
+        
+        {resource.internalPath && (
+          <Button 
+            onClick={() => navigate(resource.internalPath)}
+            className="w-full" 
+            size="sm"
+          >
+            <ArrowRight className="w-4 h-4 mr-2" />
+            Open {resource.title}
+          </Button>
+        )}
         
         {resource.url && (
           <Button asChild className="w-full" size="sm">

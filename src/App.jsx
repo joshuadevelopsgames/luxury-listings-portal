@@ -109,7 +109,6 @@ function AppLayout() {
           { id: 'programs', name: 'Programs', icon: Settings, path: '/programs' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
           { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
-          { id: 'my-time-off', name: 'My Time Off', icon: Calendar, path: '/my-time-off' },
         ];
       
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
