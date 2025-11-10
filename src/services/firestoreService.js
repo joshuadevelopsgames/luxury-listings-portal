@@ -918,10 +918,11 @@ class FirestoreService {
   onSupportTicketsChange(callback, userEmail = null) {
     let q;
     if (userEmail) {
+      // Don't use orderBy with where to avoid requiring composite index
+      // We'll sort in the app instead
       q = query(
         collection(db, this.collections.SUPPORT_TICKETS),
-        where('requesterEmail', '==', userEmail),
-        orderBy('submittedDate', 'desc')
+        where('requesterEmail', '==', userEmail)
       );
     } else {
       q = query(

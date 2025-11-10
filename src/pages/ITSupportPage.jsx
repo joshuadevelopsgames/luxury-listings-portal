@@ -68,7 +68,15 @@ const ITSupportPage = () => {
         const filteredTickets = isITSupport 
           ? tickets 
           : tickets.filter(t => t.requesterEmail === currentUser.email);
-        setMyTickets(filteredTickets);
+        
+        // Sort by submittedDate descending (newest first)
+        const sortedTickets = [...filteredTickets].sort((a, b) => {
+          const dateA = a.submittedDate?.toDate ? a.submittedDate.toDate() : new Date(a.submittedDate);
+          const dateB = b.submittedDate?.toDate ? b.submittedDate.toDate() : new Date(b.submittedDate);
+          return dateB - dateA;
+        });
+        
+        setMyTickets(sortedTickets);
         setLoading(false);
       }, isITSupport ? null : currentUser.email);
 
@@ -249,6 +257,10 @@ const ITSupportPage = () => {
         body: formData
       });
 
+      if (!response.ok) {
+        throw new Error(`Imgur API error: ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -259,8 +271,20 @@ const ITSupportPage = () => {
       }
     } catch (error) {
       console.error('❌ Error uploading image:', error);
-      alert('Failed to upload image. You can still paste a URL manually.');
-      // Keep the preview even if upload fails
+      
+      // Provide helpful error message
+      let errorMessage = 'Failed to upload image to Imgur. ';
+      if (error.message.includes('503')) {
+        errorMessage += 'Imgur service is temporarily unavailable. Please try again in a moment, or paste an image URL manually.';
+      } else if (error.message.includes('429')) {
+        errorMessage += 'Upload limit reached. Please try again later or paste an image URL manually.';
+      } else {
+        errorMessage += 'You can still paste an image URL manually below.';
+      }
+      
+      alert(errorMessage);
+      // Clear the preview on error
+      setPreviewImage(null);
     } finally {
       setUploading(false);
     }
