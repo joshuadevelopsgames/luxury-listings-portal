@@ -23,9 +23,11 @@ import ContentCalendar from './pages/ContentCalendar';
 import ContentManagerMessage from './pages/ContentManagerMessage';
 import MetaCallback from './pages/MetaCallback';
 import WaitingForApproval from './pages/WaitingForApproval';
+import MyTimeOff from './pages/MyTimeOff';
+import EmployeeSelfService from './pages/EmployeeSelfService';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
-import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare } from 'lucide-react';
+import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, Briefcase } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
 import { USER_ROLES } from './entities/UserRoles';
@@ -96,6 +98,7 @@ function AppLayout() {
           { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
           { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/analytics' },
+          { id: 'self-service', name: 'Self-Service', icon: Briefcase, path: '/self-service' },
         ];
       
       case USER_ROLES.CONTENT_DIRECTOR:
@@ -106,6 +109,7 @@ function AppLayout() {
           { id: 'programs', name: 'Programs', icon: Settings, path: '/programs' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
           { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
+          { id: 'my-time-off', name: 'My Time Off', icon: Calendar, path: '/my-time-off' },
         ];
       
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
@@ -115,6 +119,7 @@ function AppLayout() {
           { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
+          { id: 'self-service', name: 'Self-Service', icon: Briefcase, path: '/self-service' },
         ];
       
       case USER_ROLES.HR_MANAGER:
@@ -125,6 +130,7 @@ function AppLayout() {
           { id: 'team', name: 'Team Management', icon: Users, path: '/team' },
           { id: 'analytics', name: 'HR Analytics', icon: BarChart3, path: '/hr-analytics' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
+          { id: 'self-service', name: 'Self-Service', icon: Briefcase, path: '/self-service' },
         ];
       
       case USER_ROLES.SALES_MANAGER:
@@ -135,6 +141,7 @@ function AppLayout() {
           { id: 'leads', name: 'Lead Management', icon: Target, path: '/leads' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
+          { id: 'self-service', name: 'Self-Service', icon: Briefcase, path: '/self-service' },
         ];
       
       default:
@@ -143,6 +150,7 @@ function AppLayout() {
           { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
+          { id: 'self-service', name: 'Self-Service', icon: Briefcase, path: '/self-service' },
         ];
     }
   };
@@ -211,6 +219,8 @@ function AppLayout() {
           <Route path="/sales-pipeline" element={<ProtectedRoute><SalesPipelinePage /></ProtectedRoute>} />
           <Route path="/leads" element={<ProtectedRoute><LeadManagementPage /></ProtectedRoute>} />
           <Route path="/content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
+          <Route path="/my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
+          <Route path="/self-service" element={<ProtectedRoute><EmployeeSelfService /></ProtectedRoute>} />
           <Route path="/meta-callback" element={<MetaCallback />} />
           <Route path="/setup-ga" element={<ProtectedRoute><GoogleAnalyticsSetup /></ProtectedRoute>} />
         </Routes>

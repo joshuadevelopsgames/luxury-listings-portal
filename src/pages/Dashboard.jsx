@@ -34,6 +34,7 @@ import QuickStats from "../components/dashboard/QuickStats";
 import TodaysTasks from "../components/dashboard/TodaysTasks";
 import NextTutorials from "../components/dashboard/NextTutorials";
 import HRQuickActions from "../components/dashboard/HRQuickActions";
+import TimeOffWidget from "../components/dashboard/TimeOffWidget";
 
 export default function Dashboard() {
   const { currentUser, currentRole, getCurrentRolePermissions } = useAuth();
@@ -304,10 +305,13 @@ export default function Dashboard() {
       {currentRole === 'hr_manager' ? (
         <HRQuickActions />
       ) : (
-        <div className="grid lg:grid-cols-2 gap-8">
-          <TodaysTasks tasks={getUpcomingTasks()} />
-          <NextTutorials tutorials={getNextTutorials()} />
-        </div>
+        <>
+          <div className="grid lg:grid-cols-3 gap-8">
+            <TodaysTasks tasks={getUpcomingTasks()} />
+            <NextTutorials tutorials={getNextTutorials()} />
+            <TimeOffWidget />
+          </div>
+        </>
       )}
 
       {/* Role-Specific Stats - Moved to bottom above profile overview */}

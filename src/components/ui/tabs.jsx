@@ -44,7 +44,24 @@ const TabsTrigger = React.forwardRef(({ className, value, children, ...props }, 
 });
 TabsTrigger.displayName = "TabsTrigger";
 
-export { Tabs, TabsList, TabsTrigger };
+const TabsContent = React.forwardRef(({ className, value, children, ...props }, ref) => {
+  const context = React.useContext(TabsContext);
+  
+  if (context.value !== value) return null;
+  
+  return (
+    <div
+      ref={ref}
+      className={`mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${className || ''}`}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+});
+TabsContent.displayName = "TabsContent";
+
+export { Tabs, TabsList, TabsTrigger, TabsContent };
 
 
 
