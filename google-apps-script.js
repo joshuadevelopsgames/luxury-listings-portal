@@ -34,8 +34,8 @@ function doGet(e) {
     let sheet = null;
     let sheetName = 'Social Media Packages'; // default
     
-    // Only get sheet for actions that need it
-    if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived'].includes(action)) {
+    // Only get sheet for actions that need it (email doesn't need sheet)
+    if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived', 'addLead'].includes(action)) {
       // Determine which sheet to use based on package type
       console.log('🔍 Determining sheet based on package type:', clientData.packageType);
       if (clientData.packageType === 'Monthly') {
@@ -50,14 +50,17 @@ function doGet(e) {
       sheet = spreadsheet.getSheetByName(sheetName);
     }
     
-    if (!sheet) {
-      console.error('❌ Sheet not found:', sheetName);
-      console.log('📋 Available sheets:', spreadsheet.getSheets().map(s => s.getName()));
-      throw new Error(`Sheet "${sheetName}" not found`);
+    // Only validate sheet if the action requires it
+    if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived', 'addLead'].includes(action)) {
+      if (!sheet) {
+        console.error('❌ Sheet not found:', sheetName);
+        console.log('📋 Available sheets:', spreadsheet.getSheets().map(s => s.getName()));
+        throw new Error(`Sheet "${sheetName}" not found`);
+      }
+      
+      console.log('✅ Sheet found:', sheet.getName());
+      console.log('📊 Sheet dimensions:', sheet.getLastRow(), 'rows x', sheet.getLastColumn(), 'columns');
     }
-    
-    console.log('✅ Sheet found:', sheet.getName());
-    console.log('📊 Sheet dimensions:', sheet.getLastRow(), 'rows x', sheet.getLastColumn(), 'columns');
     
     let result = {};
     
@@ -112,6 +115,19 @@ function doGet(e) {
         break;
       case 'deleteArchived':
         result = deleteArchivedClient(sheet, clientData);
+        break;
+      case 'sendSupportEmail':
+        console.log('📧 Executing sendSupportEmail function');
+        const ticketDataStr = e.parameter.ticketData;
+        let ticketData = {};
+        if (ticketDataStr) {
+          try {
+            ticketData = JSON.parse(decodeURIComponent(ticketDataStr));
+          } catch (error) {
+            console.error('Error parsing ticketData:', error);
+          }
+        }
+        result = sendSupportTicketEmail(ticketData);
         break;
       case 'addLead':
         const leadDataStr = e.parameter.leadData;
@@ -1013,6 +1029,73 @@ function getFirebaseTasks() {
     };
   } catch (error) {
     console.error('❌ Error getting tasks:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function sendSupportTicketEmail(ticketData) {
+  try {
+    console.log('📧 Sending support ticket email notification');
+    console.log('📧 Ticket data:', ticketData);
+    
+    const recipient = 'jrsschroeder@gmail.com';
+    const subject = `🎫 New IT Support Ticket: ${ticketData.title || 'Untitled'}`;
+    
+    // Build email body
+    let emailBody = `
+A new IT support ticket has been submitted on the Luxury Listings Portal.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TICKET DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 Title: ${ticketData.title || 'N/A'}
+
+👤 Submitted By: ${ticketData.requesterName || 'Unknown'}
+📧 Email: ${ticketData.requesterEmail || 'N/A'}
+
+🏷️ Category: ${ticketData.category || 'N/A'}
+⚡ Priority: ${(ticketData.priority || 'medium').toUpperCase()}
+
+📄 Description:
+${ticketData.description || 'No description provided'}
+`;
+
+    if (ticketData.pageUrl) {
+      emailBody += `\n\n🔗 Page URL:\n${ticketData.pageUrl}`;
+    }
+
+    if (ticketData.screenshotUrl) {
+      emailBody += `\n\n📸 Screenshot:\n${ticketData.screenshotUrl}`;
+    }
+
+    emailBody += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+View all support tickets: https://smmluxurylistings.info/it-support
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This is an automated notification from the Luxury Listings Portal.
+`;
+
+    // Send the email
+    MailApp.sendEmail({
+      to: recipient,
+      subject: subject,
+      body: emailBody
+    });
+    
+    console.log('✅ Support ticket email sent to:', recipient);
+    
+    return {
+      success: true,
+      message: 'Email notification sent successfully',
+      recipient: recipient
+    };
+    
+  } catch (error) {
+    console.error('❌ Error sending support ticket email:', error);
     return {
       success: false,
       error: error.message

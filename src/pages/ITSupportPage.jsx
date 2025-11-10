@@ -27,6 +27,9 @@ const ITSupportPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
 
+  // Google Apps Script URL for email notifications
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
+
   // Support request form state
   const [supportForm, setSupportForm] = useState({
     title: '',
@@ -119,6 +122,23 @@ const ITSupportPage = () => {
       
       if (result.success) {
         console.log('✅ Support ticket submitted:', result.id);
+        
+        // Send email notification to IT support
+        try {
+          const params = new URLSearchParams({
+            action: 'sendSupportEmail',
+            ticketData: JSON.stringify(newTicket)
+          });
+          
+          // Use image request to avoid CORS issues
+          const img = new Image();
+          img.src = `${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`;
+          console.log('📧 Email notification triggered');
+        } catch (emailError) {
+          console.error('⚠️ Email notification failed (ticket still saved):', emailError);
+          // Don't block user flow if email fails
+        }
+        
         alert('Support request submitted successfully! ✅\n\nYour ticket has been sent to IT Support. We\'ll get back to you soon.');
         setShowRequestModal(false);
         resetForm();
