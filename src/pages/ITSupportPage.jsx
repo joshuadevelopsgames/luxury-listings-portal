@@ -44,22 +44,40 @@ const ITSupportPage = () => {
 
   // Load support tickets from Firestore
   useEffect(() => {
-    if (!currentUser?.email) return;
+    if (!currentUser?.email) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     
-    // Set up real-time listener
-    const unsubscribe = firestoreService.onSupportTicketsChange((tickets) => {
-      console.log('📡 Support tickets updated:', tickets.length);
-      // If IT Support, show all tickets, else show only user's tickets
-      const filteredTickets = isITSupport 
-        ? tickets 
-        : tickets.filter(t => t.requesterEmail === currentUser.email);
-      setMyTickets(filteredTickets);
+    // Set up real-time listener with timeout fallback
+    const timeoutId = setTimeout(() => {
+      console.log('⚠️ Loading timeout - assuming no tickets');
       setLoading(false);
-    }, isITSupport ? null : currentUser.email);
+    }, 5000);
 
-    return () => unsubscribe();
+    try {
+      const unsubscribe = firestoreService.onSupportTicketsChange((tickets) => {
+        clearTimeout(timeoutId);
+        console.log('📡 Support tickets updated:', tickets.length);
+        // If IT Support, show all tickets, else show only user's tickets
+        const filteredTickets = isITSupport 
+          ? tickets 
+          : tickets.filter(t => t.requesterEmail === currentUser.email);
+        setMyTickets(filteredTickets);
+        setLoading(false);
+      }, isITSupport ? null : currentUser.email);
+
+      return () => {
+        clearTimeout(timeoutId);
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error('❌ Error loading support tickets:', error);
+      clearTimeout(timeoutId);
+      setLoading(false);
+    }
   }, [currentUser?.email, isITSupport]);
 
   const categories = [
