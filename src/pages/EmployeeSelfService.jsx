@@ -178,10 +178,12 @@ const EmployeeSelfService = () => {
               className="cursor-pointer hover:shadow-md transition-shadow"
               onClick={action.action}
             >
-              <CardContent className="p-6 pt-[30px]">
-                <div className={`p-3 rounded-lg bg-${action.color}-100 w-fit mb-3`}>
+              <CardHeader className="pb-3">
+                <div className={`p-3 rounded-lg bg-${action.color}-100 w-fit`}>
                   <Icon className={`w-6 h-6 text-${action.color}-600`} />
                 </div>
+              </CardHeader>
+              <CardContent>
                 <h3 className="font-semibold text-gray-900 mb-1">{action.label}</h3>
                 <p className="text-sm text-gray-600">{action.description}</p>
               </CardContent>
