@@ -247,45 +247,56 @@ const ITSupportPage = () => {
     };
     reader.readAsDataURL(file);
 
-    // Try to auto-upload to Imgur
+    // Try to auto-upload to imgbb (more reliable than Imgur)
     setUploading(true);
     setUploadError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('image', file);
+      // Convert file to base64 for imgbb
+      const reader = new FileReader();
+      const base64Promise = new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result.split(',')[1]); // Get base64 without data:image prefix
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      console.log('📤 Uploading to Imgur...');
+      const base64Image = await base64Promise;
+
+      console.log('📤 Uploading to imgbb...');
       console.log('📦 File details:', { name: file.name, size: file.size, type: file.type });
+
+      // imgbb API key from api.imgbb.com
+      const IMGBB_API_KEY = '1e52042b16f9d095084295e32d073030';
       
-      const response = await fetch('https://api.imgur.com/3/image', {
+      const formData = new FormData();
+      formData.append('image', base64Image);
+      formData.append('name', file.name);
+      
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
         method: 'POST',
-        headers: {
-          'Authorization': 'Client-ID 4e150f9f6cddc14'
-        },
         body: formData
       });
 
-      console.log('📡 Imgur response status:', response.status);
+      console.log('📡 imgbb response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Imgur API error response:', errorText);
-        throw new Error(`Imgur API error: ${response.status} - ${errorText}`);
+        console.error('❌ imgbb API error response:', errorText);
+        throw new Error(`imgbb API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('📊 Imgur response data:', data);
+      console.log('📊 imgbb response data:', data);
 
-      if (data.success && data.data && data.data.link) {
-        handleFormChange('screenshotUrl', data.data.link);
-        console.log('✅ Image uploaded to Imgur:', data.data.link);
+      if (data.success && data.data && data.data.url) {
+        handleFormChange('screenshotUrl', data.data.url);
+        console.log('✅ Image uploaded to imgbb:', data.data.url);
       } else {
-        console.error('❌ Unexpected Imgur response:', data);
+        console.error('❌ Unexpected imgbb response:', data);
         throw new Error('Upload failed: No image link returned');
       }
     } catch (error) {
-      console.error('❌ Imgur upload failed:', error);
+      console.error('❌ imgbb upload failed:', error);
       console.error('❌ Error details:', {
         message: error.message,
         name: error.name,
@@ -304,9 +315,9 @@ const ITSupportPage = () => {
     setPreviewFile(null);
   };
 
-  // Open Imgur upload in new tab
-  const handleOpenImgur = () => {
-    window.open('https://imgur.com/upload', '_blank');
+  // Open imgbb upload in new tab
+  const handleOpenImgbb = () => {
+    window.open('https://imgbb.com', '_blank');
   };
 
   return (
@@ -561,7 +572,7 @@ const ITSupportPage = () => {
                       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                          <p className="text-sm text-blue-800">Uploading to Imgur automatically...</p>
+                          <p className="text-sm text-blue-800">Uploading to imgbb automatically...</p>
                         </div>
                       </div>
                     )}
@@ -588,15 +599,15 @@ const ITSupportPage = () => {
                           <div className="flex gap-2 mb-2">
                             <Button
                               type="button"
-                              onClick={handleOpenImgur}
+                              onClick={handleOpenImgbb}
                               className="bg-green-600 hover:bg-green-700 text-sm"
                             >
                               <ExternalLink className="w-4 h-4 mr-1" />
-                              Open Imgur Upload
+                              Open imgbb Upload
                             </Button>
                           </div>
                           <p className="text-xs text-yellow-700">
-                            Upload your screenshot on Imgur, then paste the URL below ⬇️
+                            Upload your screenshot on imgbb.com, then paste the URL below ⬇️
                           </p>
                         </div>
 
@@ -604,7 +615,7 @@ const ITSupportPage = () => {
                           type="url"
                           value={supportForm.screenshotUrl}
                           onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
-                          placeholder="Paste the Imgur URL here (https://i.imgur.com/...)"
+                          placeholder="Paste the image URL here"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -652,7 +663,7 @@ const ITSupportPage = () => {
                         type="url"
                         value={supportForm.screenshotUrl}
                         onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
-                        placeholder="https://i.imgur.com/example.png"
+                        placeholder="https://i.ibb.co/example.png"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       />
                     </div>
