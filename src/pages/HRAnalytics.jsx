@@ -213,7 +213,7 @@ const HRAnalytics = () => {
       {/* Key Metrics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Retention Rate</p>
@@ -231,7 +231,7 @@ const HRAnalytics = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg Performance</p>
@@ -249,7 +249,7 @@ const HRAnalytics = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Employee Satisfaction</p>
@@ -267,7 +267,7 @@ const HRAnalytics = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Turnover Rate</p>

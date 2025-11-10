@@ -271,7 +271,7 @@ const TeamManagement = () => {
       {/* Team Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Team</p>
@@ -285,7 +285,7 @@ const TeamManagement = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Members</p>
@@ -299,7 +299,7 @@ const TeamManagement = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg Rating</p>
@@ -313,7 +313,7 @@ const TeamManagement = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg Tenure</p>
@@ -327,7 +327,7 @@ const TeamManagement = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Salary</p>
@@ -341,7 +341,7 @@ const TeamManagement = () => {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Probation</p>
