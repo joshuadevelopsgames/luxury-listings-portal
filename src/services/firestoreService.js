@@ -42,7 +42,10 @@ class FirestoreService {
     APPROVED_USERS: 'approved_users',
     TASKS: 'tasks',
     ANALYTICS_CONFIG: 'analytics_config',
-    SYSTEM_CONFIG: 'system_config'
+    SYSTEM_CONFIG: 'system_config',
+    EMPLOYEES: 'employees',
+    LEAVE_REQUESTS: 'leave_requests',
+    CLIENTS: 'clients'
   };
 
   // Test connection method
@@ -554,6 +557,270 @@ class FirestoreService {
         });
       });
       callback(tasks);
+    });
+  }
+
+  // ===== EMPLOYEE MANAGEMENT =====
+
+  // Get all employees
+  async getEmployees() {
+    try {
+      const snapshot = await getDocs(collection(db, this.collections.EMPLOYEES));
+      const employees = [];
+      snapshot.forEach((doc) => {
+        employees.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Fetched employees:', employees.length);
+      return employees;
+    } catch (error) {
+      console.error('❌ Error fetching employees:', error);
+      throw error;
+    }
+  }
+
+  // Get employee by email
+  async getEmployeeByEmail(email) {
+    try {
+      const q = query(
+        collection(db, this.collections.EMPLOYEES),
+        where('email', '==', email)
+      );
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        return null;
+      }
+      
+      const doc = snapshot.docs[0];
+      return {
+        id: doc.id,
+        ...doc.data()
+      };
+    } catch (error) {
+      console.error('❌ Error fetching employee:', error);
+      throw error;
+    }
+  }
+
+  // Update employee information
+  async updateEmployee(employeeId, employeeData) {
+    try {
+      const docRef = doc(db, this.collections.EMPLOYEES, employeeId);
+      await updateDoc(docRef, {
+        ...employeeData,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Employee updated:', employeeId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating employee:', error);
+      throw error;
+    }
+  }
+
+  // Add new employee
+  async addEmployee(employeeData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.EMPLOYEES), {
+        ...employeeData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Employee added:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error adding employee:', error);
+      throw error;
+    }
+  }
+
+  // ===== LEAVE REQUEST MANAGEMENT =====
+
+  // Get leave requests for a user
+  async getLeaveRequestsByUser(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.LEAVE_REQUESTS),
+        where('employeeEmail', '==', userEmail),
+        orderBy('submittedDate', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const requests = [];
+      snapshot.forEach((doc) => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Fetched leave requests:', requests.length);
+      return requests;
+    } catch (error) {
+      console.error('❌ Error fetching leave requests:', error);
+      throw error;
+    }
+  }
+
+  // Get all leave requests (for HR)
+  async getAllLeaveRequests() {
+    try {
+      const snapshot = await getDocs(collection(db, this.collections.LEAVE_REQUESTS));
+      const requests = [];
+      snapshot.forEach((doc) => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Fetched all leave requests:', requests.length);
+      return requests;
+    } catch (error) {
+      console.error('❌ Error fetching leave requests:', error);
+      throw error;
+    }
+  }
+
+  // Submit a leave request
+  async submitLeaveRequest(requestData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.LEAVE_REQUESTS), {
+        ...requestData,
+        status: 'pending',
+        submittedDate: serverTimestamp(),
+        createdAt: serverTimestamp()
+      });
+      console.log('✅ Leave request submitted:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error submitting leave request:', error);
+      throw error;
+    }
+  }
+
+  // Update leave request status (for HR approval/rejection)
+  async updateLeaveRequestStatus(requestId, status, reviewedBy) {
+    try {
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      await updateDoc(docRef, {
+        status,
+        reviewedBy,
+        reviewedDate: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Leave request status updated:', requestId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating leave request:', error);
+      throw error;
+    }
+  }
+
+  // Listen to leave requests changes
+  onLeaveRequestsChange(callback, userEmail = null) {
+    let q;
+    if (userEmail) {
+      q = query(
+        collection(db, this.collections.LEAVE_REQUESTS),
+        where('employeeEmail', '==', userEmail),
+        orderBy('submittedDate', 'desc')
+      );
+    } else {
+      q = query(
+        collection(db, this.collections.LEAVE_REQUESTS),
+        orderBy('submittedDate', 'desc')
+      );
+    }
+    
+    return onSnapshot(q, (snapshot) => {
+      const requests = [];
+      snapshot.forEach((doc) => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(requests);
+    });
+  }
+
+  // ===== CLIENT MANAGEMENT =====
+
+  // Get all clients
+  async getClients() {
+    try {
+      const snapshot = await getDocs(collection(db, this.collections.CLIENTS));
+      const clients = [];
+      snapshot.forEach((doc) => {
+        clients.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Fetched clients:', clients.length);
+      return clients;
+    } catch (error) {
+      console.error('❌ Error fetching clients:', error);
+      throw error;
+    }
+  }
+
+  // Add new client
+  async addClient(clientData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.CLIENTS), {
+        ...clientData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Client added:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error adding client:', error);
+      throw error;
+    }
+  }
+
+  // Update client information
+  async updateClient(clientId, clientData) {
+    try {
+      const docRef = doc(db, this.collections.CLIENTS, clientId);
+      await updateDoc(docRef, {
+        ...clientData,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Client updated:', clientId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating client:', error);
+      throw error;
+    }
+  }
+
+  // Delete client
+  async deleteClient(clientId) {
+    try {
+      await deleteDoc(doc(db, this.collections.CLIENTS, clientId));
+      console.log('✅ Client deleted:', clientId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting client:', error);
+      throw error;
+    }
+  }
+
+  // Listen to clients changes
+  onClientsChange(callback) {
+    return onSnapshot(collection(db, this.collections.CLIENTS), (snapshot) => {
+      const clients = [];
+      snapshot.forEach((doc) => {
+        clients.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(clients);
     });
   }
 }

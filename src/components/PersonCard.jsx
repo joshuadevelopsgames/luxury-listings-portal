@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { firestoreService } from '../services/firestoreService';
 import { 
   User, 
   Mail, 
@@ -35,10 +36,12 @@ const PersonCard = ({
   onSave = null, 
   compact = false,
   showAvatar = true,
-  className = ''
+  className = '',
+  employeeId = null
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -64,11 +67,28 @@ const PersonCard = ({
     }
   };
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave(editedData);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // If employeeId is provided, save to Firestore
+      if (employeeId) {
+        await firestoreService.updateEmployee(employeeId, editedData);
+        console.log('✅ Employee data saved to Firestore');
+      }
+      
+      // Call custom onSave callback if provided
+      if (onSave) {
+        await onSave(editedData);
+      }
+      
+      alert('Personal information updated successfully! ✅\n\nChanges have been saved to Firestore.');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('❌ Error saving employee data:', error);
+      alert(`Failed to save changes: ${error.message}\n\nPlease try again.`);
+    } finally {
+      setSaving(false);
     }
-    setIsEditing(false);
   };
 
   const handleCancel = () => {
@@ -98,11 +118,11 @@ const PersonCard = ({
           )}
           {isEditing && (
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave}>
+              <Button size="sm" onClick={handleSave} disabled={saving}>
                 <Save className="w-4 h-4 mr-2" />
-                Save
+                {saving ? 'Saving...' : 'Save'}
               </Button>
-              <Button size="sm" variant="outline" onClick={handleCancel}>
+              <Button size="sm" variant="outline" onClick={handleCancel} disabled={saving}>
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </Button>

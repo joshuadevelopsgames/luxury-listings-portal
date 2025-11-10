@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
 import PersonCard from '../components/PersonCard';
+import { firestoreService } from '../services/firestoreService';
 import { 
   Users, 
   Plus, 
@@ -554,12 +555,32 @@ const TeamManagement = () => {
                 }}
                 editable={isHRManager}
                 isHRView={isHRManager}
-                onSave={(updatedData) => {
-                  console.log('Saving employee data:', updatedData);
-                  alert('Employee information updated successfully!\n\n(In production, this would save to Firestore)');
-                  // In production, update the employee in Firestore
+                onSave={async (updatedData) => {
+                  try {
+                    // Find employee in Firestore by email
+                    const employee = await firestoreService.getEmployeeByEmail(selectedEmployee.email);
+                    
+                    if (employee) {
+                      await firestoreService.updateEmployee(employee.id, updatedData);
+                      console.log('✅ Employee updated in Firestore');
+                    } else {
+                      // Create new employee if not found
+                      const newEmployee = {
+                        firstName: updatedData.firstName || selectedEmployee.name.split(' ')[0],
+                        lastName: updatedData.lastName || selectedEmployee.name.split(' ').slice(1).join(' '),
+                        email: selectedEmployee.email,
+                        ...updatedData
+                      };
+                      const result = await firestoreService.addEmployee(newEmployee);
+                      console.log('✅ Employee created in Firestore:', result.id);
+                    }
+                  } catch (error) {
+                    console.error('❌ Error in Team Management save:', error);
+                    throw error;
+                  }
                 }}
                 showAvatar={true}
+                employeeId={null}
               />
 
               {/* Performance Metrics */}

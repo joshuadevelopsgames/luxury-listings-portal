@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import PersonCard from '../components/PersonCard';
+import { firestoreService } from '../services/firestoreService';
 import { 
   Calendar, 
   User, 
@@ -32,10 +33,33 @@ const EmployeeSelfService = () => {
   const { currentUser, currentRole } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-  const [isEditingPersonal, setIsEditingPersonal] = useState(false);
-  const [editedPersonalInfo, setEditedPersonalInfo] = useState({});
+  const [employeeFirestoreId, setEmployeeFirestoreId] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   const isHRManager = currentRole === 'hr_manager';
+
+  // Load employee Firestore ID on mount
+  useEffect(() => {
+    const loadEmployeeId = async () => {
+      if (!currentUser?.email) return;
+      
+      try {
+        const employee = await firestoreService.getEmployeeByEmail(currentUser.email);
+        if (employee) {
+          setEmployeeFirestoreId(employee.id);
+          console.log('✅ Found employee in Firestore:', employee.id);
+        } else {
+          console.log('ℹ️ Employee not found in Firestore, will create on first save');
+        }
+      } catch (error) {
+        console.error('❌ Error loading employee ID:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEmployeeId();
+  }, [currentUser?.email]);
 
   // Mock data
   const employeeData = {
@@ -80,14 +104,29 @@ const EmployeeSelfService = () => {
     ]
   };
 
-  const handleSavePersonal = (updatedData) => {
-    // In production, this would save to Firestore
-    console.log('Saving personal info:', updatedData);
-    const rolePrefix = isHRManager ? '(HR Manager editing)' : '';
-    alert(`Personal information updated successfully! ${rolePrefix}\n\n(In production, this would save to the employee profile in Firestore)`);
-    
-    // In production, you would update employeeData here
-    // For now, just log it
+  const handleSavePersonal = async (updatedData) => {
+    try {
+      // If employee doesn't exist in Firestore yet, create them
+      if (!employeeFirestoreId) {
+        const newEmployee = {
+          ...employeeData.personalInfo,
+          ...updatedData,
+          email: currentUser.email
+        };
+        const result = await firestoreService.addEmployee(newEmployee);
+        setEmployeeFirestoreId(result.id);
+        console.log('✅ Employee created in Firestore:', result.id);
+      } else {
+        // Update existing employee
+        await firestoreService.updateEmployee(employeeFirestoreId, updatedData);
+        console.log('✅ Employee updated in Firestore');
+      }
+      
+      // Note: PersonCard already shows success message
+    } catch (error) {
+      console.error('❌ Error saving to Firestore:', error);
+      throw error; // Re-throw so PersonCard can handle the error
+    }
   };
 
   const quickActions = [
@@ -267,13 +306,23 @@ const EmployeeSelfService = () => {
 
         {/* Personal Info Tab */}
         <TabsContent value="personal">
-          <PersonCard 
-            person={employeeData.personalInfo}
-            editable={true}
-            isHRView={isHRManager}
-            onSave={handleSavePersonal}
-            showAvatar={false}
-          />
+          {loading ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading employee data...</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <PersonCard 
+              person={employeeData.personalInfo}
+              editable={true}
+              isHRView={isHRManager}
+              onSave={handleSavePersonal}
+              showAvatar={false}
+              employeeId={employeeFirestoreId}
+            />
+          )}
         </TabsContent>
 
         {/* Time Off Tab */}

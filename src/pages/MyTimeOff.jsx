@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
+import { firestoreService } from '../services/firestoreService';
 import { 
   Calendar, 
   Plus, 
@@ -24,6 +25,8 @@ const MyTimeOff = () => {
   const { currentUser } = useAuth();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   // Leave request form state
   const [leaveForm, setLeaveForm] = useState({
@@ -59,56 +62,24 @@ const MyTimeOff = () => {
     }
   };
 
-  const [myRequests, setMyRequests] = useState([
-    {
-      id: 1,
-      type: 'vacation',
-      startDate: '2024-02-15',
-      endDate: '2024-02-19',
-      days: 5,
-      reason: 'Family vacation to Hawaii',
-      status: 'approved',
-      submittedDate: '2024-01-20',
-      reviewedBy: 'Matthew Rodriguez',
-      reviewedDate: '2024-01-21'
-    },
-    {
-      id: 2,
-      type: 'sick',
-      startDate: '2024-01-10',
-      endDate: '2024-01-10',
-      days: 1,
-      reason: 'Doctor appointment',
-      status: 'approved',
-      submittedDate: '2024-01-09',
-      reviewedBy: 'Matthew Rodriguez',
-      reviewedDate: '2024-01-09'
-    },
-    {
-      id: 3,
-      type: 'vacation',
-      startDate: '2024-03-10',
-      endDate: '2024-03-12',
-      days: 3,
-      reason: 'Long weekend getaway',
-      status: 'pending',
-      submittedDate: '2024-01-25',
-      reviewedBy: null,
-      reviewedDate: null
-    },
-    {
-      id: 4,
-      type: 'personal',
-      startDate: '2024-01-05',
-      endDate: '2024-01-05',
-      days: 1,
-      reason: 'Personal matters',
-      status: 'approved',
-      submittedDate: '2024-01-03',
-      reviewedBy: 'Matthew Rodriguez',
-      reviewedDate: '2024-01-04'
-    }
-  ]);
+  const [myRequests, setMyRequests] = useState([]);
+
+  // Load leave requests from Firestore on mount
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    setLoading(true);
+    
+    // Set up real-time listener for leave requests
+    const unsubscribe = firestoreService.onLeaveRequestsChange((requests) => {
+      console.log('📡 Leave requests updated:', requests.length);
+      setMyRequests(requests);
+      setLoading(false);
+    }, currentUser.email);
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, [currentUser?.email]);
 
   const leaveTypes = {
     vacation: { 
@@ -163,26 +134,37 @@ const MyTimeOff = () => {
     return 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const newRequest = {
-      id: Date.now(),
-      type: leaveForm.type,
-      startDate: leaveForm.startDate,
-      endDate: leaveForm.endDate,
-      days: calculateDays(),
-      reason: leaveForm.reason,
-      notes: leaveForm.notes,
-      status: 'pending',
-      submittedDate: new Date().toISOString().split('T')[0],
-      reviewedBy: null,
-      reviewedDate: null
-    };
+    setSubmitting(true);
+    
+    try {
+      const newRequest = {
+        employeeEmail: currentUser.email,
+        employeeName: `${currentUser.firstName} ${currentUser.lastName}`,
+        type: leaveForm.type,
+        startDate: leaveForm.startDate,
+        endDate: leaveForm.endDate,
+        days: calculateDays(),
+        reason: leaveForm.reason,
+        notes: leaveForm.notes
+      };
 
-    setMyRequests(prev => [newRequest, ...prev]);
-    setShowRequestModal(false);
-    resetForm();
+      const result = await firestoreService.submitLeaveRequest(newRequest);
+      
+      if (result.success) {
+        console.log('✅ Leave request submitted to Firestore:', result.id);
+        alert('Time off request submitted successfully! ✅\n\nYour request has been sent to HR for approval.');
+        setShowRequestModal(false);
+        resetForm();
+      }
+    } catch (error) {
+      console.error('❌ Error submitting leave request:', error);
+      alert(`Failed to submit request: ${error.message}\n\nPlease try again.`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -462,11 +444,16 @@ const MyTimeOff = () => {
                   type="button"
                   variant="outline"
                   onClick={() => setShowRequestModal(false)}
+                  disabled={submitting}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                  Submit Request
+                <Button 
+                  type="submit" 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Submitting...' : 'Submit Request'}
                 </Button>
               </div>
             </form>
