@@ -126,7 +126,6 @@ function AppLayout() {
           { id: 'hr-calendar', name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'team', name: 'Team Management', icon: Users, path: '/team' },
-          { id: 'analytics', name: 'HR Analytics', icon: BarChart3, path: '/hr-analytics' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
           { id: 'self-service', name: 'Self-Service', icon: Briefcase, path: '/self-service' },
         ];

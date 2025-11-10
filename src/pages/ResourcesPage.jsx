@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
@@ -16,7 +17,8 @@ import {
   Globe,
   Calendar,
   ArrowRight,
-  MessageSquare
+  MessageSquare,
+  BarChart3
 } from "lucide-react";
 
 const resources = [
@@ -38,6 +40,16 @@ const resources = [
     category: "employee",
     internalPath: "/content-manager-message",
     important: true
+  },
+  {
+    id: 98,
+    title: "HR Analytics",
+    description: "View team performance metrics, retention rates, and HR insights",
+    type: "analytics",
+    category: "hr",
+    internalPath: "/hr-analytics",
+    important: true,
+    hrOnly: true
   },
   {
     id: 1,
@@ -99,7 +111,8 @@ const typeIcons = {
   video: Video,
   directory: Users,
   emergency: Phone,
-  message: MessageSquare
+  message: MessageSquare,
+  analytics: BarChart3
 };
 
 const categoryColors = {
@@ -109,14 +122,25 @@ const categoryColors = {
   contacts: "bg-purple-100 text-purple-800",
   training: "bg-orange-100 text-orange-800",
   benefits: "bg-yellow-100 text-yellow-800",
-  safety: "bg-red-100 text-red-800"
+  safety: "bg-red-100 text-red-800",
+  hr: "bg-purple-100 text-purple-800"
 };
 
 export default function ResourcesPage() {
   const navigate = useNavigate();
+  const { currentRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   
-  const filteredResources = resources.filter(resource =>
+  // Filter resources based on role
+  const roleFilteredResources = resources.filter(resource => {
+    // If resource is HR-only, only show to HR managers
+    if (resource.hrOnly) {
+      return currentRole === 'hr_manager' || currentRole === 'admin';
+    }
+    return true;
+  });
+  
+  const filteredResources = roleFilteredResources.filter(resource =>
     resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     resource.category.toLowerCase().includes(searchTerm.toLowerCase())
