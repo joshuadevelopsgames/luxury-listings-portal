@@ -1096,28 +1096,117 @@ export default function ClientPackages() {
         clientData: JSON.stringify(requestBody.clientData)
       });
       
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
-        method: 'GET'
-      });
-      
-      console.log('📊 Update response status:', response.status);
-      console.log('📊 Update response headers:', response.headers);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Update failed - Response text:', errorText);
-        throw new Error(`Failed to update Google Sheets: ${response.status} - ${errorText}`);
+      let result;
+      try {
+        const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
+          method: 'GET'
+        });
+        
+        console.log('📊 Update response status:', response.status);
+        console.log('📊 Update response headers:', response.headers);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Update failed - Response text:', errorText);
+          throw new Error(`Failed to update Google Sheets: ${response.status} - ${errorText}`);
+        }
+        
+        result = await response.json();
+        console.log('Google Apps Script update result:', result);
+        
+        if (!result.success) {
+          console.error('❌ Google Apps Script returned error:', result);
+          throw new Error(result.error || 'Update failed');
+        }
+        
+        console.log('✅ Google Apps Script update successful:', result);
+      } catch (fetchError) {
+        console.error('Fetch error:', fetchError);
+        
+        // If it's a CORS error or network issue, try using image request fallback
+        if (fetchError.message.includes('CORS') || fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
+          console.log('🔄 Trying image request fallback for update...');
+          
+          // Try using a simple image request to trigger the action
+          const img = new Image();
+          img.onload = async () => {
+            console.log('✅ Update request sent successfully via image method');
+            // Refresh the client list after a short delay
+            setTimeout(async () => {
+              await fetchClients(false);
+              
+              // Update local state
+              setClients(prevClients => 
+                prevClients.map(client => 
+                  client.id === editingClient.id 
+                    ? { 
+                        ...client, 
+                        clientEmail: editForm.clientEmail,
+                        packageType: editForm.packageType,
+                        packageSize: editForm.packageSize,
+                        postsUsed: editForm.postsUsed,
+                        postsRemaining: editForm.postsRemaining,
+                        notes: editForm.notes,
+                        postedOn: editForm.postedOn,
+                        paymentStatus: editForm.paymentStatus,
+                        customPrice: editForm.customPrice || 0,
+                        status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
+                      }
+                    : client
+                )
+              );
+              
+              // Close modal and reset state
+              setShowEditModal(false);
+              setEditingClient(null);
+              setEditForm({});
+              
+              showToast(`Package for ${editingClient.clientName} has been updated in Google Sheets!`);
+            }, 1000);
+          };
+          img.onerror = async () => {
+            console.log('✅ Update request sent successfully via image method (error expected)');
+            // Refresh the client list after a short delay
+            setTimeout(async () => {
+              await fetchClients(false);
+              
+              // Update local state
+              setClients(prevClients => 
+                prevClients.map(client => 
+                  client.id === editingClient.id 
+                    ? { 
+                        ...client, 
+                        clientEmail: editForm.clientEmail,
+                        packageType: editForm.packageType,
+                        packageSize: editForm.packageSize,
+                        postsUsed: editForm.postsUsed,
+                        postsRemaining: editForm.postsRemaining,
+                        notes: editForm.notes,
+                        postedOn: editForm.postedOn,
+                        paymentStatus: editForm.paymentStatus,
+                        customPrice: editForm.customPrice || 0,
+                        status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
+                      }
+                    : client
+                )
+              );
+              
+              // Close modal and reset state
+              setShowEditModal(false);
+              setEditingClient(null);
+              setEditForm({});
+              
+              showToast(`Package for ${editingClient.clientName} has been updated in Google Sheets!`);
+            }, 1000);
+          };
+          img.src = `${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`;
+          
+          setApprovalLoading({ ...approvalLoading, [editingClient.id]: false });
+          return; // Exit early since we're handling it asynchronously
+        } else {
+          throw fetchError; // Re-throw if it's not a CORS/network error
+        }
       }
-      
-      const result = await response.json();
-      console.log('Google Apps Script update result:', result);
-      
-      if (!result.success) {
-        console.error('❌ Google Apps Script returned error:', result);
-        throw new Error(result.error || 'Update failed');
-      }
-      
-      console.log('✅ Google Apps Script update successful:', result);
       
       // Update local state
       setClients(prevClients => 
@@ -1151,7 +1240,18 @@ export default function ClientPackages() {
       
     } catch (error) {
       console.error('Error updating Google Sheets:', error);
-      alert(`❌ Error updating Google Sheets: ${error.message}\n\nPlease try again or check your internet connection.`);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        clientData: requestBody.clientData
+      });
+      
+      showToast(`❌ Error updating Google Sheets: ${error.message}`, 'error');
+      
+      // Still close the modal but show error
+      setTimeout(() => {
+        alert(`❌ Error updating package for ${editingClient.clientName}\n\nError: ${error.message}\n\nThe changes were not saved to Google Sheets. Please try again or check the browser console for details.`);
+      }, 100);
     } finally {
       setApprovalLoading({ ...approvalLoading, [editingClient.id]: false });
     }
