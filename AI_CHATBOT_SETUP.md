@@ -70,18 +70,44 @@ CRITICAL RULES - YOU MUST FOLLOW THESE:
 - **Response caching**: Avoids duplicate API calls
 - **Error recovery**: Automatic fallback on issues
 
+## 📚 **Features the AI Knows About**
+
+### **Employee Features:**
+- **My Time Off** - Request vacation, sick leave, personal time
+- **Employee Self-Service** - Edit profile, view compensation, documents
+- **IT Support** - Submit technical issues with page URLs and screenshots
+- **Resources Page** - All tools nested here (Time Off, IT Support, Manager Messages)
+- **Dashboard Widgets** - Time Off Widget showing balances and pending requests
+
+### **HR Manager Features:**
+- **HR Calendar** - Approve/reject leave requests, team scheduling
+- **Team Management** - View and edit all employee information
+- **HR Analytics** - Nested in Resources page, not main navigation
+- **Operational Dashboard** - Pending leave requests, team satisfaction, absences
+- **HR Quick Actions** - Approve requests directly from Dashboard
+
+### **Key Features:**
+- **Auto-Save** - All data saves automatically with instant updates
+- **Email Notifications** - IT Support tickets email jrsschroeder@gmail.com
+- **Role-Based Views** - Each role sees different features
+- **No Page Reload** - Reloading keeps you on current page
+
 ## 🧪 **Testing the AI**
 
 ### **Test Questions:**
-1. **"How do I access the HR Calendar?"**
-2. **"Where can I find team performance data?"**
-3. **"How do I manage client packages?"**
-4. **"What features do I have access to?"**
+1. **"How do I request time off?"**
+2. **"Where can I find HR Analytics?"**
+3. **"How do I update my personal information?"**
+4. **"Where do I submit an IT support ticket?"**
+5. **"How do I access the HR Calendar?"**
+6. **"Can I edit employee information?"**
+7. **"What's in the Resources page?"**
 
 ### **Expected Behavior:**
-- ✅ **Software questions**: Detailed, helpful responses
+- ✅ **Software questions**: Detailed, helpful responses with emojis and access paths
 - ❌ **Off-topic questions**: Redirected to software help
-- 🎯 **Role-specific**: Tailored to user's current role
+- 🎯 **Role-specific**: HR sees operational features, employees see Self-Service
+- 📍 **Navigation help**: "Go to Resources → Click X" format for nested features
 
 ## 🚨 **Security & Privacy**
 

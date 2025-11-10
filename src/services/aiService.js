@@ -6,17 +6,23 @@ class AIService {
   constructor() {
     this.context = {
       appName: "Luxury Listings Portal",
-      description: "A comprehensive platform for managing luxury real estate operations with role-based access for Content Directors, Social Media Managers, and HR Managers.",
+      description: "A comprehensive platform for managing luxury real estate operations with role-based access for Content Directors, Social Media Managers, HR Managers, and Sales Managers. All data is saved to Firestore with real-time updates.",
       features: {
-        dashboard: "Main overview page with role-specific content and progress tracking",
+        dashboard: "Main overview page with role-specific content, stats, and quick actions. HR dashboard shows operational metrics like pending leave requests and team satisfaction.",
         tasks: "Task management system with role-based assignments and progress tracking",
         tutorials: "Step-by-step guides organized by role and difficulty level",
-        resources: "Document library with templates, guides, and reference materials",
-        calendar: "HR calendar for leave management and team scheduling (HR Managers only)",
-        team: "Team management with performance metrics and employee details (HR Managers only)",
-        analytics: "HR analytics with performance insights and reporting (HR Managers only)",
-        clientPackages: "Client package management and tracking (Content Directors only)",
-        programs: "App setup and configuration management"
+        resources: "Document library with templates, guides, and quick access to My Time Off, Manager Messages, IT Support, and HR Analytics (for HR). Everything is nested here for easy access.",
+        myTimeOff: "Employee time-off management where users can request vacation, sick leave, personal time, view balances, and track request status (pending/approved/rejected). Updates automatically in real-time.",
+        selfService: "Employee Self-Service portal with tabs for Overview, Personal Info (editable), Time Off, Compensation, and Documents. HR managers can edit all employee fields.",
+        itSupport: "IT Support intake form where employees can submit technical issues with page URLs, screenshots, and descriptions. Sends email to jrsschroeder@gmail.com and updates automatically.",
+        calendar: "HR calendar for leave management, team scheduling, and Google Calendar sync (HR Managers only)",
+        team: "Team management showing employee details, editable by HR managers (HR Managers only)",
+        analytics: "HR analytics with team performance, retention rates, turnover analysis, and satisfaction metrics (HR Managers only, accessed via Resources page)",
+        clientPackages: "Client package management with automatic updates (Content Directors only)",
+        programs: "App setup and configuration management",
+        crm: "CRM for lead management and tracking (Sales Managers only)",
+        salesPipeline: "Sales pipeline visualization and deal tracking (Sales Managers only)",
+        leadManagement: "Lead generation and management (Sales Managers only)"
       },
       roles: {
         admin: {
@@ -36,8 +42,8 @@ class AIService {
         },
         hrManager: {
           name: "HR Manager",
-          responsibilities: ["Team management", "Performance tracking", "Leave management", "HR analytics", "Employee development"],
-          access: ["Dashboard", "Tasks", "Tutorials", "Resources", "HR Calendar", "Team Management", "HR Analytics"]
+          responsibilities: ["Leave request management", "Performance reviews", "Team operations", "Employee relations", "Attendance tracking"],
+          access: ["Dashboard (operational metrics)", "HR Calendar (leave requests)", "Team Management", "Resources (includes HR Analytics)", "Self-Service (edit all employee fields)", "My Time Off", "IT Support"]
         },
         salesManager: {
           name: "Sales Manager",
@@ -46,11 +52,20 @@ class AIService {
         }
       },
       navigation: {
-        main: ["Dashboard", "Tutorials", "Tasks", "Resources"],
+        main: ["Dashboard", "Tasks", "Resources", "Self-Service"],
         admin: ["User Management", "All Profiles", "System Administration"],
-        contentDirector: ["Client Packages", "Programs"],
-        hrManager: ["HR Calendar", "Team Management", "HR Analytics"],
-        salesManager: ["CRM Dashboard", "Sales Pipeline", "Lead Management"]
+        contentDirector: ["Client Packages (next to Dashboard)", "Programs"],
+        hrManager: ["HR Calendar", "Team Management"],
+        salesManager: ["CRM Dashboard", "Sales Pipeline", "Lead Management"],
+        nestedInResources: ["My Time Off (featured)", "Manager Messages", "IT Support", "HR Analytics (HR only)"]
+      },
+      keyFeatures: {
+        autoSave: "All data saves automatically with real-time updates across all users",
+        editableProfiles: "HR managers can edit all employee information fields except Employee ID",
+        emailNotifications: "IT Support tickets automatically email jrsschroeder@gmail.com",
+        roleBasedUI: "Each role sees different dashboard content and menu options",
+        autoSync: "Client Packages updates automatically",
+        noPageReload: "Reloading a page keeps you on that page (no redirect to dashboard)"
       }
     };
   }
@@ -122,13 +137,14 @@ class AIService {
 CRITICAL RULES - YOU MUST FOLLOW THESE:
 1. ONLY answer questions about this specific software application
 2. NEVER discuss topics outside of this software
-3. If asked about anything else, respond with: "I'm here to help you with the Luxury Listings Portal software. I can help you with questions about the Dashboard, Tasks, Calendar, Team Management, HR Analytics, Tutorials, Resources, and other app features. What would you like to know about the software?"
+3. If asked about anything else, respond with: "I'm here to help you with the Luxury Listings Portal software. I can help you with questions about the Dashboard, My Time Off, Employee Self-Service, IT Support, HR Calendar, Team Management, HR Analytics, Client Packages, CRM, Sales Pipeline, and other app features. What would you like to know about the software?"
 4. Use only the context provided about this software
 5. Be helpful, friendly, and conversational (not robotic or overly formal)
 6. Keep responses concise but informative
 7. Always relate answers back to the software functionality
 8. For casual greetings like "hi", "hello", "hey", respond naturally and warmly
 9. Use emojis occasionally to make responses more friendly and engaging
+10. Many features are nested in the Resources page (My Time Off, Manager Messages, IT Support, HR Analytics) - always mention this when relevant
 
 SOFTWARE CONTEXT:
 Application Name: ${this.context.appName}
@@ -144,8 +160,12 @@ ${Object.entries(this.context.features).map(([key, desc]) => `- ${key}: ${desc}`
 Navigation Structure:
 - Main Navigation: ${this.context.navigation.main.join(', ')}
 - Role-Specific: ${this.context.navigation[userRole] ? this.context.navigation[userRole].join(', ') : 'None'}
+- Nested in Resources Page: ${this.context.navigation.nestedInResources.join(', ')}
 
-Your purpose is to help users understand and use this specific software application. Stay focused on software-related questions only, but be warm and conversational in your approach.`;
+Key Technical Features:
+${Object.entries(this.context.keyFeatures).map(([key, desc]) => `- ${key}: ${desc}`).join('\n')}
+
+Your purpose is to help users understand and use this specific software application. Stay focused on software-related questions only, but be warm and conversational in your approach. Always mention how to access features (e.g., "Go to Resources → Click X" for nested features).`;
   }
 
   // Fallback rule-based responses (used when OpenAI is unavailable)
@@ -203,8 +223,23 @@ Your purpose is to help users understand and use this specific software applicat
       return this.getLogoutResponse();
     }
     
+    // Time off and leave
+    if (this.matchesPattern(lowerMessage, ['time off', 'vacation', 'sick leave', 'pto', 'leave request'])) {
+      return this.getTimeOffResponse(userRole);
+    }
+    
+    // Self-service
+    if (this.matchesPattern(lowerMessage, ['self-service', 'self service', 'update profile', 'personal info'])) {
+      return this.getSelfServiceResponse(userRole);
+    }
+    
+    // IT Support
+    if (this.matchesPattern(lowerMessage, ['it support', 'tech support', 'technical issue', 'bug', 'problem'])) {
+      return this.getITSupportResponse(userRole);
+    }
+    
     // Navigation and finding things
-    if (this.matchesPattern(lowerMessage, ['find', 'locate', 'where can i'])) {
+    if (this.matchesPattern(lowerMessage, ['find', 'locate', 'where can i', 'how do i'])) {
       return this.getNavigationResponse(lowerMessage, userRole);
     }
     
@@ -259,12 +294,35 @@ Just ask me a specific question and I'll guide you through it.`;
   // Dashboard response
   getDashboardResponse(userRole) {
     const role = this.getRoleInfo(userRole);
-    return `The Dashboard is your main overview page where you can see your progress, upcoming tasks, and role-specific information.
+    const isHR = userRole === 'hr_manager' || userRole === 'admin';
+    
+    let dashboardDetails = `📊 **Dashboard** is your main overview page with role-specific widgets!
 
-As a ${role.name}, you have access to:
+As a ${role.name}, you'll see:
 ${role.access.map(feature => `• ${feature}`).join('\n')}
 
-The Dashboard automatically adapts to show content relevant to your role and provides a quick overview of your key metrics and upcoming activities. You can access it from the main navigation at any time.`;
+**Dashboard Features:**
+• Welcome card with role-specific priorities
+• Quick stats (4 cards showing key metrics)
+`;
+
+    if (isHR) {
+      dashboardDetails += `• **HR-Specific Widgets:**
+  - Pending Leave Requests (with approve/reject buttons)
+  - Today's Team Status (who's out, recent hires)
+  - Upcoming Performance Reviews
+  - Quick Actions (HR Calendar, Team Analytics, etc.)
+• Focus on operational metrics, not training
+• Shows real pending leave count and team satisfaction`;
+    } else {
+      dashboardDetails += `• Today's Tasks widget
+• Next Tutorials widget  
+• **Time Off Widget** - shows your vacation/sick leave balances, pending requests, and upcoming time off`;
+    }
+
+    dashboardDetails += `\n\n📍 **Access:** Click "Dashboard" - it's the first item in navigation`;
+    
+    return dashboardDetails;
   }
 
   // Tasks response
@@ -285,17 +343,30 @@ You can access Tasks from the main navigation menu.`;
 
   // Calendar response
   getCalendarResponse(userRole) {
-    if (userRole === 'hr_manager') {
-      return `HR Managers have access to a dedicated HR Calendar page where you can:
-• Manage leave requests and approvals
-• Track team availability and schedules
-• Sync with Google Calendar
-• View upcoming time-off and events
-• Manage team calendars
+    if (userRole === 'hr_manager' || userRole === 'admin') {
+      return `📅 **HR Calendar** is your operational hub for managing team leave and schedules!
 
-You can find the HR Calendar in your navigation menu. It's specifically designed for HR management tasks and team scheduling.`;
+**Key Features:**
+• 📋 Approve/reject leave requests with one click
+• 👥 See who's out today (team absences)
+• 📊 View team member vacation/sick day balances
+• 📅 Visual calendar with all leave marked
+• 🔄 Sync with Google Calendar
+• 🏖️ Track vacation, sick leave, and personal time
+
+**HR Dashboard Focus:**
+The HR dashboard is operational, not training-focused! You'll see:
+• Pending leave requests (3 awaiting approval)
+• Team absences today (2 out, 23 present)
+• Team satisfaction (4.4/5.0)
+• Quick access to approve requests
+
+📍 **Access:** Click "HR Calendar" in your navigation menu. Perfect for day-to-day HR operations!`;
     } else {
       return `The HR Calendar is a specialized feature available only to HR Managers. It provides comprehensive calendar management for team scheduling, leave requests, and HR-related events.
+
+**To request time off:**
+📍 Go to Resources → Click "My Time Off" (big blue card at top)
 
 If you need calendar functionality, you can:
 • Use the main Dashboard to view your personal schedule
@@ -306,18 +377,32 @@ If you need calendar functionality, you can:
 
   // Team response
   getTeamResponse(userRole) {
-    if (userRole === 'hr_manager') {
-      return `Team Management is available for HR Managers and provides comprehensive team oversight including:
+    if (userRole === 'hr_manager' || userRole === 'admin') {
+      return `👥 **Team Management** is your HR command center with full employee oversight!
+
+**Features:**
+• View and edit employee details
 • Performance metrics and ratings
 • Leave balance tracking
 • Skills and certifications
-• Employee details and contact info
 • Department breakdowns
 • Team statistics and trends
+• Edit any employee field (except Employee ID)
 
-You can access Team Management from the main navigation. It's designed to give you complete visibility into your team's performance and development.`;
+**Editing Employee Info:**
+HR Managers can click "Edit" on any employee to update:
+• Name, Email, Phone, Address
+• Department, Position, Manager
+• Start Date and other details
+
+All changes save automatically and update instantly! ✅
+
+📍 **Access:** Click "Team Management" in your navigation menu`;
     } else {
       return `Team Management is a specialized feature available only to HR Managers. It provides comprehensive team oversight, performance tracking, and employee management capabilities.
+
+**To view/edit your own info:**
+📍 Go to Self-Service → Personal Info tab (you can edit phone & address)
 
 If you need team-related information, you can:
 • Check the Dashboard for team overview
@@ -328,18 +413,18 @@ If you need team-related information, you can:
 
   // Analytics response
   getAnalyticsResponse(userRole) {
-    if (userRole === 'hr_manager') {
-      return `HR Analytics provides detailed insights into team performance, turnover rates, employee satisfaction, and training metrics. 
+    if (userRole === 'hr_manager' || userRole === 'admin') {
+      return `HR Analytics provides detailed insights into team performance, turnover rates, employee satisfaction, and metrics. 
 
 Key features include:
 • Performance distribution and trends
-• Department comparisons
+• Department comparisons  
 • Turnover analysis and costs
-• Training completion rates
 • Employee satisfaction breakdowns
+• Retention rates and team statistics
 • Interactive charts and visualizations
 
-You can access HR Analytics from the main navigation. It's designed to help you make data-driven decisions about your team and HR strategies.`;
+📍 **How to Access:** Go to Resources page → Click "HR Analytics" card in the Essential Resources section. It's nested there instead of the main navigation for a cleaner menu.`;
     } else {
       return `HR Analytics is a specialized feature available only to HR Managers. It provides comprehensive data insights, performance metrics, and HR reporting capabilities.
 
@@ -348,6 +433,79 @@ If you need performance insights, you can:
 • View your progress in the Tasks section
 • Contact your HR Manager for detailed reports`;
     }
+  }
+
+  // Time Off response
+  getTimeOffResponse(userRole) {
+    return `📅 **My Time Off** is where you can manage all your vacation, sick leave, and personal time!
+
+Features:
+• Request time off (vacation, sick leave, personal time)
+• View your leave balances and remaining days
+• Track request status (pending/approved/rejected)
+• See your request history
+• Get instant updates when HR approves or rejects
+
+📍 **How to Access:**
+1. Go to Resources page → Click the big blue "My Time Off" card at the top
+2. Or use the Time Off widget on your Dashboard
+3. Or go to Self-Service → Time Off tab
+
+Your requests are sent to HR managers instantly! ✅`;
+  }
+
+  // Self-Service response
+  getSelfServiceResponse(userRole) {
+    const isHR = userRole === 'hr_manager' || userRole === 'admin';
+    
+    return `🏢 **Employee Self-Service** is your personal portal with 5 tabs:
+
+**📋 Overview Tab:**
+• Personal summary with avatar
+• Time off balances
+• Recent requests
+
+**👤 Personal Info Tab:**
+• View and edit your information
+${isHR ? '• HR Managers can edit ALL employee fields (name, email, department, position, etc.)' : '• You can edit: Phone & Address'}
+${isHR ? '' : '• Contact HR to change: Name, Email, Department, Position'}
+
+**📅 Time Off Tab:**
+• Quick link to My Time Off page
+• Balance overview
+
+**💰 Compensation Tab:**
+• Salary information
+• Benefits details
+• Pay schedule
+
+**📄 Documents Tab:**
+• Pay stubs, W-2s, policies
+• Download capability
+
+📍 **Access:** Click "Self-Service" in the main navigation bar`;
+  }
+
+  // IT Support response
+  getITSupportResponse(userRole) {
+    return `🛠️ **IT Support Portal** lets you submit technical issues and get help!
+
+**Submit a Ticket With:**
+• Issue title and category (Technical/Access/Account/Other)
+• Priority level (Low/Medium/High/Urgent)
+• 🔗 Page URL - link to where the problem is
+• 📸 Screenshot URL - upload to imgur.com, paste link
+• Detailed description of the issue
+
+**What Happens:**
+✅ Your ticket is saved automatically
+📧 Email sent to jrsschroeder@gmail.com
+📊 You can track ticket status (pending/in progress/resolved)
+🔔 Get updates on your ticket
+
+📍 **How to Access:** Resources page → Click "IT Support Portal" card
+
+Perfect for bugs, access issues, or any technical problems!`;
   }
 
   // Tutorials response
@@ -367,16 +525,29 @@ As a ${role.name}, you'll find tutorials specifically tailored to your responsib
   // Resources response
   getResourcesResponse(userRole) {
     const role = this.getRoleInfo(userRole);
-    return `The Resources section contains helpful documents, templates, and reference materials organized by category.
+    const isHR = userRole === 'hr_manager' || userRole === 'admin';
+    
+    return `📚 **Resources** is your one-stop hub for everything you need!
 
-You can find:
-• Templates and forms
-• Style guides and standards
-• Reference documents
-• Best practices
-• Training materials
+**🌟 Featured at the Top:**
+• **My Time Off** (big blue card) - Request vacation/sick leave
 
-Resources are organized by category and are relevant to your role as a ${role.name}. You can browse, search, and download materials to help with your daily tasks.`;
+**📋 Essential Resources:**
+• Manager Messages
+• IT Support Portal
+${isHR ? '• HR Analytics (HR Managers only)' : ''}
+• Employee Handbook
+
+**📑 Other Resources:**
+• Team Directory
+• Training videos
+• Benefits guide
+• Emergency contacts
+
+**Why Resources is Great:**
+Everything is nested here for easy access! Instead of cluttering the navigation menu, key tools like My Time Off, Manager Messages, IT Support${isHR ? ', and HR Analytics' : ''} are organized in the Resources page.
+
+📍 **Access:** Click "Resources" in the main navigation`;
   }
 
   // Client packages response
@@ -463,12 +634,17 @@ As a ${role.name}, you can monitor your performance in areas like ${role.respons
     return `I'm not quite sure what you're asking about "${userMessage}". 😊 
 
 I'm here to help you with the Luxury Listings Portal! You can ask me about:
-• Dashboard and navigation
-• Task management  
-• Role-specific features
-• Finding resources and tutorials
-• Calendar and scheduling
-• Team management
+• 📊 Dashboard and navigation
+• ✅ Task management  
+• 📅 My Time Off (vacation/sick leave requests)
+• 🏢 Employee Self-Service (update profile, view compensation)
+• 🛠️ IT Support (submit technical issues)
+• 📚 Resources (everything is nested here!)
+• 📅 HR Calendar (leave management)
+• 👥 Team Management
+• 📈 HR Analytics
+• 📦 Client Packages
+• 💼 CRM & Sales Pipeline
 • And much more!
 
 What would you like to know about the platform?`;
