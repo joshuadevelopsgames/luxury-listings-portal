@@ -29,6 +29,8 @@ const ITSupportPage = () => {
   const [dragActive, setDragActive] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
 
   // Google Apps Script URL for email notifications
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
@@ -191,6 +193,7 @@ const ITSupportPage = () => {
     });
     setPreviewImage(null);
     setPreviewFile(null);
+    setUploadError(null);
   };
 
   // Handle drag events
@@ -222,8 +225,8 @@ const ITSupportPage = () => {
     }
   };
 
-  // Create preview (no upload yet)
-  const handleFilePreview = (file) => {
+  // Create preview and auto-upload to Imgur
+  const handleFilePreview = async (file) => {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file (PNG, JPG, GIF, etc.)');
@@ -243,6 +246,44 @@ const ITSupportPage = () => {
       setPreviewFile(file);
     };
     reader.readAsDataURL(file);
+
+    // Try to auto-upload to Imgur
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      console.log('📤 Uploading to Imgur...');
+      
+      const response = await fetch('https://api.imgur.com/3/image', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Client-ID 4e150f9f6cddc14'
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Imgur API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data.link) {
+        handleFormChange('screenshotUrl', data.data.link);
+        console.log('✅ Image uploaded to Imgur:', data.data.link);
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('❌ Imgur upload failed:', error);
+      setUploadError(error.message);
+      // Don't alert - just show fallback UI
+    } finally {
+      setUploading(false);
+    }
   };
 
   // Remove preview
@@ -503,36 +544,58 @@ const ITSupportPage = () => {
                       </button>
                     </div>
 
-                    {/* Instructions after preview */}
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm font-medium text-yellow-900 mb-2">
-                        📤 Now upload this image to get a URL:
-                      </p>
-                      <div className="flex gap-2 mb-2">
-                        <Button
-                          type="button"
-                          onClick={handleOpenImgur}
-                          className="bg-green-600 hover:bg-green-700 text-sm"
-                        >
-                          <ExternalLink className="w-4 h-4 mr-1" />
-                          Open Imgur Upload
-                        </Button>
+                    {/* Uploading state */}
+                    {uploading && (
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                          <p className="text-sm text-blue-800">Uploading to Imgur automatically...</p>
+                        </div>
                       </div>
-                      <p className="text-xs text-yellow-700">
-                        Upload your screenshot on Imgur, then copy the image URL and paste it below ⬇️
-                      </p>
-                    </div>
+                    )}
 
-                    {/* URL input after preview */}
-                    <input
-                      type="url"
-                      value={supportForm.screenshotUrl}
-                      onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
-                      placeholder="Paste the Imgur URL here (https://i.imgur.com/...)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {supportForm.screenshotUrl && (
-                      <p className="text-xs text-green-600">✓ URL added! Your screenshot will be included with the ticket.</p>
+                    {/* Success state */}
+                    {!uploading && supportForm.screenshotUrl && !uploadError && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-sm font-medium text-green-900 mb-1">
+                          ✅ Uploaded successfully!
+                        </p>
+                        <p className="text-xs text-green-700 break-all">
+                          {supportForm.screenshotUrl}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Error state - show manual upload option */}
+                    {!uploading && uploadError && !supportForm.screenshotUrl && (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <p className="text-sm font-medium text-yellow-900 mb-2">
+                            ⚠️ Automatic upload failed - Please upload manually:
+                          </p>
+                          <div className="flex gap-2 mb-2">
+                            <Button
+                              type="button"
+                              onClick={handleOpenImgur}
+                              className="bg-green-600 hover:bg-green-700 text-sm"
+                            >
+                              <ExternalLink className="w-4 h-4 mr-1" />
+                              Open Imgur Upload
+                            </Button>
+                          </div>
+                          <p className="text-xs text-yellow-700">
+                            Upload your screenshot on Imgur, then paste the URL below ⬇️
+                          </p>
+                        </div>
+
+                        <input
+                          type="url"
+                          value={supportForm.screenshotUrl}
+                          onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
+                          placeholder="Paste the Imgur URL here (https://i.imgur.com/...)"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
                     )}
                   </div>
                 ) : (
