@@ -28,11 +28,13 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const EmployeeSelfService = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, currentRole } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
   const [editedPersonalInfo, setEditedPersonalInfo] = useState({});
+  
+  const isHRManager = currentRole === 'hr_manager';
 
   // Mock data
   const employeeData = {
@@ -79,16 +81,33 @@ const EmployeeSelfService = () => {
 
   const handleEditPersonal = () => {
     setIsEditingPersonal(true);
-    setEditedPersonalInfo({
-      phone: employeeData.personalInfo.phone,
-      address: employeeData.personalInfo.address
-    });
+    if (isHRManager) {
+      // HR managers can edit all fields
+      setEditedPersonalInfo({
+        firstName: employeeData.personalInfo.firstName,
+        lastName: employeeData.personalInfo.lastName,
+        email: employeeData.personalInfo.email,
+        phone: employeeData.personalInfo.phone,
+        address: employeeData.personalInfo.address,
+        department: employeeData.personalInfo.department,
+        position: employeeData.personalInfo.position,
+        manager: employeeData.personalInfo.manager,
+        startDate: employeeData.personalInfo.startDate
+      });
+    } else {
+      // Regular employees can only edit phone and address
+      setEditedPersonalInfo({
+        phone: employeeData.personalInfo.phone,
+        address: employeeData.personalInfo.address
+      });
+    }
   };
 
   const handleSavePersonal = () => {
     // In production, this would save to Firestore
     console.log('Saving personal info:', editedPersonalInfo);
-    alert('Personal information updated successfully!\n\n(In production, this would save to your employee profile)');
+    const rolePrefix = isHRManager ? '(HR Manager editing)' : '';
+    alert(`Personal information updated successfully! ${rolePrefix}\n\n(In production, this would save to the employee profile in Firestore)`);
     setIsEditingPersonal(false);
   };
 
@@ -302,18 +321,51 @@ const EmployeeSelfService = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="text-sm font-medium text-gray-600">First Name</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.firstName}</p>
-                  <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>
+                  {isEditingPersonal && isHRManager ? (
+                    <input
+                      type="text"
+                      value={editedPersonalInfo.firstName || employeeData.personalInfo.firstName}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, firstName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <>
+                      <p className="text-gray-900 mt-1">{employeeData.personalInfo.firstName}</p>
+                      {!isHRManager && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Last Name</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.lastName}</p>
-                  <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>
+                  {isEditingPersonal && isHRManager ? (
+                    <input
+                      type="text"
+                      value={editedPersonalInfo.lastName || employeeData.personalInfo.lastName}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, lastName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <>
+                      <p className="text-gray-900 mt-1">{employeeData.personalInfo.lastName}</p>
+                      {!isHRManager && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Email</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.email}</p>
-                  <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>
+                  {isEditingPersonal && isHRManager ? (
+                    <input
+                      type="email"
+                      value={editedPersonalInfo.email || employeeData.personalInfo.email}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <>
+                      <p className="text-gray-900 mt-1">{employeeData.personalInfo.email}</p>
+                      {!isHRManager && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Phone</label>
@@ -344,29 +396,70 @@ const EmployeeSelfService = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-600">Employee ID</label>
                   <p className="text-gray-900 mt-1">{employeeData.personalInfo.employeeId}</p>
+                  {isHRManager && <p className="text-xs text-gray-500 mt-1">System-generated, cannot be changed</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Start Date</label>
-                  <p className="text-gray-900 mt-1">{format(new Date(employeeData.personalInfo.startDate), 'MMMM dd, yyyy')}</p>
+                  {isEditingPersonal && isHRManager ? (
+                    <input
+                      type="date"
+                      value={editedPersonalInfo.startDate || employeeData.personalInfo.startDate}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, startDate: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 mt-1">{format(new Date(employeeData.personalInfo.startDate), 'MMMM dd, yyyy')}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Department</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.department}</p>
+                  {isEditingPersonal && isHRManager ? (
+                    <input
+                      type="text"
+                      value={editedPersonalInfo.department || employeeData.personalInfo.department}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, department: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.department}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Position</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.position}</p>
+                  {isEditingPersonal && isHRManager ? (
+                    <input
+                      type="text"
+                      value={editedPersonalInfo.position || employeeData.personalInfo.position}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, position: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.position}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Manager</label>
-                  <p className="text-gray-900 mt-1">{employeeData.personalInfo.manager}</p>
+                  {isEditingPersonal && isHRManager ? (
+                    <input
+                      type="text"
+                      value={editedPersonalInfo.manager || employeeData.personalInfo.manager}
+                      onChange={(e) => setEditedPersonalInfo({...editedPersonalInfo, manager: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 mt-1">{employeeData.personalInfo.manager}</p>
+                  )}
                 </div>
               </div>
               
               {isEditingPersonal && (
                 <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-700">
-                    <strong>Note:</strong> You can update your phone and address. For changes to name, email, or employment details, please contact HR.
+                    {isHRManager ? (
+                      <><strong>HR Manager:</strong> You can update all employee information fields except Employee ID.</>
+                    ) : (
+                      <><strong>Note:</strong> You can update your phone and address. For changes to name, email, or employment details, please contact HR.</>
+                    )}
                   </p>
                 </div>
               )}
