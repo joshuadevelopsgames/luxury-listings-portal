@@ -15,7 +15,8 @@ import {
   Mail,
   Globe,
   Calendar,
-  ArrowRight
+  ArrowRight,
+  MessageSquare
 } from "lucide-react";
 
 const resources = [
@@ -28,6 +29,15 @@ const resources = [
     internalPath: "/my-time-off",
     important: true,
     featured: true
+  },
+  {
+    id: 99,
+    title: "Manager Messages",
+    description: "Important updates and messages from your content manager",
+    type: "message",
+    category: "employee",
+    internalPath: "/content-manager-message",
+    important: true
   },
   {
     id: 1,
@@ -88,7 +98,8 @@ const typeIcons = {
   link: Globe,
   video: Video,
   directory: Users,
-  emergency: Phone
+  emergency: Phone,
+  message: MessageSquare
 };
 
 const categoryColors = {

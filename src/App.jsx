@@ -104,11 +104,10 @@ function AppLayout() {
       case USER_ROLES.CONTENT_DIRECTOR:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
-          { id: 'content-manager-message', name: 'Manager Message', icon: MessageSquare, path: '/content-manager-message' },
+          { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'programs', name: 'Programs', icon: Settings, path: '/programs' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
         ];
       
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
