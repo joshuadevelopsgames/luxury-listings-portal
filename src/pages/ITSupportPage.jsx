@@ -180,7 +180,7 @@ const ITSupportPage = () => {
 
       {/* Support Info Banner */}
       <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-6">
+        <CardContent className="p-6 pt-8">
           <div className="flex items-center space-x-3">
             <Wrench className="w-5 h-5 text-blue-600 flex-shrink-0" />
             <div>
@@ -315,14 +315,14 @@ const ITSupportPage = () => {
                         key={cat.value}
                         type="button"
                         onClick={() => handleFormChange('category', cat.value)}
-                        className={`p-4 border-2 rounded-lg text-left transition-all ${
+                        className={`p-4 border-2 rounded-lg text-left transition-all min-h-[80px] flex flex-col ${
                           supportForm.category === cat.value 
                             ? 'border-blue-500 bg-blue-50' 
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
                         <Icon className={`w-5 h-5 text-${cat.color}-600 mb-2`} />
-                        <p className="text-sm font-medium">{cat.label}</p>
+                        <p className="text-xs font-medium leading-tight">{cat.label}</p>
                       </button>
                     );
                   })}
