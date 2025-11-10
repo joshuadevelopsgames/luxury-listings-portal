@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getRemoteConfig, fetchAndActivate, getValue } from 'firebase/remote-config';
+import { getStorage } from 'firebase/storage';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -38,6 +39,10 @@ export const db = getFirestore(app);
 console.log('🔥 Firestore database initialized:', db);
 console.log('🔥 Firestore database name:', db.name);
 console.log('🔥 Firestore database app:', db.app);
+
+// Initialize Storage
+export const storage = getStorage(app);
+console.log('🔥 Firebase Storage initialized');
 
 // Initialize Remote Config
 export const remoteConfig = getRemoteConfig(app);

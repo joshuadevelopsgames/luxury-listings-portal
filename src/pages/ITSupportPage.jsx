@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { firestoreService } from '../services/firestoreService';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ITSupportPage = () => {
   const { currentUser, currentRole } = useAuth();
@@ -221,7 +223,7 @@ const ITSupportPage = () => {
     }
   };
 
-  // Upload image to Imgur
+  // Upload image to Firebase Storage
   const handleImageUpload = async (file) => {
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -245,41 +247,35 @@ const ITSupportPage = () => {
       };
       reader.readAsDataURL(file);
 
-      // Upload to Imgur (anonymous upload)
-      const formData = new FormData();
-      formData.append('image', file);
+      // Upload to Firebase Storage
+      const timestamp = Date.now();
+      const fileName = `support-tickets/${timestamp}-${file.name}`;
+      const storageRef = ref(storage, fileName);
 
-      const response = await fetch('https://api.imgur.com/3/image', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Client-ID 4e150f9f6cddc14' // Imgur anonymous client ID
-        },
-        body: formData
-      });
+      console.log('📤 Uploading to Firebase Storage:', fileName);
+      
+      // Upload the file
+      const snapshot = await uploadBytes(storageRef, file);
+      console.log('✅ File uploaded successfully');
 
-      if (!response.ok) {
-        throw new Error(`Imgur API error: ${response.status}`);
-      }
+      // Get the download URL
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log('✅ Download URL obtained:', downloadURL);
 
-      const data = await response.json();
-
-      if (data.success) {
-        handleFormChange('screenshotUrl', data.data.link);
-        console.log('✅ Image uploaded to Imgur:', data.data.link);
-      } else {
-        throw new Error('Upload failed');
-      }
+      handleFormChange('screenshotUrl', downloadURL);
     } catch (error) {
       console.error('❌ Error uploading image:', error);
       
       // Provide helpful error message
-      let errorMessage = 'Failed to upload image to Imgur. ';
-      if (error.message.includes('503')) {
-        errorMessage += 'Imgur service is temporarily unavailable. Please try again in a moment, or paste an image URL manually.';
-      } else if (error.message.includes('429')) {
-        errorMessage += 'Upload limit reached. Please try again later or paste an image URL manually.';
+      let errorMessage = 'Failed to upload image. ';
+      if (error.code === 'storage/unauthorized') {
+        errorMessage += 'Permission denied. Please contact support.';
+      } else if (error.code === 'storage/canceled') {
+        errorMessage += 'Upload was canceled.';
+      } else if (error.code === 'storage/quota-exceeded') {
+        errorMessage += 'Storage quota exceeded. Please contact support.';
       } else {
-        errorMessage += 'You can still paste an image URL manually below.';
+        errorMessage += 'Please try again or paste an image URL manually below.';
       }
       
       alert(errorMessage);
