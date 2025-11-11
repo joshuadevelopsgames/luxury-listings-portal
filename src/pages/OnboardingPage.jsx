@@ -76,6 +76,7 @@ const OnboardingPage = () => {
   };
 
   const handleCompleteOnboarding = async () => {
+    console.log('🎯 Completing onboarding...');
     setCompleting(true);
     try {
       // Save profile data and mark onboarding as completed
@@ -89,24 +90,34 @@ const OnboardingPage = () => {
         roles: currentUser?.roles || userData?.roles || []
       };
 
+      console.log('💾 Saving employee data:', employeeData);
+
       // Check if employee exists, if not create new one
       const existingEmployee = await firestoreService.getEmployeeByEmail(currentUser.email);
       
       if (existingEmployee) {
+        console.log('✏️ Updating existing employee:', existingEmployee.id);
         await firestoreService.updateEmployee(existingEmployee.id, employeeData);
       } else {
+        console.log('➕ Creating new employee');
         await firestoreService.addEmployee(employeeData);
       }
 
+      console.log('✅ Employee data saved successfully');
       toast.success('🎉 Welcome aboard! Let\'s get started!');
       
-      // Navigate to dashboard
+      // Navigate to dashboard immediately
+      console.log('🏠 Navigating to dashboard...');
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('❌ Error completing onboarding:', error);
+      toast.error('Failed to save onboarding progress. Trying to continue anyway...');
+      
+      // Navigate anyway even if there's an error
       setTimeout(() => {
         navigate('/dashboard');
-      }, 1000);
-    } catch (error) {
-      console.error('Error completing onboarding:', error);
-      toast.error('Failed to save onboarding progress');
+      }, 2000);
+    } finally {
       setCompleting(false);
     }
   };
@@ -119,6 +130,7 @@ const OnboardingPage = () => {
   };
 
   const handleSkip = async () => {
+    console.log('⏭️ User skipping onboarding');
     await handleCompleteOnboarding();
   };
 
