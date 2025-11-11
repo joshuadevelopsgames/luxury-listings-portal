@@ -18,11 +18,36 @@ const OnboardingTestPage = () => {
     setStatus(null);
 
     try {
-      // Reset onboarding completed status
-      await firestoreService.updateEmployee('joshua@luxury-listings.com', {
-        onboardingCompleted: false,
-        onboardingCompletedDate: null
-      });
+      const userEmail = currentUser?.email;
+      
+      if (!userEmail) {
+        throw new Error('No user email found');
+      }
+
+      console.log('🔄 Resetting onboarding for:', userEmail);
+
+      // Try to get the employee document first
+      const employee = await firestoreService.getEmployeeByEmail(userEmail);
+      
+      if (employee) {
+        // Update existing employee document
+        await firestoreService.updateEmployee(userEmail, {
+          onboardingCompleted: false,
+          onboardingCompletedDate: null
+        });
+      } else {
+        // Create new employee document if it doesn't exist
+        console.log('📝 Employee document not found, creating new one...');
+        await firestoreService.addEmployee({
+          email: userEmail,
+          firstName: currentUser?.firstName || currentUser?.displayName?.split(' ')[0] || 'User',
+          lastName: currentUser?.lastName || currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
+          position: currentUser?.position || 'Team Member',
+          department: currentUser?.department || 'General',
+          onboardingCompleted: false,
+          onboardingCompletedDate: null
+        });
+      }
 
       setStatus('success');
       toast.success('✅ Onboarding status reset! Redirecting to onboarding...');
@@ -34,7 +59,7 @@ const OnboardingTestPage = () => {
     } catch (error) {
       console.error('Error resetting onboarding:', error);
       setStatus('error');
-      toast.error('❌ Failed to reset onboarding status');
+      toast.error(`❌ Failed to reset onboarding status: ${error.message}`);
     } finally {
       setResetting(false);
     }
