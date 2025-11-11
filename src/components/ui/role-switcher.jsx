@@ -216,7 +216,15 @@ const RoleSwitcher = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-semibold text-gray-900 truncate">
-                  {currentUser?.firstName} {currentUser?.lastName}
+                  {(() => {
+                    console.log('🔍 Role Switcher Name Display:', {
+                      displayName: currentUser?.displayName,
+                      firstName: currentUser?.firstName,
+                      lastName: currentUser?.lastName,
+                      willShow: currentUser?.displayName || `${currentUser?.firstName} ${currentUser?.lastName}`
+                    });
+                    return currentUser?.displayName || `${currentUser?.firstName} ${currentUser?.lastName}`;
+                  })()}
                 </h3>
                 <p className="text-sm text-gray-600 truncate">{currentUser?.email}</p>
                 <div className="flex items-center gap-2 mt-1">
