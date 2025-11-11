@@ -4,6 +4,7 @@ import { Button } from './button';
 import { X } from 'lucide-react';
 
 export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSave }) {
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -39,23 +40,32 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🚀 SAVE BUTTON CLICKED!');
     console.log('📝 EditProfileModal - Form submitted');
     console.log('📝 Current form data:', form);
     
-    // Enforce editable fields based on role
-    const commonUpdates = {
-      firstName: form.firstName,
-      lastName: form.lastName,
-      displayName: form.displayName,
-      phone: form.phone,
-      location: form.location,
-      avatar: form.avatar
-    };
-    const adminOnly = isAdmin ? { department: form.department, startDate: form.startDate } : {};
-    const allUpdates = { ...commonUpdates, ...adminOnly };
+    setSaving(true);
     
-    console.log('📝 Sending updates to onSave:', allUpdates);
-    await onSave(allUpdates);
+    try {
+      // Enforce editable fields based on role
+      const commonUpdates = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        displayName: form.displayName,
+        phone: form.phone,
+        location: form.location,
+        avatar: form.avatar
+      };
+      const adminOnly = isAdmin ? { department: form.department, startDate: form.startDate } : {};
+      const allUpdates = { ...commonUpdates, ...adminOnly };
+      
+      console.log('📝 Sending updates to onSave:', allUpdates);
+      await onSave(allUpdates);
+      console.log('✅ onSave completed successfully');
+    } catch (error) {
+      console.error('❌ Error in handleSubmit:', error);
+      setSaving(false);
+    }
   };
 
   return (
@@ -113,8 +123,17 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 p-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
           </div>
         </form>
       </div>
