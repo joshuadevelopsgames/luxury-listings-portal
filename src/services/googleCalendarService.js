@@ -1,5 +1,5 @@
 // Google Calendar Integration Service
-// Configured with API credentials for calendar sync
+// Using Google Identity Services (GIS) - Modern Authentication
 class GoogleCalendarService {
   constructor() {
     this.apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
@@ -7,9 +7,11 @@ class GoogleCalendarService {
     this.discoveryDocs = ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'];
     this.scopes = 'https://www.googleapis.com/auth/calendar.readonly';
     this.isInitialized = false;
+    this.tokenClient = null;
+    this.accessToken = null;
   }
 
-  // Initialize Google Calendar API
+  // Initialize Google Calendar API with new GIS library
   async initialize() {
     console.log('🔍 GoogleCalendarService.initialize() called');
     console.log('🔍 Already initialized?', this.isInitialized);
@@ -27,54 +29,45 @@ class GoogleCalendarService {
     }
 
     try {
-      console.log('📦 Loading Google API client...');
-      // Load Google API client
-      await this.loadGoogleAPI();
-      console.log('✅ Google API client loaded');
+      console.log('📦 Loading Google API libraries...');
       
-      console.log('⚙️ Initializing Google client...');
-      console.log('🔑 API Key (first 10 chars):', this.apiKey?.substring(0, 10) + '...');
-      console.log('🔑 Client ID (last 20 chars):', '...' + this.clientId?.substring(this.clientId.length - 20));
-      console.log('📚 Discovery docs:', this.discoveryDocs);
-      console.log('🔐 Scopes:', this.scopes);
+      // Load both GIS and GAPI libraries
+      await Promise.all([
+        this.loadGoogleIdentityServices(),
+        this.loadGoogleAPI()
+      ]);
       
-      // Initialize the client
-      try {
-        await window.gapi.client.init({
-          apiKey: this.apiKey,
-          clientId: this.clientId,
-          discoveryDocs: this.discoveryDocs,
-          scope: this.scopes
-        });
-        console.log('✅ Google client initialized');
-      } catch (initError) {
-        console.error('❌ gapi.client.init() failed');
-        console.error('❌ Init error (raw):', initError);
-        console.error('❌ Init error (stringified):', JSON.stringify(initError, null, 2));
-        
-        // Try to extract error details from Google API error format
-        if (initError?.error) {
-          console.error('❌ Google API error details:', initError.error);
-        }
-        if (initError?.details) {
-          console.error('❌ Error details:', initError.details);
-        }
-        
-        throw new Error(`Google API initialization failed. Please check: 1) API is enabled in Google Cloud Console, 2) Authorized origins include https://smmluxurylistings.info, 3) OAuth consent screen is configured`);
-      }
-
-      console.log('🔐 Checking sign-in status...');
-      // Check if user is already signed in
-      const isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
-      console.log('🔐 User signed in?', isSignedIn);
+      console.log('✅ Google libraries loaded');
       
-      if (!isSignedIn) {
-        console.log('🔐 Prompting user to sign in...');
-        await window.gapi.auth2.getAuthInstance().signIn();
-        console.log('✅ User signed in successfully');
-      }
-
-      this.isInitialized = true;
+      // Initialize gapi client with API key and discovery docs
+      console.log('⚙️ Initializing gapi client...');
+      await window.gapi.client.init({
+        apiKey: this.apiKey,
+        discoveryDocs: this.discoveryDocs,
+      });
+      console.log('✅ gapi client initialized');
+      
+      // Initialize the token client for OAuth
+      console.log('🔐 Initializing OAuth token client...');
+      this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: this.clientId,
+        scope: this.scopes,
+        callback: (response) => {
+          if (response.error) {
+            console.error('❌ OAuth error:', response);
+            return;
+          }
+          console.log('✅ Access token received');
+          this.accessToken = response.access_token;
+          this.isInitialized = true;
+        },
+      });
+      console.log('✅ Token client initialized');
+      
+      // Request access token (will trigger OAuth popup)
+      console.log('🔐 Requesting access token...');
+      await this.requestAccessToken();
+      
       console.log('✅ Google Calendar initialized successfully!');
       return true;
     } catch (error) {
@@ -84,6 +77,22 @@ class GoogleCalendarService {
       console.error('❌ Error stack:', error.stack);
       return false;
     }
+  }
+
+  // Load Google Identity Services (GIS) script
+  loadGoogleIdentityServices() {
+    return new Promise((resolve, reject) => {
+      if (window.google?.accounts?.oauth2) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
   }
 
   // Load Google API script
@@ -97,10 +106,50 @@ class GoogleCalendarService {
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';
       script.onload = () => {
-        window.gapi.load('client:auth2', resolve);
+        window.gapi.load('client', resolve);
       };
       script.onerror = reject;
       document.head.appendChild(script);
+    });
+  }
+
+  // Request access token (triggers OAuth flow)
+  requestAccessToken() {
+    return new Promise((resolve, reject) => {
+      if (!this.tokenClient) {
+        reject(new Error('Token client not initialized'));
+        return;
+      }
+
+      // Store resolve/reject for the callback
+      this._authResolve = resolve;
+      this._authReject = reject;
+
+      // Override the callback temporarily to handle promise
+      const originalCallback = this.tokenClient.callback;
+      this.tokenClient.callback = (response) => {
+        if (response.error) {
+          console.error('❌ OAuth error:', response);
+          this._authReject(new Error(response.error));
+          return;
+        }
+        console.log('✅ Access token received');
+        this.accessToken = response.access_token;
+        this.isInitialized = true;
+        
+        // Set the token for gapi client
+        window.gapi.client.setToken({
+          access_token: this.accessToken
+        });
+        
+        this._authResolve();
+        
+        // Restore original callback
+        this.tokenClient.callback = originalCallback;
+      };
+
+      // Request the token (opens OAuth popup)
+      this.tokenClient.requestAccessToken({ prompt: '' });
     });
   }
 
@@ -304,13 +353,18 @@ class GoogleCalendarService {
 
   // Check if user is authenticated
   isAuthenticated() {
-    return this.isInitialized && window.gapi?.auth2?.getAuthInstance()?.isSignedIn?.get();
+    return this.isInitialized && !!this.accessToken;
   }
 
-  // Sign out
+  // Sign out - revoke the token
   async signOut() {
-    if (this.isInitialized && window.gapi?.auth2?.getAuthInstance()) {
-      await window.gapi.auth2.getAuthInstance().signOut();
+    if (this.accessToken) {
+      // Revoke the token
+      window.google.accounts.oauth2.revoke(this.accessToken, () => {
+        console.log('✅ Access token revoked');
+      });
+      
+      this.accessToken = null;
       this.isInitialized = false;
     }
   }
