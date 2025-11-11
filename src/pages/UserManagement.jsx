@@ -23,6 +23,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { firestoreService } from '../services/firestoreService';
 import { USER_ROLES } from '../entities/UserRoles';
@@ -539,7 +540,17 @@ const UserManagement = () => {
 
   // Function to save role assignments
   const handleSaveRoleAssignment = async () => {
-    if (!selectedUserForRoles || selectedRoles.length === 0) return;
+    console.log('🚀 ASSIGN ROLES BUTTON CLICKED!');
+    console.log('👤 Selected user:', selectedUserForRoles);
+    console.log('🎭 Selected roles:', selectedRoles);
+    
+    if (!selectedUserForRoles || selectedRoles.length === 0) {
+      console.warn('⚠️ No user or roles selected, returning early');
+      if (selectedRoles.length === 0) {
+        toast.error('Please select at least one role');
+      }
+      return;
+    }
     
     try {
       setIsProcessing(true);
@@ -591,6 +602,8 @@ const UserManagement = () => {
       }
       
       console.log('✅ Roles assigned successfully');
+      toast.success(`✅ Roles updated for ${selectedUserForRoles.email}`);
+      
       setShowRoleAssignmentModal(false);
       setSelectedUserForRoles(null);
       setSelectedRoles([]);
@@ -600,6 +613,7 @@ const UserManagement = () => {
       
     } catch (error) {
       console.error('❌ Error assigning roles:', error);
+      console.error('❌ Error details:', error.message, error.stack);
       
       // Provide more specific error messages
       let errorMessage = 'Failed to assign roles. Please try again.';
@@ -614,7 +628,7 @@ const UserManagement = () => {
         errorMessage = 'User not found. The user may have been deleted.';
       }
       
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
