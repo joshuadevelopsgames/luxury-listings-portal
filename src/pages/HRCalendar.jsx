@@ -39,6 +39,17 @@ const HRCalendar = () => {
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  // Reset calendar data when user changes
+  useEffect(() => {
+    if (!currentUser?.email) return;
+    
+    console.log('📅 Resetting HR Calendar for user:', currentUser.email);
+    setGoogleEvents([]);
+    setIsGoogleConnected(false);
+    setSelectedDate(null);
+    setSelectedEvent(null);
+  }, [currentUser?.email]);
+
   // Leave request form state
   const [leaveForm, setLeaveForm] = useState({
     employeeId: '',

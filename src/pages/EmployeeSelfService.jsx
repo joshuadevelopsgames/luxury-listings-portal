@@ -38,18 +38,23 @@ const EmployeeSelfService = () => {
   
   const isHRManager = currentRole === 'hr_manager';
 
-  // Load employee Firestore ID on mount
+  // Load employee Firestore ID when user changes
   useEffect(() => {
     const loadEmployeeId = async () => {
       if (!currentUser?.email) return;
+      
+      // Reset state when user changes
+      setLoading(true);
+      setEmployeeFirestoreId(null);
+      setActiveTab('overview');
       
       try {
         const employee = await firestoreService.getEmployeeByEmail(currentUser.email);
         if (employee) {
           setEmployeeFirestoreId(employee.id);
-          console.log('✅ Found employee in Firestore:', employee.id);
+          console.log('✅ Found employee in Firestore:', employee.id, 'for', currentUser.email);
         } else {
-          console.log('ℹ️ Employee not found in Firestore, will create on first save');
+          console.log('ℹ️ Employee not found in Firestore for', currentUser.email, ', will create on first save');
         }
       } catch (error) {
         console.error('❌ Error loading employee ID:', error);

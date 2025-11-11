@@ -24,54 +24,73 @@ const ContentCalendar = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [contentItems, setContentItems] = useState([]);
   const [editingContent, setEditingContent] = useState(null);
-  const [calendars, setCalendars] = useState([
-    { id: 'default', name: 'My Calendar' },
-    { id: 'client-ll', name: 'Luxury Listings' }
-  ]);
+  const [calendars, setCalendars] = useState([]);
   const [selectedCalendarId, setSelectedCalendarId] = useState('default');
   const [showAddCalendar, setShowAddCalendar] = useState(false);
   const [newCalendarName, setNewCalendarName] = useState('');
 
-  // Mock content data - in a real app, this would come from a database
-  const [mockContent] = useState([
-    {
-      id: 1,
-      title: 'Luxury Home Tour',
-      description: 'Virtual tour of our latest luxury listing',
-      platform: 'instagram',
-      status: 'scheduled',
-      scheduledDate: new Date(2024, 11, 15),
-      contentType: 'video',
-      tags: ['luxury', 'realestate', 'hometour'],
-      calendarId: 'default'
-    },
-    {
-      id: 2,
-      title: 'Market Update',
-      description: 'Weekly luxury real estate market insights',
-      platform: 'facebook',
-      status: 'draft',
-      scheduledDate: new Date(2024, 11, 18),
-      contentType: 'image',
-      tags: ['market', 'insights', 'luxury'],
-      calendarId: 'client-ll'
-    },
-    {
-      id: 3,
-      title: 'Client Success Story',
-      description: 'Featured client testimonial and success story',
-      platform: 'linkedin',
-      status: 'published',
-      scheduledDate: new Date(2024, 11, 12),
-      contentType: 'image',
-      tags: ['testimonial', 'success', 'client'],
-      calendarId: 'default'
-    }
-  ]);
-
+  // Load user-specific content and calendars from localStorage
   useEffect(() => {
-    setContentItems(mockContent);
-  }, []);
+    if (!currentUser?.email) return;
+
+    // Clear previous user's data first
+    setContentItems([]);
+    setCalendars([]);
+    setEditingContent(null);
+    setSelectedCalendarId('default');
+
+    const userStorageKey = `content_items_${currentUser.email}`;
+    const calendarsStorageKey = `calendars_${currentUser.email}`;
+    
+    console.log('📅 Loading calendar data for:', currentUser.email);
+    
+    // Load content items
+    const stored = localStorage.getItem(userStorageKey);
+    if (stored) {
+      const parsedItems = JSON.parse(stored);
+      // Convert date strings back to Date objects
+      const itemsWithDates = parsedItems.map(item => ({
+        ...item,
+        scheduledDate: new Date(item.scheduledDate)
+      }));
+      setContentItems(itemsWithDates);
+      console.log('✅ Loaded', itemsWithDates.length, 'content items');
+    } else {
+      console.log('ℹ️ No content items found for this user');
+    }
+
+    // Load calendars
+    const storedCalendars = localStorage.getItem(calendarsStorageKey);
+    if (storedCalendars) {
+      setCalendars(JSON.parse(storedCalendars));
+      console.log('✅ Loaded calendars');
+    } else {
+      // Set default calendars for new users
+      const defaultCalendars = [
+        { id: 'default', name: 'My Calendar' },
+        { id: 'client-ll', name: 'Luxury Listings' }
+      ];
+      setCalendars(defaultCalendars);
+      localStorage.setItem(calendarsStorageKey, JSON.stringify(defaultCalendars));
+      console.log('ℹ️ Created default calendars for new user');
+    }
+  }, [currentUser?.email]);
+
+  // Save content items to localStorage whenever they change
+  useEffect(() => {
+    if (!currentUser?.email || contentItems.length === 0) return;
+
+    const userStorageKey = `content_items_${currentUser.email}`;
+    localStorage.setItem(userStorageKey, JSON.stringify(contentItems));
+  }, [contentItems, currentUser?.email]);
+
+  // Save calendars to localStorage whenever they change
+  useEffect(() => {
+    if (!currentUser?.email || calendars.length === 0) return;
+
+    const calendarsStorageKey = `calendars_${currentUser.email}`;
+    localStorage.setItem(calendarsStorageKey, JSON.stringify(calendars));
+  }, [calendars, currentUser?.email]);
 
   const [postForm, setPostForm] = useState({
     title: '',
