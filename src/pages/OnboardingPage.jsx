@@ -87,11 +87,11 @@ const OnboardingPage = () => {
       content: (
         <div className="space-y-6">
           <div className="rounded-lg p-6 border border-indigo-500" style={{ backgroundColor: '#6366f1' }}>
-            <h3 className="text-lg font-semibold mb-3 text-white">
+            <h3 className="text-lg font-semibold mb-3 text-indigo-950 dark:text-indigo-50">
               Your Role: {userData?.position || 'Team Member'}
             </h3>
-            <p className="text-white/90">
-              As a <span className="font-semibold text-white">{userData?.position || 'team member'}</span>, you'll have access to personalized tools and features designed specifically for your role.
+            <p className="text-indigo-950/90 dark:text-indigo-50/90">
+              As a <span className="font-semibold text-indigo-950 dark:text-indigo-50">{userData?.position || 'team member'}</span>, you'll have access to personalized tools and features designed specifically for your role.
             </p>
           </div>
 
@@ -127,7 +127,7 @@ const OnboardingPage = () => {
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                <LayoutDashboard className="h-5 w-5 text-white" />
+                <LayoutDashboard className="h-5 w-5 text-blue-950 dark:text-blue-50" />
               </div>
               <h4 className="font-semibold">Dashboard</h4>
             </div>
@@ -139,7 +139,7 @@ const OnboardingPage = () => {
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-green-500 dark:hover:border-green-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-green-500 flex items-center justify-center">
-                <ListTodo className="h-5 w-5 text-white" />
+                <ListTodo className="h-5 w-5 text-green-950 dark:text-green-50" />
               </div>
               <h4 className="font-semibold">Daily Tasks</h4>
             </div>
@@ -151,7 +151,7 @@ const OnboardingPage = () => {
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-purple-500 dark:hover:border-purple-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-purple-500 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-white" />
+                <BookOpen className="h-5 w-5 text-purple-950 dark:text-purple-50" />
               </div>
               <h4 className="font-semibold">Resources & Training</h4>
             </div>
@@ -163,7 +163,7 @@ const OnboardingPage = () => {
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-orange-500 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-white" />
+                <Calendar className="h-5 w-5 text-orange-950 dark:text-orange-50" />
               </div>
               <h4 className="font-semibold">Calendar & Events</h4>
             </div>
@@ -175,7 +175,7 @@ const OnboardingPage = () => {
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                <Users className="h-5 w-5 text-white" />
+                <Users className="h-5 w-5 text-blue-950 dark:text-blue-50" />
               </div>
               <h4 className="font-semibold">My Profile</h4>
             </div>
@@ -187,7 +187,7 @@ const OnboardingPage = () => {
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-red-500 dark:hover:border-red-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-red-500 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-white" />
+                <FileText className="h-5 w-5 text-red-950 dark:text-red-50" />
               </div>
               <h4 className="font-semibold">IT Support</h4>
             </div>
@@ -208,7 +208,7 @@ const OnboardingPage = () => {
           <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-lg p-6 border border-orange-200 dark:border-orange-800">
             <div className="flex items-start gap-4">
               <div className="h-12 w-12 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-                <Calendar className="h-6 w-6 text-white" />
+                <Calendar className="h-6 w-6 text-orange-950 dark:text-orange-50" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-orange-950 dark:text-orange-50">
@@ -252,7 +252,7 @@ const OnboardingPage = () => {
             ) : (
               <div className="space-y-4">
                 <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto">
-                  <Calendar className="h-8 w-8 text-gray-400" />
+                  <Calendar className="h-8 w-8 text-gray-600 dark:text-gray-300" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-lg mb-1">Connect Google Calendar</h4>
