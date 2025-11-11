@@ -304,10 +304,10 @@ const OnboardingPage = () => {
             <div className="h-20 w-20 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="h-10 w-10 text-white" />
             </div>
-            <h3 className="text-2xl font-bold mb-2 text-green-900 dark:text-green-100">
+            <h3 className="text-2xl font-bold mb-2 !text-white">
               Welcome Aboard!
             </h3>
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="!text-white">
               You're ready to explore your personalized workspace
             </p>
           </div>
@@ -320,7 +320,7 @@ const OnboardingPage = () => {
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">1</span>
                 </div>
                 <div>
-                  <p className="font-medium">Check your Dashboard</p>
+                  <p className="font-medium !text-white">Check your Dashboard</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Start with the dashboard to see your tasks and updates
                   </p>
@@ -332,7 +332,7 @@ const OnboardingPage = () => {
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">2</span>
                 </div>
                 <div>
-                  <p className="font-medium">Complete your profile</p>
+                  <p className="font-medium !text-white">Complete your profile</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Visit "My Profile" to update your contact information
                   </p>
@@ -344,7 +344,7 @@ const OnboardingPage = () => {
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">3</span>
                 </div>
                 <div>
-                  <p className="font-medium">Explore the Resources page</p>
+                  <p className="font-medium !text-white">Explore the Resources page</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Find tutorials, request time off, and access helpful tools
                   </p>
@@ -356,7 +356,7 @@ const OnboardingPage = () => {
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">4</span>
                 </div>
                 <div>
-                  <p className="font-medium">Need help?</p>
+                  <p className="font-medium !text-white">Need help?</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Use the AI assistant (bottom right) or visit IT Support anytime
                   </p>
