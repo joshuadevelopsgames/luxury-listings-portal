@@ -33,14 +33,35 @@ class GoogleCalendarService {
       console.log('✅ Google API client loaded');
       
       console.log('⚙️ Initializing Google client...');
+      console.log('🔑 API Key (first 10 chars):', this.apiKey?.substring(0, 10) + '...');
+      console.log('🔑 Client ID (last 20 chars):', '...' + this.clientId?.substring(this.clientId.length - 20));
+      console.log('📚 Discovery docs:', this.discoveryDocs);
+      console.log('🔐 Scopes:', this.scopes);
+      
       // Initialize the client
-      await window.gapi.client.init({
-        apiKey: this.apiKey,
-        clientId: this.clientId,
-        discoveryDocs: this.discoveryDocs,
-        scope: this.scopes
-      });
-      console.log('✅ Google client initialized');
+      try {
+        await window.gapi.client.init({
+          apiKey: this.apiKey,
+          clientId: this.clientId,
+          discoveryDocs: this.discoveryDocs,
+          scope: this.scopes
+        });
+        console.log('✅ Google client initialized');
+      } catch (initError) {
+        console.error('❌ gapi.client.init() failed');
+        console.error('❌ Init error (raw):', initError);
+        console.error('❌ Init error (stringified):', JSON.stringify(initError, null, 2));
+        
+        // Try to extract error details from Google API error format
+        if (initError?.error) {
+          console.error('❌ Google API error details:', initError.error);
+        }
+        if (initError?.details) {
+          console.error('❌ Error details:', initError.details);
+        }
+        
+        throw new Error(`Google API initialization failed. Please check: 1) API is enabled in Google Cloud Console, 2) Authorized origins include https://smmluxurylistings.info, 3) OAuth consent screen is configured`);
+      }
 
       console.log('🔐 Checking sign-in status...');
       // Check if user is already signed in
