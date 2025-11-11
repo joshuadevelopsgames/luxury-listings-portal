@@ -69,13 +69,13 @@ export default function ClientPackages() {
 
   // Google Sheets API configuration
   const GOOGLE_SHEETS_API_KEY = 'AIzaSyDxiQTlAv1UHxGYRXaZvxi2HulXBHTca3E';
-  const SPREADSHEET_ID = '10MGYVVpccxgCsvcYIBeWNtu3xWvlT8GlXNecv8LAQ6g';
-  const SHEET_NAME = 'Social Media Packages';
-  const SHEET_GID = '802756732';
+  const SPREADSHEET_ID = '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA';
+  const SHEET_NAME = 'Client Packages';
+  const SHEET_GID = '0'; // Main sheet GID is 0
   
   // Alternative sheet name formats to try
-  const SHEET_NAME_ENCODED = encodeURIComponent('Social Media Packages');
-  const SHEET_NAME_QUOTED = '"Social Media Packages"';
+  const SHEET_NAME_ENCODED = encodeURIComponent('Client Packages');
+  const SHEET_NAME_QUOTED = '"Client Packages"';
   
   // Google Apps Script Web App URL
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4ugw4vME8hCeaE3Bieu7gsrNJqbGHxkNwZR97vKi0wVbaQNMgGFnG3W-lKrkwXzFkdQ/exec';
