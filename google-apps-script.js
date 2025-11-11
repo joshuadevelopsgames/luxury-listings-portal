@@ -7,7 +7,7 @@ function testAuthorization() {
     console.log('🧪 Testing authorization...');
     
     // Try to access the spreadsheet
-    const spreadsheetId = '10MGYVVpccxgCsvcYIBeWNtu3xWvlT8GlXNecv8LAQ6g';
+    const spreadsheetId = '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA';
     const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
     
     console.log('✅ Successfully accessed spreadsheet:', spreadsheet.getName());
@@ -60,7 +60,7 @@ function doGet(e) {
     console.log('Parsed clientData:', clientData);
     
     // Get the spreadsheet
-    const spreadsheetId = '10MGYVVpccxgCsvcYIBeWNtu3xWvlT8GlXNecv8LAQ6g';
+    const spreadsheetId = '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA';
     
     console.log('🔍 Opening spreadsheet:', spreadsheetId);
     const spreadsheet = SpreadsheetApp.openById(spreadsheetId);

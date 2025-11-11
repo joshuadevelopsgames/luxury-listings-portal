@@ -9,8 +9,8 @@
 // 6. Replace 'your_api_key_here' below with your actual API key
 
 export const GOOGLE_SHEETS_CONFIG = {
-  SPREADSHEET_ID: '10MGYVVpccxgCsvcYIBeWNtu3xWvlT8GlXNecv8LAQ6g',
-  SHEET_NAME: 'Social Media Packages',
+  SPREADSHEET_ID: '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA',
+  SHEET_NAME: 'Client Packages',
   SHEET_GID: '802756732',
   API_KEY: 'AIzaSyDxiQTlAv1UHxGYRXaZvxi2HulXBHTca3E',
   
