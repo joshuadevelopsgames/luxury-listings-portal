@@ -14,7 +14,7 @@ import { firestoreService } from '../services/firestoreService';
 import { usePendingUsers } from './PendingUsersContext';
 
 // Helper function to navigate based on user role (only from login page)
-const navigateBasedOnRole = (role) => {
+const navigateBasedOnRole = (role, userData) => {
   // Only navigate if user is on login or waiting page, not on page reloads
   const currentPath = window.location.pathname;
   
@@ -29,9 +29,15 @@ const navigateBasedOnRole = (role) => {
   if (role === 'pending' && currentPath !== '/waiting-for-approval') {
     console.log('🔄 Navigating pending user to approval page...');
     window.location.href = '/waiting-for-approval';
-  } else if (role && role !== 'pending' && currentPath !== '/dashboard') {
-    console.log('🔄 Navigating approved user to dashboard...');
-    window.location.href = '/dashboard';
+  } else if (role && role !== 'pending') {
+    // Check if user needs onboarding
+    if (!userData?.onboardingCompleted && currentPath !== '/onboarding') {
+      console.log('🎓 New user detected - navigating to onboarding...');
+      window.location.href = '/onboarding';
+    } else if (currentPath !== '/dashboard' && currentPath !== '/onboarding') {
+      console.log('🔄 Navigating approved user to dashboard...');
+      window.location.href = '/dashboard';
+    }
   }
 };
 
@@ -47,6 +53,7 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentRole, setCurrentRole] = useState(USER_ROLES.CONTENT_DIRECTOR);
   const [currentUser, setCurrentUser] = useState(null);
+  const [userData, setUserData] = useState(null); // Full employee data from Firestore
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
@@ -268,8 +275,9 @@ export function AuthProvider({ children }) {
               };
               
               setCurrentUser(adminUser);
+              setUserData(adminUser); // Admin doesn't need onboarding
               console.log('🔄 Navigating admin user to dashboard...');
-              navigateBasedOnRole(roleToUse);
+              navigateBasedOnRole(roleToUse, adminUser);
               setLoading(false);
               return;
             }
@@ -328,8 +336,25 @@ export function AuthProvider({ children }) {
                 };
                 
                 setCurrentUser(mergedUser);
-                console.log('🔄 Navigating approved user to dashboard...');
-                navigateBasedOnRole(roleToUse);
+                
+                // Load full employee data from Firestore (including onboarding status)
+                try {
+                  const employeeData = await firestoreService.getEmployeeByEmail(user.email);
+                  if (employeeData) {
+                    setUserData(employeeData);
+                    console.log('✅ Loaded employee data from Firestore:', employeeData);
+                    
+                    // Update navigation with employee data
+                    navigateBasedOnRole(roleToUse, { ...mergedUser, ...employeeData });
+                  } else {
+                    setUserData(mergedUser);
+                    navigateBasedOnRole(roleToUse, mergedUser);
+                  }
+                } catch (error) {
+                  console.warn('⚠️ Could not load employee data:', error);
+                  setUserData(mergedUser);
+                  navigateBasedOnRole(roleToUse, mergedUser);
+                }
               } else {
                 console.log('🆕 New user - no approval found, setting to pending');
                 // New user - no approval yet, they need admin approval
@@ -351,6 +376,7 @@ export function AuthProvider({ children }) {
                 };
                 
                 setCurrentUser(newUser);
+                setUserData(newUser); // Pending users don't have onboarding yet
                 setCurrentRole('pending');
                 
                 // Add this user to the pending users system
@@ -400,7 +426,7 @@ export function AuthProvider({ children }) {
                 }
                 
                 console.log('🔄 Navigating pending user to approval page...');
-                navigateBasedOnRole('pending');
+                navigateBasedOnRole('pending', newUser);
               }
             } catch (error) {
               console.error('❌ Error checking user approval status:', error);
@@ -477,6 +503,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
+    userData,
     currentRole,
     switchRole,
     getCurrentRolePermissions,
