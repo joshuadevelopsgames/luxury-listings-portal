@@ -4,6 +4,7 @@ import { USER_ROLES, ROLE_PERMISSIONS } from '../../entities/UserRoles';
 import { getAllowedRolesForUser } from '../../entities/UserRoleMapping';
 import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield, Edit } from 'lucide-react';
 import EditProfileModal from './EditProfileModal';
+import { toast } from 'react-hot-toast';
 
 const RoleSwitcher = () => {
   const { currentRole, switchRole, getCurrentRolePermissions, currentUser } = useAuth();
@@ -325,12 +326,34 @@ const RoleSwitcher = () => {
         isAdmin={currentUser?.email === 'jrsschroeder@gmail.com'}
         onSave={async (updates) => {
           try {
+            console.log('💾 Saving profile updates:', updates);
             const { firestoreService } = await import('../../services/firestoreService');
+            
+            // Update approved users collection
             await firestoreService.updateApprovedUser(currentUser.email, updates);
+            console.log('✅ Updated approved users collection');
+            
+            // Also update employee collection if it exists
+            try {
+              const employee = await firestoreService.getEmployeeByEmail(currentUser.email);
+              if (employee) {
+                await firestoreService.updateEmployee(employee.id, updates);
+                console.log('✅ Updated employee collection');
+              }
+            } catch (employeeError) {
+              console.log('ℹ️ Employee record not found or not updated:', employeeError.message);
+            }
+            
+            toast.success('✅ Profile updated successfully!');
             setIsEditOpen(false);
+            
+            // Reload the page to refresh user data
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
           } catch (e) {
-            console.error('Failed to update profile', e);
-            alert('Failed to update profile.');
+            console.error('❌ Failed to update profile', e);
+            toast.error('Failed to update profile. Please try again.');
           }
         }}
       />
