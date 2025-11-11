@@ -86,12 +86,12 @@ const OnboardingPage = () => {
       icon: Sparkles,
       content: (
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-            <h3 className="text-lg font-semibold mb-3 text-blue-950 dark:text-blue-50">
+          <div className="rounded-lg p-6 border border-indigo-500" style={{ backgroundColor: '#6366f1' }}>
+            <h3 className="text-lg font-semibold mb-3 text-white">
               Your Role: {userData?.position || 'Team Member'}
             </h3>
-            <p className="text-gray-900 dark:text-gray-100">
-              As a <span className="font-semibold">{userData?.position || 'team member'}</span>, you'll have access to personalized tools and features designed specifically for your role.
+            <p className="text-white/90">
+              As a <span className="font-semibold text-white">{userData?.position || 'team member'}</span>, you'll have access to personalized tools and features designed specifically for your role.
             </p>
           </div>
 
