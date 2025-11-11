@@ -38,7 +38,7 @@ const ITSupportPage = () => {
   const [closingReason, setClosingReason] = useState('');
 
   // Google Apps Script URL for email notifications
-  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/a/macros/luxury-listings.com/s/AKfycbwqHUnBwX_Bmw8SzrUHKp-FGifiN1Szu4bSqrUJLF96Km5rt0M0dKFpDX0A7YbOcKruVA/exec';
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4ugw4vME8hCeaE3Bieu7gsrNJqbGHxkNwZR97vKi0wVbaQNMgGFnG3W-lKrkwXzFkdQ/exec';
 
   // Support request form state
   const [supportForm, setSupportForm] = useState({

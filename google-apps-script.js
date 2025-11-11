@@ -282,49 +282,26 @@ function doGet(e) {
         };
     }
     
-    // Return success response with CORS headers
-    const output = ContentService
+    // Return success response
+    // Note: Google Apps Script automatically handles CORS when deployed with "Anyone" access
+    return ContentService
       .createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
-    
-    // Add CORS headers for cross-origin requests
-    output.setHeader('Access-Control-Allow-Origin', '*');
-    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    return output;
       
   } catch (error) {
     // Log the error for debugging
     console.error('Error in doGet:', error.message);
     console.error('Error stack:', error.stack);
     
-    // Return error response with CORS headers
-    const output = ContentService
+    // Return error response
+    return ContentService
       .createTextOutput(JSON.stringify({
         success: false,
         error: error.message,
         stack: error.stack
       }))
       .setMimeType(ContentService.MimeType.JSON);
-    
-    // Add CORS headers
-    output.setHeader('Access-Control-Allow-Origin', '*');
-    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    return output;
   }
-}
-
-// Handle OPTIONS request for CORS preflight
-function doOptions(e) {
-  const output = ContentService.createTextOutput('');
-  output.setHeader('Access-Control-Allow-Origin', '*');
-  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  output.setHeader('Access-Control-Max-Age', '86400');
-  return output;
 }
 
 function doPost(e) {
