@@ -46,7 +46,9 @@ class FirestoreService {
     EMPLOYEES: 'employees',
     LEAVE_REQUESTS: 'leave_requests',
     CLIENTS: 'clients',
-    SUPPORT_TICKETS: 'support_tickets'
+    SUPPORT_TICKETS: 'support_tickets',
+    TICKET_COMMENTS: 'ticket_comments',
+    NOTIFICATIONS: 'notifications'
   };
 
   // Test connection method
@@ -891,6 +893,11 @@ class FirestoreService {
   async updateSupportTicketStatus(ticketId, status, resolvedBy, notes = '') {
     try {
       const docRef = doc(db, this.collections.SUPPORT_TICKETS, ticketId);
+      
+      // Get ticket data first to notify the requester
+      const ticketSnap = await getDoc(docRef);
+      const ticketData = ticketSnap.data();
+      
       const updateData = {
         status,
         updatedAt: serverTimestamp()
@@ -907,6 +914,26 @@ class FirestoreService {
       
       await updateDoc(docRef, updateData);
       console.log('✅ Support ticket status updated:', ticketId);
+
+      // Create notification for ticket requester
+      if (ticketData && ticketData.requesterEmail) {
+        const statusMessages = {
+          'in_progress': 'IT Support is working on your ticket',
+          'resolved': 'Your support ticket has been resolved',
+          'closed': 'Your support ticket has been closed'
+        };
+
+        await this.createNotification({
+          userEmail: ticketData.requesterEmail,
+          type: 'ticket_status',
+          title: 'Ticket status updated',
+          message: statusMessages[status] || `Your ticket status changed to ${status}`,
+          link: '/it-support',
+          ticketId: ticketId,
+          read: false
+        });
+      }
+
       return { success: true };
     } catch (error) {
       console.error('❌ Error updating support ticket:', error);
@@ -941,6 +968,156 @@ class FirestoreService {
       });
       callback(tickets);
     });
+  }
+
+  // ===== TICKET COMMENTS =====
+
+  // Add comment to a ticket
+  async addTicketComment(ticketId, commentData) {
+    try {
+      const comment = {
+        ticketId,
+        authorEmail: commentData.authorEmail,
+        authorName: commentData.authorName,
+        comment: commentData.comment,
+        isITSupport: commentData.isITSupport || false,
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, this.collections.TICKET_COMMENTS), comment);
+      console.log('✅ Comment added to ticket:', ticketId);
+
+      // Create notification for the ticket owner
+      if (commentData.notifyUserEmail && commentData.notifyUserEmail !== commentData.authorEmail) {
+        await this.createNotification({
+          userEmail: commentData.notifyUserEmail,
+          type: 'ticket_comment',
+          title: 'New comment on your ticket',
+          message: `${commentData.authorName} commented on your support ticket`,
+          link: `/it-support`,
+          ticketId: ticketId,
+          read: false
+        });
+      }
+
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error adding comment:', error);
+      throw error;
+    }
+  }
+
+  // Get comments for a ticket
+  onTicketCommentsChange(ticketId, callback) {
+    const q = query(
+      collection(db, this.collections.TICKET_COMMENTS),
+      where('ticketId', '==', ticketId),
+      orderBy('createdAt', 'asc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const comments = [];
+      snapshot.forEach((doc) => {
+        comments.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(comments);
+    });
+  }
+
+  // ===== NOTIFICATIONS =====
+
+  // Create notification
+  async createNotification(notificationData) {
+    try {
+      const notification = {
+        ...notificationData,
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, this.collections.NOTIFICATIONS), notification);
+      console.log('✅ Notification created:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error creating notification:', error);
+      throw error;
+    }
+  }
+
+  // Get notifications for user
+  onNotificationsChange(userEmail, callback) {
+    const q = query(
+      collection(db, this.collections.NOTIFICATIONS),
+      where('userEmail', '==', userEmail),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const notifications = [];
+      snapshot.forEach((doc) => {
+        notifications.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(notifications);
+    });
+  }
+
+  // Mark notification as read
+  async markNotificationRead(notificationId) {
+    try {
+      await updateDoc(doc(db, this.collections.NOTIFICATIONS, notificationId), {
+        read: true,
+        readAt: serverTimestamp()
+      });
+      console.log('✅ Notification marked as read:', notificationId);
+    } catch (error) {
+      console.error('❌ Error marking notification as read:', error);
+      throw error;
+    }
+  }
+
+  // Mark all notifications as read for user
+  async markAllNotificationsRead(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.NOTIFICATIONS),
+        where('userEmail', '==', userEmail),
+        where('read', '==', false)
+      );
+      
+      const snapshot = await getDocs(q);
+      const promises = [];
+      
+      snapshot.forEach((docSnap) => {
+        promises.push(
+          updateDoc(doc(db, this.collections.NOTIFICATIONS, docSnap.id), {
+            read: true,
+            readAt: serverTimestamp()
+          })
+        );
+      });
+
+      await Promise.all(promises);
+      console.log('✅ All notifications marked as read');
+    } catch (error) {
+      console.error('❌ Error marking all notifications as read:', error);
+      throw error;
+    }
+  }
+
+  // Delete notification
+  async deleteNotification(notificationId) {
+    try {
+      await deleteDoc(doc(db, this.collections.NOTIFICATIONS, notificationId));
+      console.log('✅ Notification deleted:', notificationId);
+    } catch (error) {
+      console.error('❌ Error deleting notification:', error);
+      throw error;
+    }
   }
 }
 

@@ -28,6 +28,7 @@ import EmployeeSelfService from './pages/EmployeeSelfService';
 import ITSupportPage from './pages/ITSupportPage';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
+import NotificationsCenter from './components/NotificationsCenter';
 import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, Briefcase, Wrench } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
@@ -182,8 +183,9 @@ function AppLayout() {
             {/* Center - Navigation Items */}
             <Navigation navigation={navigation} />
             
-            {/* Right side - Profile and Logout */}
+            {/* Right side - Notifications, Profile and Logout */}
             <div className="flex items-center space-x-2 flex-shrink-0">
+              <NotificationsCenter />
               <RoleSwitcher />
               
               <button

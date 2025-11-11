@@ -31,6 +31,8 @@ const ITSupportPage = () => {
   const [previewFile, setPreviewFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [ticketComments, setTicketComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
 
   // Google Apps Script URL for email notifications
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
@@ -47,6 +49,22 @@ const ITSupportPage = () => {
 
   // IT Support can see all tickets - admin or if email is jrsschroeder@gmail.com
   const isITSupport = currentRole === 'admin' || currentUser?.email === 'jrsschroeder@gmail.com';
+
+  // Load comments when a ticket is selected
+  useEffect(() => {
+    if (!selectedTicket?.id) {
+      setTicketComments([]);
+      return;
+    }
+
+    console.log('📡 Loading comments for ticket:', selectedTicket.id);
+    const unsubscribe = firestoreService.onTicketCommentsChange(selectedTicket.id, (comments) => {
+      console.log('💬 Comments updated:', comments.length);
+      setTicketComments(comments);
+    });
+
+    return () => unsubscribe();
+  }, [selectedTicket?.id]);
 
   // Load support tickets from Firestore
   useEffect(() => {
@@ -336,6 +354,28 @@ const ITSupportPage = () => {
     } catch (error) {
       console.error('❌ Error updating ticket status:', error);
       alert('Failed to update ticket status. Please try again.');
+    }
+  };
+
+  // Handle comment submission
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim() || !selectedTicket) return;
+
+    try {
+      await firestoreService.addTicketComment(selectedTicket.id, {
+        authorEmail: currentUser.email,
+        authorName: `${currentUser.firstName} ${currentUser.lastName}`,
+        comment: newComment.trim(),
+        isITSupport: isITSupport,
+        notifyUserEmail: isITSupport ? selectedTicket.requesterEmail : null
+      });
+      
+      setNewComment('');
+      console.log('✅ Comment added successfully');
+    } catch (error) {
+      console.error('❌ Error adding comment:', error);
+      alert('Failed to add comment. Please try again.');
     }
   };
 
@@ -921,6 +961,64 @@ const ITSupportPage = () => {
                   <p className="text-gray-900 mt-1 bg-gray-50 p-3 rounded">{selectedTicket.notes}</p>
                 </div>
               )}
+
+              {/* Comments Section */}
+              <div className="pt-4 border-t">
+                <label className="text-sm font-medium text-gray-600 mb-3 block">
+                  💬 Comments ({ticketComments.length})
+                </label>
+                
+                {/* Comments List */}
+                <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
+                  {ticketComments.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic text-center py-4">No comments yet</p>
+                  ) : (
+                    ticketComments.map((comment) => (
+                      <div 
+                        key={comment.id} 
+                        className={`p-3 rounded-lg ${
+                          comment.isITSupport 
+                            ? 'bg-blue-50 border border-blue-200' 
+                            : 'bg-gray-50 border border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {comment.isITSupport && '🔧 '}
+                            {comment.authorName}
+                            {comment.isITSupport && ' (IT Support)'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {comment.createdAt?.toDate 
+                              ? format(comment.createdAt.toDate(), 'MMM dd, h:mm a')
+                              : format(new Date(comment.createdAt), 'MMM dd, h:mm a')}
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.comment}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Add Comment Form */}
+                <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder={isITSupport ? "Reply to user..." : "Add a comment..."}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <Button 
+                    type="submit" 
+                    size="sm"
+                    disabled={!newComment.trim()}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </form>
+              </div>
             </div>
           </div>
         </div>
