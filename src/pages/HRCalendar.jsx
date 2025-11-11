@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import Calendar from '../components/ui/calendar';
-import googleCalendarService from '../services/googleCalendarService';
+import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 import { 
   Calendar as CalendarIcon, 
