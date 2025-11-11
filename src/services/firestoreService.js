@@ -920,7 +920,7 @@ class FirestoreService {
         const statusMessages = {
           'in_progress': 'IT Support is working on your ticket',
           'resolved': 'Your support ticket has been resolved',
-          'closed': 'Your support ticket has been closed'
+          'closed': notes ? `Your support ticket has been closed. Reason: ${notes}` : 'Your support ticket has been closed'
         };
 
         await this.createNotification({

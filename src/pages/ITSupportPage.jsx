@@ -33,6 +33,9 @@ const ITSupportPage = () => {
   const [uploadError, setUploadError] = useState(null);
   const [ticketComments, setTicketComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [ticketToClose, setTicketToClose] = useState(null);
+  const [closingReason, setClosingReason] = useState('');
 
   // Google Apps Script URL for email notifications
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
@@ -363,7 +366,7 @@ const ITSupportPage = () => {
   };
 
   // Handle status update (IT Support only)
-  const handleStatusUpdate = async (ticketId, newStatus) => {
+  const handleStatusUpdate = async (ticketId, newStatus, closingNotes = '') => {
     console.log('🔄 Updating ticket status:', ticketId, 'to', newStatus);
     
     try {
@@ -372,10 +375,11 @@ const ITSupportPage = () => {
       console.log('📤 Calling updateSupportTicketStatus with:', {
         ticketId,
         newStatus,
-        resolvedBy
+        resolvedBy,
+        notes: closingNotes
       });
       
-      await firestoreService.updateSupportTicketStatus(ticketId, newStatus, resolvedBy);
+      await firestoreService.updateSupportTicketStatus(ticketId, newStatus, resolvedBy, closingNotes);
       console.log('✅ Ticket status updated successfully');
       
       // Close the modal after status update
@@ -387,6 +391,24 @@ const ITSupportPage = () => {
       console.error('❌ Error code:', error.code);
       console.error('❌ Error message:', error.message);
       alert(`Failed to update ticket status: ${error.message}\nPlease try again.`);
+    }
+  };
+
+  // Show close dialog
+  const handleCloseTicketClick = (ticket, e) => {
+    e.stopPropagation();
+    setTicketToClose(ticket);
+    setClosingReason('');
+    setShowCloseDialog(true);
+  };
+
+  // Confirm close with reason
+  const handleConfirmClose = async () => {
+    if (ticketToClose) {
+      await handleStatusUpdate(ticketToClose.id, 'closed', closingReason);
+      setShowCloseDialog(false);
+      setTicketToClose(null);
+      setClosingReason('');
     }
   };
 
@@ -625,10 +647,7 @@ const ITSupportPage = () => {
                           {ticket.status !== 'closed' && (
                             <Button
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStatusUpdate(ticket.id, 'closed');
-                              }}
+                              onClick={(e) => handleCloseTicketClick(ticket, e)}
                               className="bg-gray-600 hover:bg-gray-700 whitespace-nowrap"
                             >
                               Close Ticket
@@ -1013,8 +1032,12 @@ const ITSupportPage = () => {
 
               {selectedTicket.notes && (
                 <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-gray-600">IT Support Notes</label>
-                  <p className="text-gray-900 mt-1 bg-gray-50 p-3 rounded">{selectedTicket.notes}</p>
+                  <label className="text-sm font-medium text-gray-600">
+                    {selectedTicket.status === 'closed' ? 'Closing Reason' : 'IT Support Notes'}
+                  </label>
+                  <p className="text-gray-900 mt-1 bg-blue-50 border border-blue-200 p-3 rounded">
+                    {selectedTicket.notes}
+                  </p>
                 </div>
               )}
 
@@ -1074,6 +1097,63 @@ const ITSupportPage = () => {
                     <Send className="w-4 h-4" />
                   </Button>
                 </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close Ticket Dialog */}
+      {showCloseDialog && ticketToClose && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Close Ticket</h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-sm text-gray-700 mb-4">
+                  Are you sure you want to close this ticket?
+                </p>
+                <p className="text-sm font-medium text-gray-900 mb-2">
+                  {ticketToClose.title}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Closing Reason (Optional)
+                </label>
+                <textarea
+                  value={closingReason}
+                  onChange={(e) => setClosingReason(e.target.value)}
+                  rows={3}
+                  placeholder="Explain why this ticket is being closed (the user will see this)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Examples: "Issue resolved via email", "Duplicate ticket", "User cancelled request"
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCloseDialog(false);
+                    setTicketToClose(null);
+                    setClosingReason('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleConfirmClose}
+                  className="bg-gray-600 hover:bg-gray-700"
+                >
+                  Close Ticket
+                </Button>
               </div>
             </div>
           </div>
