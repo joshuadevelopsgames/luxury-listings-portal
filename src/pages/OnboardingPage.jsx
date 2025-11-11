@@ -338,27 +338,27 @@ const OnboardingPage = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  State
+                  Province
                 </label>
                 <input
                   type="text"
                   value={profileData.state}
                   onChange={(e) => handleProfileInputChange('state', e.target.value)}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="CA"
+                  placeholder="ON"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  ZIP Code
+                  Postal Code
                 </label>
                 <input
                   type="text"
                   value={profileData.zipCode}
                   onChange={(e) => handleProfileInputChange('zipCode', e.target.value)}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="90001"
+                  placeholder="M5H 2N2"
                 />
               </div>
             </div>
