@@ -3,7 +3,7 @@
 
 class FirebaseApiService {
   constructor() {
-    this.baseUrl = 'https://script.google.com/macros/s/AKfycbyhj1hiWenHLHxd15RfYrbQbVQOLMERFGCUfemgnemzTXblG4XmlgMZ5wjgsEwyRooBLw/exec';
+    this.baseUrl = 'https://script.google.com/a/macros/luxury-listings.com/s/AKfycbwqHUnBwX_Bmw8SzrUHKp-FGifiN1Szu4bSqrUJLF96Km5rt0M0dKFpDX0A7YbOcKruVA/exec';
     console.log('🔧 FirebaseApiService initialized');
   }
 
