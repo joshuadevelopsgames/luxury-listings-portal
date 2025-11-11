@@ -345,7 +345,7 @@ const OnboardingPage = () => {
                   value={profileData.state}
                   onChange={(e) => handleProfileInputChange('state', e.target.value)}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="ON"
+                  placeholder="BC"
                 />
               </div>
 
@@ -358,7 +358,7 @@ const OnboardingPage = () => {
                   value={profileData.zipCode}
                   onChange={(e) => handleProfileInputChange('zipCode', e.target.value)}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="M5H 2N2"
+                  placeholder="V6B 2W9"
                 />
               </div>
             </div>
