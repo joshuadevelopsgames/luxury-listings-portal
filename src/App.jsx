@@ -96,8 +96,7 @@ function AppLayout() {
       case USER_ROLES.ADMIN:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
-          { id: 'it-support', name: 'IT Support', icon: Wrench, path: '/it-support' },
-          { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
+          { id: 'it-support', name: 'Support Tickets', icon: Wrench, path: '/it-support' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
           { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/analytics' },
           { id: 'self-service', name: 'Self-Service', icon: Briefcase, path: '/self-service' },
