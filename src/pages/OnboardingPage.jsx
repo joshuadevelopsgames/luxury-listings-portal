@@ -229,14 +229,14 @@ const OnboardingPage = () => {
       icon: User,
       content: (
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg p-6 shadow-lg">
             <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                 <User className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2">Why complete your profile?</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <h3 className="text-lg font-semibold mb-2 text-white">Why complete your profile?</h3>
+                <p className="text-sm text-white/90">
                   Help your team get to know you better and ensure we have the right contact information for important updates.
                 </p>
               </div>
@@ -244,11 +244,14 @@ const OnboardingPage = () => {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-semibold text-lg">Personal Information</h4>
+            <div className="flex items-center gap-2 pb-2 border-b-2 border-gray-200">
+              <User className="w-5 h-5 text-blue-600" />
+              <h4 className="font-semibold text-lg text-gray-800">Personal Information</h4>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <User className="inline w-4 h-4 mr-1" />
                   First Name *
                 </label>
@@ -256,14 +259,14 @@ const OnboardingPage = () => {
                   type="text"
                   value={profileData.firstName}
                   onChange={(e) => handleProfileInputChange('firstName', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="John"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <User className="inline w-4 h-4 mr-1" />
                   Last Name *
                 </label>
@@ -271,14 +274,14 @@ const OnboardingPage = () => {
                   type="text"
                   value={profileData.lastName}
                   onChange={(e) => handleProfileInputChange('lastName', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="Doe"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <Mail className="inline w-4 h-4 mr-1" />
                   Email *
                 </label>
@@ -286,12 +289,12 @@ const OnboardingPage = () => {
                   type="email"
                   value={profileData.email}
                   disabled
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
+                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <Phone className="inline w-4 h-4 mr-1" />
                   Phone Number
                 </label>
@@ -299,7 +302,7 @@ const OnboardingPage = () => {
                   type="tel"
                   value={profileData.phone}
                   onChange={(e) => handleProfileInputChange('phone', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="(555) 123-4567"
                 />
               </div>
@@ -321,91 +324,94 @@ const OnboardingPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   City
                 </label>
                 <input
                   type="text"
                   value={profileData.city}
                   onChange={(e) => handleProfileInputChange('city', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="Los Angeles"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   State
                 </label>
                 <input
                   type="text"
                   value={profileData.state}
                   onChange={(e) => handleProfileInputChange('state', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="CA"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   ZIP Code
                 </label>
                 <input
                   type="text"
                   value={profileData.zipCode}
                   onChange={(e) => handleProfileInputChange('zipCode', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="90001"
                 />
               </div>
             </div>
 
-            <h4 className="font-semibold text-lg pt-4">Emergency Contact</h4>
+            <div className="flex items-center gap-2 pb-2 border-b-2 border-gray-200 pt-4">
+              <Phone className="w-5 h-5 text-blue-600" />
+              <h4 className="font-semibold text-lg text-gray-800">Emergency Contact</h4>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Contact Name
                 </label>
                 <input
                   type="text"
                   value={profileData.emergencyContactName}
                   onChange={(e) => handleProfileInputChange('emergencyContactName', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="Jane Doe"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Contact Phone
                 </label>
                 <input
                   type="tel"
                   value={profileData.emergencyContactPhone}
                   onChange={(e) => handleProfileInputChange('emergencyContactPhone', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="(555) 987-6543"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Relationship
                 </label>
                 <input
                   type="text"
                   value={profileData.emergencyContactRelation}
                   onChange={(e) => handleProfileInputChange('emergencyContactRelation', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="Spouse, Parent, etc."
                 />
               </div>
             </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mt-4">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Note:</strong> You can update this information anytime from your profile page.
+            <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mt-4">
+              <p className="text-sm text-blue-900">
+                <strong>💡 Tip:</strong> You can update this information anytime from your profile page.
               </p>
             </div>
           </div>
