@@ -1,11 +1,47 @@
 // Google Apps Script for Client Packages Management
 // Deploy this as a web app to handle write operations
 
+// Test function to manually trigger authorization
+function testAuthorization() {
+  try {
+    console.log('🧪 Testing authorization...');
+    
+    // Try to access the spreadsheet
+    const spreadsheetId = '10MGYVVpccxgCsvcYIBeWNtu3xWvlT8GlXNecv8LAQ6g';
+    const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+    
+    console.log('✅ Successfully accessed spreadsheet:', spreadsheet.getName());
+    console.log('✅ Authorization is working!');
+    
+    return {
+      success: true,
+      message: 'Authorization successful',
+      spreadsheetName: spreadsheet.getName()
+    };
+  } catch (error) {
+    console.error('❌ Authorization failed:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 function doGet(e) {
   try {
     // Log the incoming request for debugging
     console.log('Received GET request');
-    console.log('Parameters:', e.parameter);
+    console.log('Parameters:', e ? e.parameter : 'No parameters (manual run)');
+    
+    // Handle manual run (no parameters)
+    if (!e || !e.parameter) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          success: true,
+          message: 'Google Apps Script is running! Use testAuthorization() to authorize.'
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     
     // Get action from parameters
     const action = e.parameter.action || 'test';
