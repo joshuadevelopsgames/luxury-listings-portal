@@ -115,7 +115,7 @@ function AppLayout() {
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
-          { id: 'content-calendar', name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
+          { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
           { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
