@@ -154,7 +154,8 @@ const OnboardingPage = () => {
                   <h3 className="text-2xl font-bold mb-3 text-white drop-shadow-lg">
               {(() => {
                 // Get all roles the user has access to (not just the currently switched one)
-                const allRoles = currentUser?.roles || userData?.roles || [];
+                const allRoles = (currentUser?.roles || userData?.roles || [])
+                  .filter(role => role && role.toLowerCase() !== 'pending'); // Filter out 'pending' status
                 const position = userData?.position || currentUser?.position;
                 
                 if (allRoles.length > 1) {
@@ -174,7 +175,8 @@ const OnboardingPage = () => {
             <p className="text-white/90 text-lg">
               {(() => {
                 // Get all roles the user has access to (not just the currently switched one)
-                const allRoles = currentUser?.roles || userData?.roles || [];
+                const allRoles = (currentUser?.roles || userData?.roles || [])
+                  .filter(role => role && role.toLowerCase() !== 'pending'); // Filter out 'pending' status
                 const position = (userData?.position || currentUser?.position || '').toLowerCase();
                 const rolesList = allRoles.map(r => r.toLowerCase());
                 
