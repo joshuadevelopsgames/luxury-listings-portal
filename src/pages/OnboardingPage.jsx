@@ -88,24 +88,67 @@ const OnboardingPage = () => {
         <div className="space-y-6">
           <div className="rounded-lg p-6 border border-indigo-500" style={{ backgroundColor: '#6366f1' }}>
             <h3 className="text-lg font-semibold mb-3 text-indigo-950 dark:text-indigo-50">
-              Your Role: {userData?.position || userData?.role?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Team Member'}
+              {(() => {
+                const roles = userData?.roles || [];
+                const position = userData?.position;
+                
+                if (roles.length > 1) {
+                  const roleNames = roles.map(role => 
+                    role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                  );
+                  return `Your Roles: ${roleNames.join(' & ')}`;
+                } else if (position) {
+                  return `Your Role: ${position}`;
+                } else if (roles.length === 1) {
+                  return `Your Role: ${roles[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+                } else {
+                  return 'Your Role: Team Member';
+                }
+              })()}
             </h3>
             <p className="text-indigo-950/90 dark:text-indigo-50/90">
               {(() => {
-                const position = userData?.position?.toLowerCase() || userData?.role?.toLowerCase() || '';
+                const roles = userData?.roles || [];
+                const position = userData?.position?.toLowerCase() || '';
+                const rolesList = roles.map(r => r.toLowerCase());
                 
-                if (position.includes('content director')) {
-                  return "As Content Director, you'll manage content strategy, oversee campaigns, approve deliverables, and guide the creative team.";
-                } else if (position.includes('social media manager')) {
-                  return "As Social Media Manager, you'll create and schedule posts, manage client packages, track engagement, and maintain the content calendar.";
-                } else if (position.includes('hr manager')) {
-                  return "As HR Manager, you'll handle leave requests, manage team operations, track employee performance, and maintain team satisfaction.";
-                } else if (position.includes('admin')) {
-                  return "As Administrator, you have full access to manage users, oversee all operations, handle support tickets, and configure system settings.";
-                } else if (position.includes('sales')) {
-                  return "As part of the Sales team, you'll manage leads, track deals through the pipeline, maintain client relationships, and close new business.";
+                // Build description based on all roles
+                const responsibilities = [];
+                
+                if (rolesList.some(r => r.includes('content_director')) || position.includes('content director')) {
+                  responsibilities.push("manage content strategy and oversee campaigns");
+                }
+                if (rolesList.some(r => r.includes('social_media_manager')) || position.includes('social media manager')) {
+                  responsibilities.push("create content and manage social media");
+                }
+                if (rolesList.some(r => r.includes('hr_manager')) || position.includes('hr manager')) {
+                  responsibilities.push("handle HR operations and team management");
+                }
+                if (rolesList.some(r => r.includes('admin')) || position.includes('admin')) {
+                  responsibilities.push("manage users and system settings");
+                }
+                if (rolesList.some(r => r.includes('sales')) || position.includes('sales')) {
+                  responsibilities.push("manage leads and close deals");
+                }
+                
+                if (responsibilities.length > 1) {
+                  return `With your multiple roles, you'll ${responsibilities.slice(0, -1).join(', ')}, and ${responsibilities[responsibilities.length - 1]}.`;
+                } else if (responsibilities.length === 1) {
+                  if (position.includes('content director')) {
+                    return "As Content Director, you'll manage content strategy, oversee campaigns, approve deliverables, and guide the creative team.";
+                  } else if (position.includes('social media manager')) {
+                    return "As Social Media Manager, you'll create and schedule posts, manage client packages, track engagement, and maintain the content calendar.";
+                  } else if (position.includes('hr manager')) {
+                    return "As HR Manager, you'll handle leave requests, manage team operations, track employee performance, and maintain team satisfaction.";
+                  } else if (position.includes('admin')) {
+                    return "As Administrator, you have full access to manage users, oversee all operations, handle support tickets, and configure system settings.";
+                  } else if (position.includes('sales')) {
+                    return "As part of the Sales team, you'll manage leads, track deals through the pipeline, maintain client relationships, and close new business.";
+                  } else {
+                    return `You'll ${responsibilities[0]}.`;
+                  }
                 } else {
-                  return `As a ${userData?.position || 'team member'}, you'll have access to personalized tools and features designed specifically for your role.`;
+                  return `As a ${position || 'team member'}, you'll have access to personalized tools and features designed specifically for your role.`;
                 }
               })()}
             </p>
