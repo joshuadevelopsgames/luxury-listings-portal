@@ -612,67 +612,84 @@ const OnboardingPage = () => {
       description: 'Ready to start your journey with Luxury Listings',
       icon: CheckCircle2,
       content: (
-        <div className="space-y-6">
-          <div className="rounded-lg p-8 border border-green-200 dark:border-green-800 text-center" style={{ backgroundColor: '#5a8b6c' }}>
-            <div className="h-20 w-20 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="h-10 w-10 text-white" />
+        <div className="space-y-8">
+          {/* Hero Section */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-12 text-center shadow-xl">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative">
+              <div className="inline-flex h-24 w-24 rounded-full bg-white/20 backdrop-blur-sm items-center justify-center mx-auto mb-6 animate-bounce">
+                <CheckCircle2 className="h-12 w-12 text-white" />
+              </div>
+              <h3 className="text-3xl font-bold mb-3 text-white drop-shadow-lg">
+                Welcome Aboard! 🎉
+              </h3>
+              <p className="text-lg text-white/90 max-w-md mx-auto">
+                You're all set to explore your personalized workspace
+              </p>
             </div>
-            <h3 className="text-2xl font-bold mb-2 !text-white">
-              Welcome Aboard!
-            </h3>
-            <p className="!text-white">
-              You're ready to explore your personalized workspace
-            </p>
           </div>
 
-          <div className="space-y-3">
-            <h4 className="font-semibold text-lg">Quick Tips to Get Started:</h4>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#83a4fd' }}>
-                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="!text-white font-semibold">1</span>
-                </div>
-                <div>
-                  <p className="font-medium !text-white">Check your Dashboard</p>
-                  <p className="text-sm !text-white">
-                    Start with the dashboard to see your tasks and updates
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#83a4fd' }}>
-                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="!text-white font-semibold">2</span>
-                </div>
-                <div>
-                  <p className="font-medium !text-white">Complete your profile</p>
-                  <p className="text-sm !text-white">
-                    Visit "My Profile" to update your contact information
-                  </p>
+          {/* Quick Tips Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+              <h4 className="font-bold text-xl text-gray-800">Quick Tips to Get Started</h4>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-indigo-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-lg">1</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 mb-1">Check your Dashboard</p>
+                    <p className="text-sm text-gray-600">
+                      Start with the dashboard to see your tasks and updates
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#83a4fd' }}>
-                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="!text-white font-semibold">3</span>
-                </div>
-                <div>
-                  <p className="font-medium !text-white">Explore the Resources page</p>
-                  <p className="text-sm !text-white">
-                    Find tutorials, request time off, and access helpful tools
-                  </p>
+              <div className="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-lg">2</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 mb-1">Complete your profile</p>
+                    <p className="text-sm text-gray-600">
+                      Visit "My Profile" to update your contact information
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#83a4fd' }}>
-                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="!text-white font-semibold">4</span>
+              <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-lg">3</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 mb-1">Explore the Resources page</p>
+                    <p className="text-sm text-gray-600">
+                      Find tutorials, request time off, and access helpful tools
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium !text-white">Need help?</p>
-                  <p className="text-sm !text-white">
-                    Use the AI assistant (bottom right) or visit IT Support anytime
-                  </p>
+              </div>
+
+              <div className="group relative overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200 hover:border-orange-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-lg">4</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 mb-1">Need help?</p>
+                    <p className="text-sm text-gray-600">
+                      Use the AI assistant (bottom right) or visit IT Support anytime
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -765,7 +782,7 @@ const OnboardingPage = () => {
                 <Button
                   onClick={handleCompleteOnboarding}
                   disabled={completing}
-                  className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                  className="gap-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 shadow-lg"
                 >
                   {completing ? (
                     <>
