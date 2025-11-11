@@ -138,7 +138,7 @@ const OnboardingPage = () => {
 
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-green-500 dark:hover:border-green-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-green-500 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#5a8b6c' }}>
                 <ListTodo className="h-5 w-5 text-green-950 dark:text-green-50" />
               </div>
               <h4 className="font-semibold">Daily Tasks</h4>
@@ -301,7 +301,7 @@ const OnboardingPage = () => {
       content: (
         <div className="space-y-6">
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-8 border border-green-200 dark:border-green-800 text-center">
-            <div className="h-20 w-20 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-4">
+            <div className="h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#5a8b6c' }}>
               <CheckCircle2 className="h-10 w-10 text-white" />
             </div>
             <h3 className="text-2xl font-bold mb-2 !text-white">
