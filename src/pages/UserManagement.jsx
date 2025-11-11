@@ -1280,30 +1280,29 @@ const UserManagement = () => {
                       )}
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleViewUser(user)}
-                        className="flex-1"
                       >
                         <Eye className="w-4 h-4 mr-1" />
-                        View Profile
+                        View
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleAssignRoles(user)}
-                        className="flex-1 bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                        className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
                       >
                         <Users className="w-4 h-4 mr-1" />
-                        Assign Roles
+                        Roles
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleManagePermissions(user)}
-                        className="flex-1 bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100"
+                        className="bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100"
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Permissions
@@ -1312,7 +1311,6 @@ const UserManagement = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEditUser(user)}
-                        className="flex-1"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
@@ -1321,10 +1319,10 @@ const UserManagement = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeleteApprovedUser(user.email)}
-                        className="flex-1 text-red-600 hover:text-red-700"
+                        className="col-span-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
+                        Delete User
                       </Button>
                     </div>
                   </CardContent>
