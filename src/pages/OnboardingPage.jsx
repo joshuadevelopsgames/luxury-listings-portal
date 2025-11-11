@@ -211,24 +211,24 @@ const OnboardingPage = () => {
                 <Calendar className="h-6 w-6 text-orange-950 dark:text-orange-50" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">
+                <h3 className="text-lg font-semibold mb-2 !text-black">
                   Why connect your calendar?
                 </h3>
-                <ul className="space-y-2 text-sm text-black dark:text-white">
+                <ul className="space-y-2 text-sm !text-black">
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0 text-black dark:text-white" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0 !text-black" />
                     <span>See all team meetings and events in one place</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0 text-black dark:text-white" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0 !text-black" />
                     <span>Never miss important deadlines or check-ins</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0 text-black dark:text-white" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0 !text-black" />
                     <span>Book meetings with team members easily</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0 text-black dark:text-white" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0 !text-black" />
                     <span>Your calendar data stays private and secure</span>
                   </li>
                 </ul>
