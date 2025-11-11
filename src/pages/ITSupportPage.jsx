@@ -328,37 +328,109 @@ const ITSupportPage = () => {
     window.open('https://imgbb.com', '_blank');
   };
 
+  // Handle status update (IT Support only)
+  const handleStatusUpdate = async (ticketId, newStatus) => {
+    try {
+      await firestoreService.updateSupportTicketStatus(ticketId, newStatus);
+      console.log('✅ Ticket status updated:', ticketId, newStatus);
+    } catch (error) {
+      console.error('❌ Error updating ticket status:', error);
+      alert('Failed to update ticket status. Please try again.');
+    }
+  };
+
+  // Get stats for IT admin dashboard
+  const ticketStats = {
+    total: myTickets.length,
+    pending: myTickets.filter(t => t.status === 'pending').length,
+    inProgress: myTickets.filter(t => t.status === 'in_progress').length,
+    resolved: myTickets.filter(t => t.status === 'resolved').length,
+    urgent: myTickets.filter(t => t.priority === 'urgent').length,
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">IT Support</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isITSupport ? 'IT Support Dashboard' : 'IT Support'}
+          </h1>
           <p className="text-gray-600 mt-2">
             {isITSupport ? 'Manage support tickets and help team members' : 'Submit support requests and track your tickets'}
           </p>
         </div>
-        <Button className="flex items-center space-x-2" onClick={() => setShowRequestModal(true)}>
-          <Plus className="w-4 h-4" />
-          <span>New Support Request</span>
-        </Button>
+        {!isITSupport && (
+          <Button className="flex items-center space-x-2" onClick={() => setShowRequestModal(true)}>
+            <Plus className="w-4 h-4" />
+            <span>New Support Request</span>
+          </Button>
+        )}
       </div>
 
-      {/* Support Info Banner */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="!p-8">
-          <div className="flex items-center space-x-3">
-            <Wrench className="w-5 h-5 text-blue-600 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-blue-900 mb-1">How to Get Help</h3>
-              <p className="text-sm text-blue-700">
-                Submit a detailed support request including the page URL and screenshots if possible. 
-                Our IT team will respond within 24 hours for standard requests, and immediately for urgent issues.
-              </p>
+      {/* IT Admin Stats Dashboard */}
+      {isITSupport && (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <Card>
+            <CardContent className="!p-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Total Tickets</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{ticketStats.total}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="!p-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-3xl font-bold text-yellow-600 mt-2">{ticketStats.pending}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="!p-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">In Progress</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">{ticketStats.inProgress}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="!p-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Resolved</p>
+                <p className="text-3xl font-bold text-green-600 mt-2">{ticketStats.resolved}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="!p-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">🚨 Urgent</p>
+                <p className="text-3xl font-bold text-red-600 mt-2">{ticketStats.urgent}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Support Info Banner (for regular users only) */}
+      {!isITSupport && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="!p-8">
+            <div className="flex items-center space-x-3">
+              <Wrench className="w-5 h-5 text-blue-600 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-medium text-blue-900 mb-1">How to Get Help</h3>
+                <p className="text-sm text-blue-700">
+                  Submit a detailed support request including the page URL and screenshots if possible. 
+                  Our IT team will respond within 24 hours for standard requests, and immediately for urgent issues.
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* My Tickets */}
       <Card>
@@ -377,14 +449,18 @@ const ITSupportPage = () => {
           ) : myTickets.length === 0 ? (
             <div className="text-center py-8">
               <Wrench className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600">No support tickets yet</p>
-              <Button 
-                variant="outline" 
-                className="mt-3"
-                onClick={() => setShowRequestModal(true)}
-              >
-                Submit Your First Request
-              </Button>
+              <p className="text-gray-600">
+                {isITSupport ? 'No support tickets from team members yet' : 'No support tickets yet'}
+              </p>
+              {!isITSupport && (
+                <Button 
+                  variant="outline" 
+                  className="mt-3"
+                  onClick={() => setShowRequestModal(true)}
+                >
+                  Submit Your First Request
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -396,40 +472,88 @@ const ITSupportPage = () => {
                 return (
                   <div 
                     key={ticket.id} 
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => setSelectedTicket(ticket)}
+                    className={`p-4 border-2 rounded-lg transition-all ${
+                      ticket.status === 'pending' ? 'border-yellow-300 bg-yellow-50' :
+                      ticket.status === 'in_progress' ? 'border-blue-300 bg-blue-50' :
+                      ticket.status === 'resolved' ? 'border-green-300 bg-green-50' :
+                      'border-gray-200 bg-white'
+                    }`}
                   >
-                    <div className="flex items-center space-x-4 flex-1">
-                      <div className={`p-3 rounded-lg bg-${category?.color}-100`}>
-                        <CategoryIcon className={`w-5 h-5 text-${category?.color}-600`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1 flex-wrap">
-                          <p className="font-medium text-gray-900">{ticket.title}</p>
-                          <Badge className={priority?.color}>
-                            {priority?.label}
-                          </Badge>
-                          <Badge className={`${getStatusColor(ticket.status)} flex items-center space-x-1`}>
-                            {getStatusIcon(ticket.status)}
-                            <span className="capitalize">{ticket.status?.replace('_', ' ')}</span>
-                          </Badge>
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Left side - Ticket Info */}
+                      <div 
+                        className="flex items-start space-x-4 flex-1 cursor-pointer" 
+                        onClick={() => setSelectedTicket(ticket)}
+                      >
+                        <div className={`p-3 rounded-lg bg-${category?.color}-100`}>
+                          <CategoryIcon className={`w-5 h-5 text-${category?.color}-600`} />
                         </div>
-                        {isITSupport && (
-                          <p className="text-sm text-gray-600">
-                            Submitted by {ticket.requesterName}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2 flex-wrap">
+                            <p className="font-semibold text-gray-900">{ticket.title}</p>
+                            <Badge className={priority?.color}>
+                              {priority?.label}
+                            </Badge>
+                            <Badge className={`${getStatusColor(ticket.status)} flex items-center space-x-1`}>
+                              {getStatusIcon(ticket.status)}
+                              <span className="capitalize">{ticket.status?.replace('_', ' ')}</span>
+                            </Badge>
+                          </div>
+                          {isITSupport && (
+                            <p className="text-sm font-medium text-gray-700 mb-1">
+                              👤 {ticket.requesterName} ({ticket.requesterEmail})
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600 mb-2">
+                            {ticket.description}
                           </p>
-                        )}
-                        <p className="text-sm text-gray-500 truncate">
-                          {ticket.description}
-                        </p>
+                          <p className="text-xs text-gray-500">
+                            Submitted {ticket.submittedDate?.toDate 
+                              ? format(ticket.submittedDate.toDate(), 'MMM dd, yyyy h:mm a')
+                              : format(new Date(ticket.submittedDate), 'MMM dd, yyyy h:mm a')}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right text-sm text-gray-500 flex-shrink-0 ml-4">
-                      <p>
-                        {ticket.submittedDate?.toDate 
-                          ? format(ticket.submittedDate.toDate(), 'MMM dd, yyyy')
-                          : format(new Date(ticket.submittedDate), 'MMM dd, yyyy')}
-                      </p>
+
+                      {/* Right side - Admin Actions */}
+                      {isITSupport && (
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          {ticket.status !== 'in_progress' && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusUpdate(ticket.id, 'in_progress');
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
+                            >
+                              Start Work
+                            </Button>
+                          )}
+                          {ticket.status !== 'resolved' && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusUpdate(ticket.id, 'resolved');
+                              }}
+                              className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
+                            >
+                              Mark Resolved
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedTicket(ticket);
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
