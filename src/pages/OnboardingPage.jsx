@@ -89,18 +89,19 @@ const OnboardingPage = () => {
           <div className="rounded-lg p-6 border border-indigo-500" style={{ backgroundColor: '#6366f1' }}>
             <h3 className="text-lg font-semibold mb-3 text-indigo-950 dark:text-indigo-50">
               {(() => {
-                const roles = userData?.roles || [];
-                const position = userData?.position;
+                // Get all roles the user has access to (not just the currently switched one)
+                const allRoles = currentUser?.roles || userData?.roles || [];
+                const position = userData?.position || currentUser?.position;
                 
-                if (roles.length > 1) {
-                  const roleNames = roles.map(role => 
+                if (allRoles.length > 1) {
+                  const roleNames = allRoles.map(role => 
                     role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                   );
                   return `Your Roles: ${roleNames.join(' & ')}`;
                 } else if (position) {
                   return `Your Role: ${position}`;
-                } else if (roles.length === 1) {
-                  return `Your Role: ${roles[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+                } else if (allRoles.length === 1) {
+                  return `Your Role: ${allRoles[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
                 } else {
                   return 'Your Role: Team Member';
                 }
@@ -108,9 +109,10 @@ const OnboardingPage = () => {
             </h3>
             <p className="text-indigo-950/90 dark:text-indigo-50/90">
               {(() => {
-                const roles = userData?.roles || [];
-                const position = userData?.position?.toLowerCase() || '';
-                const rolesList = roles.map(r => r.toLowerCase());
+                // Get all roles the user has access to (not just the currently switched one)
+                const allRoles = currentUser?.roles || userData?.roles || [];
+                const position = (userData?.position || currentUser?.position || '').toLowerCase();
+                const rolesList = allRoles.map(r => r.toLowerCase());
                 
                 // Build description based on all roles
                 const responsibilities = [];
