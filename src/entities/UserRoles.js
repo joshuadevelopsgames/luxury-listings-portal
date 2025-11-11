@@ -83,7 +83,7 @@ export const ROLE_PERMISSIONS = {
       'Resource Library'
     ],
     color: 'blue',
-    icon: '🎨'
+    icon: '🎬'
   },
   
   [USER_ROLES.SOCIAL_MEDIA_MANAGER]: {
