@@ -136,7 +136,8 @@ export function AuthProvider({ children }) {
         lastName: currentUser.lastName, // Keep actual user's last name
         displayName: currentUser.displayName, // Keep actual user's display name
         avatar: currentUser.avatar, // Keep actual user's avatar
-        uid: currentUser.uid // Keep actual user's UID
+        uid: currentUser.uid, // Keep actual user's UID
+        customPermissions: currentUser.customPermissions || [] // Keep custom permissions across role switches
       };
       
       setCurrentUser(updatedUser);
@@ -347,6 +348,7 @@ export function AuthProvider({ children }) {
                   bio: approvedUser.bio || userData.bio,
                   skills: approvedUser.skills || userData.skills,
                   stats: approvedUser.stats || userData.stats, // Use actual user stats from Firestore
+                  customPermissions: approvedUser.customPermissions || [], // Custom permissions granted by admin
                   isApproved: true
                 };
                 

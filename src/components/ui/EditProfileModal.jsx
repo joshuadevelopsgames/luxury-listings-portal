@@ -6,13 +6,22 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PERMISSIONS } from '../../entities/Permissions';
 
 export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSave }) {
-  const { hasPermission } = useAuth();
+  const { hasPermission, currentUser } = useAuth();
   const [saving, setSaving] = useState(false);
   
   // Check specific permissions
   const canEditAnyName = hasPermission(PERMISSIONS.EDIT_ANY_NAME) || isAdmin;
   const canEditOwnName = hasPermission(PERMISSIONS.EDIT_OWN_NAME);
   const canEditAnyProfile = hasPermission(PERMISSIONS.EDIT_ANY_PROFILE) || isAdmin;
+  
+  // Debug logging
+  console.log('🔐 EditProfileModal permissions check:', {
+    canEditAnyName,
+    canEditOwnName,
+    canEditAnyProfile,
+    isAdmin,
+    customPermissions: currentUser?.customPermissions
+  });
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
