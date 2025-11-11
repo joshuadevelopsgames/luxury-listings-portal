@@ -332,7 +332,7 @@ const OnboardingPage = () => {
                   value={profileData.city}
                   onChange={(e) => handleProfileInputChange('city', e.target.value)}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="Los Angeles"
+                  placeholder="Vancouver"
                 />
               </div>
 
