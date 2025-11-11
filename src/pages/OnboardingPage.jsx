@@ -309,7 +309,7 @@ const OnboardingPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 <MapPin className="inline w-4 h-4 mr-1" />
                 Address
               </label>
@@ -317,7 +317,7 @@ const OnboardingPage = () => {
                 type="text"
                 value={profileData.address}
                 onChange={(e) => handleProfileInputChange('address', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                 placeholder="123 Main Street"
               />
             </div>
