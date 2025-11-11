@@ -317,11 +317,11 @@ const OnboardingPage = () => {
             <div className="space-y-3">
               <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#83a4fd' }}>
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold">1</span>
+                  <span className="!text-white font-semibold">1</span>
                 </div>
                 <div>
                   <p className="font-medium !text-white">Check your Dashboard</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm !text-white">
                     Start with the dashboard to see your tasks and updates
                   </p>
                 </div>
@@ -329,11 +329,11 @@ const OnboardingPage = () => {
 
               <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#83a4fd' }}>
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold">2</span>
+                  <span className="!text-white font-semibold">2</span>
                 </div>
                 <div>
                   <p className="font-medium !text-white">Complete your profile</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm !text-white">
                     Visit "My Profile" to update your contact information
                   </p>
                 </div>
@@ -341,11 +341,11 @@ const OnboardingPage = () => {
 
               <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#83a4fd' }}>
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold">3</span>
+                  <span className="!text-white font-semibold">3</span>
                 </div>
                 <div>
                   <p className="font-medium !text-white">Explore the Resources page</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm !text-white">
                     Find tutorials, request time off, and access helpful tools
                   </p>
                 </div>
@@ -353,11 +353,11 @@ const OnboardingPage = () => {
 
               <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#83a4fd' }}>
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold">4</span>
+                  <span className="!text-white font-semibold">4</span>
                 </div>
                 <div>
                   <p className="font-medium !text-white">Need help?</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm !text-white">
                     Use the AI assistant (bottom right) or visit IT Support anytime
                   </p>
                 </div>
