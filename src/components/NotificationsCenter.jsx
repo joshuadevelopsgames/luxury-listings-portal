@@ -79,6 +79,12 @@ const NotificationsCenter = () => {
         return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'leave_request':
         return <Calendar className="w-4 h-4 text-purple-600" />;
+      case 'task_request':
+        return <MessageSquare className="w-4 h-4 text-orange-600" />;
+      case 'task_accepted':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'task_rejected':
+        return <Bell className="w-4 h-4 text-red-600" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-600" />;
     }

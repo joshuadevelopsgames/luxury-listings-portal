@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Plus, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import TaskForm from '../components/tasks/TaskForm';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskEditModal from '../components/tasks/TaskEditModal';
 import { useAuth } from '../contexts/AuthContext';
 import { DailyTask } from '../entities/DailyTask';
+import { firestoreService } from '../services/firestoreService';
+import { format } from 'date-fns';
 
 const TasksPage = () => {
   console.log('🚀 TasksPage component initializing...'); // Debug log
@@ -18,6 +22,18 @@ const TasksPage = () => {
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [taskRequests, setTaskRequests] = useState([]);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showRequestsPanel, setShowRequestsPanel] = useState(false);
+  const [requestForm, setRequestForm] = useState({
+    toUserEmail: '',
+    taskTitle: '',
+    taskDescription: '',
+    taskPriority: 'medium',
+    taskDueDate: ''
+  });
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState([]);
 
   // Helper function to parse dates as local dates (same as form validation)
   const parseLocalDate = (dateString) => {
@@ -54,6 +70,36 @@ const TasksPage = () => {
     const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     return taskDate < todayOnly;
   };
+
+  // Load available users
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const employees = await firestoreService.getEmployees();
+        // Filter out current user
+        const others = employees.filter(emp => emp.email !== currentUser.email);
+        setAvailableUsers(others);
+      } catch (error) {
+        console.error('Error loading users:', error);
+      }
+    };
+
+    if (currentUser?.email) {
+      loadUsers();
+    }
+  }, [currentUser?.email]);
+
+  // Load task requests
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    const unsubscribe = firestoreService.onTaskRequestsChange(currentUser.email, (requests) => {
+      const pendingRequests = requests.filter(r => r.status === 'pending');
+      setTaskRequests(pendingRequests);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser?.email]);
 
   // Load initial data and set up real-time listener
   useEffect(() => {
@@ -206,6 +252,66 @@ const TasksPage = () => {
     }
   };
 
+  // Handle task request submission
+  const handleSubmitTaskRequest = async (e) => {
+    e.preventDefault();
+    setSubmittingRequest(true);
+
+    try {
+      const toUser = availableUsers.find(u => u.email === requestForm.toUserEmail);
+      
+      await firestoreService.createTaskRequest({
+        fromUserEmail: currentUser.email,
+        fromUserName: `${currentUser.firstName} ${currentUser.lastName}`,
+        toUserEmail: requestForm.toUserEmail,
+        toUserName: `${toUser.firstName} ${toUser.lastName}`,
+        taskTitle: requestForm.taskTitle,
+        taskDescription: requestForm.taskDescription,
+        taskPriority: requestForm.taskPriority,
+        taskDueDate: requestForm.taskDueDate
+      });
+
+      alert('✅ Task request sent successfully!');
+      setShowRequestModal(false);
+      setRequestForm({
+        toUserEmail: '',
+        taskTitle: '',
+        taskDescription: '',
+        taskPriority: 'medium',
+        taskDueDate: ''
+      });
+    } catch (error) {
+      console.error('❌ Error sending task request:', error);
+      alert('Failed to send task request. Please try again.');
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
+
+  // Accept task request
+  const handleAcceptRequest = async (request) => {
+    try {
+      await firestoreService.acceptTaskRequest(request.id, request);
+      alert('✅ Task request accepted! Check your tasks.');
+    } catch (error) {
+      console.error('❌ Error accepting task request:', error);
+      alert('Failed to accept task request. Please try again.');
+    }
+  };
+
+  // Reject task request
+  const handleRejectRequest = async (request) => {
+    const reason = prompt('Why are you declining this task? (Optional)');
+    
+    try {
+      await firestoreService.rejectTaskRequest(request.id, request, reason || '');
+      alert('Task request declined.');
+    } catch (error) {
+      console.error('❌ Error rejecting task request:', error);
+      alert('Failed to reject task request. Please try again.');
+    }
+  };
+
   const getTaskCounts = () => {
     return {
       today: tasks.filter(task => task.due_date && isTodayLocal(task.due_date)).length,
@@ -237,10 +343,31 @@ const TasksPage = () => {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Daily Tasks</h1>
           <p className="text-slate-600">Stay on top of your onboarding activities</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Task
-        </Button>
+        <div className="flex items-center gap-3">
+          {taskRequests.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowRequestsPanel(true)}
+              className="relative"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Task Requests
+              <Badge className="ml-2 bg-red-500 text-white">{taskRequests.length}</Badge>
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            onClick={() => setShowRequestModal(true)}
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Request Task
+          </Button>
+          <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Task
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
@@ -312,6 +439,207 @@ const TasksPage = () => {
           ))
         )}
       </div>
+
+      {/* Task Request Modal */}
+      {showRequestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Request Task from Team Member</h2>
+                <Button variant="ghost" size="sm" onClick={() => setShowRequestModal(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+            
+            <form onSubmit={handleSubmitTaskRequest} className="p-6 space-y-4">
+              {/* Select User */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assign To *
+                </label>
+                <select
+                  value={requestForm.toUserEmail}
+                  onChange={(e) => setRequestForm({...requestForm, toUserEmail: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select a team member...</option>
+                  {availableUsers.map((user) => (
+                    <option key={user.email} value={user.email}>
+                      {user.firstName} {user.lastName} - {user.position || user.department}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Task Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Task Title *
+                </label>
+                <input
+                  type="text"
+                  value={requestForm.taskTitle}
+                  onChange={(e) => setRequestForm({...requestForm, taskTitle: e.target.value})}
+                  placeholder="What needs to be done?"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={requestForm.taskDescription}
+                  onChange={(e) => setRequestForm({...requestForm, taskDescription: e.target.value})}
+                  placeholder="Add details about this task..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Priority & Due Date */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                  <select
+                    value={requestForm.taskPriority}
+                    onChange={(e) => setRequestForm({...requestForm, taskPriority: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                  <input
+                    type="date"
+                    value={requestForm.taskDueDate}
+                    onChange={(e) => setRequestForm({...requestForm, taskDueDate: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowRequestModal(false)}
+                  disabled={submittingRequest}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={submittingRequest}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {submittingRequest ? 'Sending...' : 'Send Request'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Task Requests Panel */}
+      {showRequestsPanel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Task Requests ({taskRequests.length})</h2>
+                <Button variant="ghost" size="sm" onClick={() => setShowRequestsPanel(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {taskRequests.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600">No pending task requests</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {taskRequests.map((request) => (
+                    <Card key={request.id} className="border-2 border-blue-200 bg-blue-50">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center justify-between">
+                          <span>{request.taskTitle}</span>
+                          <Badge className={
+                            request.taskPriority === 'high' ? 'bg-red-100 text-red-800' :
+                            request.taskPriority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {request.taskPriority}
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Requested by:</p>
+                            <p className="text-sm text-gray-900">{request.fromUserName}</p>
+                          </div>
+                          {request.taskDescription && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Description:</p>
+                              <p className="text-sm text-gray-900">{request.taskDescription}</p>
+                            </div>
+                          )}
+                          {request.taskDueDate && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Due Date:</p>
+                              <p className="text-sm text-gray-900">
+                                {format(new Date(request.taskDueDate), 'MMMM dd, yyyy')}
+                              </p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-xs text-gray-500">
+                              Sent {request.createdAt?.toDate ? format(request.createdAt.toDate(), 'MMM dd, h:mm a') : 'recently'}
+                            </p>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-3 pt-3 border-t border-blue-200">
+                            <Button
+                              onClick={() => handleAcceptRequest(request)}
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="w-4 h-4 mr-2" />
+                              Accept & Add to My Tasks
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handleRejectRequest(request)}
+                              className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                            >
+                              <X className="w-4 h-4 mr-2" />
+                              Decline
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

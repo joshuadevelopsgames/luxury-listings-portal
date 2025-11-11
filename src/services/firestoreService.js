@@ -48,7 +48,8 @@ class FirestoreService {
     CLIENTS: 'clients',
     SUPPORT_TICKETS: 'support_tickets',
     TICKET_COMMENTS: 'ticket_comments',
-    NOTIFICATIONS: 'notifications'
+    NOTIFICATIONS: 'notifications',
+    TASK_REQUESTS: 'task_requests'
   };
 
   // Test connection method
@@ -1136,6 +1137,170 @@ class FirestoreService {
       console.error('❌ Error deleting notification:', error);
       throw error;
     }
+  }
+
+  // ===== TASK REQUESTS / DELEGATION =====
+
+  // Create task request
+  async createTaskRequest(requestData) {
+    try {
+      const taskRequest = {
+        fromUserEmail: requestData.fromUserEmail,
+        fromUserName: requestData.fromUserName,
+        toUserEmail: requestData.toUserEmail,
+        toUserName: requestData.toUserName,
+        taskTitle: requestData.taskTitle,
+        taskDescription: requestData.taskDescription,
+        taskPriority: requestData.taskPriority || 'medium',
+        taskDueDate: requestData.taskDueDate || null,
+        status: 'pending', // pending, accepted, rejected
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, this.collections.TASK_REQUESTS), taskRequest);
+      console.log('✅ Task request created:', docRef.id);
+
+      // Create notification for recipient
+      await this.createNotification({
+        userEmail: requestData.toUserEmail,
+        type: 'task_request',
+        title: 'New task request',
+        message: `${requestData.fromUserName} requested you to do: ${requestData.taskTitle}`,
+        link: '/tasks',
+        taskRequestId: docRef.id,
+        read: false
+      });
+
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error creating task request:', error);
+      throw error;
+    }
+  }
+
+  // Get task requests for user (received requests)
+  onTaskRequestsChange(userEmail, callback) {
+    const q = query(
+      collection(db, this.collections.TASK_REQUESTS),
+      where('toUserEmail', '==', userEmail)
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const requests = [];
+      snapshot.forEach((doc) => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      // Sort by createdAt descending (newest first)
+      const sortedRequests = requests.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      callback(sortedRequests);
+    });
+  }
+
+  // Accept task request
+  async acceptTaskRequest(requestId, requestData) {
+    try {
+      // Update request status
+      await updateDoc(doc(db, this.collections.TASK_REQUESTS, requestId), {
+        status: 'accepted',
+        acceptedAt: serverTimestamp()
+      });
+
+      // Create the actual task
+      const newTask = {
+        title: requestData.taskTitle,
+        description: requestData.taskDescription,
+        status: 'pending',
+        priority: requestData.taskPriority || 'medium',
+        assigned_to: requestData.toUserEmail,
+        assigned_by: requestData.fromUserEmail,
+        due_date: requestData.taskDueDate || null,
+        createdAt: serverTimestamp(),
+        task_type: 'delegated'
+      };
+
+      const taskRef = await addDoc(collection(db, this.collections.TASKS), newTask);
+      console.log('✅ Task created from request:', taskRef.id);
+
+      // Notify the requester that their request was accepted
+      await this.createNotification({
+        userEmail: requestData.fromUserEmail,
+        type: 'task_accepted',
+        title: 'Task request accepted',
+        message: `${requestData.toUserName} accepted your task request: ${requestData.taskTitle}`,
+        link: '/tasks',
+        read: false
+      });
+
+      return { success: true, taskId: taskRef.id };
+    } catch (error) {
+      console.error('❌ Error accepting task request:', error);
+      throw error;
+    }
+  }
+
+  // Reject task request
+  async rejectTaskRequest(requestId, requestData, rejectionReason = '') {
+    try {
+      // Update request status
+      await updateDoc(doc(db, this.collections.TASK_REQUESTS, requestId), {
+        status: 'rejected',
+        rejectedAt: serverTimestamp(),
+        rejectionReason: rejectionReason
+      });
+
+      // Notify the requester that their request was rejected
+      await this.createNotification({
+        userEmail: requestData.fromUserEmail,
+        type: 'task_rejected',
+        title: 'Task request declined',
+        message: rejectionReason 
+          ? `${requestData.toUserName} declined your task request: ${rejectionReason}`
+          : `${requestData.toUserName} declined your task request`,
+        link: '/tasks',
+        read: false
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error rejecting task request:', error);
+      throw error;
+    }
+  }
+
+  // Get sent task requests (requests you sent to others)
+  onSentTaskRequestsChange(userEmail, callback) {
+    const q = query(
+      collection(db, this.collections.TASK_REQUESTS),
+      where('fromUserEmail', '==', userEmail)
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const requests = [];
+      snapshot.forEach((doc) => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      // Sort by createdAt descending (newest first)
+      const sortedRequests = requests.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      callback(sortedRequests);
+    });
   }
 }
 
