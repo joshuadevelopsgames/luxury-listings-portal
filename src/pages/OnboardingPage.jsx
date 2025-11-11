@@ -211,24 +211,24 @@ const OnboardingPage = () => {
                 <Calendar className="h-6 w-6 text-orange-950 dark:text-orange-50" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-orange-950 dark:text-orange-100">
+                <h3 className="text-lg font-semibold mb-2 dark:text-orange-100" style={{ color: '#de7752' }}>
                   Why connect your calendar?
                 </h3>
-                <ul className="space-y-2 text-sm text-orange-900 dark:text-orange-200">
+                <ul className="space-y-2 text-sm dark:text-orange-200" style={{ color: '#de7752' }}>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-800 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#de7752' }} />
                     <span>See all team meetings and events in one place</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-800 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#de7752' }} />
                     <span>Never miss important deadlines or check-ins</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-800 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#de7752' }} />
                     <span>Book meetings with team members easily</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-800 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#de7752' }} />
                     <span>Your calendar data stays private and secure</span>
                   </li>
                 </ul>
