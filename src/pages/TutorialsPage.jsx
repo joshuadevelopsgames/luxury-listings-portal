@@ -18,6 +18,7 @@ import {
 
 import TutorialCard from "../components/tutorials/TutorialCard";
 import TutorialViewer from "../components/tutorials/TutorialViewer";
+import { PERMISSIONS } from "../entities/Permissions";
 
 const categoryColors = {
   strategy: "bg-blue-100 text-blue-800",
@@ -34,7 +35,10 @@ const categoryColors = {
 };
 
 export default function TutorialsPage() {
-  const { currentRole } = useAuth();
+  const { currentRole, hasPermission } = useAuth();
+  
+  // Check permissions
+  const canManageTutorials = hasPermission(PERMISSIONS.MANAGE_TUTORIALS);
   const [user, setUser] = useState(null);
   const [tutorials, setTutorials] = useState([]);
   const [progress, setProgress] = useState([]);

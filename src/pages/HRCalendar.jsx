@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import Calendar from '../components/ui/calendar';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
+import { PERMISSIONS } from '../entities/Permissions';
 import { 
   Calendar as CalendarIcon, 
   Plus, 
@@ -29,7 +30,12 @@ import {
 import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 
 const HRCalendar = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, hasPermission } = useAuth();
+  
+  // Check permissions
+  const canManageLeave = hasPermission(PERMISSIONS.MANAGE_LEAVE_REQUESTS);
+  const canApproveLeave = hasPermission(PERMISSIONS.APPROVE_LEAVE);
+  const canViewHRData = hasPermission(PERMISSIONS.VIEW_HR_DATA);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
