@@ -45,7 +45,8 @@ const ITSupportPage = () => {
     screenshotUrl: ''
   });
 
-  const isITSupport = currentRole === 'admin'; // Or create specific IT role
+  // IT Support can see all tickets - admin or if email is jrsschroeder@gmail.com
+  const isITSupport = currentRole === 'admin' || currentUser?.email === 'jrsschroeder@gmail.com';
 
   // Load support tickets from Firestore
   useEffect(() => {
@@ -161,10 +162,17 @@ const ITSupportPage = () => {
             ticketData: JSON.stringify(newTicket)
           });
           
+          const emailUrl = `${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`;
+          console.log('📧 Sending email via:', emailUrl);
+          console.log('📧 Ticket data:', newTicket);
+          
           // Use image request to avoid CORS issues
           const img = new Image();
-          img.src = `${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`;
-          console.log('📧 Email notification triggered');
+          img.onerror = () => console.log('✅ Email request completed (errors are normal for image requests)');
+          img.onload = () => console.log('✅ Email request completed successfully');
+          img.src = emailUrl;
+          
+          console.log('📧 Email notification request sent');
         } catch (emailError) {
           console.error('⚠️ Email notification failed (ticket still saved):', emailError);
           // Don't block user flow if email fails
