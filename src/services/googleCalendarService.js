@@ -9,6 +9,8 @@ class GoogleCalendarService {
     this.isInitialized = false;
     this.tokenClient = null;
     this.accessToken = null;
+    this.tokenKey = 'google_calendar_token';
+    this.tokenExpiryKey = 'google_calendar_token_expiry';
   }
 
   // Initialize Google Calendar API with new GIS library
@@ -20,6 +22,28 @@ class GoogleCalendarService {
     
     if (this.isInitialized) {
       console.log('✅ Already initialized, returning true');
+      return true;
+    }
+
+    // Check for stored token first
+    const storedToken = this.getStoredToken();
+    if (storedToken) {
+      console.log('✅ Found valid stored token, using it');
+      this.accessToken = storedToken;
+      this.isInitialized = true;
+      
+      // Still need to load gapi client for API calls
+      await this.loadGoogleAPI();
+      await window.gapi.client.init({
+        apiKey: this.apiKey,
+        discoveryDocs: this.discoveryDocs,
+      });
+      
+      // Set the stored token
+      window.gapi.client.setToken({
+        access_token: this.accessToken
+      });
+      
       return true;
     }
 
@@ -57,7 +81,7 @@ class GoogleCalendarService {
             console.error('❌ OAuth error:', response);
             return;
           }
-          console.log('✅ Access token received');
+          console.log('✅ Access token received in callback');
           this.accessToken = response.access_token;
           this.isInitialized = true;
         },
@@ -136,6 +160,9 @@ class GoogleCalendarService {
         console.log('✅ Access token received');
         this.accessToken = response.access_token;
         this.isInitialized = true;
+        
+        // Store the token (expires in 1 hour)
+        this.storeToken(response.access_token, 3600);
         
         // Set the token for gapi client
         window.gapi.client.setToken({
@@ -366,7 +393,44 @@ class GoogleCalendarService {
       
       this.accessToken = null;
       this.isInitialized = false;
+      
+      // Clear stored token
+      this.clearStoredToken();
     }
+  }
+
+  // Store token in localStorage with expiry
+  storeToken(token, expiresInSeconds) {
+    const expiryTime = Date.now() + (expiresInSeconds * 1000);
+    localStorage.setItem(this.tokenKey, token);
+    localStorage.setItem(this.tokenExpiryKey, expiryTime.toString());
+    console.log('💾 Token stored, expires in', expiresInSeconds, 'seconds');
+  }
+
+  // Get stored token if it's still valid
+  getStoredToken() {
+    const token = localStorage.getItem(this.tokenKey);
+    const expiry = localStorage.getItem(this.tokenExpiryKey);
+    
+    if (!token || !expiry) {
+      return null;
+    }
+
+    // Check if token has expired
+    if (Date.now() > parseInt(expiry)) {
+      console.log('⏰ Stored token expired, clearing it');
+      this.clearStoredToken();
+      return null;
+    }
+
+    return token;
+  }
+
+  // Clear stored token
+  clearStoredToken() {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.tokenExpiryKey);
+    console.log('🗑️ Stored token cleared');
   }
 }
 
