@@ -126,8 +126,8 @@ const OnboardingPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <LayoutDashboard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
+                <LayoutDashboard className="h-5 w-5 text-white" />
               </div>
               <h4 className="font-semibold">Dashboard</h4>
             </div>
@@ -138,8 +138,8 @@ const OnboardingPage = () => {
 
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-green-500 dark:hover:border-green-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <ListTodo className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="h-10 w-10 rounded-lg bg-green-500 flex items-center justify-center">
+                <ListTodo className="h-5 w-5 text-white" />
               </div>
               <h4 className="font-semibold">Daily Tasks</h4>
             </div>
@@ -150,8 +150,8 @@ const OnboardingPage = () => {
 
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-purple-500 dark:hover:border-purple-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <div className="h-10 w-10 rounded-lg bg-purple-500 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-white" />
               </div>
               <h4 className="font-semibold">Resources & Training</h4>
             </div>
@@ -162,8 +162,8 @@ const OnboardingPage = () => {
 
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <div className="h-10 w-10 rounded-lg bg-orange-500 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-white" />
               </div>
               <h4 className="font-semibold">Calendar & Events</h4>
             </div>
@@ -174,8 +174,8 @@ const OnboardingPage = () => {
 
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
+                <Users className="h-5 w-5 text-white" />
               </div>
               <h4 className="font-semibold">My Profile</h4>
             </div>
@@ -186,8 +186,8 @@ const OnboardingPage = () => {
 
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-red-500 dark:hover:border-red-400 transition-colors">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <div className="h-10 w-10 rounded-lg bg-red-500 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-white" />
               </div>
               <h4 className="font-semibold">IT Support</h4>
             </div>
@@ -211,24 +211,24 @@ const OnboardingPage = () => {
                 <Calendar className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-orange-900 dark:text-orange-100">
+                <h3 className="text-lg font-semibold mb-2 text-orange-950 dark:text-orange-50">
                   Why connect your calendar?
                 </h3>
-                <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                <ul className="space-y-2 text-sm text-gray-900 dark:text-gray-100">
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-600 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-700 flex-shrink-0" />
                     <span>See all team meetings and events in one place</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-600 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-700 flex-shrink-0" />
                     <span>Never miss important deadlines or check-ins</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-600 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-700 flex-shrink-0" />
                     <span>Book meetings with team members easily</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-600 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 mt-0.5 text-orange-700 flex-shrink-0" />
                     <span>Your calendar data stays private and secure</span>
                   </li>
                 </ul>
@@ -285,7 +285,7 @@ const OnboardingPage = () => {
           </div>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
+            <p className="text-sm text-blue-950 dark:text-blue-50">
               <strong>🔒 Privacy Note:</strong> We only access your calendar to show you team events. 
               We never modify your calendar or share your personal events without permission.
             </p>
