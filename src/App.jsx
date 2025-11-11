@@ -29,7 +29,7 @@ import ITSupportPage from './pages/ITSupportPage';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import NotificationsCenter from './components/NotificationsCenter';
-import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, Briefcase, Wrench } from 'lucide-react';
+import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, UserCircle, Wrench } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
 import { USER_ROLES } from './entities/UserRoles';
@@ -100,7 +100,7 @@ function AppLayout() {
           { id: 'it-support', name: 'Support Tickets', icon: Wrench, path: '/it-support' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
           { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/analytics' },
-          { id: 'self-service', name: 'My Profile', icon: Briefcase, path: '/self-service' },
+          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
         ];
       
       case USER_ROLES.CONTENT_DIRECTOR:
@@ -118,7 +118,7 @@ function AppLayout() {
           { id: 'content-calendar', name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: Briefcase, path: '/self-service' },
+          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
         ];
       
       case USER_ROLES.HR_MANAGER:
@@ -128,7 +128,7 @@ function AppLayout() {
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'team', name: 'Team Management', icon: Users, path: '/team' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: Briefcase, path: '/self-service' },
+          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
         ];
       
       case USER_ROLES.SALES_MANAGER:
@@ -139,7 +139,7 @@ function AppLayout() {
           { id: 'leads', name: 'Lead Management', icon: Target, path: '/leads' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: Briefcase, path: '/self-service' },
+          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
         ];
       
       default:
@@ -147,7 +147,7 @@ function AppLayout() {
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: Briefcase, path: '/self-service' },
+          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
         ];
     }
   };
