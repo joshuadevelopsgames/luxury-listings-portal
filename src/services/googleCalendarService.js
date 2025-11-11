@@ -11,12 +11,28 @@ class GoogleCalendarService {
 
   // Initialize Google Calendar API
   async initialize() {
-    if (this.isInitialized) return true;
+    console.log('🔍 GoogleCalendarService.initialize() called');
+    console.log('🔍 Already initialized?', this.isInitialized);
+    console.log('🔍 API Key:', this.apiKey ? 'Present' : 'MISSING');
+    console.log('🔍 Client ID:', this.clientId ? 'Present' : 'MISSING');
+    
+    if (this.isInitialized) {
+      console.log('✅ Already initialized, returning true');
+      return true;
+    }
+
+    if (!this.apiKey || !this.clientId) {
+      console.error('❌ Missing Google API credentials');
+      throw new Error('Google Calendar API credentials are not configured. Please add REACT_APP_GOOGLE_API_KEY and REACT_APP_GOOGLE_CLIENT_ID to your environment variables.');
+    }
 
     try {
+      console.log('📦 Loading Google API client...');
       // Load Google API client
       await this.loadGoogleAPI();
+      console.log('✅ Google API client loaded');
       
+      console.log('⚙️ Initializing Google client...');
       // Initialize the client
       await window.gapi.client.init({
         apiKey: this.apiKey,
@@ -24,16 +40,27 @@ class GoogleCalendarService {
         discoveryDocs: this.discoveryDocs,
         scope: this.scopes
       });
+      console.log('✅ Google client initialized');
 
+      console.log('🔐 Checking sign-in status...');
       // Check if user is already signed in
-      if (!window.gapi.auth2.getAuthInstance().isSignedIn.get()) {
+      const isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
+      console.log('🔐 User signed in?', isSignedIn);
+      
+      if (!isSignedIn) {
+        console.log('🔐 Prompting user to sign in...');
         await window.gapi.auth2.getAuthInstance().signIn();
+        console.log('✅ User signed in successfully');
       }
 
       this.isInitialized = true;
+      console.log('✅ Google Calendar initialized successfully!');
       return true;
     } catch (error) {
-      console.error('Failed to initialize Google Calendar:', error);
+      console.error('❌ Failed to initialize Google Calendar:', error);
+      console.error('❌ Error name:', error.name);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
       return false;
     }
   }
