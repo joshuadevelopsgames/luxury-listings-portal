@@ -232,7 +232,7 @@ const OnboardingPage = () => {
             
             <div className="grid grid-cols-1 gap-4">
               <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                   <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
                     <CheckCircle2 className="h-6 w-6 text-white" />
                   </div>
@@ -243,7 +243,7 @@ const OnboardingPage = () => {
               </div>
 
               <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-indigo-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                   <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
                     <CheckCircle2 className="h-6 w-6 text-white" />
                   </div>
@@ -254,7 +254,7 @@ const OnboardingPage = () => {
               </div>
 
               <div className="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                   <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
                     <CheckCircle2 className="h-6 w-6 text-white" />
                   </div>
