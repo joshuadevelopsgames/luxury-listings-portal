@@ -58,12 +58,28 @@ const ITSupportPage = () => {
     }
 
     console.log('📡 Loading comments for ticket:', selectedTicket.id);
-    const unsubscribe = firestoreService.onTicketCommentsChange(selectedTicket.id, (comments) => {
-      console.log('💬 Comments updated:', comments.length);
-      setTicketComments(comments);
-    });
+    
+    // Timeout fallback for comments
+    const timeoutId = setTimeout(() => {
+      console.log('⚠️ Comments loading timeout');
+      // Don't clear comments, just log
+    }, 5000);
 
-    return () => unsubscribe();
+    try {
+      const unsubscribe = firestoreService.onTicketCommentsChange(selectedTicket.id, (comments) => {
+        clearTimeout(timeoutId);
+        console.log('💬 Comments loaded:', comments.length, comments);
+        setTicketComments(comments);
+      });
+
+      return () => {
+        clearTimeout(timeoutId);
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error('❌ Error loading comments:', error);
+      clearTimeout(timeoutId);
+    }
   }, [selectedTicket?.id]);
 
   // Load support tickets from Firestore
@@ -362,20 +378,27 @@ const ITSupportPage = () => {
     e.preventDefault();
     if (!newComment.trim() || !selectedTicket) return;
 
+    console.log('💬 Submitting comment to ticket:', selectedTicket.id);
+
     try {
-      await firestoreService.addTicketComment(selectedTicket.id, {
+      const commentData = {
         authorEmail: currentUser.email,
         authorName: `${currentUser.firstName} ${currentUser.lastName}`,
         comment: newComment.trim(),
         isITSupport: isITSupport,
         notifyUserEmail: isITSupport ? selectedTicket.requesterEmail : null
-      });
+      };
       
+      console.log('💬 Comment data:', commentData);
+      
+      const result = await firestoreService.addTicketComment(selectedTicket.id, commentData);
+      
+      console.log('✅ Comment added successfully:', result);
       setNewComment('');
-      console.log('✅ Comment added successfully');
     } catch (error) {
       console.error('❌ Error adding comment:', error);
-      alert('Failed to add comment. Please try again.');
+      console.error('❌ Error details:', error.message, error.code);
+      alert(`Failed to add comment: ${error.message}\nPlease try again.`);
     }
   };
 
