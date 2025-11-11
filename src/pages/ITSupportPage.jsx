@@ -999,9 +999,13 @@ const ITSupportPage = () => {
 
               {selectedTicket.resolvedDate && (
                 <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-gray-600">Resolved</label>
+                  <label className="text-sm font-medium text-gray-600">
+                    {selectedTicket.status === 'closed' ? 'Closed' : 'Resolved'}
+                  </label>
                   <p className="text-gray-900 mt-1">
-                    {format(new Date(selectedTicket.resolvedDate), 'MMMM dd, yyyy')}
+                    {selectedTicket.resolvedDate?.toDate 
+                      ? format(selectedTicket.resolvedDate.toDate(), 'MMMM dd, yyyy')
+                      : format(new Date(selectedTicket.resolvedDate), 'MMMM dd, yyyy')}
                     {selectedTicket.resolvedBy && ` by ${selectedTicket.resolvedBy}`}
                   </p>
                 </div>
