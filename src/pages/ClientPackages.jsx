@@ -21,8 +21,15 @@ import {
   RefreshCw,
   Trash2
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { PERMISSIONS } from '../entities/Permissions';
+import { toast } from 'react-hot-toast';
 
 export default function ClientPackages() {
+  const { hasPermission } = useAuth();
+  
+  // Check permissions
+  const canManagePackages = hasPermission(PERMISSIONS.MANAGE_CLIENT_PACKAGES);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -1930,6 +1937,8 @@ export default function ClientPackages() {
               <Button 
                 onClick={handleAddClient}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={!canManagePackages}
+                title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Client
@@ -2020,73 +2029,82 @@ export default function ClientPackages() {
               
               {/* Actions */}
               <div className="flex flex-col gap-2 min-w-fit">
-                {client.approvalStatus === 'Pending' && (
+                {canManagePackages ? (
                   <>
+                    {client.approvalStatus === 'Pending' && (
+                      <>
+                        <Button 
+                          size="sm" 
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => openApprovalModal(client, 'approve')}
+                          disabled={approvalLoading[client.id]}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Approve
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="border-red-300 text-red-700 hover:bg-red-50"
+                          onClick={() => openApprovalModal(client, 'reject')}
+                          disabled={approvalLoading[client.id]}
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                    
                     <Button 
                       size="sm" 
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => openApprovalModal(client, 'approve')}
+                      variant="outline" 
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                      onClick={() => openEditModal(client)}
                       disabled={approvalLoading[client.id]}
                     >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Edit Package
                     </Button>
+                    
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => openFollowUpEmail(client)}
+                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Follow Up
+                    </Button>
+                    
+                    {/* Archive and Delete buttons for all clients */}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      onClick={() => archiveCompletedPackage(client)}
+                      disabled={archiveLoading[client.id]}
+                    >
+                      <Archive className="w-4 h-4 mr-2" />
+                      Archive
+                    </Button>
+                    
                     <Button 
                       size="sm" 
                       variant="outline"
                       className="border-red-300 text-red-700 hover:bg-red-50"
-                      onClick={() => openApprovalModal(client, 'reject')}
-                      disabled={approvalLoading[client.id]}
+                      onClick={() => deleteClient(client)}
+                      disabled={deleteLoading[client.id]}
                     >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Reject
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
                     </Button>
                   </>
+                ) : (
+                  <div className="text-sm text-gray-500 text-center py-4">
+                    <p>View Only</p>
+                    <p className="text-xs mt-1">Contact admin for edit access</p>
+                  </div>
                 )}
-                
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                  onClick={() => openEditModal(client)}
-                  disabled={approvalLoading[client.id]}
-                >
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  Edit Package
-                </Button>
-                
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => openFollowUpEmail(client)}
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Follow Up
-                </Button>
-                
-                {/* Archive and Delete buttons for all clients */}
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                  onClick={() => archiveCompletedPackage(client)}
-                  disabled={archiveLoading[client.id]}
-                >
-                  <Archive className="w-4 h-4 mr-2" />
-                  Archive
-                </Button>
-                
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="border-red-300 text-red-700 hover:bg-red-50"
-                  onClick={() => deleteClient(client)}
-                  disabled={deleteLoading[client.id]}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
               </div>
             </div>
           </Card>
@@ -2105,6 +2123,8 @@ export default function ClientPackages() {
             <Button 
               onClick={handleAddClient}
               className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={!canManagePackages}
+              title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New Client
@@ -2143,6 +2163,8 @@ export default function ClientPackages() {
                 <Button 
                   onClick={handleAddClient}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={!canManagePackages}
+                  title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Monthly Client
@@ -2168,6 +2190,8 @@ export default function ClientPackages() {
                 <Button 
                   onClick={handleAddClient}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={!canManagePackages}
+                  title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Monthly Client
@@ -2259,65 +2283,67 @@ export default function ClientPackages() {
                     
                     {/* Monthly Actions */}
                     <div className="flex flex-col gap-2 min-w-fit">
-                      {client.approvalStatus === 'Pending' && (
+                      {canManagePackages ? (
                         <>
+                          {client.approvalStatus === 'Pending' && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => openApprovalModal(client, 'approve')}
+                                disabled={approvalLoading[client.id]}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="border-red-300 text-red-700 hover:bg-red-50"
+                                onClick={() => openApprovalModal(client, 'reject')}
+                                disabled={approvalLoading[client.id]}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          
                           <Button 
                             size="sm" 
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => openApprovalModal(client, 'approve')}
+                            variant="outline" 
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                            onClick={() => openEditModal(client)}
                             disabled={approvalLoading[client.id]}
                           >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Approve
+                            <Edit3 className="w-4 h-4 mr-2" />
+                            Edit Package
                           </Button>
+                          
                           <Button 
                             size="sm" 
                             variant="outline"
-                            className="border-red-300 text-red-700 hover:bg-red-50"
-                            onClick={() => openApprovalModal(client, 'reject')}
+                            onClick={() => openFollowUpEmail(client)}
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            Follow Up
+                          </Button>
+                          
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                            onClick={() => handleMonthlyReset(client.id)}
                             disabled={approvalLoading[client.id]}
                           >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Reject
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Monthly Reset
                           </Button>
-                        </>
-                      )}
-                      
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                        onClick={() => openEditModal(client)}
-                        disabled={approvalLoading[client.id]}
-                      >
-                        <Edit3 className="w-4 h-4 mr-2" />
-                        Edit Package
-                      </Button>
-                      
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => openFollowUpEmail(client)}
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                      >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Follow Up
-                      </Button>
-                      
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="border-orange-300 text-orange-700 hover:bg-orange-50"
-                        onClick={() => handleMonthlyReset(client.id)}
-                        disabled={approvalLoading[client.id]}
-                      >
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Monthly Reset
-                      </Button>
-                      
-                      <Button 
-                        size="sm" 
-                        variant="outline"
+                          
+                          <Button 
+                            size="sm" 
+                            variant="outline"
                         className="border-gray-300 text-gray-700 hover:bg-gray-50"
                         onClick={() => archiveCompletedPackage(client)}
                         disabled={archiveLoading[client.id]}
@@ -2325,6 +2351,13 @@ export default function ClientPackages() {
                         <Archive className="w-4 h-4 mr-2" />
                         Archive
                       </Button>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500 text-center py-4">
+                          <p>View Only</p>
+                          <p className="text-xs mt-1">Contact admin for edit access</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>

@@ -11,10 +11,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
 import { format } from 'date-fns';
+import { PERMISSIONS } from '../entities/Permissions';
+import { toast } from 'react-hot-toast';
 
 const TasksPage = () => {
   console.log('🚀 TasksPage component initializing...'); // Debug log
-  const { currentUser } = useAuth();
+  const { currentUser, hasPermission } = useAuth();
+  
+  // Check permissions
+  const canCreateTasks = hasPermission(PERMISSIONS.CREATE_TASKS);
+  const canAssignTasks = hasPermission(PERMISSIONS.ASSIGN_TASKS);
+  const canViewAllTasks = hasPermission(PERMISSIONS.VIEW_ALL_TASKS);
+  const canDeleteAnyTask = hasPermission(PERMISSIONS.DELETE_ANY_TASK);
   const [showForm, setShowForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -363,7 +371,12 @@ const TasksPage = () => {
             <UserPlus className="w-4 h-4 mr-2" />
             Request Task
           </Button>
-          <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+            onClick={() => canCreateTasks ? setShowForm(true) : toast.error('You need CREATE_TASKS permission')} 
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={!canCreateTasks}
+            title={!canCreateTasks ? 'You need CREATE_TASKS permission' : ''}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Task
           </Button>
@@ -435,6 +448,8 @@ const TasksPage = () => {
               onStatusChange={updateTaskStatus}
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
+              canEdit={canCreateTasks}
+              canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
             />
           ))
         )}

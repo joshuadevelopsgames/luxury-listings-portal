@@ -16,7 +16,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 
-const TaskCard = ({ task, onStatusChange, onEdit, onDelete }) => {
+const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canDelete = true }) => {
   const [showActions, setShowActions] = useState(false);
 
   // Helper function to parse dates as local dates (same as TasksPage)
