@@ -141,9 +141,17 @@ const OnboardingPage = () => {
       description: 'We\'re excited to have you join the team. Let\'s take a quick tour of your new workspace.',
       icon: Sparkles,
       content: (
-        <div className="space-y-6">
-          <div className="rounded-lg p-6 border border-indigo-500" style={{ backgroundColor: '#6366f1' }}>
-            <h3 className="text-lg font-semibold mb-3 text-indigo-950 dark:text-indigo-50">
+        <div className="space-y-8">
+          {/* Role Hero Section */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 p-8 shadow-xl">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative">
+              <div className="flex items-start gap-5">
+                <div className="flex-shrink-0 h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Sparkles className="h-8 w-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold mb-3 text-white drop-shadow-lg">
               {(() => {
                 // Get all roles the user has access to (not just the currently switched one)
                 const allRoles = currentUser?.roles || userData?.roles || [];
@@ -163,7 +171,7 @@ const OnboardingPage = () => {
                 }
               })()}
             </h3>
-            <p className="text-indigo-950/90 dark:text-indigo-50/90">
+            <p className="text-white/90 text-lg">
               {(() => {
                 // Get all roles the user has access to (not just the currently switched one)
                 const allRoles = currentUser?.roles || userData?.roles || [];
@@ -210,26 +218,52 @@ const OnboardingPage = () => {
                 }
               })()}
             </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-3">
-            <p className="text-gray-600 dark:text-gray-400">
-              This quick setup will help you:
-            </p>
-            <ul className="space-y-2">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>Understand the key features available to you</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>Connect your Google Calendar for team collaboration</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>Get familiar with your personalized dashboard</span>
-              </li>
-            </ul>
+          {/* Setup Steps */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
+              <h4 className="font-bold text-xl text-gray-800">This quick setup will help you:</h4>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+                    <CheckCircle2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">Understand the key features available to you</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-indigo-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                    <CheckCircle2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">Connect your Google Calendar for team collaboration</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
+                    <CheckCircle2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">Get familiar with your personalized dashboard</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )
@@ -436,77 +470,96 @@ const OnboardingPage = () => {
       description: 'Here\'s what you can do in the Luxury Listings Portal',
       icon: LayoutDashboard,
       content: (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                <LayoutDashboard className="h-5 w-5 text-blue-950 dark:text-blue-50" />
-              </div>
-              <h4 className="font-semibold">Dashboard</h4>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Your personalized hub with quick stats, recent activity, and important updates
-            </p>
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
+            <h4 className="font-bold text-xl text-gray-800">Explore Your Tools</h4>
           </div>
 
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-green-500 dark:hover:border-green-400 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-green-500 flex items-center justify-center">
-                <ListTodo className="h-5 w-5 text-green-950 dark:text-green-50" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-indigo-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                  <LayoutDashboard className="h-7 w-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 mb-2">Dashboard</h4>
+                  <p className="text-sm text-gray-600">
+                    Your personalized hub with quick stats, recent activity, and important updates
+                  </p>
+                </div>
               </div>
-              <h4 className="font-semibold">Daily Tasks</h4>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Manage your tasks, collaborate with teammates, and track your progress
-            </p>
-          </div>
 
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-purple-500 dark:hover:border-purple-400 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-purple-500 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-purple-950 dark:text-purple-50" />
+            <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+                  <ListTodo className="h-7 w-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 mb-2">Daily Tasks</h4>
+                  <p className="text-sm text-gray-600">
+                    Manage your tasks, collaborate with teammates, and track your progress
+                  </p>
+                </div>
               </div>
-              <h4 className="font-semibold">Resources & Training</h4>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Access tutorials, time-off requests, and helpful resources
-            </p>
-          </div>
 
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-orange-500 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-orange-950 dark:text-orange-50" />
+            <div className="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
+                  <BookOpen className="h-7 w-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 mb-2">Resources & Training</h4>
+                  <p className="text-sm text-gray-600">
+                    Access tutorials, time-off requests, and helpful resources
+                  </p>
+                </div>
               </div>
-              <h4 className="font-semibold">Calendar & Events</h4>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              View team events, schedule meetings, and manage your availability
-            </p>
-          </div>
 
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                <Users className="h-5 w-5 text-blue-950 dark:text-blue-50" />
+            <div className="group relative overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200 hover:border-orange-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg">
+                  <Calendar className="h-7 w-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 mb-2">Calendar & Events</h4>
+                  <p className="text-sm text-gray-600">
+                    View team events, schedule meetings, and manage your availability
+                  </p>
+                </div>
               </div>
-              <h4 className="font-semibold">My Profile</h4>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Update your information, manage settings, and personalize your experience
-            </p>
-          </div>
 
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-red-500 dark:hover:border-red-400 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-red-500 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-red-950 dark:text-red-50" />
+            <div className="group relative overflow-hidden bg-gradient-to-br from-cyan-50 to-sky-50 border-2 border-cyan-200 hover:border-cyan-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg">
+                  <Users className="h-7 w-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 mb-2">My Profile</h4>
+                  <p className="text-sm text-gray-600">
+                    Update your information, manage settings, and personalize your experience
+                  </p>
+                </div>
               </div>
-              <h4 className="font-semibold">IT Support</h4>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Get help with technical issues, report bugs, and submit support requests
-            </p>
+
+            <div className="group relative overflow-hidden bg-gradient-to-br from-rose-50 to-red-50 border-2 border-rose-200 hover:border-rose-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg">
+                  <FileText className="h-7 w-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 mb-2">IT Support</h4>
+                  <p className="text-sm text-gray-600">
+                    Get help with technical issues, report bugs, and submit support requests
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )
