@@ -15,7 +15,12 @@ import {
   ArrowRight,
   ArrowLeft,
   Home,
-  ChevronRight
+  ChevronRight,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase
 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { googleCalendarService } from '../services/googleCalendarService';
@@ -28,6 +33,19 @@ const OnboardingPage = () => {
   const [completing, setCompleting] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [connectingCalendar, setConnectingCalendar] = useState(false);
+  const [profileData, setProfileData] = useState({
+    firstName: userData?.firstName || currentUser?.firstName || '',
+    lastName: userData?.lastName || currentUser?.lastName || '',
+    email: currentUser?.email || '',
+    phone: userData?.phone || '',
+    address: userData?.address || '',
+    city: userData?.city || '',
+    state: userData?.state || '',
+    zipCode: userData?.zipCode || '',
+    emergencyContactName: userData?.emergencyContactName || '',
+    emergencyContactPhone: userData?.emergencyContactPhone || '',
+    emergencyContactRelation: userData?.emergencyContactRelation || ''
+  });
 
   useEffect(() => {
     checkGoogleConnection();
@@ -60,11 +78,25 @@ const OnboardingPage = () => {
   const handleCompleteOnboarding = async () => {
     setCompleting(true);
     try {
-      // Mark onboarding as completed in Firestore
-      await firestoreService.updateEmployee(currentUser.email, {
+      // Save profile data and mark onboarding as completed
+      const employeeData = {
+        ...profileData,
         onboardingCompleted: true,
-        onboardingCompletedDate: new Date().toISOString()
-      });
+        onboardingCompletedDate: new Date().toISOString(),
+        position: userData?.position || currentUser?.position,
+        department: userData?.department || currentUser?.department,
+        startDate: userData?.startDate || currentUser?.startDate || new Date().toISOString(),
+        roles: currentUser?.roles || userData?.roles || []
+      };
+
+      // Check if employee exists, if not create new one
+      const existingEmployee = await firestoreService.getEmployeeByEmail(currentUser.email);
+      
+      if (existingEmployee) {
+        await firestoreService.updateEmployee(existingEmployee.id, employeeData);
+      } else {
+        await firestoreService.addEmployee(employeeData);
+      }
 
       toast.success('🎉 Welcome aboard! Let\'s get started!');
       
@@ -77,6 +109,13 @@ const OnboardingPage = () => {
       toast.error('Failed to save onboarding progress');
       setCompleting(false);
     }
+  };
+
+  const handleProfileInputChange = (field, value) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleSkip = async () => {
@@ -185,6 +224,196 @@ const OnboardingPage = () => {
     },
     {
       id: 1,
+      title: 'Complete Your Profile',
+      description: 'Tell us a bit about yourself',
+      icon: User,
+      content: (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <User className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Why complete your profile?</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Help your team get to know you better and ensure we have the right contact information for important updates.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-semibold text-lg">Personal Information</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <User className="inline w-4 h-4 mr-1" />
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  value={profileData.firstName}
+                  onChange={(e) => handleProfileInputChange('firstName', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="John"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <User className="inline w-4 h-4 mr-1" />
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  value={profileData.lastName}
+                  onChange={(e) => handleProfileInputChange('lastName', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="Doe"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Mail className="inline w-4 h-4 mr-1" />
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={profileData.email}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Phone className="inline w-4 h-4 mr-1" />
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={profileData.phone}
+                  onChange={(e) => handleProfileInputChange('phone', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <MapPin className="inline w-4 h-4 mr-1" />
+                Address
+              </label>
+              <input
+                type="text"
+                value={profileData.address}
+                onChange={(e) => handleProfileInputChange('address', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                placeholder="123 Main Street"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={profileData.city}
+                  onChange={(e) => handleProfileInputChange('city', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="Los Angeles"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  State
+                </label>
+                <input
+                  type="text"
+                  value={profileData.state}
+                  onChange={(e) => handleProfileInputChange('state', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="CA"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ZIP Code
+                </label>
+                <input
+                  type="text"
+                  value={profileData.zipCode}
+                  onChange={(e) => handleProfileInputChange('zipCode', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="90001"
+                />
+              </div>
+            </div>
+
+            <h4 className="font-semibold text-lg pt-4">Emergency Contact</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Contact Name
+                </label>
+                <input
+                  type="text"
+                  value={profileData.emergencyContactName}
+                  onChange={(e) => handleProfileInputChange('emergencyContactName', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="Jane Doe"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Contact Phone
+                </label>
+                <input
+                  type="tel"
+                  value={profileData.emergencyContactPhone}
+                  onChange={(e) => handleProfileInputChange('emergencyContactPhone', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="(555) 987-6543"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Relationship
+                </label>
+                <input
+                  type="text"
+                  value={profileData.emergencyContactRelation}
+                  onChange={(e) => handleProfileInputChange('emergencyContactRelation', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="Spouse, Parent, etc."
+                />
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mt-4">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Note:</strong> You can update this information anytime from your profile page.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 2,
       title: 'Your Platform Features',
       description: 'Here\'s what you can do in the Luxury Listings Portal',
       icon: LayoutDashboard,
@@ -265,7 +494,7 @@ const OnboardingPage = () => {
       )
     },
     {
-      id: 2,
+      id: 3,
       title: 'Connect Your Google Calendar',
       description: 'Stay in sync with team meetings and events',
       icon: Calendar,
@@ -360,7 +589,7 @@ const OnboardingPage = () => {
       )
     },
     {
-      id: 3,
+      id: 4,
       title: 'You\'re All Set! 🎉',
       description: 'Ready to start your journey with Luxury Listings',
       icon: CheckCircle2,
