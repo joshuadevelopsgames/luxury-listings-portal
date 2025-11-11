@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import Calendar from '../components/ui/calendar';
 import googleCalendarService from '../services/googleCalendarService';
+import { toast } from 'react-hot-toast';
 import { 
   Calendar as CalendarIcon, 
   Plus, 
@@ -295,16 +296,29 @@ const HRCalendar = () => {
 
   const checkGoogleCalendarConnection = async () => {
     try {
+      console.log('🔄 Starting Google Calendar connection...');
+      console.log('API Key available:', !!process.env.REACT_APP_GOOGLE_API_KEY);
+      console.log('Client ID available:', !!process.env.REACT_APP_GOOGLE_CLIENT_ID);
+      
       setIsLoadingGoogle(true);
+      
       const isConnected = await googleCalendarService.initialize();
+      console.log('✅ Google Calendar initialized:', isConnected);
+      
       setIsGoogleConnected(isConnected);
       
       if (isConnected) {
+        console.log('📅 Loading Google Calendar events...');
         await loadGoogleCalendarEvents();
+        toast.success('📅 Google Calendar connected successfully!');
+      } else {
+        toast.error('Failed to connect to Google Calendar. Please try again.');
       }
     } catch (error) {
-      console.error('Failed to connect to Google Calendar:', error);
+      console.error('❌ Failed to connect to Google Calendar:', error);
+      console.error('Error details:', error.message, error.stack);
       setIsGoogleConnected(false);
+      toast.error(`Failed to connect Google Calendar: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoadingGoogle(false);
     }
@@ -417,7 +431,14 @@ const HRCalendar = () => {
               onClick={checkGoogleCalendarConnection}
               disabled={isLoadingGoogle}
             >
-              {isGoogleConnected ? 'Reconnect' : 'Connect'}
+              {isLoadingGoogle ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                  Connecting...
+                </>
+              ) : (
+                isGoogleConnected ? 'Reconnect' : 'Connect'
+              )}
             </Button>
           </div>
         </CardContent>
