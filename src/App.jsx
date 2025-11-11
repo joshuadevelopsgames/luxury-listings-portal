@@ -27,6 +27,7 @@ import MyTimeOff from './pages/MyTimeOff';
 import EmployeeSelfService from './pages/EmployeeSelfService';
 import ITSupportPage from './pages/ITSupportPage';
 import OnboardingPage from './pages/OnboardingPage';
+import OnboardingTestPage from './pages/OnboardingTestPage';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import NotificationsCenter from './components/NotificationsCenter';
@@ -203,6 +204,7 @@ function AppLayout() {
       <main className="w-full overflow-x-hidden">
         <Routes>
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+          <Route path="/test-onboarding" element={<ProtectedRoute><OnboardingTestPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/tutorials" element={<ProtectedRoute><TutorialsPage /></ProtectedRoute>} />
           <Route path="/content-manager-message" element={<ProtectedRoute><ContentManagerMessage /></ProtectedRoute>} />
