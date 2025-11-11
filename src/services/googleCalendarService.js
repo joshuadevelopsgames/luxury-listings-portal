@@ -319,4 +319,4 @@ class GoogleCalendarService {
 // Create singleton instance
 const googleCalendarService = new GoogleCalendarService();
 
-export default googleCalendarService;
+export { googleCalendarService };
