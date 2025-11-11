@@ -315,7 +315,7 @@ const OnboardingPage = () => {
           <div className="space-y-3">
             <h4 className="font-semibold text-lg">Quick Tips to Get Started:</h4>
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#4b78f5' }}>
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">1</span>
                 </div>
@@ -327,7 +327,7 @@ const OnboardingPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#4b78f5' }}>
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">2</span>
                 </div>
@@ -339,7 +339,7 @@ const OnboardingPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#4b78f5' }}>
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">3</span>
                 </div>
@@ -351,7 +351,7 @@ const OnboardingPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#4b78f5' }}>
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">4</span>
                 </div>
