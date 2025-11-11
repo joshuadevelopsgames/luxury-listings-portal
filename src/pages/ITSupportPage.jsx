@@ -364,12 +364,29 @@ const ITSupportPage = () => {
 
   // Handle status update (IT Support only)
   const handleStatusUpdate = async (ticketId, newStatus) => {
+    console.log('🔄 Updating ticket status:', ticketId, 'to', newStatus);
+    
     try {
-      await firestoreService.updateSupportTicketStatus(ticketId, newStatus);
-      console.log('✅ Ticket status updated:', ticketId, newStatus);
+      const resolvedBy = isITSupport ? `${currentUser.firstName} ${currentUser.lastName}` : null;
+      
+      console.log('📤 Calling updateSupportTicketStatus with:', {
+        ticketId,
+        newStatus,
+        resolvedBy
+      });
+      
+      await firestoreService.updateSupportTicketStatus(ticketId, newStatus, resolvedBy);
+      console.log('✅ Ticket status updated successfully');
+      
+      // Close the modal after status update
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket(null);
+      }
     } catch (error) {
       console.error('❌ Error updating ticket status:', error);
-      alert('Failed to update ticket status. Please try again.');
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error message:', error.message);
+      alert(`Failed to update ticket status: ${error.message}\nPlease try again.`);
     }
   };
 
@@ -581,7 +598,7 @@ const ITSupportPage = () => {
                       {/* Right side - Admin Actions */}
                       {isITSupport && (
                         <div className="flex flex-col gap-2 flex-shrink-0">
-                          {ticket.status !== 'in_progress' && (
+                          {ticket.status === 'pending' && (
                             <Button
                               size="sm"
                               onClick={(e) => {
@@ -593,7 +610,7 @@ const ITSupportPage = () => {
                               Start Work
                             </Button>
                           )}
-                          {ticket.status !== 'resolved' && (
+                          {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
                             <Button
                               size="sm"
                               onClick={(e) => {
@@ -603,6 +620,18 @@ const ITSupportPage = () => {
                               className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
                             >
                               Mark Resolved
+                            </Button>
+                          )}
+                          {ticket.status === 'resolved' && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusUpdate(ticket.id, 'closed');
+                              }}
+                              className="bg-gray-600 hover:bg-gray-700 whitespace-nowrap"
+                            >
+                              Close Ticket
                             </Button>
                           )}
                           <Button
