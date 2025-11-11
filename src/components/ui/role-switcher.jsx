@@ -327,33 +327,45 @@ const RoleSwitcher = () => {
         onSave={async (updates) => {
           try {
             console.log('💾 Saving profile updates:', updates);
+            console.log('📧 Current user email:', currentUser.email);
             const { firestoreService } = await import('../../services/firestoreService');
             
             // Update approved users collection
+            console.log('⏳ Updating approved users collection...');
             await firestoreService.updateApprovedUser(currentUser.email, updates);
             console.log('✅ Updated approved users collection');
             
             // Also update employee collection if it exists
             try {
+              console.log('⏳ Checking for employee record...');
               const employee = await firestoreService.getEmployeeByEmail(currentUser.email);
               if (employee) {
+                console.log('⏳ Updating employee collection...');
                 await firestoreService.updateEmployee(employee.id, updates);
                 console.log('✅ Updated employee collection');
+              } else {
+                console.log('ℹ️ No employee record found');
               }
             } catch (employeeError) {
               console.log('ℹ️ Employee record not found or not updated:', employeeError.message);
             }
             
-            toast.success('✅ Profile updated successfully!');
+            // Wait a moment to ensure Firestore has committed
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('✅ All updates complete, reloading...');
+            
+            toast.success('✅ Profile updated successfully! Refreshing...');
             setIsEditOpen(false);
             
-            // Reload the page to refresh user data
+            // Reload the page to refresh user data from Firestore
             setTimeout(() => {
+              console.log('🔄 Reloading page now...');
               window.location.reload();
             }, 500);
           } catch (e) {
-            console.error('❌ Failed to update profile', e);
-            toast.error('Failed to update profile. Please try again.');
+            console.error('❌ Failed to update profile:', e);
+            console.error('❌ Error details:', e.message, e.stack);
+            toast.error(`Failed to update profile: ${e.message || 'Unknown error'}`);
           }
         }}
       />

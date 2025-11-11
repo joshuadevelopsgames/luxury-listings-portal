@@ -39,6 +39,9 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('📝 EditProfileModal - Form submitted');
+    console.log('📝 Current form data:', form);
+    
     // Enforce editable fields based on role
     const commonUpdates = {
       firstName: form.firstName,
@@ -49,7 +52,10 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
       avatar: form.avatar
     };
     const adminOnly = isAdmin ? { department: form.department, startDate: form.startDate } : {};
-    await onSave({ ...commonUpdates, ...adminOnly });
+    const allUpdates = { ...commonUpdates, ...adminOnly };
+    
+    console.log('📝 Sending updates to onSave:', allUpdates);
+    await onSave(allUpdates);
   };
 
   return (
