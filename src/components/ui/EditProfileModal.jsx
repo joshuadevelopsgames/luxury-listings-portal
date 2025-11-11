@@ -47,20 +47,26 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
     setSaving(true);
     
     try {
-      // Enforce editable fields based on role
-      const commonUpdates = {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        displayName: form.displayName,
-        phone: form.phone,
-        location: form.location,
-        avatar: form.avatar
-      };
-      const adminOnly = isAdmin ? { department: form.department, startDate: form.startDate } : {};
-      const allUpdates = { ...commonUpdates, ...adminOnly };
+      // Build updates based on user permissions
+      const updates = {};
       
-      console.log('📝 Sending updates to onSave:', allUpdates);
-      await onSave(allUpdates);
+      if (isAdmin) {
+        // Admin can edit everything
+        updates.firstName = form.firstName;
+        updates.lastName = form.lastName;
+        updates.department = form.department;
+        updates.startDate = form.startDate;
+      }
+      
+      // Everyone can edit these fields
+      updates.displayName = form.displayName;
+      updates.phone = form.phone;
+      updates.location = form.location;
+      updates.avatar = form.avatar;
+      
+      console.log('📝 Sending updates to onSave (based on permissions):', updates);
+      console.log('🔐 Is admin?', isAdmin);
+      await onSave(updates);
       console.log('✅ onSave completed successfully');
     } catch (error) {
       console.error('❌ Error in handleSubmit:', error);
@@ -81,12 +87,24 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
           <div className="p-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">First Name</label>
-                <input name="firstName" value={form.firstName} onChange={handleChange} className="w-full border rounded-md px-3 py-2" />
+                <label className="block text-sm text-gray-600 mb-1">First Name {isAdmin ? '' : '(HR managed)'}</label>
+                <input 
+                  name="firstName" 
+                  value={form.firstName} 
+                  onChange={handleChange} 
+                  className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500" 
+                  disabled={!isAdmin}
+                />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Last Name</label>
-                <input name="lastName" value={form.lastName} onChange={handleChange} className="w-full border rounded-md px-3 py-2" />
+                <label className="block text-sm text-gray-600 mb-1">Last Name {isAdmin ? '' : '(HR managed)'}</label>
+                <input 
+                  name="lastName" 
+                  value={form.lastName} 
+                  onChange={handleChange} 
+                  className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500" 
+                  disabled={!isAdmin}
+                />
               </div>
             </div>
 
