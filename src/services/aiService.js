@@ -13,7 +13,7 @@ class AIService {
         tutorials: "Step-by-step guides organized by role and difficulty level",
         resources: "Document library with templates, guides, and quick access to My Time Off, Manager Messages, IT Support, and HR Analytics (for HR). Everything is nested here for easy access.",
         myTimeOff: "Employee time-off management where users can request vacation, sick leave, personal time, view balances, and track request status (pending/approved/rejected). Updates automatically in real-time.",
-        selfService: "Employee Self-Service portal with tabs for Overview, Personal Info (editable), Time Off, Compensation, and Documents. HR managers can edit all employee fields.",
+        myProfile: "My Profile portal with tabs for Overview, Personal Info (editable), Time Off, Compensation, and Documents. HR managers can edit all employee fields.",
         itSupport: "IT Support intake form where employees can submit technical issues with page URLs, screenshots, and descriptions. Sends email to jrsschroeder@gmail.com and updates automatically.",
         calendar: "HR calendar for leave management, team scheduling, and Google Calendar sync (HR Managers only)",
         team: "Team management showing employee details, editable by HR managers (HR Managers only)",
@@ -52,12 +52,12 @@ class AIService {
         }
       },
       navigation: {
-        main: ["Dashboard", "Tasks", "Resources", "Self-Service"],
+        main: ["Dashboard", "Tasks", "Resources", "My Profile"],
         admin: ["User Management", "All Profiles", "System Administration"],
         contentDirector: ["Client Packages (next to Dashboard)", "Programs"],
         hrManager: ["HR Calendar", "Team Management"],
         salesManager: ["CRM Dashboard", "Sales Pipeline", "Lead Management"],
-        nestedInResources: ["My Time Off (featured)", "Manager Messages", "IT Support", "HR Analytics (HR only)"]
+        nestedInResources: ["My Time Off (featured)", "Tutorials & Training (featured)", "Manager Messages", "IT Support", "HR Analytics (HR only)"]
       },
       keyFeatures: {
         autoSave: "All data saves automatically with real-time updates across all users",
@@ -137,7 +137,7 @@ class AIService {
 CRITICAL RULES - YOU MUST FOLLOW THESE:
 1. ONLY answer questions about this specific software application
 2. NEVER discuss topics outside of this software
-3. If asked about anything else, respond with: "I'm here to help you with the Luxury Listings Portal software. I can help you with questions about the Dashboard, My Time Off, Employee Self-Service, IT Support, HR Calendar, Team Management, HR Analytics, Client Packages, CRM, Sales Pipeline, and other app features. What would you like to know about the software?"
+3. If asked about anything else, respond with: "I'm here to help you with the Luxury Listings Portal software. I can help you with questions about the Dashboard, My Time Off, My Profile, IT Support, Task Delegation, Tutorials, HR Calendar, Team Management, HR Analytics, Client Packages, CRM, Sales Pipeline, and other app features. What would you like to know about the software?"
 4. Use only the context provided about this software
 5. Be helpful, friendly, and conversational (not robotic or overly formal)
 6. Keep responses concise but informative
@@ -228,9 +228,9 @@ Your purpose is to help users understand and use this specific software applicat
       return this.getTimeOffResponse(userRole);
     }
     
-    // Self-service
-    if (this.matchesPattern(lowerMessage, ['self-service', 'self service', 'update profile', 'personal info'])) {
-      return this.getSelfServiceResponse(userRole);
+    // My Profile / Self-service
+    if (this.matchesPattern(lowerMessage, ['profile', 'my profile', 'self-service', 'self service', 'update profile', 'personal info'])) {
+      return this.getMyProfileResponse(userRole);
     }
     
     // IT Support
@@ -402,7 +402,7 @@ All changes save automatically and update instantly! ✅
       return `Team Management is a specialized feature available only to HR Managers. It provides comprehensive team oversight, performance tracking, and employee management capabilities.
 
 **To view/edit your own info:**
-📍 Go to Self-Service → Personal Info tab (you can edit phone & address)
+📍 Go to My Profile → Personal Info tab (you can edit phone & address)
 
 If you need team-related information, you can:
 • Check the Dashboard for team overview
@@ -449,16 +449,16 @@ Features:
 📍 **How to Access:**
 1. Go to Resources page → Click the big blue "My Time Off" card at the top
 2. Or use the Time Off widget on your Dashboard
-3. Or go to Self-Service → Time Off tab
+3. Or go to My Profile → Time Off tab
 
 Your requests are sent to HR managers instantly! ✅`;
   }
 
-  // Self-Service response
-  getSelfServiceResponse(userRole) {
+  // My Profile response
+  getMyProfileResponse(userRole) {
     const isHR = userRole === 'hr_manager' || userRole === 'admin';
     
-    return `🏢 **Employee Self-Service** is your personal portal with 5 tabs:
+    return `🏢 **My Profile** is your personal portal with 5 tabs:
 
 **📋 Overview Tab:**
 • Personal summary with avatar
@@ -483,7 +483,7 @@ ${isHR ? '' : '• Contact HR to change: Name, Email, Department, Position'}
 • Pay stubs, W-2s, policies
 • Download capability
 
-📍 **Access:** Click "Self-Service" in the main navigation bar`;
+📍 **Access:** Click "My Profile" in the main navigation bar`;
   }
 
   // IT Support response
@@ -650,11 +650,12 @@ As a ${role.name}, you can monitor your performance in areas like ${role.respons
 
 I'm here to help you with the Luxury Listings Portal! You can ask me about:
 • 📊 Dashboard and navigation
-• ✅ Task management  
+• ✅ Task management & delegation
 • 📅 My Time Off (vacation/sick leave requests)
-• 🏢 Employee Self-Service (update profile, view compensation)
+• 👤 My Profile (update info, view compensation)
 • 🛠️ IT Support (submit technical issues)
 • 📚 Resources (everything is nested here!)
+• 📖 Tutorials & Training
 • 📅 HR Calendar (leave management)
 • 👥 Team Management
 • 📈 HR Analytics

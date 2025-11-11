@@ -18,7 +18,8 @@ import {
   Calendar,
   ArrowRight,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  BookOpen
 } from "lucide-react";
 
 const resources = [
@@ -29,6 +30,16 @@ const resources = [
     type: "internal",
     category: "employee",
     internalPath: "/my-time-off",
+    important: true,
+    featured: true
+  },
+  {
+    id: 100,
+    title: "Tutorials & Training",
+    description: "Step-by-step guides and video tutorials for all roles",
+    type: "internal",
+    category: "training",
+    internalPath: "/tutorials",
     important: true,
     featured: true
   },

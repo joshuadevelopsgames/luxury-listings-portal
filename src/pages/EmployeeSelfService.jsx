@@ -164,7 +164,7 @@ const EmployeeSelfService = () => {
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Employee Self-Service</h1>
+        <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
         <p className="text-gray-600 mt-2">Manage your information, time off, and access important resources</p>
       </div>
 
