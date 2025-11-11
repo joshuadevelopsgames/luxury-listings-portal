@@ -5,7 +5,7 @@ import { Card, CardHeader, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { RefreshCw, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
-import googleCalendarService from '../services/googleCalendarService';
+import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 
 const OnboardingTestPage = () => {

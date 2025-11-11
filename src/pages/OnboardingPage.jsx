@@ -18,7 +18,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
-import googleCalendarService from '../services/googleCalendarService';
+import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 
 const OnboardingPage = () => {
