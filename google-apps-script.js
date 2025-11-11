@@ -68,17 +68,23 @@ function doGet(e) {
     
     // For actions that need a specific sheet, we'll determine it in the individual functions
     let sheet = null;
-    let sheetName = 'Social Media Packages'; // default
+    let sheetName = 'Client Packages'; // default - main sheet name
     
     // Only get sheet for actions that need it (email doesn't need sheet)
     if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived', 'addLead'].includes(action)) {
       // Determine which sheet to use based on package type
       console.log('🔍 Determining sheet based on package type:', clientData.packageType);
       if (clientData.packageType === 'Monthly') {
-        sheetName = 'Monthly Recurring';
-        console.log('✅ Monthly package detected - using Monthly Recurring sheet');
+        // Check if Monthly Recurring sheet exists, otherwise use main sheet
+        const monthlySheet = spreadsheet.getSheetByName('Monthly Recurring');
+        if (monthlySheet) {
+          sheetName = 'Monthly Recurring';
+          console.log('✅ Monthly package detected - using Monthly Recurring sheet');
+        } else {
+          console.log('📋 Monthly Recurring sheet not found - using Client Packages sheet');
+        }
       } else {
-        console.log('📋 Non-monthly package - using Social Media Packages sheet');
+        console.log('📋 Non-monthly package - using Client Packages sheet');
       }
       
       console.log('🔍 Getting sheet:', sheetName);
