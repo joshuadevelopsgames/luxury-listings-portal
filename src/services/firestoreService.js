@@ -241,6 +241,21 @@ class FirestoreService {
     }
   }
 
+  // Add approved user
+  async addApprovedUser(userData) {
+    try {
+      await setDoc(doc(db, this.collections.APPROVED_USERS, userData.email), {
+        ...userData,
+        createdAt: serverTimestamp(),
+        isApproved: true
+      });
+      console.log('✅ Approved user added:', userData.email);
+    } catch (error) {
+      console.error('❌ Error adding approved user:', error);
+      throw error;
+    }
+  }
+
   // Update approved user
   async updateApprovedUser(email, updates) {
     try {

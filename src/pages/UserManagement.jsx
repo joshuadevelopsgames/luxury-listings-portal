@@ -45,6 +45,16 @@ const UserManagement = () => {
   const [showRoleAssignmentModal, setShowRoleAssignmentModal] = useState(false);
   const [selectedUserForRoles, setSelectedUserForRoles] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    department: '',
+    roles: [],
+    phone: '',
+    location: ''
+  });
 
   // Debug logging for component renders
   console.log('🔍 DEBUG: UserManagement component rendered');
@@ -539,6 +549,89 @@ const UserManagement = () => {
     setShowRoleAssignmentModal(true);
   };
 
+  // Function to handle adding a new user directly
+  const handleAddNewUser = async () => {
+    console.log('🚀 ADD USER CLICKED!');
+    console.log('📝 Form data:', newUserForm);
+    
+    if (!newUserForm.email || !newUserForm.firstName || !newUserForm.lastName || newUserForm.roles.length === 0) {
+      toast.error('Please fill in email, first name, last name, and select at least one role');
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      console.log('➕ Creating new user:', newUserForm.email);
+      
+      // Create approved user data
+      const newUserData = {
+        email: newUserForm.email,
+        firstName: newUserForm.firstName,
+        lastName: newUserForm.lastName,
+        displayName: `${newUserForm.firstName} ${newUserForm.lastName}`,
+        department: newUserForm.department || 'General',
+        phone: newUserForm.phone || '',
+        location: newUserForm.location || '',
+        roles: newUserForm.roles,
+        primaryRole: newUserForm.roles[0],
+        role: newUserForm.roles[0],
+        isApproved: true,
+        approvedAt: new Date().toISOString(),
+        approvedBy: currentUser.email,
+        uid: `manual-${Date.now()}`,
+        startDate: new Date().toISOString().split('T')[0],
+        avatar: '',
+        bio: ''
+      };
+      
+      console.log('💾 Saving new user to Firestore:', newUserData);
+      
+      // Add to approved users collection
+      await firestoreService.addApprovedUser(newUserData);
+      console.log('✅ User added to approved users');
+      
+      // Also create employee record
+      try {
+        await firestoreService.addEmployee({
+          ...newUserData,
+          onboardingCompleted: false
+        });
+        console.log('✅ Employee record created');
+      } catch (empError) {
+        console.log('⚠️ Could not create employee record:', empError.message);
+      }
+      
+      toast.success(`✅ User ${newUserForm.email} added successfully!`);
+      
+      // Reset form and close modal
+      setNewUserForm({
+        email: '',
+        firstName: '',
+        lastName: '',
+        department: '',
+        roles: [],
+        phone: '',
+        location: ''
+      });
+      setShowAddUserModal(false);
+      
+      // Refresh the user list
+      await handleRefreshUsers();
+      
+    } catch (error) {
+      console.error('❌ Error adding new user:', error);
+      console.error('❌ Error details:', error.message, error.stack);
+      
+      if (error.message.includes('already exists')) {
+        toast.error('This email already exists in the system');
+      } else {
+        toast.error(`Failed to add user: ${error.message || 'Unknown error'}`);
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Function to save role assignments
   const handleSaveRoleAssignment = async () => {
     console.log('🚀 ASSIGN ROLES BUTTON CLICKED!');
@@ -944,6 +1037,13 @@ const UserManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Manage user approvals and roles</p>
         </div>
+        <Button
+          onClick={() => setShowAddUserModal(true)}
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+        >
+          <UserPlus className="w-4 h-4" />
+          Add New User
+        </Button>
       </div>
 
       {/* Stats and Management Buttons */}
@@ -1282,6 +1382,191 @@ const UserManagement = () => {
                     {isProcessing ? 'Saving...' : 'Save Roles'}
                   </Button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Add New User</h2>
+              <button 
+                onClick={() => setShowAddUserModal(false)} 
+                className="p-2 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div>
+                <h3 className="font-semibold text-lg mb-4 pb-2 border-b">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Mail className="inline w-4 h-4 mr-1" />
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={newUserForm.email}
+                      onChange={(e) => setNewUserForm({...newUserForm, email: e.target.value})}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      placeholder="user@luxury-listings.com"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Briefcase className="inline w-4 h-4 mr-1" />
+                      Department
+                    </label>
+                    <input
+                      type="text"
+                      value={newUserForm.department}
+                      onChange={(e) => setNewUserForm({...newUserForm, department: e.target.value})}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      placeholder="Marketing, Sales, etc."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <User className="inline w-4 h-4 mr-1" />
+                      First Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={newUserForm.firstName}
+                      onChange={(e) => setNewUserForm({...newUserForm, firstName: e.target.value})}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      placeholder="John"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <User className="inline w-4 h-4 mr-1" />
+                      Last Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={newUserForm.lastName}
+                      onChange={(e) => setNewUserForm({...newUserForm, lastName: e.target.value})}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      placeholder="Doe"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Phone className="inline w-4 h-4 mr-1" />
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={newUserForm.phone}
+                      onChange={(e) => setNewUserForm({...newUserForm, phone: e.target.value})}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <MapPin className="inline w-4 h-4 mr-1" />
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={newUserForm.location}
+                      onChange={(e) => setNewUserForm({...newUserForm, location: e.target.value})}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      placeholder="Vancouver, BC"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Role Assignment */}
+              <div>
+                <h3 className="font-semibold text-lg mb-4 pb-2 border-b">Assign Roles *</h3>
+                <p className="text-sm text-gray-600 mb-3">Select at least one role. The first role selected will be the primary role.</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {Object.entries(USER_ROLES)
+                    .filter(([key, value]) => value !== 'pending')
+                    .map(([key, role]) => (
+                      <label key={role} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newUserForm.roles.includes(role)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewUserForm({...newUserForm, roles: [...newUserForm.roles, role]});
+                            } else {
+                              setNewUserForm({...newUserForm, roles: newUserForm.roles.filter(r => r !== role)});
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                        />
+                        <div className="flex items-center space-x-2 flex-1">
+                          <Badge className={getRoleBadgeColor(role)}>
+                            {getRoleDisplayName(role)}
+                          </Badge>
+                          {newUserForm.roles.includes(role) && newUserForm.roles.indexOf(role) === 0 && (
+                            <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddUserModal(false);
+                    setNewUserForm({
+                      email: '',
+                      firstName: '',
+                      lastName: '',
+                      department: '',
+                      roles: [],
+                      phone: '',
+                      location: ''
+                    });
+                  }}
+                  disabled={isProcessing}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddNewUser}
+                  disabled={isProcessing || !newUserForm.email || !newUserForm.firstName || !newUserForm.lastName || newUserForm.roles.length === 0}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Adding User...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add User
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </div>
