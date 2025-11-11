@@ -28,7 +28,7 @@ import EmployeeSelfService from './pages/EmployeeSelfService';
 import ITSupportPage from './pages/ITSupportPage';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
-import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, Briefcase } from 'lucide-react';
+import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, Briefcase, Wrench } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
 import { USER_ROLES } from './entities/UserRoles';
@@ -96,6 +96,7 @@ function AppLayout() {
       case USER_ROLES.ADMIN:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
+          { id: 'it-support', name: 'IT Support', icon: Wrench, path: '/it-support' },
           { id: 'tutorials', name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
           { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/analytics' },
