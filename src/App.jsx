@@ -109,9 +109,11 @@ function AppLayout() {
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
+          { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'programs', name: 'Programs', icon: Settings, path: '/programs' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
+          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
         ];
       
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
