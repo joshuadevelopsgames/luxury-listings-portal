@@ -622,7 +622,7 @@ const ITSupportPage = () => {
                               Mark Resolved
                             </Button>
                           )}
-                          {ticket.status === 'resolved' && (
+                          {ticket.status !== 'closed' && (
                             <Button
                               size="sm"
                               onClick={(e) => {
