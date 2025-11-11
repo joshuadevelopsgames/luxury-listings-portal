@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import googleCalendarService from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 
 const OnboardingTestPage = () => {
@@ -12,6 +13,31 @@ const OnboardingTestPage = () => {
   const navigate = useNavigate();
   const [resetting, setResetting] = useState(false);
   const [status, setStatus] = useState(null);
+  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+  const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
+
+  useEffect(() => {
+    checkCalendarStatus();
+  }, []);
+
+  const checkCalendarStatus = async () => {
+    const connected = await googleCalendarService.isAuthenticated();
+    setIsCalendarConnected(connected);
+  };
+
+  const handleDisconnectCalendar = async () => {
+    setDisconnectingCalendar(true);
+    try {
+      await googleCalendarService.signOut();
+      setIsCalendarConnected(false);
+      toast.success('📅 Google Calendar disconnected!');
+    } catch (error) {
+      console.error('Error disconnecting calendar:', error);
+      toast.error('Failed to disconnect calendar');
+    } finally {
+      setDisconnectingCalendar(false);
+    }
+  };
 
   const handleResetOnboarding = async () => {
     setResetting(true);
@@ -103,14 +129,63 @@ const OnboardingTestPage = () => {
           <CardContent className="space-y-6">
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
               <p className="text-sm text-yellow-900 dark:text-yellow-100">
-                <strong>⚠️ Testing Tool:</strong> This will reset the onboarding status for joshua@luxury-listings.com,
+                <strong>⚠️ Testing Tool:</strong> This will reset the onboarding status for {currentUser?.email},
                 allowing you to test the complete onboarding flow.
               </p>
             </div>
 
+            {/* Calendar Connection Status */}
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Google Calendar Status
+              </h3>
+              <div className="space-y-3">
+                {isCalendarConnected ? (
+                  <>
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="font-medium">Calendar Connected</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      To test the full authorization flow, disconnect your calendar first.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={handleDisconnectCalendar}
+                      disabled={disconnectingCalendar}
+                      className="w-full"
+                    >
+                      {disconnectingCalendar ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                          Disconnecting...
+                        </>
+                      ) : (
+                        <>
+                          <Calendar className="h-4 w-4 mr-2" />
+                          Disconnect Calendar
+                        </>
+                      )}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                      <AlertCircle className="h-5 w-5" />
+                      <span className="font-medium">Calendar Not Connected</span>
+                    </div>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      ✅ Ready to test calendar authorization in onboarding!
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">What this does:</h3>
+                <h3 className="font-semibold mb-2">Reset Onboarding:</h3>
                 <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -123,6 +198,10 @@ const OnboardingTestPage = () => {
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span>Redirects you to the onboarding page</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span>Creates employee document if needed</span>
                   </li>
                 </ul>
               </div>
