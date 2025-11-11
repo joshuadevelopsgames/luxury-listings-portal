@@ -35,9 +35,16 @@ import CRMGoogleSheetsSetup from '../components/CRMGoogleSheetsSetup';
 import { CRMGoogleSheetsService } from '../services/crmGoogleSheetsService';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { PERMISSIONS } from '../entities/Permissions';
+import { toast } from 'react-hot-toast';
 
 const CRMPage = () => {
-  const { currentUser, currentRole } = useAuth();
+  const { currentUser, currentRole, hasPermission } = useAuth();
+  
+  // Check permissions
+  const canManageCRM = hasPermission(PERMISSIONS.MANAGE_CRM);
+  const canManageLeads = hasPermission(PERMISSIONS.MANAGE_LEADS);
+  const canViewLeads = hasPermission(PERMISSIONS.VIEW_LEADS);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('warm-leads');
   const [selectedClient, setSelectedClient] = useState(null);

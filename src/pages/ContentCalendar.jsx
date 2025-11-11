@@ -14,9 +14,16 @@ import {
 import { format, addDays, isToday, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import XLogo from '../assets/Twitter-X-logo.png';
 import XLogoSelected from '../assets/x-logo-selected.png';
+import { PERMISSIONS } from '../entities/Permissions';
+import { toast } from 'react-hot-toast';
 
 const ContentCalendar = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, hasPermission } = useAuth();
+  
+  // Check permissions
+  const canCreateContent = hasPermission(PERMISSIONS.CREATE_CONTENT);
+  const canDeleteContent = hasPermission(PERMISSIONS.DELETE_CONTENT);
+  const canApproveContent = hasPermission(PERMISSIONS.APPROVE_CONTENT);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
@@ -187,6 +194,10 @@ const ContentCalendar = () => {
   };
 
   const handleEdit = (content) => {
+    if (!canCreateContent) {
+      toast.error('You need CREATE_CONTENT permission to edit content');
+      return;
+    }
     setEditingContent(content);
     setPostForm({
       title: content.title,
@@ -203,6 +214,10 @@ const ContentCalendar = () => {
   };
 
   const handleDelete = (contentId) => {
+    if (!canDeleteContent) {
+      toast.error('You need DELETE_CONTENT permission to delete content');
+      return;
+    }
     setContentItems(prev => prev.filter(item => item.id !== contentId));
   };
 
@@ -241,7 +256,12 @@ const ContentCalendar = () => {
           <h1 className="text-3xl font-bold text-gray-900">Content Calendar</h1>
           <p className="text-gray-600">Plan and schedule your social media content</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
+        <Button 
+          onClick={() => canCreateContent ? setShowAddModal(true) : toast.error('You need CREATE_CONTENT permission')} 
+          className="flex items-center gap-2"
+          disabled={!canCreateContent}
+          title={!canCreateContent ? 'You need CREATE_CONTENT permission' : ''}
+        >
           <Plus className="w-4 h-4" />
           Add Content
         </Button>
