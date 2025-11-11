@@ -372,7 +372,7 @@ function updateClient(sheet, clientData) {
       // currentRow[15] = auto renew (preserve existing)
       currentRow[16] = clientData.overduePosts || 0; // Q - Overdue Posts
     } else {
-      // Main Social Media Packages sheet structure
+      // Main Client Packages sheet structure
       // A=Client Name, B=Package Type, C=Email, D=Date Added, E=Posted On (Page), F=Payment Status, G=Sales Stage, H=Approval Status, I=Notes, J=Status Change Date, K=Package Size, L=Posts Used, M=Last Post Date, N=Posts Remaining, O=Package Completed, P=Approval Email Recipient, Q=Price Paid (USD), R=Post Insights Sent, S=Overdue Posts
       
       currentRow[0] = clientData.clientName;     // A - Client Name
@@ -468,7 +468,7 @@ function addClient(sheet, clientData) {
         clientData.overduePosts || 0 // Q - Overdue Posts
       ];
     } else {
-      // Main Social Media Packages sheet structure
+      // Main Client Packages sheet structure
       newRow = [
         clientData.clientName,     // A - Client Name
         clientData.packageType,    // B - Package Type
