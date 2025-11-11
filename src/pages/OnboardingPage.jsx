@@ -211,10 +211,10 @@ const OnboardingPage = () => {
                 <Calendar className="h-6 w-6 text-orange-950 dark:text-orange-50" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-orange-950 dark:text-orange-50">
+                <h3 className="text-lg font-semibold mb-2 text-orange-900 dark:text-orange-100">
                   Why connect your calendar?
                 </h3>
-                <ul className="space-y-2 text-sm text-gray-900 dark:text-gray-100">
+                <ul className="space-y-2 text-sm text-orange-800 dark:text-orange-200">
                   <li className="flex items-start gap-2">
                     <ChevronRight className="h-4 w-4 mt-0.5 text-orange-700 flex-shrink-0" />
                     <span>See all team meetings and events in one place</span>
@@ -285,7 +285,7 @@ const OnboardingPage = () => {
           </div>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-950 dark:text-blue-50">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
               <strong>🔒 Privacy Note:</strong> We only access your calendar to show you team events. 
               We never modify your calendar or share your personal events without permission.
             </p>
