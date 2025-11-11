@@ -25,7 +25,7 @@ const RoleSwitcher = () => {
     {
       role: USER_ROLES.CONTENT_DIRECTOR,
       label: 'Content Manager',
-      icon: '🎬',
+      icon: '🎥',
       color: 'blue',
       description: 'Content strategy & creative direction',
       features: ['Content Strategy', 'Creative Direction', 'Team Management', 'Analytics']
@@ -144,7 +144,7 @@ const RoleSwitcher = () => {
   const getRoleIcon = (role) => {
     const iconMap = {
       'admin': '👑',
-      'content_director': '🎬',
+      'content_director': '🎥',
       'social_media_manager': '📱',
       'hr_manager': '👥',
       'sales_manager': '💼'
