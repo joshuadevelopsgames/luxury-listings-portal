@@ -1,4 +1,5 @@
 // Google Calendar Integration Service
+// Configured with API credentials for calendar sync
 class GoogleCalendarService {
   constructor() {
     this.apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
