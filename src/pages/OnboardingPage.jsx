@@ -285,7 +285,7 @@ const OnboardingPage = () => {
           </div>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-950 dark:text-blue-200">
+            <p className="text-sm dark:text-blue-200" style={{ color: '#6366f1' }}>
               <strong>🔒 Privacy Note:</strong> We only access your calendar to show you team events. 
               We never modify your calendar or share your personal events without permission.
             </p>
