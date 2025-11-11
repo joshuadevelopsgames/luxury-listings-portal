@@ -22,12 +22,29 @@ const NotificationsCenter = () => {
     }
 
     setLoading(true);
-    const unsubscribe = firestoreService.onNotificationsChange(currentUser.email, (notifs) => {
-      setNotifications(notifs);
-      setLoading(false);
-    });
 
-    return () => unsubscribe();
+    // Timeout fallback
+    const timeoutId = setTimeout(() => {
+      console.log('⚠️ Notifications loading timeout - assuming no notifications');
+      setLoading(false);
+    }, 5000);
+
+    try {
+      const unsubscribe = firestoreService.onNotificationsChange(currentUser.email, (notifs) => {
+        clearTimeout(timeoutId);
+        setNotifications(notifs);
+        setLoading(false);
+      });
+
+      return () => {
+        clearTimeout(timeoutId);
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error('❌ Error loading notifications:', error);
+      clearTimeout(timeoutId);
+      setLoading(false);
+    }
   }, [currentUser?.email]);
 
   const unreadCount = notifications.filter(n => !n.read).length;

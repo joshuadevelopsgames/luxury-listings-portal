@@ -1009,10 +1009,11 @@ class FirestoreService {
 
   // Get comments for a ticket
   onTicketCommentsChange(ticketId, callback) {
+    // Don't use orderBy with where to avoid requiring composite index
+    // We'll sort in the app instead
     const q = query(
       collection(db, this.collections.TICKET_COMMENTS),
-      where('ticketId', '==', ticketId),
-      orderBy('createdAt', 'asc')
+      where('ticketId', '==', ticketId)
     );
     
     return onSnapshot(q, (snapshot) => {
@@ -1023,7 +1024,15 @@ class FirestoreService {
           ...doc.data()
         });
       });
-      callback(comments);
+      
+      // Sort by createdAt ascending (oldest first) in the app
+      const sortedComments = comments.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateA - dateB;
+      });
+      
+      callback(sortedComments);
     });
   }
 
@@ -1048,10 +1057,11 @@ class FirestoreService {
 
   // Get notifications for user
   onNotificationsChange(userEmail, callback) {
+    // Don't use orderBy with where to avoid requiring composite index
+    // We'll sort in the app instead
     const q = query(
       collection(db, this.collections.NOTIFICATIONS),
-      where('userEmail', '==', userEmail),
-      orderBy('createdAt', 'desc')
+      where('userEmail', '==', userEmail)
     );
     
     return onSnapshot(q, (snapshot) => {
@@ -1062,7 +1072,15 @@ class FirestoreService {
           ...doc.data()
         });
       });
-      callback(notifications);
+      
+      // Sort by createdAt descending (newest first) in the app
+      const sortedNotifications = notifications.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      callback(sortedNotifications);
     });
   }
 
