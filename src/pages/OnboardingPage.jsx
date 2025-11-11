@@ -41,7 +41,12 @@ const OnboardingPage = () => {
   const handleConnectCalendar = async () => {
     setConnectingCalendar(true);
     try {
-      await googleCalendarService.initialize();
+      if (!currentUser?.email) {
+        toast.error('User email not available. Please log in again.');
+        return;
+      }
+      
+      await googleCalendarService.initialize(currentUser.email);
       setIsGoogleConnected(true);
       toast.success('📅 Google Calendar connected successfully!');
     } catch (error) {

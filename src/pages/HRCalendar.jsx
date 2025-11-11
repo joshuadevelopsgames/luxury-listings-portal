@@ -299,10 +299,16 @@ const HRCalendar = () => {
       console.log('🔄 Starting Google Calendar connection...');
       console.log('API Key available:', !!process.env.REACT_APP_GOOGLE_API_KEY);
       console.log('Client ID available:', !!process.env.REACT_APP_GOOGLE_CLIENT_ID);
+      console.log('Current user:', currentUser?.email);
+      
+      if (!currentUser?.email) {
+        toast.error('User email not available. Please log in again.');
+        return;
+      }
       
       setIsLoadingGoogle(true);
       
-      const isConnected = await googleCalendarService.initialize();
+      const isConnected = await googleCalendarService.initialize(currentUser.email);
       console.log('✅ Google Calendar initialized:', isConnected);
       
       setIsGoogleConnected(isConnected);

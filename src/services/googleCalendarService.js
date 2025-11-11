@@ -9,26 +9,48 @@ class GoogleCalendarService {
     this.isInitialized = false;
     this.tokenClient = null;
     this.accessToken = null;
-    this.tokenKey = 'google_calendar_token';
-    this.tokenExpiryKey = 'google_calendar_token_expiry';
+    this.currentUserEmail = null;
+  }
+
+  // Get storage keys for current user
+  getStorageKeys(userEmail) {
+    return {
+      token: `google_calendar_token_${userEmail}`,
+      expiry: `google_calendar_token_expiry_${userEmail}`
+    };
   }
 
   // Initialize Google Calendar API with new GIS library
-  async initialize() {
+  async initialize(userEmail) {
     console.log('🔍 GoogleCalendarService.initialize() called');
+    console.log('🔍 User email:', userEmail);
     console.log('🔍 Already initialized?', this.isInitialized);
     console.log('🔍 API Key:', this.apiKey ? 'Present' : 'MISSING');
     console.log('🔍 Client ID:', this.clientId ? 'Present' : 'MISSING');
     
-    if (this.isInitialized) {
-      console.log('✅ Already initialized, returning true');
+    if (!userEmail) {
+      console.error('❌ No user email provided');
+      throw new Error('User email is required for calendar initialization');
+    }
+
+    // If switching users, reset initialization
+    if (this.currentUserEmail && this.currentUserEmail !== userEmail) {
+      console.log('🔄 Switching users, resetting initialization');
+      this.isInitialized = false;
+      this.accessToken = null;
+    }
+
+    this.currentUserEmail = userEmail;
+    
+    if (this.isInitialized && this.currentUserEmail === userEmail) {
+      console.log('✅ Already initialized for this user, returning true');
       return true;
     }
 
     // Check for stored token first
-    const storedToken = this.getStoredToken();
+    const storedToken = this.getStoredToken(userEmail);
     if (storedToken) {
-      console.log('✅ Found valid stored token, using it');
+      console.log('✅ Found valid stored token for user, using it');
       this.accessToken = storedToken;
       this.isInitialized = true;
       
@@ -145,6 +167,11 @@ class GoogleCalendarService {
         return;
       }
 
+      if (!this.currentUserEmail) {
+        reject(new Error('No user email set'));
+        return;
+      }
+
       // Store resolve/reject for the callback
       this._authResolve = resolve;
       this._authReject = reject;
@@ -162,7 +189,7 @@ class GoogleCalendarService {
         this.isInitialized = true;
         
         // Store the token (expires in 1 hour)
-        this.storeToken(response.access_token, 3600);
+        this.storeToken(response.access_token, 3600, this.currentUserEmail);
         
         // Set the token for gapi client
         window.gapi.client.setToken({
@@ -400,17 +427,28 @@ class GoogleCalendarService {
   }
 
   // Store token in localStorage with expiry
-  storeToken(token, expiresInSeconds) {
+  storeToken(token, expiresInSeconds, userEmail) {
+    if (!userEmail) {
+      console.error('❌ Cannot store token without user email');
+      return;
+    }
+    
+    const keys = this.getStorageKeys(userEmail);
     const expiryTime = Date.now() + (expiresInSeconds * 1000);
-    localStorage.setItem(this.tokenKey, token);
-    localStorage.setItem(this.tokenExpiryKey, expiryTime.toString());
-    console.log('💾 Token stored, expires in', expiresInSeconds, 'seconds');
+    localStorage.setItem(keys.token, token);
+    localStorage.setItem(keys.expiry, expiryTime.toString());
+    console.log('💾 Token stored for', userEmail, 'expires in', expiresInSeconds, 'seconds');
   }
 
   // Get stored token if it's still valid
-  getStoredToken() {
-    const token = localStorage.getItem(this.tokenKey);
-    const expiry = localStorage.getItem(this.tokenExpiryKey);
+  getStoredToken(userEmail) {
+    if (!userEmail) {
+      return null;
+    }
+    
+    const keys = this.getStorageKeys(userEmail);
+    const token = localStorage.getItem(keys.token);
+    const expiry = localStorage.getItem(keys.expiry);
     
     if (!token || !expiry) {
       return null;
@@ -418,8 +456,8 @@ class GoogleCalendarService {
 
     // Check if token has expired
     if (Date.now() > parseInt(expiry)) {
-      console.log('⏰ Stored token expired, clearing it');
-      this.clearStoredToken();
+      console.log('⏰ Stored token expired for', userEmail, ', clearing it');
+      this.clearStoredToken(userEmail);
       return null;
     }
 
@@ -427,10 +465,20 @@ class GoogleCalendarService {
   }
 
   // Clear stored token
-  clearStoredToken() {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.tokenExpiryKey);
-    console.log('🗑️ Stored token cleared');
+  clearStoredToken(userEmail) {
+    if (!userEmail) {
+      userEmail = this.currentUserEmail;
+    }
+    
+    if (!userEmail) {
+      console.warn('⚠️ Cannot clear token without user email');
+      return;
+    }
+    
+    const keys = this.getStorageKeys(userEmail);
+    localStorage.removeItem(keys.token);
+    localStorage.removeItem(keys.expiry);
+    console.log('🗑️ Stored token cleared for', userEmail);
   }
 }
 
