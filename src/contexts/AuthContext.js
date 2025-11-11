@@ -167,6 +167,21 @@ export function AuthProvider({ children }) {
       return true;
     }
     
+    // Check user-specific permissions first (these override role permissions)
+    if (currentUser?.customPermissions && Array.isArray(currentUser.customPermissions)) {
+      if (currentUser.customPermissions.includes(permission)) {
+        return true;
+      }
+    }
+    
+    // Also check userData for custom permissions
+    if (userData?.customPermissions && Array.isArray(userData.customPermissions)) {
+      if (userData.customPermissions.includes(permission)) {
+        return true;
+      }
+    }
+    
+    // Fall back to role-based permissions
     const permissions = getCurrentRolePermissions();
     return permissions.permissions[permission] || false;
   }

@@ -28,6 +28,7 @@ import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { firestoreService } from '../services/firestoreService';
 import { USER_ROLES } from '../entities/UserRoles';
 import { auth } from '../firebase';
+import { PERMISSIONS, PERMISSION_CATEGORIES, PERMISSION_LABELS } from '../entities/Permissions';
 
 const UserManagement = () => {
   const { currentUser, hasPermission } = useAuth();
@@ -55,6 +56,9 @@ const UserManagement = () => {
     phone: '',
     location: ''
   });
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
+  const [selectedPermissions, setSelectedPermissions] = useState([]);
 
   // Debug logging for component renders
   console.log('🔍 DEBUG: UserManagement component rendered');
@@ -547,6 +551,58 @@ const UserManagement = () => {
     setSelectedUserForRoles(user);
     setSelectedRoles(user.roles || [user.role] || []);
     setShowRoleAssignmentModal(true);
+  };
+
+  // Function to handle permissions modal
+  const handleManagePermissions = (user) => {
+    console.log('🔐 Opening permissions for user:', user);
+    setSelectedUserForPermissions(user);
+    setSelectedPermissions(user.customPermissions || []);
+    setShowPermissionsModal(true);
+  };
+
+  // Function to save custom permissions
+  const handleSavePermissions = async () => {
+    console.log('🚀 SAVE PERMISSIONS CLICKED!');
+    console.log('👤 User:', selectedUserForPermissions);
+    console.log('🔐 Permissions:', selectedPermissions);
+    
+    try {
+      setIsProcessing(true);
+      
+      // Update user's custom permissions
+      await handleUpdateApprovedUser(selectedUserForPermissions.email, {
+        customPermissions: selectedPermissions
+      });
+      
+      // Also update employee record
+      try {
+        const employee = await firestoreService.getEmployeeByEmail(selectedUserForPermissions.email);
+        if (employee) {
+          await firestoreService.updateEmployee(employee.id, {
+            customPermissions: selectedPermissions
+          });
+        }
+      } catch (empError) {
+        console.log('ℹ️ Could not update employee permissions:', empError.message);
+      }
+      
+      console.log('✅ Permissions saved successfully');
+      toast.success(`✅ Permissions updated for ${selectedUserForPermissions.email}`);
+      
+      setShowPermissionsModal(false);
+      setSelectedUserForPermissions(null);
+      setSelectedPermissions([]);
+      
+      // Refresh user list
+      await handleRefreshUsers();
+      
+    } catch (error) {
+      console.error('❌ Error saving permissions:', error);
+      toast.error(`Failed to save permissions: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Function to handle adding a new user directly
@@ -1246,6 +1302,15 @@ const UserManagement = () => {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => handleManagePermissions(user)}
+                        className="flex-1 bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Permissions
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => handleEditUser(user)}
                         className="flex-1"
                       >
@@ -1383,6 +1448,125 @@ const UserManagement = () => {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Permissions Modal */}
+      {showPermissionsModal && selectedUserForPermissions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Manage Permissions for {selectedUserForPermissions.firstName} {selectedUserForPermissions.lastName}
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  These permissions apply regardless of the role they're switched into
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowPermissionsModal(false)} 
+                className="p-2 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Permission Categories */}
+              {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => (
+                <div key={categoryKey} className="border-2 border-gray-200 rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-bold text-lg text-gray-900">{category.name}</h3>
+                      <p className="text-sm text-gray-600">{category.description}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        // Toggle all permissions in this category
+                        const allSelected = category.permissions.every(p => selectedPermissions.includes(p));
+                        if (allSelected) {
+                          // Remove all from this category
+                          setSelectedPermissions(selectedPermissions.filter(p => !category.permissions.includes(p)));
+                        } else {
+                          // Add all from this category
+                          const newPerms = [...new Set([...selectedPermissions, ...category.permissions])];
+                          setSelectedPermissions(newPerms);
+                        }
+                      }}
+                      className="text-xs"
+                    >
+                      {category.permissions.every(p => selectedPermissions.includes(p)) ? 'Unselect All' : 'Select All'}
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {category.permissions.map((permission) => (
+                      <label key={permission} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedPermissions.includes(permission)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedPermissions([...selectedPermissions, permission]);
+                            } else {
+                              setSelectedPermissions(selectedPermissions.filter(p => p !== permission));
+                            }
+                          }}
+                          className="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-5 h-5"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 text-sm">
+                            {PERMISSION_LABELS[permission]}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
+                <p className="text-sm text-blue-900">
+                  <strong>💡 Tip:</strong> Custom permissions give this user specific abilities across all roles they switch into. These override role-based permissions.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-6 border-t mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPermissionsModal(false);
+                  setSelectedUserForPermissions(null);
+                  setSelectedPermissions([]);
+                }}
+                disabled={isProcessing}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSavePermissions}
+                disabled={isProcessing}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 w-4 mr-2" />
+                    Save Permissions
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>

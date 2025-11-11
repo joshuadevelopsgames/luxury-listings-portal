@@ -2,9 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Button } from './button';
 import { X } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { PERMISSIONS } from '../../entities/Permissions';
 
 export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSave }) {
+  const { hasPermission } = useAuth();
   const [saving, setSaving] = useState(false);
+  
+  // Check specific permissions
+  const canEditAnyName = hasPermission(PERMISSIONS.EDIT_ANY_NAME) || isAdmin;
+  const canEditOwnName = hasPermission(PERMISSIONS.EDIT_OWN_NAME);
+  const canEditAnyProfile = hasPermission(PERMISSIONS.EDIT_ANY_PROFILE) || isAdmin;
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -47,13 +55,17 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
     setSaving(true);
     
     try {
-      // Build updates based on user permissions
+      // Build updates based on user-specific permissions
       const updates = {};
       
-      if (isAdmin) {
-        // Admin can edit everything
+      // Check name editing permissions
+      if (canEditAnyName || canEditOwnName) {
         updates.firstName = form.firstName;
         updates.lastName = form.lastName;
+      }
+      
+      // Check department editing permissions
+      if (isAdmin || canEditAnyProfile) {
         updates.department = form.department;
         updates.startDate = form.startDate;
       }
@@ -65,7 +77,12 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
       updates.avatar = form.avatar;
       
       console.log('📝 Sending updates to onSave (based on permissions):', updates);
-      console.log('🔐 Is admin?', isAdmin);
+      console.log('🔐 Permissions check:', {
+        canEditAnyName,
+        canEditOwnName,
+        canEditAnyProfile,
+        isAdmin
+      });
       await onSave(updates);
       console.log('✅ onSave completed successfully');
     } catch (error) {
@@ -87,23 +104,27 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
           <div className="p-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">First Name {isAdmin ? '' : '(HR managed)'}</label>
+                <label className="block text-sm text-gray-600 mb-1">
+                  First Name {!canEditAnyName && !canEditOwnName ? '(HR managed)' : ''}
+                </label>
                 <input 
                   name="firstName" 
                   value={form.firstName} 
                   onChange={handleChange} 
                   className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500" 
-                  disabled={!isAdmin}
+                  disabled={!canEditAnyName && !canEditOwnName}
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Last Name {isAdmin ? '' : '(HR managed)'}</label>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Last Name {!canEditAnyName && !canEditOwnName ? '(HR managed)' : ''}
+                </label>
                 <input 
                   name="lastName" 
                   value={form.lastName} 
                   onChange={handleChange} 
                   className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500" 
-                  disabled={!isAdmin}
+                  disabled={!canEditAnyName && !canEditOwnName}
                 />
               </div>
             </div>
