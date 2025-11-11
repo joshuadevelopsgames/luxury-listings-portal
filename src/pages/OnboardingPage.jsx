@@ -87,10 +87,10 @@ const OnboardingPage = () => {
       content: (
         <div className="space-y-6">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-            <h3 className="text-lg font-semibold mb-3 text-blue-900 dark:text-blue-100">
+            <h3 className="text-lg font-semibold mb-3 text-blue-950 dark:text-blue-50">
               Your Role: {userData?.position || 'Team Member'}
             </h3>
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-gray-900 dark:text-gray-100">
               As a <span className="font-semibold">{userData?.position || 'team member'}</span>, you'll have access to personalized tools and features designed specifically for your role.
             </p>
           </div>
