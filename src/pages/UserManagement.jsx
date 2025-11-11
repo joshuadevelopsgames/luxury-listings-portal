@@ -27,6 +27,7 @@ import { toast } from 'react-hot-toast';
 import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { firestoreService } from '../services/firestoreService';
 import { USER_ROLES } from '../entities/UserRoles';
+import { auth } from '../firebase';
 
 const UserManagement = () => {
   const { currentUser, hasPermission } = useAuth();
@@ -562,11 +563,17 @@ const UserManagement = () => {
         throw new Error('User not authenticated');
       }
       
+      // Get Firebase auth user for token
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) {
+        throw new Error('Firebase user not found');
+      }
+      
       // Check authentication token and refresh if needed
-      const authToken = await currentUser.getIdToken(true); // Force refresh
+      const authToken = await firebaseUser.getIdToken(true); // Force refresh
       console.log('🔍 Auth token exists:', !!authToken);
-      console.log('🔍 Current user email:', currentUser.email);
-      console.log('🔍 Current user UID:', currentUser.uid);
+      console.log('🔍 Firebase user email:', firebaseUser.email);
+      console.log('🔍 Firebase user UID:', firebaseUser.uid);
       
       // Verify token is valid
       if (!authToken) {
@@ -1255,14 +1262,17 @@ const UserManagement = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        if (currentUser) {
-                          const token = await currentUser.getIdToken(true);
-                          alert('✅ Authentication token refreshed successfully!');
+                        const firebaseUser = auth.currentUser;
+                        if (firebaseUser) {
+                          const token = await firebaseUser.getIdToken(true);
+                          toast.success('✅ Authentication token refreshed successfully!');
+                          console.log('✅ Token refreshed:', !!token);
                         } else {
-                          alert('❌ No user logged in');
+                          toast.error('❌ No user logged in');
                         }
                       } catch (error) {
-                        alert('❌ Failed to refresh token: ' + error.message);
+                        toast.error('❌ Failed to refresh token: ' + error.message);
+                        console.error('❌ Token refresh error:', error);
                       }
                     }}
                     disabled={isProcessing}
