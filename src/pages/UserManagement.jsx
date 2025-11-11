@@ -1246,22 +1246,6 @@ const UserManagement = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        await firestoreService.testConnection();
-                        alert('✅ Connection test successful!');
-                      } catch (error) {
-                        alert('❌ Connection test failed: ' + error.message);
-                      }
-                    }}
-                    disabled={isProcessing}
-                    className="text-xs"
-                  >
-                    🔧 Test Connection
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      try {
                         const firebaseUser = auth.currentUser;
                         if (firebaseUser) {
                           const token = await firebaseUser.getIdToken(true);
