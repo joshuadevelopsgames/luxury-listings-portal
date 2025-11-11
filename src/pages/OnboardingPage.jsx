@@ -88,10 +88,26 @@ const OnboardingPage = () => {
         <div className="space-y-6">
           <div className="rounded-lg p-6 border border-indigo-500" style={{ backgroundColor: '#6366f1' }}>
             <h3 className="text-lg font-semibold mb-3 text-indigo-950 dark:text-indigo-50">
-              Your Role: {userData?.position || 'Team Member'}
+              Your Role: {userData?.position || userData?.role?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Team Member'}
             </h3>
             <p className="text-indigo-950/90 dark:text-indigo-50/90">
-              As a <span className="font-semibold text-indigo-950 dark:text-indigo-50">{userData?.position || 'team member'}</span>, you'll have access to personalized tools and features designed specifically for your role.
+              {(() => {
+                const position = userData?.position?.toLowerCase() || userData?.role?.toLowerCase() || '';
+                
+                if (position.includes('content director')) {
+                  return "As Content Director, you'll manage content strategy, oversee campaigns, approve deliverables, and guide the creative team.";
+                } else if (position.includes('social media manager')) {
+                  return "As Social Media Manager, you'll create and schedule posts, manage client packages, track engagement, and maintain the content calendar.";
+                } else if (position.includes('hr manager')) {
+                  return "As HR Manager, you'll handle leave requests, manage team operations, track employee performance, and maintain team satisfaction.";
+                } else if (position.includes('admin')) {
+                  return "As Administrator, you have full access to manage users, oversee all operations, handle support tickets, and configure system settings.";
+                } else if (position.includes('sales')) {
+                  return "As part of the Sales team, you'll manage leads, track deals through the pipeline, maintain client relationships, and close new business.";
+                } else {
+                  return `As a ${userData?.position || 'team member'}, you'll have access to personalized tools and features designed specifically for your role.`;
+                }
+              })()}
             </p>
           </div>
 
