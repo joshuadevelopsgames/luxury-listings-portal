@@ -98,10 +98,11 @@ const ContentCalendar = () => {
 
   // Save content items to localStorage whenever they change
   useEffect(() => {
-    if (!currentUser?.email || contentItems.length === 0) return;
+    if (!currentUser?.email) return;
 
     const userStorageKey = `content_items_${currentUser.email}`;
     localStorage.setItem(userStorageKey, JSON.stringify(contentItems));
+    console.log('💾 Saved', contentItems.length, 'content items to localStorage');
   }, [contentItems, currentUser?.email]);
 
   // Save calendars to localStorage whenever they change
@@ -253,6 +254,17 @@ const ContentCalendar = () => {
     return platformMatch && statusMatch;
   });
 
+  // Debug logging for filtered content
+  useEffect(() => {
+    console.log('🔍 Filtering content:', {
+      totalItems: contentItems.length,
+      selectedCalendarId,
+      filteredCount: filteredContent.length,
+      filterPlatform,
+      filterStatus
+    });
+  }, [contentItems, selectedCalendarId, filteredContent.length, filterPlatform, filterStatus]);
+
   const nextMonth = () => {
     setCurrentMonth(addDays(currentMonth, 32));
   };
@@ -368,6 +380,23 @@ const ContentCalendar = () => {
     setImportStep(4);
     
     try {
+      // Create a new calendar based on the sheet title
+      const newCalendarId = `cal-${Date.now()}`;
+      const newCalendarName = sheetData.spreadsheetTitle || 'Imported Calendar';
+      
+      console.log('📅 Creating new calendar:', newCalendarName);
+      
+      // Add the new calendar
+      setCalendars(prev => {
+        const updated = [...prev, { id: newCalendarId, name: newCalendarName }];
+        // Save to localStorage immediately
+        if (currentUser?.email) {
+          const calendarsStorageKey = `calendars_${currentUser.email}`;
+          localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
+        }
+        return updated;
+      });
+
       const importedContent = [];
       let successCount = 0;
       let skipCount = 0;
@@ -397,7 +426,7 @@ const ContentCalendar = () => {
           // Parse and format the data
           const newContent = {
             id: Date.now() + Math.random(),
-            calendarId: selectedCalendarId,
+            calendarId: newCalendarId, // Use the new calendar
             title: contentItem.caption ? contentItem.caption.substring(0, 50) : 'Imported Post',
             description: contentItem.caption || contentItem.notes || '',
             platform: normalizePlatform(contentItem.platform) || 'instagram',
@@ -420,10 +449,23 @@ const ContentCalendar = () => {
         }
       }
 
-      // Add imported content to the calendar
-      setContentItems(prev => [...prev, ...importedContent]);
+      console.log('📦 Importing', importedContent.length, 'items to calendar:', newCalendarName);
 
-      toast.success(`✅ Imported ${successCount} items! ${skipCount > 0 ? `(${skipCount} skipped)` : ''}`);
+      // Add imported content to the calendar
+      setContentItems(prev => {
+        const updated = [...prev, ...importedContent];
+        // Save to localStorage immediately
+        if (currentUser?.email) {
+          const userStorageKey = `content_items_${currentUser.email}`;
+          localStorage.setItem(userStorageKey, JSON.stringify(updated));
+        }
+        return updated;
+      });
+
+      // Switch to the new calendar
+      setSelectedCalendarId(newCalendarId);
+
+      toast.success(`✅ Created "${newCalendarName}" with ${successCount} posts! ${skipCount > 0 ? `(${skipCount} skipped)` : ''}`);
       
       // Close modal after a short delay
       setTimeout(() => {

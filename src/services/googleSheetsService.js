@@ -203,15 +203,17 @@ class GoogleSheetsService {
       // Extract ID from URL if needed
       const sheetId = this.extractSpreadsheetId(spreadsheetId);
 
-      // If no range specified, get the first sheet's data
+      // Get the spreadsheet metadata to find the title and first sheet name
+      const metadataResponse = await window.gapi.client.sheets.spreadsheets.get({
+        spreadsheetId: sheetId,
+      });
+      
+      const spreadsheetTitle = metadataResponse.result.properties.title;
+      const firstSheet = metadataResponse.result.sheets[0];
+      const sheetTitle = firstSheet.properties.title;
+      
+      // If no range specified, use the first sheet
       if (!range) {
-        // First, get the spreadsheet metadata to find the first sheet name
-        const metadataResponse = await window.gapi.client.sheets.spreadsheets.get({
-          spreadsheetId: sheetId,
-        });
-        
-        const firstSheet = metadataResponse.result.sheets[0];
-        const sheetTitle = firstSheet.properties.title;
         range = `${sheetTitle}!A1:Z1000`; // Fetch first 1000 rows, columns A-Z
         console.log('📋 Using first sheet:', sheetTitle);
       }
@@ -226,18 +228,20 @@ class GoogleSheetsService {
       
       if (!values || values.length === 0) {
         console.warn('⚠️ No data found in sheet');
-        return { headers: [], rows: [] };
+        return { headers: [], rows: [], spreadsheetTitle, sheetTitle };
       }
 
       const headers = values[0];
       const rows = values.slice(1);
 
-      console.log('✅ Sheet data fetched:', { headers, rowCount: rows.length });
+      console.log('✅ Sheet data fetched:', { spreadsheetTitle, headers, rowCount: rows.length });
 
       return {
         headers,
         rows,
         spreadsheetId: sheetId,
+        spreadsheetTitle,
+        sheetTitle,
         range,
       };
 
