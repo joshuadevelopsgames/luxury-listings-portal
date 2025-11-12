@@ -17,6 +17,37 @@ class GoogleSheetsService {
   }
 
   /**
+   * Wait for Google API libraries to load
+   */
+  async waitForGoogleLibraries() {
+    console.log('⏳ Waiting for Google API libraries...');
+    
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds total
+      
+      const checkLibraries = () => {
+        attempts++;
+        
+        if (window.gapi && window.google?.accounts?.oauth2) {
+          console.log('✅ Google libraries loaded');
+          resolve();
+          return;
+        }
+        
+        if (attempts >= maxAttempts) {
+          reject(new Error('Google API libraries failed to load. Please refresh the page.'));
+          return;
+        }
+        
+        setTimeout(checkLibraries, 100);
+      };
+      
+      checkLibraries();
+    });
+  }
+
+  /**
    * Initialize Google API client and OAuth
    */
   async initialize(userEmail) {
@@ -29,6 +60,9 @@ class GoogleSheetsService {
     }
 
     try {
+      // Wait for Google libraries to load
+      await this.waitForGoogleLibraries();
+
       // Check for stored token
       const storedToken = this.getStoredToken();
       if (storedToken && this.isTokenValid(storedToken)) {

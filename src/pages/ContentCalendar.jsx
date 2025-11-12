@@ -269,27 +269,37 @@ const ContentCalendar = () => {
     setImportStep(1);
     
     try {
+      toast.loading('Initializing Google Sheets...', { id: 'init-sheets' });
+      
       // Initialize Google Sheets service
       const result = await googleSheetsService.initialize(currentUser.email);
+      
+      toast.dismiss('init-sheets');
+      
       if (!result.needsAuth) {
         setIsSheetsAuthorized(true);
         setImportStep(2);
+        toast.success('✅ Already authorized!');
       }
     } catch (error) {
       console.error('❌ Error initializing Sheets:', error);
-      toast.error('Failed to initialize Google Sheets. Please check your internet connection.');
+      toast.error(error.message || 'Failed to initialize Google Sheets. Please refresh and try again.', { id: 'init-sheets' });
     }
   };
 
   const handleAuthorizeSheets = async () => {
     try {
+      console.log('🔐 Requesting Sheets authorization...');
+      toast.loading('Opening authorization window...', { id: 'auth-sheets' });
+      
       await googleSheetsService.requestAuthorization();
+      
+      toast.success('✅ Google Sheets authorized!', { id: 'auth-sheets' });
       setIsSheetsAuthorized(true);
       setImportStep(2);
-      toast.success('✅ Google Sheets authorized!');
     } catch (error) {
       console.error('❌ Authorization failed:', error);
-      toast.error('Failed to authorize Google Sheets. Please try again.');
+      toast.error(error.message || 'Failed to authorize Google Sheets. Please try again.', { id: 'auth-sheets' });
     }
   };
 
