@@ -334,6 +334,13 @@ const ContentCalendar = () => {
 
       setSheetData(data);
       
+      console.log('📋 Sheet data received:', {
+        spreadsheetTitle: data.spreadsheetTitle,
+        headers: data.headers,
+        rowCount: data.rows.length,
+        sampleRow: data.rows[0]
+      });
+      
       // Get sample rows for AI analysis
       const sampleRows = googleSheetsService.getSampleRows(data.rows, 5);
       
@@ -490,7 +497,14 @@ const ContentCalendar = () => {
         }
       }
 
-      console.log('📦 Total imported content:', importedContent);
+      // Log final column mappings for debugging
+      console.log('\n📊 FINAL COLUMN MAPPINGS:');
+      sheetData.headers.forEach((header, index) => {
+        const mapping = columnMappings[index.toString()];
+        console.log(`  Column ${index}: "${header}" → ${mapping || 'unmapped'}`);
+      });
+      
+      console.log('\n📦 Total imported content:', importedContent);
       console.log(`📦 Importing ${importedContent.length} items to calendar: ${newCalendarName}`);
 
       // Add imported content to the calendar

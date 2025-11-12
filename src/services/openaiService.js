@@ -82,7 +82,7 @@ SHEET COLUMNS:
 ${columnsInfo}
 
 AVAILABLE FIELDS TO MAP TO:
-- postDate: The date/time to post (required)
+- postDate: The date/time to post (CRITICAL - look for dates in ANY format)
 - platform: Social media platform (Instagram, TikTok, Facebook, LinkedIn, etc.)
 - contentType: Type of content (Reel, Story, Carousel, Post, Video, etc.)
 - caption: The post caption or description
@@ -97,7 +97,10 @@ INSTRUCTIONS:
 2. Determine the best field match for each column
 3. If a column doesn't match any field, map it to "unmapped"
 4. Use context clues from both header names and data patterns
-5. postDate is the most critical - look for any date/time column
+5. **CRITICAL**: postDate is the MOST IMPORTANT field - look for ANY column with dates:
+   - Headers like: "Date", "Post Date", "Publish Date", "Schedule", "When", "Day", "Week", "Time"
+   - Data patterns like: "11/15/2024", "2024-11-15", "Nov 15", "15-Nov-24", timestamps, etc.
+   - Even if the header doesn't say "date", if the data looks like dates, map it to postDate
 
 Return a JSON object with this structure:
 {
@@ -136,11 +139,21 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
       let conf = 'low';
       let suggestion = '';
 
-      // Date matching
-      if (lowerHeader.includes('date') || lowerHeader.includes('when') || lowerHeader.includes('publish')) {
+      // Date matching - expanded to catch more variations
+      if (lowerHeader.includes('date') || 
+          lowerHeader.includes('when') || 
+          lowerHeader.includes('publish') ||
+          lowerHeader.includes('schedule') ||
+          lowerHeader.includes('post') ||
+          lowerHeader.includes('day') ||
+          lowerHeader.includes('week') ||
+          lowerHeader.includes('month') ||
+          lowerHeader.includes('time') ||
+          lowerHeader.match(/^\d+\/\d+/) || // Starts with date pattern
+          lowerHeader === 'date') {
         field = 'postDate';
         conf = 'high';
-        suggestion = 'Matched by keyword: date/when/publish';
+        suggestion = 'Matched by keyword: date/schedule/time';
       }
       // Platform matching
       else if (lowerHeader.includes('platform') || lowerHeader.includes('social') || lowerHeader.includes('channel')) {
