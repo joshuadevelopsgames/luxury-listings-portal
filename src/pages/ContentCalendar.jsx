@@ -9,7 +9,8 @@ import {
   Calendar, Plus, Instagram, Facebook, Twitter, Linkedin, Youtube,
   Image, Video, FileText, Clock, Users, TrendingUp, Settings,
   ExternalLink, Filter, Download, RefreshCw, CheckCircle, AlertCircle, Pause, Play,
-  X, Edit, Trash2, Eye, CalendarDays, Folder, FolderPlus, FileSpreadsheet, Upload
+  X, Edit, Trash2, Eye, CalendarDays, Folder, FolderPlus, FileSpreadsheet, Upload,
+  Check, MoreVertical
 } from 'lucide-react';
 import { format, addDays, isToday, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import XLogo from '../assets/Twitter-X-logo.png';
@@ -37,6 +38,8 @@ const ContentCalendar = () => {
   const [selectedCalendarId, setSelectedCalendarId] = useState('default');
   const [showAddCalendar, setShowAddCalendar] = useState(false);
   const [newCalendarName, setNewCalendarName] = useState('');
+  const [editingCalendarId, setEditingCalendarId] = useState(null);
+  const [editingCalendarName, setEditingCalendarName] = useState('');
 
   // Import from Sheets state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -271,6 +274,91 @@ const ContentCalendar = () => {
 
   const prevMonth = () => {
     setCurrentMonth(addDays(currentMonth, -32));
+  };
+
+  // ========== CALENDAR MANAGEMENT ==========
+
+  const handleEditCalendar = (calendarId, currentName) => {
+    setEditingCalendarId(calendarId);
+    setEditingCalendarName(currentName);
+  };
+
+  const handleSaveCalendarName = () => {
+    if (!editingCalendarName.trim()) {
+      toast.error('Calendar name cannot be empty');
+      return;
+    }
+
+    setCalendars(prev => {
+      const updated = prev.map(cal => 
+        cal.id === editingCalendarId 
+          ? { ...cal, name: editingCalendarName.trim() }
+          : cal
+      );
+      
+      // Save to localStorage
+      if (currentUser?.email) {
+        const calendarsStorageKey = `calendars_${currentUser.email}`;
+        localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
+      }
+      
+      return updated;
+    });
+
+    toast.success('Calendar renamed!');
+    setEditingCalendarId(null);
+    setEditingCalendarName('');
+  };
+
+  const handleCancelEditCalendar = () => {
+    setEditingCalendarId(null);
+    setEditingCalendarName('');
+  };
+
+  const handleDeleteCalendar = (calendarId, calendarName) => {
+    // Prevent deleting default calendars
+    if (calendarId === 'default' || calendarId === 'client-ll') {
+      toast.error('Cannot delete default calendars');
+      return;
+    }
+
+    // Show confirmation
+    if (!window.confirm(`Delete "${calendarName}"?\n\nAll content in this calendar will also be deleted. This cannot be undone.`)) {
+      return;
+    }
+
+    // Delete calendar
+    setCalendars(prev => {
+      const updated = prev.filter(cal => cal.id !== calendarId);
+      
+      // Save to localStorage
+      if (currentUser?.email) {
+        const calendarsStorageKey = `calendars_${currentUser.email}`;
+        localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
+      }
+      
+      return updated;
+    });
+
+    // Delete all content items in this calendar
+    setContentItems(prev => {
+      const updated = prev.filter(item => item.calendarId !== calendarId);
+      
+      // Save to localStorage
+      if (currentUser?.email) {
+        const userStorageKey = `content_items_${currentUser.email}`;
+        localStorage.setItem(userStorageKey, JSON.stringify(updated));
+      }
+      
+      return updated;
+    });
+
+    // Switch to default calendar if we deleted the selected one
+    if (selectedCalendarId === calendarId) {
+      setSelectedCalendarId('default');
+    }
+
+    toast.success(`Deleted "${calendarName}"`);
   };
 
   // ========== GOOGLE SHEETS IMPORT HANDLERS ==========
@@ -726,17 +814,82 @@ const ContentCalendar = () => {
                 {calendars.map((cal) => {
                   const count = contentItems.filter(ci => ci.calendarId === cal.id).length;
                   const isActive = cal.id === selectedCalendarId;
+                  const isEditing = editingCalendarId === cal.id;
+                  const isDefault = cal.id === 'default' || cal.id === 'client-ll';
+                  
                   return (
-                    <button
+                    <div
                       key={cal.id}
-                      onClick={() => setSelectedCalendarId(cal.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md border text-left transition-colors ${
-                        isActive ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-gray-200 hover:bg-gray-50'
+                      className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors ${
+                        isActive ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
                       }`}
                     >
-                      <span className="truncate">{cal.name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>{count}</span>
-                    </button>
+                      {isEditing ? (
+                        // Edit mode
+                        <>
+                          <Input
+                            value={editingCalendarName}
+                            onChange={(e) => setEditingCalendarName(e.target.value)}
+                            className="flex-1 h-8 text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveCalendarName();
+                              if (e.key === 'Escape') handleCancelEditCalendar();
+                            }}
+                          />
+                          <button
+                            onClick={handleSaveCalendarName}
+                            className="p-1 hover:bg-green-100 rounded"
+                            title="Save"
+                          >
+                            <Check className="w-4 h-4 text-green-600" />
+                          </button>
+                          <button
+                            onClick={handleCancelEditCalendar}
+                            className="p-1 hover:bg-red-100 rounded"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4 text-red-600" />
+                          </button>
+                        </>
+                      ) : (
+                        // View mode
+                        <>
+                          <button
+                            onClick={() => setSelectedCalendarId(cal.id)}
+                            className="flex-1 flex items-center justify-between text-left min-w-0"
+                          >
+                            <span className={`truncate ${isActive ? 'text-blue-900 font-medium' : 'text-gray-900'}`}>
+                              {cal.name}
+                            </span>
+                            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                              isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                            }`}>
+                              {count}
+                            </span>
+                          </button>
+                          
+                          {!isDefault && (
+                            <div className="flex gap-1 flex-shrink-0">
+                              <button
+                                onClick={() => handleEditCalendar(cal.id, cal.name)}
+                                className="p-1 hover:bg-blue-100 rounded"
+                                title="Rename calendar"
+                              >
+                                <Edit className="w-3 h-3 text-blue-600" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCalendar(cal.id, cal.name)}
+                                className="p-1 hover:bg-red-100 rounded"
+                                title="Delete calendar"
+                              >
+                                <Trash2 className="w-3 h-3 text-red-600" />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   );
                 })}
               </div>
