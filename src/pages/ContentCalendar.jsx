@@ -402,8 +402,10 @@ const ContentCalendar = () => {
       let skipCount = 0;
 
       // Process each row
-      for (const row of sheetData.rows) {
+      for (let i = 0; i < sheetData.rows.length; i++) {
+        const row = sheetData.rows[i];
         try {
+          console.log(`\n📝 Processing row ${i + 1}:`, row);
           const contentItem = {};
           
           // Map columns to fields based on mappings
@@ -413,26 +415,45 @@ const ContentCalendar = () => {
             
             if (field !== 'unmapped' && value) {
               contentItem[field] = value;
+              console.log(`  ✓ Mapped column ${colIndex} (${sheetData.headers[colIndex]}) → ${field}: "${value}"`);
             }
           });
 
+          console.log('  📋 Parsed content item:', contentItem);
+
           // Validate required fields
           if (!contentItem.postDate) {
-            console.warn('⚠️ Skipping row without postDate:', row);
+            console.warn('  ⚠️ Skipping row without postDate:', row);
             skipCount++;
             continue;
           }
 
           // Parse and format the data
+          const parsedDate = parseDate(contentItem.postDate);
+          const normalizedPlatform = normalizePlatform(contentItem.platform) || 'instagram';
+          const normalizedContentType = normalizeContentType(contentItem.contentType) || 'image';
+          const normalizedStatus = normalizeStatus(contentItem.status) || 'draft';
+          
+          console.log('  🔄 Normalized values:', {
+            originalDate: contentItem.postDate,
+            parsedDate,
+            originalPlatform: contentItem.platform,
+            normalizedPlatform,
+            originalContentType: contentItem.contentType,
+            normalizedContentType,
+            originalStatus: contentItem.status,
+            normalizedStatus
+          });
+
           const newContent = {
             id: Date.now() + Math.random(),
             calendarId: newCalendarId, // Use the new calendar
             title: contentItem.caption ? contentItem.caption.substring(0, 50) : 'Imported Post',
             description: contentItem.caption || contentItem.notes || '',
-            platform: normalizePlatform(contentItem.platform) || 'instagram',
-            contentType: normalizeContentType(contentItem.contentType) || 'image',
-            scheduledDate: parseDate(contentItem.postDate),
-            status: normalizeStatus(contentItem.status) || 'draft',
+            platform: normalizedPlatform,
+            contentType: normalizedContentType,
+            scheduledDate: parsedDate,
+            status: normalizedStatus,
             tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
             imageUrl: contentItem.mediaUrls || '',
             videoUrl: '',
@@ -441,28 +462,40 @@ const ContentCalendar = () => {
             createdAt: new Date()
           };
 
+          console.log('  ✅ Created content object:', newContent);
           importedContent.push(newContent);
           successCount++;
         } catch (rowError) {
-          console.error('❌ Error processing row:', rowError, row);
+          console.error('  ❌ Error processing row:', rowError, row);
           skipCount++;
         }
       }
 
-      console.log('📦 Importing', importedContent.length, 'items to calendar:', newCalendarName);
+      console.log('📦 Total imported content:', importedContent);
+      console.log(`📦 Importing ${importedContent.length} items to calendar: ${newCalendarName}`);
 
       // Add imported content to the calendar
       setContentItems(prev => {
+        console.log('  📋 Previous content items:', prev.length);
         const updated = [...prev, ...importedContent];
+        console.log('  📋 Updated content items:', updated.length);
+        
         // Save to localStorage immediately
         if (currentUser?.email) {
           const userStorageKey = `content_items_${currentUser.email}`;
           localStorage.setItem(userStorageKey, JSON.stringify(updated));
+          console.log('  💾 Saved to localStorage:', userStorageKey);
+          
+          // Verify it was saved
+          const verification = localStorage.getItem(userStorageKey);
+          const parsed = JSON.parse(verification);
+          console.log('  ✅ Verification - items in localStorage:', parsed.length);
         }
         return updated;
       });
 
       // Switch to the new calendar
+      console.log('📅 Switching to new calendar:', newCalendarId);
       setSelectedCalendarId(newCalendarId);
 
       toast.success(`✅ Created "${newCalendarName}" with ${successCount} posts! ${skipCount > 0 ? `(${skipCount} skipped)` : ''}`);
@@ -514,16 +547,34 @@ const ContentCalendar = () => {
   };
 
   const parseDate = (value) => {
-    if (!value) return new Date();
+    if (!value) {
+      console.log('    ⚠️ No date value provided, using current date');
+      return new Date();
+    }
+    
+    console.log('    🗓️ Parsing date:', value);
+    
     try {
+      // Try direct parsing first
       const date = new Date(value);
-      if (isNaN(date.getTime())) {
-        // Try parsing common date formats
-        const parsed = new Date(value.replace(/\//g, '-'));
-        return isNaN(parsed.getTime()) ? new Date() : parsed;
+      if (!isNaN(date.getTime())) {
+        console.log('    ✅ Parsed directly:', date);
+        return date;
       }
-      return date;
-    } catch {
+      
+      // Try replacing slashes with dashes
+      const withDashes = value.replace(/\//g, '-');
+      const parsed = new Date(withDashes);
+      if (!isNaN(parsed.getTime())) {
+        console.log('    ✅ Parsed with dashes:', parsed);
+        return parsed;
+      }
+      
+      // Fallback to current date
+      console.warn('    ⚠️ Could not parse date, using current date. Original value:', value);
+      return new Date();
+    } catch (error) {
+      console.error('    ❌ Error parsing date:', error);
       return new Date();
     }
   };
