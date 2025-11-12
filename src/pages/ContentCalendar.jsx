@@ -10,7 +10,7 @@ import {
   Image, Video, FileText, Clock, Users, TrendingUp, Settings,
   ExternalLink, Filter, Download, RefreshCw, CheckCircle, AlertCircle, Pause, Play,
   X, Edit, Trash2, Eye, CalendarDays, Folder, FolderPlus, FileSpreadsheet, Upload,
-  Check, MoreVertical
+  Check, MoreVertical, Link as LinkIcon
 } from 'lucide-react';
 import { format, addDays, isToday, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import XLogo from '../assets/Twitter-X-logo.png';
@@ -41,6 +41,8 @@ const ContentCalendar = () => {
   const [editingCalendarId, setEditingCalendarId] = useState(null);
   const [editingCalendarName, setEditingCalendarName] = useState('');
   const [refreshingCalendarId, setRefreshingCalendarId] = useState(null);
+  const [linkingCalendarId, setLinkingCalendarId] = useState(null);
+  const [linkSheetUrl, setLinkSheetUrl] = useState('');
 
   // Import from Sheets state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -360,6 +362,43 @@ const ContentCalendar = () => {
     }
 
     toast.success(`Deleted "${calendarName}"`);
+  };
+
+  const handleLinkSheet = (calendarId) => {
+    setLinkingCalendarId(calendarId);
+    setLinkSheetUrl('');
+  };
+
+  const handleSaveLinkSheet = () => {
+    if (!linkSheetUrl.trim()) {
+      toast.error('Please enter a Google Sheets URL');
+      return;
+    }
+
+    setCalendars(prev => {
+      const updated = prev.map(cal => 
+        cal.id === linkingCalendarId 
+          ? { ...cal, sheetUrl: linkSheetUrl.trim(), lastImported: new Date().toISOString() }
+          : cal
+      );
+      
+      // Save to localStorage
+      if (currentUser?.email) {
+        const calendarsStorageKey = `calendars_${currentUser.email}`;
+        localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
+      }
+      
+      return updated;
+    });
+
+    toast.success('Sheet linked! You can now use the refresh button.');
+    setLinkingCalendarId(null);
+    setLinkSheetUrl('');
+  };
+
+  const handleCancelLinkSheet = () => {
+    setLinkingCalendarId(null);
+    setLinkSheetUrl('');
   };
 
   const handleRefreshCalendar = async (calendarId, calendarName, sheetUrl) => {
@@ -984,18 +1023,19 @@ const ContentCalendar = () => {
                   const count = contentItems.filter(ci => ci.calendarId === cal.id).length;
                   const isActive = cal.id === selectedCalendarId;
                   const isEditing = editingCalendarId === cal.id;
+                  const isLinking = linkingCalendarId === cal.id;
                   const isDefault = cal.id === 'default' || cal.id === 'client-ll';
                   
                   return (
                     <div
                       key={cal.id}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors ${
+                      className={`px-3 py-2 rounded-md border transition-colors ${
                         isActive ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
                       }`}
                     >
                       {isEditing ? (
-                        // Edit mode
-                        <>
+                        // Edit name mode
+                        <div className="flex items-center gap-2">
                           <Input
                             value={editingCalendarName}
                             onChange={(e) => setEditingCalendarName(e.target.value)}
@@ -1020,10 +1060,42 @@ const ContentCalendar = () => {
                           >
                             <X className="w-4 h-4 text-red-600" />
                           </button>
-                        </>
+                        </div>
+                      ) : isLinking ? (
+                        // Link sheet URL mode
+                        <div className="space-y-2">
+                          <Input
+                            value={linkSheetUrl}
+                            onChange={(e) => setLinkSheetUrl(e.target.value)}
+                            className="w-full h-8 text-xs"
+                            placeholder="Paste Google Sheets URL..."
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveLinkSheet();
+                              if (e.key === 'Escape') handleCancelLinkSheet();
+                            }}
+                          />
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              onClick={handleSaveLinkSheet}
+                              className="h-7 text-xs"
+                            >
+                              Link
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleCancelLinkSheet}
+                              className="h-7 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
                       ) : (
                         // View mode
-                        <>
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => setSelectedCalendarId(cal.id)}
                             className="flex-1 flex items-center justify-between text-left min-w-0"
@@ -1040,7 +1112,7 @@ const ContentCalendar = () => {
                           
                           {!isDefault && (
                             <div className="flex gap-1 flex-shrink-0">
-                              {cal.sheetUrl && (
+                              {cal.sheetUrl ? (
                                 <button
                                   onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl)}
                                   disabled={refreshingCalendarId === cal.id}
@@ -1050,6 +1122,14 @@ const ContentCalendar = () => {
                                   title={`Refresh from Google Sheets${cal.lastImported ? '\nLast updated: ' + new Date(cal.lastImported).toLocaleString() : ''}`}
                                 >
                                   <RefreshCw className="w-3 h-3 text-green-600" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleLinkSheet(cal.id)}
+                                  className="p-1 hover:bg-purple-100 rounded"
+                                  title="Link to Google Sheet for auto-refresh"
+                                >
+                                  <LinkIcon className="w-3 h-3 text-purple-600" />
                                 </button>
                               )}
                               <button
@@ -1068,7 +1148,7 @@ const ContentCalendar = () => {
                               </button>
                             </div>
                           )}
-                        </>
+                        </div>
                       )}
                     </div>
                   );
