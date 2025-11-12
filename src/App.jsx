@@ -179,7 +179,9 @@ function AppLayout() {
                 alt="Luxury Listings Logo" 
                 className="h-7 w-7 object-contain flex-shrink-0"
               />
-              <h1 className="text-lg font-bold text-gray-900 truncate hidden sm:block">Luxury Listings Portal</h1>
+              <Link to="/dashboard">
+                <h1 className="text-lg font-bold text-gray-900 truncate hidden sm:block hover:text-blue-600 transition-colors cursor-pointer">Luxury Listings Portal</h1>
+              </Link>
             </div>
             
             {/* Center - Navigation Items */}
