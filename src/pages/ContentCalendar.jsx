@@ -40,6 +40,7 @@ const ContentCalendar = () => {
   const [newCalendarName, setNewCalendarName] = useState('');
   const [editingCalendarId, setEditingCalendarId] = useState(null);
   const [editingCalendarName, setEditingCalendarName] = useState('');
+  const [refreshingCalendarId, setRefreshingCalendarId] = useState(null);
 
   // Import from Sheets state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -361,6 +362,169 @@ const ContentCalendar = () => {
     toast.success(`Deleted "${calendarName}"`);
   };
 
+  const handleRefreshCalendar = async (calendarId, calendarName, sheetUrl) => {
+    if (!sheetUrl) {
+      toast.error('No sheet URL found for this calendar');
+      return;
+    }
+
+    setRefreshingCalendarId(calendarId);
+    
+    try {
+      toast.loading('Refreshing from Google Sheets...', { id: 'refresh-cal' });
+      
+      // Fetch the sheet data
+      const data = await googleSheetsService.fetchSheetData(sheetUrl);
+      
+      if (!data.headers || data.headers.length === 0) {
+        toast.error('Sheet appears to be empty', { id: 'refresh-cal' });
+        setRefreshingCalendarId(null);
+        return;
+      }
+
+      // Get sample rows for AI analysis
+      const sampleRows = googleSheetsService.getSampleRows(data.rows, 5);
+      
+      toast.loading('AI is re-analyzing columns...', { id: 'refresh-cal' });
+      
+      // Use AI to suggest mappings
+      let aiMappings = {};
+      try {
+        const aiResult = await openaiService.analyzeColumnMapping(data.headers, sampleRows);
+        aiMappings = aiResult.mappings;
+      } catch (aiError) {
+        console.warn('⚠️ AI analysis failed, using fallback:', aiError);
+        const fallback = openaiService.fallbackMapping(data.headers);
+        aiMappings = fallback.mappings;
+      }
+
+      // Delete existing content in this calendar
+      setContentItems(prev => prev.filter(item => item.calendarId !== calendarId));
+
+      // Import new content
+      const importedContent = [];
+      let successCount = 0;
+      let skipCount = 0;
+
+      for (let i = 0; i < data.rows.length; i++) {
+        const row = data.rows[i];
+        try {
+          const contentItem = {};
+          
+          // Map columns to fields based on AI mappings
+          Object.keys(aiMappings).forEach(colIndex => {
+            const field = aiMappings[colIndex];
+            let value = row[parseInt(colIndex)];
+            
+            if (field !== 'unmapped' && value) {
+              if (field === 'mediaUrls' && contentItem[field]) {
+                contentItem[field] = `${contentItem[field]}, ${value}`;
+              } else {
+                contentItem[field] = value;
+              }
+            }
+          });
+
+          // Skip completely empty rows
+          if (Object.keys(contentItem).length === 0) {
+            skipCount++;
+            continue;
+          }
+
+          // Parse and format the data
+          const parsedDate = contentItem.postDate ? parseDate(contentItem.postDate) : addDays(new Date(), i);
+          const normalizedPlatform = normalizePlatform(contentItem.platform) || 'instagram';
+          const defaultContentType = (contentItem.mediaUrls && 
+            (contentItem.mediaUrls.includes('video') || contentItem.mediaUrls.includes('.mp4'))) 
+            ? 'video' : 'image';
+          const normalizedContentType = normalizeContentType(contentItem.contentType) || defaultContentType;
+          const normalizedStatus = normalizeStatus(contentItem.status) || 'draft';
+
+          // Generate title
+          let title = 'Imported Post';
+          if (contentItem.caption) {
+            title = contentItem.caption.substring(0, 50);
+          } else if (contentItem.notes) {
+            title = contentItem.notes.substring(0, 50);
+          } else if (contentItem.assignedTo) {
+            title = `Post for ${contentItem.assignedTo}`;
+          }
+
+          // Handle multiple URLs
+          let primaryImageUrl = '';
+          let allMediaUrls = contentItem.mediaUrls || '';
+          
+          if (allMediaUrls) {
+            const urls = allMediaUrls.split(',').map(u => u.trim());
+            const imageUrl = urls.find(url => 
+              url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
+              url.includes('drive.google.com') ||
+              url.includes('dropbox.com') ||
+              url.includes('imgur.com') ||
+              url.includes('cloudinary.com')
+            );
+            primaryImageUrl = imageUrl || urls[0];
+          }
+
+          const newContent = {
+            id: Date.now() + Math.random(),
+            calendarId: calendarId,
+            title: title,
+            description: contentItem.caption || contentItem.notes || '',
+            platform: normalizedPlatform,
+            contentType: normalizedContentType,
+            scheduledDate: parsedDate,
+            status: normalizedStatus,
+            tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
+            imageUrl: primaryImageUrl,
+            videoUrl: allMediaUrls,
+            notes: contentItem.notes || '',
+            assignedTo: contentItem.assignedTo || '',
+            createdAt: new Date()
+          };
+
+          importedContent.push(newContent);
+          successCount++;
+        } catch (rowError) {
+          console.error('❌ Error processing row:', rowError, row);
+          skipCount++;
+        }
+      }
+
+      // Add imported content
+      setContentItems(prev => {
+        const updated = [...prev, ...importedContent];
+        if (currentUser?.email) {
+          const userStorageKey = `content_items_${currentUser.email}`;
+          localStorage.setItem(userStorageKey, JSON.stringify(updated));
+        }
+        return updated;
+      });
+
+      // Update calendar last imported time
+      setCalendars(prev => {
+        const updated = prev.map(cal => 
+          cal.id === calendarId 
+            ? { ...cal, lastImported: new Date().toISOString() }
+            : cal
+        );
+        if (currentUser?.email) {
+          const calendarsStorageKey = `calendars_${currentUser.email}`;
+          localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
+        }
+        return updated;
+      });
+
+      toast.success(`✅ Refreshed "${calendarName}" with ${successCount} posts!`, { id: 'refresh-cal' });
+
+    } catch (error) {
+      console.error('❌ Refresh error:', error);
+      toast.error(error.message || 'Failed to refresh calendar', { id: 'refresh-cal' });
+    } finally {
+      setRefreshingCalendarId(null);
+    }
+  };
+
   // ========== GOOGLE SHEETS IMPORT HANDLERS ==========
 
   const handleStartImport = async () => {
@@ -481,9 +645,14 @@ const ContentCalendar = () => {
       
       console.log('📅 Creating new calendar:', newCalendarName);
       
-      // Add the new calendar
+      // Add the new calendar with sheet URL for refresh
       setCalendars(prev => {
-        const updated = [...prev, { id: newCalendarId, name: newCalendarName }];
+        const updated = [...prev, { 
+          id: newCalendarId, 
+          name: newCalendarName,
+          sheetUrl: sheetUrl, // Store the sheet URL for refresh
+          lastImported: new Date().toISOString()
+        }];
         // Save to localStorage immediately
         if (currentUser?.email) {
           const calendarsStorageKey = `calendars_${currentUser.email}`;
@@ -871,6 +1040,18 @@ const ContentCalendar = () => {
                           
                           {!isDefault && (
                             <div className="flex gap-1 flex-shrink-0">
+                              {cal.sheetUrl && (
+                                <button
+                                  onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl)}
+                                  disabled={refreshingCalendarId === cal.id}
+                                  className={`p-1 hover:bg-green-100 rounded ${
+                                    refreshingCalendarId === cal.id ? 'animate-spin' : ''
+                                  }`}
+                                  title={`Refresh from Google Sheets${cal.lastImported ? '\nLast updated: ' + new Date(cal.lastImported).toLocaleString() : ''}`}
+                                >
+                                  <RefreshCw className="w-3 h-3 text-green-600" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleEditCalendar(cal.id, cal.name)}
                                 className="p-1 hover:bg-blue-100 rounded"
