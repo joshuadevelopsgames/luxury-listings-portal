@@ -421,18 +421,27 @@ const ContentCalendar = () => {
 
           console.log('  📋 Parsed content item:', contentItem);
 
-          // Validate required fields
-          if (!contentItem.postDate) {
-            console.warn('  ⚠️ Skipping row without postDate:', row);
+          // Skip completely empty rows
+          if (Object.keys(contentItem).length === 0) {
+            console.warn('  ⚠️ Skipping empty row');
             skipCount++;
             continue;
           }
 
           // Parse and format the data
-          const parsedDate = parseDate(contentItem.postDate);
+          // If no date provided, use current date + row number to spread them out
+          const parsedDate = contentItem.postDate ? parseDate(contentItem.postDate) : addDays(new Date(), i);
           const normalizedPlatform = normalizePlatform(contentItem.platform) || 'instagram';
-          const normalizedContentType = normalizeContentType(contentItem.contentType) || 'image';
+          // Default to 'video' if mediaUrls contains video-like content, otherwise 'image'
+          const defaultContentType = (contentItem.mediaUrls && 
+            (contentItem.mediaUrls.includes('video') || contentItem.mediaUrls.includes('.mp4'))) 
+            ? 'video' : 'image';
+          const normalizedContentType = normalizeContentType(contentItem.contentType) || defaultContentType;
           const normalizedStatus = normalizeStatus(contentItem.status) || 'draft';
+          
+          if (!contentItem.postDate) {
+            console.log('  ℹ️ No date provided, using auto-generated date:', parsedDate);
+          }
           
           console.log('  🔄 Normalized values:', {
             originalDate: contentItem.postDate,
@@ -445,10 +454,20 @@ const ContentCalendar = () => {
             normalizedStatus
           });
 
+          // Generate a meaningful title from available data
+          let title = 'Imported Post';
+          if (contentItem.caption) {
+            title = contentItem.caption.substring(0, 50);
+          } else if (contentItem.notes) {
+            title = contentItem.notes.substring(0, 50);
+          } else if (contentItem.assignedTo) {
+            title = `Post for ${contentItem.assignedTo}`;
+          }
+
           const newContent = {
             id: Date.now() + Math.random(),
             calendarId: newCalendarId, // Use the new calendar
-            title: contentItem.caption ? contentItem.caption.substring(0, 50) : 'Imported Post',
+            title: title,
             description: contentItem.caption || contentItem.notes || '',
             platform: normalizedPlatform,
             contentType: normalizedContentType,
@@ -456,7 +475,7 @@ const ContentCalendar = () => {
             status: normalizedStatus,
             tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
             imageUrl: contentItem.mediaUrls || '',
-            videoUrl: '',
+            videoUrl: contentItem.mediaUrls || '',
             notes: contentItem.notes || '',
             assignedTo: contentItem.assignedTo || '',
             createdAt: new Date()
@@ -590,7 +609,7 @@ const ContentCalendar = () => {
   };
 
   const availableFields = [
-    { value: 'postDate', label: 'Post Date' },
+    { value: 'postDate', label: 'Post Date (optional - auto-generated if missing)' },
     { value: 'platform', label: 'Platform' },
     { value: 'contentType', label: 'Content Type' },
     { value: 'caption', label: 'Caption/Description' },
@@ -1147,8 +1166,11 @@ const ContentCalendar = () => {
                   </div>
 
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-sm text-green-900">
+                    <p className="text-sm text-green-900 mb-2">
                       ✅ Found <strong>{sheetData.headers.length}</strong> columns and <strong>{sheetData.rows.length}</strong> rows
+                    </p>
+                    <p className="text-xs text-green-800">
+                      💡 <strong>Note:</strong> Post dates are optional. If you don't have dates, they'll be auto-generated starting from today.
                     </p>
                   </div>
 
