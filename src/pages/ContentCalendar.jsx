@@ -418,11 +418,17 @@ const ContentCalendar = () => {
           // Map columns to fields based on mappings
           Object.keys(columnMappings).forEach(colIndex => {
             const field = columnMappings[colIndex];
-            const value = row[parseInt(colIndex)];
+            let value = row[parseInt(colIndex)];
             
             if (field !== 'unmapped' && value) {
-              contentItem[field] = value;
-              console.log(`  ✓ Mapped column ${colIndex} (${sheetData.headers[colIndex]}) → ${field}: "${value}"`);
+              // If this is a mediaUrls field and we already have one, append it
+              if (field === 'mediaUrls' && contentItem[field]) {
+                contentItem[field] = `${contentItem[field]}, ${value}`;
+                console.log(`  ✓ Appended to ${field}: "${value}"`);
+              } else {
+                contentItem[field] = value;
+                console.log(`  ✓ Mapped column ${colIndex} (${sheetData.headers[colIndex]}) → ${field}: "${value}"`);
+              }
             }
           });
 
@@ -471,6 +477,24 @@ const ContentCalendar = () => {
             title = `Post for ${contentItem.assignedTo}`;
           }
 
+          // Handle multiple URLs - extract first URL that looks like an image
+          let primaryImageUrl = '';
+          let allMediaUrls = contentItem.mediaUrls || '';
+          
+          if (allMediaUrls) {
+            // Split by comma if multiple URLs
+            const urls = allMediaUrls.split(',').map(u => u.trim());
+            // Find first URL that looks like an image (ends with image extension or is from common image hosts)
+            const imageUrl = urls.find(url => 
+              url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
+              url.includes('drive.google.com') ||
+              url.includes('dropbox.com') ||
+              url.includes('imgur.com') ||
+              url.includes('cloudinary.com')
+            );
+            primaryImageUrl = imageUrl || urls[0]; // Use first URL if no image found
+          }
+
           const newContent = {
             id: Date.now() + Math.random(),
             calendarId: newCalendarId, // Use the new calendar
@@ -481,8 +505,8 @@ const ContentCalendar = () => {
             scheduledDate: parsedDate,
             status: normalizedStatus,
             tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
-            imageUrl: contentItem.mediaUrls || '',
-            videoUrl: contentItem.mediaUrls || '',
+            imageUrl: primaryImageUrl,
+            videoUrl: allMediaUrls,
             notes: contentItem.notes || '',
             assignedTo: contentItem.assignedTo || '',
             createdAt: new Date()
@@ -876,10 +900,18 @@ const ContentCalendar = () => {
                     {dayContent.slice(0, 2).map(content => (
                       <div
                         key={content.id}
-                        className={`text-xs p-1 rounded truncate ${getStatusColor(content.status)} text-white`}
+                        className={`text-xs p-1 rounded overflow-hidden ${getStatusColor(content.status)}`}
                         title={content.title}
                       >
-                        {content.title}
+                        {content.imageUrl && (
+                          <img 
+                            src={content.imageUrl} 
+                            alt={content.title}
+                            className="w-full h-12 object-cover rounded mb-1"
+                            onError={(e) => e.target.style.display = 'none'}
+                          />
+                        )}
+                        <div className="text-white truncate">{content.title}</div>
                       </div>
                     ))}
                     {dayContent.length > 2 && (
@@ -905,15 +937,30 @@ const ContentCalendar = () => {
             {filteredContent.map(content => {
               const PlatformIcon = getPlatformIcon(content.platform);
               return (
-                <div key={content.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${getStatusColor(content.status)}`}>
+                <div key={content.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    {/* Image Preview */}
+                    {content.imageUrl && (
+                      <div className="flex-shrink-0">
+                        <img 
+                          src={content.imageUrl} 
+                          alt={content.title}
+                          className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                          onError={(e) => e.target.style.display = 'none'}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Platform Icon */}
+                    <div className={`flex-shrink-0 p-2 rounded-lg ${getStatusColor(content.status)}`}>
                       <PlatformIcon className="w-5 h-5 text-white" />
                     </div>
-                    <div>
-                      <h3 className="font-medium">{content.title}</h3>
-                      <p className="text-sm text-gray-600">{content.description}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                    
+                    {/* Content Details */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium truncate">{content.title}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">{content.description}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <Badge variant="outline" className="text-xs">
                           {content.contentType}
                         </Badge>
@@ -923,10 +970,17 @@ const ContentCalendar = () => {
                         <span className="text-xs text-gray-500">
                           {format(new Date(content.scheduledDate), 'MMM d, yyyy')}
                         </span>
+                        {content.notes && (
+                          <span className="text-xs text-gray-400 truncate">
+                            📝 {content.notes}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(content)}>
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -1205,8 +1259,11 @@ const ContentCalendar = () => {
                     <p className="text-sm text-green-900 mb-2">
                       ✅ Found <strong>{sheetData.headers.length}</strong> columns and <strong>{sheetData.rows.length}</strong> rows
                     </p>
+                    <p className="text-xs text-green-800 mb-1">
+                      💡 <strong>Tip:</strong> Post dates are optional. If you don't have dates, they'll be auto-generated starting from today.
+                    </p>
                     <p className="text-xs text-green-800">
-                      💡 <strong>Note:</strong> Post dates are optional. If you don't have dates, they'll be auto-generated starting from today.
+                      🖼️ <strong>Images:</strong> Columns with image URLs, Drive/Dropbox links, or thumbnails will show as previews in your calendar!
                     </p>
                   </div>
 

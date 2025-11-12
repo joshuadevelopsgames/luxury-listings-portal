@@ -88,7 +88,7 @@ AVAILABLE FIELDS TO MAP TO:
 - caption: The MAIN post text/caption - Look for "Caption", "Post Text", "Description" columns with long text
 - assignedTo: Person responsible (name or email)
 - status: Current status (Planned, Draft, In Progress, Ready, Published, Posted, etc.)
-- mediaUrls: URLs to images/videos OR link columns (Listing Link, Content Link, Media Link, etc.)
+- mediaUrls: URLs to images/videos OR link columns (Listing Link, Content Link, Media Link, Image/Video Cover, Photo, etc.)
 - notes: Additional notes, topics, property addresses, or short reference text - Look for "Content Topic", "Notes", "Topic"
 - hashtags: Hashtags for the post
 
@@ -197,18 +197,20 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
         conf = 'high';
         suggestion = 'Matched by keyword: status/state/progress';
       }
-      // Media/Link matching (expanded for various link types)
+      // Media/Link matching (expanded for various link types and image references)
       else if (lowerHeader.includes('media') || 
                lowerHeader.includes('image') || 
                lowerHeader.includes('video') || 
                lowerHeader.includes('photo') ||
+               lowerHeader.includes('cover') ||
+               lowerHeader.includes('thumbnail') ||
                lowerHeader.includes('url') || 
                lowerHeader.includes('link') ||
                lowerHeader.includes('listing link') ||
                lowerHeader.includes('content link')) {
         field = 'mediaUrls';
-        conf = 'medium';
-        suggestion = 'Matched by keyword: media/image/video/url/link';
+        conf = 'high';
+        suggestion = 'Matched by keyword: media/image/video/cover/link';
       }
       // Hashtags matching
       else if (lowerHeader.includes('hashtag') || lowerHeader.includes('tag') || lowerHeader.includes('#')) {
