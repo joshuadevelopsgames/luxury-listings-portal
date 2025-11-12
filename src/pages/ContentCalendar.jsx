@@ -9,13 +9,15 @@ import {
   Calendar, Plus, Instagram, Facebook, Twitter, Linkedin, Youtube,
   Image, Video, FileText, Clock, Users, TrendingUp, Settings,
   ExternalLink, Filter, Download, RefreshCw, CheckCircle, AlertCircle, Pause, Play,
-  X, Edit, Trash2, Eye, CalendarDays, Folder, FolderPlus
+  X, Edit, Trash2, Eye, CalendarDays, Folder, FolderPlus, FileSpreadsheet, Upload
 } from 'lucide-react';
 import { format, addDays, isToday, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import XLogo from '../assets/Twitter-X-logo.png';
 import XLogoSelected from '../assets/x-logo-selected.png';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
+import { googleSheetsService } from '../services/googleSheetsService';
+import { openaiService } from '../services/openaiService';
 
 const ContentCalendar = () => {
   const { currentUser, hasPermission } = useAuth();
@@ -35,6 +37,17 @@ const ContentCalendar = () => {
   const [selectedCalendarId, setSelectedCalendarId] = useState('default');
   const [showAddCalendar, setShowAddCalendar] = useState(false);
   const [newCalendarName, setNewCalendarName] = useState('');
+
+  // Import from Sheets state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importStep, setImportStep] = useState(1); // 1: Auth, 2: URL, 3: Mapping, 4: Importing
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [sheetData, setSheetData] = useState(null);
+  const [columnMappings, setColumnMappings] = useState({});
+  const [mappingConfidence, setMappingConfidence] = useState({});
+  const [mappingSuggestions, setMappingSuggestions] = useState({});
+  const [isImporting, setIsImporting] = useState(false);
+  const [isSheetsAuthorized, setIsSheetsAuthorized] = useState(false);
 
   // Load user-specific content and calendars from localStorage
   useEffect(() => {
@@ -248,6 +261,244 @@ const ContentCalendar = () => {
     setCurrentMonth(addDays(currentMonth, -32));
   };
 
+  // ========== GOOGLE SHEETS IMPORT HANDLERS ==========
+
+  const handleStartImport = async () => {
+    console.log('🚀 Starting Google Sheets import...');
+    setShowImportModal(true);
+    setImportStep(1);
+    
+    try {
+      // Initialize Google Sheets service
+      const result = await googleSheetsService.initialize(currentUser.email);
+      if (!result.needsAuth) {
+        setIsSheetsAuthorized(true);
+        setImportStep(2);
+      }
+    } catch (error) {
+      console.error('❌ Error initializing Sheets:', error);
+      toast.error('Failed to initialize Google Sheets. Please check your internet connection.');
+    }
+  };
+
+  const handleAuthorizeSheets = async () => {
+    try {
+      await googleSheetsService.requestAuthorization();
+      setIsSheetsAuthorized(true);
+      setImportStep(2);
+      toast.success('✅ Google Sheets authorized!');
+    } catch (error) {
+      console.error('❌ Authorization failed:', error);
+      toast.error('Failed to authorize Google Sheets. Please try again.');
+    }
+  };
+
+  const handleFetchSheet = async () => {
+    if (!sheetUrl.trim()) {
+      toast.error('Please enter a Google Sheets URL');
+      return;
+    }
+
+    try {
+      toast.loading('Fetching sheet data...', { id: 'fetch-sheet' });
+      
+      // Fetch the sheet data
+      const data = await googleSheetsService.fetchSheetData(sheetUrl);
+      
+      if (!data.headers || data.headers.length === 0) {
+        toast.error('Sheet appears to be empty', { id: 'fetch-sheet' });
+        return;
+      }
+
+      setSheetData(data);
+      
+      // Get sample rows for AI analysis
+      const sampleRows = googleSheetsService.getSampleRows(data.rows, 5);
+      
+      toast.loading('AI is analyzing columns...', { id: 'fetch-sheet' });
+      
+      // Use AI to suggest mappings
+      try {
+        const aiResult = await openaiService.analyzeColumnMapping(data.headers, sampleRows);
+        setColumnMappings(aiResult.mappings);
+        setMappingConfidence(aiResult.confidence);
+        setMappingSuggestions(aiResult.suggestions);
+        toast.success('✅ Sheet analyzed successfully!', { id: 'fetch-sheet' });
+      } catch (aiError) {
+        console.warn('⚠️ AI analysis failed, using fallback:', aiError);
+        toast.loading('Using fallback mapping...', { id: 'fetch-sheet' });
+        const fallback = openaiService.fallbackMapping(data.headers);
+        setColumnMappings(fallback.mappings);
+        setMappingConfidence(fallback.confidence);
+        setMappingSuggestions(fallback.suggestions);
+        toast.success('✅ Sheet fetched! Please review mappings.', { id: 'fetch-sheet' });
+      }
+      
+      setImportStep(3);
+    } catch (error) {
+      console.error('❌ Error fetching sheet:', error);
+      toast.error(error.message || 'Failed to fetch sheet data', { id: 'fetch-sheet' });
+    }
+  };
+
+  const handleMappingChange = (columnIndex, newField) => {
+    setColumnMappings(prev => ({
+      ...prev,
+      [columnIndex]: newField
+    }));
+  };
+
+  const handleImportContent = async () => {
+    if (!sheetData || !sheetData.rows) {
+      toast.error('No data to import');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportStep(4);
+    
+    try {
+      const importedContent = [];
+      let successCount = 0;
+      let skipCount = 0;
+
+      // Process each row
+      for (const row of sheetData.rows) {
+        try {
+          const contentItem = {};
+          
+          // Map columns to fields based on mappings
+          Object.keys(columnMappings).forEach(colIndex => {
+            const field = columnMappings[colIndex];
+            const value = row[parseInt(colIndex)];
+            
+            if (field !== 'unmapped' && value) {
+              contentItem[field] = value;
+            }
+          });
+
+          // Validate required fields
+          if (!contentItem.postDate) {
+            console.warn('⚠️ Skipping row without postDate:', row);
+            skipCount++;
+            continue;
+          }
+
+          // Parse and format the data
+          const newContent = {
+            id: Date.now() + Math.random(),
+            calendarId: selectedCalendarId,
+            title: contentItem.caption ? contentItem.caption.substring(0, 50) : 'Imported Post',
+            description: contentItem.caption || contentItem.notes || '',
+            platform: normalizePlatform(contentItem.platform) || 'instagram',
+            contentType: normalizeContentType(contentItem.contentType) || 'image',
+            scheduledDate: parseDate(contentItem.postDate),
+            status: normalizeStatus(contentItem.status) || 'draft',
+            tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
+            imageUrl: contentItem.mediaUrls || '',
+            videoUrl: '',
+            notes: contentItem.notes || '',
+            assignedTo: contentItem.assignedTo || '',
+            createdAt: new Date()
+          };
+
+          importedContent.push(newContent);
+          successCount++;
+        } catch (rowError) {
+          console.error('❌ Error processing row:', rowError, row);
+          skipCount++;
+        }
+      }
+
+      // Add imported content to the calendar
+      setContentItems(prev => [...prev, ...importedContent]);
+
+      toast.success(`✅ Imported ${successCount} items! ${skipCount > 0 ? `(${skipCount} skipped)` : ''}`);
+      
+      // Close modal after a short delay
+      setTimeout(() => {
+        setShowImportModal(false);
+        resetImportState();
+      }, 2000);
+
+    } catch (error) {
+      console.error('❌ Import error:', error);
+      toast.error('Failed to import content. Please check the console for details.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Helper functions for normalizing imported data
+  const normalizePlatform = (value) => {
+    if (!value) return null;
+    const lower = value.toLowerCase().trim();
+    if (lower.includes('insta') || lower === 'ig') return 'instagram';
+    if (lower.includes('face')) return 'facebook';
+    if (lower.includes('twit') || lower === 'x') return 'twitter';
+    if (lower.includes('link')) return 'linkedin';
+    if (lower.includes('you') || lower.includes('tube')) return 'youtube';
+    if (lower.includes('tik')) return 'tiktok';
+    return platforms.find(p => p.id === lower) ? lower : null;
+  };
+
+  const normalizeContentType = (value) => {
+    if (!value) return null;
+    const lower = value.toLowerCase().trim();
+    if (lower.includes('image') || lower.includes('photo') || lower.includes('picture')) return 'image';
+    if (lower.includes('video') || lower.includes('reel') || lower.includes('story')) return 'video';
+    if (lower.includes('text') || lower.includes('post')) return 'text';
+    return contentTypes.find(ct => ct.id === lower) ? lower : null;
+  };
+
+  const normalizeStatus = (value) => {
+    if (!value) return null;
+    const lower = value.toLowerCase().trim();
+    if (lower.includes('draft')) return 'draft';
+    if (lower.includes('schedule') || lower.includes('plan')) return 'scheduled';
+    if (lower.includes('publish') || lower.includes('live') || lower.includes('done')) return 'published';
+    if (lower.includes('pause') || lower.includes('hold')) return 'paused';
+    return statuses.find(s => s.id === lower) ? lower : null;
+  };
+
+  const parseDate = (value) => {
+    if (!value) return new Date();
+    try {
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        // Try parsing common date formats
+        const parsed = new Date(value.replace(/\//g, '-'));
+        return isNaN(parsed.getTime()) ? new Date() : parsed;
+      }
+      return date;
+    } catch {
+      return new Date();
+    }
+  };
+
+  const resetImportState = () => {
+    setImportStep(1);
+    setSheetUrl('');
+    setSheetData(null);
+    setColumnMappings({});
+    setMappingConfidence({});
+    setMappingSuggestions({});
+    setIsImporting(false);
+  };
+
+  const availableFields = [
+    { value: 'postDate', label: 'Post Date' },
+    { value: 'platform', label: 'Platform' },
+    { value: 'contentType', label: 'Content Type' },
+    { value: 'caption', label: 'Caption/Description' },
+    { value: 'status', label: 'Status' },
+    { value: 'assignedTo', label: 'Assigned To' },
+    { value: 'hashtags', label: 'Hashtags' },
+    { value: 'mediaUrls', label: 'Media URLs' },
+    { value: 'notes', label: 'Notes' },
+    { value: 'unmapped', label: '(Skip this column)' }
+  ];
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -256,15 +507,27 @@ const ContentCalendar = () => {
           <h1 className="text-3xl font-bold text-gray-900">Content Calendar</h1>
           <p className="text-gray-600">Plan and schedule your social media content</p>
         </div>
-        <Button 
-          onClick={() => canCreateContent ? setShowAddModal(true) : toast.error('You need CREATE_CONTENT permission')} 
-          className="flex items-center gap-2"
-          disabled={!canCreateContent}
-          title={!canCreateContent ? 'You need CREATE_CONTENT permission' : ''}
-        >
-          <Plus className="w-4 h-4" />
-          Add Content
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleStartImport}
+            variant="outline"
+            className="flex items-center gap-2"
+            disabled={!canCreateContent}
+            title={!canCreateContent ? 'You need CREATE_CONTENT permission' : 'Import from Google Sheets'}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Import from Sheets
+          </Button>
+          <Button 
+            onClick={() => canCreateContent ? setShowAddModal(true) : toast.error('You need CREATE_CONTENT permission')} 
+            className="flex items-center gap-2"
+            disabled={!canCreateContent}
+            title={!canCreateContent ? 'You need CREATE_CONTENT permission' : ''}
+          >
+            <Plus className="w-4 h-4" />
+            Add Content
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6">
@@ -666,6 +929,225 @@ const ContentCalendar = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import from Google Sheets Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Import from Google Sheets</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Step {importStep} of 4
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => {
+                setShowImportModal(false);
+                resetImportState();
+              }}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="p-6">
+              {/* Step 1: Authorization */}
+              {importStep === 1 && (
+                <div className="text-center space-y-6 py-8">
+                  <div className="flex justify-center">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                      <FileSpreadsheet className="w-10 h-10 text-green-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">Connect Google Sheets</h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      To import content from your Google Sheets, we need permission to access your sheets.
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+                    <p className="text-sm text-blue-900">
+                      <strong>We only read data from sheets you select.</strong> Your data is never stored on our servers.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleAuthorizeSheets}
+                    className="flex items-center gap-2 mx-auto"
+                    size="lg"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    Authorize Google Sheets
+                  </Button>
+                </div>
+              )}
+
+              {/* Step 2: Enter Sheet URL */}
+              {importStep === 2 && (
+                <div className="space-y-6 py-4">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">Enter Sheet URL</h3>
+                    <p className="text-gray-600">
+                      Paste the URL or ID of your Google Sheet content calendar.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Google Sheets URL or ID</label>
+                    <Input
+                      value={sheetUrl}
+                      onChange={(e) => setSheetUrl(e.target.value)}
+                      placeholder="https://docs.google.com/spreadsheets/d/..."
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      How to find your Sheet URL:
+                    </h4>
+                    <ol className="text-sm text-gray-600 space-y-1 ml-6 list-decimal">
+                      <li>Open your Google Sheet</li>
+                      <li>Copy the URL from your browser's address bar</li>
+                      <li>Paste it here</li>
+                    </ol>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setImportStep(1)}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleFetchSheet}
+                      disabled={!sheetUrl.trim()}
+                    >
+                      Fetch Sheet Data
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Column Mapping */}
+              {importStep === 3 && sheetData && (
+                <div className="space-y-6 py-4">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">Review Column Mapping</h3>
+                    <p className="text-gray-600">
+                      AI has analyzed your sheet. Review and adjust the mappings below.
+                    </p>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-900">
+                      ✅ Found <strong>{sheetData.headers.length}</strong> columns and <strong>{sheetData.rows.length}</strong> rows
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {sheetData.headers.map((header, index) => {
+                      const mapping = columnMappings[index.toString()];
+                      const confidence = mappingConfidence[index.toString()];
+                      const suggestion = mappingSuggestions[index.toString()];
+                      const sampleData = sheetData.rows.slice(0, 2).map(row => row[index]).filter(v => v);
+
+                      return (
+                        <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium text-gray-900 truncate">{header}</p>
+                                {confidence && (
+                                  <Badge 
+                                    className={`text-xs ${
+                                      confidence === 'high' ? 'bg-green-100 text-green-800' :
+                                      confidence === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}
+                                  >
+                                    {confidence} confidence
+                                  </Badge>
+                                )}
+                              </div>
+                              {sampleData.length > 0 && (
+                                <p className="text-xs text-gray-500 truncate">
+                                  Sample: {sampleData.join(', ')}
+                                </p>
+                              )}
+                              {suggestion && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  💡 {suggestion}
+                                </p>
+                              )}
+                            </div>
+                            <div className="w-48 flex-shrink-0">
+                              <select
+                                value={mapping || 'unmapped'}
+                                onChange={(e) => handleMappingChange(index.toString(), e.target.value)}
+                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                              >
+                                {availableFields.map(field => (
+                                  <option key={field.value} value={field.value}>
+                                    {field.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => setImportStep(2)}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleImportContent}
+                      className="flex items-center gap-2"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Import {sheetData.rows.length} Posts
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Importing */}
+              {importStep === 4 && (
+                <div className="text-center space-y-6 py-12">
+                  <div className="flex justify-center">
+                    {isImporting ? (
+                      <div className="w-20 h-20 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                        <CheckCircle className="w-10 h-10 text-green-600" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">
+                      {isImporting ? 'Importing Content...' : 'Import Complete!'}
+                    </h3>
+                    <p className="text-gray-600">
+                      {isImporting 
+                        ? 'Please wait while we import your content...' 
+                        : 'Your content has been successfully imported to your calendar.'
+                      }
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
