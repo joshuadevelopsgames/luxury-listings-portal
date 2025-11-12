@@ -574,7 +574,7 @@ const ContentCalendar = () => {
     const lower = value.toLowerCase().trim();
     if (lower.includes('draft')) return 'draft';
     if (lower.includes('schedule') || lower.includes('plan')) return 'scheduled';
-    if (lower.includes('publish') || lower.includes('live') || lower.includes('done')) return 'published';
+    if (lower.includes('publish') || lower.includes('post') || lower.includes('live') || lower.includes('done')) return 'published';
     if (lower.includes('pause') || lower.includes('hold')) return 'paused';
     return statuses.find(s => s.id === lower) ? lower : null;
   };
@@ -588,8 +588,22 @@ const ContentCalendar = () => {
     console.log('    🗓️ Parsing date:', value);
     
     try {
-      // Try direct parsing first
-      const date = new Date(value);
+      // Handle "Monday, October 20" format (add current year)
+      const dayMonthPattern = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+(\w+)\s+(\d+)$/i;
+      const match = value.match(dayMonthPattern);
+      if (match) {
+        const [, , month, day] = match;
+        const currentYear = new Date().getFullYear();
+        const dateString = `${month} ${day}, ${currentYear}`;
+        const parsed = new Date(dateString);
+        if (!isNaN(parsed.getTime())) {
+          console.log('    ✅ Parsed day-month format with current year:', parsed);
+          return parsed;
+        }
+      }
+      
+      // Try direct parsing
+      let date = new Date(value);
       if (!isNaN(date.getTime())) {
         console.log('    ✅ Parsed directly:', date);
         return date;
@@ -597,10 +611,18 @@ const ContentCalendar = () => {
       
       // Try replacing slashes with dashes
       const withDashes = value.replace(/\//g, '-');
-      const parsed = new Date(withDashes);
-      if (!isNaN(parsed.getTime())) {
-        console.log('    ✅ Parsed with dashes:', parsed);
-        return parsed;
+      date = new Date(withDashes);
+      if (!isNaN(date.getTime())) {
+        console.log('    ✅ Parsed with dashes:', date);
+        return date;
+      }
+      
+      // Try adding current year to common formats
+      const currentYear = new Date().getFullYear();
+      date = new Date(`${value}, ${currentYear}`);
+      if (!isNaN(date.getTime())) {
+        console.log('    ✅ Parsed with added year:', date);
+        return date;
       }
       
       // Fallback to current date

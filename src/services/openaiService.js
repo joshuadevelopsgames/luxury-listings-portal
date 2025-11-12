@@ -82,14 +82,14 @@ SHEET COLUMNS:
 ${columnsInfo}
 
 AVAILABLE FIELDS TO MAP TO:
-- postDate: The date/time to post (CRITICAL - look for dates in ANY format)
+- postDate: The date/time to post (CRITICAL - look for dates in ANY format, including "Monday, October 20")
 - platform: Social media platform (Instagram, TikTok, Facebook, LinkedIn, etc.)
-- contentType: Type of content (Reel, Story, Carousel, Post, Video, etc.)
-- caption: The post caption or description
+- contentType: Type of content (Reel, Story, Carousel, Post, Video, Image, etc.) - Look for "Content Type" columns
+- caption: The MAIN post text/caption - Look for "Caption", "Post Text", "Description" columns with long text
 - assignedTo: Person responsible (name or email)
-- status: Current status (Planned, Draft, In Progress, Ready, Published, etc.)
-- mediaUrls: URLs to images/videos (comma-separated)
-- notes: Additional notes or comments
+- status: Current status (Planned, Draft, In Progress, Ready, Published, Posted, etc.)
+- mediaUrls: URLs to images/videos OR link columns (Listing Link, Content Link, Media Link, etc.)
+- notes: Additional notes, topics, property addresses, or short reference text - Look for "Content Topic", "Notes", "Topic"
 - hashtags: Hashtags for the post
 
 INSTRUCTIONS:
@@ -167,11 +167,23 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
         conf = 'medium';
         suggestion = 'Matched by keyword: type/format/content';
       }
-      // Caption matching
-      else if (lowerHeader.includes('caption') || lowerHeader.includes('description') || lowerHeader.includes('text') || lowerHeader.includes('post')) {
+      // Caption matching (main post text)
+      else if (lowerHeader.includes('caption') || 
+               lowerHeader.includes('post text') || 
+               lowerHeader.includes('copy') ||
+               (lowerHeader.includes('description') && !lowerHeader.includes('topic'))) {
         field = 'caption';
         conf = 'high';
-        suggestion = 'Matched by keyword: caption/description/text';
+        suggestion = 'Matched by keyword: caption/post text/copy';
+      }
+      // Notes/Topic matching (shorter reference text)
+      else if (lowerHeader.includes('topic') || 
+               lowerHeader.includes('subject') ||
+               lowerHeader.includes('title') ||
+               (lowerHeader.includes('note') && !lowerHeader.includes('caption'))) {
+        field = 'notes';
+        conf = 'high';
+        suggestion = 'Matched by keyword: topic/subject/title/notes';
       }
       // Assigned to matching
       else if (lowerHeader.includes('assign') || lowerHeader.includes('owner') || lowerHeader.includes('who') || lowerHeader.includes('responsible')) {
@@ -185,17 +197,18 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
         conf = 'high';
         suggestion = 'Matched by keyword: status/state/progress';
       }
-      // Media matching
-      else if (lowerHeader.includes('media') || lowerHeader.includes('image') || lowerHeader.includes('video') || lowerHeader.includes('url') || lowerHeader.includes('link')) {
+      // Media/Link matching (expanded for various link types)
+      else if (lowerHeader.includes('media') || 
+               lowerHeader.includes('image') || 
+               lowerHeader.includes('video') || 
+               lowerHeader.includes('photo') ||
+               lowerHeader.includes('url') || 
+               lowerHeader.includes('link') ||
+               lowerHeader.includes('listing link') ||
+               lowerHeader.includes('content link')) {
         field = 'mediaUrls';
         conf = 'medium';
-        suggestion = 'Matched by keyword: media/image/video/url';
-      }
-      // Notes matching
-      else if (lowerHeader.includes('note') || lowerHeader.includes('comment') || lowerHeader.includes('remark')) {
-        field = 'notes';
-        conf = 'medium';
-        suggestion = 'Matched by keyword: note/comment';
+        suggestion = 'Matched by keyword: media/image/video/url/link';
       }
       // Hashtags matching
       else if (lowerHeader.includes('hashtag') || lowerHeader.includes('tag') || lowerHeader.includes('#')) {
