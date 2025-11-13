@@ -141,23 +141,25 @@ const TemplateEditor = ({ onClose }) => {
   if (isCreating) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-        <Card className="w-full max-w-4xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 sticky top-0 bg-white z-10 border-b">
+        <Card className="w-full max-w-4xl relative">
+          {/* Close button - top right corner */}
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={() => {
+              setIsCreating(false);
+              setEditingTemplate(null);
+              setFormData({ name: '', description: '', icon: '✍️', tasks: [] });
+            }}
+            className="absolute top-4 right-4 h-10 w-10 p-0 z-20 hover:bg-gray-100"
+          >
+            <X className="w-6 h-6" />
+          </Button>
+          
+          <CardHeader className="pb-4 pr-16">
             <CardTitle className="text-2xl font-bold">
               {editingTemplate ? 'Edit Template' : 'Create New Template'}
             </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIsCreating(false);
-                setEditingTemplate(null);
-                setFormData({ name: '', description: '', icon: '✍️', tasks: [] });
-              }}
-              className="h-8 w-8 p-0"
-            >
-              <X className="w-4 h-4" />
-            </Button>
           </CardHeader>
           
           <CardContent className="space-y-6 max-h-none">
@@ -316,27 +318,29 @@ const TemplateEditor = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-      <Card className="w-full max-w-5xl mb-8">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 sticky top-0 bg-white z-10 border-b">
-          <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-indigo-500" />
-            Template Manager
-          </CardTitle>
-          <div className="flex items-center gap-2">
+      <Card className="w-full max-w-5xl mb-8 relative">
+        {/* Close button - top right corner */}
+        <Button
+          variant="ghost"
+          size="lg"
+          onClick={onClose}
+          className="absolute top-4 right-4 h-10 w-10 p-0 z-20 hover:bg-gray-100"
+        >
+          <X className="w-6 h-6" />
+        </Button>
+        
+        <CardHeader className="pb-4 pr-16">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-indigo-500" />
+              Template Manager
+            </CardTitle>
             <Button
               onClick={() => setIsCreating(true)}
               className="bg-indigo-600 hover:bg-indigo-700"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Template
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="w-4 h-4" />
             </Button>
           </div>
         </CardHeader>
