@@ -1,6 +1,7 @@
 // User Roles and Permissions System
 export const USER_ROLES = {
   ADMIN: 'admin',
+  DIRECTOR: 'director',
   CONTENT_DIRECTOR: 'content_director',
   SOCIAL_MEDIA_MANAGER: 'social_media_manager',
   HR_MANAGER: 'hr_manager',
@@ -48,6 +49,46 @@ export const ROLE_PERMISSIONS = {
     ],
     color: 'red',
     icon: '👑'
+  },
+  
+  [USER_ROLES.DIRECTOR]: {
+    name: 'Director',
+    displayName: 'Director',
+    description: 'Senior leadership with template editing and team oversight',
+    permissions: {
+      canViewDashboard: true,
+      canManageTutorials: true,
+      canCreateTutorials: true,
+      canEditTutorials: true,
+      canDeleteTutorials: false,
+      canViewTasks: true,
+      canCreateTasks: true,
+      canAssignTasks: true,
+      canViewAllTasks: true,
+      canEditTaskTemplates: true, // Unique to Director
+      canManageClientPackages: true,
+      canViewResources: true,
+      canUploadResources: true,
+      canViewAnalytics: true,
+      canManageTeam: true,
+      canViewHRData: true,
+      canManageHRData: false,
+      canViewSocialMetrics: true,
+      canManageSocialContent: true,
+      canViewCRM: true,
+      canManageLeads: true,
+      canViewSalesPipeline: true
+    },
+    features: [
+      'Task Template Management',
+      'Team Oversight',
+      'Content Strategy',
+      'Performance Analytics',
+      'Client Management',
+      'Team Leadership'
+    ],
+    color: 'indigo',
+    icon: '🎯'
   },
   
   [USER_ROLES.CONTENT_DIRECTOR]: {

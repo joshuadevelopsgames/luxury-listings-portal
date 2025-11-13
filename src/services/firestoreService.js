@@ -41,6 +41,7 @@ class FirestoreService {
     PENDING_USERS: 'pending_users',
     APPROVED_USERS: 'approved_users',
     TASKS: 'tasks',
+    TASK_TEMPLATES: 'task_templates',
     ANALYTICS_CONFIG: 'analytics_config',
     SYSTEM_CONFIG: 'system_config',
     EMPLOYEES: 'employees',
@@ -1316,6 +1317,131 @@ class FirestoreService {
       
       callback(sortedRequests);
     });
+  }
+
+  // ===== TASK TEMPLATES MANAGEMENT =====
+
+  // Get all task templates
+  async getTaskTemplates() {
+    try {
+      const querySnapshot = await getDocs(collection(db, this.collections.TASK_TEMPLATES));
+      const templates = [];
+      querySnapshot.forEach((doc) => {
+        templates.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Retrieved task templates:', templates.length);
+      return templates;
+    } catch (error) {
+      console.error('❌ Error getting task templates:', error);
+      throw error;
+    }
+  }
+
+  // Get a single task template
+  async getTaskTemplate(templateId) {
+    try {
+      const docRef = doc(db, this.collections.TASK_TEMPLATES, templateId);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        return {
+          id: docSnap.id,
+          ...docSnap.data()
+        };
+      } else {
+        console.log('❌ Template not found:', templateId);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error getting task template:', error);
+      throw error;
+    }
+  }
+
+  // Create a new task template
+  async createTaskTemplate(templateData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.TASK_TEMPLATES), {
+        ...templateData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Task template created with ID:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Error creating task template:', error);
+      throw error;
+    }
+  }
+
+  // Update a task template
+  async updateTaskTemplate(templateId, updates) {
+    try {
+      const docRef = doc(db, this.collections.TASK_TEMPLATES, templateId);
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Task template updated:', templateId);
+    } catch (error) {
+      console.error('❌ Error updating task template:', error);
+      throw error;
+    }
+  }
+
+  // Delete a task template
+  async deleteTaskTemplate(templateId) {
+    try {
+      const docRef = doc(db, this.collections.TASK_TEMPLATES, templateId);
+      await deleteDoc(docRef);
+      console.log('✅ Task template deleted:', templateId);
+    } catch (error) {
+      console.error('❌ Error deleting task template:', error);
+      throw error;
+    }
+  }
+
+  // Listen to template changes in real-time
+  onTaskTemplatesChange(callback) {
+    const q = query(
+      collection(db, this.collections.TASK_TEMPLATES),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const templates = [];
+      snapshot.forEach((doc) => {
+        templates.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(templates);
+    });
+  }
+
+  // Initialize default templates if none exist
+  async initializeDefaultTemplates(defaultTemplates) {
+    try {
+      const existingTemplates = await this.getTaskTemplates();
+      
+      if (existingTemplates.length === 0) {
+        console.log('📝 Initializing default task templates...');
+        
+        const promises = Object.values(defaultTemplates).map(template => {
+          return this.createTaskTemplate(template);
+        });
+        
+        await Promise.all(promises);
+        console.log('✅ Default templates initialized');
+      }
+    } catch (error) {
+      console.error('❌ Error initializing default templates:', error);
+      throw error;
+    }
   }
 }
 

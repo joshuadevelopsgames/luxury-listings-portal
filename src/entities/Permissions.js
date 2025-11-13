@@ -31,6 +31,7 @@ export const PERMISSIONS = {
   ASSIGN_TASKS: 'assign_tasks',
   VIEW_ALL_TASKS: 'view_all_tasks',
   DELETE_ANY_TASK: 'delete_any_task',
+  EDIT_TASK_TEMPLATES: 'edit_task_templates',
   
   // HR Functions
   MANAGE_LEAVE_REQUESTS: 'manage_leave_requests',
@@ -108,7 +109,8 @@ export const PERMISSION_CATEGORIES = {
       PERMISSIONS.CREATE_TASKS,
       PERMISSIONS.ASSIGN_TASKS,
       PERMISSIONS.VIEW_ALL_TASKS,
-      PERMISSIONS.DELETE_ANY_TASK
+      PERMISSIONS.DELETE_ANY_TASK,
+      PERMISSIONS.EDIT_TASK_TEMPLATES
     ]
   },
   HR_FUNCTIONS: {
@@ -185,6 +187,7 @@ export const PERMISSION_LABELS = {
   [PERMISSIONS.ASSIGN_TASKS]: 'Assign Tasks to Others',
   [PERMISSIONS.VIEW_ALL_TASKS]: 'View All Tasks',
   [PERMISSIONS.DELETE_ANY_TASK]: 'Delete Any Task',
+  [PERMISSIONS.EDIT_TASK_TEMPLATES]: 'Edit Task Templates',
   
   [PERMISSIONS.MANAGE_LEAVE_REQUESTS]: 'Manage Leave Requests',
   [PERMISSIONS.APPROVE_LEAVE]: 'Approve Leave Requests',
@@ -236,6 +239,7 @@ export function getPermissionDescription(permission) {
     [PERMISSIONS.ASSIGN_TASKS]: 'Assign tasks to team members',
     [PERMISSIONS.VIEW_ALL_TASKS]: 'View all team tasks',
     [PERMISSIONS.DELETE_ANY_TASK]: 'Delete any task in the system',
+    [PERMISSIONS.EDIT_TASK_TEMPLATES]: 'Create and edit task templates for the team',
     
     [PERMISSIONS.MANAGE_LEAVE_REQUESTS]: 'View and manage all leave requests',
     [PERMISSIONS.APPROVE_LEAVE]: 'Approve or reject leave requests',

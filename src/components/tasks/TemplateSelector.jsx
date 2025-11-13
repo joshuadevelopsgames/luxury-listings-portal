@@ -1,17 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { X, CheckCircle2, Sparkles } from 'lucide-react';
-import { getAllTemplates } from '../../data/taskTemplates';
+import { X, CheckCircle2, Sparkles, Edit } from 'lucide-react';
+import { TASK_TEMPLATES } from '../../data/taskTemplates';
 import { DailyTask } from '../../entities/DailyTask';
+import { firestoreService } from '../../services/firestoreService';
+import { PERMISSIONS } from '../../entities/Permissions';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
-const TemplateSelector = ({ onClose, currentUser }) => {
+const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
+  const { hasPermission } = useAuth();
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-  const templates = getAllTemplates();
+  const canEditTemplates = hasPermission(PERMISSIONS.EDIT_TASK_TEMPLATES);
+
+  // Load templates from Firestore on mount
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const firestoreTemplates = await firestoreService.getTaskTemplates();
+        
+        // If no templates in Firestore, initialize with defaults
+        if (firestoreTemplates.length === 0) {
+          await firestoreService.initializeDefaultTemplates(TASK_TEMPLATES);
+          const newTemplates = await firestoreService.getTaskTemplates();
+          setTemplates(newTemplates);
+        } else {
+          setTemplates(firestoreTemplates);
+        }
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        // Fallback to default templates
+        setTemplates(Object.values(TASK_TEMPLATES));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTemplates();
+  }, []);
 
   const handleApplyTemplate = async () => {
     if (!selectedTemplate) return;
@@ -52,6 +84,18 @@ const TemplateSelector = ({ onClose, currentUser }) => {
     }
   };
 
+    if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <p className="text-gray-600">Loading templates...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <Card className="w-full max-w-5xl my-8">
@@ -60,19 +104,40 @@ const TemplateSelector = ({ onClose, currentUser }) => {
             <Sparkles className="w-6 h-6 text-purple-500" />
             Task Templates
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {canEditTemplates && onEditTemplate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  onEditTemplate();
+                }}
+                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Templates
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </CardHeader>
         
         <CardContent className="space-y-6">
           <p className="text-gray-600">
             Choose a template to quickly create a set of related tasks
+            {canEditTemplates && (
+              <span className="ml-2 text-indigo-600 font-medium">
+                • You can edit these templates
+              </span>
+            )}
           </p>
 
           {/* Templates Grid */}

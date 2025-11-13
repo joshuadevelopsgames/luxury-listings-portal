@@ -9,6 +9,7 @@ import TaskCard from '../components/tasks/TaskCard';
 import TaskEditModal from '../components/tasks/TaskEditModal';
 import ProductivityStats from '../components/tasks/ProductivityStats';
 import TemplateSelector from '../components/tasks/TemplateSelector';
+import TemplateEditor from '../components/tasks/TemplateEditor';
 import { useAuth } from '../contexts/AuthContext';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
@@ -47,6 +48,7 @@ const TasksPage = () => {
   const [availableUsers, setAvailableUsers] = useState([]);
   const [showProductivityStats, setShowProductivityStats] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -771,7 +773,15 @@ const TasksPage = () => {
       {showTemplateSelector && (
         <TemplateSelector 
           currentUser={currentUser}
-          onClose={() => setShowTemplateSelector(false)} 
+          onClose={() => setShowTemplateSelector(false)}
+          onEditTemplate={() => setShowTemplateEditor(true)}
+        />
+      )}
+
+      {/* Template Editor Modal */}
+      {showTemplateEditor && (
+        <TemplateEditor 
+          onClose={() => setShowTemplateEditor(false)} 
         />
       )}
     </div>
