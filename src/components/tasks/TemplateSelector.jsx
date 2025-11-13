@@ -99,35 +99,35 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-5xl mb-8 relative">
-        {/* Close button - top right corner */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-        >
-          <X className="w-5 h-5" />
-        </Button>
-        
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between pr-16">
+          <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-purple-500" />
               Task Templates
             </CardTitle>
-            {canEditTemplates && onEditTemplate && (
+            <div className="flex items-center gap-3">
+              {canEditTemplates && onEditTemplate && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onClose();
+                    onEditTemplate();
+                  }}
+                  className="border-indigo-600 text-indigo-600 hover:bg-indigo-50"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Templates
+                </Button>
+              )}
               <Button
-                variant="outline"
-                onClick={() => {
-                  onClose();
-                  onEditTemplate();
-                }}
-                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50"
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700"
               >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Templates
+                <X className="w-5 h-5" />
               </Button>
-            )}
+            </div>
           </div>
         </CardHeader>
         
