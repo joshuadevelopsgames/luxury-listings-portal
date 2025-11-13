@@ -143,17 +143,18 @@ const TemplateEditor = ({ onClose }) => {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
         <Card className="w-full max-w-4xl relative">
           {/* Close button - top right corner */}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setIsCreating(false);
               setEditingTemplate(null);
               setFormData({ name: '', description: '', icon: '✍️', tasks: [] });
             }}
-            className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center z-20 text-gray-600 hover:text-gray-900 cursor-pointer text-3xl font-bold leading-none transition-colors"
-            aria-label="Close"
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
           >
-            ×
-          </button>
+            <X className="w-5 h-5" />
+          </Button>
           
           <CardHeader className="pb-4 pr-20">
             <CardTitle className="text-2xl font-bold">
@@ -319,13 +320,14 @@ const TemplateEditor = ({ onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-5xl mb-8 relative">
         {/* Close button - top right corner */}
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onClose}
-          className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center z-20 text-gray-600 hover:text-gray-900 cursor-pointer text-3xl font-bold leading-none transition-colors"
-          aria-label="Close"
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
         >
-          ×
-        </button>
+          <X className="w-5 h-5" />
+        </Button>
         
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between pr-16">
