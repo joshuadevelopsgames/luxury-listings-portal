@@ -55,14 +55,13 @@ const ProductivityStats = ({ tasks, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-4xl mb-8 relative">
         {/* Close button - top right corner */}
-        <Button
-          variant="ghost"
-          size="lg"
+        <button
           onClick={onClose}
-          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-gray-800 hover:bg-gray-900 rounded-full shadow-lg"
+          className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center z-20 text-gray-600 hover:text-gray-900 cursor-pointer text-3xl font-bold leading-none transition-colors"
+          aria-label="Close"
         >
-          <X className="w-7 h-7 text-white font-bold" strokeWidth={3} />
-        </Button>
+          ×
+        </button>
         
         <CardHeader className="pb-4 pr-20">
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
