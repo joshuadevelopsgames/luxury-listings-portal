@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, TrendingUp, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import TaskForm from '../components/tasks/TaskForm';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskEditModal from '../components/tasks/TaskEditModal';
+import ProductivityStats from '../components/tasks/ProductivityStats';
+import TemplateSelector from '../components/tasks/TemplateSelector';
 import { useAuth } from '../contexts/AuthContext';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
 import { format } from 'date-fns';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
+import { parseNaturalLanguageDate } from '../utils/dateParser';
 
 const TasksPage = () => {
   console.log('🚀 TasksPage component initializing...'); // Debug log
@@ -42,6 +45,34 @@ const TasksPage = () => {
   });
   const [submittingRequest, setSubmittingRequest] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
+  const [showProductivityStats, setShowProductivityStats] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Cmd/Ctrl + K: Quick add task
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (canCreateTasks) {
+          setShowForm(true);
+        } else {
+          toast.error('You need CREATE_TASKS permission');
+        }
+      }
+      
+      // Escape: Close modals
+      if (e.key === 'Escape') {
+        setShowForm(false);
+        setShowEditModal(false);
+        setShowRequestModal(false);
+        setShowRequestsPanel(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [canCreateTasks]);
 
   // Helper function to parse dates as local dates (same as form validation)
   const parseLocalDate = (dateString) => {
@@ -157,24 +188,43 @@ const TasksPage = () => {
 
     
     switch (activeFilter) {
-      case "today":
-        // Include tasks due today OR tasks without a due date (need attention), but exclude completed
+      case "inbox":
+        // Tasks without a due date (Todoist-style inbox)
         filtered = tasks.filter(task => 
-          task.status !== 'completed' && (
-            !task.due_date || 
-            (task.due_date && isTodayLocal(task.due_date))
-          )
+          task.status !== 'completed' && !task.due_date
         );
+        break;
+      case "today":
+        // Overdue tasks + tasks due today (Todoist-style)
+        const overdueTasks = tasks.filter(task => 
+          task.status !== 'completed' && 
+          task.due_date && 
+          isPastLocal(task.due_date) && 
+          !isTodayLocal(task.due_date)
+        );
+        const todayTasks = tasks.filter(task => 
+          task.status !== 'completed' && 
+          task.due_date && 
+          isTodayLocal(task.due_date)
+        );
+        // Overdue tasks first, then today's tasks
+        filtered = [...overdueTasks, ...todayTasks];
         break;
       case "upcoming":
         filtered = tasks.filter(task => 
           task.status !== 'completed' && 
           task.due_date && 
-          (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date())
+          (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date()) &&
+          !isPastLocal(task.due_date)
         );
         break;
       case "overdue":
-        filtered = tasks.filter(task => task.due_date && isPastLocal(task.due_date) && !isTodayLocal(task.due_date) && task.status !== 'completed');
+        filtered = tasks.filter(task => 
+          task.due_date && 
+          isPastLocal(task.due_date) && 
+          !isTodayLocal(task.due_date) && 
+          task.status !== 'completed'
+        );
         break;
       case "completed":
         filtered = tasks.filter(task => task.status === 'completed');
@@ -331,10 +381,29 @@ const TasksPage = () => {
   };
 
   const getTaskCounts = () => {
+    const overdueTasks = tasks.filter(task => 
+      task.due_date && 
+      isPastLocal(task.due_date) && 
+      !isTodayLocal(task.due_date) && 
+      task.status !== 'completed'
+    );
+    
+    const todayTasksOnly = tasks.filter(task => 
+      task.status !== 'completed' && 
+      task.due_date && 
+      isTodayLocal(task.due_date)
+    );
+    
     return {
-      today: tasks.filter(task => task.status !== 'completed' && (!task.due_date || (task.due_date && isTodayLocal(task.due_date)))).length,
-      upcoming: tasks.filter(task => task.status !== 'completed' && task.due_date && (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date())).length,
-      overdue: tasks.filter(task => task.due_date && isPastLocal(task.due_date) && !isTodayLocal(task.due_date) && task.status !== 'completed').length,
+      inbox: tasks.filter(task => task.status !== 'completed' && !task.due_date).length,
+      today: overdueTasks.length + todayTasksOnly.length,
+      upcoming: tasks.filter(task => 
+        task.status !== 'completed' && 
+        task.due_date && 
+        (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date()) &&
+        !isPastLocal(task.due_date)
+      ).length,
+      overdue: overdueTasks.length,
       completed: tasks.filter(task => task.status === 'completed').length
     };
   };
@@ -359,9 +428,30 @@ const TasksPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Daily Tasks</h1>
-          <p className="text-slate-600">Stay on top of your onboarding activities</p>
+          <p className="text-slate-600">
+            Stay on top of your onboarding activities
+            <span className="ml-3 text-xs text-slate-400">
+              Press <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-600">⌘K</kbd> to quick add
+            </span>
+          </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowTemplateSelector(true)}
+            className="border-green-600 text-green-600 hover:bg-green-50"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Templates
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowProductivityStats(true)}
+            className="border-purple-600 text-purple-600 hover:bg-purple-50"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Stats
+          </Button>
           {taskRequests.length > 0 && (
             <Button 
               variant="outline" 
@@ -396,18 +486,20 @@ const TasksPage = () => {
       <div className="flex items-center justify-between">
         <Tabs value={activeFilter} onValueChange={setActiveFilter}>
           <TabsList className="bg-white/80 backdrop-blur-sm">
+            <TabsTrigger value="inbox" className="flex items-center gap-2">
+              <Inbox className="w-4 h-4" />
+              Inbox ({counts.inbox})
+            </TabsTrigger>
             <TabsTrigger value="today" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
+              <Calendar className="w-4 h-4" />
               Today ({counts.today})
             </TabsTrigger>
-            <TabsTrigger value="upcoming">
+            <TabsTrigger value="upcoming" className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
               Upcoming ({counts.upcoming})
             </TabsTrigger>
-            <TabsTrigger value="overdue">
-              Overdue ({counts.overdue})
-            </TabsTrigger>
-            <TabsTrigger value="completed">
-              <CheckCircle2 className="w-4 h-4 mr-1" />
+            <TabsTrigger value="completed" className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
               Completed ({counts.completed})
             </TabsTrigger>
           </TabsList>
@@ -444,6 +536,7 @@ const TasksPage = () => {
               )}
             </div>
             <p className="text-slate-500 font-medium">
+              {activeFilter === "inbox" && "No tasks in inbox"}
               {activeFilter === "today" && "No tasks scheduled for today"}
               {activeFilter === "upcoming" && "No upcoming tasks"}
               {activeFilter === "overdue" && "No overdue tasks"}
@@ -664,6 +757,22 @@ const TasksPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Productivity Stats Modal */}
+      {showProductivityStats && (
+        <ProductivityStats 
+          tasks={tasks} 
+          onClose={() => setShowProductivityStats(false)} 
+        />
+      )}
+
+      {/* Template Selector Modal */}
+      {showTemplateSelector && (
+        <TemplateSelector 
+          currentUser={currentUser}
+          onClose={() => setShowTemplateSelector(false)} 
+        />
       )}
     </div>
   );

@@ -13,7 +13,10 @@ import {
   Edit,
   Trash2,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Flag,
+  MessageSquare,
+  CheckSquare
 } from 'lucide-react';
 
 const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canDelete = true }) => {
@@ -142,13 +145,13 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
             </CardTitle>
             
             <div className="flex items-center gap-2 mb-3">
-              {getPriorityIcon(task.priority)}
-              <Badge 
-                variant="outline" 
-                className={`text-xs font-medium ${getPriorityColor(task.priority)}`}
-              >
-                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-              </Badge>
+              {/* Todoist-style Priority Flag */}
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${task.priorityFlag.bgColor}`}>
+                <Flag className={`w-3.5 h-3.5 ${task.priorityFlag.color} fill-current`} />
+                <span className={`text-xs font-semibold ${task.priorityFlag.color}`}>
+                  {task.priorityFlag.label}
+                </span>
+              </div>
               
               <Badge 
                 variant="outline" 
@@ -156,6 +159,22 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
               >
                 {getStatusText(task.status)}
               </Badge>
+              
+              {/* Show subtask progress if exists */}
+              {task.subtasks && task.subtasks.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <CheckSquare className="w-3 h-3" />
+                  <span>{task.subtaskProgress}</span>
+                </div>
+              )}
+              
+              {/* Show comment count if exists */}
+              {task.comments && task.comments.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <MessageSquare className="w-3 h-3" />
+                  <span>{task.comments.length}</span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -207,21 +226,46 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
         </p>
         
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span className={dueDateStatus.color}>
-              {dueDateStatus.text}
-            </span>
-            {task.estimatedTime && (
+          <div className="flex items-center justify-between text-xs">
+            {/* Contextual date display (Todoist-style) */}
+            {task.formattedDueDate ? (
+              <div className="flex items-center gap-1.5">
+                <Calendar className={`w-3 h-3 ${task.formattedDueDate.color}`} />
+                <span className={`font-medium ${task.formattedDueDate.color}`}>
+                  {task.formattedDueDate.text}
+                </span>
+              </div>
+            ) : (
+              <span className="text-gray-400">No due date</span>
+            )}
+            {task.estimated_time && (
               <span className="text-gray-500">
-                Est: {task.estimatedTime < 60 ? `${task.estimatedTime}m` : `${Math.floor(task.estimatedTime / 60)}h`}
+                ⏱ {task.formattedTime}
               </span>
             )}
           </div>
           
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Calendar className="w-3 h-3" />
-            <span>Category: {task.category}</span>
-          </div>
+          {task.category && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Target className="w-3 h-3" />
+              <span>Category: {task.category}</span>
+            </div>
+          )}
+          
+          {/* Labels display */}
+          {task.labels && task.labels.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {task.labels.map((label, index) => (
+                <Badge 
+                  key={index} 
+                  variant="outline"
+                  className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 border-purple-200"
+                >
+                  {label}
+                </Badge>
+              ))}
+            </div>
+          )}
           
           {task.assignedBy && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -230,6 +274,40 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
           )}
         </div>
         
+        {/* Subtasks display */}
+        {task.subtasks && task.subtasks.length > 0 && (
+          <div className="pt-3 border-t border-gray-100">
+            <div className="text-xs font-medium text-gray-600 mb-2 flex items-center justify-between">
+              <span>Subtasks ({task.subtaskProgress})</span>
+              <div className="flex-1 mx-2 bg-gray-200 rounded-full h-1.5">
+                <div 
+                  className="bg-blue-600 h-1.5 rounded-full transition-all"
+                  style={{ width: `${task.subtaskPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+            <div className="space-y-1.5 max-h-24 overflow-y-auto">
+              {task.subtasks.slice(0, 3).map((subtask) => (
+                <div key={subtask.id} className="flex items-center gap-2 text-xs">
+                  <Checkbox
+                    checked={subtask.completed}
+                    disabled
+                    className="h-3 w-3"
+                  />
+                  <span className={subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'}>
+                    {subtask.text}
+                  </span>
+                </div>
+              ))}
+              {task.subtasks.length > 3 && (
+                <p className="text-xs text-gray-400">
+                  +{task.subtasks.length - 3} more subtasks...
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Status management */}
         <div className="flex gap-2 pt-2">
           {!isCompleted ? (

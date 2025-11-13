@@ -9,8 +9,14 @@ import {
   Clock,
   Target,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Tag,
+  Plus,
+  CheckSquare,
+  Trash2,
+  Repeat
 } from 'lucide-react';
+import { parseNaturalLanguageDate, parseRecurringPattern } from '../../utils/dateParser';
 
 const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) => {
   const [formData, setFormData] = useState({
@@ -20,11 +26,19 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     priority: initialData?.priority || 'medium',
     dueDate: initialData?.dueDate || '',
     estimatedTime: initialData?.estimatedTime || 30,
-    notes: initialData?.notes || ''
+    notes: initialData?.notes || '',
+    labels: initialData?.labels || [],
+    subtasks: initialData?.subtasks || [],
+    recurring: initialData?.recurring || null
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [naturalDateInput, setNaturalDateInput] = useState('');
+  const [newLabel, setNewLabel] = useState('');
+  const [newSubtask, setNewSubtask] = useState('');
+  const [recurringInput, setRecurringInput] = useState('');
+  const [showRecurring, setShowRecurring] = useState(false);
 
   const categories = [
     'Training', 'IT Setup', 'Meetings', 'Development', 'Documentation', 'Compliance', 'Other'
@@ -48,6 +62,54 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     { value: 240, label: '4 hours' },
     { value: 300, label: '5 hours' }
   ];
+
+  // Handle natural language date input
+  const handleNaturalDateChange = (value) => {
+    setNaturalDateInput(value);
+    const parsedDate = parseNaturalLanguageDate(value);
+    if (parsedDate) {
+      handleInputChange('dueDate', parsedDate);
+    }
+  };
+
+  // Handle adding labels
+  const handleAddLabel = () => {
+    if (newLabel.trim() && !formData.labels.includes(newLabel.trim())) {
+      handleInputChange('labels', [...formData.labels, newLabel.trim()]);
+      setNewLabel('');
+    }
+  };
+
+  const handleRemoveLabel = (labelToRemove) => {
+    handleInputChange('labels', formData.labels.filter(l => l !== labelToRemove));
+  };
+
+  // Handle adding subtasks
+  const handleAddSubtask = () => {
+    if (newSubtask.trim()) {
+      const subtask = {
+        id: Date.now().toString(),
+        text: newSubtask.trim(),
+        completed: false,
+        order: formData.subtasks.length
+      };
+      handleInputChange('subtasks', [...formData.subtasks, subtask]);
+      setNewSubtask('');
+    }
+  };
+
+  const handleRemoveSubtask = (subtaskId) => {
+    handleInputChange('subtasks', formData.subtasks.filter(st => st.id !== subtaskId));
+  };
+
+  // Handle recurring pattern
+  const handleRecurringChange = (value) => {
+    setRecurringInput(value);
+    const pattern = parseRecurringPattern(value);
+    if (pattern) {
+      handleInputChange('recurring', pattern);
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -258,6 +320,15 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   <Calendar className="w-4 h-4 inline mr-1" />
                   Due Date
                 </label>
+                {/* Natural language input */}
+                <input
+                  type="text"
+                  value={naturalDateInput}
+                  onChange={(e) => handleNaturalDateChange(e.target.value)}
+                  placeholder="e.g., tomorrow, next monday, in 3 days"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                />
+                {/* Date picker fallback */}
                 <input
                   type="date"
                   value={formData.dueDate}
@@ -265,6 +336,11 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   min={getMinDate()}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {formData.dueDate && (
+                  <p className="mt-1 text-xs text-green-600">
+                    ✓ Due: {new Date(formData.dueDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </p>
+                )}
                 {errors.dueDate && (
                   <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
@@ -305,6 +381,129 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Any additional information or context"
               />
+            </div>
+
+            {/* Labels */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Tag className="w-4 h-4 inline mr-1" />
+                Labels
+              </label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLabel())}
+                  placeholder="Add a label..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddLabel}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              {formData.labels.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.labels.map((label, index) => (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className="text-xs px-2 py-1 bg-purple-50 text-purple-700 border-purple-200 flex items-center gap-1"
+                    >
+                      {label}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover:text-purple-900"
+                        onClick={() => handleRemoveLabel(label)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Subtasks */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <CheckSquare className="w-4 h-4 inline mr-1" />
+                Subtasks
+              </label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={newSubtask}
+                  onChange={(e) => setNewSubtask(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSubtask())}
+                  placeholder="Add a subtask..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddSubtask}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              {formData.subtasks.length > 0 && (
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {formData.subtasks.map((subtask) => (
+                    <div
+                      key={subtask.id}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
+                    >
+                      <span className="text-sm">{subtask.text}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveSubtask(subtask.id)}
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recurring Task */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  <Repeat className="w-4 h-4 inline mr-1" />
+                  Recurring Task
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRecurring(!showRecurring)}
+                >
+                  {showRecurring ? 'Hide' : 'Show'}
+                </Button>
+              </div>
+              {showRecurring && (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={recurringInput}
+                    onChange={(e) => handleRecurringChange(e.target.value)}
+                    placeholder="e.g., every day, every week, every monday"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formData.recurring && (
+                    <p className="text-xs text-green-600">
+                      ✓ Repeats: {formData.recurring.pattern} 
+                      {formData.recurring.interval > 1 && ` (every ${formData.recurring.interval})`}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Priority Preview */}
