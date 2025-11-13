@@ -104,12 +104,12 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
           variant="ghost"
           size="lg"
           onClick={onClose}
-          className="absolute top-4 right-4 h-10 w-10 p-0 z-20 hover:bg-gray-100"
+          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-white hover:bg-gray-100 border-2 border-gray-300 rounded-full shadow-sm"
         >
-          <X className="w-6 h-6" />
+          <X className="w-6 h-6 text-gray-700" />
         </Button>
         
-        <CardHeader className="pb-4 pr-16">
+        <CardHeader className="pb-4 pr-20">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-purple-500" />
@@ -122,7 +122,7 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
                   onClose();
                   onEditTemplate();
                 }}
-                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50"
+                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 mr-14"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Templates
@@ -153,9 +153,9 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
                 }`}
                 onClick={() => setSelectedTemplate(template)}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-3xl">{template.icon}</span>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="text-4xl">{template.icon}</span>
                     {selectedTemplate?.id === template.id && (
                       <CheckCircle2 className="w-5 h-5 text-blue-500" />
                     )}

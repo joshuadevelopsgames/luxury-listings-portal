@@ -59,12 +59,12 @@ const ProductivityStats = ({ tasks, onClose }) => {
           variant="ghost"
           size="lg"
           onClick={onClose}
-          className="absolute top-4 right-4 h-10 w-10 p-0 z-20 hover:bg-gray-100"
+          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-white hover:bg-gray-100 border-2 border-gray-300 rounded-full shadow-sm"
         >
-          <X className="w-6 h-6" />
+          <X className="w-6 h-6 text-gray-700" />
         </Button>
         
-        <CardHeader className="pb-4 pr-16">
+        <CardHeader className="pb-4 pr-20">
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
             <Trophy className="w-6 h-6 text-yellow-500" />
             Your Productivity Stats
