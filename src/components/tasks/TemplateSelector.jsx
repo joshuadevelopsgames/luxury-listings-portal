@@ -104,13 +104,13 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
           variant="ghost"
           size="lg"
           onClick={onClose}
-          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-white hover:bg-gray-100 border-2 border-gray-300 rounded-full shadow-sm"
+          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-gray-800 hover:bg-gray-900 rounded-full shadow-lg"
         >
-          <X className="w-6 h-6 text-gray-700" />
+          <X className="w-7 h-7 text-white font-bold" strokeWidth={3} />
         </Button>
         
-        <CardHeader className="pb-4 pr-20">
-          <div className="flex items-center justify-between">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between pr-16">
             <CardTitle className="text-2xl font-bold flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-purple-500" />
               Task Templates
@@ -122,7 +122,7 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
                   onClose();
                   onEditTemplate();
                 }}
-                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 mr-14"
+                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Templates
@@ -153,7 +153,7 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
                 }`}
                 onClick={() => setSelectedTemplate(template)}
               >
-                <CardContent className="p-6">
+                <CardContent className="p-6 pt-8">
                   <div className="flex items-start justify-between mb-4">
                     <span className="text-4xl">{template.icon}</span>
                     {selectedTemplate?.id === template.id && (

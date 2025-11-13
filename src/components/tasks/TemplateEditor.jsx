@@ -151,9 +151,9 @@ const TemplateEditor = ({ onClose }) => {
               setEditingTemplate(null);
               setFormData({ name: '', description: '', icon: '✍️', tasks: [] });
             }}
-            className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-white hover:bg-gray-100 border-2 border-gray-300 rounded-full shadow-sm"
+            className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-gray-800 hover:bg-gray-900 rounded-full shadow-lg"
           >
-            <X className="w-6 h-6 text-gray-700" />
+            <X className="w-7 h-7 text-white font-bold" strokeWidth={3} />
           </Button>
           
           <CardHeader className="pb-4 pr-20">
@@ -324,20 +324,20 @@ const TemplateEditor = ({ onClose }) => {
           variant="ghost"
           size="lg"
           onClick={onClose}
-          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-white hover:bg-gray-100 border-2 border-gray-300 rounded-full shadow-sm"
+          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-gray-800 hover:bg-gray-900 rounded-full shadow-lg"
         >
-          <X className="w-6 h-6 text-gray-700" />
+          <X className="w-7 h-7 text-white font-bold" strokeWidth={3} />
         </Button>
         
-        <CardHeader className="pb-4 pr-20">
-          <div className="flex items-center justify-between">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between pr-16">
             <CardTitle className="text-2xl font-bold flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-indigo-500" />
               Template Manager
             </CardTitle>
             <Button
               onClick={() => setIsCreating(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 mr-14"
+              className="bg-indigo-600 hover:bg-indigo-700"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Template
@@ -354,7 +354,7 @@ const TemplateEditor = ({ onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {templates.map((template) => (
               <Card key={template.id} className="border border-gray-200 hover:shadow-lg transition-all">
-                <CardContent className="p-6">
+                <CardContent className="p-6 pt-8">
                   <div className="flex items-start justify-between mb-4">
                     <span className="text-4xl">{template.icon}</span>
                     <div className="flex gap-1">

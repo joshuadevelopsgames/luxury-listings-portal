@@ -59,9 +59,9 @@ const ProductivityStats = ({ tasks, onClose }) => {
           variant="ghost"
           size="lg"
           onClick={onClose}
-          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-white hover:bg-gray-100 border-2 border-gray-300 rounded-full shadow-sm"
+          className="absolute top-4 right-4 h-12 w-12 p-0 z-20 bg-gray-800 hover:bg-gray-900 rounded-full shadow-lg"
         >
-          <X className="w-6 h-6 text-gray-700" />
+          <X className="w-7 h-7 text-white font-bold" strokeWidth={3} />
         </Button>
         
         <CardHeader className="pb-4 pr-20">
