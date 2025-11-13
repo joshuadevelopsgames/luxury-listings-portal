@@ -97,9 +97,9 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <Card className="w-full max-w-5xl my-8">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
+      <Card className="w-full max-w-5xl mb-8">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 sticky top-0 bg-white z-10 border-b">
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-purple-500" />
             Task Templates
