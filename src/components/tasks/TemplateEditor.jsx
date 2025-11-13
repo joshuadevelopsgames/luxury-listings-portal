@@ -362,17 +362,17 @@ const TemplateEditor = ({ onClose }) => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEditTemplate(template)}
-                        className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                        className="h-9 w-9 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-5 h-5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteTemplate(template.id)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </Button>
                     </div>
                   </div>

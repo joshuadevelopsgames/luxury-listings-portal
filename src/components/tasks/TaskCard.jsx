@@ -182,10 +182,10 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0"
+              className="h-10 w-10 p-0"
               onClick={() => setShowActions(!showActions)}
             >
-              <MoreHorizontal className="w-4 h-4" />
+              <MoreHorizontal className="w-6 h-6" />
             </Button>
             
             {showActions && (
