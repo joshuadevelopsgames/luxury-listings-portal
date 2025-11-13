@@ -158,10 +158,20 @@ const TasksPage = () => {
     
     switch (activeFilter) {
       case "today":
-        filtered = tasks.filter(task => task.due_date && isTodayLocal(task.due_date));
+        // Include tasks due today OR tasks without a due date (need attention), but exclude completed
+        filtered = tasks.filter(task => 
+          task.status !== 'completed' && (
+            !task.due_date || 
+            (task.due_date && isTodayLocal(task.due_date))
+          )
+        );
         break;
       case "upcoming":
-        filtered = tasks.filter(task => task.due_date && (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date()));
+        filtered = tasks.filter(task => 
+          task.status !== 'completed' && 
+          task.due_date && 
+          (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date())
+        );
         break;
       case "overdue":
         filtered = tasks.filter(task => task.due_date && isPastLocal(task.due_date) && !isTodayLocal(task.due_date) && task.status !== 'completed');
@@ -322,8 +332,8 @@ const TasksPage = () => {
 
   const getTaskCounts = () => {
     return {
-      today: tasks.filter(task => task.due_date && isTodayLocal(task.due_date)).length,
-      upcoming: tasks.filter(task => task.due_date && (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date())).length,
+      today: tasks.filter(task => task.status !== 'completed' && (!task.due_date || (task.due_date && isTodayLocal(task.due_date)))).length,
+      upcoming: tasks.filter(task => task.status !== 'completed' && task.due_date && (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date())).length,
       overdue: tasks.filter(task => task.due_date && isPastLocal(task.due_date) && !isTodayLocal(task.due_date) && task.status !== 'completed').length,
       completed: tasks.filter(task => task.status === 'completed').length
     };
@@ -377,9 +387,9 @@ const TasksPage = () => {
             disabled={!canCreateTasks}
             title={!canCreateTasks ? 'You need CREATE_TASKS permission' : ''}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Task
-          </Button>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Task
+        </Button>
         </div>
       </div>
 

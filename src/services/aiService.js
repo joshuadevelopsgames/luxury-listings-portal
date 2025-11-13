@@ -295,7 +295,7 @@ Just ask me a specific question and I'll guide you through it.`;
   getDashboardResponse(userRole) {
     const role = this.getRoleInfo(userRole);
     const isHR = userRole === 'hr_manager' || userRole === 'admin';
-    
+
     let dashboardDetails = `📊 **Dashboard** is your main overview page with role-specific widgets!
 
 As a ${role.name}, you'll see:
@@ -418,7 +418,7 @@ If you need team-related information, you can:
 
 Key features include:
 • Performance distribution and trends
-• Department comparisons  
+• Department comparisons
 • Turnover analysis and costs
 • Employee satisfaction breakdowns
 • Retention rates and team statistics

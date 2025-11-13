@@ -78,9 +78,9 @@ function doGet(e) {
         // Check if Monthly Recurring sheet exists, otherwise use main sheet
         const monthlySheet = spreadsheet.getSheetByName('Monthly Recurring');
         if (monthlySheet) {
-          sheetName = 'Monthly Recurring';
-          console.log('✅ Monthly package detected - using Monthly Recurring sheet');
-        } else {
+        sheetName = 'Monthly Recurring';
+        console.log('✅ Monthly package detected - using Monthly Recurring sheet');
+      } else {
           console.log('📋 Monthly Recurring sheet not found - using Client Packages sheet');
         }
       } else {
@@ -94,14 +94,14 @@ function doGet(e) {
     
     // Only validate sheet if the action requires it
     if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived', 'addLead'].includes(action)) {
-      if (!sheet) {
-        console.error('❌ Sheet not found:', sheetName);
-        console.log('📋 Available sheets:', spreadsheet.getSheets().map(s => s.getName()));
-        throw new Error(`Sheet "${sheetName}" not found`);
-      }
-      
-      console.log('✅ Sheet found:', sheet.getName());
-      console.log('📊 Sheet dimensions:', sheet.getLastRow(), 'rows x', sheet.getLastColumn(), 'columns');
+    if (!sheet) {
+      console.error('❌ Sheet not found:', sheetName);
+      console.log('📋 Available sheets:', spreadsheet.getSheets().map(s => s.getName()));
+      throw new Error(`Sheet "${sheetName}" not found`);
+    }
+    
+    console.log('✅ Sheet found:', sheet.getName());
+    console.log('📊 Sheet dimensions:', sheet.getLastRow(), 'rows x', sheet.getLastColumn(), 'columns');
     }
     
     let result = {};

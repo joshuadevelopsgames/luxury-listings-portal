@@ -35,8 +35,8 @@ const navigateBasedOnRole = (role, userData) => {
       console.log('🎓 New user detected - navigating to onboarding...');
       window.location.href = '/onboarding';
     } else if (currentPath !== '/dashboard' && currentPath !== '/onboarding') {
-      console.log('🔄 Navigating approved user to dashboard...');
-      window.location.href = '/dashboard';
+    console.log('🔄 Navigating approved user to dashboard...');
+    window.location.href = '/dashboard';
     }
   }
 };

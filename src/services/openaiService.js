@@ -88,9 +88,15 @@ AVAILABLE FIELDS TO MAP TO:
 - caption: The MAIN post text/caption - Look for "Caption", "Post Text", "Description" columns with long text
 - assignedTo: Person responsible (name or email)
 - status: Current status (Planned, Draft, In Progress, Ready, Published, Posted, etc.)
-- mediaUrls: URLs to images/videos OR link columns (Listing Link, Content Link, Media Link, Image/Video Cover, Photo, etc.)
-- notes: Additional notes, topics, property addresses, or short reference text - Look for "Content Topic", "Notes", "Topic"
+- imageUrl: URLs to IMAGES/PHOTOS ONLY - Prioritize "Photo Link", "Image", "Cover", "Thumbnail" columns
+- mediaUrls: URLs to VIDEOS or general media - Look for "Video Link", "Media", "Link" columns (but NOT if they're specifically photo/image columns)
+- notes: Additional notes, topics, property addresses, or short reference text - Look for "Content Topic", "Notes", "Topic", "Address"
 - hashtags: Hashtags for the post
+
+IMPORTANT: If there are separate "Photo" and "Video" columns:
+- Map photo/image columns to "imageUrl"
+- Map video columns to "mediaUrls"
+- Do NOT map both to the same field
 
 INSTRUCTIONS:
 1. Analyze each column header and sample data
@@ -197,20 +203,26 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
         conf = 'high';
         suggestion = 'Matched by keyword: status/state/progress';
       }
-      // Media/Link matching (expanded for various link types and image references)
-      else if (lowerHeader.includes('media') || 
-               lowerHeader.includes('image') || 
-               lowerHeader.includes('video') || 
-               lowerHeader.includes('photo') ||
+      // Photo/Image matching (prioritize for imageUrl)
+      else if (lowerHeader.includes('photo') ||
+               lowerHeader.includes('image') ||
                lowerHeader.includes('cover') ||
                lowerHeader.includes('thumbnail') ||
+               lowerHeader.includes('picture')) {
+        field = 'imageUrl';
+        conf = 'high';
+        suggestion = 'Matched by keyword: photo/image/cover/thumbnail';
+      }
+      // Video/Media matching (for mediaUrls)
+      else if (lowerHeader.includes('video') || 
+               lowerHeader.includes('media') || 
                lowerHeader.includes('url') || 
                lowerHeader.includes('link') ||
                lowerHeader.includes('listing link') ||
                lowerHeader.includes('content link')) {
         field = 'mediaUrls';
         conf = 'high';
-        suggestion = 'Matched by keyword: media/image/video/cover/link';
+        suggestion = 'Matched by keyword: video/media/link';
       }
       // Hashtags matching
       else if (lowerHeader.includes('hashtag') || lowerHeader.includes('tag') || lowerHeader.includes('#')) {

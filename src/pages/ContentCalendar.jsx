@@ -456,7 +456,8 @@ const ContentCalendar = () => {
             let value = row[parseInt(colIndex)];
             
             if (field !== 'unmapped' && value) {
-              if (field === 'mediaUrls' && contentItem[field]) {
+              // If this is a mediaUrls or imageUrl field and we already have one, append it
+              if ((field === 'mediaUrls' || field === 'imageUrl') && contentItem[field]) {
                 contentItem[field] = `${contentItem[field]}, ${value}`;
               } else {
                 contentItem[field] = value;
@@ -489,20 +490,67 @@ const ContentCalendar = () => {
             title = `Post for ${contentItem.assignedTo}`;
           }
 
-          // Handle multiple URLs
+          // Handle URLs and convert cloud storage links
+          const convertToDirectUrl = (url) => {
+            if (!url) return '';
+            
+            // Dropbox: Convert viewer URL to raw/direct URL
+            if (url.includes('dropbox.com')) {
+              // If it has preview parameter, extract the file and convert to raw
+              if (url.includes('preview=')) {
+                const match = url.match(/preview=([^&]+)/);
+                if (match) {
+                  const filename = decodeURIComponent(match[1]);
+                  // For now, return the base URL with raw=1
+                  return url.split('?')[0] + '?raw=1';
+                }
+              }
+              // Otherwise just change dl=0 to raw=1
+              return url.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
+            }
+            
+            // Google Drive: Try to extract file ID and create direct link
+            if (url.includes('drive.google.com')) {
+              // If it's a file URL with /d/, extract ID
+              const match = url.match(/\/d\/([^\/\?]+)/);
+              if (match) {
+                return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+              }
+              // If it's a folder URL, we can't embed it directly
+              if (url.includes('/folders/')) {
+                console.warn('⚠️ Cannot embed Google Drive folder URL:', url);
+                return ''; // Return empty for folder URLs
+              }
+            }
+            
+            return url;
+          };
+          
+          // Get image URL from either imageUrl field or mediaUrls field
           let primaryImageUrl = '';
           let allMediaUrls = contentItem.mediaUrls || '';
           
-          if (allMediaUrls) {
+          // If imageUrl field is explicitly set (from PHOTO LINK column)
+          if (contentItem.imageUrl) {
+            primaryImageUrl = convertToDirectUrl(contentItem.imageUrl);
+            console.log('🖼️ Using imageUrl field:', { original: contentItem.imageUrl, converted: primaryImageUrl });
+          }
+          // Otherwise try to extract from mediaUrls
+          else if (allMediaUrls) {
             const urls = allMediaUrls.split(',').map(u => u.trim());
+            
+            // Look for image URLs (but prefer explicit image columns)
             const imageUrl = urls.find(url => 
               url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
-              url.includes('drive.google.com') ||
-              url.includes('dropbox.com') ||
-              url.includes('imgur.com') ||
-              url.includes('cloudinary.com')
+              (!url.includes('video') && !url.includes('.mp4') && 
+               (url.includes('drive.google.com') || url.includes('dropbox.com') || 
+                url.includes('imgur.com') || url.includes('cloudinary.com')))
             );
-            primaryImageUrl = imageUrl || urls[0];
+            
+            if (imageUrl) {
+              primaryImageUrl = convertToDirectUrl(imageUrl);
+              console.log('🖼️ Extracted from mediaUrls:', { original: imageUrl, converted: primaryImageUrl });
+            }
           }
 
           const newContent = {
@@ -717,8 +765,8 @@ const ContentCalendar = () => {
             let value = row[parseInt(colIndex)];
             
             if (field !== 'unmapped' && value) {
-              // If this is a mediaUrls field and we already have one, append it
-              if (field === 'mediaUrls' && contentItem[field]) {
+              // If this is a mediaUrls or imageUrl field and we already have one, append it
+              if ((field === 'mediaUrls' || field === 'imageUrl') && contentItem[field]) {
                 contentItem[field] = `${contentItem[field]}, ${value}`;
                 console.log(`  ✓ Appended to ${field}: "${value}"`);
               } else {
@@ -773,22 +821,67 @@ const ContentCalendar = () => {
             title = `Post for ${contentItem.assignedTo}`;
           }
 
-          // Handle multiple URLs - extract first URL that looks like an image
+          // Handle URLs and convert cloud storage links
+          const convertToDirectUrl = (url) => {
+            if (!url) return '';
+            
+            // Dropbox: Convert viewer URL to raw/direct URL
+            if (url.includes('dropbox.com')) {
+              // If it has preview parameter, extract the file and convert to raw
+              if (url.includes('preview=')) {
+                const match = url.match(/preview=([^&]+)/);
+                if (match) {
+                  const filename = decodeURIComponent(match[1]);
+                  // For now, return the base URL with raw=1
+                  return url.split('?')[0] + '?raw=1';
+                }
+              }
+              // Otherwise just change dl=0 to raw=1
+              return url.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
+            }
+            
+            // Google Drive: Try to extract file ID and create direct link
+            if (url.includes('drive.google.com')) {
+              // If it's a file URL with /d/, extract ID
+              const match = url.match(/\/d\/([^\/\?]+)/);
+              if (match) {
+                return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+              }
+              // If it's a folder URL, we can't embed it directly
+              if (url.includes('/folders/')) {
+                console.warn('⚠️ Cannot embed Google Drive folder URL:', url);
+                return ''; // Return empty for folder URLs
+              }
+            }
+            
+            return url;
+          };
+          
+          // Get image URL from either imageUrl field or mediaUrls field
           let primaryImageUrl = '';
           let allMediaUrls = contentItem.mediaUrls || '';
           
-          if (allMediaUrls) {
-            // Split by comma if multiple URLs
+          // If imageUrl field is explicitly set (from PHOTO LINK column)
+          if (contentItem.imageUrl) {
+            primaryImageUrl = convertToDirectUrl(contentItem.imageUrl);
+            console.log('  🖼️ Using imageUrl field:', { original: contentItem.imageUrl, converted: primaryImageUrl });
+          }
+          // Otherwise try to extract from mediaUrls
+          else if (allMediaUrls) {
             const urls = allMediaUrls.split(',').map(u => u.trim());
-            // Find first URL that looks like an image (ends with image extension or is from common image hosts)
+            
+            // Look for image URLs (but prefer explicit image columns)
             const imageUrl = urls.find(url => 
               url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
-              url.includes('drive.google.com') ||
-              url.includes('dropbox.com') ||
-              url.includes('imgur.com') ||
-              url.includes('cloudinary.com')
+              (!url.includes('video') && !url.includes('.mp4') && 
+               (url.includes('drive.google.com') || url.includes('dropbox.com') || 
+                url.includes('imgur.com') || url.includes('cloudinary.com')))
             );
-            primaryImageUrl = imageUrl || urls[0]; // Use first URL if no image found
+            
+            if (imageUrl) {
+              primaryImageUrl = convertToDirectUrl(imageUrl);
+              console.log('  🖼️ Extracted from mediaUrls:', { original: imageUrl, converted: primaryImageUrl });
+            }
           }
 
           const newContent = {
@@ -1315,14 +1408,17 @@ const ContentCalendar = () => {
                       <div
                         key={content.id}
                         className={`text-xs p-1 rounded overflow-hidden ${getStatusColor(content.status)}`}
-                        title={content.title}
+                        title={`${content.title}${content.imageUrl ? '\n📎 ' + content.imageUrl.substring(0, 50) : ''}`}
                       >
                         {content.imageUrl && (
                           <img 
                             src={content.imageUrl} 
                             alt={content.title}
                             className="w-full h-12 object-cover rounded mb-1"
-                            onError={(e) => e.target.style.display = 'none'}
+                            onError={(e) => {
+                              console.warn('❌ Failed to load image:', content.imageUrl);
+                              e.target.style.display = 'none';
+                            }}
                           />
                         )}
                         <div className="text-white truncate">{content.title}</div>

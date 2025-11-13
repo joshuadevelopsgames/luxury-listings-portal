@@ -279,18 +279,18 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
 
         {/* Day Counter or HR-specific Status */}
         {currentRole !== 'hr_manager' ? (
-          <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Trophy className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-slate-300">Onboarding Journey</span>
-            </div>
-            <p className="text-white font-semibold text-lg">
-              Day 1 of {roleContent.journey}
-            </p>
-            <p className="text-slate-300 text-sm mt-1">
-              {roleContent.journeyDesc}
-            </p>
+        <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="w-4 h-4 text-yellow-400" />
+            <span className="text-sm font-medium text-slate-300">Onboarding Journey</span>
           </div>
+          <p className="text-white font-semibold text-lg">
+            Day 1 of {roleContent.journey}
+          </p>
+          <p className="text-slate-300 text-sm mt-1">
+            {roleContent.journeyDesc}
+          </p>
+        </div>
         ) : (
           <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-2">
@@ -308,16 +308,16 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
 
         {/* Onboarding Progress or HR Status */}
         {currentRole !== 'hr_manager' ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-300">{roleContent.title} Progress</span>
-              <span className="text-white font-bold">{overallProgress}%</span>
-            </div>
-            <Progress value={overallProgress} className="h-3 bg-white/20" />
-            <p className="text-slate-200 text-sm leading-relaxed">
-              {roleContent.progressDesc.replace('{progress}', overallProgress)}
-            </p>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-300">{roleContent.title} Progress</span>
+            <span className="text-white font-bold">{overallProgress}%</span>
           </div>
+          <Progress value={overallProgress} className="h-3 bg-white/20" />
+          <p className="text-slate-200 text-sm leading-relaxed">
+            {roleContent.progressDesc.replace('{progress}', overallProgress)}
+          </p>
+        </div>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
