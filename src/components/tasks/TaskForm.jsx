@@ -42,7 +42,12 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
   const [showReminderPicker, setShowReminderPicker] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showProjectPicker, setShowProjectPicker] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
+  const [showSubtasks, setShowSubtasks] = useState(false);
+  const [showEstimatedTime, setShowEstimatedTime] = useState(false);
   const [naturalDateInput, setNaturalDateInput] = useState('');
+  const [newLabel, setNewLabel] = useState('');
+  const [newSubtask, setNewSubtask] = useState('');
 
   const datePickerRef = useRef(null);
   const priorityPickerRef = useRef(null);
@@ -97,18 +102,13 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
       alert('Please enter a task name');
       return;
     }
-    
-    if (!formData.description.trim()) {
-      alert('Please enter a description');
-      return;
-    }
 
     setIsSubmitting(true);
     
     try {
       await onSubmit({
         ...formData,
-        estimatedTime: parseInt(formData.estimatedTime),
+        estimatedTime: parseInt(formData.estimatedTime) || 30,
         dueDate: formData.dueDate || null
       });
     } catch (error) {
@@ -160,6 +160,35 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     handleInputChange('reminders', formData.reminders.filter(r => r.id !== reminderId));
   };
 
+  const handleAddLabel = () => {
+    if (!newLabel.trim()) return;
+    if (formData.labels.includes(newLabel.trim())) return;
+    
+    handleInputChange('labels', [...formData.labels, newLabel.trim()]);
+    setNewLabel('');
+  };
+
+  const handleRemoveLabel = (label) => {
+    handleInputChange('labels', formData.labels.filter(l => l !== label));
+  };
+
+  const handleAddSubtask = () => {
+    if (!newSubtask.trim()) return;
+    
+    const subtask = {
+      id: Date.now(),
+      text: newSubtask.trim(),
+      completed: false
+    };
+    
+    handleInputChange('subtasks', [...formData.subtasks, subtask]);
+    setNewSubtask('');
+  };
+
+  const handleRemoveSubtask = (subtaskId) => {
+    handleInputChange('subtasks', formData.subtasks.filter(st => st.id !== subtaskId));
+  };
+
   const getTodayDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -206,6 +235,130 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
             className="w-full text-sm border-none outline-none focus:ring-0 px-0 py-2 placeholder-gray-400 resize-none"
             placeholder="Description"
           />
+
+          {/* Labels Section */}
+          {showLabels && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">Labels</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowLabels(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {formData.labels.map((label) => (
+                  <Badge key={label} variant="secondary" className="bg-purple-100 text-purple-800">
+                    {label}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLabel(label)}
+                      className="ml-2 text-purple-600 hover:text-purple-800"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddLabel()}
+                  placeholder="Add label"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddLabel}
+                  size="sm"
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Subtasks Section */}
+          {showSubtasks && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">Subtasks</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowSubtasks(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-2 mb-3">
+                {formData.subtasks.map((subtask) => (
+                  <div key={subtask.id} className="flex items-center gap-2">
+                    <CheckSquare className="w-4 h-4 text-gray-400" />
+                    <span className="flex-1 text-sm text-gray-700">{subtask.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSubtask(subtask.id)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newSubtask}
+                  onChange={(e) => setNewSubtask(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddSubtask()}
+                  placeholder="Add subtask"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddSubtask}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Estimated Time Section */}
+          {showEstimatedTime && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">Estimated Time</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowEstimatedTime(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={formData.estimatedTime}
+                  onChange={(e) => handleInputChange('estimatedTime', parseInt(e.target.value) || 0)}
+                  min="0"
+                  placeholder="30"
+                  className="w-24 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600">minutes</span>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons Row */}
           <div className="flex items-center gap-2 mb-6 mt-4 pb-2">
@@ -506,7 +659,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   <button
                     type="button"
                     onClick={() => {
-                      console.log('Labels clicked');
+                      setShowLabels(true);
                       setShowMoreOptions(false);
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
@@ -517,7 +670,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   <button
                     type="button"
                     onClick={() => {
-                      console.log('Subtasks clicked');
+                      setShowSubtasks(true);
                       setShowMoreOptions(false);
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
@@ -528,7 +681,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   <button
                     type="button"
                     onClick={() => {
-                      console.log('Estimated time clicked');
+                      setShowEstimatedTime(true);
                       setShowMoreOptions(false);
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
