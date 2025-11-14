@@ -183,9 +183,9 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-      <Card className="w-full max-w-2xl mb-8 bg-white rounded-lg shadow-lg">
-        <form onSubmit={handleSubmit} className="p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4 pb-96">
+      <Card className="w-full max-w-2xl my-8 bg-white rounded-lg shadow-lg overflow-visible">
+        <form onSubmit={handleSubmit} className="p-6 overflow-visible">
           {/* Title Input */}
           <input
             type="text"
@@ -206,7 +206,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
           />
 
           {/* Action Buttons Row */}
-          <div className="flex items-center gap-2 mb-6 mt-4">
+          <div className="flex items-center gap-2 mb-6 mt-4 pb-2">
             {/* Date Button */}
             <div className="relative" ref={datePickerRef}>
               <Button
@@ -226,7 +226,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Date Picker Dropdown */}
               {showDatePicker && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-10">
+                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
                   <input
                     type="text"
                     value={naturalDateInput}
@@ -314,7 +314,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Priority Picker Dropdown */}
               {showPriorityPicker && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10">
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[100]">
                   {priorities.map((priority) => (
                     <button
                       key={priority.value}
@@ -359,7 +359,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Reminders Picker Dropdown */}
               {showReminderPicker && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-10">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Reminders</p>
                     {!formData.dueDate && (
@@ -438,7 +438,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* More Options Dropdown */}
               {showMoreOptions && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[100]">
                   <button
                     type="button"
                     onClick={() => {
@@ -499,7 +499,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Project Picker Dropdown */}
               {showProjectPicker && (
-                <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10 max-h-64 overflow-y-auto">
+                <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[100] max-h-64 overflow-y-auto">
                   {projects.map((project) => (
                     <button
                       key={project.name}
