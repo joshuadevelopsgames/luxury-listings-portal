@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';;
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
