@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2 } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import {
@@ -22,6 +22,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import TaskForm from '../components/tasks/TaskForm';
 import TaskCard from '../components/tasks/TaskCard';
+import TaskListItem from '../components/tasks/TaskListItem';
 import TaskEditModal from '../components/tasks/TaskEditModal';
 import ProductivityStats from '../components/tasks/ProductivityStats';
 import TemplateSelector from '../components/tasks/TemplateSelector';
@@ -73,6 +74,36 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
   );
 };
 
+// Sortable Task List Item Wrapper
+const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...props }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <TaskListItem 
+        task={task} 
+        isSelected={isSelected}
+        onToggleSelect={onToggleSelect}
+        bulkMode={bulkMode}
+        {...props} 
+      />
+    </div>
+  );
+};
+
 const TasksPage = () => {
   console.log('🚀 TasksPage component initializing...'); // Debug log
   const { currentUser, hasPermission } = useAuth();
@@ -110,6 +141,7 @@ const TasksPage = () => {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [bulkActionMode, setBulkActionMode] = useState(false);
   const [showCalendarView, setShowCalendarView] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   // Toggle task selection
   const toggleTaskSelection = (taskId) => {
@@ -824,6 +856,30 @@ const TasksPage = () => {
         </Tabs>
         
         <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className={`rounded-none border-0 ${
+                viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={`rounded-none border-0 ${
+                viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
+              }`}
+            >
+              <List className="w-4 h-4" />
+            </Button>
+          </div>
+          
           <Button
             variant="outline"
             onClick={() => setShowCalendarView(true)}
@@ -913,26 +969,26 @@ const TasksPage = () => {
           items={filteredTasks.map(t => t.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  {activeFilter === "completed" ? (
-                    <CheckCircle2 className="w-8 h-8 text-green-500" />
-                  ) : (
-                    <Clock className="w-8 h-8 text-slate-400" />
-                  )}
-                </div>
-                <p className="text-slate-500 font-medium">
-                  {activeFilter === "inbox" && "No tasks in inbox"}
-                  {activeFilter === "today" && "No tasks scheduled for today"}
-                  {activeFilter === "upcoming" && "No upcoming tasks"}
-                  {activeFilter === "overdue" && "No overdue tasks"}
-                  {activeFilter === "completed" && "No completed tasks yet"}
-                </p>
+          {filteredTasks.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                {activeFilter === "completed" ? (
+                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+                ) : (
+                  <Clock className="w-8 h-8 text-slate-400" />
+                )}
               </div>
-            ) : (
-              filteredTasks.map((task) => (
+              <p className="text-slate-500 font-medium">
+                {activeFilter === "inbox" && "No tasks in inbox"}
+                {activeFilter === "today" && "No tasks scheduled for today"}
+                {activeFilter === "upcoming" && "No upcoming tasks"}
+                {activeFilter === "overdue" && "No overdue tasks"}
+                {activeFilter === "completed" && "No completed tasks yet"}
+              </p>
+            </div>
+          ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTasks.map((task) => (
                 <SortableTaskCard
                   key={task.id}
                   task={task}
@@ -945,9 +1001,26 @@ const TasksPage = () => {
                   canEdit={canCreateTasks}
                   canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
                 />
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              {filteredTasks.map((task) => (
+                <SortableTaskListItem
+                  key={task.id}
+                  task={task}
+                  isSelected={selectedTasks.includes(task.id)}
+                  onToggleSelect={toggleTaskSelection}
+                  bulkMode={bulkActionMode}
+                  onStatusChange={updateTaskStatus}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteTask}
+                  canEdit={canCreateTasks}
+                  canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
+                />
+              ))}
+            </div>
+          )}
         </SortableContext>
       </DndContext>
 
