@@ -163,7 +163,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
   return createPortal(
     <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-white w-full max-w-4xl shadow-2xl overflow-y-auto rounded-lg max-h-[90vh]"
+        className="bg-white w-full max-w-6xl shadow-2xl overflow-y-auto rounded-lg max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Bar */}
@@ -286,7 +286,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
           </div>
 
           {/* Right Sidebar - Properties */}
-          <div className="w-64 border-l border-gray-200 px-6 py-6 space-y-4 flex-shrink-0">
+          <div className="w-80 border-l border-gray-200 px-6 py-6 space-y-4 flex-shrink-0">
             {/* Project */}
             <div className="relative">
               <button
