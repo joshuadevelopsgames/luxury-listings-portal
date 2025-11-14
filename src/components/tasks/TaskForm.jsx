@@ -8,7 +8,6 @@ import {
   Calendar,
   Clock,
   Flag,
-  MoreHorizontal,
   Inbox,
   Bell,
   Repeat,
@@ -40,7 +39,6 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
   const [showReminderPicker, setShowReminderPicker] = useState(false);
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showProjectPicker, setShowProjectPicker] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
   const [showSubtasks, setShowSubtasks] = useState(false);
@@ -52,7 +50,6 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
   const datePickerRef = useRef(null);
   const priorityPickerRef = useRef(null);
   const reminderPickerRef = useRef(null);
-  const moreOptionsRef = useRef(null);
   const projectPickerRef = useRef(null);
 
   // Close dropdowns when clicking outside
@@ -66,9 +63,6 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
       }
       if (reminderPickerRef.current && !reminderPickerRef.current.contains(event.target)) {
         setShowReminderPicker(false);
-      }
-      if (moreOptionsRef.current && !moreOptionsRef.current.contains(event.target)) {
-        setShowMoreOptions(false);
       }
       if (projectPickerRef.current && !projectPickerRef.current.contains(event.target)) {
         setShowProjectPicker(false);
@@ -637,8 +631,8 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
               )}
             </div>
 
-            {/* More Options Button */}
-            <div className="relative" ref={moreOptionsRef}>
+            {/* Labels Button */}
+            <div className="relative">
               <Button
                 type="button"
                 variant="ghost"
@@ -646,51 +640,55 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setShowMoreOptions(!showMoreOptions);
+                  setShowLabels(!showLabels);
                 }}
-                className="text-xs text-gray-600 hover:bg-gray-100"
+                className={`text-xs ${formData.labels.length > 0 ? 'text-purple-700 bg-purple-50 hover:bg-purple-100' : 'text-gray-600 hover:bg-gray-100'}`}
               >
-                <MoreHorizontal className="w-4 h-4" />
+                <Tag className="w-4 h-4 mr-1" />
+                Labels
+                {formData.labels.length > 0 && (
+                  <span className="ml-1">({formData.labels.length})</span>
+                )}
               </Button>
+            </div>
 
-              {/* More Options Dropdown */}
-              {showMoreOptions && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[100]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowLabels(true);
-                      setShowMoreOptions(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
-                  >
-                    <Tag className="w-4 h-4" />
-                    Labels
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowSubtasks(true);
-                      setShowMoreOptions(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                    Subtasks
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEstimatedTime(true);
-                      setShowMoreOptions(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
-                  >
-                    <Clock className="w-4 h-4" />
-                    Estimated time
-                  </button>
-                </div>
-              )}
+            {/* Subtasks Button */}
+            <div className="relative">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowSubtasks(!showSubtasks);
+                }}
+                className={`text-xs ${formData.subtasks.length > 0 ? 'text-blue-700 bg-blue-50 hover:bg-blue-100' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                <CheckSquare className="w-4 h-4 mr-1" />
+                Subtasks
+                {formData.subtasks.length > 0 && (
+                  <span className="ml-1">({formData.subtasks.length})</span>
+                )}
+              </Button>
+            </div>
+
+            {/* Estimated Time Button */}
+            <div className="relative">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowEstimatedTime(!showEstimatedTime);
+                }}
+                className={`text-xs ${formData.estimatedTime && formData.estimatedTime !== 30 ? 'text-orange-700 bg-orange-50 hover:bg-orange-100' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                <Clock className="w-4 h-4 mr-1" />
+                {formData.estimatedTime ? `${formData.estimatedTime}m` : 'Time'}
+              </Button>
             </div>
           </div>
 
