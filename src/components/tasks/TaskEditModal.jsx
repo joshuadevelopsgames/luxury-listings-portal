@@ -507,7 +507,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                   onBlur={handleSubmit}
                   className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 resize-none placeholder-gray-400"
-                  placeholder="should repeat daily"
+                  placeholder="Description"
                   rows={3}
                 />
               </div>
