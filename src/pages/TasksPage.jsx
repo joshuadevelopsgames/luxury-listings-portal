@@ -1191,7 +1191,8 @@ const TasksPage = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Task Requests Panel */}
@@ -1281,7 +1282,8 @@ const TasksPage = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Productivity Stats Modal */}
