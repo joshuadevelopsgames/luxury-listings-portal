@@ -806,7 +806,12 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="text-sm bg-red-500 hover:bg-red-600 text-white"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSubmit(e);
+                }}
+                className="text-sm bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Adding...' : 'Add task'}
               </Button>
