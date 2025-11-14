@@ -326,19 +326,17 @@ const TasksPage = () => {
     };
   }, [currentUser.email]);
 
-  // Filter tasks whenever activeFilter or tasks change
+  // Filter tasks whenever activeFilter, tasks, or activeSmartFilter change
   useEffect(() => {
     filterTasks();
-  }, [activeFilter, tasks]);
+  }, [activeFilter, tasks, activeSmartFilter]);
 
   const applySmartFilter = (filter) => {
     if (filter === null) {
       // Clear filter
       setActiveSmartFilter(null);
-      setActiveFilter('today');
     } else {
       setActiveSmartFilter(filter);
-      setActiveFilter('custom');
     }
   };
 
@@ -365,16 +363,58 @@ const TasksPage = () => {
       status: task.status
     })));
     
-    // Apply smart filter if active
-    if (activeFilter === 'custom' && activeSmartFilter) {
+    // STEP 1: Apply tab filter (inbox, today, upcoming, completed)
+    switch (activeFilter) {
+      case "inbox":
+        // Tasks without a due date (Todoist-style inbox)
+        filtered = tasks.filter(task => 
+          task.status !== 'completed' && !task.due_date
+        );
+        break;
+      case "today":
+        // Overdue tasks + tasks due today (Todoist-style)
+        const overdueTasks = tasks.filter(task => 
+          task.status !== 'completed' && 
+          task.due_date && 
+          isPastLocal(task.due_date) && 
+          !isTodayLocal(task.due_date)
+        );
+        const todayTasks = tasks.filter(task => 
+          task.status !== 'completed' && 
+          task.due_date && 
+          isTodayLocal(task.due_date)
+        );
+        // Overdue tasks first, then today's tasks
+        filtered = [...overdueTasks, ...todayTasks];
+        break;
+      case "upcoming":
+        filtered = tasks.filter(task => 
+          task.status !== 'completed' && 
+          task.due_date && 
+          (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date()) &&
+          !isPastLocal(task.due_date)
+        );
+        break;
+      case "overdue":
+        filtered = tasks.filter(task => 
+          task.due_date && 
+          isPastLocal(task.due_date) && 
+          !isTodayLocal(task.due_date) && 
+          task.status !== 'completed'
+        );
+        break;
+      case "completed":
+        filtered = tasks.filter(task => task.status === 'completed');
+        break;
+      default:
+        filtered = tasks;
+    }
+    
+    // STEP 2: Apply smart filter criteria on top of tab filter
+    if (activeSmartFilter) {
       const criteria = activeSmartFilter.criteria;
       
-      filtered = tasks.filter(task => {
-        // Skip completed tasks for most filters
-        if (task.status === 'completed' && !activeSmartFilter.id?.includes('completed')) {
-          return false;
-        }
-        
+      filtered = filtered.filter(task => {
         // Priority filter
         if (criteria.priorities?.length > 0) {
           if (!criteria.priorities.includes(task.priority)) return false;
@@ -423,55 +463,6 @@ const TasksPage = () => {
         
         return true;
       });
-      
-      setFilteredTasks(filtered);
-      return;
-    }
-    
-    switch (activeFilter) {
-      case "inbox":
-        // Tasks without a due date (Todoist-style inbox)
-        filtered = tasks.filter(task => 
-          task.status !== 'completed' && !task.due_date
-        );
-        break;
-      case "today":
-        // Overdue tasks + tasks due today (Todoist-style)
-        const overdueTasks = tasks.filter(task => 
-          task.status !== 'completed' && 
-          task.due_date && 
-          isPastLocal(task.due_date) && 
-          !isTodayLocal(task.due_date)
-        );
-        const todayTasks = tasks.filter(task => 
-          task.status !== 'completed' && 
-          task.due_date && 
-          isTodayLocal(task.due_date)
-        );
-        // Overdue tasks first, then today's tasks
-        filtered = [...overdueTasks, ...todayTasks];
-        break;
-      case "upcoming":
-        filtered = tasks.filter(task => 
-          task.status !== 'completed' && 
-          task.due_date && 
-          (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date()) &&
-          !isPastLocal(task.due_date)
-        );
-        break;
-      case "overdue":
-        filtered = tasks.filter(task => 
-          task.due_date && 
-          isPastLocal(task.due_date) && 
-          !isTodayLocal(task.due_date) && 
-          task.status !== 'completed'
-        );
-        break;
-      case "completed":
-        filtered = tasks.filter(task => task.status === 'completed');
-        break;
-      default:
-        filtered = tasks;
     }
     
     console.log('Filtered tasks:', filtered.map(task => ({
@@ -784,13 +775,7 @@ const TasksPage = () => {
       </div>
 
       <div className="flex items-center justify-between">
-        <Tabs value={activeFilter} onValueChange={(value) => {
-          setActiveFilter(value);
-          // Clear smart filter when switching to standard tabs
-          if (value !== 'custom') {
-            setActiveSmartFilter(null);
-          }
-        }}>
+        <Tabs value={activeFilter} onValueChange={setActiveFilter}>
           <TabsList className="bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="inbox" className="flex items-center gap-2">
               <Inbox className="w-4 h-4" />
