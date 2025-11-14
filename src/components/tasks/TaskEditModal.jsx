@@ -484,14 +484,28 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
 
             {/* Description */}
             <div className="mb-6">
-              <textarea
-                value={editForm.description}
-                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                onBlur={handleSubmit}
-                className="w-full text-sm border-none outline-none focus:ring-0 p-0 resize-none placeholder-gray-400"
-                placeholder="should repeat daily"
-                rows={3}
-              />
+              <div className="flex items-start gap-2">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="20" 
+                  height="20" 
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                  className="text-gray-400 mt-1 flex-shrink-0"
+                >
+                  <rect x="3" y="5" width="14" height="2" rx="1"/>
+                  <rect x="3" y="9" width="14" height="2" rx="1"/>
+                  <rect x="3" y="13" width="10" height="2" rx="1"/>
+                </svg>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  onBlur={handleSubmit}
+                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 resize-none placeholder-gray-400"
+                  placeholder="should repeat daily"
+                  rows={3}
+                />
+              </div>
             </div>
 
             {/* Sub-tasks */}
