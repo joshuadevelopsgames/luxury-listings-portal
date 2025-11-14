@@ -135,10 +135,9 @@ const TemplateEditor = ({ onClose }) => {
             <p className="text-gray-600">Loading templates...</p>
           </CardContent>
         </Card>
-      </div>
-    ),
-    document.body
-)
+      </div>,
+      document.body
+    );
   }
 
   if (isCreating) {

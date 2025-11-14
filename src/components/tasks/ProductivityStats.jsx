@@ -46,10 +46,9 @@ const ProductivityStats = ({ tasks, onClose }) => {
             <p className="text-gray-600">Loading statistics...</p>
           </CardContent>
         </Card>
-      </div>
-    ),
-    document.body
-)
+      </div>,
+      document.body
+    );
   }
 
   const maxWeeklyTasks = Math.max(...weeklyData.map(d => d.completed), 1);
