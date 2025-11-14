@@ -547,19 +547,90 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                 </Button>
               </div>
               {showRecurring && (
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={recurringInput}
-                    onChange={(e) => handleRecurringChange(e.target.value)}
-                    placeholder="e.g., every day, every week, every monday"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500">Select a pattern:</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {[
+                      { label: 'Daily', pattern: 'daily', interval: 1 },
+                      { label: 'Weekly', pattern: 'weekly', interval: 1 },
+                      { label: 'Monthly', pattern: 'monthly', interval: 1 },
+                      { label: 'Yearly', pattern: 'yearly', interval: 1 }
+                    ].map((option) => (
+                      <Badge
+                        key={option.label}
+                        variant="outline"
+                        className={`text-xs px-3 py-2 cursor-pointer transition-colors text-center ${
+                          formData.recurring?.pattern === option.pattern
+                            ? 'bg-green-50 text-green-700 border-green-300'
+                            : 'bg-gray-50 text-gray-600 border-gray-300 hover:bg-green-50 hover:text-green-700 hover:border-green-300'
+                        }`}
+                        onClick={() => handleInputChange('recurring', { 
+                          pattern: option.pattern, 
+                          interval: option.interval 
+                        })}
+                      >
+                        {option.label}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  {/* Day of week options for weekly */}
+                  {formData.recurring?.pattern === 'weekly' && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-2">Repeat on:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { label: 'Mon', day: 1 },
+                          { label: 'Tue', day: 2 },
+                          { label: 'Wed', day: 3 },
+                          { label: 'Thu', day: 4 },
+                          { label: 'Fri', day: 5 },
+                          { label: 'Sat', day: 6 },
+                          { label: 'Sun', day: 0 }
+                        ].map((dayOption) => (
+                          <Badge
+                            key={dayOption.label}
+                            variant="outline"
+                            className={`text-xs px-2 py-1 cursor-pointer transition-colors ${
+                              formData.recurring?.daysOfWeek?.includes(dayOption.day)
+                                ? 'bg-green-50 text-green-700 border-green-300'
+                                : 'bg-gray-50 text-gray-600 border-gray-300 hover:bg-green-50 hover:text-green-700 hover:border-green-300'
+                            }`}
+                            onClick={() => {
+                              const currentDays = formData.recurring?.daysOfWeek || [];
+                              const newDays = currentDays.includes(dayOption.day)
+                                ? currentDays.filter(d => d !== dayOption.day)
+                                : [...currentDays, dayOption.day];
+                              handleInputChange('recurring', {
+                                ...formData.recurring,
+                                daysOfWeek: newDays.length > 0 ? newDays : undefined
+                              });
+                            }}
+                          >
+                            {dayOption.label}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Clear recurring */}
                   {formData.recurring && (
-                    <p className="text-xs text-green-600">
-                      ✓ Repeats: {formData.recurring.pattern} 
-                      {formData.recurring.interval > 1 && ` (every ${formData.recurring.interval})`}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-green-600">
+                        ✓ Repeats: {formData.recurring.pattern}
+                        {formData.recurring.daysOfWeek && ` on ${formData.recurring.daysOfWeek.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')}`}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleInputChange('recurring', null)}
+                        className="text-red-600 hover:text-red-700 text-xs"
+                      >
+                        Clear
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
