@@ -142,18 +142,23 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
                 Priorities
               </label>
               <div className="flex flex-wrap gap-2">
-                {['p1', 'p2', 'p3', 'p4'].map((priority) => (
+                {[
+                  { value: 'p1', label: 'P1 (Urgent)', color: 'red' },
+                  { value: 'p2', label: 'P2 (High)', color: 'orange' },
+                  { value: 'p3', label: 'P3 (Medium)', color: 'blue' },
+                  { value: 'p4', label: 'P4 (Low)', color: 'gray' }
+                ].map((priority) => (
                   <Badge
-                    key={priority}
+                    key={priority.value}
                     variant="outline"
                     className={`cursor-pointer transition-colors ${
-                      formData.criteria.priorities?.includes(priority)
-                        ? 'bg-blue-50 text-blue-700 border-blue-300'
+                      formData.criteria.priorities?.includes(priority.value)
+                        ? `bg-${priority.color}-50 text-${priority.color}-700 border-${priority.color}-300`
                         : 'bg-gray-50 text-gray-600 border-gray-300 hover:bg-blue-50'
                     }`}
-                    onClick={() => togglePriority(priority)}
+                    onClick={() => togglePriority(priority.value)}
                   >
-                    {priority.toUpperCase()}
+                    {priority.label}
                   </Badge>
                 ))}
               </div>

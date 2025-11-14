@@ -415,9 +415,25 @@ const TasksPage = () => {
       const criteria = activeSmartFilter.criteria;
       
       filtered = filtered.filter(task => {
-        // Priority filter
+        // Priority filter - normalize to handle both formats (p1/urgent, p2/high, etc.)
         if (criteria.priorities?.length > 0) {
-          if (!criteria.priorities.includes(task.priority)) return false;
+          const priorityMap = {
+            'urgent': ['urgent', 'p1'],
+            'p1': ['urgent', 'p1'],
+            'high': ['high', 'p2'],
+            'p2': ['high', 'p2'],
+            'medium': ['medium', 'p3'],
+            'p3': ['medium', 'p3'],
+            'low': ['low', 'p4'],
+            'p4': ['low', 'p4']
+          };
+          
+          const matchesPriority = criteria.priorities.some(filterPriority => {
+            const validPriorities = priorityMap[filterPriority] || [filterPriority];
+            return validPriorities.includes(task.priority);
+          });
+          
+          if (!matchesPriority) return false;
         }
         
         // Label filter
