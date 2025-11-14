@@ -100,7 +100,8 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[70vh] overflow-y-auto"
+      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[85vh] overflow-y-auto"
+      style={{ maxHeight: 'calc(100vh - 120px)' }}
     >
       {/* Preset Filters */}
       <div className="border-b border-gray-200">
@@ -168,7 +169,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
       )}
 
       {/* Clear Filter & Create New */}
-      <div className="py-2 pb-3">
+      <div className="py-2 pb-4">
         {activeFilter?.id && (
           <button
             onClick={() => {
