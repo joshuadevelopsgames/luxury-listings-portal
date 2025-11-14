@@ -1102,10 +1102,17 @@ const TasksPage = () => {
             </div>
             
             <form onSubmit={handleSubmitTaskRequest} className="p-6 space-y-4">
+              {/* Debug info */}
+              {availableUsers.length === 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+                  ⚠️ No other team members found. Total employees: {availableUsers.length}
+                </div>
+              )}
+              
               {/* Select User */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assign To *
+                  Assign To * ({availableUsers.length} available)
                 </label>
                 <select
                   value={requestForm.toUserEmail}
