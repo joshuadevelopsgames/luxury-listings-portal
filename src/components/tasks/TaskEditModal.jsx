@@ -215,27 +215,39 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
 
   // Duplicate task
   const duplicateTask = async () => {
+    if (!currentUser?.email) {
+      alert('You must be logged in to duplicate tasks');
+      return;
+    }
+
     const duplicatedTask = {
       title: `${editForm.title} (copy)`,
-      description: editForm.description,
-      category: editForm.category,
-      priority: editForm.priority,
+      description: editForm.description || '',
+      category: editForm.category || '',
+      priority: editForm.priority || 'medium',
       due_date: editForm.dueDate || null,
       due_time: editForm.dueTime || null,
       estimated_time: editForm.estimatedTime || null,
-      project: editForm.project,
+      project: editForm.project || null,
+      section: editForm.section || null,
       labels: editForm.labels || [],
       subtasks: (editForm.subtasks || []).map(st => ({ ...st, completed: false })),
+      recurring: null, // Don't duplicate recurring pattern
+      reminders: [], // Don't duplicate reminders
       status: 'pending',
-      createdBy: currentUser?.email
+      assigned_to: currentUser.email, // CRITICAL: Must assign to current user
+      createdBy: currentUser.email
     };
     
     try {
-      await DailyTask.create(duplicatedTask);
+      console.log('Duplicating task with data:', duplicatedTask);
+      const newTask = await DailyTask.create(duplicatedTask);
+      console.log('✅ Task duplicated successfully:', newTask);
       alert('Task duplicated successfully!');
+      setShowMoreMenu(false);
     } catch (error) {
-      console.error('Error duplicating task:', error);
-      alert('Failed to duplicate task');
+      console.error('❌ Error duplicating task:', error);
+      alert(`Failed to duplicate task: ${error.message}`);
     }
   };
 
@@ -272,10 +284,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 e.stopPropagation();
                 goToNextTask();
               }}
-              title="Next task"
+              title="Next task (→)"
               disabled={!tasks || tasks.length <= 1}
+              className="relative group"
             >
               <ChevronRight className="w-4 h-4" />
+              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                Next task
+              </span>
             </Button>
             <Button 
               variant="ghost" 
@@ -284,10 +300,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 e.stopPropagation();
                 goToPreviousTask();
               }}
-              title="Previous task"
+              title="Previous task (←)"
               disabled={!tasks || tasks.length <= 1}
+              className="relative group"
             >
               <ChevronDown className="w-4 h-4" />
+              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                Previous task
+              </span>
             </Button>
             <div className="relative">
               <Button 
