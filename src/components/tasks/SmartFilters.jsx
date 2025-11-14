@@ -99,7 +99,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
   };
 
   if (creating) {
-    return (
+    return createPortal(
       <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
         <Card className="w-full max-w-2xl mb-8">
           <CardHeader className="pb-4">
@@ -250,11 +250,12 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div>,
+      document.body
     );
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-3xl mb-8">
         <CardHeader className="pb-4">
@@ -353,7 +354,8 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
           )}
         </CardContent>
       </Card>
-    </div>
+    </div>,
+    document.body
   );
 };
 

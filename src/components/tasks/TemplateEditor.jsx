@@ -127,7 +127,7 @@ const TemplateEditor = ({ onClose }) => {
   };
 
   if (loading) {
-    return (
+    return createPortal(
       <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
@@ -135,11 +135,13 @@ const TemplateEditor = ({ onClose }) => {
           </CardContent>
         </Card>
       </div>
-    );
+    ),
+    document.body
+)
   }
 
   if (isCreating) {
-    return (
+    return createPortal(
       <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
         <Card className="w-full max-w-4xl relative">
           <CardHeader className="pb-4">
@@ -312,11 +314,12 @@ const TemplateEditor = ({ onClose }) => {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div>,
+      document.body
     );
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-5xl mb-8 relative">
         <CardHeader className="pb-4">
@@ -398,7 +401,8 @@ const TemplateEditor = ({ onClose }) => {
           )}
         </CardContent>
       </Card>
-    </div>
+    </div>,
+    document.body
   );
 };
 

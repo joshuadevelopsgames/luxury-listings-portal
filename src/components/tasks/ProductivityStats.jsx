@@ -38,7 +38,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
   }, [tasks]);
 
   if (!stats) {
-    return (
+    return createPortal(
       <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-4xl">
           <CardContent className="p-8 text-center">
@@ -46,12 +46,14 @@ const ProductivityStats = ({ tasks, onClose }) => {
           </CardContent>
         </Card>
       </div>
-    );
+    ),
+    document.body
+)
   }
 
   const maxWeeklyTasks = Math.max(...weeklyData.map(d => d.completed), 1);
 
-  return (
+  return createPortal(
     <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-4xl mb-8 relative">
         <CardHeader className="pb-4">
@@ -236,7 +238,8 @@ const ProductivityStats = ({ tasks, onClose }) => {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </div>,
+    document.body
   );
 };
 
