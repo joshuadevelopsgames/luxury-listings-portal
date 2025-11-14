@@ -58,17 +58,7 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} className="relative group">
-      {/* Drag Handle */}
-      <div 
-        ref={setActivatorNodeRef}
-        {...listeners}
-        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
-        style={{ touchAction: 'none' }}
-      >
-        <GripVertical className="w-5 h-5 text-gray-400" />
-      </div>
-      
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative group">
       {bulkMode && (
         <div className="absolute top-2 left-2 z-10">
           <input
@@ -105,17 +95,7 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} className="relative group">
-      {/* Drag Handle */}
-      <div 
-        ref={setActivatorNodeRef}
-        {...listeners}
-        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
-        style={{ touchAction: 'none' }}
-      >
-        <GripVertical className="w-4 h-4 text-gray-400" />
-      </div>
-      
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative group">
       <TaskListItem 
         task={task} 
         isSelected={isSelected}
@@ -221,9 +201,13 @@ const TasksPage = () => {
     }
   };
 
-  // Drag and drop sensors
+  // Drag and drop sensors with activation constraints
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
