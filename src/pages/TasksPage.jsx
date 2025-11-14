@@ -45,7 +45,6 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
     attributes,
     listeners,
     setNodeRef,
-    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -55,18 +54,11 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} className="relative">
-      {/* Drag Handle */}
-      <div 
-        ref={setActivatorNodeRef} 
-        {...listeners}
-        className="absolute top-2 right-2 z-10 p-1 cursor-grab active:cursor-grabbing opacity-0 hover:opacity-100 transition-opacity bg-white rounded shadow-sm"
-      >
-        <GripVertical className="w-4 h-4 text-gray-400" />
-      </div>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative">
       {bulkMode && (
         <div className="absolute top-2 left-2 z-10">
           <input
@@ -89,7 +81,6 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
     attributes,
     listeners,
     setNodeRef,
-    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -99,27 +90,18 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} className="relative group">
-      {/* Drag Handle - left side */}
-      <div 
-        ref={setActivatorNodeRef} 
-        {...listeners}
-        className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity z-10"
-      >
-        <GripVertical className="w-4 h-4 text-gray-400" />
-      </div>
-      <div className="pl-8">
-        <TaskListItem 
-          task={task} 
-          isSelected={isSelected}
-          onToggleSelect={onToggleSelect}
-          bulkMode={bulkMode}
-          {...props} 
-        />
-      </div>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <TaskListItem 
+        task={task} 
+        isSelected={isSelected}
+        onToggleSelect={onToggleSelect}
+        bulkMode={bulkMode}
+        {...props} 
+      />
     </div>
   );
 };
@@ -232,28 +214,32 @@ const TasksPage = () => {
     const oldIndex = filteredTasks.findIndex(task => task.id === active.id);
     const newIndex = filteredTasks.findIndex(task => task.id === over.id);
 
-    const newOrder = arrayMove(filteredTasks, oldIndex, newIndex);
-    setFilteredTasks(newOrder);
+    if (oldIndex === newIndex) return;
 
-    // Update order in database for all affected tasks
+    // Reorder the filtered tasks
+    const newOrder = arrayMove(filteredTasks, oldIndex, newIndex);
+    
+    // Update order field for each task
+    const tasksWithNewOrder = newOrder.map((task, index) => ({
+      ...task,
+      order: index
+    }));
+    
+    setFilteredTasks(tasksWithNewOrder);
+
+    // Update order in database for all reordered tasks
     try {
-      const updates = newOrder.map((task, index) => 
+      const updates = tasksWithNewOrder.map((task, index) => 
         DailyTask.update(task.id, { order: index })
       );
       await Promise.all(updates);
       
-      // Also update in main tasks array
-      const updatedTasks = [...tasks];
-      const taskToMove = updatedTasks.find(t => t.id === active.id);
-      if (taskToMove) {
-        taskToMove.order = newIndex;
-        setTasks(updatedTasks);
-      }
-      
-      console.log('✅ Task order updated');
+      console.log('✅ Task order updated and persisted');
     } catch (error) {
       console.error('Error updating task order:', error);
-      toast.error('Failed to update order');
+      toast.error('Failed to save order');
+      // Revert on error
+      filterTasks();
     }
   };
 
@@ -553,9 +539,15 @@ const TasksPage = () => {
       filter: activeFilter
     })));
     
+    // Sort by manual order if it exists, otherwise by priority
     setFilteredTasks(filtered.sort((a, b) => {
-      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
+      // If both have order fields, sort by order
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      }
+      // Otherwise sort by priority
+      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1, p1: 4, p2: 3, p3: 2, p4: 1 };
+      return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
     }));
   };
 
@@ -1035,8 +1027,8 @@ const TasksPage = () => {
                   canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
                 />
               ))}
-            </div>
-          ) : (
+          </div>
+        ) : (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
               {filteredTasks.map((task) => (
                 <SortableTaskListItem

@@ -435,7 +435,7 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
           <Checkbox
             checked={isCompleted}
             onCheckedChange={(checked) => handleStatusChange(checked ? 'completed' : 'pending')}
-            className="mt-1 rounded-full"
+            className="mt-1"
           />
           <span className="text-sm text-gray-600">
             Mark as {isCompleted ? 'incomplete' : 'complete'}
