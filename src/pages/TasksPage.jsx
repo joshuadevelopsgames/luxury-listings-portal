@@ -260,8 +260,18 @@ const TasksPage = () => {
         due_date: taskData.dueDate, // Map dueDate to due_date
         estimated_time: taskData.estimatedTime, // Map estimatedTime to estimated_time
         assigned_to: currentUser.email,
-        status: 'pending'
+        status: 'pending',
+        labels: taskData.labels || [],
+        subtasks: taskData.subtasks || [],
+        recurring: taskData.recurring || null,
+        reminders: taskData.reminders || []
       });
+      
+      if (taskData.recurring) {
+        toast.success(`✓ Recurring task created! Will repeat ${taskData.recurring.pattern}ly`);
+      } else {
+        toast.success('✓ Task created!');
+      }
       
       // No need to reload data - real-time listener will update automatically
       setShowForm(false);
@@ -273,7 +283,32 @@ const TasksPage = () => {
 
   const updateTaskStatus = async (taskId, newStatus) => {
     try {
-      await DailyTask.update(taskId, { status: newStatus });
+      // Find the task to check if it's recurring
+      const task = tasks.find(t => t.id === taskId);
+      
+      // Update the task status
+      await DailyTask.update(taskId, { 
+        status: newStatus,
+        completed_date: newStatus === 'completed' ? new Date().toISOString() : null
+      });
+      
+      // If task is completed and has recurring pattern, create next instance
+      if (newStatus === 'completed' && task?.recurring) {
+        try {
+          const taskInstance = new DailyTask(task);
+          const nextInstance = await taskInstance.generateNextRecurringInstance();
+          
+          if (nextInstance) {
+            toast.success(`✓ Task completed! Next instance scheduled for ${nextInstance.due_date}`);
+          } else {
+            toast.success('✓ Task completed! (Recurring ended)');
+          }
+        } catch (error) {
+          console.error('Error creating next recurring instance:', error);
+          toast.success('✓ Task completed!');
+        }
+      }
+      
       // No need to reload data - real-time listener will update automatically
     } catch (error) {
       console.error("Error updating task status:", error);

@@ -16,7 +16,8 @@ import {
   TrendingUp,
   Flag,
   MessageSquare,
-  CheckSquare
+  CheckSquare,
+  Repeat
 } from 'lucide-react';
 
 const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canDelete = true }) => {
@@ -173,6 +174,14 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
                 <div className="flex items-center gap-1 text-xs text-gray-600">
                   <MessageSquare className="w-3 h-3" />
                   <span>{task.comments.length}</span>
+                </div>
+              )}
+              
+              {/* Show recurring indicator */}
+              {task.recurring && (
+                <div className="flex items-center gap-1 text-xs text-green-600">
+                  <Repeat className="w-3 h-3" />
+                  <span>{task.recurring.pattern}</span>
                 </div>
               )}
             </div>
