@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createPortal } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -1029,7 +1029,7 @@ const CRMPage = () => {
       )}
 
       {/* Add New Lead Modal */}
-      {showAddModal && (
+      {showAddModal && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -1182,7 +1182,7 @@ const CRMPage = () => {
       )}
 
       {/* Client Detail Modal */}
-      {selectedClient && (
+      {selectedClient && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -1406,7 +1406,7 @@ const CRMPage = () => {
       )}
 
       {/* Edit Modal */}
-      {showEditModal && editingClient && (
+      {showEditModal && editingClient && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createPortal } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -526,7 +526,7 @@ const TeamManagement = () => {
       </Card>
 
       {/* Employee Detail Modal */}
-      {showEmployeeModal && selectedEmployee && (
+      {showEmployeeModal && selectedEmployee && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">

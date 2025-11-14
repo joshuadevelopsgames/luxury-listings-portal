@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createPortal } from 'react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import GoogleAnalyticsSetup from '../components/GoogleAnalyticsSetup';
@@ -466,7 +466,7 @@ const Analytics = () => {
       )}
 
       {/* Google Analytics Setup Modal */}
-      {showSetup && (
+      {showSetup && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">

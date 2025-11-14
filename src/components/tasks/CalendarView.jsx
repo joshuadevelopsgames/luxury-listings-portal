@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, createPortal } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -29,7 +29,7 @@ const CalendarView = ({ tasks, onClose, onTaskClick }) => {
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const goToToday = () => setCurrentMonth(new Date());
 
-  return (
+  return createPortal(
     <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-7xl mb-8">
         <CardHeader className="pb-4">
@@ -162,7 +162,8 @@ const CalendarView = ({ tasks, onClose, onTaskClick }) => {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </div>,
+    document.body
   );
 };
 

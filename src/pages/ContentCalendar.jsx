@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createPortal } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -1506,7 +1506,7 @@ const ContentCalendar = () => {
       </Card>
 
       {/* Add/Edit Content Modal */}
-      {showAddModal && (
+      {showAddModal && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
@@ -1652,11 +1652,12 @@ const ContentCalendar = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Import from Google Sheets Modal */}
-      {showImportModal && (
+      {showImportModal && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
@@ -1877,7 +1878,8 @@ const ContentCalendar = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
         </div>
       </div>

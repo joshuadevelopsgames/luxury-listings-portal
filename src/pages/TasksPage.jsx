@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, createPortal } from 'react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical } from 'lucide-react';
@@ -1083,7 +1083,7 @@ const TasksPage = () => {
       </DndContext>
 
       {/* Task Request Modal */}
-      {showRequestModal && (
+      {showRequestModal && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full">
             <div className="border-b border-gray-200 px-6 py-4">
@@ -1194,7 +1194,7 @@ const TasksPage = () => {
       )}
 
       {/* Task Requests Panel */}
-      {showRequestsPanel && (
+      {showRequestsPanel && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="border-b border-gray-200 px-6 py-4">

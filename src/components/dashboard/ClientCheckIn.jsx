@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createPortal } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -671,7 +671,7 @@ Joshua@luxury-listings.com`);
       </CardContent>
       
       {/* Approval Modal */}
-      {showApprovalModal && selectedClient && (
+      {showApprovalModal && selectedClient && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
@@ -749,7 +749,7 @@ Joshua@luxury-listings.com`);
       )}
       
       {/* Edit Package Modal */}
-      {showEditModal && editingClient && (
+      {showEditModal && editingClient && createPortal(
         <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
