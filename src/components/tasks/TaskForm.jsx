@@ -542,7 +542,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Labels Dropdown */}
               {showLabels && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 pr-6 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 pt-4 pb-4 pl-4 pr-6 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Labels</p>
                   </div>
@@ -613,7 +613,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Subtasks Dropdown */}
               {showSubtasks && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 pr-6 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 pt-4 pb-4 pl-4 pr-6 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Subtasks</p>
                   </div>
