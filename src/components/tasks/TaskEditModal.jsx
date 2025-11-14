@@ -289,18 +289,16 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
           <div className="w-80 border-l border-gray-200 px-6 py-6 space-y-4 flex-shrink-0">
             {/* Project */}
             <div className="relative">
+              <div className="py-2 px-2">
+                <span className="text-sm font-medium text-gray-700">Project</span>
+              </div>
               <button
                 onClick={() => setShowProjectDropdown(!showProjectDropdown)}
-                className="w-full flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2"
+                className="w-full flex items-center gap-2 text-sm text-gray-600 px-2 mt-1 hover:bg-gray-50 py-1 rounded"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Project</span>
-                </div>
-              </button>
-              <div className="flex items-center gap-2 text-sm text-gray-600 px-2 mt-1">
                 <Inbox className="w-4 h-4" />
                 <span>{editForm.project}</span>
-              </div>
+              </button>
               
               {showProjectDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
@@ -382,16 +380,16 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
 
             {/* Priority */}
             <div className="relative">
+              <div className="py-2 px-2">
+                <span className="text-sm font-medium text-gray-700">Priority</span>
+              </div>
               <button
                 onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
-                className="w-full flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2"
+                className="w-full flex items-center gap-2 text-sm px-2 mt-1 hover:bg-gray-50 py-1 rounded"
               >
-                <span className="text-sm font-medium text-gray-700">Priority</span>
-              </button>
-              <div className="flex items-center gap-2 text-sm px-2 mt-1">
                 {currentPriority.icon}
                 <span className="text-gray-600">{currentPriority.label.replace('Priority ', 'P')}</span>
-              </div>
+              </button>
 
               {showPriorityDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
