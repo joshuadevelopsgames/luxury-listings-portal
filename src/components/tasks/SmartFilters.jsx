@@ -121,7 +121,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
             </div>
           </CardHeader>
           
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pb-8">
             {/* Filter Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -278,7 +278,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pb-8">
           <p className="text-gray-600">
             Create custom views to quickly find specific tasks
           </p>
