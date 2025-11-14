@@ -430,12 +430,12 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
           )}
         </div>
         
-        {/* Quick checkbox for completion */}
+        {/* Quick checkbox for completion - circular */}
         <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
           <Checkbox
             checked={isCompleted}
             onCheckedChange={(checked) => handleStatusChange(checked ? 'completed' : 'pending')}
-            className="mt-1"
+            className="mt-1 rounded-full"
           />
           <span className="text-sm text-gray-600">
             Mark as {isCompleted ? 'incomplete' : 'complete'}

@@ -141,7 +141,7 @@ const TasksPage = () => {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [bulkActionMode, setBulkActionMode] = useState(false);
   const [showCalendarView, setShowCalendarView] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list' - default to list
 
   // Toggle task selection
   const toggleTaskSelection = (taskId) => {

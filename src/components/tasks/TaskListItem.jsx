@@ -31,11 +31,11 @@ const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect
         />
       )}
 
-      {/* Complete checkbox */}
+      {/* Complete checkbox - circular */}
       <Checkbox
         checked={isCompleted}
         onCheckedChange={(checked) => onStatusChange(task.id, checked ? 'completed' : 'pending')}
-        className="flex-shrink-0"
+        className="flex-shrink-0 rounded-full"
       />
 
       {/* Priority Flag */}
