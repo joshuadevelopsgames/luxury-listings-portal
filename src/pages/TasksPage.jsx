@@ -45,6 +45,7 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -57,7 +58,17 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} className="relative">
+    <div ref={setNodeRef} style={style} {...attributes} className="relative group">
+      {/* Drag Handle */}
+      <div 
+        ref={setActivatorNodeRef}
+        {...listeners}
+        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
+        style={{ touchAction: 'none' }}
+      >
+        <GripVertical className="w-5 h-5 text-gray-400" />
+      </div>
+      
       {bulkMode && (
         <div className="absolute top-2 left-2 z-10">
           <input
@@ -69,22 +80,8 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
           />
         </div>
       )}
-      <div 
-        {...listeners}
-        onPointerDown={(e) => {
-          // Only allow drag if NOT clicking on interactive elements
-          const target = e.target;
-          if (target.closest('button, input, a, [role="button"], [data-no-drag]')) {
-            e.preventDefault();
-          }
-        }}
-        style={{ 
-          cursor: isDragging ? 'grabbing' : 'grab',
-          touchAction: 'none'
-        }}
-      >
-        <TaskCard task={task} {...props} />
-      </div>
+      
+      <TaskCard task={task} {...props} />
     </div>
   );
 };
@@ -95,6 +92,7 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -107,29 +105,24 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div ref={setNodeRef} style={style} {...attributes} className="relative group">
+      {/* Drag Handle */}
       <div 
+        ref={setActivatorNodeRef}
         {...listeners}
-        onPointerDown={(e) => {
-          // Only allow drag if NOT clicking on interactive elements
-          const target = e.target;
-          if (target.closest('button, input, a, [role="button"], [data-no-drag]')) {
-            e.preventDefault();
-          }
-        }}
-        style={{ 
-          cursor: isDragging ? 'grabbing' : 'grab',
-          touchAction: 'none'
-        }}
+        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
+        style={{ touchAction: 'none' }}
       >
-        <TaskListItem 
-          task={task} 
-          isSelected={isSelected}
-          onToggleSelect={onToggleSelect}
-          bulkMode={bulkMode}
-          {...props} 
-        />
+        <GripVertical className="w-4 h-4 text-gray-400" />
       </div>
+      
+      <TaskListItem 
+        task={task} 
+        isSelected={isSelected}
+        onToggleSelect={onToggleSelect}
+        bulkMode={bulkMode}
+        {...props} 
+      />
     </div>
   );
 };
