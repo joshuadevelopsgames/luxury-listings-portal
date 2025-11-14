@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -182,7 +183,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     return priority ? priority.icon : <Flag className="w-4 h-4" />;
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4 pb-96">
       <Card className="w-full max-w-2xl my-8 bg-white rounded-lg shadow-lg overflow-visible">
         <form onSubmit={handleSubmit} className="p-6 overflow-visible">
@@ -539,7 +540,8 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
           </div>
         </form>
       </Card>
-    </div>
+    </div>,
+    document.body
   );
 };
 

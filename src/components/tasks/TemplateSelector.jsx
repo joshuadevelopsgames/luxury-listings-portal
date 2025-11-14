@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -85,18 +86,19 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
   };
 
     if (loading) {
-    return (
+    return createPortal(
       <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <p className="text-gray-600">Loading templates...</p>
           </CardContent>
         </Card>
-      </div>
+      </div>,
+      document.body
     );
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-5xl mb-8 relative">
         <CardHeader className="pb-4">
@@ -235,7 +237,8 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </div>,
+    document.body
   );
 };
 
