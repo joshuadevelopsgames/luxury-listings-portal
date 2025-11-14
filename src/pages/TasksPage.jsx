@@ -845,16 +845,11 @@ const TasksPage = () => {
 
   const getTaskCounts = () => {
     const overdueTasks = tasks.filter(task => 
-      task.due_date && 
-      isPastLocal(task.due_date) && 
-      !isTodayLocal(task.due_date) && 
-      task.status !== 'completed'
+      task.status !== 'completed' && isOverdue(task) && !isDueToday(task)
     );
     
     const todayTasksOnly = tasks.filter(task => 
-      task.status !== 'completed' && 
-      task.due_date && 
-      isTodayLocal(task.due_date)
+      task.status !== 'completed' && isDueToday(task) && !isOverdue(task)
     );
     
     return {
@@ -863,8 +858,8 @@ const TasksPage = () => {
       upcoming: tasks.filter(task => 
         task.status !== 'completed' && 
         task.due_date && 
-        (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date()) &&
-        !isPastLocal(task.due_date)
+        isDueInFuture(task) &&
+        !isDueToday(task)
       ).length,
       overdue: overdueTasks.length,
       completed: tasks.filter(task => 
