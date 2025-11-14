@@ -39,6 +39,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
   const [newComment, setNewComment] = useState('');
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showLabelInput, setShowLabelInput] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
 
   useEffect(() => {
     if (task && isOpen) {
@@ -95,13 +98,53 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
     setNewSubtask('');
   };
 
-  const toggleSubtask = (subtaskId) => {
+  const toggleSubtask = async (subtaskId) => {
+    const updatedSubtasks = editForm.subtasks.map(st => 
+      st.id === subtaskId ? { ...st, completed: !st.completed } : st
+    );
+    
     setEditForm(prev => ({
       ...prev,
-      subtasks: prev.subtasks.map(st => 
-        st.id === subtaskId ? { ...st, completed: !st.completed } : st
-      )
+      subtasks: updatedSubtasks
     }));
+    
+    // Auto-save subtask change
+    await DailyTask.update(task.id, { subtasks: updatedSubtasks });
+  };
+
+  const handleAddLabel = () => {
+    if (!newLabel.trim()) return;
+    
+    const updatedLabels = [...editForm.labels, newLabel.trim()];
+    setEditForm(prev => ({
+      ...prev,
+      labels: updatedLabels
+    }));
+    
+    DailyTask.update(task.id, { labels: updatedLabels });
+    setNewLabel('');
+    setShowLabelInput(false);
+  };
+
+  const removeLabel = (labelToRemove) => {
+    const updatedLabels = editForm.labels.filter(l => l !== labelToRemove);
+    setEditForm(prev => ({
+      ...prev,
+      labels: updatedLabels
+    }));
+    
+    DailyTask.update(task.id, { labels: updatedLabels });
+  };
+
+  const handleDateChange = (newDate) => {
+    setEditForm(prev => ({ ...prev, dueDate: newDate }));
+    DailyTask.update(task.id, { due_date: newDate });
+    setShowDatePicker(false);
+  };
+
+  const removeDate = () => {
+    setEditForm(prev => ({ ...prev, dueDate: '' }));
+    DailyTask.update(task.id, { due_date: null });
   };
 
   const priorities = [
@@ -118,9 +161,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
   const currentPriority = priorities.find(p => p.value === editForm.priority) || priorities[2];
 
   return createPortal(
-    <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-end z-50" onClick={onClose}>
+    <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-white h-full w-full max-w-3xl shadow-2xl overflow-y-auto"
+        className="bg-white w-full max-w-4xl shadow-2xl overflow-y-auto rounded-lg max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Bar */}
@@ -258,20 +301,81 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
                 <Inbox className="w-4 h-4" />
                 <span>{editForm.project}</span>
               </div>
+              
+              {showProjectDropdown && (
+                <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
+                  {projects.map((project) => (
+                    <button
+                      key={project}
+                      onClick={() => {
+                        setEditForm(prev => ({ ...prev, project }));
+                        setShowProjectDropdown(false);
+                        DailyTask.update(task.id, { project });
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left"
+                    >
+                      <Inbox className="w-4 h-4" />
+                      <span>{project}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Date */}
-            <div>
+            <div className="relative">
               <div className="flex items-center justify-between py-2 px-2">
                 <span className="text-sm font-medium text-gray-700">Date</span>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <Plus className="w-4 h-4" />
-                </button>
+                {!editForm.dueDate && (
+                  <button 
+                    onClick={() => setShowDatePicker(!showDatePicker)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              {editForm.dueDate && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 px-2 mt-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>{new Date(editForm.dueDate + 'T00:00:00').toLocaleDateString()}</span>
+              {editForm.dueDate ? (
+                <div className="flex items-center justify-between px-2 mt-1 group">
+                  <button
+                    onClick={() => setShowDatePicker(!showDatePicker)}
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:bg-gray-50 px-2 py-1 rounded flex-1"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>{new Date(editForm.dueDate + 'T00:00:00').toLocaleDateString()}</span>
+                  </button>
+                  <button
+                    onClick={removeDate}
+                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 p-1"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : null}
+              
+              {showDatePicker && (
+                <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-20">
+                  <input
+                    type="date"
+                    value={editForm.dueDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="mt-2 space-y-1">
+                    {[
+                      { label: 'Today', value: new Date().toISOString().split('T')[0] },
+                      { label: 'Tomorrow', value: new Date(Date.now() + 86400000).toISOString().split('T')[0] },
+                      { label: 'Next week', value: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0] }
+                    ].map((option) => (
+                      <button
+                        key={option.label}
+                        onClick={() => handleDateChange(option.value)}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded text-sm"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -310,18 +414,50 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             </div>
 
             {/* Labels */}
-            <div>
+            <div className="relative">
               <div className="flex items-center justify-between py-2 px-2">
                 <span className="text-sm font-medium text-gray-700">Labels</span>
-                <button className="text-gray-400 hover:text-gray-600">
+                <button 
+                  onClick={() => setShowLabelInput(!showLabelInput)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
+              
+              {showLabelInput && (
+                <div className="px-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newLabel}
+                      onChange={(e) => setNewLabel(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddLabel()}
+                      placeholder="Label name..."
+                      className="flex-1 text-sm px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      autoFocus
+                    />
+                    <Button
+                      onClick={handleAddLabel}
+                      size="sm"
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
               {editForm.labels && editForm.labels.length > 0 && (
                 <div className="flex flex-wrap gap-1 px-2 mt-1">
                   {editForm.labels.map((label, idx) => (
-                    <span key={idx} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                    <span 
+                      key={idx} 
+                      className="group text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded flex items-center gap-1 hover:bg-purple-200 cursor-pointer"
+                      onClick={() => removeLabel(label)}
+                    >
                       {label}
+                      <X className="w-3 h-3 opacity-0 group-hover:opacity-100" />
                     </span>
                   ))}
                 </div>
