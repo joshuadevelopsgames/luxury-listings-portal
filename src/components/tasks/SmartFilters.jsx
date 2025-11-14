@@ -100,7 +100,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
 
   if (creating) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
+      <div className="fixed inset-0 w-screen h-screen bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
         <Card className="w-full max-w-2xl mb-8">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -255,7 +255,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
+    <div className="fixed inset-0 w-screen h-screen bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-3xl mb-8">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
