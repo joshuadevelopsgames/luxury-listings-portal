@@ -266,10 +266,10 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             {/* Description */}
             <div className="mb-6">
               <div className="flex items-center gap-2 text-gray-500 mb-2">
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                <div className="flex flex-col gap-0.5">
+                  <div className="w-3 h-0.5 bg-gray-400 rounded"></div>
+                  <div className="w-3 h-0.5 bg-gray-400 rounded"></div>
+                  <div className="w-3 h-0.5 bg-gray-400 rounded"></div>
                 </div>
                 <span className="text-sm">Description</span>
               </div>
