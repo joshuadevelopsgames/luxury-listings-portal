@@ -43,12 +43,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showLabelInput, setShowLabelInput] = useState(false);
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
   const [newLabel, setNewLabel] = useState('');
 
   const projectDropdownRef = useRef(null);
   const datePickerRef = useRef(null);
   const priorityDropdownRef = useRef(null);
   const labelInputRef = useRef(null);
+  const reminderPickerRef = useRef(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -57,12 +59,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
       const clickedInsideDate = datePickerRef.current?.contains(event.target);
       const clickedInsidePriority = priorityDropdownRef.current?.contains(event.target);
       const clickedInsideLabel = labelInputRef.current?.contains(event.target);
+      const clickedInsideReminder = reminderPickerRef.current?.contains(event.target);
       
-      if (!clickedInsideProject && !clickedInsideDate && !clickedInsidePriority && !clickedInsideLabel) {
+      if (!clickedInsideProject && !clickedInsideDate && !clickedInsidePriority && !clickedInsideLabel && !clickedInsideReminder) {
         setShowProjectDropdown(false);
         setShowDatePicker(false);
         setShowPriorityDropdown(false);
         setShowLabelInput(false);
+        setShowReminderPicker(false);
       }
     };
 
@@ -195,6 +199,36 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   const openDropdown = (dropdownSetter) => {
     closeAllDropdowns();
     dropdownSetter(true);
+  };
+
+  const handleAddReminder = async (type, value) => {
+    const newReminder = {
+      id: Date.now(),
+      type,
+      ...value
+    };
+    
+    const updatedReminders = [...(editForm.reminders || []), newReminder];
+    
+    setEditForm(prev => ({
+      ...prev,
+      reminders: updatedReminders
+    }));
+    
+    // Auto-save reminder
+    await DailyTask.update(task.id, { reminders: updatedReminders });
+  };
+
+  const handleRemoveReminder = async (reminderId) => {
+    const updatedReminders = (editForm.reminders || []).filter(r => r.id !== reminderId);
+    
+    setEditForm(prev => ({
+      ...prev,
+      reminders: updatedReminders
+    }));
+    
+    // Auto-save reminder removal
+    await DailyTask.update(task.id, { reminders: updatedReminders });
   };
 
   // Navigate to next task
@@ -679,13 +713,129 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
             </div>
 
             {/* Reminders */}
-            <div>
+            <div className="relative" ref={reminderPickerRef}>
               <div className="flex items-center justify-between py-2 px-2">
                 <span className="text-sm font-medium text-gray-700">Reminders</span>
-                <button className="text-gray-400 hover:text-gray-600">
+                <button 
+                  onClick={() => openDropdown(setShowReminderPicker)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
+              
+              {editForm.reminders && editForm.reminders.length > 0 && (
+                <div className="px-2 mb-2 space-y-1">
+                  {editForm.reminders.map((reminder) => (
+                    <div
+                      key={reminder.id}
+                      className="flex items-center justify-between px-2 py-1 bg-yellow-50 rounded text-xs"
+                    >
+                      <span className="text-yellow-800">{reminder.label}</span>
+                      <button
+                        onClick={() => handleRemoveReminder(reminder.id)}
+                        className="text-gray-400 hover:text-red-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showReminderPicker && (
+                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-20">
+                  <div className="mb-3">
+                    <p className="text-sm font-semibold mb-2">Reminders</p>
+                  </div>
+                  
+                  {/* Relative reminders (if task has due date) */}
+                  {editForm.dueDate && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-2">Before due time:</p>
+                      <div className="space-y-1">
+                        {[
+                          { label: 'At due time', minutes: 0 },
+                          { label: '15 min before', minutes: 15 },
+                          { label: '30 min before', minutes: 30 },
+                          { label: '1 hour before', minutes: 60 },
+                          { label: '1 day before', minutes: 1440 }
+                        ].map((option) => (
+                          <button
+                            key={option.label}
+                            onClick={async () => {
+                              await handleAddReminder('relative', { minutes: option.minutes, label: option.label });
+                              setShowReminderPicker(false);
+                            }}
+                            className="w-full px-3 py-2 hover:bg-gray-50 rounded text-sm text-left text-gray-900"
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Absolute time reminder */}
+                  <div className="mb-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-500 mb-2">At specific time:</p>
+                    <div className="space-y-2">
+                      <input
+                        type="date"
+                        id="reminder-date-edit"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                      <input
+                        type="time"
+                        id="reminder-time-edit"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        onClick={async () => {
+                          const dateInput = document.getElementById('reminder-date-edit');
+                          const timeInput = document.getElementById('reminder-time-edit');
+                          
+                          if (!dateInput.value || !timeInput.value) {
+                            alert('Please select both date and time');
+                            return;
+                          }
+                          
+                          const reminderDateTime = new Date(`${dateInput.value}T${timeInput.value}`);
+                          const now = new Date();
+                          
+                          if (reminderDateTime < now) {
+                            alert('Reminder time must be in the future');
+                            return;
+                          }
+                          
+                          const formattedDate = reminderDateTime.toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          });
+                          const formattedTime = reminderDateTime.toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit' 
+                          });
+                          
+                          await handleAddReminder('absolute', { 
+                            datetime: reminderDateTime.toISOString(),
+                            label: `${formattedDate} at ${formattedTime}`
+                          });
+                          
+                          dateInput.value = '';
+                          timeInput.value = '';
+                          setShowReminderPicker(false);
+                        }}
+                        className="w-full px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                      >
+                        Add reminder
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Delete Button at Bottom */}

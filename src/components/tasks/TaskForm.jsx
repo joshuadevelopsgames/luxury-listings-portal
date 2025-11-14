@@ -365,40 +365,98 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Reminders Picker Dropdown */}
               {showReminderPicker && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Reminders</p>
-                    {!formData.dueDate && (
-                      <div className="flex items-start gap-2 p-3 bg-blue-50 rounded text-xs text-blue-800 mb-3">
-                        <span>ℹ️</span>
-                        <span>Add a date and time to the task first.</span>
-                      </div>
-                    )}
                   </div>
                   
+                  {/* Relative reminders (if task has due date) */}
                   {formData.dueDate && (
-                    <div className="space-y-2">
-                      {[
-                        { label: 'At due time', minutes: 0 },
-                        { label: '15 min before', minutes: 15 },
-                        { label: '30 min before', minutes: 30 },
-                        { label: '1 hour before', minutes: 60 },
-                        { label: '1 day before', minutes: 1440 }
-                      ].map((option) => (
-                        <button
-                          key={option.label}
-                          type="button"
-                          onClick={() => {
-                            addReminder('relative', { minutes: option.minutes, label: option.label });
-                            setShowReminderPicker(false);
-                          }}
-                          className="w-full px-3 py-2 hover:bg-gray-50 rounded text-sm text-left text-gray-900"
-                        >
-                          {option.label}
-                        </button>
-                      ))}
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-2">Before due time:</p>
+                      <div className="space-y-1">
+                        {[
+                          { label: 'At due time', minutes: 0 },
+                          { label: '15 min before', minutes: 15 },
+                          { label: '30 min before', minutes: 30 },
+                          { label: '1 hour before', minutes: 60 },
+                          { label: '1 day before', minutes: 1440 }
+                        ].map((option) => (
+                          <button
+                            key={option.label}
+                            type="button"
+                            onClick={() => {
+                              addReminder('relative', { minutes: option.minutes, label: option.label });
+                              setShowReminderPicker(false);
+                            }}
+                            className="w-full px-3 py-2 hover:bg-gray-50 rounded text-sm text-left text-gray-900"
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
+
+                  {/* Absolute time reminder */}
+                  <div className="mb-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-500 mb-2">At specific time:</p>
+                    <div className="space-y-2">
+                      <input
+                        type="date"
+                        id="reminder-date"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                      <input
+                        type="time"
+                        id="reminder-time"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const dateInput = document.getElementById('reminder-date');
+                          const timeInput = document.getElementById('reminder-time');
+                          
+                          if (!dateInput.value || !timeInput.value) {
+                            alert('Please select both date and time');
+                            return;
+                          }
+                          
+                          const reminderDateTime = new Date(`${dateInput.value}T${timeInput.value}`);
+                          const now = new Date();
+                          
+                          if (reminderDateTime < now) {
+                            alert('Reminder time must be in the future');
+                            return;
+                          }
+                          
+                          const formattedDate = reminderDateTime.toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          });
+                          const formattedTime = reminderDateTime.toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit' 
+                          });
+                          
+                          addReminder('absolute', { 
+                            datetime: reminderDateTime.toISOString(),
+                            label: `${formattedDate} at ${formattedTime}`
+                          });
+                          
+                          dateInput.value = '';
+                          timeInput.value = '';
+                          setShowReminderPicker(false);
+                        }}
+                        className="w-full px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                      >
+                        Add reminder
+                      </button>
+                    </div>
+                  </div>
 
                   {formData.reminders.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
