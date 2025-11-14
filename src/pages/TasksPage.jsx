@@ -211,36 +211,29 @@ const TasksPage = () => {
 
     if (!over || active.id === over.id) return;
 
-    const oldIndex = filteredTasks.findIndex(task => task.id === active.id);
-    const newIndex = filteredTasks.findIndex(task => task.id === over.id);
+    setFilteredTasks((items) => {
+      const oldIndex = items.findIndex(task => task.id === active.id);
+      const newIndex = items.findIndex(task => task.id === over.id);
 
-    if (oldIndex === newIndex) return;
+      if (oldIndex === -1 || newIndex === -1) return items;
 
-    // Reorder the filtered tasks
-    const newOrder = arrayMove(filteredTasks, oldIndex, newIndex);
-    
-    // Update order field for each task
-    const tasksWithNewOrder = newOrder.map((task, index) => ({
-      ...task,
-      order: index
-    }));
-    
-    setFilteredTasks(tasksWithNewOrder);
-
-    // Update order in database for all reordered tasks
-    try {
-      const updates = tasksWithNewOrder.map((task, index) => 
-        DailyTask.update(task.id, { order: index })
-      );
-      await Promise.all(updates);
+      const newOrder = arrayMove(items, oldIndex, newIndex);
       
-      console.log('✅ Task order updated and persisted');
-    } catch (error) {
-      console.error('Error updating task order:', error);
-      toast.error('Failed to save order');
-      // Revert on error
-      filterTasks();
-    }
+      // Save order to database asynchronously
+      setTimeout(async () => {
+        try {
+          const updates = newOrder.map((task, index) => 
+            DailyTask.update(task.id, { order: index })
+          );
+          await Promise.all(updates);
+          console.log('✅ Task order saved');
+        } catch (error) {
+          console.error('Error saving task order:', error);
+        }
+      }, 0);
+      
+      return newOrder;
+    });
   };
 
   // Keyboard shortcuts
