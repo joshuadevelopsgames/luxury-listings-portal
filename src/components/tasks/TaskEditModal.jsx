@@ -147,6 +147,20 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
     DailyTask.update(task.id, { due_date: null });
   };
 
+  // Close all dropdowns
+  const closeAllDropdowns = () => {
+    setShowPriorityDropdown(false);
+    setShowProjectDropdown(false);
+    setShowDatePicker(false);
+    setShowLabelInput(false);
+  };
+
+  // Open one dropdown and close others
+  const openDropdown = (dropdownSetter) => {
+    closeAllDropdowns();
+    dropdownSetter(true);
+  };
+
   const priorities = [
     { value: 'urgent', label: 'Priority 1', icon: <Flag className="w-4 h-4 fill-red-600 stroke-red-600" /> },
     { value: 'high', label: 'Priority 2', icon: <Flag className="w-4 h-4 fill-orange-500 stroke-orange-500" /> },
@@ -293,7 +307,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
                 <span className="text-sm font-medium text-gray-700">Project</span>
               </div>
               <button
-                onClick={() => setShowProjectDropdown(!showProjectDropdown)}
+                onClick={() => openDropdown(setShowProjectDropdown)}
                 className="w-full flex items-center gap-2 text-sm text-gray-600 px-2 mt-1 hover:bg-gray-50 py-1 rounded"
               >
                 <Inbox className="w-4 h-4" />
@@ -326,7 +340,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
                 <span className="text-sm font-medium text-gray-700">Date</span>
                 {!editForm.dueDate && (
                   <button 
-                    onClick={() => setShowDatePicker(!showDatePicker)}
+                    onClick={() => openDropdown(setShowDatePicker)}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Plus className="w-4 h-4" />
@@ -336,7 +350,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
               {editForm.dueDate ? (
                 <div className="flex items-center justify-between px-2 mt-1 group">
                   <button
-                    onClick={() => setShowDatePicker(!showDatePicker)}
+                    onClick={() => openDropdown(setShowDatePicker)}
                     className="flex items-center gap-2 text-sm text-gray-600 hover:bg-gray-50 px-2 py-1 rounded flex-1"
                   >
                     <Calendar className="w-4 h-4" />
@@ -384,7 +398,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
                 <span className="text-sm font-medium text-gray-700">Priority</span>
               </div>
               <button
-                onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
+                onClick={() => openDropdown(setShowPriorityDropdown)}
                 className="w-full flex items-center gap-2 text-sm px-2 mt-1 hover:bg-gray-50 py-1 rounded"
               >
                 {currentPriority.icon}
@@ -416,7 +430,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
               <div className="flex items-center justify-between py-2 px-2">
                 <span className="text-sm font-medium text-gray-700">Labels</span>
                 <button 
-                  onClick={() => setShowLabelInput(!showLabelInput)}
+                  onClick={() => openDropdown(setShowLabelInput)}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <Plus className="w-4 h-4" />
