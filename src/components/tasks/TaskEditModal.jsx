@@ -118,7 +118,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     }
   };
 
-  const handleAddSubtask = () => {
+  const handleAddSubtask = async () => {
     if (!newSubtask.trim()) return;
     
     const subtask = {
@@ -127,11 +127,16 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
       completed: false
     };
     
+    const updatedSubtasks = [...(editForm.subtasks || []), subtask];
+    
     setEditForm(prev => ({
       ...prev,
-      subtasks: [...prev.subtasks, subtask]
+      subtasks: updatedSubtasks
     }));
     setNewSubtask('');
+    
+    // Auto-save subtask
+    await DailyTask.update(task.id, { subtasks: updatedSubtasks });
   };
 
   const toggleSubtask = async (subtaskId) => {
