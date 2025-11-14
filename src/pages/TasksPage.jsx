@@ -1031,6 +1031,8 @@ const TasksPage = () => {
         }}
         onSave={handleSaveTask}
         onDelete={handleDeleteTask}
+        tasks={filteredTasks}
+        onNavigate={(newTask) => setEditingTask(newTask)}
       />
 
       <DndContext

@@ -21,8 +21,9 @@ import {
 import { DailyTask } from '../../entities/DailyTask';
 import { useAuth } from '../../contexts/AuthContext';
 
-const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
+const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], onNavigate }) => {
   const { currentUser } = useAuth();
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
@@ -196,6 +197,48 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
     dropdownSetter(true);
   };
 
+  // Navigate to next task
+  const goToNextTask = () => {
+    if (!tasks || tasks.length === 0) return;
+    const currentIndex = tasks.findIndex(t => t.id === task.id);
+    const nextIndex = (currentIndex + 1) % tasks.length;
+    onNavigate(tasks[nextIndex]);
+  };
+
+  // Navigate to previous task
+  const goToPreviousTask = () => {
+    if (!tasks || tasks.length === 0) return;
+    const currentIndex = tasks.findIndex(t => t.id === task.id);
+    const prevIndex = currentIndex - 1 < 0 ? tasks.length - 1 : currentIndex - 1;
+    onNavigate(tasks[prevIndex]);
+  };
+
+  // Duplicate task
+  const duplicateTask = async () => {
+    const duplicatedTask = {
+      title: `${editForm.title} (copy)`,
+      description: editForm.description,
+      category: editForm.category,
+      priority: editForm.priority,
+      due_date: editForm.dueDate || null,
+      due_time: editForm.dueTime || null,
+      estimated_time: editForm.estimatedTime || null,
+      project: editForm.project,
+      labels: editForm.labels || [],
+      subtasks: (editForm.subtasks || []).map(st => ({ ...st, completed: false })),
+      status: 'pending',
+      createdBy: currentUser?.email
+    };
+    
+    try {
+      await DailyTask.create(duplicatedTask);
+      alert('Task duplicated successfully!');
+    } catch (error) {
+      console.error('Error duplicating task:', error);
+      alert('Failed to duplicate task');
+    }
+  };
+
   const priorities = [
     { value: 'urgent', label: 'Priority 1', icon: <Flag className="w-4 h-4 fill-red-600 stroke-red-600" /> },
     { value: 'high', label: 'Priority 2', icon: <Flag className="w-4 h-4 fill-orange-500 stroke-orange-500" /> },
@@ -221,16 +264,16 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             <Inbox className="w-4 h-4" />
             <span className="text-sm">{editForm.project}</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 relative">
             <Button 
               variant="ghost" 
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                alert('Next task - Coming soon!');
-                // TODO: Implement next task navigation
+                goToNextTask();
               }}
               title="Next task"
+              disabled={!tasks || tasks.length <= 1}
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -239,25 +282,66 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                alert('Previous task - Coming soon!');
-                // TODO: Implement previous task navigation
+                goToPreviousTask();
               }}
               title="Previous task"
+              disabled={!tasks || tasks.length <= 1}
             >
               <ChevronDown className="w-4 h-4" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                alert('More options - Coming soon!');
-                // TODO: Implement more options menu
-              }}
-              title="More options"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
+            <div className="relative">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMoreMenu(!showMoreMenu);
+                }}
+                title="More options"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+              
+              {showMoreMenu && (
+                <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      duplicateTask();
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    Duplicate task
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(`mailto:?subject=${encodeURIComponent(editForm.title)}&body=${encodeURIComponent(editForm.description)}`, '_blank');
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Share via email
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const taskText = `${editForm.title}\n${editForm.description}\nPriority: ${editForm.priority}\nDue: ${editForm.dueDate || 'No date'}`;
+                      navigator.clipboard.writeText(taskText);
+                      alert('Task details copied to clipboard!');
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Copy task details
+                  </button>
+                </div>
+              )}
+            </div>
             <Button 
               variant="ghost" 
               size="sm" 
