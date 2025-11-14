@@ -100,7 +100,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden"
+      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[80vh] overflow-y-auto"
     >
       {/* Preset Filters */}
       <div className="border-b border-gray-200">
