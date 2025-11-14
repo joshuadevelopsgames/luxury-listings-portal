@@ -402,10 +402,22 @@ const TasksPage = () => {
     };
   }, [currentUser.email]);
 
-  // Filter tasks whenever activeFilter, tasks, or activeSmartFilter change
+  // Force re-filter every minute to auto-hide tasks that pass 24-hour mark
+  const [timeTick, setTimeTick] = useState(0);
+  
+  useEffect(() => {
+    // Update every minute to check if tasks have passed 24-hour mark
+    const interval = setInterval(() => {
+      setTimeTick(prev => prev + 1);
+    }, 60000); // 60 seconds = 1 minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Filter tasks whenever activeFilter, tasks, activeSmartFilter, or timeTick change
   useEffect(() => {
     filterTasks();
-  }, [activeFilter, tasks, activeSmartFilter]);
+  }, [activeFilter, tasks, activeSmartFilter, timeTick]);
 
   const applySmartFilter = (filter) => {
     if (filter === null) {
