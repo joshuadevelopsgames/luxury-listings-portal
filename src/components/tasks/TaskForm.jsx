@@ -330,6 +330,39 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   placeholder="e.g., tomorrow, next monday, in 3 days"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                 />
+                
+                {/* Quick date suggestions */}
+                {!formData.dueDate && (
+                  <div className="mb-2">
+                    <p className="text-xs text-gray-500 mb-2">Quick select:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: 'Today', value: 'today' },
+                        { label: 'Tomorrow', value: 'tomorrow' },
+                        { label: 'Next Week', value: 'next week' },
+                        { label: 'No Date', value: '' }
+                      ].map((dateOption) => (
+                        <Badge
+                          key={dateOption.label}
+                          variant="outline"
+                          className="text-xs px-2 py-1 bg-gray-50 text-gray-600 border-gray-300 cursor-pointer hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
+                          onClick={() => {
+                            if (dateOption.value) {
+                              handleNaturalDateChange(dateOption.value);
+                              setNaturalDateInput(dateOption.value);
+                            } else {
+                              handleInputChange('dueDate', '');
+                              setNaturalDateInput('');
+                            }
+                          }}
+                        >
+                          {dateOption.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 {/* Date picker fallback */}
                 <input
                   type="date"
@@ -408,6 +441,30 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
+              
+              {/* Suggested Labels */}
+              {formData.labels.length === 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-gray-500 mb-2">Quick add:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['urgent', 'client-work', 'marketing', 'follow-up', 'important', 'quick-win', 'personal'].map((suggestion) => (
+                      <Badge
+                        key={suggestion}
+                        variant="outline"
+                        className="text-xs px-2 py-1 bg-gray-50 text-gray-600 border-gray-300 cursor-pointer hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 transition-colors"
+                        onClick={() => {
+                          if (!formData.labels.includes(suggestion)) {
+                            handleInputChange('labels', [...formData.labels, suggestion]);
+                          }
+                        }}
+                      >
+                        {suggestion}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {formData.labels.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {formData.labels.map((label, index) => (
