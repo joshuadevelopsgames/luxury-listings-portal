@@ -182,13 +182,13 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
             ) : (
               <CardTitle 
                 className={`text-lg font-semibold mb-2 line-clamp-2 cursor-text hover:bg-gray-50 px-2 py-1 rounded ${
-                  isCompleted ? 'line-through text-gray-500' : 'text-gray-900'
+              isCompleted ? 'line-through text-gray-500' : 'text-gray-900'
                 }`}
                 onDoubleClick={() => canEdit && setEditingTitle(true)}
                 title="Double-click to edit"
               >
-                {task.title}
-              </CardTitle>
+              {task.title}
+            </CardTitle>
             )}
             
             <div className="flex items-center gap-2 mb-3">
@@ -294,13 +294,13 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
         ) : (
           <p 
             className={`text-sm line-clamp-3 cursor-text hover:bg-gray-50 px-2 py-1 rounded ${
-              isCompleted ? 'text-gray-400' : 'text-gray-600'
+          isCompleted ? 'text-gray-400' : 'text-gray-600'
             }`}
             onDoubleClick={() => canEdit && setEditingDescription(true)}
             title="Double-click to edit"
           >
-            {task.description}
-          </p>
+          {task.description}
+        </p>
         )}
         
         <div className="space-y-3">
@@ -311,7 +311,7 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
                 <Calendar className={`w-3 h-3 ${task.formattedDueDate.color}`} />
                 <span className={`font-medium ${task.formattedDueDate.color}`}>
                   {task.formattedDueDate.text}
-                </span>
+            </span>
               </div>
             ) : (
               <span className="text-gray-400">No due date</span>
@@ -331,10 +331,10 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
           )}
           
           {!task.project && task.category && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
               <Target className="w-3 h-3" />
-              <span>Category: {task.category}</span>
-            </div>
+            <span>Category: {task.category}</span>
+          </div>
           )}
           
           {/* Labels display */}
@@ -392,7 +392,7 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
             </div>
           </div>
         )}
-
+        
         {/* Status management */}
         <div className="flex gap-2 pt-2">
           {!isCompleted ? (

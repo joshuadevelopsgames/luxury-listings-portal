@@ -236,17 +236,17 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
       <Card className="w-full max-w-2xl mb-8">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-semibold">
-              {mode === 'create' ? 'Create New Task' : 'Edit Task'}
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onCancel}
+          <CardTitle className="text-xl font-semibold">
+            {mode === 'create' ? 'Create New Task' : 'Edit Task'}
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
               className="text-gray-500 hover:text-gray-700"
-            >
+          >
               <X className="w-5 h-5" />
-            </Button>
+          </Button>
           </div>
         </CardHeader>
         

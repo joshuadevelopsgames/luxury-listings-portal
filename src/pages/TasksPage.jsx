@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import {
@@ -45,6 +45,7 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -57,7 +58,15 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative">
+    <div ref={setNodeRef} style={style} {...attributes} className="relative">
+      {/* Drag Handle */}
+      <div 
+        ref={setActivatorNodeRef} 
+        {...listeners}
+        className="absolute top-2 right-2 z-10 p-1 cursor-grab active:cursor-grabbing opacity-0 hover:opacity-100 transition-opacity bg-white rounded shadow-sm"
+      >
+        <GripVertical className="w-4 h-4 text-gray-400" />
+      </div>
       {bulkMode && (
         <div className="absolute top-2 left-2 z-10">
           <input
@@ -80,6 +89,7 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -92,14 +102,24 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskListItem 
-        task={task} 
-        isSelected={isSelected}
-        onToggleSelect={onToggleSelect}
-        bulkMode={bulkMode}
-        {...props} 
-      />
+    <div ref={setNodeRef} style={style} {...attributes} className="relative group">
+      {/* Drag Handle - left side */}
+      <div 
+        ref={setActivatorNodeRef} 
+        {...listeners}
+        className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity z-10"
+      >
+        <GripVertical className="w-4 h-4 text-gray-400" />
+      </div>
+      <div className="pl-8">
+        <TaskListItem 
+          task={task} 
+          isSelected={isSelected}
+          onToggleSelect={onToggleSelect}
+          bulkMode={bulkMode}
+          {...props} 
+        />
+      </div>
     </div>
   );
 };
@@ -207,20 +227,33 @@ const TasksPage = () => {
   const handleDragEnd = async (event) => {
     const { active, over } = event;
 
-    if (active.id !== over.id) {
-      const oldIndex = filteredTasks.findIndex(task => task.id === active.id);
-      const newIndex = filteredTasks.findIndex(task => task.id === over.id);
+    if (!over || active.id === over.id) return;
 
-      const newOrder = arrayMove(filteredTasks, oldIndex, newIndex);
-      setFilteredTasks(newOrder);
+    const oldIndex = filteredTasks.findIndex(task => task.id === active.id);
+    const newIndex = filteredTasks.findIndex(task => task.id === over.id);
 
-      // Update order in database
-      try {
-        await DailyTask.update(active.id, { order: newIndex });
-        toast.success('Task order updated');
-      } catch (error) {
-        console.error('Error updating task order:', error);
+    const newOrder = arrayMove(filteredTasks, oldIndex, newIndex);
+    setFilteredTasks(newOrder);
+
+    // Update order in database for all affected tasks
+    try {
+      const updates = newOrder.map((task, index) => 
+        DailyTask.update(task.id, { order: index })
+      );
+      await Promise.all(updates);
+      
+      // Also update in main tasks array
+      const updatedTasks = [...tasks];
+      const taskToMove = updatedTasks.find(t => t.id === active.id);
+      if (taskToMove) {
+        taskToMove.order = newIndex;
+        setTasks(updatedTasks);
       }
+      
+      console.log('✅ Task order updated');
+    } catch (error) {
+      console.error('Error updating task order:', error);
+      toast.error('Failed to update order');
     }
   };
 
@@ -878,7 +911,7 @@ const TasksPage = () => {
             >
               <List className="w-4 h-4" />
             </Button>
-          </div>
+      </div>
           
           <Button
             variant="outline"
@@ -969,23 +1002,23 @@ const TasksPage = () => {
           items={filteredTasks.map(t => t.id)}
           strategy={verticalListSortingStrategy}
         >
-          {filteredTasks.length === 0 ? (
+        {filteredTasks.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                {activeFilter === "completed" ? (
-                  <CheckCircle2 className="w-8 h-8 text-green-500" />
-                ) : (
-                  <Clock className="w-8 h-8 text-slate-400" />
-                )}
-              </div>
-              <p className="text-slate-500 font-medium">
-                {activeFilter === "inbox" && "No tasks in inbox"}
-                {activeFilter === "today" && "No tasks scheduled for today"}
-                {activeFilter === "upcoming" && "No upcoming tasks"}
-                {activeFilter === "overdue" && "No overdue tasks"}
-                {activeFilter === "completed" && "No completed tasks yet"}
-              </p>
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              {activeFilter === "completed" ? (
+                <CheckCircle2 className="w-8 h-8 text-green-500" />
+              ) : (
+                <Clock className="w-8 h-8 text-slate-400" />
+              )}
             </div>
+            <p className="text-slate-500 font-medium">
+                {activeFilter === "inbox" && "No tasks in inbox"}
+              {activeFilter === "today" && "No tasks scheduled for today"}
+              {activeFilter === "upcoming" && "No upcoming tasks"}
+              {activeFilter === "overdue" && "No overdue tasks"}
+              {activeFilter === "completed" && "No completed tasks yet"}
+            </p>
+          </div>
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTasks.map((task) => (
@@ -1007,19 +1040,19 @@ const TasksPage = () => {
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
               {filteredTasks.map((task) => (
                 <SortableTaskListItem
-                  key={task.id}
-                  task={task}
+              key={task.id}
+              task={task}
                   isSelected={selectedTasks.includes(task.id)}
                   onToggleSelect={toggleTaskSelection}
                   bulkMode={bulkActionMode}
-                  onStatusChange={updateTaskStatus}
-                  onEdit={handleEditTask}
-                  onDelete={handleDeleteTask}
-                  canEdit={canCreateTasks}
-                  canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
-                />
+              onStatusChange={updateTaskStatus}
+              onEdit={handleEditTask}
+              onDelete={handleDeleteTask}
+              canEdit={canCreateTasks}
+              canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
+            />
               ))}
-            </div>
+      </div>
           )}
         </SortableContext>
       </DndContext>
