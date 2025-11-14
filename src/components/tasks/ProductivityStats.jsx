@@ -22,19 +22,29 @@ const ProductivityStats = ({ tasks, onClose }) => {
 
   useEffect(() => {
     const calculateStats = async () => {
+      console.log('📊 ProductivityStats - Total tasks received:', tasks.length);
+      const completedCount = tasks.filter(t => t.status === 'completed').length;
+      console.log('✅ Completed tasks:', completedCount);
+      const withDates = tasks.filter(t => t.completed_date).length;
+      console.log('📅 Tasks with completed_date:', withDates);
+      
       const userEmail = 'current-user@example.com'; // This should come from auth context
       const productivityStats = await productivityService.getProductivityStats(userEmail, tasks);
+      console.log('📈 Calculated stats:', productivityStats);
       setStats(productivityStats);
       
       const level = productivityService.getKarmaLevel(productivityStats.karma);
       setKarmaLevel(level);
 
       const weekData = productivityService.getWeeklyChartData(tasks);
+      console.log('📊 Weekly data:', weekData);
       setWeeklyData(weekData);
     };
 
     if (tasks && tasks.length > 0) {
       calculateStats();
+    } else {
+      console.log('⚠️ No tasks available for stats');
     }
   }, [tasks]);
 
