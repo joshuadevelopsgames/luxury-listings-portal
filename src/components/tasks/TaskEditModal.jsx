@@ -221,7 +221,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     }
 
     const duplicatedTask = {
-      title: `${editForm.title} (copy)`,
+      title: editForm.title,
       description: editForm.description || '',
       category: editForm.category || '',
       priority: editForm.priority || 'medium',
