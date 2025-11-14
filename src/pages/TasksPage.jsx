@@ -54,11 +54,10 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative">
+    <div ref={setNodeRef} style={style} {...attributes} className="relative">
       {bulkMode && (
         <div className="absolute top-2 left-2 z-10">
           <input
@@ -70,7 +69,16 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
           />
         </div>
       )}
-      <TaskCard task={task} {...props} />
+      <div {...listeners} style={{ cursor: 'grab' }} onPointerDown={(e) => {
+        // Allow drag from anywhere except interactive elements
+        const target = e.target;
+        const isInteractive = target.closest('button, input, a, [role="button"]');
+        if (isInteractive) {
+          e.stopPropagation();
+        }
+      }}>
+        <TaskCard task={task} {...props} />
+      </div>
     </div>
   );
 };
@@ -90,18 +98,26 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskListItem 
-        task={task} 
-        isSelected={isSelected}
-        onToggleSelect={onToggleSelect}
-        bulkMode={bulkMode}
-        {...props} 
-      />
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div {...listeners} style={{ cursor: 'grab' }} onPointerDown={(e) => {
+        // Allow drag from anywhere except interactive elements
+        const target = e.target;
+        const isInteractive = target.closest('button, input, a, [role="button"]');
+        if (isInteractive) {
+          e.stopPropagation();
+        }
+      }}>
+        <TaskListItem 
+          task={task} 
+          isSelected={isSelected}
+          onToggleSelect={onToggleSelect}
+          bulkMode={bulkMode}
+          {...props} 
+        />
+      </div>
     </div>
   );
 };
