@@ -159,13 +159,16 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
   const isOverdue = task.due_date && isPastLocal(task.due_date) && !isTodayLocal(task.due_date) && task.status !== 'completed';
 
   return (
-    <Card className={`h-full transition-all duration-200 hover:shadow-md ${
-      isCompleted 
-        ? 'border-green-200 bg-green-50/30' 
-        : isOverdue
-        ? 'border-red-200 bg-red-50/30'
-        : 'border-gray-200 hover:border-blue-300'
-    }`}>
+    <Card 
+      className={`h-full transition-all duration-200 hover:shadow-md cursor-pointer ${
+        isCompleted 
+          ? 'border-green-200 bg-green-50/30' 
+          : isOverdue
+          ? 'border-red-200 bg-red-50/30'
+          : 'border-gray-200 hover:border-blue-300'
+      }`}
+      onClick={() => onEdit(task)}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -246,7 +249,10 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
               variant="ghost"
               size="sm"
               className="h-10 w-10 p-0"
-              onClick={() => setShowActions(!showActions)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowActions(!showActions);
+              }}
             >
               <MoreHorizontal className="w-6 h-6" />
             </Button>
@@ -430,13 +436,15 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
           )}
         </div>
         
-        {/* Quick checkbox for completion - circular */}
+        {/* Quick checkbox for completion - circular */}        
         <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-          <Checkbox
-            checked={isCompleted}
-            onCheckedChange={(checked) => handleStatusChange(checked ? 'completed' : 'pending')}
-            className="mt-1"
-          />
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={isCompleted}
+              onCheckedChange={(checked) => handleStatusChange(checked ? 'completed' : 'pending')}
+              className="mt-1"
+            />
+          </div>
           <span className="text-sm text-gray-600">
             Mark as {isCompleted ? 'incomplete' : 'complete'}
           </span>

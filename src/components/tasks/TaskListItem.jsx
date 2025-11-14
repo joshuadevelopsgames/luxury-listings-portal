@@ -17,9 +17,12 @@ const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect
   const isCompleted = task.status === 'completed';
 
   return (
-    <div className={`flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors group ${
-      isCompleted ? 'bg-green-50/30' : ''
-    }`}>
+    <div 
+      className={`flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors group cursor-pointer ${
+        isCompleted ? 'bg-green-50/30' : ''
+      }`}
+      onClick={() => onEdit(task)}
+    >
       {/* Bulk selection checkbox */}
       {bulkMode && (
         <input
@@ -32,11 +35,13 @@ const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect
       )}
 
       {/* Complete checkbox - circular */}
-      <Checkbox
-        checked={isCompleted}
-        onCheckedChange={(checked) => onStatusChange(task.id, checked ? 'completed' : 'pending')}
-        className="flex-shrink-0"
-      />
+      <div onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={isCompleted}
+          onCheckedChange={(checked) => onStatusChange(task.id, checked ? 'completed' : 'pending')}
+          className="flex-shrink-0"
+        />
+      </div>
 
       {/* Priority Flag */}
       <div className={`flex items-center justify-center w-6 h-6 rounded ${task.priorityFlag.bgColor} flex-shrink-0`}>

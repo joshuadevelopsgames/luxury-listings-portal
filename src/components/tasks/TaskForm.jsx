@@ -213,7 +213,11 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowDatePicker(!showDatePicker)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowDatePicker(!showDatePicker);
+                }}
                 className={`text-xs ${formData.dueDate ? 'text-green-700 bg-green-50 hover:bg-green-100' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <Calendar className="w-4 h-4 mr-1" />
@@ -297,7 +301,11 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowPriorityPicker(!showPriorityPicker)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowPriorityPicker(!showPriorityPicker);
+                }}
                 className="text-xs text-gray-600 hover:bg-gray-100"
               >
                 {getPriorityIcon()}
@@ -335,7 +343,11 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowReminderPicker(!showReminderPicker)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowReminderPicker(!showReminderPicker);
+                }}
                 className={`text-xs ${formData.reminders.length > 0 ? 'text-yellow-700 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <Bell className="w-4 h-4 mr-1" />
@@ -414,7 +426,11 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowMoreOptions(!showMoreOptions)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMoreOptions(!showMoreOptions);
+                }}
                 className="text-xs text-gray-600 hover:bg-gray-100"
               >
                 <MoreHorizontal className="w-4 h-4" />
@@ -422,9 +438,13 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* More Options Dropdown */}
               {showMoreOptions && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10">
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
                   <button
                     type="button"
+                    onClick={() => {
+                      console.log('Labels clicked');
+                      setShowMoreOptions(false);
+                    }}
                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
                   >
                     <Tag className="w-4 h-4" />
@@ -432,6 +452,10 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   </button>
                   <button
                     type="button"
+                    onClick={() => {
+                      console.log('Subtasks clicked');
+                      setShowMoreOptions(false);
+                    }}
                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
                   >
                     <CheckSquare className="w-4 h-4" />
@@ -439,6 +463,10 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   </button>
                   <button
                     type="button"
+                    onClick={() => {
+                      console.log('Estimated time clicked');
+                      setShowMoreOptions(false);
+                    }}
                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
                   >
                     <Clock className="w-4 h-4" />
@@ -457,7 +485,11 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowProjectPicker(!showProjectPicker)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowProjectPicker(!showProjectPicker);
+                }}
                 className="text-xs text-gray-600 hover:bg-gray-100"
               >
                 <Inbox className="w-4 h-4 mr-1" />
