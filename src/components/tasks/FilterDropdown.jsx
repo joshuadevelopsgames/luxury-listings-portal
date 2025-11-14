@@ -100,15 +100,15 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden flex flex-col"
-      style={{ maxHeight: '600px' }}
+      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-y-auto"
+      style={{ maxHeight: '500px' }}
     >
       {/* Preset Filters */}
-      <div className="border-b border-gray-200 flex-shrink-0">
-        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+      <div className="border-b border-gray-200">
+        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 sticky top-0 z-10 bg-white">
           <p className="text-xs font-semibold text-gray-600 uppercase">Quick Filters</p>
         </div>
-        <div className="py-1 pb-2 overflow-y-auto" style={{ maxHeight: '250px' }}>
+        <div className="py-1 pb-2">
           {PRESET_FILTERS.map((filter) => {
             const Icon = filter.icon;
             const isActive = activeFilter?.id === filter.id;
@@ -133,11 +133,11 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
 
       {/* Custom Filters */}
       {customFilters.length > 0 && (
-        <div className="border-b border-gray-200 flex-shrink-0">
-          <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+        <div className="border-b border-gray-200">
+          <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 sticky top-0 z-10 bg-white">
             <p className="text-xs font-semibold text-gray-600 uppercase">My Filters</p>
           </div>
-          <div className="py-1 pb-2 overflow-y-auto" style={{ maxHeight: '250px' }}>
+          <div className="py-1 pb-2">
             {customFilters.map((filter) => {
               const isActive = activeFilter?.id === filter.id;
               
@@ -169,7 +169,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
       )}
 
       {/* Clear Filter & Create New */}
-      <div className="py-2 pb-3 flex-shrink-0 border-t border-gray-100">
+      <div className="py-2 pb-3 sticky bottom-0 z-10 bg-white border-t border-gray-200">
         {activeFilter?.id && (
           <button
             onClick={() => {
