@@ -44,8 +44,8 @@ class ReminderService {
         // Skip completed tasks
         if (task.status === 'completed') continue;
         
-        // Skip tasks without reminders or due date
-        if (!task.reminders || task.reminders.length === 0 || !task.due_date) continue;
+        // Skip tasks without reminders or due date/time
+        if (!task.reminders || task.reminders.length === 0 || (!task.due_date && !task.due_time)) continue;
 
         for (const reminder of task.reminders) {
           if (reminder.sent) continue; // Already sent
@@ -73,11 +73,27 @@ class ReminderService {
    * Determine if a reminder should be sent
    */
   shouldSendReminder(task, reminder, now) {
-    const dueDate = new Date(task.due_date);
+    // Build due datetime from due_date and due_time
+    let dueDateTime = null;
+    
+    if (task.due_date) {
+      dueDateTime = new Date(task.due_date);
+      
+      // If task has a due_time, combine it with due_date
+      if (task.due_time) {
+        const [hours, minutes] = task.due_time.split(':').map(Number);
+        dueDateTime.setHours(hours || 0, minutes || 0, 0, 0);
+      } else {
+        // Default to end of day if no time specified
+        dueDateTime.setHours(23, 59, 59, 999);
+      }
+    } else {
+      return false; // No due date, can't send reminder
+    }
 
     if (reminder.type === 'relative') {
-      // Calculate when to send based on minutes before due date
-      const sendTime = new Date(dueDate.getTime() - (reminder.minutes * 60000));
+      // Calculate when to send based on minutes before due datetime
+      const sendTime = new Date(dueDateTime.getTime() - (reminder.minutes * 60000));
       
       // Send if current time is past send time (within 2 minute window)
       const timeDiff = now.getTime() - sendTime.getTime();

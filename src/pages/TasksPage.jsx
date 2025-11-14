@@ -331,6 +331,62 @@ const TasksPage = () => {
     return hoursSinceCompletion > 24;
   };
 
+  // Helper function to build full datetime from due_date and due_time
+  const getTaskDateTime = (task) => {
+    if (!task.due_date) return null;
+    
+    const taskDate = parseLocalDate(task.due_date);
+    if (!taskDate) return null;
+    
+    // If task has a due_time, combine it with due_date
+    if (task.due_time) {
+      const [hours, minutes] = task.due_time.split(':').map(Number);
+      taskDate.setHours(hours || 0, minutes || 0, 0, 0);
+    } else {
+      // Default to end of day if no time specified
+      taskDate.setHours(23, 59, 59, 999);
+    }
+    
+    return taskDate;
+  };
+
+  // Helper function to check if task is due today (considering time)
+  const isDueToday = (task) => {
+    if (!task.due_date) return false;
+    
+    const taskDateTime = getTaskDateTime(task);
+    if (!taskDateTime) return false;
+    
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    
+    return taskDateTime >= todayStart && taskDateTime <= todayEnd;
+  };
+
+  // Helper function to check if task is overdue (considering time)
+  const isOverdue = (task) => {
+    if (!task.due_date) return false;
+    if (task.status === 'completed') return false;
+    
+    const taskDateTime = getTaskDateTime(task);
+    if (!taskDateTime) return false;
+    
+    const now = new Date();
+    return taskDateTime < now;
+  };
+
+  // Helper function to check if task is due in the future (considering time)
+  const isDueInFuture = (task) => {
+    if (!task.due_date) return false;
+    
+    const taskDateTime = getTaskDateTime(task);
+    if (!taskDateTime) return false;
+    
+    const now = new Date();
+    return taskDateTime > now;
+  };
+
   // Load available users (use same source as User Management)
   useEffect(() => {
     const loadUsers = async () => {
@@ -460,17 +516,12 @@ const TasksPage = () => {
         );
         break;
       case "today":
-        // Overdue tasks + tasks due today (Todoist-style)
+        // Overdue tasks + tasks due today (considering time)
         const overdueTasks = tasks.filter(task => 
-          task.status !== 'completed' && 
-          task.due_date && 
-          isPastLocal(task.due_date) && 
-          !isTodayLocal(task.due_date)
+          task.status !== 'completed' && isOverdue(task)
         );
         const todayTasks = tasks.filter(task => 
-          task.status !== 'completed' && 
-          task.due_date && 
-          isTodayLocal(task.due_date)
+          task.status !== 'completed' && isDueToday(task) && !isOverdue(task)
         );
         // Overdue tasks first, then today's tasks
         filtered = [...overdueTasks, ...todayTasks];
@@ -479,16 +530,15 @@ const TasksPage = () => {
         filtered = tasks.filter(task => 
           task.status !== 'completed' && 
           task.due_date && 
-          (isTomorrowLocal(task.due_date) || parseLocalDate(task.due_date) > new Date()) &&
-          !isPastLocal(task.due_date)
+          isDueInFuture(task) &&
+          !isDueToday(task)
         );
         break;
       case "overdue":
         filtered = tasks.filter(task => 
-          task.due_date && 
-          isPastLocal(task.due_date) && 
-          !isTodayLocal(task.due_date) && 
-          task.status !== 'completed'
+          task.status !== 'completed' && 
+          isOverdue(task) &&
+          !isDueToday(task)
         );
         break;
       case "completed":
