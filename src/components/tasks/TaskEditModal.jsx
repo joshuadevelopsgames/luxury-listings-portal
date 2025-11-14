@@ -39,6 +39,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   });
   const [newSubtask, setNewSubtask] = useState('');
   const [newComment, setNewComment] = useState('');
+  const [commentLink, setCommentLink] = useState('');
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -230,6 +231,50 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     
     // Auto-save reminder removal
     await DailyTask.update(task.id, { reminders: updatedReminders });
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() && !commentLink.trim()) return;
+    
+    const commentText = commentLink.trim() 
+      ? `${newComment.trim()} ${commentLink.trim()}`.trim()
+      : newComment.trim();
+    
+    if (!commentText) return;
+    
+    const userName = currentUser?.firstName && currentUser?.lastName
+      ? `${currentUser.firstName} ${currentUser.lastName}`
+      : currentUser?.email || 'User';
+    
+    await task.addComment(currentUser?.email, userName, commentText);
+    
+    // Update local state
+    const updatedComments = [...(task.comments || []), {
+      id: Date.now().toString(),
+      user: currentUser?.email,
+      userName: userName,
+      text: commentText,
+      timestamp: new Date().toISOString()
+    }];
+    
+    setEditForm(prev => ({
+      ...prev,
+      comments: updatedComments
+    }));
+    
+    setNewComment('');
+    setCommentLink('');
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    await task.deleteComment(commentId);
+    
+    // Update local state
+    const updatedComments = (task.comments || []).filter(c => c.id !== commentId);
+    setEditForm(prev => ({
+      ...prev,
+      comments: updatedComments
+    }));
   };
 
   // Navigate to next task
@@ -439,20 +484,12 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
 
             {/* Description */}
             <div className="mb-6">
-              <div className="flex items-center gap-2 text-gray-500 mb-2">
-                <div className="flex flex-col gap-0.5">
-                  <div className="w-3 h-0.5 bg-gray-400 rounded"></div>
-                  <div className="w-3 h-0.5 bg-gray-400 rounded"></div>
-                  <div className="w-3 h-0.5 bg-gray-400 rounded"></div>
-                </div>
-                <span className="text-sm">Description</span>
-              </div>
               <textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                 onBlur={handleSubmit}
                 className="w-full text-sm border-none outline-none focus:ring-0 p-0 resize-none placeholder-gray-400"
-                placeholder="Add description..."
+                placeholder="should repeat daily"
                 rows={3}
               />
             </div>
@@ -462,14 +499,27 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               {editForm.subtasks && editForm.subtasks.length > 0 && (
                 <div className="space-y-2 mb-3">
                   {editForm.subtasks.map((subtask) => (
-                    <div key={subtask.id} className="flex items-center gap-3">
+                    <div key={subtask.id} className="flex items-center gap-3 group">
                       <Checkbox
                         checked={subtask.completed}
                         onCheckedChange={() => toggleSubtask(subtask.id)}
                       />
-                      <span className={`text-sm ${subtask.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                      <span className={`flex-1 text-sm ${subtask.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                         {subtask.text}
                       </span>
+                      <button
+                        onClick={async () => {
+                          const updatedSubtasks = editForm.subtasks.filter(st => st.id !== subtask.id);
+                          setEditForm(prev => ({
+                            ...prev,
+                            subtasks: updatedSubtasks
+                          }));
+                          await DailyTask.update(task.id, { subtasks: updatedSubtasks });
+                        }}
+                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 p-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -490,20 +540,72 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
 
             {/* Comments */}
             <div className="mt-8">
-              <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+              {/* Existing Comments */}
+              {task.comments && task.comments.length > 0 && (
+                <div className="space-y-4 mb-4">
+                  {task.comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-3 group">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                        {comment.userName?.[0] || comment.user?.[0] || 'U'}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium text-gray-900">
+                            {comment.userName || comment.user || 'User'}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(comment.timestamp).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 ml-auto"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Comment Input */}
+              <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                   {currentUser?.firstName?.[0] || 'U'}
                 </div>
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Comment"
-                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
-                />
-                <button className="text-gray-400 hover:text-gray-600">
-                  <Paperclip className="w-4 h-4" />
-                </button>
+                <div className="flex-1 space-y-2">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
+                    placeholder="Comment"
+                    className="w-full text-sm border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      value={commentLink}
+                      onChange={(e) => setCommentLink(e.target.value)}
+                      placeholder="Add link or media URL"
+                      className="flex-1 text-xs border-none outline-none focus:ring-0 p-0 placeholder-gray-400 text-blue-600"
+                    />
+                    <button
+                      onClick={handleAddComment}
+                      disabled={!newComment.trim() && !commentLink.trim()}
+                      className="text-blue-600 hover:text-blue-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
