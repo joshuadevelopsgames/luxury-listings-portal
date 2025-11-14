@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
@@ -44,21 +44,32 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
   const [showLabelInput, setShowLabelInput] = useState(false);
   const [newLabel, setNewLabel] = useState('');
 
+  const projectDropdownRef = useRef(null);
+  const datePickerRef = useRef(null);
+  const priorityDropdownRef = useRef(null);
+  const labelInputRef = useRef(null);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Don't close if clicking inside any dropdown
-      if (event.target.closest('.dropdown-container')) {
-        return;
+      const clickedInsideProject = projectDropdownRef.current?.contains(event.target);
+      const clickedInsideDate = datePickerRef.current?.contains(event.target);
+      const clickedInsidePriority = priorityDropdownRef.current?.contains(event.target);
+      const clickedInsideLabel = labelInputRef.current?.contains(event.target);
+      
+      if (!clickedInsideProject && !clickedInsideDate && !clickedInsidePriority && !clickedInsideLabel) {
+        setShowProjectDropdown(false);
+        setShowDatePicker(false);
+        setShowPriorityDropdown(false);
+        setShowLabelInput(false);
       }
-      closeAllDropdowns();
     };
 
-    if (isOpen && (showPriorityDropdown || showProjectDropdown || showDatePicker || showLabelInput)) {
+    if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isOpen, showPriorityDropdown, showProjectDropdown, showDatePicker, showLabelInput]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (task && isOpen) {
@@ -326,7 +337,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
           {/* Right Sidebar - Properties */}
           <div className="w-80 border-l border-gray-200 px-6 py-6 space-y-4 flex-shrink-0">
             {/* Project */}
-            <div className="relative dropdown-container">
+            <div className="relative" ref={projectDropdownRef}>
               <div className="py-2 px-2">
                 <span className="text-sm font-medium text-gray-700">Project</span>
               </div>
@@ -339,7 +350,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
               </button>
               
               {showProjectDropdown && (
-                <div className="dropdown-container absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
+                <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
                   {projects.map((project) => (
                     <button
                       key={project}
@@ -359,7 +370,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             </div>
 
             {/* Date */}
-            <div className="relative dropdown-container">
+            <div className="relative" ref={datePickerRef}>
               <div className="flex items-center justify-between py-2 px-2">
                 <span className="text-sm font-medium text-gray-700">Date</span>
                 {!editForm.dueDate && (
@@ -397,7 +408,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
               ) : null}
               
               {showDatePicker && (
-                <div className="dropdown-container absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-20">
+                <div className="absolute top-full left-0 mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-20">
                   <input
                     type="date"
                     value={editForm.dueDate}
@@ -441,7 +452,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             </div>
 
             {/* Priority */}
-            <div className="relative dropdown-container">
+            <div className="relative" ref={priorityDropdownRef}>
               <div className="py-2 px-2">
                 <span className="text-sm font-medium text-gray-700">Priority</span>
               </div>
@@ -454,7 +465,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
               </button>
 
               {showPriorityDropdown && (
-                <div className="dropdown-container absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
                   {priorities.map((priority) => (
                     <button
                       key={priority.value}
@@ -474,7 +485,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             </div>
 
             {/* Labels */}
-            <div className="relative dropdown-container">
+            <div className="relative" ref={labelInputRef}>
               <div className="flex items-center justify-between py-2 px-2">
                 <span className="text-sm font-medium text-gray-700">Labels</span>
                 <button 
@@ -486,7 +497,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
               </div>
               
               {showLabelInput && (
-                <div className="dropdown-container px-2 mb-2">
+                <div className="px-2 mb-2">
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
