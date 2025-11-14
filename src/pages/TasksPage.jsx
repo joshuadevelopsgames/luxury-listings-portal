@@ -70,15 +70,17 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
         </div>
       )}
       <div 
-        {...listeners} 
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-        onMouseDown={(e) => {
-          // Prevent drag if clicking on interactive elements
+        {...listeners}
+        onPointerDown={(e) => {
+          // Only allow drag if NOT clicking on interactive elements
           const target = e.target;
           if (target.closest('button, input, a, [role="button"], [data-no-drag]')) {
-            e.stopPropagation();
-            return false;
+            e.preventDefault();
           }
+        }}
+        style={{ 
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none'
         }}
       >
         <TaskCard task={task} {...props} />
@@ -107,15 +109,17 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
       <div 
-        {...listeners} 
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-        onMouseDown={(e) => {
-          // Prevent drag if clicking on interactive elements
+        {...listeners}
+        onPointerDown={(e) => {
+          // Only allow drag if NOT clicking on interactive elements
           const target = e.target;
           if (target.closest('button, input, a, [role="button"], [data-no-drag]')) {
-            e.stopPropagation();
-            return false;
+            e.preventDefault();
           }
+        }}
+        style={{ 
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none'
         }}
       >
         <TaskListItem 
