@@ -193,6 +193,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     setShowProjectDropdown(false);
     setShowDatePicker(false);
     setShowLabelInput(false);
+    setShowReminderPicker(false);
   };
 
   // Open one dropdown and close others
