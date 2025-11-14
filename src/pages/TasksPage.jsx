@@ -734,7 +734,13 @@ const TasksPage = () => {
       </div>
 
       <div className="flex items-center justify-between">
-        <Tabs value={activeFilter} onValueChange={setActiveFilter}>
+        <Tabs value={activeFilter} onValueChange={(value) => {
+          setActiveFilter(value);
+          // Clear smart filter when switching to standard tabs
+          if (value !== 'custom') {
+            setActiveSmartFilter(null);
+          }
+        }}>
           <TabsList className="bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="inbox" className="flex items-center gap-2">
               <Inbox className="w-4 h-4" />
