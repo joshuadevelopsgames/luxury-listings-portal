@@ -716,7 +716,18 @@ const TasksPage = () => {
               <Filter className="w-4 h-4 mr-2" />
               Filters
               {activeSmartFilter && (
-                <Badge className="ml-2 bg-blue-500 text-white text-xs">{activeSmartFilter.name}</Badge>
+                <Badge className="ml-2 bg-blue-500 text-white text-xs flex items-center gap-1.5 pl-2 pr-1">
+                  <span>{activeSmartFilter.name}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      applySmartFilter(null);
+                    }}
+                    className="hover:bg-blue-600 rounded-sm p-0.5 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
               )}
             </Button>
             <FilterDropdown
