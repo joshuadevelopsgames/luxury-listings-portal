@@ -46,6 +46,7 @@ const PRESET_FILTERS = [
 const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFilter }) => {
   const [customFilters, setCustomFilters] = useState([]);
   const [maxHeight, setMaxHeight] = useState('none');
+  const [dropUp, setDropUp] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -54,18 +55,27 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
     }
   }, [isOpen]);
 
-  // Calculate max height based on available space
+  // Calculate max height and position based on available space
   useEffect(() => {
     if (isOpen && dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.top - 20; // 20px margin from bottom
+      const spaceAbove = rect.top - 20; // 20px margin from top
       
-      // Only set max-height if content would overflow
-      if (rect.height > spaceBelow) {
-        setMaxHeight(`${spaceBelow}px`);
+      // Check if there's more space above than below
+      if (spaceBelow < 300 && spaceAbove > spaceBelow) {
+        // Open upward
+        setDropUp(true);
+        setMaxHeight(spaceAbove > rect.height ? 'none' : `${spaceAbove}px`);
       } else {
-        setMaxHeight('none');
+        // Open downward
+        setDropUp(false);
+        if (rect.height > spaceBelow) {
+          setMaxHeight(`${spaceBelow}px`);
+        } else {
+          setMaxHeight('none');
+        }
       }
     }
   }, [isOpen, customFilters]);
@@ -117,7 +127,9 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-y-auto"
+      className={`absolute right-0 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-y-auto ${
+        dropUp ? 'bottom-full mb-2' : 'top-full mt-2'
+      }`}
       style={{ maxHeight }}
     >
       {/* Preset Filters */}
