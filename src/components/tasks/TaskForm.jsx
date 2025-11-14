@@ -564,6 +564,28 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                     </div>
                   )}
                   
+                  {/* Example Labels */}
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-2">Suggestions:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Urgent', 'Personal', 'Work'].map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => {
+                            if (!formData.labels.includes(suggestion)) {
+                              handleInputChange('labels', [...formData.labels, suggestion]);
+                            }
+                          }}
+                          disabled={formData.labels.includes(suggestion)}
+                          className="px-3 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
                   <div className="flex gap-2">
                     <input
                       type="text"
