@@ -85,12 +85,13 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
       description: editForm.description,
       category: editForm.category,
       priority: editForm.priority,
-      due_date: editForm.dueDate,
-      estimated_time: editForm.estimatedTime,
-      project: editForm.project,
-      labels: editForm.labels,
-      reminders: editForm.reminders,
-      subtasks: editForm.subtasks
+      due_date: editForm.dueDate || null,
+      due_time: editForm.dueTime || null,
+      estimated_time: editForm.estimatedTime || null,
+      project: editForm.project || 'Inbox',
+      labels: editForm.labels || [],
+      reminders: editForm.reminders || [],
+      subtasks: editForm.subtasks || []
     });
   };
 
@@ -130,38 +131,38 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
     await DailyTask.update(task.id, { subtasks: updatedSubtasks });
   };
 
-  const handleAddLabel = () => {
+  const handleAddLabel = async () => {
     if (!newLabel.trim()) return;
     
-    const updatedLabels = [...editForm.labels, newLabel.trim()];
+    const updatedLabels = [...(editForm.labels || []), newLabel.trim()];
     setEditForm(prev => ({
       ...prev,
       labels: updatedLabels
     }));
     
-    DailyTask.update(task.id, { labels: updatedLabels });
+    await DailyTask.update(task.id, { labels: updatedLabels });
     setNewLabel('');
     setShowLabelInput(false);
   };
 
-  const removeLabel = (labelToRemove) => {
-    const updatedLabels = editForm.labels.filter(l => l !== labelToRemove);
+  const removeLabel = async (labelToRemove) => {
+    const updatedLabels = (editForm.labels || []).filter(l => l !== labelToRemove);
     setEditForm(prev => ({
       ...prev,
       labels: updatedLabels
     }));
     
-    DailyTask.update(task.id, { labels: updatedLabels });
+    await DailyTask.update(task.id, { labels: updatedLabels });
   };
 
   const handleDateChange = (newDate) => {
     setEditForm(prev => ({ ...prev, dueDate: newDate }));
-    DailyTask.update(task.id, { due_date: newDate });
+    DailyTask.update(task.id, { due_date: newDate || null });
   };
 
   const handleTimeChange = (newTime) => {
     setEditForm(prev => ({ ...prev, dueTime: newTime }));
-    DailyTask.update(task.id, { due_time: newTime });
+    DailyTask.update(task.id, { due_time: newTime || null });
   };
 
   const removeDate = () => {
