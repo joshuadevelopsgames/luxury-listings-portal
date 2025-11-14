@@ -69,14 +69,18 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
           />
         </div>
       )}
-      <div {...listeners} style={{ cursor: 'grab' }} onPointerDown={(e) => {
-        // Allow drag from anywhere except interactive elements
-        const target = e.target;
-        const isInteractive = target.closest('button, input, a, [role="button"]');
-        if (isInteractive) {
-          e.stopPropagation();
-        }
-      }}>
+      <div 
+        {...listeners} 
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        onMouseDown={(e) => {
+          // Prevent drag if clicking on interactive elements
+          const target = e.target;
+          if (target.closest('button, input, a, [role="button"], [data-no-drag]')) {
+            e.stopPropagation();
+            return false;
+          }
+        }}
+      >
         <TaskCard task={task} {...props} />
       </div>
     </div>
@@ -102,14 +106,18 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
-      <div {...listeners} style={{ cursor: 'grab' }} onPointerDown={(e) => {
-        // Allow drag from anywhere except interactive elements
-        const target = e.target;
-        const isInteractive = target.closest('button, input, a, [role="button"]');
-        if (isInteractive) {
-          e.stopPropagation();
-        }
-      }}>
+      <div 
+        {...listeners} 
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        onMouseDown={(e) => {
+          // Prevent drag if clicking on interactive elements
+          const target = e.target;
+          if (target.closest('button, input, a, [role="button"], [data-no-drag]')) {
+            e.stopPropagation();
+            return false;
+          }
+        }}
+      >
         <TaskListItem 
           task={task} 
           isSelected={isSelected}
@@ -161,6 +169,8 @@ const TasksPage = () => {
   const [showCalendarView, setShowCalendarView] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list' - default to list
   const filterButtonRef = useRef(null);
+  const [toast, setToast] = useState(null);
+  const [lastCompletedTask, setLastCompletedTask] = useState(null);
 
   // Toggle task selection
   const toggleTaskSelection = (taskId) => {
@@ -607,6 +617,18 @@ const TasksPage = () => {
         completed_date: newStatus === 'completed' ? new Date().toISOString() : null
       });
       
+      // Show custom toast notification when completing a task
+      if (newStatus === 'completed') {
+        setLastCompletedTask({ id: taskId, title: task.title });
+        setToast({ message: '1 task completed', taskId, taskTitle: task.title });
+        
+        // Auto-hide toast after 5 seconds
+        setTimeout(() => {
+          setToast(null);
+          setLastCompletedTask(null);
+        }, 5000);
+      }
+      
       // If task is completed and has recurring pattern, create next instance
       if (newStatus === 'completed' && task?.recurring) {
         try {
@@ -614,20 +636,38 @@ const TasksPage = () => {
           const nextInstance = await taskInstance.generateNextRecurringInstance();
           
           if (nextInstance) {
-            toast.success(`✓ Task completed! Next instance scheduled for ${nextInstance.due_date}`);
+            console.log(`✓ Task completed! Next instance scheduled for ${nextInstance.due_date}`);
           } else {
-            toast.success('✓ Task completed! (Recurring ended)');
+            console.log('✓ Task completed! (Recurring ended)');
           }
         } catch (error) {
           console.error('Error creating next recurring instance:', error);
-          toast.success('✓ Task completed!');
         }
       }
       
       // No need to reload data - real-time listener will update automatically
     } catch (error) {
       console.error("Error updating task status:", error);
-      alert('Failed to update task status. Please try again.');
+      toast.error('Failed to update task status. Please try again.');
+    }
+  };
+  
+  // Undo task completion
+  const undoTaskCompletion = async () => {
+    if (!lastCompletedTask) return;
+    
+    try {
+      await DailyTask.update(lastCompletedTask.id, { 
+        status: 'pending',
+        completed_date: null
+      });
+      
+      setToast(null);
+      setLastCompletedTask(null);
+      toast.success('Task restored');
+    } catch (error) {
+      console.error("Error undoing task completion:", error);
+      toast.error("Failed to undo");
     }
   };
 
@@ -1305,6 +1345,27 @@ const TasksPage = () => {
             setShowEditModal(true);
           }}
         />
+      )}
+
+      {/* Toast Notification - Bottom Left */}
+      {toast && (
+        <div className="fixed bottom-6 left-6 z-50 animate-in slide-in-from-bottom-5 duration-200">
+          <div className="bg-gray-900 text-white rounded-lg shadow-2xl px-4 py-3 flex items-center gap-4 min-w-[300px]">
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={undoTaskCompletion}
+              className="text-red-400 hover:text-red-300 text-sm font-semibold transition-colors"
+            >
+              Undo
+            </button>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-auto text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
