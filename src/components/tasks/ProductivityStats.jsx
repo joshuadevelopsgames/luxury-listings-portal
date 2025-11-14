@@ -54,12 +54,12 @@ const ProductivityStats = ({ tasks, onClose }) => {
   const maxWeeklyTasks = Math.max(...weeklyData.map(d => d.completed), 1);
 
   return createPortal(
-    <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-      <Card className="w-full max-w-4xl mb-8 relative">
-        <CardHeader className="pb-4">
+    <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-5xl relative max-h-[85vh] flex flex-col">
+        <CardHeader className="pb-3 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-yellow-500" />
+            <CardTitle className="text-xl font-bold flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-500" />
               Your Productivity Stats
             </CardTitle>
             <Button
@@ -68,22 +68,22 @@ const ProductivityStats = ({ tasks, onClose }) => {
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </Button>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 overflow-y-auto">
           {/* Karma Level */}
-          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-6 border-2 border-purple-200">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-4 border-2 border-purple-200">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">{stats.karma} Karma Points</h3>
-                <p className={`text-lg font-semibold ${karmaLevel.color}`}>
+                <h3 className="text-xl font-bold text-gray-900">{stats.karma} Karma Points</h3>
+                <p className={`text-base font-semibold ${karmaLevel.color}`}>
                   {karmaLevel.level} Level
                 </p>
               </div>
-              <Award className="w-12 h-12 text-purple-500" />
+              <Award className="w-10 h-10 text-purple-500" />
             </div>
             {karmaLevel.next && (
               <div className="space-y-2">
@@ -102,62 +102,62 @@ const ProductivityStats = ({ tasks, onClose }) => {
           </div>
 
           {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-3">
             {/* Streak */}
             <Card className="border-2 border-orange-200 bg-orange-50">
-              <CardContent className="pt-6 px-4 pb-4 text-center">
-                <Flame className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-gray-900">{stats.streak}</p>
-                <p className="text-sm text-gray-600">Day Streak</p>
+              <CardContent className="pt-4 px-3 pb-3 text-center">
+                <Flame className="w-6 h-6 text-orange-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-gray-900">{stats.streak}</p>
+                <p className="text-xs text-gray-600">Day Streak</p>
               </CardContent>
             </Card>
 
             {/* Completion Rate */}
             <Card className="border-2 border-green-200 bg-green-50">
-              <CardContent className="pt-6 px-4 pb-4 text-center">
-                <Target className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-gray-900">{stats.completionRate}%</p>
-                <p className="text-sm text-gray-600">Completion</p>
+              <CardContent className="pt-4 px-3 pb-3 text-center">
+                <Target className="w-6 h-6 text-green-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-gray-900">{stats.completionRate}%</p>
+                <p className="text-xs text-gray-600">Completion</p>
               </CardContent>
             </Card>
 
             {/* Today's Tasks */}
             <Card className="border-2 border-blue-200 bg-blue-50">
-              <CardContent className="pt-6 px-4 pb-4 text-center">
-                <Calendar className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-gray-900">{stats.completedToday}</p>
-                <p className="text-sm text-gray-600">Today</p>
+              <CardContent className="pt-4 px-3 pb-3 text-center">
+                <Calendar className="w-6 h-6 text-blue-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-gray-900">{stats.completedToday}</p>
+                <p className="text-xs text-gray-600">Today</p>
               </CardContent>
             </Card>
 
             {/* Average Per Day */}
             <Card className="border-2 border-purple-200 bg-purple-50">
-              <CardContent className="pt-6 px-4 pb-4 text-center">
-                <TrendingUp className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-gray-900">{stats.avgTasksPerDay}</p>
-                <p className="text-sm text-gray-600">Daily Avg</p>
+              <CardContent className="pt-4 px-3 pb-3 text-center">
+                <TrendingUp className="w-6 h-6 text-purple-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-gray-900">{stats.avgTasksPerDay}</p>
+                <p className="text-xs text-gray-600">Daily Avg</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Period Stats */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Completion Summary</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Completion Summary</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-2xl font-bold text-blue-600">{stats.completedThisWeek}</p>
-                  <p className="text-sm text-gray-600">This Week</p>
+                  <p className="text-xl font-bold text-blue-600">{stats.completedThisWeek}</p>
+                  <p className="text-xs text-gray-600">This Week</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-purple-600">{stats.completedThisMonth}</p>
-                  <p className="text-sm text-gray-600">This Month</p>
+                  <p className="text-xl font-bold text-purple-600">{stats.completedThisMonth}</p>
+                  <p className="text-xs text-gray-600">This Month</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-600">{stats.completed}</p>
-                  <p className="text-sm text-gray-600">All Time</p>
+                  <p className="text-xl font-bold text-gray-600">{stats.completed}</p>
+                  <p className="text-xs text-gray-600">All Time</p>
                 </div>
               </div>
             </CardContent>
@@ -165,14 +165,14 @@ const ProductivityStats = ({ tasks, onClose }) => {
 
           {/* Weekly Chart */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
                 This Week's Activity
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between gap-2 h-40">
+            <CardContent className="pt-2">
+              <div className="flex items-end justify-between gap-2 h-32">
                 {weeklyData.map((day, index) => (
                   <div key={index} className="flex-1 flex flex-col items-center gap-2">
                     <div className="flex-1 w-full flex items-end">
