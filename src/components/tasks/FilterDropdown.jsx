@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Plus, Trash2, Star, Flag, Calendar, Users, Zap, Repeat, CheckCircle2 } from 'lucide-react';
@@ -43,10 +44,11 @@ const PRESET_FILTERS = [
   }
 ];
 
-const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFilter }) => {
+const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFilter, buttonRef }) => {
   const [customFilters, setCustomFilters] = useState([]);
   const [maxHeight, setMaxHeight] = useState('none');
   const [dropUp, setDropUp] = useState(false);
+  const [position, setPosition] = useState({ top: 0, right: 0 });
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -55,30 +57,35 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
     }
   }, [isOpen]);
 
-  // Calculate max height and position based on available space
+  // Calculate position relative to button
   useEffect(() => {
-    if (isOpen && dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect();
+    if (isOpen && buttonRef?.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      const spaceBelow = viewportHeight - rect.top - 20; // 20px margin from bottom
-      const spaceAbove = rect.top - 20; // 20px margin from top
+      const viewportWidth = window.innerWidth;
       
-      // Check if there's more space above than below
+      // Calculate position from button
+      const top = buttonRect.bottom + 8; // 8px gap below button
+      const right = viewportWidth - buttonRect.right; // Distance from right edge
+      
+      setPosition({ top, right });
+      
+      // Calculate available space
+      const spaceBelow = viewportHeight - top - 20;
+      const spaceAbove = buttonRect.top - 20;
+      
+      // Determine if should drop up
       if (spaceBelow < 300 && spaceAbove > spaceBelow) {
-        // Open upward
         setDropUp(true);
-        setMaxHeight(spaceAbove > rect.height ? 'none' : `${spaceAbove}px`);
+        setPosition({ bottom: viewportHeight - buttonRect.top + 8, right });
+        setMaxHeight(spaceAbove > 500 ? 'none' : `${spaceAbove}px`);
       } else {
-        // Open downward
         setDropUp(false);
-        if (rect.height > spaceBelow) {
-          setMaxHeight(`${spaceBelow}px`);
-        } else {
-          setMaxHeight('none');
-        }
+        setPosition({ top, right });
+        setMaxHeight(spaceBelow > 500 ? 'none' : `${spaceBelow}px`);
       }
     }
-  }, [isOpen, customFilters]);
+  }, [isOpen, customFilters, buttonRef]);
 
   // Close on click outside
   useEffect(() => {
@@ -124,13 +131,14 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       ref={dropdownRef}
-      className={`absolute right-0 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-y-auto ${
-        dropUp ? 'bottom-full mb-2' : 'top-full mt-2'
-      }`}
-      style={{ maxHeight }}
+      className="fixed w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-y-auto"
+      style={{ 
+        maxHeight,
+        ...(dropUp ? { bottom: position.bottom, right: position.right } : { top: position.top, right: position.right })
+      }}
     >
       {/* Preset Filters */}
       <div className="border-b border-gray-200">
@@ -223,7 +231,8 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
           <span className="text-sm">Create New Filter</span>
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

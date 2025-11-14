@@ -144,6 +144,7 @@ const TasksPage = () => {
   const [bulkActionMode, setBulkActionMode] = useState(false);
   const [showCalendarView, setShowCalendarView] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list' - default to list
+  const filterButtonRef = useRef(null);
 
   // Toggle task selection
   const toggleTaskSelection = (taskId) => {
@@ -773,6 +774,7 @@ const TasksPage = () => {
         <div className="flex items-center gap-3">
           <div className="relative">
             <Button 
+              ref={filterButtonRef}
               variant="outline" 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
               className={`border-blue-600 text-blue-600 hover:bg-blue-50 ${
@@ -802,6 +804,7 @@ const TasksPage = () => {
               onApplyFilter={applySmartFilter}
               currentUser={currentUser}
               activeFilter={activeSmartFilter}
+              buttonRef={filterButtonRef}
             />
           </div>
           <Button 
