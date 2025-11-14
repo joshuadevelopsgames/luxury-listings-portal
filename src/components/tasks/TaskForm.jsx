@@ -201,20 +201,22 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-xl font-semibold">
-            {mode === 'create' ? 'Create New Task' : 'Edit Task'}
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCancel}
-            className="h-8 w-8 p-0"
-          >
-            <X className="w-4 h-4" />
-          </Button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
+      <Card className="w-full max-w-2xl mb-8">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl font-semibold">
+              {mode === 'create' ? 'Create New Task' : 'Edit Task'}
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </CardHeader>
         
         <CardContent>
