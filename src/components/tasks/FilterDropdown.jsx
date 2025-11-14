@@ -45,6 +45,7 @@ const PRESET_FILTERS = [
 
 const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFilter }) => {
   const [customFilters, setCustomFilters] = useState([]);
+  const [maxHeight, setMaxHeight] = useState('none');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -52,6 +53,22 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
       loadCustomFilters();
     }
   }, [isOpen]);
+
+  // Calculate max height based on available space
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.top - 20; // 20px margin from bottom
+      
+      // Only set max-height if content would overflow
+      if (rect.height > spaceBelow) {
+        setMaxHeight(`${spaceBelow}px`);
+      } else {
+        setMaxHeight('none');
+      }
+    }
+  }, [isOpen, customFilters]);
 
   // Close on click outside
   useEffect(() => {
@@ -101,7 +118,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
     <div
       ref={dropdownRef}
       className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-y-auto"
-      style={{ maxHeight: '500px' }}
+      style={{ maxHeight }}
     >
       {/* Preset Filters */}
       <div className="border-b border-gray-200">
