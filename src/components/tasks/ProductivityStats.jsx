@@ -105,7 +105,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Streak */}
             <Card className="border-2 border-orange-200 bg-orange-50">
-              <CardContent className="p-4 text-center">
+              <CardContent className="pt-6 px-4 pb-4 text-center">
                 <Flame className="w-8 h-8 text-orange-500 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-gray-900">{stats.streak}</p>
                 <p className="text-sm text-gray-600">Day Streak</p>
@@ -114,7 +114,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
 
             {/* Completion Rate */}
             <Card className="border-2 border-green-200 bg-green-50">
-              <CardContent className="p-4 text-center">
+              <CardContent className="pt-6 px-4 pb-4 text-center">
                 <Target className="w-8 h-8 text-green-500 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-gray-900">{stats.completionRate}%</p>
                 <p className="text-sm text-gray-600">Completion</p>
@@ -123,7 +123,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
 
             {/* Today's Tasks */}
             <Card className="border-2 border-blue-200 bg-blue-50">
-              <CardContent className="p-4 text-center">
+              <CardContent className="pt-6 px-4 pb-4 text-center">
                 <Calendar className="w-8 h-8 text-blue-500 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-gray-900">{stats.completedToday}</p>
                 <p className="text-sm text-gray-600">Today</p>
@@ -132,7 +132,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
 
             {/* Average Per Day */}
             <Card className="border-2 border-purple-200 bg-purple-50">
-              <CardContent className="p-4 text-center">
+              <CardContent className="pt-6 px-4 pb-4 text-center">
                 <TrendingUp className="w-8 h-8 text-purple-500 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-gray-900">{stats.avgTasksPerDay}</p>
                 <p className="text-sm text-gray-600">Daily Avg</p>
