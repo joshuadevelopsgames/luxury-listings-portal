@@ -542,7 +542,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Labels Dropdown */}
               {showLabels && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 pr-6 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Labels</p>
                   </div>
@@ -613,7 +613,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Subtasks Dropdown */}
               {showSubtasks && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 pr-6 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Subtasks</p>
                   </div>
@@ -701,17 +701,24 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="grid grid-cols-3 gap-2">
-                      {[15, 30, 60, 90, 120, 180].map((minutes) => (
+                      {[
+                        { value: 15, label: '15m' },
+                        { value: 30, label: '30m' },
+                        { value: 45, label: '45m' },
+                        { value: 60, label: '1hr' },
+                        { value: 90, label: '1.5hrs' },
+                        { value: 120, label: '2hrs' }
+                      ].map((option) => (
                         <button
-                          key={minutes}
+                          key={option.value}
                           type="button"
                           onClick={() => {
-                            handleInputChange('estimatedTime', minutes);
+                            handleInputChange('estimatedTime', option.value);
                             setShowEstimatedTime(false);
                           }}
                           className="px-3 py-2 text-sm border border-gray-200 rounded-md hover:bg-gray-50 text-gray-700"
                         >
-                          {minutes}m
+                          {option.label}
                         </button>
                       ))}
                     </div>
