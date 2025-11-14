@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 
 const Checkbox = React.forwardRef(({ className, checked, onCheckedChange, disabled, ...props }, ref) => {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = () => {
     if (disabled || !onCheckedChange) return;
@@ -30,6 +31,8 @@ const Checkbox = React.forwardRef(({ className, checked, onCheckedChange, disabl
         />
         <div
           onClick={handleClick}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
             disabled
               ? 'cursor-not-allowed opacity-50'
@@ -42,9 +45,11 @@ const Checkbox = React.forwardRef(({ className, checked, onCheckedChange, disabl
             isAnimating ? 'scale-125' : 'scale-100'
           } ${className || ''}`}
         >
-          {checked && (
+          {checked ? (
             <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
-          )}
+          ) : isHovered && !disabled ? (
+            <Check className="w-3.5 h-3.5 text-gray-300 stroke-[3]" />
+          ) : null}
         </div>
       </div>
     </div>
