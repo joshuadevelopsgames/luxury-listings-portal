@@ -551,10 +551,10 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   <p className="text-xs text-gray-500">Select a pattern:</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {[
-                      { label: 'Daily', pattern: 'daily', interval: 1 },
-                      { label: 'Weekly', pattern: 'weekly', interval: 1 },
-                      { label: 'Monthly', pattern: 'monthly', interval: 1 },
-                      { label: 'Yearly', pattern: 'yearly', interval: 1 }
+                      { label: 'Daily', pattern: 'daily' },
+                      { label: 'Weekly', pattern: 'weekly' },
+                      { label: 'Monthly', pattern: 'monthly' },
+                      { label: 'Yearly', pattern: 'yearly' }
                     ].map((option) => (
                       <Badge
                         key={option.label}
@@ -566,13 +566,39 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                         }`}
                         onClick={() => handleInputChange('recurring', { 
                           pattern: option.pattern, 
-                          interval: option.interval 
+                          interval: formData.recurring?.interval || 1
                         })}
                       >
                         {option.label}
                       </Badge>
                     ))}
                   </div>
+                  
+                  {/* Interval selector */}
+                  {formData.recurring && (
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-2">
+                        Repeat every:
+                      </label>
+                      <select
+                        value={formData.recurring?.interval || 1}
+                        onChange={(e) => handleInputChange('recurring', {
+                          ...formData.recurring,
+                          interval: parseInt(e.target.value)
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 10, 14, 30].map((num) => (
+                          <option key={num} value={num}>
+                            {num} {formData.recurring?.pattern === 'daily' && (num === 1 ? 'day' : 'days')}
+                            {formData.recurring?.pattern === 'weekly' && (num === 1 ? 'week' : 'weeks')}
+                            {formData.recurring?.pattern === 'monthly' && (num === 1 ? 'month' : 'months')}
+                            {formData.recurring?.pattern === 'yearly' && (num === 1 ? 'year' : 'years')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   
                   {/* Day of week options for weekly */}
                   {formData.recurring?.pattern === 'weekly' && (
