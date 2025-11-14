@@ -59,7 +59,9 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
 
   // Calculate position relative to button
   useEffect(() => {
-    if (isOpen && buttonRef?.current) {
+    if (!isOpen || !buttonRef?.current) return;
+    
+    try {
       const buttonRect = buttonRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
@@ -84,6 +86,11 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
         setPosition({ top, right });
         setMaxHeight(spaceBelow > 500 ? 'none' : `${spaceBelow}px`);
       }
+    } catch (error) {
+      console.error('Error calculating dropdown position:', error);
+      // Fallback to basic positioning
+      setPosition({ top: 100, right: 20 });
+      setMaxHeight('400px');
     }
   }, [isOpen, customFilters, buttonRef]);
 
@@ -129,7 +136,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !buttonRef?.current) return null;
 
   return createPortal(
     <div

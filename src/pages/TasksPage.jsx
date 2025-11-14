@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical } from 'lucide-react';
