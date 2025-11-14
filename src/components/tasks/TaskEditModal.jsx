@@ -221,17 +221,41 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             <Inbox className="w-4 h-4" />
             <span className="text-sm">{editForm.project}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                console.log('Navigate to next task');
+                // TODO: Implement next task navigation
+              }}
+              title="Next task"
+            >
               <ChevronRight className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                console.log('Navigate to previous task');
+                // TODO: Implement previous task navigation
+              }}
+              title="Previous task"
+            >
               <ChevronDown className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                console.log('More options clicked');
+                // TODO: Implement more options menu
+              }}
+              title="More options"
+            >
               <MoreHorizontal className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="ghost" size="sm" onClick={onClose} title="Close">
               <X className="w-4 h-4" />
             </Button>
           </div>
