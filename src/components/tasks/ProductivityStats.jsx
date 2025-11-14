@@ -39,7 +39,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
 
   if (!stats) {
     return (
-      <div className="fixed inset-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <Card className="w-full max-w-4xl">
           <CardContent className="p-8 text-center">
             <p className="text-gray-600">Loading statistics...</p>
@@ -52,7 +52,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
   const maxWeeklyTasks = Math.max(...weeklyData.map(d => d.completed), 1);
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
+    <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
       <Card className="w-full max-w-4xl mb-8 relative">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">

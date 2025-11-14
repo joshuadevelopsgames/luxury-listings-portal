@@ -183,7 +183,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
   };
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4 pb-96">
+    <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4 pb-96">
       <Card className="w-full max-w-2xl my-8 bg-white rounded-lg shadow-lg overflow-visible">
         <form onSubmit={handleSubmit} className="p-6 overflow-visible">
           {/* Title Input */}
