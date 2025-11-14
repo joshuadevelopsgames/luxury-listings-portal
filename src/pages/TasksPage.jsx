@@ -322,16 +322,16 @@ const TasksPage = () => {
     return taskDate < todayOnly;
   };
 
-  // Load available users
+  // Load available users (use same source as User Management)
   useEffect(() => {
     const loadUsers = async () => {
       try {
         console.log('👥 Loading users for task requests...');
-        const employees = await firestoreService.getEmployees();
-        console.log('👥 Total employees from Firestore:', employees.length, employees);
+        const approvedUsers = await firestoreService.getApprovedUsers();
+        console.log('👥 Total approved users from Firestore:', approvedUsers.length, approvedUsers);
         
         // Filter out current user
-        const others = employees.filter(emp => emp.email !== currentUser.email);
+        const others = approvedUsers.filter(user => user.email !== currentUser.email);
         console.log('👥 Available users (excluding self):', others.length, others);
         setAvailableUsers(others);
       } catch (error) {
