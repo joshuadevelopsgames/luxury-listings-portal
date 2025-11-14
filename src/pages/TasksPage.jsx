@@ -322,6 +322,15 @@ const TasksPage = () => {
     return taskDate < todayOnly;
   };
 
+  // Helper function to check if task was completed more than 24 hours ago
+  const isCompletedMoreThan24HoursAgo = (completedDateString) => {
+    if (!completedDateString) return false;
+    const completedDate = new Date(completedDateString);
+    const now = new Date();
+    const hoursSinceCompletion = (now - completedDate) / (1000 * 60 * 60); // Convert to hours
+    return hoursSinceCompletion > 24;
+  };
+
   // Load available users (use same source as User Management)
   useEffect(() => {
     const loadUsers = async () => {
@@ -471,7 +480,11 @@ const TasksPage = () => {
         );
         break;
       case "completed":
-        filtered = tasks.filter(task => task.status === 'completed');
+        // Only show tasks completed within the last 24 hours
+        filtered = tasks.filter(task => 
+          task.status === 'completed' && 
+          !isCompletedMoreThan24HoursAgo(task.completed_date)
+        );
         break;
       default:
         filtered = tasks;
@@ -792,7 +805,10 @@ const TasksPage = () => {
         !isPastLocal(task.due_date)
       ).length,
       overdue: overdueTasks.length,
-      completed: tasks.filter(task => task.status === 'completed').length
+      completed: tasks.filter(task => 
+        task.status === 'completed' && 
+        !isCompletedMoreThan24HoursAgo(task.completed_date)
+      ).length
     };
   };
 
