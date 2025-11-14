@@ -100,14 +100,14 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[80vh] overflow-y-auto"
+      className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[70vh] overflow-y-auto"
     >
       {/* Preset Filters */}
       <div className="border-b border-gray-200">
-        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
           <p className="text-xs font-semibold text-gray-600 uppercase">Quick Filters</p>
         </div>
-        <div className="py-1">
+        <div className="py-1 pb-2">
           {PRESET_FILTERS.map((filter) => {
             const Icon = filter.icon;
             const isActive = activeFilter?.id === filter.id;
@@ -136,7 +136,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
           <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
             <p className="text-xs font-semibold text-gray-600 uppercase">My Filters</p>
           </div>
-          <div className="py-1 max-h-48 overflow-y-auto">
+          <div className="py-1 pb-2">
             {customFilters.map((filter) => {
               const isActive = activeFilter?.id === filter.id;
               
@@ -168,7 +168,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
       )}
 
       {/* Clear Filter & Create New */}
-      <div className="py-1">
+      <div className="py-1 pb-2">
         {activeFilter?.id && (
           <button
             onClick={() => {
