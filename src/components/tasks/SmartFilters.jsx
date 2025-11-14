@@ -288,7 +288,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
             <div className="space-y-3">
               {filters.map((filter) => (
                 <Card key={filter.id} className="border border-gray-200 hover:shadow-md transition-all">
-                  <CardContent className="p-4">
+                  <CardContent className="p-6 pt-8">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -314,7 +314,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -330,9 +330,9 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteFilter(filter.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-5 h-5" />
                         </Button>
                       </div>
                     </div>
