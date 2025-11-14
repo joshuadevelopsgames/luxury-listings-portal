@@ -345,6 +345,15 @@ const TasksPage = () => {
     }
   }, [currentUser?.email]);
 
+  // Log when Request Task modal opens
+  useEffect(() => {
+    if (showRequestModal) {
+      console.log('🚀 Request Task modal opened');
+      console.log('👥 Available users at modal open:', availableUsers.length, availableUsers);
+      console.log('👤 Current user:', currentUser?.email);
+    }
+  }, [showRequestModal]);
+
   // Load task requests
   useEffect(() => {
     if (!currentUser?.email) return;
