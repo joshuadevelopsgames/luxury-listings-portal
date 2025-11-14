@@ -225,8 +225,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => {
-                console.log('Navigate to next task');
+              onClick={(e) => {
+                e.stopPropagation();
+                alert('Next task - Coming soon!');
                 // TODO: Implement next task navigation
               }}
               title="Next task"
@@ -236,8 +237,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => {
-                console.log('Navigate to previous task');
+              onClick={(e) => {
+                e.stopPropagation();
+                alert('Previous task - Coming soon!');
                 // TODO: Implement previous task navigation
               }}
               title="Previous task"
@@ -247,15 +249,24 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => {
-                console.log('More options clicked');
+              onClick={(e) => {
+                e.stopPropagation();
+                alert('More options - Coming soon!');
                 // TODO: Implement more options menu
               }}
               title="More options"
             >
               <MoreHorizontal className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onClose} title="Close">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }} 
+              title="Close"
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
