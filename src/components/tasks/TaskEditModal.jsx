@@ -453,11 +453,15 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
                   {editForm.labels.map((label, idx) => (
                     <span 
                       key={idx} 
-                      className="group text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded flex items-center gap-1 hover:bg-purple-200 cursor-pointer"
-                      onClick={() => removeLabel(label)}
+                      className="group text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded flex items-center gap-1 hover:bg-purple-200"
                     >
                       {label}
-                      <X className="w-3 h-3 opacity-0 group-hover:opacity-100" />
+                      <button
+                        onClick={() => removeLabel(label)}
+                        className="opacity-0 group-hover:opacity-100 hover:text-purple-900 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </span>
                   ))}
                 </div>
