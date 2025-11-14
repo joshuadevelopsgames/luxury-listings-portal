@@ -29,6 +29,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
     category: '',
     priority: 'medium',
     dueDate: '',
+    dueTime: '',
     estimatedTime: '',
     project: 'Inbox',
     labels: [],
@@ -51,6 +52,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
         category: task.category || '',
         priority: task.priority || 'medium',
         dueDate: task.due_date || '',
+        dueTime: task.due_time || '',
         estimatedTime: task.estimated_time || '',
         project: task.project || 'Inbox',
         labels: task.labels || [],
@@ -139,12 +141,17 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
   const handleDateChange = (newDate) => {
     setEditForm(prev => ({ ...prev, dueDate: newDate }));
     DailyTask.update(task.id, { due_date: newDate });
-    setShowDatePicker(false);
+  };
+
+  const handleTimeChange = (newTime) => {
+    setEditForm(prev => ({ ...prev, dueTime: newTime }));
+    DailyTask.update(task.id, { due_time: newTime });
   };
 
   const removeDate = () => {
-    setEditForm(prev => ({ ...prev, dueDate: '' }));
-    DailyTask.update(task.id, { due_date: null });
+    setEditForm(prev => ({ ...prev, dueDate: '', dueTime: '' }));
+    DailyTask.update(task.id, { due_date: null, due_time: null });
+    setShowDatePicker(false);
   };
 
   // Close all dropdowns
@@ -354,7 +361,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
                     className="flex items-center gap-2 text-sm text-gray-600 hover:bg-gray-50 px-2 py-1 rounded flex-1"
                   >
                     <Calendar className="w-4 h-4" />
-                    <span>{new Date(editForm.dueDate + 'T00:00:00').toLocaleDateString()}</span>
+                    <div className="flex flex-col items-start">
+                      <span>{new Date(editForm.dueDate + 'T00:00:00').toLocaleDateString()}</span>
+                      {editForm.dueTime && (
+                        <span className="text-xs text-gray-500">
+                          {new Date(`2000-01-01T${editForm.dueTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
                   </button>
                   <button
                     onClick={removeDate}
@@ -371,9 +385,23 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
                     type="date"
                     value={editForm.dueDate}
                     onChange={(e) => handleDateChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                   />
-                  <div className="mt-2 space-y-1">
+                  
+                  {/* Time picker */}
+                  {editForm.dueDate && (
+                    <div className="mb-2">
+                      <label className="text-xs text-gray-600 mb-1 block">Time (optional)</label>
+                      <input
+                        type="time"
+                        value={editForm.dueTime}
+                        onChange={(e) => handleTimeChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="space-y-1 border-t border-gray-200 pt-2">
                     {[
                       { label: 'Today', value: new Date().toISOString().split('T')[0] },
                       { label: 'Tomorrow', value: new Date(Date.now() + 86400000).toISOString().split('T')[0] },
@@ -381,7 +409,10 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete }) => {
                     ].map((option) => (
                       <button
                         key={option.label}
-                        onClick={() => handleDateChange(option.value)}
+                        onClick={() => {
+                          handleDateChange(option.value);
+                          setShowDatePicker(false);
+                        }}
                         className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded text-sm"
                       >
                         {option.label}

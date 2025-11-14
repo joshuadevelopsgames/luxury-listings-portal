@@ -25,6 +25,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     category: initialData?.category || 'Training',
     priority: initialData?.priority || 'medium',
     dueDate: initialData?.dueDate || '',
+    dueTime: initialData?.dueTime || '',
     estimatedTime: initialData?.estimatedTime || 30,
     notes: initialData?.notes || '',
     labels: initialData?.labels || [],
@@ -264,20 +265,24 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                       value={formData.dueDate}
                       onChange={(e) => handleInputChange('dueDate', e.target.value)}
                       min={getTodayDate()}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                     />
+                    
+                    {/* Time picker - only show if date is selected */}
+                    {formData.dueDate && (
+                      <div>
+                        <label className="text-xs text-gray-600 mb-1 block">Time (optional)</label>
+                        <input
+                          type="time"
+                          value={formData.dueTime}
+                          onChange={(e) => handleInputChange('dueTime', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-gray-600 hover:bg-gray-100"
-                    >
-                      <Clock className="w-4 h-4 mr-1" />
-                      Time
-                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
