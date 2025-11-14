@@ -27,6 +27,7 @@ import ProductivityStats from '../components/tasks/ProductivityStats';
 import TemplateSelector from '../components/tasks/TemplateSelector';
 import TemplateEditor from '../components/tasks/TemplateEditor';
 import SmartFilters from '../components/tasks/SmartFilters';
+import FilterDropdown from '../components/tasks/FilterDropdown';
 import CalendarView from '../components/tasks/CalendarView';
 import { useAuth } from '../contexts/AuthContext';
 import { DailyTask } from '../entities/DailyTask';
@@ -104,6 +105,7 @@ const TasksPage = () => {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [showSmartFilters, setShowSmartFilters] = useState(false);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [activeSmartFilter, setActiveSmartFilter] = useState(null);
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [bulkActionMode, setBulkActionMode] = useState(false);
@@ -330,9 +332,25 @@ const TasksPage = () => {
   }, [activeFilter, tasks]);
 
   const applySmartFilter = (filter) => {
-    setActiveSmartFilter(filter);
-    setActiveFilter('custom');
+    if (filter === null) {
+      // Clear filter
+      setActiveSmartFilter(null);
+      setActiveFilter('today');
+    } else {
+      setActiveSmartFilter(filter);
+      setActiveFilter('custom');
+    }
   };
+
+  // Listen for create filter event from dropdown
+  useEffect(() => {
+    const handleCreateFilter = () => {
+      setShowSmartFilters(true);
+    };
+
+    window.addEventListener('create-smart-filter', handleCreateFilter);
+    return () => window.removeEventListener('create-smart-filter', handleCreateFilter);
+  }, []);
 
   const filterTasks = () => {
     let filtered = [...tasks];
@@ -352,6 +370,11 @@ const TasksPage = () => {
       const criteria = activeSmartFilter.criteria;
       
       filtered = tasks.filter(task => {
+        // Skip completed tasks for most filters
+        if (task.status === 'completed' && !activeSmartFilter.id?.includes('completed')) {
+          return false;
+        }
+        
         // Priority filter
         if (criteria.priorities?.length > 0) {
           if (!criteria.priorities.includes(task.priority)) return false;
@@ -367,6 +390,22 @@ const TasksPage = () => {
         // Category filter
         if (criteria.categories?.length > 0) {
           if (!criteria.categories.includes(task.category)) return false;
+        }
+        
+        // Due within days (for "This Week" preset)
+        if (criteria.dueWithinDays) {
+          if (!task.due_date) return false;
+          const dueDate = parseLocalDate(task.due_date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const maxDate = new Date(today);
+          maxDate.setDate(today.getDate() + criteria.dueWithinDays);
+          if (dueDate > maxDate || dueDate < today) return false;
+        }
+        
+        // Estimated time max (for "Quick Wins" preset)
+        if (criteria.estimatedTimeMax && task.estimated_time > criteria.estimatedTimeMax) {
+          return false;
         }
         
         // Special criteria
@@ -675,17 +714,28 @@ const TasksPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowSmartFilters(true)}
-            className="border-blue-600 text-blue-600 hover:bg-blue-50"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-            {activeSmartFilter && (
-              <Badge className="ml-2 bg-blue-500 text-white">{activeSmartFilter.name}</Badge>
-            )}
-          </Button>
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-blue-600 text-blue-600 hover:bg-blue-50 ${
+                activeSmartFilter ? 'bg-blue-50' : ''
+              }`}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+              {activeSmartFilter && (
+                <Badge className="ml-2 bg-blue-500 text-white text-xs">{activeSmartFilter.name}</Badge>
+              )}
+            </Button>
+            <FilterDropdown
+              isOpen={showFilterDropdown}
+              onClose={() => setShowFilterDropdown(false)}
+              onApplyFilter={applySmartFilter}
+              currentUser={currentUser}
+              activeFilter={activeSmartFilter}
+            />
+          </div>
           <Button 
             variant="outline" 
             onClick={() => setShowTemplateSelector(true)}
