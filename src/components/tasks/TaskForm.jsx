@@ -14,7 +14,8 @@ import {
   Plus,
   CheckSquare,
   Trash2,
-  Repeat
+  Repeat,
+  Bell
 } from 'lucide-react';
 import { parseNaturalLanguageDate, parseRecurringPattern } from '../../utils/dateParser';
 
@@ -29,16 +30,30 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     notes: initialData?.notes || '',
     labels: initialData?.labels || [],
     subtasks: initialData?.subtasks || [],
-    recurring: initialData?.recurring || null
+    recurring: initialData?.recurring || null,
+    project: initialData?.project || '',
+    section: initialData?.section || ''
   });
 
   const [errors, setErrors] = useState({});
+
+  // Common projects
+  const projects = [
+    { name: 'Client Work', sections: ['Onboarding', 'Follow-ups', 'Delivery'] },
+    { name: 'Marketing', sections: ['Social Media', 'Content Creation', 'Campaigns'] },
+    { name: 'Operations', sections: ['Admin', 'HR', 'IT Support'] },
+    { name: 'Sales', sections: ['Prospecting', 'Meetings', 'Proposals'] },
+    { name: 'Personal', sections: ['Learning', 'Professional Development'] }
+  ];
+
+  const selectedProject = projects.find(p => p.name === formData.project);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [naturalDateInput, setNaturalDateInput] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newSubtask, setNewSubtask] = useState('');
   const [recurringInput, setRecurringInput] = useState('');
   const [showRecurring, setShowRecurring] = useState(false);
+  const [showReminders, setShowReminders] = useState(false);
 
   const categories = [
     'Training', 'IT Setup', 'Meetings', 'Development', 'Documentation', 'Compliance', 'Other'
@@ -109,6 +124,22 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     if (pattern) {
       handleInputChange('recurring', pattern);
     }
+  };
+
+  // Handle adding reminders
+  const handleAddReminder = (reminderType, value) => {
+    const newReminder = {
+      id: Date.now().toString(),
+      type: reminderType, // 'relative' or 'absolute'
+      ...value
+    };
+    const updatedReminders = [...(formData.reminders || []), newReminder];
+    handleInputChange('reminders', updatedReminders);
+  };
+
+  const handleRemoveReminder = (reminderId) => {
+    const updatedReminders = (formData.reminders || []).filter(r => r.id !== reminderId);
+    handleInputChange('reminders', updatedReminders);
   };
 
   const validateForm = () => {
@@ -273,11 +304,56 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
               </p>
             </div>
 
+            {/* Project and Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Target className="w-4 h-4 inline mr-1" />
+                  Project
+                </label>
+                <select
+                  value={formData.project}
+                  onChange={(e) => {
+                    handleInputChange('project', e.target.value);
+                    handleInputChange('section', ''); // Reset section when project changes
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">No Project</option>
+                  {projects.map(project => (
+                    <option key={project.name} value={project.name}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {formData.project && selectedProject && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Section
+                  </label>
+                  <select
+                    value={formData.section}
+                    onChange={(e) => handleInputChange('section', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">No Section</option>
+                    {selectedProject.sections.map(section => (
+                      <option key={section} value={section}>
+                        {section}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
             {/* Category and Priority */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
+                  Category (Legacy)
                 </label>
                 <select
                   value={formData.category}
@@ -656,6 +732,79 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                       >
                         Clear
                       </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Reminders */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  <Bell className="w-4 h-4 inline mr-1" />
+                  Reminders
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowReminders(!showReminders)}
+                >
+                  {showReminders ? 'Hide' : 'Show'}
+                </Button>
+              </div>
+              {showReminders && (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500">Add a reminder:</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {[
+                      { label: 'At due time', minutes: 0 },
+                      { label: '15 min before', minutes: 15 },
+                      { label: '30 min before', minutes: 30 },
+                      { label: '1 hour before', minutes: 60 },
+                      { label: '1 day before', minutes: 1440 },
+                      { label: '1 week before', minutes: 10080 }
+                    ].map((option) => (
+                      <Badge
+                        key={option.label}
+                        variant="outline"
+                        className="text-xs px-3 py-2 cursor-pointer transition-colors text-center bg-gray-50 text-gray-600 border-gray-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+                        onClick={() => handleAddReminder('relative', { minutes: option.minutes, label: option.label })}
+                      >
+                        {option.label}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  {/* Active reminders */}
+                  {formData.reminders && formData.reminders.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-500">Active reminders:</p>
+                      <div className="space-y-2">
+                        {formData.reminders.map((reminder) => (
+                          <div
+                            key={reminder.id}
+                            className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Bell className="w-4 h-4 text-blue-600" />
+                              <span className="text-sm text-blue-700">
+                                {reminder.label || `${reminder.minutes} minutes before`}
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveReminder(reminder.id)}
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

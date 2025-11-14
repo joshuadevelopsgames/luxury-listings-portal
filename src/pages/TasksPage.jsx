@@ -1,22 +1,76 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, TrendingUp, Sparkles } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import TaskForm from '../components/tasks/TaskForm';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskEditModal from '../components/tasks/TaskEditModal';
 import ProductivityStats from '../components/tasks/ProductivityStats';
 import TemplateSelector from '../components/tasks/TemplateSelector';
 import TemplateEditor from '../components/tasks/TemplateEditor';
+import SmartFilters from '../components/tasks/SmartFilters';
+import CalendarView from '../components/tasks/CalendarView';
 import { useAuth } from '../contexts/AuthContext';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
+import { reminderService } from '../services/reminderService';
 import { format } from 'date-fns';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { parseNaturalLanguageDate } from '../utils/dateParser';
+
+// Sortable Task Card Wrapper
+const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative">
+      {bulkMode && (
+        <div className="absolute top-2 left-2 z-10">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect(task.id)}
+            className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+      <TaskCard task={task} {...props} />
+    </div>
+  );
+};
 
 const TasksPage = () => {
   console.log('🚀 TasksPage component initializing...'); // Debug log
@@ -49,6 +103,92 @@ const TasksPage = () => {
   const [showProductivityStats, setShowProductivityStats] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [showSmartFilters, setShowSmartFilters] = useState(false);
+  const [activeSmartFilter, setActiveSmartFilter] = useState(null);
+  const [selectedTasks, setSelectedTasks] = useState([]);
+  const [bulkActionMode, setBulkActionMode] = useState(false);
+  const [showCalendarView, setShowCalendarView] = useState(false);
+
+  // Toggle task selection
+  const toggleTaskSelection = (taskId) => {
+    setSelectedTasks(prev => 
+      prev.includes(taskId)
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
+    );
+  };
+
+  // Select all tasks
+  const selectAllTasks = () => {
+    setSelectedTasks(filteredTasks.map(t => t.id));
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedTasks([]);
+    setBulkActionMode(false);
+  };
+
+  // Bulk complete tasks
+  const bulkCompleteTasks = async () => {
+    try {
+      await Promise.all(
+        selectedTasks.map(taskId => 
+          updateTaskStatus(taskId, 'completed')
+        )
+      );
+      toast.success(`✓ Completed ${selectedTasks.length} tasks`);
+      clearSelection();
+    } catch (error) {
+      console.error('Error bulk completing tasks:', error);
+      toast.error('Failed to complete tasks');
+    }
+  };
+
+  // Bulk delete tasks
+  const bulkDeleteTasks = async () => {
+    if (!window.confirm(`Delete ${selectedTasks.length} tasks?`)) return;
+
+    try {
+      await Promise.all(
+        selectedTasks.map(taskId => DailyTask.delete(taskId))
+      );
+      toast.success(`✓ Deleted ${selectedTasks.length} tasks`);
+      clearSelection();
+    } catch (error) {
+      console.error('Error bulk deleting tasks:', error);
+      toast.error('Failed to delete tasks');
+    }
+  };
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      const oldIndex = filteredTasks.findIndex(task => task.id === active.id);
+      const newIndex = filteredTasks.findIndex(task => task.id === over.id);
+
+      const newOrder = arrayMove(filteredTasks, oldIndex, newIndex);
+      setFilteredTasks(newOrder);
+
+      // Update order in database
+      try {
+        await DailyTask.update(active.id, { order: newIndex });
+        toast.success('Task order updated');
+      } catch (error) {
+        console.error('Error updating task order:', error);
+      }
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -75,6 +215,21 @@ const TasksPage = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [canCreateTasks]);
+
+  // Start reminder checking
+  useEffect(() => {
+    if (currentUser?.email) {
+      // Request notification permission
+      reminderService.requestNotificationPermission();
+      
+      // Start checking for reminders
+      reminderService.startReminderCheck(currentUser.email);
+      
+      return () => {
+        reminderService.stopReminderCheck();
+      };
+    }
+  }, [currentUser?.email]);
 
   // Helper function to parse dates as local dates (same as form validation)
   const parseLocalDate = (dateString) => {
@@ -174,6 +329,11 @@ const TasksPage = () => {
     filterTasks();
   }, [activeFilter, tasks]);
 
+  const applySmartFilter = (filter) => {
+    setActiveSmartFilter(filter);
+    setActiveFilter('custom');
+  };
+
   const filterTasks = () => {
     let filtered = [...tasks];
     
@@ -187,7 +347,47 @@ const TasksPage = () => {
       status: task.status
     })));
     
-
+    // Apply smart filter if active
+    if (activeFilter === 'custom' && activeSmartFilter) {
+      const criteria = activeSmartFilter.criteria;
+      
+      filtered = tasks.filter(task => {
+        // Priority filter
+        if (criteria.priorities?.length > 0) {
+          if (!criteria.priorities.includes(task.priority)) return false;
+        }
+        
+        // Label filter
+        if (criteria.labels?.length > 0) {
+          if (!task.labels || !criteria.labels.some(label => task.labels.includes(label))) {
+            return false;
+          }
+        }
+        
+        // Category filter
+        if (criteria.categories?.length > 0) {
+          if (!criteria.categories.includes(task.category)) return false;
+        }
+        
+        // Special criteria
+        if (criteria.hasSubtasks && (!task.subtasks || task.subtasks.length === 0)) {
+          return false;
+        }
+        
+        if (criteria.hasReminders && (!task.reminders || task.reminders.length === 0)) {
+          return false;
+        }
+        
+        if (criteria.isRecurring && !task.recurring) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      setFilteredTasks(filtered);
+      return;
+    }
     
     switch (activeFilter) {
       case "inbox":
@@ -264,7 +464,9 @@ const TasksPage = () => {
         labels: taskData.labels || [],
         subtasks: taskData.subtasks || [],
         recurring: taskData.recurring || null,
-        reminders: taskData.reminders || []
+        reminders: taskData.reminders || [],
+        project: taskData.project || null,
+        section: taskData.section || null
       });
       
       if (taskData.recurring) {
@@ -475,6 +677,17 @@ const TasksPage = () => {
         <div className="flex items-center gap-3">
           <Button 
             variant="outline" 
+            onClick={() => setShowSmartFilters(true)}
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Filters
+            {activeSmartFilter && (
+              <Badge className="ml-2 bg-blue-500 text-white">{activeSmartFilter.name}</Badge>
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
             onClick={() => setShowTemplateSelector(true)}
             className="border-green-600 text-green-600 hover:bg-green-50"
           >
@@ -541,7 +754,68 @@ const TasksPage = () => {
             </TabsTrigger>
           </TabsList>
         </Tabs>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowCalendarView(true)}
+            className="border-indigo-600 text-indigo-600 hover:bg-indigo-50"
+          >
+            <CalendarIcon className="w-4 h-4 mr-2" />
+            Calendar View
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setBulkActionMode(!bulkActionMode)}
+            className={bulkActionMode ? "bg-blue-50 border-blue-500 text-blue-700" : ""}
+          >
+            {bulkActionMode ? 'Cancel Bulk Mode' : 'Select Multiple'}
+          </Button>
+        </div>
       </div>
+
+      {/* Bulk Actions Toolbar */}
+      {bulkActionMode && selectedTasks.length > 0 && (
+        <div className="sticky top-0 z-30 bg-blue-600 text-white p-4 rounded-lg shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="font-semibold">{selectedTasks.length} task{selectedTasks.length !== 1 ? 's' : ''} selected</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={selectAllTasks}
+                className="text-white hover:bg-blue-700"
+              >
+                Select All ({filteredTasks.length})
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={bulkCompleteTasks}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Complete
+              </Button>
+              <Button
+                onClick={bulkDeleteTasks}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={clearSelection}
+                className="text-white hover:bg-blue-700"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <TaskForm
@@ -562,38 +836,52 @@ const TasksPage = () => {
         onDelete={handleDeleteTask}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTasks.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              {activeFilter === "completed" ? (
-                <CheckCircle2 className="w-8 h-8 text-green-500" />
-              ) : (
-                <Clock className="w-8 h-8 text-slate-400" />
-              )}
-            </div>
-            <p className="text-slate-500 font-medium">
-              {activeFilter === "inbox" && "No tasks in inbox"}
-              {activeFilter === "today" && "No tasks scheduled for today"}
-              {activeFilter === "upcoming" && "No upcoming tasks"}
-              {activeFilter === "overdue" && "No overdue tasks"}
-              {activeFilter === "completed" && "No completed tasks yet"}
-            </p>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={filteredTasks.map(t => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTasks.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  {activeFilter === "completed" ? (
+                    <CheckCircle2 className="w-8 h-8 text-green-500" />
+                  ) : (
+                    <Clock className="w-8 h-8 text-slate-400" />
+                  )}
+                </div>
+                <p className="text-slate-500 font-medium">
+                  {activeFilter === "inbox" && "No tasks in inbox"}
+                  {activeFilter === "today" && "No tasks scheduled for today"}
+                  {activeFilter === "upcoming" && "No upcoming tasks"}
+                  {activeFilter === "overdue" && "No overdue tasks"}
+                  {activeFilter === "completed" && "No completed tasks yet"}
+                </p>
+              </div>
+            ) : (
+              filteredTasks.map((task) => (
+                <SortableTaskCard
+                  key={task.id}
+                  task={task}
+                  isSelected={selectedTasks.includes(task.id)}
+                  onToggleSelect={toggleTaskSelection}
+                  bulkMode={bulkActionMode}
+                  onStatusChange={updateTaskStatus}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteTask}
+                  canEdit={canCreateTasks}
+                  canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
+                />
+              ))
+            )}
           </div>
-        ) : (
-          filteredTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onStatusChange={updateTaskStatus}
-              onEdit={handleEditTask}
-              onDelete={handleDeleteTask}
-              canEdit={canCreateTasks}
-              canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
-            />
-          ))
-        )}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Task Request Modal */}
       {showRequestModal && (
@@ -817,6 +1105,27 @@ const TasksPage = () => {
       {showTemplateEditor && (
         <TemplateEditor 
           onClose={() => setShowTemplateEditor(false)} 
+        />
+      )}
+
+      {/* Smart Filters Modal */}
+      {showSmartFilters && (
+        <SmartFilters 
+          currentUser={currentUser}
+          onClose={() => setShowSmartFilters(false)}
+          onApplyFilter={applySmartFilter}
+        />
+      )}
+
+      {/* Calendar View Modal */}
+      {showCalendarView && (
+        <CalendarView 
+          tasks={tasks}
+          onClose={() => setShowCalendarView(false)}
+          onTaskClick={(task) => {
+            setEditingTask(task);
+            setShowEditModal(true);
+          }}
         />
       )}
     </div>

@@ -42,6 +42,7 @@ class FirestoreService {
     APPROVED_USERS: 'approved_users',
     TASKS: 'tasks',
     TASK_TEMPLATES: 'task_templates',
+    SMART_FILTERS: 'smart_filters',
     ANALYTICS_CONFIG: 'analytics_config',
     SYSTEM_CONFIG: 'system_config',
     EMPLOYEES: 'employees',
@@ -1440,6 +1441,72 @@ class FirestoreService {
       }
     } catch (error) {
       console.error('❌ Error initializing default templates:', error);
+      throw error;
+    }
+  }
+
+  // ===== SMART FILTERS MANAGEMENT =====
+
+  // Get user's smart filters
+  async getSmartFilters(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.SMART_FILTERS),
+        where('userEmail', '==', userEmail)
+      );
+      const querySnapshot = await getDocs(q);
+      const filters = [];
+      querySnapshot.forEach((doc) => {
+        filters.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      return filters;
+    } catch (error) {
+      console.error('❌ Error getting smart filters:', error);
+      throw error;
+    }
+  }
+
+  // Create a smart filter
+  async createSmartFilter(filterData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.SMART_FILTERS), {
+        ...filterData,
+        createdAt: serverTimestamp()
+      });
+      console.log('✅ Smart filter created:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Error creating smart filter:', error);
+      throw error;
+    }
+  }
+
+  // Update a smart filter
+  async updateSmartFilter(filterId, updates) {
+    try {
+      const docRef = doc(db, this.collections.SMART_FILTERS, filterId);
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Smart filter updated:', filterId);
+    } catch (error) {
+      console.error('❌ Error updating smart filter:', error);
+      throw error;
+    }
+  }
+
+  // Delete a smart filter
+  async deleteSmartFilter(filterId) {
+    try {
+      const docRef = doc(db, this.collections.SMART_FILTERS, filterId);
+      await deleteDoc(docRef);
+      console.log('✅ Smart filter deleted:', filterId);
+    } catch (error) {
+      console.error('❌ Error deleting smart filter:', error);
       throw error;
     }
   }

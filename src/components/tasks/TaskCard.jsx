@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
+import { DailyTask } from '../../entities/DailyTask';
 import { 
   Clock, 
   AlertTriangle, 
@@ -17,11 +18,40 @@ import {
   Flag,
   MessageSquare,
   CheckSquare,
-  Repeat
+  Repeat,
+  Bell
 } from 'lucide-react';
 
 const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canDelete = true }) => {
   const [showActions, setShowActions] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(task.title);
+  const [editedDescription, setEditedDescription] = useState(task.description);
+
+  const handleTitleSave = async () => {
+    if (editedTitle.trim() && editedTitle !== task.title) {
+      try {
+        await DailyTask.update(task.id, { title: editedTitle });
+      } catch (error) {
+        console.error('Error updating title:', error);
+        setEditedTitle(task.title);
+      }
+    }
+    setEditingTitle(false);
+  };
+
+  const handleDescriptionSave = async () => {
+    if (editedDescription.trim() && editedDescription !== task.description) {
+      try {
+        await DailyTask.update(task.id, { description: editedDescription });
+      } catch (error) {
+        console.error('Error updating description:', error);
+        setEditedDescription(task.description);
+      }
+    }
+    setEditingDescription(false);
+  };
 
   // Helper function to parse dates as local dates (same as TasksPage)
   const parseLocalDate = (dateString) => {
@@ -139,11 +169,27 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <CardTitle className={`text-lg font-semibold mb-2 line-clamp-2 ${
-              isCompleted ? 'line-through text-gray-500' : 'text-gray-900'
-            }`}>
-              {task.title}
-            </CardTitle>
+            {editingTitle ? (
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onBlur={handleTitleSave}
+                onKeyPress={(e) => e.key === 'Enter' && handleTitleSave()}
+                className="text-lg font-semibold mb-2 w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoFocus
+              />
+            ) : (
+              <CardTitle 
+                className={`text-lg font-semibold mb-2 line-clamp-2 cursor-text hover:bg-gray-50 px-2 py-1 rounded ${
+                  isCompleted ? 'line-through text-gray-500' : 'text-gray-900'
+                }`}
+                onDoubleClick={() => canEdit && setEditingTitle(true)}
+                title="Double-click to edit"
+              >
+                {task.title}
+              </CardTitle>
+            )}
             
             <div className="flex items-center gap-2 mb-3">
               {/* Todoist-style Priority Flag */}
@@ -182,6 +228,14 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
                 <div className="flex items-center gap-1 text-xs text-green-600">
                   <Repeat className="w-3 h-3" />
                   <span>{task.recurring.pattern}</span>
+                </div>
+              )}
+              
+              {/* Show reminder indicator */}
+              {task.reminders && task.reminders.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-blue-600">
+                  <Bell className="w-3 h-3" />
+                  <span>{task.reminders.length}</span>
                 </div>
               )}
             </div>
@@ -228,11 +282,26 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <p className={`text-sm line-clamp-3 ${
-          isCompleted ? 'text-gray-400' : 'text-gray-600'
-        }`}>
-          {task.description}
-        </p>
+        {editingDescription ? (
+          <textarea
+            value={editedDescription}
+            onChange={(e) => setEditedDescription(e.target.value)}
+            onBlur={handleDescriptionSave}
+            className="text-sm w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={3}
+            autoFocus
+          />
+        ) : (
+          <p 
+            className={`text-sm line-clamp-3 cursor-text hover:bg-gray-50 px-2 py-1 rounded ${
+              isCompleted ? 'text-gray-400' : 'text-gray-600'
+            }`}
+            onDoubleClick={() => canEdit && setEditingDescription(true)}
+            title="Double-click to edit"
+          >
+            {task.description}
+          </p>
+        )}
         
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs">
@@ -254,7 +323,14 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
             )}
           </div>
           
-          {task.category && (
+          {task.project && (
+            <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
+              <Target className="w-3 h-3 text-indigo-600" />
+              <span>{task.project}{task.section ? ` / ${task.section}` : ''}</span>
+            </div>
+          )}
+          
+          {!task.project && task.category && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Target className="w-3 h-3" />
               <span>Category: {task.category}</span>
