@@ -518,6 +518,103 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Function to refresh current user data from Firestore
+  const refreshCurrentUser = async () => {
+    if (GOOGLE_AUTH_DISABLED || !auth.currentUser) {
+      return;
+    }
+
+    const user = auth.currentUser;
+    try {
+      // Special handling for admin user
+      if (user.email === 'jrsschroeder@gmail.com') {
+        const savedRole = await firestoreService.getSystemConfig('currentRole');
+        const roleToUse = savedRole && Object.values(USER_ROLES).includes(savedRole) ? savedRole : USER_ROLES.ADMIN;
+        setCurrentRole(roleToUse);
+        
+        // Try to get admin user data from Firestore
+        let approvedUser = null;
+        try {
+          const approvedUsers = await firestoreService.getApprovedUsers();
+          approvedUser = approvedUsers.find(u => u.email === user.email);
+        } catch (error) {
+          console.warn('⚠️ Could not fetch approved users for admin:', error);
+        }
+        
+        const userData = getUserByRole(roleToUse);
+        const adminUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: approvedUser?.displayName || user.displayName || userData.displayName,
+          firstName: approvedUser?.firstName || user.displayName?.split(' ')[0] || userData.firstName,
+          lastName: approvedUser?.lastName || user.displayName?.split(' ').slice(1).join(' ') || userData.lastName,
+          role: roleToUse,
+          roles: Object.values(USER_ROLES),
+          primaryRole: USER_ROLES.ADMIN,
+          department: approvedUser?.department || userData.department,
+          startDate: approvedUser?.startDate || userData.startDate,
+          avatar: approvedUser?.avatar || user.photoURL || userData.avatar,
+          bio: approvedUser?.bio || userData.bio,
+          skills: approvedUser?.skills || userData.skills,
+          stats: approvedUser?.stats || userData.stats,
+          isApproved: true
+        };
+        setCurrentUser(adminUser);
+        setUserData(adminUser);
+        return;
+      }
+
+      // For regular users, fetch from approved users
+      const approvedUsers = await firestoreService.getApprovedUsers();
+      const approvedUser = approvedUsers.find(u => u.email === user.email);
+      
+      if (approvedUser && approvedUser.isApproved) {
+        const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
+        const primaryRole = assignedRoles[0] || 'content_director';
+        
+        const savedRole = await firestoreService.getSystemConfig('currentRole');
+        const roleToUse = savedRole && assignedRoles.includes(savedRole) ? savedRole : primaryRole;
+        setCurrentRole(roleToUse);
+        
+        const userData = getUserByRole(roleToUse);
+        const mergedUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: approvedUser.displayName || user.displayName || userData.displayName,
+          firstName: approvedUser.firstName || user.displayName?.split(' ')[0] || userData.firstName,
+          lastName: approvedUser.lastName || user.displayName?.split(' ').slice(1).join(' ') || userData.lastName,
+          role: roleToUse,
+          roles: assignedRoles,
+          primaryRole: primaryRole,
+          department: approvedUser.department || userData.department,
+          startDate: approvedUser.startDate || userData.startDate,
+          avatar: approvedUser.avatar || user.photoURL || userData.avatar,
+          bio: approvedUser.bio || userData.bio,
+          skills: approvedUser.skills || userData.skills,
+          stats: approvedUser.stats || userData.stats,
+          customPermissions: approvedUser.customPermissions || [],
+          isApproved: true
+        };
+        
+        setCurrentUser(mergedUser);
+        
+        try {
+          const employeeData = await firestoreService.getEmployeeByEmail(user.email);
+          if (employeeData) {
+            setUserData(employeeData);
+          } else {
+            setUserData(mergedUser);
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not load employee data:', error);
+          setUserData(mergedUser);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing current user:', error);
+    }
+  };
+
   const value = {
     currentUser,
     userData,
@@ -528,7 +625,8 @@ export function AuthProvider({ children }) {
     signInWithGoogle,
     logout,
     isGoogleAuthDisabled: GOOGLE_AUTH_DISABLED,
-    chatbotResetTrigger
+    chatbotResetTrigger,
+    refreshCurrentUser
   };
 
   return (

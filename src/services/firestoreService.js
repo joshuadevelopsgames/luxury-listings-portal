@@ -354,14 +354,34 @@ class FirestoreService {
 
   // Update task
   async updateTask(taskId, updates) {
+    // Filter out undefined values - Firestore doesn't allow undefined
+    // Also convert empty strings to null for date fields
+    const cleanUpdates = {};
+    
+    for (const [key, value] of Object.entries(updates)) {
+      // Skip undefined values completely
+      if (value === undefined) {
+        continue;
+      }
+      
+      // For date fields, convert empty strings to null
+      if ((key === 'due_date' || key === 'due_time') && value === '') {
+        cleanUpdates[key] = null;
+      } else {
+        cleanUpdates[key] = value;
+      }
+    }
+    
     try {
       await updateDoc(doc(db, this.collections.TASKS, taskId), {
-        ...updates,
+        ...cleanUpdates,
         updatedAt: serverTimestamp()
       });
       console.log('✅ Task updated:', taskId);
     } catch (error) {
       console.error('❌ Error updating task:', error);
+      console.error('❌ Updates object:', updates);
+      console.error('❌ Clean updates:', cleanUpdates);
       throw error;
     }
   }

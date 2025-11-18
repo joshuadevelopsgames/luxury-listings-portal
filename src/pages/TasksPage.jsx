@@ -751,14 +751,28 @@ const TasksPage = () => {
   // Handle save edited task
   const handleSaveTask = async (updatedTask) => {
     try {
-      await DailyTask.update(updatedTask.id, {
+      // Build update object, only including defined values
+      const updates = {
         title: updatedTask.title,
         description: updatedTask.description,
         category: updatedTask.category,
-        priority: updatedTask.priority,
-        due_date: updatedTask.dueDate,
-        estimated_time: updatedTask.estimatedTime
-      });
+        priority: updatedTask.priority
+      };
+      
+      // Handle due_date - use due_date if present, otherwise dueDate, convert empty string to null
+      const dueDate = updatedTask.due_date !== undefined ? updatedTask.due_date : updatedTask.dueDate;
+      if (dueDate !== undefined) {
+        updates.due_date = dueDate || null;
+      }
+      
+      // Handle estimated_time
+      if (updatedTask.estimated_time !== undefined || updatedTask.estimatedTime !== undefined) {
+        updates.estimated_time = updatedTask.estimated_time !== undefined 
+          ? updatedTask.estimated_time 
+          : updatedTask.estimatedTime;
+      }
+      
+      await DailyTask.update(updatedTask.id, updates);
       
       // No need to reload data - real-time listener will update automatically
       setShowEditModal(false);

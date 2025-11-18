@@ -7,7 +7,7 @@ import EditProfileModal from './EditProfileModal';
 import { toast } from 'react-hot-toast';
 
 const RoleSwitcher = () => {
-  const { currentRole, switchRole, getCurrentRolePermissions, currentUser } = useAuth();
+  const { currentRole, switchRole, getCurrentRolePermissions, currentUser, refreshCurrentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   
@@ -177,7 +177,7 @@ const RoleSwitcher = () => {
         </div>
         <div className="text-left">
           <div className="font-medium text-sm flex items-center gap-2">
-            Profile
+            {currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'Profile'}
             {currentUser?.email === 'jrsschroeder@gmail.com' && (
               <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Admin</span>
             )}
@@ -359,17 +359,22 @@ const RoleSwitcher = () => {
             }
             
             // Wait a moment to ensure Firestore has committed
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('✅ All updates complete, reloading...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            console.log('✅ All updates complete, refreshing user data...');
             
-            toast.success('✅ Profile updated successfully! Refreshing...');
+            toast.success('✅ Profile updated successfully!');
             setIsEditOpen(false);
             
-            // Reload the page to refresh user data from Firestore
-            setTimeout(() => {
-              console.log('🔄 Reloading page now...');
-              window.location.reload();
-            }, 500);
+            // Refresh user data from AuthContext instead of reloading page
+            if (refreshCurrentUser) {
+              await refreshCurrentUser();
+              console.log('✅ User data refreshed');
+            } else {
+              // Fallback to page reload if refresh function not available
+              setTimeout(() => {
+                window.location.reload();
+              }, 500);
+            }
           } catch (e) {
             console.error('❌ Failed to update profile:', e);
             console.error('❌ Error details:', e.message, e.stack);

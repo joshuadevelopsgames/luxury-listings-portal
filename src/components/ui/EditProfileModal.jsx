@@ -80,10 +80,11 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
       }
       
       // Everyone can edit these fields
-      updates.displayName = form.displayName;
-      updates.phone = form.phone;
-      updates.location = form.location;
-      updates.avatar = form.avatar;
+      // Handle displayName - use null if empty, otherwise use trimmed value
+      updates.displayName = form.displayName?.trim() || null;
+      updates.phone = form.phone?.trim() || null;
+      updates.location = form.location?.trim() || null;
+      updates.avatar = form.avatar?.trim() || null;
       
       console.log('📝 Sending updates to onSave (based on permissions):', updates);
       console.log('🔐 Permissions check:', {
