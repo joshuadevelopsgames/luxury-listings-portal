@@ -664,7 +664,18 @@ const TasksPage = () => {
       });
       
       if (taskData.recurring) {
-        toast.success(`✓ Recurring task created! Will repeat ${taskData.recurring.pattern}ly`);
+        const { pattern, interval } = taskData.recurring;
+        let repeatText = '';
+        if (pattern === 'daily') {
+          repeatText = interval === 1 ? 'daily' : `every ${interval} days`;
+        } else if (pattern === 'weekly') {
+          repeatText = interval === 1 ? 'weekly' : interval === 2 ? 'biweekly' : `every ${interval} weeks`;
+        } else if (pattern === 'monthly') {
+          repeatText = interval === 1 ? 'monthly' : `every ${interval} months`;
+        } else if (pattern === 'yearly') {
+          repeatText = interval === 1 ? 'yearly' : `every ${interval} years`;
+        }
+        toast.success(`✓ Recurring task created! Will repeat ${repeatText}`);
       } else {
         toast.success('✓ Task created!');
       }
