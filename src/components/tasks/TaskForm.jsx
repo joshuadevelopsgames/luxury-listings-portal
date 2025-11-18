@@ -44,9 +44,22 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [showEstimatedTime, setShowEstimatedTime] = useState(false);
   const [showRecurringPicker, setShowRecurringPicker] = useState(false);
+  const [recurringInterval, setRecurringInterval] = useState(initialData?.recurring?.interval || 1);
+  const [recurringPattern, setRecurringPattern] = useState(initialData?.recurring?.pattern || 'weekly');
   const [naturalDateInput, setNaturalDateInput] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newSubtask, setNewSubtask] = useState('');
+
+  // Sync recurring state when formData changes
+  useEffect(() => {
+    if (formData.recurring) {
+      setRecurringInterval(formData.recurring.interval || 1);
+      setRecurringPattern(formData.recurring.pattern || 'weekly');
+    } else {
+      setRecurringInterval(1);
+      setRecurringPattern('weekly');
+    }
+  }, [formData.recurring]);
 
   const datePickerRef = useRef(null);
   const priorityPickerRef = useRef(null);
@@ -356,129 +369,80 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
                     {/* Recurring Picker Dropdown */}
                     {showRecurringPicker && (
-                      <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100] max-h-96 overflow-y-auto">
+                      <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
                         <div className="mb-3">
-                          <p className="text-sm font-semibold mb-2">Repeat Task</p>
+                          <p className="text-sm font-semibold mb-3">Repeat Task</p>
                         </div>
                         
-                        {/* Daily Options */}
-                        <div className="mb-4">
-                          <p className="text-xs text-gray-500 mb-2 font-medium">Daily</p>
-                          <div className="grid grid-cols-3 gap-1">
-                            {[1, 2, 3, 4, 5, 6].map((interval) => (
-                              <button
-                                key={`daily-${interval}`}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange('recurring', {
-                                    pattern: 'daily',
-                                    interval: interval,
-                                    endDate: null
-                                  });
-                                  setShowRecurringPicker(false);
-                                }}
-                                className={`px-3 py-2 hover:bg-gray-50 rounded text-xs text-left ${
-                                  formData.recurring?.pattern === 'daily' && formData.recurring?.interval === interval
-                                    ? 'bg-blue-50 text-blue-700 font-medium' 
-                                    : 'text-gray-900'
-                                }`}
-                              >
-                                Every {interval} {interval === 1 ? 'day' : 'days'}
-                              </button>
+                        {/* Two Dropdowns: Interval and Pattern */}
+                        <div className="flex items-center gap-2 mb-3">
+                          {/* Interval Dropdown */}
+                          <select
+                            value={recurringInterval}
+                            onChange={(e) => {
+                              const interval = parseInt(e.target.value);
+                              setRecurringInterval(interval);
+                              handleInputChange('recurring', {
+                                pattern: recurringPattern,
+                                interval: interval,
+                                endDate: null
+                              });
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                              <option key={num} value={num}>{num}</option>
                             ))}
-                          </div>
+                          </select>
+
+                          {/* Pattern Dropdown */}
+                          <select
+                            value={recurringPattern}
+                            onChange={(e) => {
+                              const pattern = e.target.value;
+                              setRecurringPattern(pattern);
+                              handleInputChange('recurring', {
+                                pattern: pattern,
+                                interval: recurringInterval,
+                                endDate: null
+                              });
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="daily">{recurringInterval === 1 ? 'day' : 'days'}</option>
+                            <option value="weekly">{recurringInterval === 1 ? 'week' : 'weeks'}</option>
+                            <option value="monthly">{recurringInterval === 1 ? 'month' : 'months'}</option>
+                            <option value="yearly">{recurringInterval === 1 ? 'year' : 'years'}</option>
+                          </select>
                         </div>
 
-                        {/* Weekly Options */}
-                        <div className="mb-4">
-                          <p className="text-xs text-gray-500 mb-2 font-medium">Weekly</p>
-                          <div className="grid grid-cols-2 gap-1">
-                            {[1, 2, 3, 4, 5, 6].map((interval) => (
-                              <button
-                                key={`weekly-${interval}`}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange('recurring', {
-                                    pattern: 'weekly',
-                                    interval: interval,
-                                    endDate: null
-                                  });
-                                  setShowRecurringPicker(false);
-                                }}
-                                className={`px-3 py-2 hover:bg-gray-50 rounded text-xs text-left ${
-                                  formData.recurring?.pattern === 'weekly' && formData.recurring?.interval === interval
-                                    ? 'bg-blue-50 text-blue-700 font-medium' 
-                                    : 'text-gray-900'
-                                }`}
-                              >
-                                {interval === 1 ? 'Weekly' : interval === 2 ? 'Biweekly' : `Every ${interval} weeks`}
-                              </button>
-                            ))}
-                          </div>
+                        {/* Apply Button */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              handleInputChange('recurring', {
+                                pattern: recurringPattern,
+                                interval: recurringInterval,
+                                endDate: null
+                              });
+                              setShowRecurringPicker(false);
+                            }}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm"
+                          >
+                            Apply
+                          </Button>
                         </div>
 
-                        {/* Monthly Options */}
-                        <div className="mb-4">
-                          <p className="text-xs text-gray-500 mb-2 font-medium">Monthly</p>
-                          <div className="grid grid-cols-3 gap-1">
-                            {[1, 2, 3, 4, 5, 6].map((interval) => (
-                              <button
-                                key={`monthly-${interval}`}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange('recurring', {
-                                    pattern: 'monthly',
-                                    interval: interval,
-                                    endDate: null
-                                  });
-                                  setShowRecurringPicker(false);
-                                }}
-                                className={`px-3 py-2 hover:bg-gray-50 rounded text-xs text-left ${
-                                  formData.recurring?.pattern === 'monthly' && formData.recurring?.interval === interval
-                                    ? 'bg-blue-50 text-blue-700 font-medium' 
-                                    : 'text-gray-900'
-                                }`}
-                              >
-                                Every {interval} {interval === 1 ? 'month' : 'months'}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Yearly Options */}
-                        <div className="mb-3">
-                          <p className="text-xs text-gray-500 mb-2 font-medium">Yearly</p>
-                          <div className="grid grid-cols-3 gap-1">
-                            {[1, 2, 3, 4, 5, 6].map((interval) => (
-                              <button
-                                key={`yearly-${interval}`}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange('recurring', {
-                                    pattern: 'yearly',
-                                    interval: interval,
-                                    endDate: null
-                                  });
-                                  setShowRecurringPicker(false);
-                                }}
-                                className={`px-3 py-2 hover:bg-gray-50 rounded text-xs text-left ${
-                                  formData.recurring?.pattern === 'yearly' && formData.recurring?.interval === interval
-                                    ? 'bg-blue-50 text-blue-700 font-medium' 
-                                    : 'text-gray-900'
-                                }`}
-                              >
-                                Every {interval} {interval === 1 ? 'year' : 'years'}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
+                        {/* Don't Repeat Option */}
                         {formData.recurring && (
                           <div className="pt-3 border-t border-gray-200">
                             <button
                               type="button"
                               onClick={() => {
                                 handleInputChange('recurring', null);
+                                setRecurringInterval(1);
+                                setRecurringPattern('weekly');
                                 setShowRecurringPicker(false);
                               }}
                               className="w-full px-3 py-2 hover:bg-red-50 rounded text-sm text-left text-red-600"
