@@ -2567,7 +2567,8 @@ export default function ClientPackages() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       
       {/* Edit Package Modal */}
@@ -2808,7 +2809,8 @@ export default function ClientPackages() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       
       {/* Add New Client Modal */}
@@ -3096,7 +3098,8 @@ export default function ClientPackages() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Toast Notification */}
