@@ -25,6 +25,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
+import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
 
 export default function ClientPackages() {
   const { hasPermission } = useAuth();
@@ -75,18 +76,21 @@ export default function ClientPackages() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [autoResetChecked, setAutoResetChecked] = useState(false);
 
-  // Google Sheets API configuration
-  const GOOGLE_SHEETS_API_KEY = 'AIzaSyDxiQTlAv1UHxGYRXaZvxi2HulXBHTca3E';
-  const SPREADSHEET_ID = '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA';
-  const SHEET_NAME = 'Client Packages';
+  // Import secure API configuration
+  import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
+  
+  // Google Sheets API configuration (using secure config)
+  const GOOGLE_SHEETS_API_KEY = API_KEYS.GOOGLE_SHEETS_API_KEY || 'AIzaSyDxiQTlAv1UHxGYRXaZvxi2HulXBHTca3E'; // Fallback for backward compatibility
+  const SPREADSHEET_ID = GOOGLE_SHEETS_CONFIG.SPREADSHEET_ID;
+  const SHEET_NAME = GOOGLE_SHEETS_CONFIG.SHEET_NAME;
   const SHEET_GID = '0'; // Main sheet GID is 0
   
   // Alternative sheet name formats to try
-  const SHEET_NAME_ENCODED = encodeURIComponent('Client Packages');
-  const SHEET_NAME_QUOTED = '"Client Packages"';
+  const SHEET_NAME_ENCODED = encodeURIComponent(SHEET_NAME);
+  const SHEET_NAME_QUOTED = `"${SHEET_NAME}"`;
   
-  // Google Apps Script Web App URL
-  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4ugw4vME8hCeaE3Bieu7gsrNJqbGHxkNwZR97vKi0wVbaQNMgGFnG3W-lKrkwXzFkdQ/exec';
+  // Google Apps Script Web App URL (using secure config)
+  const GOOGLE_APPS_SCRIPT_URL = GOOGLE_SHEETS_CONFIG.GOOGLE_APPS_SCRIPT_URL;
 
   // Toast notification helper
   const showToast = (message, type = 'success') => {

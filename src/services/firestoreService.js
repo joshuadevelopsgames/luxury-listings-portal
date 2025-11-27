@@ -54,7 +54,8 @@ class FirestoreService {
     TASK_REQUESTS: 'task_requests',
     CLIENT_MESSAGES: 'client_messages',
     CLIENT_REPORTS: 'client_reports',
-    PENDING_CLIENTS: 'pending_clients'
+    PENDING_CLIENTS: 'pending_clients',
+    CLIENT_CONTRACTS: 'client_contracts'
   };
 
   // Test connection method
@@ -1703,6 +1704,91 @@ class FirestoreService {
       });
       callback(clients);
     });
+  }
+
+  // ===== CLIENT CONTRACTS =====
+
+  // Get contracts by client
+  async getContractsByClient(clientId) {
+    try {
+      const q = query(
+        collection(db, this.collections.CLIENT_CONTRACTS),
+        where('clientId', '==', clientId),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const contracts = [];
+      snapshot.forEach((doc) => {
+        contracts.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      return contracts;
+    } catch (error) {
+      console.error('❌ Error getting contracts:', error);
+      return [];
+    }
+  }
+
+  // Get contract by ID
+  async getContractById(contractId) {
+    try {
+      const docRef = doc(db, this.collections.CLIENT_CONTRACTS, contractId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return {
+          id: docSnap.id,
+          ...docSnap.data()
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting contract:', error);
+      throw error;
+    }
+  }
+
+  // Add contract document
+  async addContract(contractData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.CLIENT_CONTRACTS), {
+        ...contractData,
+        createdAt: serverTimestamp()
+      });
+      console.log('✅ Contract added:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Error adding contract:', error);
+      throw error;
+    }
+  }
+
+  // Update contract
+  async updateContract(contractId, updates) {
+    try {
+      const docRef = doc(db, this.collections.CLIENT_CONTRACTS, contractId);
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Contract updated:', contractId);
+    } catch (error) {
+      console.error('❌ Error updating contract:', error);
+      throw error;
+    }
+  }
+
+  // Delete contract
+  async deleteContract(contractId) {
+    try {
+      const docRef = doc(db, this.collections.CLIENT_CONTRACTS, contractId);
+      await deleteDoc(docRef);
+      console.log('✅ Contract deleted:', contractId);
+    } catch (error) {
+      console.error('❌ Error deleting contract:', error);
+      throw error;
+    }
   }
 }
 

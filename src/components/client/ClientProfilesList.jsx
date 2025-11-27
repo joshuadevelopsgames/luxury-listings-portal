@@ -3,6 +3,7 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { 
   Users, 
   Mail, 
@@ -12,10 +13,12 @@ import {
   Calendar,
   Package,
   Edit3,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { format } from 'date-fns';
+import ClientContractsSection from './ClientContractsSection';
 
 const ClientProfilesList = () => {
   const [clients, setClients] = useState([]);
@@ -293,6 +296,11 @@ const ClientProfilesList = () => {
                     <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedClient.notes}</p>
                   </div>
                 )}
+              </div>
+
+              {/* Contracts Section */}
+              <div className="mt-6 pt-6 border-t">
+                <ClientContractsSection client={selectedClient} />
               </div>
 
               <div className="flex gap-3 mt-6 pt-6 border-t">
