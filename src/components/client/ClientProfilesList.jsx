@@ -166,11 +166,9 @@ const ClientProfilesList = () => {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Loading client profiles...</p>
-        </div>
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-600 mt-4">Loading client profiles...</p>
       </div>
     );
   }
@@ -210,7 +208,7 @@ const ClientProfilesList = () => {
 
       {/* Stats Cards */}
       {clients.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -441,43 +439,55 @@ const ClientProfilesList = () => {
                     </div>
                   </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Mail className="w-4 h-4" />
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Mail className="w-3 h-3 text-gray-600" />
+                    </div>
                     <span className="truncate">{client.clientEmail || 'No email'}</span>
                   </div>
                   
                   {client.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone className="w-4 h-4" />
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                      <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Phone className="w-3 h-3 text-gray-600" />
+                      </div>
                       <span>{client.phone}</span>
                     </div>
                   )}
 
                   {manager ? (
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="w-4 h-4 text-green-600" />
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <User className="w-3 h-3 text-green-600" />
+                      </div>
                       <span className="text-gray-700">
                         Manager: <span className="font-medium text-green-700">{manager.displayName || manager.email}</span>
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-sm text-yellow-600">
-                      <User className="w-4 h-4" />
+                    <div className="flex items-center gap-3 text-sm text-yellow-600">
+                      <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                        <AlertCircle className="w-3 h-3 text-yellow-600" />
+                      </div>
                       <span>No manager assigned</span>
                     </div>
                   )}
 
                   {client.startDate && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                      <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-3 h-3 text-gray-600" />
+                      </div>
                       <span>Since {format(new Date(client.startDate), 'MMM yyyy')}</span>
                     </div>
                   )}
 
                   {client.postsRemaining !== undefined && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Package className="w-4 h-4" />
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                      <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Package className="w-3 h-3 text-gray-600" />
+                      </div>
                       <span>{client.postsRemaining} posts remaining</span>
                     </div>
                   )}

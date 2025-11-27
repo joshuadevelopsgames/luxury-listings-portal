@@ -18,17 +18,15 @@ const ClientsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Header Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
-                <p className="mt-1 text-sm text-gray-600">
-                  Manage client profiles and pending approvals
-                </p>
-              </div>
+          <div className="mb-8">
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
+              <p className="mt-2 text-sm text-gray-600">
+                Manage client profiles and pending approvals
+              </p>
             </div>
             
             {/* Tabs Navigation */}
@@ -53,11 +51,11 @@ const ClientsPage = () => {
           </div>
 
           {/* Tab Content */}
-          <TabsContent value="profiles" className="mt-6">
+          <TabsContent value="profiles" className="mt-0">
             <ClientProfilesList />
           </TabsContent>
 
-          <TabsContent value="pending" className="mt-6">
+          <TabsContent value="pending" className="mt-0">
             <PendingClients />
           </TabsContent>
         </Tabs>
