@@ -70,6 +70,15 @@ function doGet(e) {
     let sheet = null;
     let sheetName = 'Client Packages'; // default - main sheet name
     
+    // Handle Google Drive folder access actions (don't need sheet)
+    if (action === 'grantDriveFolderAccess' || action === 'revokeDriveFolderAccess') {
+      if (action === 'grantDriveFolderAccess') {
+        return grantDriveFolderAccess(e.parameter);
+      } else if (action === 'revokeDriveFolderAccess') {
+        return revokeDriveFolderAccess(e.parameter);
+      }
+    }
+    
     // Only get sheet for actions that need it (email doesn't need sheet)
     if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived', 'addLead'].includes(action)) {
       // Determine which sheet to use based on package type

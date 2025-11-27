@@ -244,6 +244,17 @@ const UserManagement = () => {
       // Approve the user (this will move them from pending to approved)
       await firestoreService.approveUser(pendingUser.id, approvedUserData);
       
+      // Automatically grant Google Drive folder access based on role
+      try {
+        const { googleDriveService } = await import('../services/googleDriveService');
+        const primaryRole = approvedUserData.primaryRole || approvedUserData.role;
+        await googleDriveService.grantFolderAccess(approvedUserData.email, primaryRole);
+        console.log('✅ Google Drive access granted');
+      } catch (driveError) {
+        console.warn('⚠️ Could not grant Google Drive access:', driveError.message);
+        // Don't fail user approval if Drive access fails
+      }
+      
       console.log('✅ User approved successfully');
     } catch (error) {
       console.error('❌ Error approving user:', error);
@@ -656,6 +667,17 @@ const UserManagement = () => {
         console.log('✅ Employee record created');
       } catch (empError) {
         console.log('⚠️ Could not create employee record:', empError.message);
+      }
+      
+      // Automatically grant Google Drive folder access based on role
+      try {
+        const { googleDriveService } = await import('../services/googleDriveService');
+        const primaryRole = newUserData.primaryRole || newUserData.role;
+        await googleDriveService.grantFolderAccess(newUserData.email, primaryRole);
+        console.log('✅ Google Drive access granted');
+      } catch (driveError) {
+        console.warn('⚠️ Could not grant Google Drive access:', driveError.message);
+        // Don't fail user creation if Drive access fails
       }
       
       toast.success(`✅ User ${newUserForm.email} added successfully!`);
