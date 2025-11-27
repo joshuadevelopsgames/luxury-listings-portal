@@ -283,7 +283,7 @@ const ClientLogin = () => {
                           }
                           console.log('Sending password reset email to:', emailToReset);
                           await sendPasswordResetEmail(auth, emailToReset, {
-                            url: window.location.origin + '/client-login',
+                            url: window.location.origin + '/client-password-reset',
                             handleCodeInApp: false
                           });
                           console.log('Password reset email sent successfully');
