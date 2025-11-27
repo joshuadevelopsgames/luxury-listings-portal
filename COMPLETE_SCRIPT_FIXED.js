@@ -1,47 +1,11 @@
 // Google Apps Script for Client Packages Management
 // Deploy this as a web app to handle write operations
 
-// Test function to manually trigger authorization
-function testAuthorization() {
-  try {
-    console.log('🧪 Testing authorization...');
-    
-    // Try to access the spreadsheet
-    const spreadsheetId = '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA';
-    const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
-    
-    console.log('✅ Successfully accessed spreadsheet:', spreadsheet.getName());
-    console.log('✅ Authorization is working!');
-    
-    return {
-      success: true,
-      message: 'Authorization successful',
-      spreadsheetName: spreadsheet.getName()
-    };
-  } catch (error) {
-    console.error('❌ Authorization failed:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
 function doGet(e) {
   try {
     // Log the incoming request for debugging
     console.log('Received GET request');
-    console.log('Parameters:', e ? e.parameter : 'No parameters (manual run)');
-    
-    // Handle manual run (no parameters)
-    if (!e || !e.parameter) {
-      return ContentService
-        .createTextOutput(JSON.stringify({
-          success: true,
-          message: 'Google Apps Script is running! Use testAuthorization() to authorize.'
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
+    console.log('Parameters:', e.parameter);
     
     // Get action from parameters
     const action = e.parameter.action || 'test';
@@ -67,7 +31,7 @@ function doGet(e) {
     }
     
     // Get the spreadsheet
-    const spreadsheetId = '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA';
+    const spreadsheetId = '10MGYVVpccxgCsvcYIBeWNtu3xWvlT8GlXNecv8LAQ6g';
     
     console.log('🔍 Opening spreadsheet:', spreadsheetId);
     const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
@@ -75,32 +39,17 @@ function doGet(e) {
     
     // For actions that need a specific sheet, we'll determine it in the individual functions
     let sheet = null;
-    let sheetName = 'Client Packages'; // default - main sheet name
-    
-    // Handle Google Drive folder access actions (don't need sheet)
-    if (action === 'grantDriveFolderAccess' || action === 'revokeDriveFolderAccess') {
-      if (action === 'grantDriveFolderAccess') {
-        return grantDriveFolderAccess(e.parameter);
-      } else if (action === 'revokeDriveFolderAccess') {
-        return revokeDriveFolderAccess(e.parameter);
-      }
-    }
+    let sheetName = 'Social Media Packages'; // default
     
     // Only get sheet for actions that need it (email doesn't need sheet)
     if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived', 'addLead'].includes(action)) {
       // Determine which sheet to use based on package type
       console.log('🔍 Determining sheet based on package type:', clientData.packageType);
       if (clientData.packageType === 'Monthly') {
-        // Check if Monthly Recurring sheet exists, otherwise use main sheet
-        const monthlySheet = spreadsheet.getSheetByName('Monthly Recurring');
-        if (monthlySheet) {
         sheetName = 'Monthly Recurring';
         console.log('✅ Monthly package detected - using Monthly Recurring sheet');
       } else {
-          console.log('📋 Monthly Recurring sheet not found - using Client Packages sheet');
-        }
-      } else {
-        console.log('📋 Non-monthly package - using Client Packages sheet');
+        console.log('📋 Non-monthly package - using Social Media Packages sheet');
       }
       
       console.log('🔍 Getting sheet:', sheetName);
@@ -110,14 +59,14 @@ function doGet(e) {
     
     // Only validate sheet if the action requires it
     if (['test', 'update', 'add', 'approve', 'delete', 'archive', 'restore', 'deleteArchived', 'addLead'].includes(action)) {
-    if (!sheet) {
-      console.error('❌ Sheet not found:', sheetName);
-      console.log('📋 Available sheets:', spreadsheet.getSheets().map(s => s.getName()));
-      throw new Error(`Sheet "${sheetName}" not found`);
-    }
-    
-    console.log('✅ Sheet found:', sheet.getName());
-    console.log('📊 Sheet dimensions:', sheet.getLastRow(), 'rows x', sheet.getLastColumn(), 'columns');
+      if (!sheet) {
+        console.error('❌ Sheet not found:', sheetName);
+        console.log('📋 Available sheets:', spreadsheet.getSheets().map(s => s.getName()));
+        throw new Error(`Sheet "${sheetName}" not found`);
+      }
+      
+      console.log('✅ Sheet found:', sheet.getName());
+      console.log('📊 Sheet dimensions:', sheet.getLastRow(), 'rows x', sheet.getLastColumn(), 'columns');
     }
     
     let result = {};
@@ -305,7 +254,6 @@ function doGet(e) {
     }
     
     // Return success response
-    // Note: Google Apps Script automatically handles CORS when deployed with "Anyone" access
     return ContentService
       .createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -388,7 +336,7 @@ function updateClient(sheet, clientData) {
       // currentRow[15] = auto renew (preserve existing)
       currentRow[16] = clientData.overduePosts || 0; // Q - Overdue Posts
     } else {
-      // Main Client Packages sheet structure
+      // Main Social Media Packages sheet structure
       // A=Client Name, B=Package Type, C=Email, D=Date Added, E=Posted On (Page), F=Payment Status, G=Sales Stage, H=Approval Status, I=Notes, J=Status Change Date, K=Package Size, L=Posts Used, M=Last Post Date, N=Posts Remaining, O=Package Completed, P=Approval Email Recipient, Q=Price Paid (USD), R=Post Insights Sent, S=Overdue Posts
       
       currentRow[0] = clientData.clientName;     // A - Client Name
@@ -484,7 +432,7 @@ function addClient(sheet, clientData) {
         clientData.overduePosts || 0 // Q - Overdue Posts
       ];
     } else {
-      // Main Client Packages sheet structure
+      // Main Social Media Packages sheet structure
       newRow = [
         clientData.clientName,     // A - Client Name
         clientData.packageType,    // B - Package Type
@@ -1168,44 +1116,28 @@ function grantDriveFolderAccess(params) {
     // Handle direct execution from editor (for testing/authorization)
     if (!params || typeof params !== 'object') {
       console.log('ℹ️ Function called directly - checking Drive API access...');
-      // Try to access Drive root folder to trigger authorization prompt
-      // This will always work and trigger authorization if needed
-      const rootFolder = DriveApp.getRootFolder();
-      const rootName = rootFolder.getName();
-      console.log('✅ Drive API authorization check passed - root folder:', rootName);
-      
-      // Now try to access the contracts folder (optional check)
+      // Try to access Drive to trigger authorization prompt
       try {
-        const contractsFolder = DriveApp.getFolderById('1-mOzG-PzUl_Pz5riUb4vVsEOF4BpHUDR');
-        const folderName = contractsFolder.getName();
-        console.log('✅ Contracts folder accessible:', folderName);
+        const folder = DriveApp.getFolderById('1ld1rW8eTnWth2UDfRBrqGywZzsEPOJJw');
+        const folderName = folder.getName();
+        console.log('✅ Drive API authorization check passed - folder:', folderName);
         return ContentService
           .createTextOutput(JSON.stringify({
             success: true,
             message: 'Drive API authorization successful. Function is ready to use.',
-            folderName: folderName,
-            note: 'You can now grant folder access to users via the portal.'
+            folderName: folderName
           }))
           .setMimeType(ContentService.MimeType.JSON);
-      } catch (folderError) {
-        // Folder might not exist or user doesn't have access yet - that's OK
-        console.log('⚠️ Contracts folder not accessible:', folderError.message);
-        console.log('ℹ️ This is OK - Drive API is authorized. Folder access will work once folder ID is correct.');
-        return ContentService
-          .createTextOutput(JSON.stringify({
-            success: true,
-            message: 'Drive API authorization successful!',
-            note: 'Contracts folder not accessible yet. Please verify folder ID: 1-mOzG-PzUl_Pz5riUb4vVsEOF4BpHUDR',
-            folderError: folderError.message,
-            instruction: 'Once folder ID is correct, the function will work from the portal.'
-          }))
-          .setMimeType(ContentService.MimeType.JSON);
+      } catch (authError) {
+        // This will trigger authorization prompt on first run
+        console.log('⚠️ Authorization needed - error:', authError.message);
+        throw new Error('Drive API authorization required. Please authorize and run again.');
       }
     }
     
     const email = params.email;
-    const folderId = params.folderId || '1-mOzG-PzUl_Pz5riUb4vVsEOF4BpHUDR'; // Default contracts folder
-    const accessLevel = params.accessLevel || 'reader'; // reader, writer, or owner
+    const folderId = params.folderId || '1ld1rW8eTnWth2UDfRBrqGywZzsEPOJJw';
+    const accessLevel = params.accessLevel || 'reader';
     
     if (!email) {
       throw new Error('Email is required');
@@ -1213,18 +1145,13 @@ function grantDriveFolderAccess(params) {
     
     console.log(`🔐 Granting ${accessLevel} access to ${email} for folder ${folderId}`);
     
-    // Get the folder
     const folder = DriveApp.getFolderById(folderId);
-    
-    // Map access levels to Drive permission types
     let role = DriveApp.Permission.VIEWER;
     
     if (accessLevel === 'writer' || accessLevel === 'editor') {
       role = DriveApp.Permission.EDITOR;
     } else if (accessLevel === 'owner') {
       role = DriveApp.Permission.OWNER;
-    } else {
-      role = DriveApp.Permission.VIEWER;
     }
     
     // Check if user already has access
@@ -1235,7 +1162,6 @@ function grantDriveFolderAccess(params) {
     
     if (hasAccess) {
       console.log(`ℹ️ User ${email} already has access, updating permission...`);
-      // Remove existing permission first
       const allPermissions = folder.getEditors().concat(folder.getViewers());
       for (let i = 0; i < allPermissions.length; i++) {
         if (allPermissions[i].getEmail() === email) {
@@ -1281,7 +1207,7 @@ function grantDriveFolderAccess(params) {
 function revokeDriveFolderAccess(params) {
   try {
     const email = params.email;
-    const folderId = params.folderId || '1-mOzG-PzUl_Pz5riUb4vVsEOF4BpHUDR'; // Default contracts folder
+    const folderId = params.folderId || '1ld1rW8eTnWth2UDfRBrqGywZzsEPOJJw';
     
     if (!email) {
       throw new Error('Email is required');
@@ -1289,37 +1215,26 @@ function revokeDriveFolderAccess(params) {
     
     console.log(`🔐 Revoking access from ${email} for folder ${folderId}`);
     
-    // Get the folder
     const folder = DriveApp.getFolderById(folderId);
-    
-    // Remove the user from both editors and viewers
     const editors = folder.getEditors();
     const viewers = folder.getViewers();
     
     let removed = false;
     
-    // Remove from editors
     for (let i = 0; i < editors.length; i++) {
       if (editors[i].getEmail() === email) {
         folder.removeEditor(editors[i]);
         removed = true;
-        console.log(`✅ Removed ${email} from editors`);
         break;
       }
     }
     
-    // Remove from viewers
     for (let i = 0; i < viewers.length; i++) {
       if (viewers[i].getEmail() === email) {
         folder.removeViewer(viewers[i]);
         removed = true;
-        console.log(`✅ Removed ${email} from viewers`);
         break;
       }
-    }
-    
-    if (!removed) {
-      console.log(`ℹ️ User ${email} did not have access to this folder`);
     }
     
     return ContentService
@@ -1337,9 +1252,9 @@ function revokeDriveFolderAccess(params) {
     return ContentService
       .createTextOutput(JSON.stringify({
         success: false,
-        error: error.message,
-        stack: error.stack
+        error: error.message
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
+

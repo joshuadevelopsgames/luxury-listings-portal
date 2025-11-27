@@ -25,7 +25,7 @@ export const GOOGLE_SHEETS_CONFIG = {
 
 // Google Drive Configuration
 export const GOOGLE_DRIVE_CONFIG = {
-  CONTRACTS_FOLDER_ID: process.env.REACT_APP_GOOGLE_DRIVE_CONTRACTS_FOLDER_ID || '1ld1rW8eTnWth2UDfRBrqGywZzsEPOJJw',
+  CONTRACTS_FOLDER_ID: process.env.REACT_APP_GOOGLE_DRIVE_CONTRACTS_FOLDER_ID || '1-mOzG-PzUl_Pz5riUb4vVsEOF4BpHUDR',
   CONTRACTS_FOLDER_NAME: 'Client Contracts',
 };
 

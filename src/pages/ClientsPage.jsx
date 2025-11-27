@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import ClientProfilesList from '../components/client/ClientProfilesList';
 import PendingClients from './PendingClients';
@@ -6,6 +6,15 @@ import { Users, Clock } from 'lucide-react';
 
 const ClientsPage = () => {
   const [activeTab, setActiveTab] = useState('profiles');
+
+  // Listen for tab switch events
+  useEffect(() => {
+    const handleTabSwitch = (e) => {
+      setActiveTab(e.detail);
+    };
+    window.addEventListener('switchTab', handleTabSwitch);
+    return () => window.removeEventListener('switchTab', handleTabSwitch);
+  }, []);
 
   return (
     <div className="w-full">
@@ -25,6 +34,7 @@ const ClientsPage = () => {
             >
               <Clock className="w-4 h-4" />
               Pending Approvals
+              {/* Show badge if there are pending clients */}
             </TabsTrigger>
           </TabsList>
         </div>

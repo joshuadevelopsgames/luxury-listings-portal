@@ -6,7 +6,7 @@ import { GOOGLE_SHEETS_CONFIG, GOOGLE_DRIVE_CONFIG } from '../config/apiKeys';
 class GoogleDriveService {
   constructor() {
     this.googleAppsScriptUrl = GOOGLE_SHEETS_CONFIG.GOOGLE_APPS_SCRIPT_URL;
-    this.contractsFolderId = GOOGLE_DRIVE_CONFIG.CONTRACTS_FOLDER_ID || '1ld1rW8eTnWth2UDfRBrqGywZzsEPOJJw';
+    this.contractsFolderId = GOOGLE_DRIVE_CONFIG.CONTRACTS_FOLDER_ID || '1-mOzG-PzUl_Pz5riUb4vVsEOF4BpHUDR';
   }
 
   /**

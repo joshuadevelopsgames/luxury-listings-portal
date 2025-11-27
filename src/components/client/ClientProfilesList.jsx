@@ -14,21 +14,44 @@ import {
   Package,
   Edit3,
   MessageSquare,
-  FileText
+  FileText,
+  Filter,
+  UserPlus,
+  X,
+  CheckCircle,
+  AlertCircle,
+  TrendingUp
 } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { format } from 'date-fns';
 import ClientContractsSection from './ClientContractsSection';
+import { toast } from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ClientProfilesList = () => {
+  const { currentUser } = useAuth();
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
+  const [managerFilter, setManagerFilter] = useState('all');
+  const [packageFilter, setPackageFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showManagerAssignModal, setShowManagerAssignModal] = useState(false);
+  const [assigningManager, setAssigningManager] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     loadData();
+    
+    // Set up real-time listener for clients
+    const unsubscribe = firestoreService.onClientsChange((updatedClients) => {
+      setClients(updatedClients || []);
+    });
+    
+    return () => unsubscribe();
   }, []);
 
   const loadData = async () => {
@@ -65,11 +88,81 @@ const ClientProfilesList = () => {
     return null;
   };
 
-  const filteredClients = clients.filter(client =>
-    client.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.clientEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.packageType?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Calculate stats
+  const stats = {
+    total: clients.length,
+    withManager: clients.filter(c => getAssignedManager(c)).length,
+    withoutManager: clients.filter(c => !getAssignedManager(c)).length,
+    active: clients.filter(c => c.approvalStatus === 'Approved').length,
+    pending: clients.filter(c => c.approvalStatus === 'Pending').length
+  };
+
+  const filteredClients = clients.filter(client => {
+    // Search filter
+    const matchesSearch = 
+      client.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.clientEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.packageType?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Manager filter
+    const matchesManager = managerFilter === 'all' || 
+      (managerFilter === 'unassigned' && !getAssignedManager(client)) ||
+      (managerFilter !== 'unassigned' && getAssignedManager(client)?.email === managerFilter);
+    
+    // Package filter
+    const matchesPackage = packageFilter === 'all' || 
+      client.packageType?.toLowerCase() === packageFilter.toLowerCase();
+    
+    // Status filter
+    const matchesStatus = statusFilter === 'all' ||
+      client.approvalStatus?.toLowerCase() === statusFilter.toLowerCase();
+    
+    return matchesSearch && matchesManager && matchesPackage && matchesStatus;
+  });
+
+  const handleAssignManager = async (clientId, managerEmail) => {
+    try {
+      setAssigningManager(true);
+      const updateData = managerEmail 
+        ? { assignedManager: managerEmail }
+        : { assignedManager: null };
+      
+      await firestoreService.updateClient(clientId, updateData);
+      toast.success(managerEmail ? 'Manager assigned successfully' : 'Manager unassigned');
+      setShowManagerAssignModal(false);
+      await loadData();
+      // Update selected client if it's the one being updated
+      if (selectedClient && selectedClient.id === clientId) {
+        const updated = await firestoreService.getClients();
+        const updatedClient = updated.find(c => c.id === clientId);
+        if (updatedClient) setSelectedClient(updatedClient);
+      }
+    } catch (error) {
+      console.error('Error assigning manager:', error);
+      toast.error('Failed to assign manager');
+    } finally {
+      setAssigningManager(false);
+    }
+  };
+
+  const handleUpdateClient = async () => {
+    if (!selectedClient) return;
+    
+    try {
+      await firestoreService.updateClient(selectedClient.id, editForm);
+      toast.success('Client updated successfully');
+      setShowEditModal(false);
+      setEditForm({});
+      loadData();
+      // Reload selected client
+      const updated = await firestoreService.getClients();
+      const updatedClient = updated.find(c => c.id === selectedClient.id);
+      if (updatedClient) setSelectedClient(updatedClient);
+    } catch (error) {
+      console.error('Error updating client:', error);
+      toast.error('Failed to update client');
+    }
+  };
 
   if (loading) {
     return (
@@ -91,16 +184,105 @@ const ClientProfilesList = () => {
         </p>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <Input
-            placeholder="Search clients by name, email, or package..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Clients</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+            <Users className="w-8 h-8 text-blue-600" />
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">With Manager</p>
+              <p className="text-2xl font-bold text-green-600">{stats.withManager}</p>
+            </div>
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Unassigned</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.withoutManager}</p>
+            </div>
+            <AlertCircle className="w-8 h-8 text-yellow-600" />
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Active</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.active}</p>
+            </div>
+            <TrendingUp className="w-8 h-8 text-blue-600" />
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
+            </div>
+            <Calendar className="w-8 h-8 text-orange-600" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="relative flex-1 min-w-[250px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              placeholder="Search clients by name, email, or package..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <select
+              value={managerFilter}
+              onChange={(e) => setManagerFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Managers</option>
+              <option value="unassigned">Unassigned</option>
+              {employees.map(emp => (
+                <option key={emp.email} value={emp.email}>
+                  {emp.displayName || emp.email}
+                </option>
+              ))}
+            </select>
+            
+            <select
+              value={packageFilter}
+              onChange={(e) => setPackageFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Packages</option>
+              {[...new Set(clients.map(c => c.packageType).filter(Boolean))].map(pkg => (
+                <option key={pkg} value={pkg}>{pkg}</option>
+              ))}
+            </select>
+            
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -108,10 +290,81 @@ const ClientProfilesList = () => {
       {filteredClients.length === 0 ? (
         <Card className="p-12 text-center">
           <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">No clients found</p>
-          <p className="text-sm text-gray-500 mt-2">
-            {searchTerm ? 'Try a different search term' : 'No clients in the system yet'}
+          <p className="text-gray-600 font-medium">
+            {searchTerm || managerFilter !== 'all' || packageFilter !== 'all' || statusFilter !== 'all' 
+              ? 'No clients match your filters' 
+              : 'No clients in the system yet'}
           </p>
+          <p className="text-sm text-gray-500 mt-2">
+            {searchTerm || managerFilter !== 'all' || packageFilter !== 'all' || statusFilter !== 'all' 
+              ? 'Try adjusting your search or filters' 
+              : 'Clients will appear here once they are added or approved from pending sign-ups'}
+          </p>
+          {!searchTerm && managerFilter === 'all' && packageFilter === 'all' && statusFilter === 'all' && (
+            <div className="mt-6">
+              <p className="text-sm text-gray-600 mb-3">To get started:</p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Navigate to pending clients tab
+                    const event = new CustomEvent('switchTab', { detail: 'pending' });
+                    window.dispatchEvent(event);
+                  }}
+                >
+                  Check Pending Approvals
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    // Import bulk clients
+                    try {
+                      const { bulkAddClients } = await import('../../utils/bulkAddClients');
+                      await bulkAddClients();
+                      await loadData();
+                    } catch (error) {
+                      console.error('Error importing clients:', error);
+                      toast.error('Failed to import clients: ' + error.message);
+                    }
+                  }}
+                >
+                  Import All Clients
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    // Create a test client
+                    try {
+                      const testClient = {
+                        clientName: 'Test Client',
+                        clientEmail: `test-${Date.now()}@example.com`,
+                        packageType: 'Standard',
+                        packageSize: 10,
+                        postsUsed: 0,
+                        postsRemaining: 10,
+                        postedOn: 'Luxury Listings',
+                        paymentStatus: 'Paid',
+                        approvalStatus: 'Approved',
+                        notes: 'Test client created for demonstration',
+                        startDate: new Date().toISOString().split('T')[0],
+                        lastContact: new Date().toISOString().split('T')[0],
+                        customPrice: 0,
+                        overduePosts: 0
+                      };
+                      await firestoreService.addClient(testClient);
+                      toast.success('Test client created!');
+                      await loadData();
+                    } catch (error) {
+                      console.error('Error creating test client:', error);
+                      toast.error('Failed to create test client: ' + error.message);
+                    }
+                  }}
+                >
+                  Create Test Client
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -182,6 +435,19 @@ const ClientProfilesList = () => {
                 </div>
 
                 <div className="flex gap-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 flex items-center gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedClient(client);
+                      setShowManagerAssignModal(true);
+                    }}
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    {manager ? 'Reassign' : 'Assign'}
+                  </Button>
                   {manager && (
                     <Button
                       variant="outline"
@@ -304,6 +570,33 @@ const ClientProfilesList = () => {
               </div>
 
               <div className="flex gap-3 mt-6 pt-6 border-t">
+                <Button
+                  onClick={() => {
+                    setEditForm({
+                      clientName: selectedClient.clientName || '',
+                      clientEmail: selectedClient.clientEmail || '',
+                      phone: selectedClient.phone || '',
+                      notes: selectedClient.notes || ''
+                    });
+                    setShowEditModal(true);
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Edit3 className="w-4 h-4 mr-2" />
+                  Edit Info
+                </Button>
+                <Button
+                  onClick={() => {
+                    setSelectedClient(selectedClient);
+                    setShowManagerAssignModal(true);
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  {getAssignedManager(selectedClient) ? 'Reassign Manager' : 'Assign Manager'}
+                </Button>
                 {getAssignedManager(selectedClient) && (
                   <Button
                     onClick={() => {
@@ -321,6 +614,153 @@ const ClientProfilesList = () => {
                   className="flex-1"
                 >
                   Close
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Manager Assignment Modal */}
+      {showManagerAssignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Assign Manager</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowManagerAssignModal(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Select a social media manager for {selectedClient?.clientName || 'this client'}
+              </p>
+              
+              <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
+                <Button
+                  variant={getAssignedManager(selectedClient) === null ? "default" : "outline"}
+                  className="w-full justify-start"
+                  onClick={() => handleAssignManager(selectedClient.id, null)}
+                  disabled={assigningManager}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Unassign
+                </Button>
+                {employees.map(emp => (
+                  <Button
+                    key={emp.email}
+                    variant={getAssignedManager(selectedClient)?.email === emp.email ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={() => handleAssignManager(selectedClient.id, emp.email)}
+                    disabled={assigningManager}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    {emp.displayName || emp.email}
+                  </Button>
+                ))}
+              </div>
+              
+              <Button
+                onClick={() => setShowManagerAssignModal(false)}
+                variant="outline"
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Client Modal */}
+      {showEditModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Edit Client Information</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditForm({});
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Client Name
+                  </label>
+                  <Input
+                    value={editForm.clientName || ''}
+                    onChange={(e) => setEditForm({...editForm, clientName: e.target.value})}
+                    placeholder="Client name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <Input
+                    type="email"
+                    value={editForm.clientEmail || ''}
+                    onChange={(e) => setEditForm({...editForm, clientEmail: e.target.value})}
+                    placeholder="client@example.com"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <Input
+                    value={editForm.phone || ''}
+                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Notes
+                  </label>
+                  <textarea
+                    value={editForm.notes || ''}
+                    onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
+                    placeholder="Additional notes..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <Button
+                  onClick={handleUpdateClient}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Save Changes
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditForm({});
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
                 </Button>
               </div>
             </div>
