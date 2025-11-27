@@ -51,7 +51,9 @@ class FirestoreService {
     SUPPORT_TICKETS: 'support_tickets',
     TICKET_COMMENTS: 'ticket_comments',
     NOTIFICATIONS: 'notifications',
-    TASK_REQUESTS: 'task_requests'
+    TASK_REQUESTS: 'task_requests',
+    CLIENT_MESSAGES: 'client_messages',
+    CLIENT_REPORTS: 'client_reports'
   };
 
   // Test connection method
@@ -1527,6 +1529,106 @@ class FirestoreService {
       console.log('✅ Smart filter deleted:', filterId);
     } catch (error) {
       console.error('❌ Error deleting smart filter:', error);
+      throw error;
+    }
+  }
+
+  // ===== CLIENT MESSAGING =====
+
+  // Create a message
+  async createMessage(messageData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.CLIENT_MESSAGES), {
+        ...messageData,
+        createdAt: serverTimestamp()
+      });
+      console.log('✅ Message created:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error creating message:', error);
+      throw error;
+    }
+  }
+
+  // Get messages by client
+  async getMessagesByClient(clientId) {
+    try {
+      const q = query(
+        collection(db, this.collections.CLIENT_MESSAGES),
+        where('clientId', '==', clientId),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const messages = [];
+      snapshot.forEach((doc) => {
+        messages.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      return messages.reverse(); // Reverse to show oldest first
+    } catch (error) {
+      console.error('❌ Error getting messages:', error);
+      return [];
+    }
+  }
+
+  // Listen to messages changes
+  onMessagesChange(clientId, callback) {
+    const q = query(
+      collection(db, this.collections.CLIENT_MESSAGES),
+      where('clientId', '==', clientId),
+      orderBy('createdAt', 'asc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const messages = [];
+      snapshot.forEach((doc) => {
+        messages.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(messages);
+    });
+  }
+
+  // ===== CLIENT REPORTS =====
+
+  // Get reports by client
+  async getReportsByClient(clientId) {
+    try {
+      const q = query(
+        collection(db, this.collections.CLIENT_REPORTS),
+        where('clientId', '==', clientId),
+        orderBy('date', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const reports = [];
+      snapshot.forEach((doc) => {
+        reports.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      return reports;
+    } catch (error) {
+      console.error('❌ Error getting reports:', error);
+      return [];
+    }
+  }
+
+  // Create a monthly report
+  async createMonthlyReport(reportData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.CLIENT_REPORTS), {
+        ...reportData,
+        createdAt: serverTimestamp()
+      });
+      console.log('✅ Monthly report created:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error creating report:', error);
       throw error;
     }
   }

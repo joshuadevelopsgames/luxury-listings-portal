@@ -28,6 +28,7 @@ import EmployeeSelfService from './pages/EmployeeSelfService';
 import ITSupportPage from './pages/ITSupportPage';
 import OnboardingPage from './pages/OnboardingPage';
 import OnboardingTestPage from './pages/OnboardingTestPage';
+import ClientPortal from './pages/ClientPortal';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import NotificationsCenter from './components/NotificationsCenter';
@@ -228,6 +229,7 @@ function AppLayout() {
           <Route path="/my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
           <Route path="/self-service" element={<ProtectedRoute><EmployeeSelfService /></ProtectedRoute>} />
           <Route path="/it-support" element={<ProtectedRoute><ITSupportPage /></ProtectedRoute>} />
+          <Route path="/client-portal" element={<ProtectedRoute><ClientPortal /></ProtectedRoute>} />
           <Route path="/meta-callback" element={<MetaCallback />} />
           <Route path="/setup-ga" element={<ProtectedRoute><GoogleAnalyticsSetup /></ProtectedRoute>} />
         </Routes>
