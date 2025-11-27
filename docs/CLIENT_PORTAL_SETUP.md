@@ -59,6 +59,27 @@ The client portal uses email/password authentication, which needs to be enabled 
 - Client needs to be added to Client Packages first
 - Use the "Create Test Client Account" button or add manually
 
+### Password Reset Emails
+
+Firebase automatically sends password reset emails when `sendPasswordResetEmail` is called. 
+
+**To configure email templates:**
+1. Go to Firebase Console → Authentication → Templates
+2. Click on "Password reset" template
+3. Customize the email subject and body
+4. Set the action URL (should be your domain + `/client-login`)
+
+**Default email settings:**
+- Firebase uses `noreply@[project-id].firebaseapp.com` as the sender
+- Emails are sent automatically - no SMTP configuration needed
+- Check spam folder if email doesn't arrive
+- Password reset links expire after 1 hour
+
+**To customize sender email (optional):**
+1. Go to Firebase Console → Authentication → Settings
+2. Scroll to "Authorized domains"
+3. Configure custom domain for emails (requires domain verification)
+
 ### Client Portal Features
 
 Once authenticated, clients can:

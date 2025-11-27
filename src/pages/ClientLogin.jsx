@@ -278,12 +278,23 @@ const ClientLogin = () => {
                             setError('Please enter your email address');
                             return;
                           }
-                          await sendPasswordResetEmail(auth, emailToReset);
+                          console.log('Sending password reset email to:', emailToReset);
+                          await sendPasswordResetEmail(auth, emailToReset, {
+                            url: window.location.origin + '/client-login',
+                            handleCodeInApp: false
+                          });
+                          console.log('Password reset email sent successfully');
                           setResetSent(true);
                           setError('');
                         } catch (error) {
                           console.error('Password reset error:', error);
-                          setError('Failed to send reset email: ' + (error.message || 'Unknown error'));
+                          if (error.code === 'auth/user-not-found') {
+                            setError('No account found with this email address.');
+                          } else if (error.code === 'auth/invalid-email') {
+                            setError('Invalid email address. Please check and try again.');
+                          } else {
+                            setError('Failed to send reset email: ' + (error.message || error.code || 'Unknown error'));
+                          }
                         }
                       }}
                       variant="outline"
