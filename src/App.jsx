@@ -115,7 +115,6 @@ function AppLayout() {
       case USER_ROLES.CONTENT_DIRECTOR:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
-          { id: 'clients', name: 'Clients', icon: User, path: '/clients' },
           { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
@@ -125,6 +124,7 @@ function AppLayout() {
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
+          { id: 'clients', name: 'Clients', icon: User, path: '/clients' },
           { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
