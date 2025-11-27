@@ -47,13 +47,18 @@ const ClientLogin = () => {
             navigate('/client-waiting-for-approval');
           }
         } catch (error) {
+          console.error('Sign-up error:', error);
           if (error.code === 'auth/email-already-in-use') {
             setError('An account already exists with this email. Please sign in instead.');
             setIsSignUp(false);
           } else if (error.code === 'auth/weak-password') {
             setError('Password is too weak. Please use at least 6 characters.');
+          } else if (error.code === 'auth/operation-not-allowed') {
+            setError('Email/password authentication is not enabled. Please contact support or use Google sign-in.');
+          } else if (error.code === 'auth/invalid-email') {
+            setError('Invalid email address. Please check and try again.');
           } else {
-            setError('Failed to create account: ' + error.message);
+            setError('Failed to create account. Error: ' + (error.message || error.code || 'Unknown error'));
           }
         }
       } else {
@@ -81,6 +86,7 @@ const ClientLogin = () => {
             navigate('/client-waiting-for-approval');
           }
         } catch (error) {
+          console.error('Sign-in error:', error);
           if (error.code === 'auth/user-not-found') {
             setError('No account found. Please sign up first.');
             setIsSignUp(true);
@@ -88,8 +94,12 @@ const ClientLogin = () => {
             setError('Incorrect password. Please try again.');
           } else if (error.code === 'auth/invalid-email') {
             setError('Invalid email address. Please check and try again.');
+          } else if (error.code === 'auth/operation-not-allowed') {
+            setError('Email/password authentication is not enabled. Please contact support.');
+          } else if (error.code === 'auth/too-many-requests') {
+            setError('Too many failed attempts. Please try again later.');
           } else {
-            setError('Failed to sign in: ' + error.message);
+            setError('Failed to sign in. Error: ' + (error.message || error.code || 'Unknown error'));
           }
         }
       }
