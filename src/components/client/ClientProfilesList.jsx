@@ -177,11 +177,30 @@ const ClientProfilesList = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Client Profiles</h1>
-        <p className="text-gray-600">
-          View client contact information and assigned social media managers
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Client Profiles</h1>
+          <p className="text-gray-600">
+            View client contact information and assigned social media managers
+          </p>
+        </div>
+        {clients.length === 0 && (
+          <Button
+            onClick={async () => {
+              try {
+                const { bulkAddClients } = await import('../../utils/bulkAddClients');
+                await bulkAddClients();
+                await loadData();
+              } catch (error) {
+                console.error('Error importing clients:', error);
+                toast.error('Failed to import clients: ' + error.message);
+              }
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Import All Clients
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards */}
