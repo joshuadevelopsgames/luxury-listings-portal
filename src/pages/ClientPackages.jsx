@@ -76,9 +76,6 @@ export default function ClientPackages() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [autoResetChecked, setAutoResetChecked] = useState(false);
 
-  // Import secure API configuration
-  import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
-  
   // Google Sheets API configuration (using secure config)
   const GOOGLE_SHEETS_API_KEY = API_KEYS.GOOGLE_SHEETS_API_KEY || 'AIzaSyDxiQTlAv1UHxGYRXaZvxi2HulXBHTca3E'; // Fallback for backward compatibility
   const SPREADSHEET_ID = GOOGLE_SHEETS_CONFIG.SPREADSHEET_ID;
