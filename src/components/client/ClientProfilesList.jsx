@@ -178,7 +178,7 @@ const ClientProfilesList = () => {
       {/* Header Actions */}
       {clients.length === 0 && (
         <Card className="mt-8">
-          <CardContent className="p-6">
+          <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Get Started</h2>
@@ -210,7 +210,7 @@ const ClientProfilesList = () => {
       {clients.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-8">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Clients</p>
@@ -223,7 +223,7 @@ const ClientProfilesList = () => {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-8">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">With Manager</p>
@@ -236,7 +236,7 @@ const ClientProfilesList = () => {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-8">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Unassigned</p>
@@ -249,7 +249,7 @@ const ClientProfilesList = () => {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-8">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Active</p>
@@ -262,7 +262,7 @@ const ClientProfilesList = () => {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-8">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Pending</p>
@@ -280,7 +280,7 @@ const ClientProfilesList = () => {
       {/* Filters and Search */}
       {clients.length > 0 && (
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6 pt-8">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
               <div className="relative flex-1 w-full sm:w-auto min-w-[250px]">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -337,7 +337,7 @@ const ClientProfilesList = () => {
       {/* Client List */}
       {filteredClients.length === 0 ? (
         <Card className="mt-8">
-          <CardContent className="p-12 text-center">
+          <CardContent className="p-12 pt-12 text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {searchTerm || managerFilter !== 'all' || packageFilter !== 'all' || statusFilter !== 'all' 
@@ -420,7 +420,7 @@ const ClientProfilesList = () => {
                 className="hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-200"
                 onClick={() => setSelectedClient(client)}
               >
-                <CardContent className="p-6">
+                <CardContent className="p-6 pt-8">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">

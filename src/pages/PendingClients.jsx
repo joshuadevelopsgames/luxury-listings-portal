@@ -110,7 +110,7 @@ const PendingClients = () => {
 
       {pendingClients.length === 0 ? (
         <Card>
-          <CardContent className="p-12 text-center">
+          <CardContent className="p-12 pt-12 text-center">
             <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No pending clients</h3>
             <p className="text-sm text-gray-500">
@@ -122,7 +122,7 @@ const PendingClients = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pendingClients.map((client) => (
             <Card key={client.id} className="hover:shadow-lg transition-shadow border border-gray-200">
-              <CardContent className="p-6">
+              <CardContent className="p-6 pt-8">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
