@@ -237,11 +237,84 @@ const ClientLogin = () => {
             </Button>
           </form>
 
+          {/* Password Reset Section */}
+          {showPasswordReset && !isSignUp && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              {resetSent ? (
+                <div className="text-center">
+                  <p className="text-sm text-blue-800 font-medium mb-2">✓ Password reset email sent!</p>
+                  <p className="text-xs text-blue-700 mb-2">
+                    Check your inbox at <strong>{resetEmail || email}</strong> and click the reset link.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowPasswordReset(false);
+                      setResetSent(false);
+                      setResetEmail('');
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm font-medium text-blue-900 mb-2">Forgot Password?</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={resetEmail || email}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <Button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const emailToReset = resetEmail || email;
+                          if (!emailToReset) {
+                            setError('Please enter your email address');
+                            return;
+                          }
+                          await sendPasswordResetEmail(auth, emailToReset);
+                          setResetSent(true);
+                          setError('');
+                        } catch (error) {
+                          console.error('Password reset error:', error);
+                          setError('Failed to send reset email: ' + (error.message || 'Unknown error'));
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white whitespace-nowrap"
+                    >
+                      Send Reset
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isSignUp && !showPasswordReset && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowPasswordReset(true)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
+
           <div className="mt-6 text-center">
             <button
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError('');
+                setShowPasswordReset(false);
+                setResetSent(false);
               }}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
