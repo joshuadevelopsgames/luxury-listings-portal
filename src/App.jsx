@@ -30,6 +30,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import OnboardingTestPage from './pages/OnboardingTestPage';
 import ClientPortal from './pages/ClientPortal';
 import ClientLogin from './pages/ClientLogin';
+import ClientWaitingForApproval from './pages/ClientWaitingForApproval';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import NotificationsCenter from './components/NotificationsCenter';
@@ -255,6 +256,7 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/client-login" element={<ClientLogin />} />
+            <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
             <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
             
             {/* Protected routes - redirect root to login */}

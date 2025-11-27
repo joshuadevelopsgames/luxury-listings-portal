@@ -43,11 +43,8 @@ const ClientLogin = () => {
             }));
             navigate('/client-portal');
           } else {
-            // Account created but client doesn't exist yet
-            // Sign out and show message
-            await signOut(auth);
-            setError('Account created, but no client profile found. Please contact your media manager to add you as a client, or use the "Create Test Client" button if you\'re testing.');
-            setIsSignUp(false);
+            // Account created but client doesn't exist yet - redirect to waiting page
+            navigate('/client-waiting-for-approval');
           }
         } catch (error) {
           if (error.code === 'auth/email-already-in-use') {
@@ -80,9 +77,8 @@ const ClientLogin = () => {
             }));
             navigate('/client-portal');
           } else {
-            // Signed in but client doesn't exist
-            await signOut(auth);
-            setError('No client profile found for this email. Please contact your media manager.');
+            // Signed in but client doesn't exist - redirect to waiting page
+            navigate('/client-waiting-for-approval');
           }
         } catch (error) {
           if (error.code === 'auth/user-not-found') {
