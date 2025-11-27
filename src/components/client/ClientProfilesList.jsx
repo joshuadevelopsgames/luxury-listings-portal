@@ -177,7 +177,7 @@ const ClientProfilesList = () => {
     <div className="space-y-6">
       {/* Header Actions */}
       {clients.length === 0 && (
-        <Card>
+        <Card className="mt-8">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -336,7 +336,7 @@ const ClientProfilesList = () => {
 
       {/* Client List */}
       {filteredClients.length === 0 ? (
-        <Card>
+        <Card className="mt-8">
           <CardContent className="p-12 text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
