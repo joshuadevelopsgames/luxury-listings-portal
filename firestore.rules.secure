@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == 'jrsschroeder@gmail.com';
+    }
+    
+    // Helper function to get user email
+    function getUserEmail() {
+      return request.auth.token.email;
+    }
+    
+    // Users collection - users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && 
+                            (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Pending users - authenticated users can read, admins can write
+    match /pending_users/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Approved users - authenticated users can read, admins can write
+    match /approved_users/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Employees - authenticated users can read, admins/HR can write
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Tasks - authenticated users can read/write
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Clients - authenticated users can read, admins/managers can write
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // TODO: Add role-based check
+    }
+    
+    // Client contracts - authenticated users can read, admins/managers can write
+    match /client_contracts/{contractId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // TODO: Add role-based check
+    }
+    
+    // Client messages - users can access messages for their clients
+    match /client_messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Client reports - authenticated users can read, admins can write
+    match /client_reports/{reportId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // TODO: Add role-based check
+    }
+    
+    // Pending clients - authenticated users can read, admins/managers can write
+    match /pending_clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // TODO: Add role-based check
+    }
+    
+    // Analytics config - admins only
+    match /analytics_config/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // System config - admins only
+    match /system_config/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Support tickets - authenticated users can read/write
+    match /support_tickets/{ticketId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Leave requests - authenticated users can read, HR/admins can write
+    match /leave_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // TODO: Add HR role check
+    }
+  }
+}
+
