@@ -247,6 +247,9 @@ const ClientLogin = () => {
                   <p className="text-xs text-blue-700 mb-2">
                     Check your inbox at <strong>{resetEmail || email}</strong> and click the reset link.
                   </p>
+                  <p className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-2 py-1 mb-2">
+                    ⚠️ Don't see it? Please check your <strong>spam/junk folder</strong> - it may have been filtered there.
+                  </p>
                   <button
                     onClick={() => {
                       setShowPasswordReset(false);
