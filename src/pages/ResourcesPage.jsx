@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
+import AppSetupPage from "./AppSetupPage";
 import { 
   FileText, 
   ExternalLink, 
@@ -19,7 +21,8 @@ import {
   ArrowRight,
   MessageSquare,
   BarChart3,
-  BookOpen
+  BookOpen,
+  Settings
 } from "lucide-react";
 
 const resources = [
@@ -141,6 +144,7 @@ export default function ResourcesPage() {
   const navigate = useNavigate();
   const { currentRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("resources");
   
   // Filter resources based on role
   const roleFilteredResources = resources.filter(resource => {
@@ -162,11 +166,33 @@ export default function ResourcesPage() {
   const otherResources = filteredResources.filter(r => !r.important && !r.featured);
 
   return (
-    <div className="p-6 space-y-8 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Resources & Support</h1>
-        <p className="text-slate-600">Everything you need to know, all in one place</p>
-      </div>
+    <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="border-b border-gray-200 bg-white px-6 pt-4">
+          <TabsList className="bg-transparent">
+            <TabsTrigger 
+              value="resources" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              <BookOpen className="w-4 h-4" />
+              Resources
+            </TabsTrigger>
+            <TabsTrigger 
+              value="programs" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              <Settings className="w-4 h-4" />
+              Programs
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="resources" className="mt-0">
+          <div className="p-6 space-y-8 max-w-6xl mx-auto">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Resources & Support</h1>
+              <p className="text-slate-600">Everything you need to know, all in one place</p>
+            </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -282,6 +308,13 @@ export default function ResourcesPage() {
           </div>
         </CardContent>
       </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="programs" className="mt-0">
+          <AppSetupPage />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

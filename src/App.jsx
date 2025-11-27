@@ -10,6 +10,7 @@ import TasksPage from './pages/TasksPage';
 import AppSetupPage from './pages/AppSetupPage';
 import ResourcesPage from './pages/ResourcesPage';
 import ClientPackages from './pages/ClientPackages';
+import ClientsPage from './pages/ClientsPage';
 import HRCalendar from './pages/HRCalendar';
 import TeamManagement from './pages/TeamManagement';
 import HRAnalytics from './pages/HRAnalytics';
@@ -220,8 +221,10 @@ function AppLayout() {
           <Route path="/tutorials" element={<ProtectedRoute><TutorialsPage /></ProtectedRoute>} />
           <Route path="/content-manager-message" element={<ProtectedRoute><ContentManagerMessage /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
-          <Route path="/programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
           <Route path="/resources" element={<ProtectedRoute><ResourcesPage /></ProtectedRoute>} />
+          <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
+          {/* Keep old routes for backward compatibility */}
+          <Route path="/programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
           <Route path="/client-packages" element={<ProtectedRoute><ClientPackages /></ProtectedRoute>} />
           <Route path="/pending-clients" element={<ProtectedRoute><PendingClients /></ProtectedRoute>} />
           <Route path="/hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
