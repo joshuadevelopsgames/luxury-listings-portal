@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Mail, Lock, Shield, Calendar, MessageSquare, BarChart3, FileText } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { auth } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { createTestClient } from '../utils/createTestClient';
 
 const ClientLogin = () => {
@@ -14,6 +14,9 @@ const ClientLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -90,14 +93,16 @@ const ClientLogin = () => {
           if (error.code === 'auth/user-not-found') {
             setError('No account found. Please sign up first.');
             setIsSignUp(true);
-          } else if (error.code === 'auth/wrong-password') {
-            setError('Incorrect password. Please try again.');
+          } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            setError('Incorrect password. Click "Forgot Password?" to reset it.');
+            setShowPasswordReset(true);
           } else if (error.code === 'auth/invalid-email') {
             setError('Invalid email address. Please check and try again.');
           } else if (error.code === 'auth/operation-not-allowed') {
             setError('Email/password authentication is not enabled. Please contact support.');
           } else if (error.code === 'auth/too-many-requests') {
-            setError('Too many failed attempts. Please try again later.');
+            setError('Too many failed attempts. Please try again later or reset your password.');
+            setShowPasswordReset(true);
           } else {
             setError('Failed to sign in. Error: ' + (error.message || error.code || 'Unknown error'));
           }
