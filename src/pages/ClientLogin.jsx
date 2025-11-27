@@ -52,8 +52,9 @@ const ClientLogin = () => {
         } catch (error) {
           console.error('Sign-up error:', error);
           if (error.code === 'auth/email-already-in-use') {
-            setError('An account already exists with this email. Please sign in instead.');
+            setError('An account already exists with this email. Please sign in instead. If you forgot your password, use "Forgot Password?" below.');
             setIsSignUp(false);
+            setShowPasswordReset(true);
           } else if (error.code === 'auth/weak-password') {
             setError('Password is too weak. Please use at least 6 characters.');
           } else if (error.code === 'auth/operation-not-allowed') {
