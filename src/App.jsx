@@ -115,11 +115,9 @@ function AppLayout() {
       case USER_ROLES.CONTENT_DIRECTOR:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
-          { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
-          { id: 'pending-clients', name: 'Pending Clients', icon: Clock, path: '/pending-clients' },
+          { id: 'clients', name: 'Clients', icon: User, path: '/clients' },
           { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          { id: 'programs', name: 'Programs', icon: Settings, path: '/programs' },
           { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
           { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
         ];
