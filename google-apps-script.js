@@ -59,6 +59,13 @@ function doGet(e) {
     console.log('Parsed action:', action);
     console.log('Parsed clientData:', clientData);
     
+    // Handle Google Drive folder access actions (don't need spreadsheet)
+    if (action === 'grantDriveFolderAccess') {
+      return grantDriveFolderAccess(e.parameter);
+    } else if (action === 'revokeDriveFolderAccess') {
+      return revokeDriveFolderAccess(e.parameter);
+    }
+    
     // Get the spreadsheet
     const spreadsheetId = '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA';
     
