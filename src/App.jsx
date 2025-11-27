@@ -32,6 +32,7 @@ import ClientPortal from './pages/ClientPortal';
 import ClientLogin from './pages/ClientLogin';
 import ClientWaitingForApproval from './pages/ClientWaitingForApproval';
 import ClientPasswordReset from './pages/ClientPasswordReset';
+import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import NotificationsCenter from './components/NotificationsCenter';
@@ -260,6 +261,8 @@ function App() {
             <Route path="/client-password-reset" element={<ClientPasswordReset />} />
             <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
             <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
+            {/* Handle Firebase default auth URLs */}
+            <Route path="/__/auth/action" element={<FirebaseAuthHandler />} />
             
             {/* Protected routes - redirect root to login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
