@@ -298,14 +298,28 @@ const ClientLogin = () => {
             </div>
           )}
 
-          {!isSignUp && !showPasswordReset && (
+          {!isSignUp && (
             <div className="mt-4 text-center">
-              <button
-                onClick={() => setShowPasswordReset(true)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Forgot Password?
-              </button>
+              {!showPasswordReset ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordReset(true)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Forgot Password?
+                </button>
+              ) : !resetSent && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordReset(false);
+                    setResetEmail('');
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-700 font-medium"
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           )}
 
