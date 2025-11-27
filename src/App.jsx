@@ -29,6 +29,7 @@ import ITSupportPage from './pages/ITSupportPage';
 import OnboardingPage from './pages/OnboardingPage';
 import OnboardingTestPage from './pages/OnboardingTestPage';
 import ClientPortal from './pages/ClientPortal';
+import ClientLogin from './pages/ClientLogin';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import NotificationsCenter from './components/NotificationsCenter';
@@ -229,7 +230,7 @@ function AppLayout() {
           <Route path="/my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
           <Route path="/self-service" element={<ProtectedRoute><EmployeeSelfService /></ProtectedRoute>} />
           <Route path="/it-support" element={<ProtectedRoute><ITSupportPage /></ProtectedRoute>} />
-          <Route path="/client-portal" element={<ProtectedRoute><ClientPortal /></ProtectedRoute>} />
+          <Route path="/client-portal" element={<ClientPortal />} />
           <Route path="/meta-callback" element={<MetaCallback />} />
           <Route path="/setup-ga" element={<ProtectedRoute><GoogleAnalyticsSetup /></ProtectedRoute>} />
         </Routes>
@@ -253,6 +254,7 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/client-login" element={<ClientLogin />} />
             <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
             
             {/* Protected routes - redirect root to login */}

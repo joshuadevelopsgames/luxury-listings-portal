@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -15,41 +16,83 @@ import {
   Users,
   Eye,
   MousePointer,
-  Globe
+  Globe,
+  LogOut
 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { analyticsService } from '../services/analyticsService';
-import { useAuth } from '../contexts/AuthContext';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 import ClientCalendarApproval from '../components/client/ClientCalendarApproval';
 import ClientMessaging from '../components/client/ClientMessaging';
 import ClientAnalytics from '../components/client/ClientAnalytics';
 import ClientReports from '../components/client/ClientReports';
 
 const ClientPortal = () => {
-  const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [clientData, setClientData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('calendar');
+  const [clientEmail, setClientEmail] = useState(null);
 
   // Load client data based on email
   useEffect(() => {
     const loadClientData = async () => {
-      if (!currentUser?.email) {
-        setLoading(false);
+      // Check localStorage for client auth first
+      const clientAuth = localStorage.getItem('clientAuth');
+      let emailToUse = null;
+
+      if (clientAuth) {
+        try {
+          const authData = JSON.parse(clientAuth);
+          emailToUse = authData.email;
+          setClientEmail(emailToUse);
+        } catch (error) {
+          console.error('Error parsing client auth:', error);
+        }
+      }
+
+      // Fallback to Firebase auth user
+      if (!emailToUse) {
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            emailToUse = user.email;
+            setClientEmail(emailToUse);
+            loadClient(emailToUse);
+          } else {
+            // No user authenticated, redirect to login
+            navigate('/client-login');
+          }
+        });
         return;
       }
 
+      await loadClient(emailToUse);
+    };
+
+    const loadClient = async (email) => {
       try {
+        setLoading(true);
         // Find client by email
         const clients = await firestoreService.getClients();
         const client = clients.find(c => 
-          c.clientEmail?.toLowerCase() === currentUser.email.toLowerCase()
+          c.clientEmail?.toLowerCase() === email.toLowerCase()
         );
 
         if (client) {
           setClientData(client);
+          // Update localStorage
+          localStorage.setItem('clientAuth', JSON.stringify({
+            email: email,
+            clientId: client.id,
+            clientName: client.clientName,
+            authenticated: true
+          }));
         } else {
-          console.warn('Client not found for email:', currentUser.email);
+          console.warn('Client not found for email:', email);
+          // Clear invalid auth
+          localStorage.removeItem('clientAuth');
+          navigate('/client-login');
         }
       } catch (error) {
         console.error('Error loading client data:', error);
@@ -59,7 +102,17 @@ const ClientPortal = () => {
     };
 
     loadClientData();
-  }, [currentUser?.email]);
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('clientAuth');
+      navigate('/client-login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -105,17 +158,27 @@ const ClientPortal = () => {
                 {clientData.packageType} Package • {clientData.postsRemaining} posts remaining
               </p>
             </div>
-            <Badge 
-              className={
-                clientData.approvalStatus === 'Approved' 
-                  ? 'bg-green-100 text-green-800' 
-                  : clientData.approvalStatus === 'Pending'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-red-100 text-red-800'
-              }
-            >
-              {clientData.approvalStatus}
-            </Badge>
+            <div className="flex items-center gap-4">
+              <Badge 
+                className={
+                  clientData.approvalStatus === 'Approved' 
+                    ? 'bg-green-100 text-green-800' 
+                    : clientData.approvalStatus === 'Pending'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+                }
+              >
+                {clientData.approvalStatus}
+              </Badge>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </div>
