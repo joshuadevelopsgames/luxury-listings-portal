@@ -1161,3 +1161,147 @@ This is an automated notification from the Luxury Listings Portal.
     };
   }
 }
+
+// Grant access to a Google Drive folder
+function grantDriveFolderAccess(params) {
+  try {
+    const email = params.email;
+    const folderId = params.folderId || '1ld1rW8eTnWth2UDfRBrqGywZzsEPOJJw'; // Default contracts folder
+    const accessLevel = params.accessLevel || 'reader'; // reader, writer, or owner
+    
+    if (!email) {
+      throw new Error('Email is required');
+    }
+    
+    console.log(`🔐 Granting ${accessLevel} access to ${email} for folder ${folderId}`);
+    
+    // Get the folder
+    const folder = DriveApp.getFolderById(folderId);
+    
+    // Map access levels to Drive permission types
+    let role = DriveApp.Permission.VIEWER;
+    
+    if (accessLevel === 'writer' || accessLevel === 'editor') {
+      role = DriveApp.Permission.EDITOR;
+    } else if (accessLevel === 'owner') {
+      role = DriveApp.Permission.OWNER;
+    } else {
+      role = DriveApp.Permission.VIEWER;
+    }
+    
+    // Check if user already has access
+    const existingPermissions = folder.getEditors();
+    const existingViewers = folder.getViewers();
+    const hasAccess = existingPermissions.some(p => p.getEmail() === email) || 
+                      existingViewers.some(p => p.getEmail() === email);
+    
+    if (hasAccess) {
+      console.log(`ℹ️ User ${email} already has access, updating permission...`);
+      // Remove existing permission first
+      const allPermissions = folder.getEditors().concat(folder.getViewers());
+      for (let i = 0; i < allPermissions.length; i++) {
+        if (allPermissions[i].getEmail() === email) {
+          folder.removeEditor(allPermissions[i]);
+          folder.removeViewer(allPermissions[i]);
+          break;
+        }
+      }
+    }
+    
+    // Add the new permission
+    if (role === DriveApp.Permission.EDITOR) {
+      folder.addEditor(email);
+    } else {
+      folder.addViewer(email);
+    }
+    
+    console.log(`✅ Successfully granted ${accessLevel} access to ${email}`);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: `Granted ${accessLevel} access to ${email}`,
+        email: email,
+        folderId: folderId,
+        accessLevel: accessLevel
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    console.error('❌ Error granting folder access:', error);
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.message,
+        stack: error.stack
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Revoke access from a Google Drive folder
+function revokeDriveFolderAccess(params) {
+  try {
+    const email = params.email;
+    const folderId = params.folderId || '1ld1rW8eTnWth2UDfRBrqGywZzsEPOJJw'; // Default contracts folder
+    
+    if (!email) {
+      throw new Error('Email is required');
+    }
+    
+    console.log(`🔐 Revoking access from ${email} for folder ${folderId}`);
+    
+    // Get the folder
+    const folder = DriveApp.getFolderById(folderId);
+    
+    // Remove the user from both editors and viewers
+    const editors = folder.getEditors();
+    const viewers = folder.getViewers();
+    
+    let removed = false;
+    
+    // Remove from editors
+    for (let i = 0; i < editors.length; i++) {
+      if (editors[i].getEmail() === email) {
+        folder.removeEditor(editors[i]);
+        removed = true;
+        console.log(`✅ Removed ${email} from editors`);
+        break;
+      }
+    }
+    
+    // Remove from viewers
+    for (let i = 0; i < viewers.length; i++) {
+      if (viewers[i].getEmail() === email) {
+        folder.removeViewer(viewers[i]);
+        removed = true;
+        console.log(`✅ Removed ${email} from viewers`);
+        break;
+      }
+    }
+    
+    if (!removed) {
+      console.log(`ℹ️ User ${email} did not have access to this folder`);
+    }
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: `Revoked access from ${email}`,
+        email: email,
+        folderId: folderId,
+        removed: removed
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    console.error('❌ Error revoking folder access:', error);
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.message,
+        stack: error.stack
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
