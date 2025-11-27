@@ -560,7 +560,7 @@ const ClientProfilesList = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-8">
 
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -742,7 +742,7 @@ const ClientProfilesList = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-8">
               
               <p className="text-sm text-gray-600 mb-4">
                 Select a social media manager for <span className="font-medium">{selectedClient?.clientName || 'this client'}</span>
@@ -809,7 +809,7 @@ const ClientProfilesList = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-8">
               
               <div className="space-y-4">
                 <div>
