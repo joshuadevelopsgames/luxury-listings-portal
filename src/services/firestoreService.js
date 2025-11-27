@@ -53,7 +53,8 @@ class FirestoreService {
     NOTIFICATIONS: 'notifications',
     TASK_REQUESTS: 'task_requests',
     CLIENT_MESSAGES: 'client_messages',
-    CLIENT_REPORTS: 'client_reports'
+    CLIENT_REPORTS: 'client_reports',
+    PENDING_CLIENTS: 'pending_clients'
   };
 
   // Test connection method
@@ -1631,6 +1632,77 @@ class FirestoreService {
       console.error('❌ Error creating report:', error);
       throw error;
     }
+  }
+
+  // ===== PENDING CLIENTS =====
+
+  // Add a pending client (when client signs up but doesn't exist)
+  async addPendingClient(clientData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.PENDING_CLIENTS), {
+        ...clientData,
+        createdAt: serverTimestamp(),
+        status: 'pending'
+      });
+      console.log('✅ Pending client added:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error adding pending client:', error);
+      throw error;
+    }
+  }
+
+  // Get all pending clients
+  async getPendingClients() {
+    try {
+      const q = query(
+        collection(db, this.collections.PENDING_CLIENTS),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const clients = [];
+      snapshot.forEach((doc) => {
+        clients.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      return clients;
+    } catch (error) {
+      console.error('❌ Error getting pending clients:', error);
+      return [];
+    }
+  }
+
+  // Remove a pending client (after approval or rejection)
+  async removePendingClient(clientId) {
+    try {
+      const docRef = doc(db, this.collections.PENDING_CLIENTS, clientId);
+      await deleteDoc(docRef);
+      console.log('✅ Pending client removed:', clientId);
+    } catch (error) {
+      console.error('❌ Error removing pending client:', error);
+      throw error;
+    }
+  }
+
+  // Listen to pending clients changes
+  onPendingClientsChange(callback) {
+    const q = query(
+      collection(db, this.collections.PENDING_CLIENTS),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const clients = [];
+      snapshot.forEach((doc) => {
+        clients.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(clients);
+    });
   }
 }
 

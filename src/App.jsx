@@ -33,6 +33,7 @@ import ClientLogin from './pages/ClientLogin';
 import ClientWaitingForApproval from './pages/ClientWaitingForApproval';
 import ClientPasswordReset from './pages/ClientPasswordReset';
 import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
+import PendingClients from './pages/PendingClients';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import NotificationsCenter from './components/NotificationsCenter';
@@ -221,6 +222,7 @@ function AppLayout() {
           <Route path="/programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
           <Route path="/resources" element={<ProtectedRoute><ResourcesPage /></ProtectedRoute>} />
           <Route path="/client-packages" element={<ProtectedRoute><ClientPackages /></ProtectedRoute>} />
+          <Route path="/pending-clients" element={<ProtectedRoute><PendingClients /></ProtectedRoute>} />
           <Route path="/hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
           <Route path="/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
           <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />

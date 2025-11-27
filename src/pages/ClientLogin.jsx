@@ -46,7 +46,18 @@ const ClientLogin = () => {
             }));
             navigate('/client-portal');
           } else {
-            // Account created but client doesn't exist yet - redirect to waiting page
+            // Account created but client doesn't exist yet
+            // Add to pending clients for admin approval
+            try {
+              await firestoreService.addPendingClient({
+                email: email,
+                clientName: email.split('@')[0], // Use email prefix as default name
+                status: 'pending'
+              });
+            } catch (error) {
+              console.error('Error adding pending client:', error);
+              // Continue even if this fails
+            }
             navigate('/client-waiting-for-approval');
           }
         } catch (error) {
