@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Mail, Lock, Shield, Calendar, MessageSquare, BarChart3, FileText } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { auth } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { createTestClient } from '../utils/createTestClient';
 
 const ClientLogin = () => {
@@ -22,58 +22,78 @@ const ClientLogin = () => {
     setLoading(true);
 
     try {
-      // First, check if this email exists as a client
-      const clients = await firestoreService.getClients();
-      const client = clients.find(c => 
-        c.clientEmail?.toLowerCase() === email.toLowerCase()
-      );
-
-      if (!client) {
-        setError('No client account found with this email. Please contact your media manager.');
-        setLoading(false);
-        return;
-      }
-
       if (isSignUp) {
-        // Create account for client
+        // Create Firebase account first
         try {
           await createUserWithEmailAndPassword(auth, email, password);
-          // Store client info in localStorage for the portal
-          localStorage.setItem('clientAuth', JSON.stringify({
-            email: email,
-            clientId: client.id,
-            clientName: client.clientName,
-            authenticated: true
-          }));
-          navigate('/client-portal');
+          
+          // After account creation, check if client exists
+          const clients = await firestoreService.getClients();
+          const client = clients.find(c => 
+            c.clientEmail?.toLowerCase() === email.toLowerCase()
+          );
+
+          if (client) {
+            // Client exists, store info and redirect
+            localStorage.setItem('clientAuth', JSON.stringify({
+              email: email,
+              clientId: client.id,
+              clientName: client.clientName,
+              authenticated: true
+            }));
+            navigate('/client-portal');
+          } else {
+            // Account created but client doesn't exist yet
+            // Sign out and show message
+            await signOut(auth);
+            setError('Account created, but no client profile found. Please contact your media manager to add you as a client, or use the "Create Test Client" button if you\'re testing.');
+            setIsSignUp(false);
+          }
         } catch (error) {
           if (error.code === 'auth/email-already-in-use') {
             setError('An account already exists with this email. Please sign in instead.');
             setIsSignUp(false);
+          } else if (error.code === 'auth/weak-password') {
+            setError('Password is too weak. Please use at least 6 characters.');
           } else {
-            setError('Failed to create account. Please try again.');
+            setError('Failed to create account: ' + error.message);
           }
         }
       } else {
-        // Sign in existing client
+        // Sign in existing account
         try {
           await signInWithEmailAndPassword(auth, email, password);
-          // Store client info in localStorage for the portal
-          localStorage.setItem('clientAuth', JSON.stringify({
-            email: email,
-            clientId: client.id,
-            clientName: client.clientName,
-            authenticated: true
-          }));
-          navigate('/client-portal');
+          
+          // After sign in, check if client exists
+          const clients = await firestoreService.getClients();
+          const client = clients.find(c => 
+            c.clientEmail?.toLowerCase() === email.toLowerCase()
+          );
+
+          if (client) {
+            // Client exists, store info and redirect
+            localStorage.setItem('clientAuth', JSON.stringify({
+              email: email,
+              clientId: client.id,
+              clientName: client.clientName,
+              authenticated: true
+            }));
+            navigate('/client-portal');
+          } else {
+            // Signed in but client doesn't exist
+            await signOut(auth);
+            setError('No client profile found for this email. Please contact your media manager.');
+          }
         } catch (error) {
           if (error.code === 'auth/user-not-found') {
             setError('No account found. Please sign up first.');
             setIsSignUp(true);
           } else if (error.code === 'auth/wrong-password') {
             setError('Incorrect password. Please try again.');
+          } else if (error.code === 'auth/invalid-email') {
+            setError('Invalid email address. Please check and try again.');
           } else {
-            setError('Failed to sign in. Please try again.');
+            setError('Failed to sign in: ' + error.message);
           }
         }
       }
@@ -252,12 +272,22 @@ const ClientLogin = () => {
                   size="sm"
                   onClick={async () => {
                     try {
-                      await createTestClient();
+                      setLoading(true);
+                      setError('');
+                      const result = await createTestClient();
+                      if (result) {
+                        setError('');
+                        alert('Test client created! You can now sign up with joshua@luxury-listings.com');
+                      }
                     } catch (error) {
                       console.error('Error creating test client:', error);
+                      setError('Failed to create test client: ' + error.message);
+                    } finally {
+                      setLoading(false);
                     }
                   }}
                   className="w-full text-xs"
+                  disabled={loading}
                 >
                   Create Test Client Account
                 </Button>
