@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Mail, Clock, CheckCircle, XCircle, User, Calendar } from 'lucide-react';
@@ -108,70 +108,74 @@ const PendingClients = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Pending Client Approvals</h1>
-        <p className="text-gray-600">
-          Review and approve clients who have signed up for portal access
-        </p>
-      </div>
+    <div className="space-y-6">
 
       {pendingClients.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">No pending clients</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Clients who sign up will appear here for approval
-          </p>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No pending clients</h3>
+            <p className="text-sm text-gray-500">
+              Clients who sign up will appear here for approval
+            </p>
+          </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pendingClients.map((client) => (
-            <Card key={client.id} className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-blue-600" />
+            <Card key={client.id} className="hover:shadow-lg transition-shadow border border-gray-200">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-semibold text-lg">
+                        {client.clientName ? client.clientName.charAt(0).toUpperCase() : client.email.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">
+                        {client.clientName || client.email.split('@')[0]}
+                      </p>
+                      <p className="text-sm text-gray-600 truncate">{client.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {client.clientName || client.email.split('@')[0]}
-                    </p>
-                    <p className="text-sm text-gray-600">{client.email}</p>
+                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 flex-shrink-0">Pending</Badge>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Mail className="w-3 h-3 text-gray-600" />
+                    </div>
+                    <span className="truncate">{client.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Calendar className="w-3 h-3 text-gray-600" />
+                    </div>
+                    <span>Signed up {format(new Date(client.createdAt?.toDate() || client.createdAt || Date.now()), 'MMM d, yyyy')}</span>
                   </div>
                 </div>
-                <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
-              </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Mail className="w-4 h-4" />
-                  <span>{client.email}</span>
+                <div className="flex gap-2 pt-4 border-t border-gray-100">
+                  <Button
+                    onClick={() => handleApprove(client)}
+                    disabled={processing[client.id]}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {processing[client.id] ? 'Processing...' : 'Approve'}
+                  </Button>
+                  <Button
+                    onClick={() => handleReject(client)}
+                    disabled={processing[client.id]}
+                    variant="outline"
+                    className="border-red-300 text-red-700 hover:bg-red-50"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>Signed up {format(new Date(client.createdAt?.toDate() || client.createdAt || Date.now()), 'MMM d, yyyy')}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => handleApprove(client)}
-                  disabled={processing[client.id]}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  {processing[client.id] ? 'Processing...' : 'Approve'}
-                </Button>
-                <Button
-                  onClick={() => handleReject(client)}
-                  disabled={processing[client.id]}
-                  variant="outline"
-                  className="border-red-300 text-red-700 hover:bg-red-50"
-                >
-                  <XCircle className="w-4 h-4" />
-                </Button>
-              </div>
+              </CardContent>
             </Card>
           ))}
         </div>

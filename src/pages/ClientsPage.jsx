@@ -17,39 +17,53 @@ const ClientsPage = () => {
   }, []);
 
   return (
-    <div className="w-full">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b border-gray-200 bg-white px-6 pt-4">
-          <TabsList className="bg-transparent">
-            <TabsTrigger 
-              value="profiles" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
-            >
-              <Users className="w-4 h-4" />
-              Client Profiles
-            </TabsTrigger>
-            <TabsTrigger 
-              value="pending" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
-            >
-              <Clock className="w-4 h-4" />
-              Pending Approvals
-              {/* Show badge if there are pending clients */}
-            </TabsTrigger>
-          </TabsList>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* Header Section */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
+                <p className="mt-1 text-sm text-gray-600">
+                  Manage client profiles and pending approvals
+                </p>
+              </div>
+            </div>
+            
+            {/* Tabs Navigation */}
+            <div className="border-b border-gray-200">
+              <TabsList className="bg-transparent h-auto p-0">
+                <TabsTrigger 
+                  value="profiles" 
+                  className="flex items-center gap-2 px-4 py-3 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:shadow-none rounded-none"
+                >
+                  <Users className="w-4 h-4" />
+                  Client Profiles
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="pending" 
+                  className="flex items-center gap-2 px-4 py-3 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:shadow-none rounded-none"
+                >
+                  <Clock className="w-4 h-4" />
+                  Pending Approvals
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
 
-        <TabsContent value="profiles" className="mt-0">
-          <ClientProfilesList />
-        </TabsContent>
+          {/* Tab Content */}
+          <TabsContent value="profiles" className="mt-6">
+            <ClientProfilesList />
+          </TabsContent>
 
-        <TabsContent value="pending" className="mt-0">
-          <PendingClients />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="pending" className="mt-6">
+            <PendingClients />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
 
 export default ClientsPage;
-
