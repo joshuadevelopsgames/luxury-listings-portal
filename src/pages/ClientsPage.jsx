@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import ClientPackages from './ClientPackages';
+import ClientProfilesList from '../components/client/ClientProfilesList';
 import PendingClients from './PendingClients';
 import { Users, Clock } from 'lucide-react';
 
@@ -30,7 +30,7 @@ const ClientsPage = () => {
         </div>
 
         <TabsContent value="profiles" className="mt-0">
-          <ClientPackages />
+          <ClientProfilesList />
         </TabsContent>
 
         <TabsContent value="pending" className="mt-0">
