@@ -1,7 +1,19 @@
 -- Migration: Create Content Calendar Tables
 -- Description: Creates tables for content items and calendars to replace localStorage
 
--- Content Items Table
+-- IMPORTANT: Create calendars table FIRST since content_items references it
+-- Calendars Table
+CREATE TABLE IF NOT EXISTS calendars (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_email TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  color TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Content Items Table (created AFTER calendars due to foreign key reference)
 CREATE TABLE IF NOT EXISTS content_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_email TEXT NOT NULL,
@@ -15,17 +27,6 @@ CREATE TABLE IF NOT EXISTS content_items (
   image_url TEXT,
   video_url TEXT,
   calendar_id UUID REFERENCES calendars(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Calendars Table
-CREATE TABLE IF NOT EXISTS calendars (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_email TEXT NOT NULL,
-  name TEXT NOT NULL,
-  description TEXT,
-  color TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
