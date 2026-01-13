@@ -40,7 +40,15 @@ Add to `.env.local`:
 ```env
 REACT_APP_SUPABASE_URL=https://your-project.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_DB_PASSWORD=your-database-password
 ```
+
+**Note:** 
+- `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_ANON_KEY` are required for the React app
+- `SUPABASE_DB_PASSWORD` is optional and only needed for:
+  - Supabase CLI operations
+  - Direct PostgreSQL connections (server-side)
+  - Database migrations via CLI
 
 ---
 
