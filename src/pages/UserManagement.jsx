@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { 
   Users, 
   UserPlus, 
@@ -60,6 +60,25 @@ const UserManagement = () => {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
   const [selectedPermissions, setSelectedPermissions] = useState([]);
+  const [showUnifiedManageModal, setShowUnifiedManageModal] = useState(false);
+  const [managedUser, setManagedUser] = useState(null);
+  const [userPagePermissions, setUserPagePermissions] = useState([]);
+  
+  // Available pages for page permissions
+  const AVAILABLE_PAGES = [
+    { id: 'dashboard', name: 'Dashboard', icon: '🏠', category: 'Core' },
+    { id: 'tasks', name: 'Tasks', icon: '✅', category: 'Core' },
+    { id: 'clients', name: 'Clients', icon: '👥', category: 'Client Management' },
+    { id: 'client-packages', name: 'Client Packages', icon: '📦', category: 'Client Management' },
+    { id: 'content-calendar', name: 'Content Calendar', icon: '📅', category: 'Content' },
+    { id: 'crm', name: 'CRM', icon: '💼', category: 'Sales' },
+    { id: 'hr-calendar', name: 'HR Calendar', icon: '📆', category: 'HR' },
+    { id: 'team', name: 'Team Management', icon: '👨‍👩‍👧‍👦', category: 'HR' },
+    { id: 'analytics', name: 'Analytics', icon: '📊', category: 'Analytics' },
+    { id: 'it-support', name: 'IT Support', icon: '🛠️', category: 'Support' },
+    { id: 'my-time-off', name: 'My Time Off', icon: '🏖️', category: 'HR' },
+    { id: 'user-management', name: 'User Management', icon: '👤', category: 'Admin' },
+  ];
 
   // Debug logging for component renders
   console.log('🔍 DEBUG: UserManagement component rendered');
@@ -565,12 +584,29 @@ const UserManagement = () => {
     setShowRoleAssignmentModal(true);
   };
 
-  // Function to handle permissions modal
-  const handleManagePermissions = (user) => {
-    console.log('🔐 Opening permissions for user:', user);
-    setSelectedUserForPermissions(user);
+  // Function to handle unified manage user modal
+  const handleManageUser = async (user) => {
+    console.log('🔧 Opening unified manage modal for user:', user);
+    setManagedUser(user);
+    
+    // Load page permissions
+    try {
+      const pagePerms = await firestoreService.getUserPagePermissions(user.email);
+      setUserPagePermissions(pagePerms || []);
+    } catch (error) {
+      console.error('Error loading page permissions:', error);
+      setUserPagePermissions([]);
+    }
+    
+    // Set other states
+    setSelectedRoles(user.roles || [user.role] || []);
     setSelectedPermissions(user.customPermissions || []);
-    setShowPermissionsModal(true);
+    setShowUnifiedManageModal(true);
+  };
+
+  // Function to handle permissions modal (legacy - keeping for backward compatibility)
+  const handleManagePermissions = (user) => {
+    handleManageUser(user);
   };
 
   // Function to save custom permissions
@@ -1315,28 +1351,11 @@ const UserManagement = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleAssignRoles(user)}
-                        className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
-                      >
-                        <Users className="w-4 h-4 mr-1" />
-                        Roles
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleManagePermissions(user)}
-                        className="bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Permissions
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditUser(user)}
+                        onClick={() => handleManageUser(user)}
+                        className="bg-blue-600 text-white hover:bg-blue-700 col-span-2"
                       >
                         <Edit className="w-4 h-4 mr-1" />
-                        Edit
+                        Manage User
                       </Button>
                       <Button
                         size="sm"
@@ -1776,6 +1795,313 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+};
+
+      {/* Unified Manage User Modal */}
+      {showUnifiedManageModal && managedUser && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Manage User: {managedUser.firstName} {managedUser.lastName}
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">{managedUser.email}</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowUnifiedManageModal(false);
+                  setManagedUser(null);
+                  setUserPagePermissions([]);
+                }} 
+                className="p-2 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <Tabs defaultValue="basic" onValueChange={() => {}} className="w-full">
+              <TabsList className="grid w-full grid-cols-4 mb-6">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="roles">Roles</TabsTrigger>
+                <TabsTrigger value="pages">Page Access</TabsTrigger>
+                <TabsTrigger value="permissions">Custom Permissions</TabsTrigger>
+              </TabsList>
+
+              {/* Basic Info Tab */}
+              <TabsContent value="basic" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input
+                      type="text"
+                      value={managedUser.firstName || ''}
+                      onChange={(e) => setManagedUser({...managedUser, firstName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input
+                      type="text"
+                      value={managedUser.lastName || ''}
+                      onChange={(e) => setManagedUser({...managedUser, lastName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={managedUser.email || ''}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input
+                      type="tel"
+                      value={managedUser.phone || ''}
+                      onChange={(e) => setManagedUser({...managedUser, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <input
+                      type="text"
+                      value={managedUser.department || ''}
+                      onChange={(e) => setManagedUser({...managedUser, department: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input
+                      type="text"
+                      value={managedUser.location || ''}
+                      onChange={(e) => setManagedUser({...managedUser, location: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Roles Tab */}
+              <TabsContent value="roles" className="space-y-4">
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Select roles this user can switch between. The first role will be their primary role.
+                  </p>
+                  {Object.values(USER_ROLES).map((role) => (
+                    <label key={role} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedRoles.includes(role)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRoles([...selectedRoles, role]);
+                          } else {
+                            setSelectedRoles(selectedRoles.filter(r => r !== role));
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span className="font-medium">{getRoleDisplayName(role)}</span>
+                    </label>
+                  ))}
+                </div>
+              </TabsContent>
+
+              {/* Page Access Tab */}
+              <TabsContent value="pages" className="space-y-4">
+                <div className="space-y-6">
+                  {Object.entries(
+                    AVAILABLE_PAGES.reduce((acc, page) => {
+                      if (!acc[page.category]) acc[page.category] = [];
+                      acc[page.category].push(page);
+                      return acc;
+                    }, {})
+                  ).map(([category, pages]) => (
+                    <div key={category}>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">
+                        {category}
+                      </h3>
+                      <div className="space-y-2">
+                        {pages.map((page) => {
+                          const hasPermission = userPagePermissions.includes(page.id);
+                          return (
+                            <label
+                              key={page.id}
+                              className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={hasPermission}
+                                onChange={() => {
+                                  if (hasPermission) {
+                                    setUserPagePermissions(userPagePermissions.filter(p => p !== page.id));
+                                  } else {
+                                    setUserPagePermissions([...userPagePermissions, page.id]);
+                                  }
+                                }}
+                                className="w-4 h-4 text-blue-600 rounded"
+                              />
+                              <span className="text-lg">{page.icon}</span>
+                              <span className="flex-1 font-medium text-gray-900">{page.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              {/* Custom Permissions Tab */}
+              <TabsContent value="permissions" className="space-y-4">
+                <div className="space-y-6">
+                  {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => (
+                    <div key={categoryKey} className="border-2 border-gray-200 rounded-xl p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-bold text-lg text-gray-900">{category.name}</h3>
+                          <p className="text-sm text-gray-600">{category.description}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const allSelected = category.permissions.every(p => selectedPermissions.includes(p));
+                            if (allSelected) {
+                              setSelectedPermissions(selectedPermissions.filter(p => !category.permissions.includes(p)));
+                            } else {
+                              setSelectedPermissions([...new Set([...selectedPermissions, ...category.permissions])]);
+                            }
+                          }}
+                        >
+                          {category.permissions.every(p => selectedPermissions.includes(p)) ? 'Unselect All' : 'Select All'}
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {category.permissions.map((permission) => (
+                          <label key={permission} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedPermissions.includes(permission)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedPermissions([...selectedPermissions, permission]);
+                                } else {
+                                  setSelectedPermissions(selectedPermissions.filter(p => p !== permission));
+                                }
+                              }}
+                              className="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-5 h-5"
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900 text-sm">
+                                {PERMISSION_LABELS[permission]}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {/* Save Button */}
+            <div className="flex justify-end gap-3 pt-6 border-t mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowUnifiedManageModal(false);
+                  setManagedUser(null);
+                  setUserPagePermissions([]);
+                }}
+                disabled={isProcessing}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    setIsProcessing(true);
+                    
+                    // Save basic info
+                    await handleUpdateApprovedUser(managedUser.email, {
+                      firstName: managedUser.firstName,
+                      lastName: managedUser.lastName,
+                      phone: managedUser.phone,
+                      department: managedUser.department,
+                      location: managedUser.location,
+                      displayName: `${managedUser.firstName} ${managedUser.lastName}`
+                    });
+
+                    // Save roles
+                    await handleUpdateApprovedUser(managedUser.email, {
+                      roles: selectedRoles,
+                      primaryRole: selectedRoles[0] || managedUser.primaryRole,
+                      role: selectedRoles[0] || managedUser.role
+                    });
+
+                    // Save page permissions
+                    await firestoreService.setUserPagePermissions(managedUser.email, userPagePermissions);
+
+                    // Save custom permissions
+                    await handleUpdateApprovedUser(managedUser.email, {
+                      customPermissions: selectedPermissions
+                    });
+
+                    toast.success('✅ User updated successfully!');
+                    setShowUnifiedManageModal(false);
+                    setManagedUser(null);
+                    setUserPagePermissions([]);
+                    await handleRefreshUsers();
+                  } catch (error) {
+                    console.error('Error saving user:', error);
+                    toast.error(`Failed to save: ${error.message || 'Unknown error'}`);
+                  } finally {
+                    setIsProcessing(false);
+                  }
+                }}
+                disabled={isProcessing}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Save All Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Click outside to close unified modal */}
+      {showUnifiedManageModal && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => {
+            setShowUnifiedManageModal(false);
+            setManagedUser(null);
+            setUserPagePermissions([]);
+          }}
+        />
       )}
     </div>
   );
