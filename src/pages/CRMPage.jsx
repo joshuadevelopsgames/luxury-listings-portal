@@ -195,7 +195,7 @@ const CRMPage = () => {
         } catch (error) {
           console.error('❌ Auto-sync failed:', error);
           // Don't show error to user for auto-sync, but log it
-          console.log('📱 Auto-sync failed, using stored data or mock data');
+          console.log('📱 Auto-sync failed, using stored data');
         }
       };
 
