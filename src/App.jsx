@@ -156,18 +156,17 @@ function AppLayout() {
     'analytics': { name: 'Analytics', icon: BarChart3, path: '/analytics' },
     'it-support': { name: 'Support Tickets', icon: Wrench, path: '/it-support' },
     'user-management': { name: 'User Management', icon: Users, path: '/user-management' },
-    'permissions': { name: 'Permissions', icon: Shield, path: '/permissions' },
+    // Permissions Management integrated into User Management
   };
 
   // Get navigation items based on permissions
   const getNavigationItems = () => {
-    // System admins always see admin pages + permissions
+    // System admins always see admin pages
     if (isSystemAdmin) {
       const adminPages = [
         allPages['dashboard'],
         allPages['it-support'],
         allPages['user-management'],
-        allPages['permissions'],
         allPages['analytics'],
       ];
       return adminPages.map(page => ({
