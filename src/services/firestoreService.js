@@ -1832,18 +1832,26 @@ class FirestoreService {
       // Check if document exists first
       const userSnap = await getDoc(userRef);
       
-      if (!userSnap.exists()) {
-        console.error('❌ User document does not exist:', userEmail);
-        throw new Error(`User ${userEmail} not found in approved_users collection`);
-      }
-
-      console.log('📝 Updating permissions for user:', userEmail);
+      console.log('📝 Setting permissions for user:', userEmail);
+      console.log('📝 Document exists:', userSnap.exists());
       console.log('📝 New permissions:', pageIds);
-      
-      await updateDoc(userRef, {
-        pagePermissions: pageIds,
-        permissionsUpdatedAt: serverTimestamp()
-      });
+
+      if (!userSnap.exists()) {
+        console.warn('⚠️ User document does not exist, creating with permissions...');
+        // Create document if it doesn't exist
+        await setDoc(userRef, {
+          email: userEmail,
+          pagePermissions: pageIds,
+          permissionsUpdatedAt: serverTimestamp(),
+          createdAt: serverTimestamp()
+        }, { merge: true });
+      } else {
+        // Update existing document
+        await updateDoc(userRef, {
+          pagePermissions: pageIds,
+          permissionsUpdatedAt: serverTimestamp()
+        });
+      }
       
       console.log('✅ Page permissions saved for:', userEmail);
       
@@ -1852,11 +1860,17 @@ class FirestoreService {
       if (verifySnap.exists()) {
         const savedPermissions = verifySnap.data().pagePermissions || [];
         console.log('✅ Verified saved permissions:', savedPermissions);
+        if (JSON.stringify(savedPermissions) !== JSON.stringify(pageIds)) {
+          console.warn('⚠️ Saved permissions do not match requested permissions!');
+        }
+      } else {
+        console.error('❌ Document does not exist after save!');
       }
     } catch (error) {
       console.error('❌ Error setting user page permissions:', error);
       console.error('❌ Error code:', error.code);
       console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
       throw error;
     }
   }
