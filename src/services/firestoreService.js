@@ -265,8 +265,22 @@ class FirestoreService {
   // Update approved user
   async updateApprovedUser(email, updates) {
     try {
+      // Remove undefined values - Firestore doesn't allow undefined
+      const cleanedUpdates = {};
+      Object.keys(updates).forEach(key => {
+        if (updates[key] !== undefined) {
+          cleanedUpdates[key] = updates[key];
+        }
+      });
+      
+      // If no valid updates, return early
+      if (Object.keys(cleanedUpdates).length === 0) {
+        console.log('⚠️ No valid updates to apply (all values were undefined)');
+        return;
+      }
+      
       await updateDoc(doc(db, this.collections.APPROVED_USERS, email), {
-        ...updates,
+        ...cleanedUpdates,
         updatedAt: serverTimestamp()
       });
       console.log('✅ Approved user updated:', email);
