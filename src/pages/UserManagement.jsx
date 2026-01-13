@@ -63,6 +63,7 @@ const UserManagement = () => {
   const [showUnifiedManageModal, setShowUnifiedManageModal] = useState(false);
   const [managedUser, setManagedUser] = useState(null);
   const [userPagePermissions, setUserPagePermissions] = useState([]);
+  const [manageModalTab, setManageModalTab] = useState('basic');
   
   // Available pages for page permissions
   const AVAILABLE_PAGES = [
@@ -1824,7 +1825,7 @@ const UserManagement = () => {
             </div>
 
             {/* Tabs */}
-            <Tabs defaultValue="basic" onValueChange={() => {}} className="w-full">
+            <Tabs value={manageModalTab} onValueChange={setManageModalTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4 mb-6">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="roles">Roles</TabsTrigger>
@@ -2064,6 +2065,7 @@ const UserManagement = () => {
                     setShowUnifiedManageModal(false);
                     setManagedUser(null);
                     setUserPagePermissions([]);
+                    setManageModalTab('basic');
                     await handleRefreshUsers();
                   } catch (error) {
                     console.error('Error saving user:', error);
@@ -2100,6 +2102,7 @@ const UserManagement = () => {
             setShowUnifiedManageModal(false);
             setManagedUser(null);
             setUserPagePermissions([]);
+            setManageModalTab('basic');
           }}
         />
       )}
