@@ -2037,11 +2037,28 @@ const UserManagement = () => {
                 Cancel
               </Button>
               <Button
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  console.log('💾 Save All Changes clicked');
+                  console.log('📝 Managed user:', managedUser);
+                  console.log('👥 Selected roles:', selectedRoles);
+                  console.log('📄 Page permissions:', userPagePermissions);
+                  console.log('🔐 Custom permissions:', selectedPermissions);
+                  
+                  if (!managedUser || !managedUser.email) {
+                    toast.error('❌ No user selected');
+                    console.error('❌ No managed user or email');
+                    return;
+                  }
+                  
                   try {
                     setIsProcessing(true);
+                    console.log('🔄 Starting save process...');
                     
                     // Save basic info
+                    console.log('💾 Saving basic info...');
                     await handleUpdateApprovedUser(managedUser.email, {
                       firstName: managedUser.firstName,
                       lastName: managedUser.lastName,
@@ -2050,33 +2067,52 @@ const UserManagement = () => {
                       location: managedUser.location,
                       displayName: `${managedUser.firstName} ${managedUser.lastName}`
                     });
+                    console.log('✅ Basic info saved');
 
                     // Save roles
-                    await handleUpdateApprovedUser(managedUser.email, {
-                      roles: selectedRoles,
-                      primaryRole: selectedRoles[0] || managedUser.primaryRole,
-                      role: selectedRoles[0] || managedUser.role
-                    });
+                    if (selectedRoles.length > 0) {
+                      console.log('💾 Saving roles...');
+                      await handleUpdateApprovedUser(managedUser.email, {
+                        roles: selectedRoles,
+                        primaryRole: selectedRoles[0] || managedUser.primaryRole,
+                        role: selectedRoles[0] || managedUser.role
+                      });
+                      console.log('✅ Roles saved');
+                    } else {
+                      console.warn('⚠️ No roles selected, skipping role update');
+                    }
 
                     // Save page permissions
+                    console.log('💾 Saving page permissions...');
                     await firestoreService.setUserPagePermissions(managedUser.email, userPagePermissions);
+                    console.log('✅ Page permissions saved');
 
                     // Save custom permissions
+                    console.log('💾 Saving custom permissions...');
                     await handleUpdateApprovedUser(managedUser.email, {
                       customPermissions: selectedPermissions
                     });
+                    console.log('✅ Custom permissions saved');
 
                     toast.success('✅ User updated successfully!');
+                    console.log('✅ All changes saved successfully');
+                    
                     setShowUnifiedManageModal(false);
                     setManagedUser(null);
                     setUserPagePermissions([]);
                     setManageModalTab('basic');
                     await handleRefreshUsers();
                   } catch (error) {
-                    console.error('Error saving user:', error);
+                    console.error('❌ Error saving user:', error);
+                    console.error('❌ Error details:', {
+                      message: error.message,
+                      code: error.code,
+                      stack: error.stack
+                    });
                     toast.error(`Failed to save: ${error.message || 'Unknown error'}`);
                   } finally {
                     setIsProcessing(false);
+                    console.log('🏁 Save process completed');
                   }
                 }}
                 disabled={isProcessing}
@@ -2104,11 +2140,14 @@ const UserManagement = () => {
       {showUnifiedManageModal && (
         <div 
           className="fixed inset-0 z-40" 
-          onClick={() => {
-            setShowUnifiedManageModal(false);
-            setManagedUser(null);
-            setUserPagePermissions([]);
-            setManageModalTab('basic');
+          onClick={(e) => {
+            // Only close if clicking the backdrop, not the modal content
+            if (e.target === e.currentTarget) {
+              setShowUnifiedManageModal(false);
+              setManagedUser(null);
+              setUserPagePermissions([]);
+              setManageModalTab('basic');
+            }
           }}
         />
       )}
