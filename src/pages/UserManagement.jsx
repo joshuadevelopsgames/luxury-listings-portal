@@ -2059,14 +2059,18 @@ const UserManagement = () => {
                     
                     // Save basic info
                     console.log('💾 Saving basic info...');
-                    await handleUpdateApprovedUser(managedUser.email, {
+                    const basicInfoUpdates = {
                       firstName: managedUser.firstName,
                       lastName: managedUser.lastName,
-                      phone: managedUser.phone,
-                      department: managedUser.department,
-                      location: managedUser.location,
                       displayName: `${managedUser.firstName} ${managedUser.lastName}`
-                    });
+                    };
+                    
+                    // Only include optional fields if they have values
+                    if (managedUser.phone) basicInfoUpdates.phone = managedUser.phone;
+                    if (managedUser.department) basicInfoUpdates.department = managedUser.department;
+                    if (managedUser.location) basicInfoUpdates.location = managedUser.location;
+                    
+                    await handleUpdateApprovedUser(managedUser.email, basicInfoUpdates);
                     console.log('✅ Basic info saved');
 
                     // Save roles
