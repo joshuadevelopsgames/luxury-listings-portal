@@ -2,7 +2,6 @@
   "name": "luxury-listings-onboarding",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://smmluxurylistings.info",
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -28,7 +27,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "DISABLE_ESLINT_PLUGIN=true PUBLIC_URL=https://smmluxurylistings.info react-scripts build",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
