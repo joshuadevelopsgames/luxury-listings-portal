@@ -1797,9 +1797,6 @@ const UserManagement = () => {
           </div>
         </div>
       )}
-    </div>
-  );
-};
 
       {/* Unified Manage User Modal */}
       {showUnifiedManageModal && managedUser && createPortal(
