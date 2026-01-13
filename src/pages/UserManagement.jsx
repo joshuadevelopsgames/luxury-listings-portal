@@ -1497,6 +1497,7 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+        , document.body
       )}
 
       {/* Manage Permissions Modal */}
@@ -1616,6 +1617,7 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+        , document.body
       )}
 
       {/* Add New User Modal */}
@@ -1801,10 +1803,11 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+        , document.body
       )}
 
       {/* Unified Manage User Modal */}
-      {showUnifiedManageModal && managedUser && typeof document !== 'undefined' && createPortal(
+      {showUnifiedManageModal && managedUser && typeof document !== 'undefined' && document.body && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
