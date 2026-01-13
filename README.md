@@ -1,23 +1,44 @@
 # Luxury Listings Portal
 
-A comprehensive portal for managing luxury real estate listings with user management, analytics, and task tracking.
+## Setup
 
-## 🚀 **Deployment Status**
-- ✅ **GitHub Repository**: Connected
-- ✅ **Vercel Project**: Imported
-- 🔄 **Auto-Deployment**: Ready
-- 📅 **Last Updated**: August 18, 2025 - 2:45 PM EST
-- 🔧 **Git Integration**: Testing deployment trigger
+### Install Git Hooks
 
-## 🎯 **Key Features**
-- **User Management**: Approve/reject users with permanent Firestore updates
-- **Analytics Dashboard**: Real Google Analytics integration
-- **Task Management**: Real-time task tracking
-- **Role-Based Access**: Admin, Content Manager, HR, Sales, Social Media roles
-- **Firebase Integration**: Persistent data storage
+After cloning the repository, run:
 
-## 🔧 **Setup**
-See `FIREBASE_FIRESTORE_SETUP.md` for detailed setup instructions.
+```bash
+./scripts/setup-git-hooks.sh
+```
 
-## 🚀 **Deployment**
-This project is configured for automatic deployment via Vercel.
+This will install pre-push hooks that check for syntax errors before allowing pushes.
+
+### Manual Hook Installation
+
+If you prefer to install hooks manually:
+
+```bash
+cp scripts/git-hooks/pre-push .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+## Git Hooks
+
+### Pre-Push Hook
+
+The pre-push hook automatically:
+- Checks for syntax errors by running `npm run build`
+- Prevents pushing code that won't compile
+- Can be bypassed with `git push --no-verify` (not recommended)
+
+## Development
+
+```bash
+npm install
+npm start
+```
+
+## Building
+
+```bash
+npm run build
+```
