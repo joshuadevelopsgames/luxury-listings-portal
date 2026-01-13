@@ -44,6 +44,10 @@ const navigateBasedOnRole = (role, userData) => {
 // Flag to disable Google authentication
 const GOOGLE_AUTH_DISABLED = false;
 
+// Dev mode: Auto-login as jrsschroeder@gmail.com
+const DEV_MODE_AUTO_LOGIN = process.env.NODE_ENV === 'development';
+const DEV_AUTO_LOGIN_EMAIL = 'jrsschroeder@gmail.com';
+
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -459,6 +463,15 @@ export function AuthProvider({ children }) {
             }
           } else {
             console.log('❌ User signed out');
+            
+            // Dev mode: Auto-login again if signed out
+            if (DEV_MODE_AUTO_LOGIN) {
+              console.log('🔧 DEV MODE: User signed out, auto-logging back in...');
+              // Trigger auto-login by resetting initialization
+              setIsInitialized(false);
+              return;
+            }
+            
             setCurrentUser(null);
             setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
           }
