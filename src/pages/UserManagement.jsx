@@ -596,6 +596,11 @@ const UserManagement = () => {
       setUserPagePermissions(pagePerms || []);
     } catch (error) {
       console.error('Error loading page permissions:', error);
+      // If permission error, user might not have access - start with empty array
+      // Admin users should have access, so this might be a temporary issue
+      if (error.code === 'permission-denied' || error.message?.includes('permission')) {
+        console.warn('⚠️ Permission denied loading page permissions - user may need admin access');
+      }
       setUserPagePermissions([]);
     }
     

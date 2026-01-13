@@ -1810,16 +1810,31 @@ class FirestoreService {
   // Get user's page permissions
   async getUserPagePermissions(userEmail) {
     try {
-      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      // Normalize email (Firestore document IDs are case-sensitive)
+      const normalizedEmail = userEmail.toLowerCase().trim();
+      const userRef = doc(db, this.collections.APPROVED_USERS, normalizedEmail);
       const userSnap = await getDoc(userRef);
       
       if (userSnap.exists()) {
         const userData = userSnap.data();
         return userData.pagePermissions || [];
       }
+      
+      // If document doesn't exist with normalized email, try original email
+      if (normalizedEmail !== userEmail) {
+        const altRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+        const altSnap = await getDoc(altRef);
+        if (altSnap.exists()) {
+          const userData = altSnap.data();
+          return userData.pagePermissions || [];
+        }
+      }
+      
       return [];
     } catch (error) {
       console.error('❌ Error getting user page permissions:', error);
+      console.error('❌ Email used:', userEmail);
+      console.error('❌ Error code:', error.code);
       throw error;
     }
   }
