@@ -31,7 +31,7 @@ service cloud.firestore {
     }
     
     // Approved users - authenticated users can read, admins can write
-    match /approved_users/{document=**} {
+    match /approved_users/{userEmail} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
