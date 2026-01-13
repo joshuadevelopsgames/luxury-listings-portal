@@ -44,6 +44,7 @@ import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
 import { USER_ROLES } from './entities/UserRoles';
+import { firestoreService } from './services/firestoreService';
 
 // Navigation Component with useLocation
 function Navigation({ navigation }) {
@@ -101,18 +102,97 @@ function Navigation({ navigation }) {
 // Main App Layout Component
 function AppLayout() {
   const { currentUser, currentRole, logout } = useAuth();
+  const [userPermissions, setUserPermissions] = React.useState([]);
+  const [loadingPermissions, setLoadingPermissions] = React.useState(true);
 
-  // Role-based navigation
+  // Check if user is system admin
+  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com' || 
+                        currentUser?.email === 'joshua@luxury-listings.com';
+
+  // Load user's page permissions
+  React.useEffect(() => {
+    if (!currentUser?.email) return;
+
+    const loadPermissions = async () => {
+      try {
+        setLoadingPermissions(true);
+        const permissions = await firestoreService.getUserPagePermissions(currentUser.email);
+        setUserPermissions(permissions || []);
+      } catch (error) {
+        console.error('Error loading permissions:', error);
+        // Fallback to role-based navigation if permissions fail
+        setUserPermissions([]);
+      } finally {
+        setLoadingPermissions(false);
+      }
+    };
+
+    loadPermissions();
+
+    // Set up real-time listener for permissions
+    const unsubscribe = firestoreService.onUserPagePermissionsChange(
+      currentUser.email,
+      (permissions) => {
+        setUserPermissions(permissions || []);
+      }
+    );
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [currentUser?.email]);
+
+  // Page definitions with icons
+  const allPages = {
+    'dashboard': { name: 'Dashboard', icon: Home, path: '/dashboard', default: true },
+    'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks', default: true },
+    'clients': { name: 'Clients', icon: User, path: '/clients' },
+    'client-packages': { name: 'Client Packages', icon: User, path: '/client-packages' },
+    'content-calendar': { name: 'Calendars', icon: Calendar, path: '/content-calendar' },
+    'crm': { name: 'CRM', icon: User, path: '/crm' },
+    'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
+    'team': { name: 'Team Management', icon: Users, path: '/team' },
+    'analytics': { name: 'Analytics', icon: BarChart3, path: '/analytics' },
+    'it-support': { name: 'Support Tickets', icon: Wrench, path: '/it-support' },
+    'user-management': { name: 'User Management', icon: Users, path: '/user-management' },
+    'permissions': { name: 'Permissions', icon: Shield, path: '/permissions' },
+  };
+
+  // Get navigation items based on permissions
   const getNavigationItems = () => {
+    // System admins always see admin pages + permissions
+    if (isSystemAdmin) {
+      const adminPages = [
+        allPages['dashboard'],
+        allPages['it-support'],
+        allPages['user-management'],
+        allPages['permissions'],
+        allPages['analytics'],
+      ];
+      return adminPages.map(page => ({
+        id: Object.keys(allPages).find(key => allPages[key] === page),
+        ...page
+      }));
+    }
+
+    // If permissions are loaded, use them
+    if (!loadingPermissions && userPermissions.length > 0) {
+      return userPermissions
+        .filter(pageId => allPages[pageId])
+        .map(pageId => ({
+          id: pageId,
+          ...allPages[pageId]
+        }));
+    }
+
+    // Fallback to role-based navigation while permissions load
     switch (currentRole) {
       case USER_ROLES.ADMIN:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'it-support', name: 'Support Tickets', icon: Wrench, path: '/it-support' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
-          { id: 'permissions', name: 'Permissions', icon: Shield, path: '/permissions' },
           { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/analytics' },
-          // Resources and Profile moved to profile dropdown
         ];
       
       case USER_ROLES.CONTENT_DIRECTOR:
@@ -121,7 +201,6 @@ function AppLayout() {
           { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
           { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          // Resources and Profile moved to profile dropdown
         ];
       
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
@@ -130,7 +209,6 @@ function AppLayout() {
           { id: 'clients', name: 'Clients', icon: User, path: '/clients' },
           { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          // Resources and Profile moved to profile dropdown
         ];
       
       case USER_ROLES.HR_MANAGER:
@@ -139,7 +217,6 @@ function AppLayout() {
           { id: 'hr-calendar', name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'team', name: 'Team Management', icon: Users, path: '/team' },
-          // Resources and Profile moved to profile dropdown
         ];
       
       case USER_ROLES.SALES_MANAGER:
@@ -147,16 +224,12 @@ function AppLayout() {
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'crm', name: 'CRM', icon: User, path: '/crm' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          // Sales Pipeline and Lead Management temporarily hidden
-          // { id: 'sales-pipeline', name: 'Sales Pipeline', icon: TrendingUp, path: '/sales-pipeline' },
-          // { id: 'leads', name: 'Lead Management', icon: Target, path: '/leads' },
         ];
       
       default:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          // Resources and Profile moved to profile dropdown
         ];
     }
   };
