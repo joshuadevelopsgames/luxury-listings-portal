@@ -15,12 +15,14 @@ import HRCalendar from './pages/HRCalendar';
 import TeamManagement from './pages/TeamManagement';
 import HRAnalytics from './pages/HRAnalytics';
 import CRMPage from './pages/CRMPage';
-import SalesPipelinePage from './pages/SalesPipelinePage';
-import LeadManagementPage from './pages/LeadManagementPage';
+// Sales Pipeline and Lead Management pages temporarily hidden
+// import SalesPipelinePage from './pages/SalesPipelinePage';
+// import LeadManagementPage from './pages/LeadManagementPage';
 import UserManagement from './pages/UserManagement';
 import Analytics from './pages/Analytics';
 import GoogleAnalyticsSetup from './components/GoogleAnalyticsSetup';
 import ContentCalendar from './pages/ContentCalendar';
+import PermissionsManagement from './pages/PermissionsManagement';
 import ContentManagerMessage from './pages/ContentManagerMessage';
 import MetaCallback from './pages/MetaCallback';
 import WaitingForApproval from './pages/WaitingForApproval';
@@ -38,7 +40,7 @@ import PendingClients from './pages/PendingClients';
 import ChatWidget from './components/ui/chat-widget';
 import MigrationBanner from './components/MigrationBanner';
 import NotificationsCenter from './components/NotificationsCenter';
-import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, UserCircle, Wrench, Clock } from 'lucide-react';
+import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, UserCircle, Wrench, Clock, Shield } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import RoleSwitcher from './components/ui/role-switcher';
 import { USER_ROLES } from './entities/UserRoles';
@@ -108,8 +110,9 @@ function AppLayout() {
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'it-support', name: 'Support Tickets', icon: Wrench, path: '/it-support' },
           { id: 'user-management', name: 'User Management', icon: Users, path: '/user-management' },
+          { id: 'permissions', name: 'Permissions', icon: Shield, path: '/permissions' },
           { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/analytics' },
-          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
+          // Resources and Profile moved to profile dropdown
         ];
       
       case USER_ROLES.CONTENT_DIRECTOR:
@@ -118,8 +121,7 @@ function AppLayout() {
           { id: 'client-packages', name: 'Client Packages', icon: User, path: '/client-packages' },
           { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
+          // Resources and Profile moved to profile dropdown
         ];
       
       case USER_ROLES.SOCIAL_MEDIA_MANAGER:
@@ -128,8 +130,7 @@ function AppLayout() {
           { id: 'clients', name: 'Clients', icon: User, path: '/clients' },
           { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/content-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
+          // Resources and Profile moved to profile dropdown
         ];
       
       case USER_ROLES.HR_MANAGER:
@@ -138,27 +139,24 @@ function AppLayout() {
           { id: 'hr-calendar', name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
           { id: 'team', name: 'Team Management', icon: Users, path: '/team' },
-          { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
+          // Resources and Profile moved to profile dropdown
         ];
       
       case USER_ROLES.SALES_MANAGER:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'crm', name: 'CRM', icon: User, path: '/crm' },
-          { id: 'sales-pipeline', name: 'Sales Pipeline', icon: TrendingUp, path: '/sales-pipeline' },
-          { id: 'leads', name: 'Lead Management', icon: Target, path: '/leads' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
+          // Sales Pipeline and Lead Management temporarily hidden
+          // { id: 'sales-pipeline', name: 'Sales Pipeline', icon: TrendingUp, path: '/sales-pipeline' },
+          // { id: 'leads', name: 'Lead Management', icon: Target, path: '/leads' },
         ];
       
       default:
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
           { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-          { id: 'resources', name: 'Resources', icon: FileText, path: '/resources' },
-          { id: 'self-service', name: 'My Profile', icon: UserCircle, path: '/self-service' },
+          // Resources and Profile moved to profile dropdown
         ];
     }
   };
@@ -230,10 +228,12 @@ function AppLayout() {
           <Route path="/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
           <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
           <Route path="/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+          <Route path="/permissions" element={<ProtectedRoute><PermissionsManagement /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
-          <Route path="/sales-pipeline" element={<ProtectedRoute><SalesPipelinePage /></ProtectedRoute>} />
-          <Route path="/leads" element={<ProtectedRoute><LeadManagementPage /></ProtectedRoute>} />
+          {/* Sales Pipeline and Lead Management temporarily hidden */}
+          {/* <Route path="/sales-pipeline" element={<ProtectedRoute><SalesPipelinePage /></ProtectedRoute>} /> */}
+          {/* <Route path="/leads" element={<ProtectedRoute><LeadManagementPage /></ProtectedRoute>} /> */}
           <Route path="/content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
           <Route path="/my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
           <Route path="/self-service" element={<ProtectedRoute><EmployeeSelfService /></ProtectedRoute>} />

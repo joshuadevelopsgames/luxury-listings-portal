@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES, ROLE_PERMISSIONS } from '../../entities/UserRoles';
 import { getAllowedRolesForUser } from '../../entities/UserRoleMapping';
-import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield, Edit } from 'lucide-react';
+import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield, Edit, UserCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import EditProfileModal from './EditProfileModal';
 import { toast } from 'react-hot-toast';
 
@@ -260,8 +261,29 @@ const RoleSwitcher = () => {
             </div>
           </div>
 
+          {/* Profile Menu Links */}
+          <div className="px-4 py-3 border-t border-gray-100">
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Profile Menu</div>
+            <Link
+              to="/self-service"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-700"
+            >
+              <UserCircle className="w-4 h-4" />
+              <span>My Profile</span>
+            </Link>
+            <Link
+              to="/resources"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-700"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Resources</span>
+            </Link>
+          </div>
+
           {/* Role Switching Section */}
-          <div className="p-4">
+          <div className="p-4 border-t border-gray-100">
             <div className="text-sm font-medium text-gray-700 mb-4">Switch Profile Role</div>
             
             {/* Show available roles info for non-admin users */}

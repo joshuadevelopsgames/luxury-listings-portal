@@ -1804,6 +1804,53 @@ class FirestoreService {
       throw error;
     }
   }
+
+  // ===== PAGE PERMISSIONS MANAGEMENT =====
+
+  // Get user's page permissions
+  async getUserPagePermissions(userEmail) {
+    try {
+      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        return userData.pagePermissions || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Error getting user page permissions:', error);
+      throw error;
+    }
+  }
+
+  // Set user's page permissions
+  async setUserPagePermissions(userEmail, pageIds) {
+    try {
+      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      await updateDoc(userRef, {
+        pagePermissions: pageIds,
+        permissionsUpdatedAt: serverTimestamp()
+      });
+      console.log('✅ Page permissions saved for:', userEmail);
+    } catch (error) {
+      console.error('❌ Error setting user page permissions:', error);
+      throw error;
+    }
+  }
+
+  // Listen to user's page permissions in real-time
+  onUserPagePermissionsChange(userEmail, callback) {
+    const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+    return onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        callback(userData.pagePermissions || []);
+      } else {
+        callback([]);
+      }
+    });
+  }
 }
 
 // Export singleton instance
