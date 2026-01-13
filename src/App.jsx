@@ -22,7 +22,8 @@ import UserManagement from './pages/UserManagement';
 import Analytics from './pages/Analytics';
 import GoogleAnalyticsSetup from './components/GoogleAnalyticsSetup';
 import ContentCalendar from './pages/ContentCalendar';
-import PermissionsManagement from './pages/PermissionsManagement';
+// Permissions Management integrated into User Management
+// import PermissionsManagement from './pages/PermissionsManagement';
 import ContentManagerMessage from './pages/ContentManagerMessage';
 import MetaCallback from './pages/MetaCallback';
 import WaitingForApproval from './pages/WaitingForApproval';
@@ -301,7 +302,8 @@ function AppLayout() {
           <Route path="/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
           <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
           <Route path="/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-          <Route path="/permissions" element={<ProtectedRoute><PermissionsManagement /></ProtectedRoute>} />
+          {/* Permissions Management integrated into User Management */}
+          {/* <Route path="/permissions" element={<ProtectedRoute><PermissionsManagement /></ProtectedRoute>} /> */}
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
           {/* Sales Pipeline and Lead Management temporarily hidden */}
