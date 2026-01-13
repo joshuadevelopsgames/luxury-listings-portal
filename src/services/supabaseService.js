@@ -6,17 +6,41 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || ''
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase credentials not found. Please add REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY to .env.local')
+// Only create Supabase client if credentials are available
+// Otherwise, create a mock client that won't break the app
+let supabaseClient = null;
+
+if (supabaseUrl && supabaseAnonKey) {
+  try {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true
+      }
+    });
+    console.log('✅ Supabase client initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize Supabase:', error);
+  }
+} else {
+  console.warn('⚠️ Supabase credentials not found. Content Calendar will use localStorage fallback.');
+  // Create a mock client that returns empty results but doesn't break
+  supabaseClient = {
+    from: () => ({
+      select: () => Promise.resolve({ data: [], error: null }),
+      insert: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+      update: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+      delete: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+    }),
+    channel: () => ({
+      on: () => ({ subscribe: () => ({}) }),
+      subscribe: () => ({})
+    }),
+    removeChannel: () => {}
+  };
 }
 
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true
-  }
-})
+export const supabase = supabaseClient;
 
 // Test connection
 export const testSupabaseConnection = async () => {
