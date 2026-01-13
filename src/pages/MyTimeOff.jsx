@@ -128,9 +128,6 @@ const MyTimeOff = () => {
 
     loadLeaveBalances();
   }, [currentUser?.email, myRequests]);
-      setLoading(false);
-    }
-  }, [currentUser?.email]);
 
   const leaveTypes = {
     vacation: { 
