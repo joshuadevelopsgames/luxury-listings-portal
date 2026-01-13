@@ -29,7 +29,10 @@
     "start": "react-scripts start",
     "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "firebase": "firebase",
+    "deploy:rules": "firebase deploy --only firestore:rules --project luxury-listings-portal-e56de",
+    "deploy:firestore": "firebase deploy --only firestore --project luxury-listings-portal-e56de"
   },
   "eslintConfig": {
     "extends": [
