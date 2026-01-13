@@ -2089,6 +2089,7 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+        , document.body
       )}
 
       {/* Click outside to close unified modal */}
