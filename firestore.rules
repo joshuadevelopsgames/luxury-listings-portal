@@ -1,10 +1,139 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to all users under any document
-    // This is for development/testing - should be restricted for production
-    match /{document=**} {
-      allow read, write: if true;
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             (request.auth.token.email == 'jrsschroeder@gmail.com' ||
+              request.auth.token.email == 'joshua@luxury-listings.com');
+    }
+    
+    // Helper function to get user email
+    function getUserEmail() {
+      return request.auth.token.email;
+    }
+    
+    // Users collection - users can read/write their own data, admins can access all
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && 
+                            (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Pending users - authenticated users can read, admins can write
+    match /pending_users/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Approved users - authenticated users can read, admins can write
+    match /approved_users/{userEmail} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Employees - authenticated users can read, admins can write
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Tasks - authenticated users can read/write (team collaboration)
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Task templates - authenticated users can read, admins can write
+    match /task_templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Smart filters - authenticated users can read/write
+    match /smart_filters/{filterId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Clients - authenticated users can read, authenticated users can write
+    // TODO: Add role-based check (only Social Media Managers and Admins should write)
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Client contracts - authenticated users can read, authenticated users can write
+    // TODO: Add role-based check (only Social Media Managers and Admins should write)
+    match /client_contracts/{contractId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Client messages - authenticated users can read/write
+    match /client_messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Client reports - authenticated users can read, authenticated users can write
+    match /client_reports/{reportId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Pending clients - authenticated users can read, authenticated users can write
+    // TODO: Add role-based check (only Social Media Managers and Admins should write)
+    match /pending_clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Analytics config - authenticated users can read, admins can write
+    match /analytics_config/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // System config - authenticated users can read, admins can write
+    match /system_config/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Support tickets - authenticated users can read/write
+    match /support_tickets/{ticketId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Ticket comments - authenticated users can read/write
+    match /ticket_comments/{commentId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Notifications - authenticated users can read/write their own
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Task requests - authenticated users can read/write
+    match /task_requests/{requestId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Leave requests - authenticated users can read, authenticated users can write
+    // TODO: Add HR role check for write operations
+    match /leave_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Note: The catch-all rule below is commented out to maintain current functionality
+    // Uncomment it once you've verified all collections are explicitly listed above
+    // match /{document=**} {
+    //   allow read, write: if false;
+    // }
   }
 }
+
