@@ -220,6 +220,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    console.log('🔍 AuthContext useEffect running - DEV_MODE_AUTO_LOGIN:', DEV_MODE_AUTO_LOGIN, 'isInitialized:', isInitialized, 'currentUser:', currentUser);
+    
     // Dev mode: Auto-login as jrsschroeder@gmail.com
     if (DEV_MODE_AUTO_LOGIN && !isInitialized && !currentUser) {
       try {
@@ -246,10 +248,12 @@ export function AuthProvider({ children }) {
           isApproved: true
         };
         
+        console.log('✅ DEV MODE: Setting user and loading state');
         setCurrentUser(devUser);
         setUserData(devUser);
         setCurrentRole(USER_ROLES.ADMIN);
         setLoading(false);
+        console.log('✅ DEV MODE: Loading set to false');
         
         // Navigate to dashboard if on login page
         const currentPath = window.location.pathname;
@@ -291,7 +295,19 @@ export function AuthProvider({ children }) {
       return;
     }
 
+    // Skip Firebase auth if dev mode is enabled
+    if (DEV_MODE_AUTO_LOGIN) {
+      console.log('🔧 DEV MODE: Skipping Firebase auth listener');
+      // Ensure loading is false if dev mode already handled it
+      if (loading) {
+        console.log('⚠️ DEV MODE: Loading still true, forcing false');
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!GOOGLE_AUTH_DISABLED) {
+      console.log('🔐 Setting up Firebase auth listener...');
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         console.log('🔐 Auth state changed - User:', user);
         try {
