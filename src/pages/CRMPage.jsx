@@ -108,85 +108,6 @@ const CRMPage = () => {
   const [contactedClients, setContactedClients] = useState([]);
   const [coldLeads, setColdLeads] = useState([]);
 
-  // Mock CRM data as fallback
-  const mockData = {
-    warmLeads: [
-      {
-        id: 1,
-        contactName: 'Eddie Escobido',
-        phone: '(623) 225-8893',
-        email: 'eddie.escobido@theagencyre.com',
-        instagram: 'escobidoluxurygroup',
-        status: 'warm',
-        lastContact: '2025-08-15',
-        notes: 'Interested in luxury listings, has high-end clientele'
-      },
-      {
-        id: 2,
-        contactName: 'Shawnalei Tamayose',
-        phone: '(808) 339-0254',
-        email: 'shawna@apt212.com',
-        instagram: 'shawnalei808',
-        status: 'warm',
-        lastContact: '2025-08-12',
-        notes: 'Looking for luxury properties in Hawaii market'
-      },
-      {
-        id: 3,
-        contactName: 'ATR Luxury Homes',
-        phone: '(786) 723-6041',
-        email: 'morella@atrluxuryhomes.com',
-        instagram: 'atrluxuryhomes',
-        status: 'warm',
-        lastContact: '2025-08-10',
-        notes: 'Corporate client, multiple property portfolio'
-      },
-      {
-        id: 4,
-        contactName: 'Devin Kay',
-        phone: '(301) 602-1172',
-        email: 'Devin.Kay@elliman.com',
-        instagram: 'devin__kay',
-        status: 'warm',
-        lastContact: '2025-08-08',
-        notes: 'Douglas Elliman agent, luxury market specialist'
-      },
-      {
-        id: 5,
-        contactName: 'Shawn Shirdel',
-        phone: '(310) 770-2262',
-        email: 'shawn@shawnshirdel.com',
-        instagram: 'shawnshirdel',
-        status: 'warm',
-        lastContact: '2025-08-05',
-        notes: 'Luxury real estate specialist, Beverly Hills market'
-      }
-    ],
-    contactedClients: [
-      {
-        id: 6,
-        contactName: 'Maritt Bird',
-        phone: '(310) 555-0123',
-        email: 'maritt@luxuryrealty.com',
-        instagram: 'marittbird',
-        status: 'contacted',
-        lastContact: '2025-08-14',
-        notes: 'Follow up scheduled for next week'
-      }
-    ],
-    coldLeads: [
-      {
-        id: 7,
-        contactName: 'Alex Johnson',
-        phone: '(212) 555-0456',
-        email: 'alex@premiumproperties.com',
-        instagram: 'alexjohnson',
-        status: 'cold',
-        lastContact: 'Never',
-        notes: 'New lead from website inquiry'
-      }
-    ]
-  };
 
   // Load stored data from Firebase
   const loadStoredData = async () => {
@@ -210,17 +131,17 @@ const CRMPage = () => {
           setColdLeads(storedData.coldLeads);
         }
       } else {
-        console.log('📂 No stored CRM data found, using mock data');
-        setWarmLeads(mockData.warmLeads);
-        setContactedClients(mockData.contactedClients);
-        setColdLeads(mockData.coldLeads);
+        console.log('📂 No stored CRM data found, starting with empty arrays');
+        setWarmLeads([]);
+        setContactedClients([]);
+        setColdLeads([]);
       }
     } catch (error) {
       console.error('Error loading stored CRM data:', error);
-      // Fallback to mock data
-      setWarmLeads(mockData.warmLeads);
-      setContactedClients(mockData.contactedClients);
-      setColdLeads(mockData.coldLeads);
+      // Start with empty arrays on error
+      setWarmLeads([]);
+      setContactedClients([]);
+      setColdLeads([]);
     }
   };
 
@@ -364,10 +285,10 @@ const CRMPage = () => {
       setLastSyncTime(new Date().toLocaleString());
     } catch (error) {
       console.error('❌ Manual sync failed:', error);
-      // Fall back to mock data on error
-      setWarmLeads(mockData.warmLeads);
-      setContactedClients(mockData.contactedClients);
-      setColdLeads(mockData.coldLeads);
+      // Start with empty arrays on error
+      setWarmLeads([]);
+      setContactedClients([]);
+      setColdLeads([]);
     } finally {
       setIsLoading(false);
     }

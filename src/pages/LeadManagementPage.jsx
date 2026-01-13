@@ -33,79 +33,8 @@ const LeadManagementPage = () => {
   const [selectedLead, setSelectedLead] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Mock lead data
-  const [leads, setLeads] = useState([
-    {
-      id: 1,
-      name: 'Jennifer Martinez',
-      company: 'Martinez Investments',
-      email: 'jennifer.martinez@martinezinvestments.com',
-      phone: '+1 (555) 567-8901',
-      source: 'website',
-      score: 85,
-      status: 'qualified',
-      value: '$2.8M',
-      lastActivity: '2025-08-10',
-      nextFollowUp: '2025-08-15',
-      notes: 'Interested in luxury condos for investment portfolio'
-    },
-    {
-      id: 2,
-      name: 'Robert Kim',
-      company: 'Kim Real Estate Group',
-      email: 'robert.kim@kimrealestate.com',
-      phone: '+1 (555) 678-9012',
-      source: 'referral',
-      score: 92,
-      status: 'hot',
-      value: '$3.5M',
-      lastActivity: '2025-08-12',
-      nextFollowUp: '2025-08-14',
-      notes: 'High-priority lead from existing client referral'
-    },
-    {
-      id: 3,
-      name: 'Lisa Anderson',
-      company: 'Anderson Properties',
-      email: 'lisa.anderson@andersonproperties.com',
-      phone: '+1 (555) 789-0123',
-      source: 'social_media',
-      score: 68,
-      status: 'warm',
-      value: '$1.9M',
-      lastActivity: '2025-08-08',
-      nextFollowUp: '2025-08-18',
-      notes: 'Found us through Instagram luxury real estate content'
-    },
-    {
-      id: 4,
-      name: 'Thomas Wilson',
-      company: 'Wilson Holdings',
-      email: 'thomas.wilson@wilsonholdings.com',
-      phone: '+1 (555) 890-1234',
-      source: 'cold_call',
-      score: 45,
-      status: 'cold',
-      value: '$4.2M',
-      lastActivity: '2025-08-05',
-      nextFollowUp: '2025-08-20',
-      notes: 'Corporate client, needs multiple luxury properties'
-    },
-    {
-      id: 5,
-      name: 'Amanda Foster',
-      company: 'Foster Luxury Homes',
-      email: 'amanda.foster@fosterluxury.com',
-      phone: '+1 (555) 901-2345',
-      source: 'website',
-      score: 78,
-      status: 'qualified',
-      value: '$2.1M',
-      lastActivity: '2025-08-11',
-      nextFollowUp: '2025-08-16',
-      notes: 'Looking for waterfront properties in exclusive areas'
-    }
-  ]);
+  // Lead data - loaded from Firestore or CRM
+  const [leads, setLeads] = useState([]);
 
   const getSourceColor = (source) => {
     const colors = {

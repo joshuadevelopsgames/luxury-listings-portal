@@ -25,40 +25,16 @@ const ClientReports = ({ clientId, clientEmail }) => {
       if (clientReports && clientReports.length > 0) {
         setReports(clientReports);
       } else {
-        // Generate mock reports for demonstration
-        const mockReports = generateMockReports();
-        setReports(mockReports);
+        // No reports found - start with empty array
+        setReports([]);
       }
     } catch (error) {
       console.error('Error loading reports:', error);
-      // Fallback to mock data
-      const mockReports = generateMockReports();
-      setReports(mockReports);
+      // Start with empty array on error
+      setReports([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateMockReports = () => {
-    const months = [];
-    const now = new Date();
-    for (let i = 0; i < 6; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
-        id: `report-${i}`,
-        month: format(date, 'MMMM yyyy'),
-        date: date.toISOString(),
-        status: i === 0 ? 'pending' : 'completed',
-        metrics: {
-          totalUsers: Math.floor(Math.random() * 5000) + 1000,
-          pageViews: Math.floor(Math.random() * 20000) + 5000,
-          sessions: Math.floor(Math.random() * 3000) + 1000,
-          avgSessionDuration: `${Math.floor(Math.random() * 3) + 1}m ${Math.floor(Math.random() * 60)}s`,
-          bounceRate: (Math.random() * 30 + 20).toFixed(1)
-        }
-      });
-    }
-    return months;
   };
 
   const handleDownloadReport = async (reportId) => {

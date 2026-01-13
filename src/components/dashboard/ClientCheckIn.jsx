@@ -44,103 +44,10 @@ const ClientCheckIn = () => {
   // Google Sheets API configuration
   const { SPREADSHEET_ID, SHEET_NAME, API_KEY } = GOOGLE_SHEETS_CONFIG;
 
-  // Mock data based on your actual Google Sheets structure
-  const mockClientData = [
-    {
-      id: 1,
-      clientName: "Max Nobel",
-      packageType: "Gold",
-      email: "max@example.com",
-      dateAdded: "4/2/2025",
-      postedOn: "All Pages",
-      paymentStatus: "Paid",
-      salesStage: "Ready for Approval",
-      approvalStatus: "Approved",
-      notes: "5 posts, 3 used, 2 remaining",
-      packageSize: 5,
-      postsUsed: 3,
-      postsRemaining: 2,
-      lastPostDate: "4/2/2025",
-      pricePaid: "$1500 USD",
-      status: "active"
-    },
-    {
-      id: 2,
-      clientName: "8899 Beverly",
-      packageType: "Gold",
-      email: "info@8899beverlyblvd.com",
-      dateAdded: "4/11/2025",
-      postedOn: "All Pages",
-      paymentStatus: "Pending",
-      salesStage: "Ready for Approval",
-      approvalStatus: "Pending",
-      notes: "6 posts, 5 used, 1 remaining",
-      packageSize: 6,
-      postsUsed: 5,
-      postsRemaining: 1,
-      lastPostDate: "4/11/2025",
-      pricePaid: "$1800 USD",
-      status: "pending_approval"
-    },
-    {
-      id: 3,
-      clientName: "Jordan Cohen",
-      packageType: "Silver",
-      email: "madison@jordancohen.com",
-      dateAdded: "April 2, 2025",
-      postedOn: "Luxury Listings",
-      paymentStatus: "Paid",
-      salesStage: "Ready for Approval",
-      approvalStatus: "Approved",
-      notes: "He paid for 5 posts, (ON PAUSE UNTIL JORDAN GET'S BACK FROM VACAY)",
-      packageSize: 5,
-      postsUsed: 2,
-      postsRemaining: 3,
-      lastPostDate: "4/2/2025",
-      pricePaid: "$1200 USD",
-      status: "active"
-    },
-    {
-      id: 4,
-      clientName: "William Pitt",
-      packageType: "Seven",
-      email: "mreid@wpsir.com",
-      dateAdded: "6/16/2025",
-      postedOn: "4 Luxury Listings + 3 on Mansions",
-      paymentStatus: "Paid",
-      salesStage: "Ready for Approval",
-      approvalStatus: "Approved",
-      notes: "Margarita Reid is our Main contact (1M posted)",
-      packageSize: 7,
-      postsUsed: 2,
-      postsRemaining: 5,
-      lastPostDate: "6/16/2025",
-      pricePaid: "$2100 USD",
-      status: "active"
-    },
-    {
-      id: 5,
-      clientName: "New Client Submission",
-      packageType: "Silver",
-      email: "newclient@example.com",
-      dateAdded: "Today",
-      postedOn: "Luxury Listings",
-      paymentStatus: "Pending",
-      salesStage: "New Submission",
-      approvalStatus: "Pending",
-      notes: "New client interested in Silver package",
-      packageSize: 3,
-      postsUsed: 0,
-      postsRemaining: 3,
-      lastPostDate: "N/A",
-      pricePaid: "$900 USD",
-      status: "pending_approval"
-    }
-  ];
-
   useEffect(() => {
-    // Load initial data
-    setClients(mockClientData);
+    // Load initial data from Firestore or Google Sheets
+    // Start with empty array - data will be loaded from real source
+    setClients([]);
     setLastSync(new Date());
   }, []);
 

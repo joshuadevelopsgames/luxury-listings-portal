@@ -42,27 +42,27 @@ const MyTimeOff = () => {
     notes: ''
   });
 
-  // Mock data - in production this would come from Firestore
-  const leaveBalances = {
+  // Leave balances - loaded from Firestore
+  const [leaveBalances, setLeaveBalances] = useState({
     vacation: {
-      total: 20,
-      used: 8,
-      remaining: 12,
-      pending: 3
+      total: 0,
+      used: 0,
+      remaining: 0,
+      pending: 0
     },
     sick: {
-      total: 10,
-      used: 2,
-      remaining: 8,
+      total: 0,
+      used: 0,
+      remaining: 0,
       pending: 0
     },
     personal: {
-      total: 5,
-      used: 1,
-      remaining: 4,
+      total: 0,
+      used: 0,
+      remaining: 0,
       pending: 0
     }
-  };
+  });
 
   const [myRequests, setMyRequests] = useState([]);
 
@@ -92,6 +92,42 @@ const MyTimeOff = () => {
     } catch (err) {
       console.error('❌ Error setting up leave requests listener:', err);
       setError(err.message || 'Failed to load leave requests');
+      setLoading(false);
+    }
+  }, [currentUser?.email]);
+
+  // Load leave balances from Firestore
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    const loadLeaveBalances = async () => {
+      try {
+        // TODO: Implement getLeaveBalances in firestoreService
+        // For now, calculate from leave requests
+        const balances = {
+          vacation: { total: 20, used: 0, remaining: 20, pending: 0 },
+          sick: { total: 10, used: 0, remaining: 10, pending: 0 },
+          personal: { total: 5, used: 0, remaining: 5, pending: 0 }
+        };
+        
+        // Calculate used/pending from myRequests
+        myRequests.forEach(request => {
+          if (request.status === 'approved') {
+            balances[request.type].used += request.days || 1;
+            balances[request.type].remaining -= request.days || 1;
+          } else if (request.status === 'pending') {
+            balances[request.type].pending += request.days || 1;
+          }
+        });
+        
+        setLeaveBalances(balances);
+      } catch (err) {
+        console.error('❌ Error loading leave balances:', err);
+      }
+    };
+
+    loadLeaveBalances();
+  }, [currentUser?.email, myRequests]);
       setLoading(false);
     }
   }, [currentUser?.email]);

@@ -223,72 +223,10 @@ class FirebaseApiService {
     try {
       console.log('🔍 API: Getting tasks...');
       
-      // For now, return mock data directly
-      const mockTasks = [
-        {
-          id: 'task-1',
-          title: 'Review and update your ClickUp task status',
-          description: 'Update progress on all assigned tasks in the project management system',
-          category: 'Administrative',
-          priority: 'low',
-          due_date: '2025-08-15',
-          estimated_time: 20,
-          assigned_to: 'joshua@luxurylistings.com',
-          status: 'pending',
-          created_date: '2025-08-10T10:00:00.000Z'
-        },
-        {
-          id: 'task-2',
-          title: 'Create your first luxury post using the Luxe Post Kit',
-          description: 'Design a high-quality post following the brand guidelines',
-          category: 'Content Creation',
-          priority: 'high',
-          due_date: '2025-08-14',
-          estimated_time: 90,
-          assigned_to: 'joshua@luxurylistings.com',
-          status: 'pending',
-          created_date: '2025-08-10T10:00:00.000Z'
-        },
-        {
-          id: 'task-3',
-          title: 'Review last 10 posts on luxury accounts',
-          description: 'Analyze competitor content and identify successful patterns',
-          category: 'Research',
-          priority: 'medium',
-          due_date: '2025-08-13',
-          estimated_time: 60,
-          assigned_to: 'joshua@luxurylistings.com',
-          status: 'in_progress',
-          created_date: '2025-08-10T10:00:00.000Z'
-        },
-        {
-          id: 'task-4',
-          title: 'Schedule your first post using Later.com',
-          description: 'Learn the scheduling platform and set up your first automated post',
-          category: 'Training',
-          priority: 'medium',
-          due_date: '2025-08-14',
-          estimated_time: 45,
-          assigned_to: 'joshua@luxurylistings.com',
-          status: 'pending',
-          created_date: '2025-08-10T10:00:00.000Z'
-        },
-        {
-          id: 'task-5',
-          title: 'Check in with client list via Google Sheets',
-          description: 'Review client status and identify follow-up opportunities',
-          category: 'Client Relations',
-          priority: 'high',
-          due_date: '2025-08-19',
-          estimated_time: 40,
-          assigned_to: 'joshua@luxurylistings.com',
-          status: 'pending',
-          created_date: '2025-08-10T10:00:00.000Z'
-        }
-      ];
-      
-      console.log(`✅ API: Found ${mockTasks.length} tasks (mock data)`);
-      return mockTasks;
+      // TODO: Implement real API call to get tasks
+      // For now, return empty array - tasks should come from Firestore
+      console.log('⚠️ API: getTasks() not implemented - returning empty array');
+      return [];
     } catch (error) {
       console.error('❌ API: Error getting tasks:', error);
       return [];

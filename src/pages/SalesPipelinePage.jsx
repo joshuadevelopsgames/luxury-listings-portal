@@ -25,81 +25,37 @@ const SalesPipelinePage = () => {
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Mock pipeline data
-  const pipelineStages = [
+  // Pipeline data - loaded from Firestore or CRM
+  const [pipelineStages, setPipelineStages] = useState([
     {
       id: 'qualification',
       name: 'Qualification',
-      deals: [
-        {
-          id: 1,
-          clientName: 'Emily Rodriguez',
-          property: 'Beverly Hills Mansion',
-          value: '$3.2M',
-          probability: 40,
-          expectedClose: '2025-11-15',
-          lastActivity: '2025-08-05',
-          notes: 'High-net-worth individual seeking luxury homes'
-        }
-      ],
+      deals: [],
       color: 'bg-gray-100',
       textColor: 'text-gray-800'
     },
     {
       id: 'proposal',
       name: 'Proposal',
-      deals: [
-        {
-          id: 2,
-          clientName: 'Michael Chen',
-          property: 'Downtown Penthouse',
-          value: '$1.8M',
-          probability: 60,
-          expectedClose: '2025-10-01',
-          lastActivity: '2025-08-08',
-          notes: 'Looking for investment opportunities'
-        }
-      ],
+      deals: [],
       color: 'bg-blue-100',
       textColor: 'text-blue-800'
     },
     {
       id: 'negotiation',
       name: 'Negotiation',
-      deals: [
-        {
-          id: 3,
-          clientName: 'Sarah Johnson',
-          property: 'Waterfront Villa - Malibu',
-          value: '$2.5M',
-          probability: 75,
-          expectedClose: '2025-09-15',
-          lastActivity: '2025-08-10',
-          notes: 'Interested in luxury waterfront properties'
-        }
-      ],
+      deals: [],
       color: 'bg-yellow-100',
       textColor: 'text-yellow-800'
     },
     {
       id: 'closing',
       name: 'Closing',
-      deals: [
-        {
-          id: 4,
-          clientName: 'David Thompson',
-          property: 'Corporate Portfolio',
-          value: '$4.1M',
-          probability: 90,
-          expectedClose: '2025-08-25',
-          lastActivity: '2025-08-12',
-          notes: 'Corporate client with multiple property needs'
-        }
-      ],
+      deals: [],
       color: 'bg-green-100',
       textColor: 'text-green-800'
     }
-  ];
+  ]);
 
   const getProbabilityColor = (probability) => {
     if (probability >= 80) return 'bg-green-100 text-green-800';
