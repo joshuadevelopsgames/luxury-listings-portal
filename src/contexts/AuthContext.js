@@ -216,6 +216,47 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    // Dev mode: Auto-login as jrsschroeder@gmail.com
+    if (DEV_MODE_AUTO_LOGIN && !isInitialized && !currentUser) {
+      console.log('🔧 DEV MODE: Auto-logging in as', DEV_AUTO_LOGIN_EMAIL);
+      setIsInitialized(true);
+      
+      // Create mock admin user for dev mode
+      const adminUserData = getUserByRole(USER_ROLES.ADMIN);
+      const devUser = {
+        uid: 'dev-user-' + Date.now(),
+        email: DEV_AUTO_LOGIN_EMAIL,
+        displayName: 'Joshua Schroeder',
+        firstName: 'Joshua',
+        lastName: 'Schroeder',
+        role: USER_ROLES.ADMIN,
+        roles: Object.values(USER_ROLES), // Admin can access all roles
+        primaryRole: USER_ROLES.ADMIN,
+        department: adminUserData.department,
+        startDate: adminUserData.startDate,
+        avatar: adminUserData.avatar,
+        bio: adminUserData.bio,
+        skills: adminUserData.skills,
+        stats: adminUserData.stats,
+        isApproved: true
+      };
+      
+      setCurrentUser(devUser);
+      setUserData(devUser);
+      setCurrentRole(USER_ROLES.ADMIN);
+      setLoading(false);
+      
+      // Navigate to dashboard if on login page
+      const currentPath = window.location.pathname;
+      if (currentPath === '/login' || currentPath === '/') {
+        console.log('🔄 DEV MODE: Navigating to dashboard...');
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
+      }
+      return;
+    }
+
     if (GOOGLE_AUTH_DISABLED && !isInitialized) {
       // Only initialize once
       setIsInitialized(true);
