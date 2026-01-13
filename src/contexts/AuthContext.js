@@ -45,7 +45,11 @@ const navigateBasedOnRole = (role, userData) => {
 const GOOGLE_AUTH_DISABLED = false;
 
 // Dev mode: Auto-login as jrsschroeder@gmail.com
-const DEV_MODE_AUTO_LOGIN = process.env.NODE_ENV === 'development';
+// Works in: local development OR Vercel preview deployments (dev branch)
+const DEV_MODE_AUTO_LOGIN = 
+  process.env.NODE_ENV === 'development' || 
+  process.env.VERCEL_ENV === 'preview' ||
+  process.env.REACT_APP_DEV_AUTO_LOGIN === 'true';
 const DEV_AUTO_LOGIN_EMAIL = 'jrsschroeder@gmail.com';
 
 const AuthContext = createContext();

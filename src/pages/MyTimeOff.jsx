@@ -28,6 +28,7 @@ const MyTimeOff = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   // Leave request form state
   const [leaveForm, setLeaveForm] = useState({
@@ -67,19 +68,32 @@ const MyTimeOff = () => {
 
   // Load leave requests from Firestore on mount
   useEffect(() => {
-    if (!currentUser?.email) return;
+    if (!currentUser?.email) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
+    setError(null);
     
-    // Set up real-time listener for leave requests
-    const unsubscribe = firestoreService.onLeaveRequestsChange((requests) => {
-      console.log('📡 Leave requests updated:', requests.length);
-      setMyRequests(requests);
-      setLoading(false);
-    }, currentUser.email);
+    try {
+      // Set up real-time listener for leave requests
+      const unsubscribe = firestoreService.onLeaveRequestsChange((requests) => {
+        console.log('📡 Leave requests updated:', requests.length);
+        setMyRequests(requests);
+        setLoading(false);
+        setError(null);
+      }, currentUser.email);
 
-    // Cleanup listener on unmount
-    return () => unsubscribe();
+      // Cleanup listener on unmount
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    } catch (err) {
+      console.error('❌ Error setting up leave requests listener:', err);
+      setError(err.message || 'Failed to load leave requests');
+      setLoading(false);
+    }
   }, [currentUser?.email]);
 
   const leaveTypes = {
@@ -180,6 +194,38 @@ const MyTimeOff = () => {
       notes: ''
     });
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your time off requests...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <Card className="max-w-md">
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Time Off</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>Retry</Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -323,7 +369,7 @@ const MyTimeOff = () => {
 
       {/* Request Time Off Modal */}
       {showRequestModal && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 fixed inset-0">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
@@ -460,11 +506,11 @@ const MyTimeOff = () => {
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Request Details Modal */}
       {selectedRequest && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 fixed inset-0">
           <div className="bg-white rounded-lg max-w-xl w-full">
             <div className="border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
@@ -525,7 +571,7 @@ const MyTimeOff = () => {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };

@@ -765,29 +765,43 @@ class FirestoreService {
   // Listen to leave requests changes
   onLeaveRequestsChange(callback, userEmail = null) {
     let q;
-    if (userEmail) {
-      q = query(
-        collection(db, this.collections.LEAVE_REQUESTS),
-        where('employeeEmail', '==', userEmail),
-        orderBy('submittedDate', 'desc')
-      );
-    } else {
-      q = query(
-        collection(db, this.collections.LEAVE_REQUESTS),
-        orderBy('submittedDate', 'desc')
-      );
+    try {
+      if (userEmail) {
+        q = query(
+          collection(db, this.collections.LEAVE_REQUESTS),
+          where('employeeEmail', '==', userEmail),
+          orderBy('submittedDate', 'desc')
+        );
+      } else {
+        q = query(
+          collection(db, this.collections.LEAVE_REQUESTS),
+          orderBy('submittedDate', 'desc')
+        );
+      }
+    } catch (error) {
+      console.error('❌ Error creating query:', error);
+      // Return a cleanup function that does nothing
+      return () => {};
     }
     
-    return onSnapshot(q, (snapshot) => {
-      const requests = [];
-      snapshot.forEach((doc) => {
-        requests.push({
-          id: doc.id,
-          ...doc.data()
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const requests = [];
+        snapshot.forEach((doc) => {
+          requests.push({
+            id: doc.id,
+            ...doc.data()
+          });
         });
-      });
-      callback(requests);
-    });
+        callback(requests);
+      },
+      (error) => {
+        console.error('❌ Error in leave requests snapshot:', error);
+        // Call callback with empty array on error so UI doesn't break
+        callback([]);
+      }
+    );
   }
 
   // ===== CLIENT MANAGEMENT =====
