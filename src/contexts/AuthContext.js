@@ -222,41 +222,46 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Dev mode: Auto-login as jrsschroeder@gmail.com
     if (DEV_MODE_AUTO_LOGIN && !isInitialized && !currentUser) {
-      console.log('🔧 DEV MODE: Auto-logging in as', DEV_AUTO_LOGIN_EMAIL);
-      setIsInitialized(true);
-      
-      // Create mock admin user for dev mode
-      const adminUserData = getUserByRole(USER_ROLES.ADMIN);
-      const devUser = {
-        uid: 'dev-user-' + Date.now(),
-        email: DEV_AUTO_LOGIN_EMAIL,
-        displayName: 'Joshua Schroeder',
-        firstName: 'Joshua',
-        lastName: 'Schroeder',
-        role: USER_ROLES.ADMIN,
-        roles: Object.values(USER_ROLES), // Admin can access all roles
-        primaryRole: USER_ROLES.ADMIN,
-        department: adminUserData.department,
-        startDate: adminUserData.startDate,
-        avatar: adminUserData.avatar,
-        bio: adminUserData.bio,
-        skills: adminUserData.skills,
-        stats: adminUserData.stats,
-        isApproved: true
-      };
-      
-      setCurrentUser(devUser);
-      setUserData(devUser);
-      setCurrentRole(USER_ROLES.ADMIN);
-      setLoading(false);
-      
-      // Navigate to dashboard if on login page
-      const currentPath = window.location.pathname;
-      if (currentPath === '/login' || currentPath === '/') {
-        console.log('🔄 DEV MODE: Navigating to dashboard...');
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
+      try {
+        console.log('🔧 DEV MODE: Auto-logging in as', DEV_AUTO_LOGIN_EMAIL);
+        setIsInitialized(true);
+        
+        // Create mock admin user for dev mode
+        const adminUserData = getUserByRole(USER_ROLES.ADMIN);
+        const devUser = {
+          uid: 'dev-user-' + Date.now(),
+          email: DEV_AUTO_LOGIN_EMAIL,
+          displayName: 'Joshua Schroeder',
+          firstName: 'Joshua',
+          lastName: 'Schroeder',
+          role: USER_ROLES.ADMIN,
+          roles: Object.values(USER_ROLES), // Admin can access all roles
+          primaryRole: USER_ROLES.ADMIN,
+          department: adminUserData?.department || 'Administration',
+          startDate: adminUserData?.startDate || new Date().toISOString().split('T')[0],
+          avatar: adminUserData?.avatar || 'JS',
+          bio: adminUserData?.bio || 'Development Admin User',
+          skills: adminUserData?.skills || [],
+          stats: adminUserData?.stats || {},
+          isApproved: true
+        };
+        
+        setCurrentUser(devUser);
+        setUserData(devUser);
+        setCurrentRole(USER_ROLES.ADMIN);
+        setLoading(false);
+        
+        // Navigate to dashboard if on login page
+        const currentPath = window.location.pathname;
+        if (currentPath === '/login' || currentPath === '/') {
+          console.log('🔄 DEV MODE: Navigating to dashboard...');
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 100);
+        }
+      } catch (error) {
+        console.error('❌ Error in dev mode auto-login:', error);
+        setLoading(false);
       }
       return;
     }
@@ -531,7 +536,19 @@ export function AuthProvider({ children }) {
 
       return unsubscribe;
     }
-  }, [isInitialized]);
+  }, [isInitialized, currentUser]);
+
+  // Safety timeout: if loading takes too long, show app anyway
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('⚠️ Auth loading timeout - showing app anyway');
+        setLoading(false);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [loading]);
 
   const handleApproveUser = async (pendingUser) => {
     try {
@@ -689,7 +706,34 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          minHeight: '100vh',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f4f6',
+            borderTop: '4px solid #3b82f6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          <p style={{ color: '#6b7280' }}>Loading...</p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }
