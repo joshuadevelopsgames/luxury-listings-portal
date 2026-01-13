@@ -81,11 +81,27 @@ const PermissionsManagement = () => {
     try {
       setSaving(true);
       const permissions = userPermissions[userEmail] || [];
+      console.log('💾 Saving permissions for:', userEmail, 'Permissions:', permissions);
+      
+      // Check if user exists in approved_users collection first
+      const userExists = users.find(u => u.email === userEmail);
+      if (!userExists) {
+        toast.error(`User ${userEmail} not found in approved users`);
+        setSaving(false);
+        return;
+      }
+
       await firestoreService.setUserPagePermissions(userEmail, permissions);
+      console.log('✅ Permissions saved successfully');
       toast.success(`Permissions saved for ${userEmail}`);
+      
+      // Reload permissions to verify they were saved
+      const updatedPermissions = await firestoreService.getUserPagePermissions(userEmail);
+      console.log('✅ Verified saved permissions:', updatedPermissions);
     } catch (error) {
-      console.error('Error saving permissions:', error);
-      toast.error('Failed to save permissions');
+      console.error('❌ Error saving permissions:', error);
+      console.error('❌ Error details:', error.message, error.stack);
+      toast.error(`Failed to save permissions: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }

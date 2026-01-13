@@ -1828,13 +1828,35 @@ class FirestoreService {
   async setUserPagePermissions(userEmail, pageIds) {
     try {
       const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      
+      // Check if document exists first
+      const userSnap = await getDoc(userRef);
+      
+      if (!userSnap.exists()) {
+        console.error('❌ User document does not exist:', userEmail);
+        throw new Error(`User ${userEmail} not found in approved_users collection`);
+      }
+
+      console.log('📝 Updating permissions for user:', userEmail);
+      console.log('📝 New permissions:', pageIds);
+      
       await updateDoc(userRef, {
         pagePermissions: pageIds,
         permissionsUpdatedAt: serverTimestamp()
       });
+      
       console.log('✅ Page permissions saved for:', userEmail);
+      
+      // Verify the update
+      const verifySnap = await getDoc(userRef);
+      if (verifySnap.exists()) {
+        const savedPermissions = verifySnap.data().pagePermissions || [];
+        console.log('✅ Verified saved permissions:', savedPermissions);
+      }
     } catch (error) {
       console.error('❌ Error setting user page permissions:', error);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error message:', error.message);
       throw error;
     }
   }
