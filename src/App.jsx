@@ -253,19 +253,26 @@ function AppLayout() {
   );
 }
 
+// Helper to detect dev mode (same logic as AuthContext)
+function isDevMode() {
+  const isVercelPreview = 
+    process.env.VERCEL_ENV === 'preview' ||
+    process.env.VERCEL === '1' ||
+    (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app'));
+  
+  return (
+    process.env.NODE_ENV === 'development' || 
+    isVercelPreview ||
+    process.env.REACT_APP_DEV_AUTO_LOGIN === 'true'
+  );
+}
+
 // Dev mode check wrapper for login route
 function LoginWithDevRedirect() {
   const { currentUser, loading } = useAuth();
-  const location = useLocation();
-  
-  // Check if dev mode is active
-  const isDevMode = 
-    process.env.NODE_ENV === 'development' || 
-    process.env.VERCEL_ENV === 'preview' ||
-    process.env.REACT_APP_DEV_AUTO_LOGIN === 'true';
   
   // If dev mode and user is logged in, redirect from login to dashboard
-  if (isDevMode && !loading && currentUser) {
+  if (isDevMode() && !loading && currentUser) {
     console.log('🔧 DEV MODE: User logged in, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
@@ -277,14 +284,8 @@ function LoginWithDevRedirect() {
 function RootRedirect() {
   const { currentUser, loading } = useAuth();
   
-  // Check if dev mode is active
-  const isDevMode = 
-    process.env.NODE_ENV === 'development' || 
-    process.env.VERCEL_ENV === 'preview' ||
-    process.env.REACT_APP_DEV_AUTO_LOGIN === 'true';
-  
   // If dev mode and user is logged in, go to dashboard
-  if (isDevMode && !loading && currentUser) {
+  if (isDevMode() && !loading && currentUser) {
     console.log('🔧 DEV MODE: Root redirect - user logged in, going to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
