@@ -46,11 +46,28 @@ const GOOGLE_AUTH_DISABLED = false;
 
 // Dev mode: Auto-login as jrsschroeder@gmail.com
 // Works in: local development OR Vercel preview deployments (dev branch)
+// Check multiple ways to detect preview/dev environment
+const isVercelPreview = 
+  process.env.VERCEL_ENV === 'preview' ||
+  process.env.VERCEL === '1' ||
+  window.location.hostname.includes('vercel.app');
+
 const DEV_MODE_AUTO_LOGIN = 
   process.env.NODE_ENV === 'development' || 
-  process.env.VERCEL_ENV === 'preview' ||
+  isVercelPreview ||
   process.env.REACT_APP_DEV_AUTO_LOGIN === 'true';
+
 const DEV_AUTO_LOGIN_EMAIL = 'jrsschroeder@gmail.com';
+
+// Log dev mode status for debugging
+console.log('🔍 Dev Mode Check:', {
+  NODE_ENV: process.env.NODE_ENV,
+  VERCEL_ENV: process.env.VERCEL_ENV,
+  VERCEL: process.env.VERCEL,
+  hostname: window.location.hostname,
+  isVercelPreview,
+  DEV_MODE_AUTO_LOGIN
+});
 
 const AuthContext = createContext();
 
