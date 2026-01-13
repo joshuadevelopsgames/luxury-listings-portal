@@ -253,6 +253,46 @@ function AppLayout() {
   );
 }
 
+// Dev mode check wrapper for login route
+function LoginWithDevRedirect() {
+  const { currentUser, loading } = useAuth();
+  const location = useLocation();
+  
+  // Check if dev mode is active
+  const isDevMode = 
+    process.env.NODE_ENV === 'development' || 
+    process.env.VERCEL_ENV === 'preview' ||
+    process.env.REACT_APP_DEV_AUTO_LOGIN === 'true';
+  
+  // If dev mode and user is logged in, redirect from login to dashboard
+  if (isDevMode && !loading && currentUser) {
+    console.log('🔧 DEV MODE: User logged in, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <Login />;
+}
+
+// Root redirect component
+function RootRedirect() {
+  const { currentUser, loading } = useAuth();
+  
+  // Check if dev mode is active
+  const isDevMode = 
+    process.env.NODE_ENV === 'development' || 
+    process.env.VERCEL_ENV === 'preview' ||
+    process.env.REACT_APP_DEV_AUTO_LOGIN === 'true';
+  
+  // If dev mode and user is logged in, go to dashboard
+  if (isDevMode && !loading && currentUser) {
+    console.log('🔧 DEV MODE: Root redirect - user logged in, going to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  // Otherwise go to login
+  return <Navigate to="/login" replace />;
+}
+
 // Main App Component
 function App() {
   return (
@@ -261,7 +301,7 @@ function App() {
         <Router>
           <Routes>
             {/* Public routes */}
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<LoginWithDevRedirect />} />
             <Route path="/client-login" element={<ClientLogin />} />
             <Route path="/client-password-reset" element={<ClientPasswordReset />} />
             <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
@@ -269,8 +309,8 @@ function App() {
             {/* Handle Firebase default auth URLs */}
             <Route path="/__/auth/action" element={<FirebaseAuthHandler />} />
             
-            {/* Protected routes - redirect root to login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* Protected routes - redirect root based on auth state */}
+            <Route path="/" element={<RootRedirect />} />
             <Route path="/*" element={<AppLayout />} />
           </Routes>
         </Router>
