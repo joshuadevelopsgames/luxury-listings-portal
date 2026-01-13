@@ -13,6 +13,13 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('❌ Unhandled promise rejection:', event.reason);
 });
 
+// Debug environment variables
+console.log('🔍 Environment check:');
+console.log('  NODE_ENV:', process.env.NODE_ENV);
+console.log('  VERCEL_ENV:', process.env.VERCEL_ENV);
+console.log('  REACT_APP_DEV_AUTO_LOGIN:', process.env.REACT_APP_DEV_AUTO_LOGIN);
+console.log('  Window location:', window.location.href);
+
 // Verify root element exists
 const rootElement = document.getElementById('root');
 if (!rootElement) {
