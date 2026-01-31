@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import V3Layout from './components/Layout';
 import V3Login from './components/Login';
 import V3Dashboard from './components/Dashboard';
+import PermissionRoute from './components/PermissionRoute';
 
 // V3 styled components that use real data where available
 // For pages that don't have a V3 version yet, we use the original pages wrapped in the V3 layout
@@ -27,6 +28,7 @@ import MyTimeOff from '../pages/MyTimeOff';
 import EmployeeSelfService from '../pages/EmployeeSelfService';
 import OnboardingPage from '../pages/OnboardingPage';
 import ContentManagerMessage from '../pages/ContentManagerMessage';
+import PermissionsManager from './pages/PermissionsManager';
 
 // Import styles
 import './styles/globals.css';
@@ -59,29 +61,89 @@ const V3App = () => {
             <Routes>
               <Route path="/" element={<Navigate to="dashboard" replace />} />
               
-              {/* V3 Apple-styled Dashboard (with real task data) */}
+              {/* Dashboard - always accessible */}
               <Route path="dashboard" element={<V3Dashboard />} />
               
-              {/* Original pages wrapped in V3 layout */}
-              {/* These pages inherit Apple styling via the v3-content-wrapper CSS */}
-              <Route path="tasks" element={<TasksPage />} />
-              <Route path="clients" element={<ClientsPage />} />
-              <Route path="client-packages" element={<ClientPackages />} />
-              <Route path="pending-clients" element={<PendingClients />} />
-              <Route path="content-calendar" element={<ContentCalendar />} />
-              <Route path="crm" element={<CRMPage />} />
-              <Route path="team" element={<TeamManagement />} />
-              <Route path="hr-calendar" element={<HRCalendar />} />
-              <Route path="hr-analytics" element={<HRAnalytics />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="user-management" element={<UserManagement />} />
-              <Route path="it-support" element={<ITSupportPage />} />
-              <Route path="tutorials" element={<TutorialsPage />} />
-              <Route path="resources" element={<ResourcesPage />} />
+              {/* Permission-protected pages */}
+              <Route path="tasks" element={
+                <PermissionRoute pageId="tasks" pageName="Tasks">
+                  <TasksPage />
+                </PermissionRoute>
+              } />
+              <Route path="clients" element={
+                <PermissionRoute pageId="clients" pageName="Clients">
+                  <ClientsPage />
+                </PermissionRoute>
+              } />
+              <Route path="client-packages" element={
+                <PermissionRoute pageId="client-packages" pageName="Client Packages">
+                  <ClientPackages />
+                </PermissionRoute>
+              } />
+              <Route path="pending-clients" element={
+                <PermissionRoute pageId="pending-clients" pageName="Pending Clients">
+                  <PendingClients />
+                </PermissionRoute>
+              } />
+              <Route path="content-calendar" element={
+                <PermissionRoute pageId="content-calendar" pageName="Content Calendar">
+                  <ContentCalendar />
+                </PermissionRoute>
+              } />
+              <Route path="crm" element={
+                <PermissionRoute pageId="crm" pageName="CRM">
+                  <CRMPage />
+                </PermissionRoute>
+              } />
+              <Route path="team" element={
+                <PermissionRoute pageId="team" pageName="Team Management">
+                  <TeamManagement />
+                </PermissionRoute>
+              } />
+              <Route path="hr-calendar" element={
+                <PermissionRoute pageId="hr-calendar" pageName="HR Calendar">
+                  <HRCalendar />
+                </PermissionRoute>
+              } />
+              <Route path="hr-analytics" element={
+                <PermissionRoute pageId="hr-analytics" pageName="HR Analytics">
+                  <HRAnalytics />
+                </PermissionRoute>
+              } />
+              <Route path="analytics" element={
+                <PermissionRoute pageId="analytics" pageName="Analytics">
+                  <Analytics />
+                </PermissionRoute>
+              } />
+              <Route path="user-management" element={
+                <PermissionRoute pageId="user-management" pageName="User Management">
+                  <UserManagement />
+                </PermissionRoute>
+              } />
+              <Route path="it-support" element={
+                <PermissionRoute pageId="it-support" pageName="IT Support">
+                  <ITSupportPage />
+                </PermissionRoute>
+              } />
+              <Route path="tutorials" element={
+                <PermissionRoute pageId="tutorials" pageName="Tutorials">
+                  <TutorialsPage />
+                </PermissionRoute>
+              } />
+              <Route path="resources" element={
+                <PermissionRoute pageId="resources" pageName="Resources">
+                  <ResourcesPage />
+                </PermissionRoute>
+              } />
+              
+              {/* Profile pages - always accessible */}
               <Route path="my-time-off" element={<MyTimeOff />} />
               <Route path="self-service" element={<EmployeeSelfService />} />
               <Route path="onboarding" element={<OnboardingPage />} />
               <Route path="content-manager-message" element={<ContentManagerMessage />} />
+              
+              {/* System admin only */}
+              <Route path="permissions" element={<PermissionsManager />} />
               
               {/* Catch all */}
               <Route path="*" element={<Navigate to="dashboard" replace />} />

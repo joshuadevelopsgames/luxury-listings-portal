@@ -124,6 +124,7 @@ const V3Layout = ({ children }) => {
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/v3/hr-analytics' },
     'analytics': { name: 'Analytics', icon: BarChart3, path: '/v3/analytics' },
     'user-management': { name: 'User Management', icon: Users, path: '/v3/user-management' },
+    'permissions': { name: 'Permissions', icon: Settings, path: '/v3/permissions' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/v3/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/v3/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/v3/resources' },
@@ -148,7 +149,7 @@ const V3Layout = ({ children }) => {
         },
         {
           title: 'Admin',
-          items: ['user-management', 'it-support']
+          items: ['user-management', 'permissions', 'it-support']
         },
         {
           title: 'Resources',
