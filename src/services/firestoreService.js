@@ -1901,12 +1901,22 @@ class FirestoreService {
     return result;
   }
 
-  // Create an Instagram report
+  // Create an Instagram report. Screenshots are never stored (OCR-only in the app); we always write screenshots: [].
   async createInstagramReport(reportData) {
     try {
+      // Use only these fields; never pass through reportData.screenshots (may contain File objects).
+      const sanitized = JSON.parse(JSON.stringify({
+        clientName: reportData.clientName ?? '',
+        title: reportData.title ?? '',
+        dateRange: reportData.dateRange ?? '',
+        notes: reportData.notes ?? '',
+        postLinks: Array.isArray(reportData.postLinks) ? reportData.postLinks.map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? '') })) : [],
+        metrics: reportData.metrics ?? null,
+        screenshots: [] // always empty; screenshots are used for OCR only, not attached to report
+      }));
       const publicLinkId = this.generatePublicLinkId();
       const docRef = await addDoc(collection(db, this.collections.INSTAGRAM_REPORTS), {
-        ...reportData,
+        ...sanitized,
         publicLinkId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()

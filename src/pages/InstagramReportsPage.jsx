@@ -532,11 +532,18 @@ const ReportModal = ({ report, onClose, onSave }) => {
     setSaving(true);
 
     try {
-      const { screenshots, ...toSave } = formData;
+      // Build payload with only serializable data. Never include formData.screenshots (they hold File objects for OCR only).
+      const clientName = String(formData.clientName ?? '');
+      const title = String(formData.title ?? '');
+      const dateRange = String(formData.dateRange ?? '');
+      const notes = String(formData.notes ?? '');
+      const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? '') }));
+      const metrics = formData.metrics ? JSON.parse(JSON.stringify(formData.metrics)) : null;
+
       if (report) {
-        await firestoreService.updateInstagramReport(report.id, toSave);
+        await firestoreService.updateInstagramReport(report.id, { clientName, title, dateRange, notes, postLinks, metrics });
       } else {
-        await firestoreService.createInstagramReport({ ...toSave, screenshots: [] });
+        await firestoreService.createInstagramReport({ clientName, title, dateRange, notes, postLinks, metrics });
       }
       onSave();
     } catch (error) {
