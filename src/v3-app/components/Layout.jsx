@@ -366,9 +366,17 @@ const V3Layout = ({ children }) => {
                     </p>
                     <p className="text-[11px] text-[#86868b] capitalize">{currentRole?.replace('_', ' ') || 'Member'}</p>
                   </div>
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-[13px] font-semibold shadow-sm">
-                    {currentUser?.displayName?.charAt(0) || 'U'}
-                  </div>
+                  {currentUser?.avatar || currentUser?.photoURL ? (
+                    <img 
+                      src={currentUser.avatar || currentUser.photoURL} 
+                      alt={currentUser.displayName || 'User'} 
+                      className="w-9 h-9 rounded-full object-cover shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-[13px] font-semibold shadow-sm">
+                      {currentUser?.displayName?.charAt(0) || 'U'}
+                    </div>
+                  )}
                   <ChevronDown className="w-4 h-4 text-[#86868b] hidden sm:block" />
                 </button>
 

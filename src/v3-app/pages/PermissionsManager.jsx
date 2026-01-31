@@ -240,7 +240,20 @@ const PermissionsManager = () => {
                   onClick={() => setExpandedUser(isExpanded ? null : user.email)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white font-semibold text-[15px]">
+                    {user.avatar || user.photoURL ? (
+                      <img 
+                        src={user.avatar || user.photoURL} 
+                        alt={user.displayName || 'User'} 
+                        className="w-12 h-12 rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-12 h-12 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center text-white font-semibold text-[15px] ${user.avatar || user.photoURL ? 'hidden' : 'flex'}`}
+                    >
                       {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
                     </div>
                     <div>
