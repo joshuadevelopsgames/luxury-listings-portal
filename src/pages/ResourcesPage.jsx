@@ -130,14 +130,14 @@ const typeIcons = {
 };
 
 const categoryColors = {
-  employee: "bg-blue-100 text-blue-800",
-  policy: "bg-slate-100 text-slate-800",
-  support: "bg-green-100 text-green-800", 
-  contacts: "bg-purple-100 text-purple-800",
-  training: "bg-orange-100 text-orange-800",
-  benefits: "bg-yellow-100 text-yellow-800",
-  safety: "bg-red-100 text-red-800",
-  hr: "bg-purple-100 text-purple-800"
+  employee: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  policy: "bg-slate-100 text-slate-800 dark:bg-slate-700/50 dark:text-slate-300",
+  support: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300", 
+  contacts: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  training: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  benefits: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+  safety: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  hr: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
 };
 
 export default function ResourcesPage() {
@@ -168,18 +168,18 @@ export default function ResourcesPage() {
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b border-gray-200 bg-white px-6 pt-4">
+        <div className="border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#1c1c1e] px-6 pt-4">
           <TabsList className="bg-transparent">
             <TabsTrigger 
               value="resources" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30 dark:data-[state=active]:text-blue-300 dark:text-gray-400"
             >
               <BookOpen className="w-4 h-4" />
               Resources
             </TabsTrigger>
             <TabsTrigger 
               value="programs" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30 dark:data-[state=active]:text-blue-300 dark:text-gray-400"
             >
               <Settings className="w-4 h-4" />
               Programs
@@ -190,17 +190,17 @@ export default function ResourcesPage() {
         <TabsContent value="resources" className="mt-0">
           <div className="p-6 space-y-8 max-w-6xl mx-auto">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Resources & Support</h1>
-              <p className="text-slate-600">Everything you need to know, all in one place</p>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Resources & Support</h1>
+              <p className="text-slate-600 dark:text-gray-400">Everything you need to know, all in one place</p>
             </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500 w-4 h-4" />
         <Input
           placeholder="Search resources..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-white/80 backdrop-blur-sm"
+          className="pl-10 bg-white/80 dark:bg-[#2d2d2d]/80 dark:border-white/10 dark:text-white backdrop-blur-sm"
         />
       </div>
 
@@ -243,8 +243,8 @@ export default function ResourcesPage() {
       {importantResources.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-xl font-semibold text-slate-900">Essential Resources</h2>
-            <Badge className="bg-red-100 text-red-800">Must Read</Badge>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Essential Resources</h2>
+            <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Must Read</Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {importantResources.map((resource) => (
@@ -256,15 +256,15 @@ export default function ResourcesPage() {
 
       {/* Other Resources */}
       <section>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">All Resources</h2>
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">All Resources</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {otherResources.length === 0 && importantResources.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Book className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 bg-slate-100 dark:bg-[#2d2d2d] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Book className="w-8 h-8 text-slate-400 dark:text-gray-500" />
               </div>
-              <p className="text-slate-500 font-medium">No resources found</p>
-              <p className="text-sm text-slate-400">Try a different search term</p>
+              <p className="text-slate-500 dark:text-gray-400 font-medium">No resources found</p>
+              <p className="text-sm text-slate-400 dark:text-gray-500">Try a different search term</p>
             </div>
           ) : (
             otherResources.map((resource) => (
@@ -323,18 +323,18 @@ function ResourceCard({ resource, navigate }) {
   const Icon = typeIcons[resource.type];
   
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border-slate-200/60 hover:shadow-lg transition-all duration-300">
+    <Card className="bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-sm border-slate-200/60 dark:border-white/10 hover:shadow-lg transition-all duration-300">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-slate-100 rounded-lg">
-              <Icon className="w-5 h-5 text-slate-600" />
+            <div className="p-2 bg-slate-100 dark:bg-white/10 rounded-lg">
+              <Icon className="w-5 h-5 text-slate-600 dark:text-gray-400" />
             </div>
             <div className="flex-1">
-              <CardTitle className="text-lg font-semibold text-slate-900">
+              <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">
                 {resource.title}
               </CardTitle>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-sm text-slate-600 dark:text-gray-400 mt-1">
                 {resource.description}
               </p>
             </div>
@@ -373,14 +373,14 @@ function ResourceCard({ resource, navigate }) {
         )}
         
         {resource.contact && (
-          <div className="text-sm text-slate-600 flex items-center gap-1">
+          <div className="text-sm text-slate-600 dark:text-gray-400 flex items-center gap-1">
             <Mail className="w-3 h-3" />
             {resource.contact}
           </div>
         )}
         
         {resource.phone && (
-          <div className="text-sm text-slate-600 flex items-center gap-1">
+          <div className="text-sm text-slate-600 dark:text-gray-400 flex items-center gap-1">
             <Phone className="w-3 h-3" />
             {resource.phone}
           </div>
