@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
+import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
@@ -42,6 +43,7 @@ import {
 const V3Layout = ({ children }) => {
   const { currentUser, currentRole, logout } = useAuth();
   const { viewingAsUser, isViewingAs, stopViewingAs } = useViewAs();
+  const { permissions: userPermissions, isSystemAdmin } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -57,7 +59,6 @@ const V3Layout = ({ children }) => {
   const [darkMode, setDarkMode] = useState(() => isAfter5PMVancouver());
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [userPermissions, setUserPermissions] = useState([]);
   const [viewAsPermissions, setViewAsPermissions] = useState([]);
   
   // Auto-switch dark mode based on Vancouver time
@@ -72,48 +73,6 @@ const V3Layout = ({ children }) => {
     
     return () => clearInterval(interval);
   }, []);
-
-  // Check if user is system admin
-  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com' || 
-                        currentUser?.email === 'joshua@luxury-listings.com';
-
-  // Load user's page permissions from Firestore
-  useEffect(() => {
-    if (!currentUser?.email) return;
-
-    let isMounted = true;
-
-    const loadPermissions = async () => {
-      try {
-        const permissions = await firestoreService.getUserPagePermissions(currentUser.email);
-        if (isMounted) {
-          setUserPermissions(permissions || []);
-        }
-      } catch (error) {
-        console.error('Error loading permissions:', error);
-        if (isMounted) {
-          setUserPermissions([]);
-        }
-      }
-    };
-
-    loadPermissions();
-
-    // Set up real-time listener
-    const unsubscribe = firestoreService.onUserPagePermissionsChange(
-      currentUser.email,
-      (permissions) => {
-        if (isMounted) {
-          setUserPermissions(permissions || []);
-        }
-      }
-    );
-
-    return () => {
-      isMounted = false;
-      if (unsubscribe) unsubscribe();
-    };
-  }, [currentUser?.email]);
 
   // Load permissions for the user being viewed as
   useEffect(() => {
