@@ -214,28 +214,32 @@ const V3Layout = ({ children }) => {
       `}>
         <div className="h-full bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-r border-gray-200 dark:border-white/5 flex flex-col">
           {/* Logo */}
-          <div className="h-[60px] px-5 flex items-center justify-between border-b border-black/5 dark:border-white/5">
-            <Link to="/v3/dashboard" className="flex items-center gap-3">
-              <img 
-                src={darkMode ? "/Luxury-listings-logo-CLR-reverse.png" : "/Luxury-listings-logo-CLR.png"}
-                alt="Luxury Listings" 
-                className="h-8 w-auto"
-              />
+          <div className="h-[72px] px-4 flex items-center justify-between border-b border-black/5 dark:border-white/5">
+            <Link to="/v3/dashboard" className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
+                <img 
+                  src="/Luxury-listings-logo-CLR.png"
+                  alt="Luxury Listings" 
+                  className={`h-9 w-auto ${darkMode ? 'brightness-0 invert' : ''}`}
+                />
+              </div>
               {!sidebarCollapsed && (
-                <div className="animate-in fade-in slide-in-from-left-2 duration-200">
-                  <h1 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white tracking-[-0.01em]">
+                <div className="animate-in fade-in slide-in-from-left-2 duration-200 min-w-0">
+                  <h1 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white tracking-[-0.01em] leading-tight">
                     Luxury Listings
                   </h1>
-                  <p className="text-[11px] text-[#86868b] font-medium">Portal</p>
+                  <p className="text-[11px] text-[#86868b] font-medium mt-0.5">Portal</p>
                 </div>
               )}
             </Link>
-            <button 
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex w-6 h-6 items-center justify-center rounded hover:bg-black/5 dark:hover:bg-white/5"
-            >
-              <ChevronRight className={`w-4 h-4 text-[#86868b] transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`} />
-            </button>
+            {!sidebarCollapsed && (
+              <button 
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:flex w-7 h-7 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/10 flex-shrink-0"
+              >
+                <ChevronRight className={`w-4 h-4 text-[#86868b] transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`} />
+              </button>
+            )}
           </div>
 
           {/* Navigation */}
