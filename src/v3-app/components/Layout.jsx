@@ -46,7 +46,7 @@ const V3Layout = ({ children }) => {
   const { permissions: userPermissions, isSystemAdmin } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Vancouver time: dark from 5 PM to 6 AM (switches at 6:00 and 17:00)
@@ -277,6 +277,7 @@ const V3Layout = ({ children }) => {
                         key={pageId}
                         to={page.path}
                         title={sidebarCollapsed ? page.name : undefined}
+                        onClick={() => setSidebarOpen(false)}
                         className={`
                           flex items-center gap-3 px-3 py-2 rounded-lg
                           transition-all duration-200 ease-out
@@ -302,6 +303,7 @@ const V3Layout = ({ children }) => {
           <div className="px-3 py-4 border-t border-black/5 dark:border-white/5">
             <Link
               to="/classic/dashboard"
+              onClick={() => setSidebarOpen(false)}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-200 mb-2"
             >
               {!sidebarCollapsed && <span className="text-[13px] font-medium">Switch to Classic</span>}
@@ -454,8 +456,8 @@ const V3Layout = ({ children }) => {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="p-4 lg:p-8">
+        {/* Page Content - key forces remount when path changes so view updates with URL */}
+        <main className="p-4 lg:p-8" key={location.pathname}>
           <div className="max-w-[1600px] mx-auto">
             {/* Apple-style content wrapper */}
             <div className="v3-content-wrapper">
