@@ -36,47 +36,20 @@ const ClientPortal = () => {
 
   // Load client data based on email
   useEffect(() => {
-    const loadClientData = async () => {
-      // Check localStorage for client auth first
-      const clientAuth = localStorage.getItem('clientAuth');
-      let emailToUse = null;
-
-      if (clientAuth) {
-        try {
-          const authData = JSON.parse(clientAuth);
-          emailToUse = authData.email;
-          setClientEmail(emailToUse);
-        } catch (error) {
-          console.error('Error parsing client auth:', error);
-        }
-      }
-
-      // Fallback to Firebase auth user
-      if (!emailToUse) {
-        auth.onAuthStateChanged((user) => {
-          if (user) {
-            emailToUse = user.email;
-            setClientEmail(emailToUse);
-            loadClient(emailToUse);
-          } else {
-            // No user authenticated, redirect to login
-            navigate('/client-login');
-          }
-        });
-        return;
-      }
-
-      await loadClient(emailToUse);
-    };
+    let unsubscribeAuth = null;
+    let isMounted = true;
 
     const loadClient = async (email) => {
       try {
+        if (!isMounted) return;
         setLoading(true);
         // Find client by email
         const clients = await firestoreService.getClients();
         const client = clients.find(c => 
           c.clientEmail?.toLowerCase() === email.toLowerCase()
         );
+
+        if (!isMounted) return;
 
         if (client) {
           setClientData(client);
@@ -88,7 +61,6 @@ const ClientPortal = () => {
             authenticated: true
           }));
         } else {
-          console.warn('Client not found for email:', email);
           // Clear invalid auth
           localStorage.removeItem('clientAuth');
           navigate('/client-login');
@@ -96,11 +68,57 @@ const ClientPortal = () => {
       } catch (error) {
         console.error('Error loading client data:', error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
+    const loadClientData = async () => {
+      // Check localStorage for client auth first
+      const clientAuth = localStorage.getItem('clientAuth');
+      let emailToUse = null;
+
+      if (clientAuth) {
+        try {
+          const authData = JSON.parse(clientAuth);
+          emailToUse = authData.email;
+          if (isMounted) {
+            setClientEmail(emailToUse);
+          }
+        } catch (error) {
+          // Invalid localStorage data
+        }
+      }
+
+      // Fallback to Firebase auth user
+      if (!emailToUse) {
+        unsubscribeAuth = auth.onAuthStateChanged((user) => {
+          if (!isMounted) return;
+          
+          if (user) {
+            setClientEmail(user.email);
+            loadClient(user.email);
+          } else {
+            // No user authenticated, redirect to login
+            navigate('/client-login');
+          }
+        });
+        return;
+      }
+
+      await loadClient(emailToUse);
+    };
+
     loadClientData();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (unsubscribeAuth) {
+        unsubscribeAuth();
+      }
+    };
   }, [navigate]);
 
   const handleLogout = async () => {

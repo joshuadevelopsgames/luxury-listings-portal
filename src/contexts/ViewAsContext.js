@@ -20,13 +20,11 @@ export function ViewAsProvider({ children }) {
   // Start viewing as another user
   const startViewingAs = (user) => {
     setViewingAsUser(user);
-    console.log('👁️ Now viewing as:', user.email);
   };
 
   // Stop viewing as another user
   const stopViewingAs = () => {
     setViewingAsUser(null);
-    console.log('👁️ Exited view-as mode');
   };
 
   // Check if currently viewing as another user

@@ -28,18 +28,61 @@ class CloudVisionOCRService {
   }
 
   /**
-   * Convert a File/Blob to base64 string
+   * Resize image to max dimension for faster upload + Vision API (smaller = faster)
    */
-  async fileToBase64(file) {
+  async compressForUpload(file, maxWidth = 1024) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth || height > maxWidth) {
+          if (width > height) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          } else {
+            width = (width * maxWidth) / height;
+            height = maxWidth;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        if (img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : resolve(file)),
+          'image/jpeg',
+          0.82
+        );
+      };
+      img.onerror = () => {
+        if (img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+        resolve(file);
+      };
+      if (file instanceof File || file instanceof Blob) {
+        img.src = URL.createObjectURL(file);
+      } else {
+        resolve(file);
+      }
+    });
+  }
+
+  /**
+   * Convert a File/Blob to base64 string (optionally compress first for speed)
+   */
+  async fileToBase64(file, compress = true) {
+    const toEncode = compress && (file instanceof File || file instanceof Blob)
+      ? await this.compressForUpload(file)
+      : file;
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        // Remove the data URL prefix (e.g., "data:image/png;base64,")
         const base64 = reader.result.split(',')[1];
         resolve(base64);
       };
       reader.onerror = reject;
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(toEncode);
     });
   }
 
@@ -64,12 +107,10 @@ class CloudVisionOCRService {
       const imageData = await Promise.all(
         images.map(async (img, index) => {
           if (img.localFile || img instanceof File || img instanceof Blob) {
-            // Convert local file to base64 for upload
             const file = img.localFile || img;
-            const base64 = await this.fileToBase64(file);
+            const base64 = await this.fileToBase64(file, true);
             return { base64, index };
           } else if (typeof img === 'string' || img.url) {
-            // Use URL directly (for existing reports)
             return { url: img.url || img, index };
           }
           return { url: img, index };

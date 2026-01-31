@@ -21,7 +21,6 @@ export function PendingUsersProvider({ children }) {
     const isPublicPage = publicPaths.some(path => window.location.pathname.startsWith(path));
     
     if (isPublicPage) {
-      console.log('⏭️ Skipping pending users load on public page');
       setLoading(false);
       return;
     }
@@ -30,11 +29,9 @@ export function PendingUsersProvider({ children }) {
     const loadInitialData = async () => {
       try {
         const users = await firestoreService.getPendingUsers();
-        console.log('📡 Initial pending users loaded:', users.length);
         setPendingUsers(users);
         setLoading(false);
       } catch (error) {
-        console.error('❌ Error loading initial pending users:', error);
         setPendingUsers([]);
         setLoading(false);
       }
@@ -96,23 +93,19 @@ export function PendingUsersProvider({ children }) {
   // Manual refresh function
   const refreshPendingUsers = async () => {
     try {
-      console.log('🔄 Manually refreshing pending users...');
       const users = await firestoreService.getPendingUsers();
-      console.log('📡 Manual refresh - pending users:', users);
       setPendingUsers(users);
       setLoading(false);
     } catch (error) {
-      console.error('❌ Error manually refreshing pending users:', error);
+      // Silent fail
     }
   };
 
   // Function to add a new pending user
   const addPendingUser = async (user) => {
     try {
-      console.log('➕ Adding pending user:', user);
       await firestoreService.addPendingUser(user);
     } catch (error) {
-      console.error('❌ Error adding pending user:', error);
       throw error;
     }
   };
@@ -120,28 +113,10 @@ export function PendingUsersProvider({ children }) {
   // Function to remove a pending user (when approved or rejected)
   const removePendingUser = async (userId) => {
     try {
-      console.log('🗑️ Removing pending user:', userId);
-      
-      // Remove from Firestore
-      console.log('🗑️ Removing from Firestore:', userId);
       await firestoreService.removePendingUser(userId);
-      console.log('✅ Successfully removed from Firestore:', userId);
-      
       // Update local state since real-time listener is disabled
-      console.log('🔍 DEBUG: Updating local state after removal');
-      setPendingUsers(prevUsers => {
-        const updatedUsers = prevUsers.filter(user => user.id !== userId);
-        console.log('🔍 DEBUG: Local state updated. Previous count:', prevUsers.length, 'New count:', updatedUsers.length);
-        return updatedUsers;
-      });
-      
+      setPendingUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     } catch (error) {
-      console.error('❌ Error removing pending user:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
       throw error;
     }
   };
@@ -149,13 +124,11 @@ export function PendingUsersProvider({ children }) {
   // Function to update a pending user's role
   const updatePendingUserRole = async (userId, newRole) => {
     try {
-      console.log('✏️ Updating pending user role:', userId, newRole);
       const user = pendingUsers.find(u => u.id === userId);
       if (user) {
         await firestoreService.updatePendingUser(userId, { requestedRole: newRole });
       }
     } catch (error) {
-      console.error('❌ Error updating pending user role:', error);
       throw error;
     }
   };
@@ -163,21 +136,10 @@ export function PendingUsersProvider({ children }) {
   // Function to approve a user (remove from pending and add to approved)
   const approveUser = async (userId, approvedUserData) => {
     try {
-      console.log('✅ Approving user:', userId);
-      
-      // Approve in Firestore
       await firestoreService.approveUser(userId, approvedUserData);
-      
       // Update local state since real-time listener is disabled
-      console.log('🔍 DEBUG: Updating local state after approval');
-      setPendingUsers(prevUsers => {
-        const updatedUsers = prevUsers.filter(user => user.id !== userId);
-        console.log('🔍 DEBUG: Local state updated after approval. Previous count:', prevUsers.length, 'New count:', updatedUsers.length);
-        return updatedUsers;
-      });
-      
+      setPendingUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     } catch (error) {
-      console.error('❌ Error approving user:', error);
       throw error;
     }
   };

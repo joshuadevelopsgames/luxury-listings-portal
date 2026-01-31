@@ -10,7 +10,7 @@ class InstagramOCRService {
   constructor() {
     this.workers = [];
     this.isInitialized = false;
-    this.workerCount = 3; // Process 3 images in parallel
+    this.workerCount = 2; // 2 workers = less main-thread contention, still parallel
   }
 
   /**
@@ -47,12 +47,12 @@ class InstagramOCRService {
   }
 
   /**
-   * Compress image for faster OCR processing
+   * Compress image for faster OCR processing (smaller = much faster Tesseract)
    * @param {File|Blob} imageFile - Original image file
-   * @param {number} maxWidth - Maximum width (default 1200px is enough for OCR)
+   * @param {number} maxWidth - Maximum width (720px keeps labels readable, 2-3x faster OCR)
    * @returns {Promise<Blob>} Compressed image blob
    */
-  async compressImage(imageFile, maxWidth = 1200) {
+  async compressImage(imageFile, maxWidth = 720) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       const canvas = document.createElement('canvas');
@@ -84,7 +84,7 @@ class InstagramOCRService {
             }
           },
           'image/jpeg',
-          0.8 // 80% quality is fine for OCR
+          0.7 // 70% quality is enough for OCR, smaller file = faster
         );
       };
       
@@ -111,7 +111,11 @@ class InstagramOCRService {
     await this.initialize();
     
     const worker = this.workers[workerIndex % this.workers.length];
-    const result = await worker.recognize(image);
+    // PSM 6 = single block (faster for dashboard screens); OEM 0 = legacy engine (faster than LSTM)
+    const result = await worker.recognize(image, {
+      tessedit_pageseg_mode: 6,
+      tessedit_ocr_engine_mode: 0
+    });
     
     return result.data.text;
   }

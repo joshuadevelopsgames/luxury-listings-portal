@@ -19,20 +19,7 @@ import { firebaseApiService } from './firebaseApiService';
 
 class FirestoreService {
   constructor() {
-    console.log('🔧 FirestoreService constructor called');
-    console.log('🔧 Database instance:', db);
-    console.log('🔧 Database app:', db.app);
-    console.log('🔧 Database name:', db.name);
-    console.log('🔧 Database type:', typeof db);
-    console.log('🔧 Database app options:', db.app.options);
-    
-    // Test if we can access the database
-    try {
-      const testCollection = collection(db, 'test');
-      console.log('🔧 Test collection created:', testCollection);
-    } catch (error) {
-      console.error('🔧 Error creating test collection:', error);
-    }
+    // FirestoreService initialized silently
   }
 
   // Collections
