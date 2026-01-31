@@ -53,10 +53,15 @@ const ALL_PAGES = {
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },
 };
 
-// System admins cannot have their access removed
+// System admins (for full access display)
 const SYSTEM_ADMINS = [
   'jrsschroeder@gmail.com',
   'joshua@luxury-listings.com'
+];
+
+// Protected admins that cannot be removed
+const PROTECTED_ADMINS = [
+  'jrsschroeder@gmail.com'
 ];
 
 const PermissionsManager = () => {
@@ -232,9 +237,9 @@ const PermissionsManager = () => {
   const handleRemoveUser = async () => {
     if (!userToRemove) return;
     
-    // Don't allow removing system admins
-    if (SYSTEM_ADMINS.includes(userToRemove.email?.toLowerCase())) {
-      toast.error('Cannot remove system administrators');
+    // Don't allow removing protected admins
+    if (PROTECTED_ADMINS.includes(userToRemove.email?.toLowerCase())) {
+      toast.error('Cannot remove the primary system administrator');
       setUserToRemove(null);
       return;
     }
