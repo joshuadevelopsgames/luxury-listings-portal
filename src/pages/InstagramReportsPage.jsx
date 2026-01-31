@@ -4,7 +4,7 @@ import { firestoreService } from '../services/firestoreService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 // Fallback to browser-based OCR if Cloud Vision fails
 import { instagramOCRService } from '../services/instagramOCRService';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getStorage, ref, deleteObject } from 'firebase/storage';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -80,9 +80,10 @@ const InstagramReportsPage = () => {
     }
 
     try {
-      // Delete screenshots from storage
+      // Delete legacy screenshots from storage (only if they were ever uploaded)
       const storage = getStorage();
       for (const screenshot of report.screenshots || []) {
+        if (!screenshot.path) continue;
         try {
           const imageRef = ref(storage, screenshot.path);
           await deleteObject(imageRef);
@@ -187,8 +188,8 @@ const InstagramReportsPage = () => {
                           {report.dateRange}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Image className="w-4 h-4" />
-                          {report.screenshots?.length || 0} screenshots
+                          <LinkIcon className="w-4 h-4" />
+                          {report.postLinks?.length || 0} post links
                         </span>
                       </div>
                     </div>
@@ -252,26 +253,49 @@ const InstagramReportsPage = () => {
                   </div>
                 </div>
 
-                {/* Expanded Screenshots Preview */}
+                {/* Expanded: Post links & legacy screenshots */}
                 {expandedReport === report.id && (
                   <div className="border-t border-gray-200 dark:border-white/10 p-6 bg-gray-50 dark:bg-white/5">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Screenshots Preview</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {report.screenshots?.map((screenshot, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={screenshot.url}
-                            alt={screenshot.caption || `Screenshot ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-white/10"
-                          />
-                          {screenshot.caption && (
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center p-2">
-                              <p className="text-xs text-white text-center">{screenshot.caption}</p>
-                            </div>
-                          )}
+                    {(report.postLinks?.length > 0) && (
+                      <>
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Post links</h4>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {report.postLinks.map((link, index) => (
+                            <a
+                              key={index}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                            >
+                              <LinkIcon className="w-4 h-4" />
+                              {link.label || link.url || 'Link'}
+                            </a>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </>
+                    )}
+                    {(report.screenshots?.length > 0) && (
+                      <>
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Screenshots (legacy)</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {report.screenshots.map((screenshot, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={screenshot.url}
+                                alt={screenshot.caption || `Screenshot ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-white/10"
+                              />
+                              {screenshot.caption && (
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center p-2">
+                                  <p className="text-xs text-white text-center">{screenshot.caption}</p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                     {report.notes && (
                       <div className="mt-4 p-4 bg-white dark:bg-white/10 rounded-lg">
                         <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</h5>
@@ -314,7 +338,8 @@ const ReportModal = ({ report, onClose, onSave }) => {
     title: report?.title || '',
     dateRange: report?.dateRange || '',
     notes: report?.notes || '',
-    screenshots: report?.screenshots || [],
+    screenshots: [], // OCR only (not saved); editing loads no screenshots
+    postLinks: report?.postLinks || [],
     metrics: report?.metrics || null
   });
   const [uploading, setUploading] = useState(false);
@@ -348,7 +373,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
     setExtracting(true);
     setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Reading screenshots...' });
     try {
-      const images = formData.screenshots.map(s => ({ localFile: s.localFile, url: s.url }));
+      const images = formData.screenshots.map(s => ({ localFile: s.localFile, url: s.previewUrl }));
       let metrics;
       try {
         metrics = await cloudVisionOCRService.processScreenshots(
@@ -360,7 +385,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
       } catch (cloudError) {
         console.warn('Cloud Vision failed, falling back to browser OCR:', cloudError);
         setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Reading screenshots…' });
-        const imageFiles = formData.screenshots.map(s => s.localFile || s.url);
+        const imageFiles = formData.screenshots.map(s => s.localFile || s.previewUrl);
         metrics = await instagramOCRService.processScreenshots(
           imageFiles,
           (current, total, status) => {
@@ -385,28 +410,15 @@ const ReportModal = ({ report, onClose, onSave }) => {
     if (!files?.length) return;
 
     setUploading(true);
-    const storage = getStorage();
     const newScreenshots = [];
 
     try {
       for (const file of files) {
         if (!file.type.startsWith('image/')) continue;
-
-        const reportId = report?.id || `new-${Date.now()}`;
-        const fileName = `${Date.now()}-${file.name}`;
-        const storagePath = `instagram-reports/${reportId}/${fileName}`;
-        const storageRef = ref(storage, storagePath);
-
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-
         newScreenshots.push({
-          url,
-          path: storagePath,
+          localFile: file,
           name: file.name,
-          caption: '',
-          // Store local file for fast OCR (avoids re-downloading from Firebase)
-          localFile: file
+          previewUrl: URL.createObjectURL(file)
         });
       }
 
@@ -415,8 +427,8 @@ const ReportModal = ({ report, onClose, onSave }) => {
         screenshots: [...prev.screenshots, ...newScreenshots]
       }));
     } catch (error) {
-      console.error('Error uploading files:', error);
-      alert('Failed to upload some files. Please try again.');
+      console.error('Error adding screenshots:', error);
+      alert('Failed to add some files. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -428,18 +440,9 @@ const ReportModal = ({ report, onClose, onSave }) => {
     handleFileUpload(e.dataTransfer.files);
   };
 
-  const handleRemoveScreenshot = async (index) => {
+  const handleRemoveScreenshot = (index) => {
     const screenshot = formData.screenshots[index];
-    
-    if (screenshot.path) {
-      try {
-        const storage = getStorage();
-        const imageRef = ref(storage, screenshot.path);
-        await deleteObject(imageRef);
-      } catch (e) {
-        console.warn('Error deleting screenshot from storage:', e);
-      }
-    }
+    if (screenshot.previewUrl) URL.revokeObjectURL(screenshot.previewUrl);
 
     setFormData(prev => ({
       ...prev,
@@ -526,18 +529,14 @@ const ReportModal = ({ report, onClose, onSave }) => {
       return;
     }
 
-    if (formData.screenshots.length === 0) {
-      alert('Please add at least one screenshot');
-      return;
-    }
-
     setSaving(true);
 
     try {
+      const { screenshots, ...toSave } = formData;
       if (report) {
-        await firestoreService.updateInstagramReport(report.id, formData);
+        await firestoreService.updateInstagramReport(report.id, toSave);
       } else {
-        await firestoreService.createInstagramReport(formData);
+        await firestoreService.createInstagramReport({ ...toSave, screenshots: [] });
       }
       onSave();
     } catch (error) {
@@ -621,10 +620,10 @@ const ReportModal = ({ report, onClose, onSave }) => {
               />
             </div>
 
-            {/* Screenshot Upload Area */}
+            {/* Screenshots for reading numbers only (not attached to report) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Screenshots *
+                Screenshots (optional — for reading numbers only, not attached)
               </label>
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -650,13 +649,13 @@ const ReportModal = ({ report, onClose, onSave }) => {
                 {uploading ? (
                   <div className="flex items-center justify-center">
                     <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
-                    <span className="ml-3 text-gray-600 dark:text-gray-400">Uploading...</span>
+                    <span className="ml-3 text-gray-600 dark:text-gray-400">Adding...</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-3">
                     <Upload className="w-6 h-6 text-gray-400" />
                     <p className="text-gray-600 dark:text-gray-400">
-                      Drag and drop Instagram screenshots, or click to browse
+                      Drop screenshots to read numbers from them (optional)
                     </p>
                   </div>
                 )}
@@ -691,7 +690,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
                   {formData.screenshots.map((screenshot, index) => (
                     <div key={index} className="relative group border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
                       <img
-                        src={screenshot.url}
+                        src={screenshot.previewUrl || screenshot.url}
                         alt={screenshot.name}
                         className="w-full h-28 object-cover"
                       />
@@ -709,9 +708,8 @@ const ReportModal = ({ report, onClose, onSave }) => {
               </div>
             )}
 
-            {/* Metrics section — open by default when there are screenshots; manual entry for missing fields */}
-            {formData.screenshots.length > 0 && (
-              <div className="border border-purple-200 dark:border-purple-800 rounded-xl overflow-hidden">
+            {/* Metrics section — always visible; manual entry for missing fields */}
+            <div className="border border-purple-200 dark:border-purple-800 rounded-xl overflow-hidden">
                 <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-white">
                     <BarChart3 className="w-5 h-5" />
@@ -1093,7 +1091,57 @@ const ReportModal = ({ report, onClose, onSave }) => {
                 </div>
                 )}
               </div>
-            )}
+            </div>
+
+            {/* Instagram post links (shown on report as previews) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Instagram post links (for previews on report)
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Add links to Instagram posts to show as preview cards on the report.
+              </p>
+              {(formData.postLinks || []).map((link, idx) => (
+                <div key={idx} className="flex gap-2 mb-2">
+                  <input
+                    type="url"
+                    value={link.url || ''}
+                    onChange={(e) => {
+                      const next = [...(formData.postLinks || [])];
+                      next[idx] = { ...next[idx], url: e.target.value };
+                      setFormData(prev => ({ ...prev, postLinks: next }));
+                    }}
+                    placeholder="https://www.instagram.com/p/..."
+                    className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={link.label || ''}
+                    onChange={(e) => {
+                      const next = [...(formData.postLinks || [])];
+                      next[idx] = { ...next[idx], label: e.target.value };
+                      setFormData(prev => ({ ...prev, postLinks: next }));
+                    }}
+                    placeholder="Label (optional)"
+                    className="w-28 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, postLinks: (prev.postLinks || []).filter((_, i) => i !== idx) }))}
+                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, postLinks: [...(prev.postLinks || []), { url: '', label: '' }] }))}
+                className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" /> Add link
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1149,9 +1197,12 @@ const ReportPreviewModal = ({ report, onClose }) => {
   const [lightboxImage, setLightboxImage] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  const screenshots = report.screenshots || [];
   const openLightbox = (index) => {
-    setLightboxIndex(index);
-    setLightboxImage(report.screenshots[index]);
+    if (screenshots[index]) {
+      setLightboxIndex(index);
+      setLightboxImage(screenshots[index]);
+    }
   };
 
   const closeLightbox = () => {
@@ -1160,9 +1211,9 @@ const ReportPreviewModal = ({ report, onClose }) => {
 
   const navigateLightbox = (direction) => {
     const newIndex = lightboxIndex + direction;
-    if (newIndex >= 0 && newIndex < report.screenshots.length) {
+    if (newIndex >= 0 && newIndex < screenshots.length) {
       setLightboxIndex(newIndex);
-      setLightboxImage(report.screenshots[newIndex]);
+      setLightboxImage(screenshots[newIndex]);
     }
   };
 
@@ -1456,7 +1507,44 @@ const ReportPreviewModal = ({ report, onClose }) => {
             </div>
           )}
 
-          {/* Screenshots Gallery */}
+          {/* Instagram post links (previews) */}
+          {report.postLinks && report.postLinks.length > 0 && (
+            <div className="max-w-4xl mx-auto px-6 py-8">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Instagram Posts
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Featured posts from this period
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {report.postLinks.map((link, index) => (
+                  <a
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-4 p-4 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-100"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                      <Instagram className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 truncate group-hover:text-purple-600">
+                        {link.label || 'View post'}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{link.url}</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Legacy screenshots gallery */}
           {report.screenshots && report.screenshots.length > 0 && (
             <div className="max-w-4xl mx-auto px-6 py-8">
               <div className="text-center mb-6">
@@ -1493,12 +1581,12 @@ const ReportPreviewModal = ({ report, onClose }) => {
             </div>
           )}
 
-          {/* Empty state for screenshots */}
-          {(!report.screenshots || report.screenshots.length === 0) && (
+          {/* Empty state when no post links and no screenshots */}
+          {(!report.postLinks || report.postLinks.length === 0) && (!report.screenshots || report.screenshots.length === 0) && (
             <div className="max-w-4xl mx-auto px-6 py-8">
               <div className="text-center py-12 bg-white/50 rounded-xl border-2 border-dashed border-gray-200">
-                <Image className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500">No screenshots uploaded yet</p>
+                <LinkIcon className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-500">No post links added</p>
               </div>
             </div>
           )}
@@ -1540,7 +1628,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
             <X className="w-6 h-6" />
           </button>
 
-          {lightboxIndex > 0 && (
+          {screenshots.length > 0 && lightboxIndex > 0 && (
             <button
               onClick={(e) => { e.stopPropagation(); navigateLightbox(-1); }}
               className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
@@ -1549,7 +1637,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
             </button>
           )}
           
-          {lightboxIndex < report.screenshots.length - 1 && (
+          {screenshots.length > 0 && lightboxIndex < screenshots.length - 1 && (
             <button
               onClick={(e) => { e.stopPropagation(); navigateLightbox(1); }}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
@@ -1571,7 +1659,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
 
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
             <p className="text-white text-sm">
-              {lightboxIndex + 1} / {report.screenshots.length}
+              {lightboxIndex + 1} / {screenshots.length}
             </p>
           </div>
         </div>
