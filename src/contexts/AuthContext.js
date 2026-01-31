@@ -251,8 +251,10 @@ export function AuthProvider({ children }) {
     return permissions.permissions[permission] || false;
   }
 
-  // Load current role from Firestore on mount
+  // Load current role from Firestore only when user is authenticated (avoids permission error on login page)
   useEffect(() => {
+    if (!currentUser) return;
+
     const loadCurrentRole = async () => {
       try {
         const savedRole = await firestoreService.getSystemConfig('currentRole');
@@ -260,12 +262,12 @@ export function AuthProvider({ children }) {
           setCurrentRole(savedRole);
         }
       } catch (error) {
-        // Use default role on error
+        // Use default role on error (e.g. insufficient permissions before auth)
       }
     };
 
     loadCurrentRole();
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     // Dev mode: Auto-login as jrsschroeder@gmail.com
