@@ -49,6 +49,12 @@ const V3Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
+  // #region agent log
+  React.useEffect(() => {
+    fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Layout.jsx:V3Layout',message:'Location changed in Layout',data:{pathname:location.pathname,hasChildren:!!children,childrenType:children?.type?.name||typeof children},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H5'})}).catch(()=>{});
+  }, [location.pathname, children]);
+  // #endregion
+  
   // Vancouver time: dark from 5 PM to 6 AM (switches at 6:00 and 17:00)
   const getVancouverHour = () => {
     const vancouverTime = new Date().toLocaleString('en-US', { timeZone: 'America/Vancouver' });
@@ -277,7 +283,12 @@ const V3Layout = ({ children }) => {
                         key={pageId}
                         to={page.path}
                         title={sidebarCollapsed ? page.name : undefined}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={() => {
+                          // #region agent log
+                          fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Layout.jsx:Link-click',message:'Sidebar link clicked',data:{targetPath:page.path,pageName:page.name,currentPath:location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+                          // #endregion
+                          setSidebarOpen(false);
+                        }}
                         className={`
                           flex items-center gap-3 px-3 py-2 rounded-lg
                           transition-all duration-200 ease-out
@@ -461,6 +472,9 @@ const V3Layout = ({ children }) => {
           <div className="max-w-[1600px] mx-auto">
             {/* Apple-style content wrapper */}
             <div className="v3-content-wrapper">
+              {/* #region agent log */}
+              {(() => { fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Layout.jsx:main-render',message:'Rendering children in main',data:{pathname:location.pathname,childrenExists:!!children},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{}); return null; })()}
+              {/* #endregion */}
               {children}
             </div>
           </div>
