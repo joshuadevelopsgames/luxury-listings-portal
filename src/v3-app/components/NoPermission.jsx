@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldX, ArrowLeft, Home, Mail } from 'lucide-react';
+import { ShieldOff, ArrowLeft, Home, Mail } from 'lucide-react';
 
 /**
  * NoPermission - Apple-styled access denied page
@@ -13,7 +13,7 @@ const NoPermission = ({ pageName = 'this page' }) => {
         {/* Icon */}
         <div className="mb-8 flex justify-center">
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#ff3b30]/10 to-[#ff9500]/10 dark:from-[#ff3b30]/20 dark:to-[#ff9500]/20 flex items-center justify-center">
-            <ShieldX className="w-12 h-12 text-[#ff3b30]" strokeWidth={1.5} />
+            <ShieldOff className="w-12 h-12 text-[#ff3b30]" strokeWidth={1.5} />
           </div>
         </div>
 
