@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useViewAs } from '../../contexts/ViewAsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { 
   Shield, 
@@ -27,7 +29,8 @@ import {
   Plus,
   Trash2,
   UserPlus,
-  Mail
+  Mail,
+  Eye
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -58,6 +61,8 @@ const SYSTEM_ADMINS = [
 
 const PermissionsManager = () => {
   const { currentUser } = useAuth();
+  const { startViewingAs } = useViewAs();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
@@ -259,6 +264,17 @@ const PermissionsManager = () => {
     }
   };
 
+  // View site as another user
+  const handleViewAsUser = (user) => {
+    startViewingAs({
+      email: user.email,
+      displayName: user.displayName || user.email,
+      avatar: user.avatar || user.photoURL
+    });
+    navigate('/v3/dashboard');
+    toast.success(`Now viewing as ${user.displayName || user.email}`);
+  };
+
   // Filter users by search
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -419,6 +435,13 @@ const PermissionsManager = () => {
                         {/* Quick Actions */}
                         <div className="flex items-center justify-between py-4">
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleViewAsUser(user)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              View as User
+                            </button>
                             <button
                               onClick={() => grantAllPages(user.email)}
                               className="px-3 py-1.5 rounded-lg bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors"

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { ViewAsProvider } from '../contexts/ViewAsContext';
 
 // V3 Layout and Components (Apple-styled)
 import V3Layout from './components/Layout';
@@ -57,6 +58,7 @@ const V3App = () => {
       {/* Protected routes - all wrapped in V3Layout */}
       <Route path="/*" element={
         currentUser ? (
+          <ViewAsProvider>
           <V3Layout>
             <Routes>
               <Route path="/" element={<Navigate to="dashboard" replace />} />
@@ -149,6 +151,7 @@ const V3App = () => {
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
           </V3Layout>
+          </ViewAsProvider>
         ) : (
           <Navigate to="login" replace />
         )

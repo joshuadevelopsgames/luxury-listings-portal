@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useViewAs } from '../../contexts/ViewAsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
@@ -29,7 +30,9 @@ import {
   Target,
   TrendingUp,
   Briefcase,
-  UserCircle
+  UserCircle,
+  Eye,
+  X
 } from 'lucide-react';
 
 /**
@@ -38,6 +41,7 @@ import {
  */
 const V3Layout = ({ children }) => {
   const { currentUser, currentRole, logout } = useAuth();
+  const { viewingAsUser, isViewingAs, stopViewingAs } = useViewAs();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -54,6 +58,7 @@ const V3Layout = ({ children }) => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [userPermissions, setUserPermissions] = useState([]);
+  const [viewAsPermissions, setViewAsPermissions] = useState([]);
   
   // Auto-switch dark mode based on Vancouver time
   useEffect(() => {
@@ -110,6 +115,26 @@ const V3Layout = ({ children }) => {
     };
   }, [currentUser?.email]);
 
+  // Load permissions for the user being viewed as
+  useEffect(() => {
+    if (!isViewingAs || !viewingAsUser?.email) {
+      setViewAsPermissions([]);
+      return;
+    }
+
+    const loadViewAsPermissions = async () => {
+      try {
+        const permissions = await firestoreService.getUserPagePermissions(viewingAsUser.email);
+        setViewAsPermissions(permissions || []);
+      } catch (error) {
+        console.error('Error loading view-as permissions:', error);
+        setViewAsPermissions([]);
+      }
+    };
+
+    loadViewAsPermissions();
+  }, [isViewingAs, viewingAsUser?.email]);
+
   // All available pages with their icons
   const allPages = {
     'dashboard': { name: 'Dashboard', icon: Home, path: '/v3/dashboard' },
@@ -132,8 +157,16 @@ const V3Layout = ({ children }) => {
 
   // Navigation sections based on role/permissions
   const getNavSections = () => {
-    // System admins see everything organized
-    if (isSystemAdmin) {
+    // When viewing as another user, show their permissions
+    if (isViewingAs && viewAsPermissions.length > 0) {
+      return [{
+        title: 'Menu',
+        items: viewAsPermissions.filter(id => allPages[id])
+      }];
+    }
+
+    // System admins see everything organized (when not viewing as someone else)
+    if (isSystemAdmin && !isViewingAs) {
       return [
         {
           title: 'Main',
@@ -305,8 +338,32 @@ const V3Layout = ({ children }) => {
 
       {/* Main Content */}
       <div className={`min-h-screen bg-[#f5f5f7] dark:bg-[#161617] transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
+        {/* View As Banner */}
+        {isViewingAs && viewingAsUser && (
+          <div className="sticky top-0 z-40 bg-gradient-to-r from-[#ff9500] to-[#ff3b30] text-white px-4 py-2">
+            <div className="flex items-center justify-between max-w-[1600px] mx-auto">
+              <div className="flex items-center gap-3">
+                <Eye className="w-5 h-5" />
+                <span className="text-[13px] font-medium">
+                  Viewing as: <span className="font-semibold">{viewingAsUser.displayName || viewingAsUser.email}</span>
+                </span>
+                <span className="text-[12px] opacity-80">
+                  ({viewAsPermissions.length} pages)
+                </span>
+              </div>
+              <button
+                onClick={stopViewingAs}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-[13px] font-medium"
+              >
+                <X className="w-4 h-4" />
+                Exit View Mode
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
-        <header className="sticky top-0 z-30 h-[60px] bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-b border-gray-200 dark:border-white/5">
+        <header className={`sticky ${isViewingAs ? 'top-[44px]' : 'top-0'} z-30 h-[60px] bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-b border-gray-200 dark:border-white/5`}>
           <div className="h-full flex items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-4">
               {/* Mobile menu button */}
