@@ -348,7 +348,9 @@ const ReportModal = ({ report, onClose, onSave }) => {
           url,
           path: storagePath,
           name: file.name,
-          caption: ''
+          caption: '',
+          // Store local file for fast OCR (avoids re-downloading from Firebase)
+          localFile: file
         });
       }
 
@@ -409,9 +411,11 @@ const ReportModal = ({ report, onClose, onSave }) => {
     setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Initializing OCR...' });
 
     try {
-      const imageUrls = formData.screenshots.map(s => s.url);
+      // Use local files if available (much faster than re-downloading from Firebase)
+      // Falls back to URLs for existing reports that don't have local files
+      const images = formData.screenshots.map(s => s.localFile || s.url);
       const metrics = await instagramOCRService.processScreenshots(
-        imageUrls,
+        images,
         (current, total, status) => {
           setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
         }

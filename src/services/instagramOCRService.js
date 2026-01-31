@@ -1,73 +1,119 @@
 /**
  * Instagram OCR Service
  * Extracts analytics data from Instagram Insights screenshots using Tesseract.js
+ * Optimized for speed with parallel processing and image compression
  */
 
 import Tesseract from 'tesseract.js';
 
 class InstagramOCRService {
   constructor() {
-    this.worker = null;
+    this.workers = [];
     this.isInitialized = false;
+    this.workerCount = 3; // Process 3 images in parallel
   }
 
   /**
-   * Initialize the Tesseract worker
+   * Initialize Tesseract workers for parallel processing
    */
   async initialize() {
     if (this.isInitialized) return;
     
-    console.log('🔍 Initializing OCR worker...');
-    this.worker = await Tesseract.createWorker('eng');
+    console.log(`🔍 Initializing ${this.workerCount} OCR workers...`);
+    const startTime = Date.now();
+    
+    // Create workers in parallel
+    const workerPromises = [];
+    for (let i = 0; i < this.workerCount; i++) {
+      workerPromises.push(Tesseract.createWorker('eng'));
+    }
+    
+    this.workers = await Promise.all(workerPromises);
     this.isInitialized = true;
-    console.log('✅ OCR worker initialized');
+    
+    console.log(`✅ OCR workers initialized in ${Date.now() - startTime}ms`);
   }
 
   /**
-   * Terminate the worker when done
+   * Terminate all workers when done
    */
   async terminate() {
-    if (this.worker) {
-      await this.worker.terminate();
-      this.worker = null;
-      this.isInitialized = false;
+    for (const worker of this.workers) {
+      await worker.terminate();
     }
+    this.workers = [];
+    this.isInitialized = false;
+    console.log('🧹 OCR workers terminated');
   }
 
   /**
-   * Extract text from an image
+   * Compress image for faster OCR processing
+   * @param {File|Blob} imageFile - Original image file
+   * @param {number} maxWidth - Maximum width (default 1200px is enough for OCR)
+   * @returns {Promise<Blob>} Compressed image blob
+   */
+  async compressImage(imageFile, maxWidth = 1200) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              console.log(`📦 Compressed: ${(imageFile.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB`);
+              resolve(blob);
+            } else {
+              resolve(imageFile); // Fallback to original
+            }
+          },
+          'image/jpeg',
+          0.8 // 80% quality is fine for OCR
+        );
+      };
+      
+      img.onerror = () => resolve(imageFile); // Fallback to original on error
+      
+      // Create object URL from file
+      if (imageFile instanceof File || imageFile instanceof Blob) {
+        img.src = URL.createObjectURL(imageFile);
+      } else if (typeof imageFile === 'string') {
+        img.src = imageFile;
+      } else {
+        resolve(imageFile);
+      }
+    });
+  }
+
+  /**
+   * Extract text from an image using a specific worker
    * @param {string|File|Blob} image - Image URL, File, or Blob
+   * @param {number} workerIndex - Which worker to use
    * @returns {Promise<string>} Extracted text
    */
-  async extractText(image) {
+  async extractTextWithWorker(image, workerIndex) {
     await this.initialize();
     
-    console.log('🔍 Extracting text from image...');
-    const result = await this.worker.recognize(image);
-    console.log('✅ Text extraction complete');
+    const worker = this.workers[workerIndex % this.workers.length];
+    const result = await worker.recognize(image);
     
     return result.data.text;
-  }
-
-  /**
-   * Extract text from multiple images
-   * @param {Array} images - Array of image URLs, Files, or Blobs
-   * @param {Function} onProgress - Progress callback (index, total)
-   * @returns {Promise<string[]>} Array of extracted texts
-   */
-  async extractTextFromMultiple(images, onProgress = null) {
-    const texts = [];
-    
-    for (let i = 0; i < images.length; i++) {
-      const text = await this.extractText(images[i]);
-      texts.push(text);
-      
-      if (onProgress) {
-        onProgress(i + 1, images.length);
-      }
-    }
-    
-    return texts;
   }
 
   /**
@@ -293,31 +339,71 @@ class InstagramOCRService {
   }
 
   /**
-   * Process multiple screenshots and merge the extracted data
-   * @param {Array} imageUrls - Array of image URLs
+   * Process multiple screenshots in parallel with compression
+   * @param {Array} images - Array of image Files, Blobs, or URLs
    * @param {Function} onProgress - Progress callback
    * @returns {Promise<Object>} Merged metrics from all screenshots
    */
-  async processScreenshots(imageUrls, onProgress = null) {
-    const allMetrics = {};
+  async processScreenshots(images, onProgress = null) {
+    const startTime = Date.now();
+    console.log(`🚀 Starting OCR for ${images.length} images with parallel processing...`);
     
-    for (let i = 0; i < imageUrls.length; i++) {
-      if (onProgress) {
-        onProgress(i + 1, imageUrls.length, 'Extracting text...');
-      }
-      
+    // Initialize workers first
+    if (onProgress) {
+      onProgress(0, images.length, 'Initializing OCR engine...');
+    }
+    await this.initialize();
+    
+    // Compress images first (in parallel)
+    if (onProgress) {
+      onProgress(0, images.length, 'Optimizing images...');
+    }
+    
+    const compressedImages = await Promise.all(
+      images.map(async (img) => {
+        if (img instanceof File || img instanceof Blob) {
+          return this.compressImage(img);
+        }
+        return img; // URLs can't be compressed client-side easily
+      })
+    );
+    
+    const allMetrics = {};
+    let completed = 0;
+    
+    // Process images in batches using available workers
+    const processImage = async (image, index) => {
       try {
-        const text = await this.extractText(imageUrls[i]);
-        console.log(`📄 Screenshot ${i + 1} raw text:`, text.substring(0, 500) + '...');
+        const text = await this.extractTextWithWorker(image, index);
+        console.log(`📄 Screenshot ${index + 1} processed (${text.length} chars)`);
         
         const metrics = this.parseInstagramMetrics(text);
-        console.log(`📊 Screenshot ${i + 1} parsed metrics:`, metrics);
+        console.log(`📊 Screenshot ${index + 1} metrics:`, Object.keys(metrics).length, 'fields found');
         
-        // Merge metrics (later values override earlier ones for single values)
-        // Arrays are concatenated and deduplicated
-        this.mergeMetrics(allMetrics, metrics);
+        return metrics;
       } catch (error) {
-        console.error(`Error processing screenshot ${i + 1}:`, error);
+        console.error(`Error processing screenshot ${index + 1}:`, error);
+        return {};
+      }
+    };
+
+    // Process in parallel batches
+    const batchSize = this.workerCount;
+    for (let i = 0; i < compressedImages.length; i += batchSize) {
+      const batch = compressedImages.slice(i, i + batchSize);
+      const batchPromises = batch.map((img, batchIndex) => 
+        processImage(img, i + batchIndex)
+      );
+      
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Merge results from this batch
+      for (const metrics of batchResults) {
+        this.mergeMetrics(allMetrics, metrics);
+        completed++;
+        if (onProgress) {
+          onProgress(completed, images.length, `Processed ${completed} of ${images.length} screenshots...`);
+        }
       }
     }
     
@@ -331,6 +417,9 @@ class InstagramOCRService {
     if (allMetrics.contentBreakdown) {
       allMetrics.contentBreakdown = this.deduplicateByType(allMetrics.contentBreakdown);
     }
+    
+    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`✅ OCR complete in ${totalTime}s - Found ${Object.keys(allMetrics).length} metric types`);
     
     return allMetrics;
   }
