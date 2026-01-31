@@ -378,8 +378,18 @@ function isDevMode() {
 function LoginWithDevRedirect() {
   const { currentUser, loading } = useAuth();
   
-  if (isDevMode() && !loading && currentUser) {
+  // Show login immediately while auth is loading
+  if (loading) {
+    return <Login />;
+  }
+  
+  if (isDevMode() && currentUser) {
     console.log('🔧 DEV MODE: User logged in, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  // If user is already logged in (non-dev), redirect to dashboard
+  if (currentUser) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -403,32 +413,40 @@ function RootRedirect() {
 
 function App() {
   return (
-    <PendingUsersProvider>
-      <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<LoginWithDevRedirect />} />
-            <Route path="/client-login" element={<ClientLogin />} />
-            <Route path="/client-password-reset" element={<ClientPasswordReset />} />
-            <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
-            <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
-            <Route path="/__/auth/action" element={<FirebaseAuthHandler />} />
-            
-            {/* Classic Layout (Original v1 design - fully preserved) */}
-            <Route path="/classic/*" element={<ClassicAppLayout />} />
-            
-            {/* Demo Apps */}
-            <Route path="/v2/*" element={<DemoApp />} />
-            <Route path="/v3/*" element={<V3App />} />
-            
-            {/* Main App with Apple Layout (New default) */}
-            <Route path="/" element={<RootRedirect />} />
-            <Route path="/*" element={<MainAppLayout />} />
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </PendingUsersProvider>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public routes - no PendingUsersProvider needed */}
+          <Route path="/login" element={<LoginWithDevRedirect />} />
+          <Route path="/client-login" element={<ClientLogin />} />
+          <Route path="/client-password-reset" element={<ClientPasswordReset />} />
+          <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
+          <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
+          <Route path="/__/auth/action" element={<FirebaseAuthHandler />} />
+          
+          {/* Authenticated routes - wrap with PendingUsersProvider */}
+          <Route path="/classic/*" element={
+            <PendingUsersProvider>
+              <ClassicAppLayout />
+            </PendingUsersProvider>
+          } />
+          
+          <Route path="/v2/*" element={<DemoApp />} />
+          <Route path="/v3/*" element={
+            <PendingUsersProvider>
+              <V3App />
+            </PendingUsersProvider>
+          } />
+          
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/*" element={
+            <PendingUsersProvider>
+              <MainAppLayout />
+            </PendingUsersProvider>
+          } />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
