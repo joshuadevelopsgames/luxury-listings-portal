@@ -29,7 +29,16 @@ const Loader = ({ isDark = true, fadeOut = false, onFadeComplete, useLoginColors
       className={`w-full min-h-screen flex items-center justify-center fixed inset-0 z-50 transition-opacity duration-500 ${isDark ? 'bg-[#161617]' : 'bg-[#f5f5f7]'}`}
       style={{ opacity }}
     >
-      <div className="relative w-12 h-12 rotate-45">
+      {/* Login page gradient background */}
+      {useLoginColors && (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50" />
+          <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl" />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl" />
+        </>
+      )}
+      
+      <div className="relative w-12 h-12 rotate-45 z-10">
         {[...Array(7)].map((_, i) => (
           <div
             key={i}
