@@ -9,6 +9,7 @@ import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
 import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAULT_ROLE } from '../entities/UserRoleMapping';
 import { firestoreService } from '../services/firestoreService';
+import Loader from '../components/Loader';
 
 // Import the pending users context
 import { usePendingUsers } from './PendingUsersContext';
@@ -754,30 +755,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={value}>
       {loading ? (
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          minHeight: '100vh',
-          flexDirection: 'column',
-          gap: '1rem'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #f3f4f6',
-            borderTop: '4px solid #3b82f6',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-          <p style={{ color: '#6b7280' }}>Loading...</p>
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
+        <Loader isDark={true} />
       ) : (
         children
       )}

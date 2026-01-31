@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Loader from '../components/Loader';
 
 // V3 Layout and Components (Apple-styled)
 import V3Layout from './components/Layout';
@@ -47,14 +48,7 @@ const V3App = () => {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-[#0071e3]/20 border-t-[#0071e3] rounded-full animate-spin" />
-          <p className="text-[15px] text-[#86868b] font-medium">Loading...</p>
-        </div>
-      </div>
-    );
+    return <Loader isDark={true} />;
   }
 
   return (
