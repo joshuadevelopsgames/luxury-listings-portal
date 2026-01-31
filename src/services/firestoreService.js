@@ -262,6 +262,18 @@ class FirestoreService {
     }
   }
 
+  // Remove approved user
+  async removeApprovedUser(email) {
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+      await deleteDoc(doc(db, this.collections.APPROVED_USERS, normalizedEmail));
+      console.log('✅ Approved user removed:', normalizedEmail);
+    } catch (error) {
+      console.error('❌ Error removing approved user:', error);
+      throw error;
+    }
+  }
+
   // Update approved user
   async updateApprovedUser(email, updates) {
     try {

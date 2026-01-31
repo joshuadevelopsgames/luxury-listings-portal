@@ -23,7 +23,11 @@ import {
   FileText,
   Briefcase,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Trash2,
+  UserPlus,
+  Mail
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -61,6 +65,19 @@ const PermissionsManager = () => {
   const [expandedUser, setExpandedUser] = useState(null);
   const [userPermissions, setUserPermissions] = useState({});
   const [hasChanges, setHasChanges] = useState({});
+  
+  // Add user modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    email: '',
+    displayName: '',
+    role: 'content_director'
+  });
+  const [addingUser, setAddingUser] = useState(false);
+  
+  // Remove user state
+  const [userToRemove, setUserToRemove] = useState(null);
+  const [removingUser, setRemovingUser] = useState(false);
 
   // Check if current user is system admin
   const isSystemAdmin = SYSTEM_ADMINS.includes(currentUser?.email?.toLowerCase());
@@ -153,6 +170,95 @@ const PermissionsManager = () => {
     }
   };
 
+  // Add a new user
+  const handleAddUser = async () => {
+    if (!newUserForm.email || !newUserForm.displayName) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    // Check if user already exists
+    if (users.some(u => u.email?.toLowerCase() === newUserForm.email.toLowerCase())) {
+      toast.error('User with this email already exists');
+      return;
+    }
+
+    try {
+      setAddingUser(true);
+      
+      const userData = {
+        email: newUserForm.email.toLowerCase().trim(),
+        displayName: newUserForm.displayName.trim(),
+        firstName: newUserForm.displayName.split(' ')[0],
+        lastName: newUserForm.displayName.split(' ').slice(1).join(' ') || '',
+        role: newUserForm.role,
+        primaryRole: newUserForm.role,
+        roles: [newUserForm.role],
+        isApproved: true,
+        approvedAt: new Date().toISOString(),
+        approvedBy: currentUser?.email,
+        department: 'General',
+        startDate: new Date().toISOString().split('T')[0],
+        avatar: ''
+      };
+
+      await firestoreService.addApprovedUser(userData);
+      
+      // Set default permissions (dashboard + role-appropriate pages)
+      const defaultPages = ['dashboard', 'tasks', 'resources', 'tutorials'];
+      await firestoreService.setUserPagePermissions(userData.email, defaultPages);
+      
+      // Update local state
+      setUsers(prev => [...prev, userData]);
+      setUserPermissions(prev => ({ ...prev, [userData.email]: defaultPages }));
+      
+      toast.success(`User ${newUserForm.displayName} added successfully`);
+      setShowAddModal(false);
+      setNewUserForm({ email: '', displayName: '', role: 'content_director' });
+    } catch (error) {
+      console.error('Error adding user:', error);
+      toast.error('Failed to add user');
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  // Remove a user
+  const handleRemoveUser = async () => {
+    if (!userToRemove) return;
+    
+    // Don't allow removing system admins
+    if (SYSTEM_ADMINS.includes(userToRemove.email?.toLowerCase())) {
+      toast.error('Cannot remove system administrators');
+      setUserToRemove(null);
+      return;
+    }
+
+    try {
+      setRemovingUser(true);
+      
+      // Remove from approved users
+      await firestoreService.removeApprovedUser(userToRemove.email);
+      
+      // Update local state
+      setUsers(prev => prev.filter(u => u.email !== userToRemove.email));
+      setUserPermissions(prev => {
+        const newPerms = { ...prev };
+        delete newPerms[userToRemove.email];
+        return newPerms;
+      });
+      
+      toast.success(`User ${userToRemove.displayName || userToRemove.email} removed`);
+      setUserToRemove(null);
+      setExpandedUser(null);
+    } catch (error) {
+      console.error('Error removing user:', error);
+      toast.error('Failed to remove user');
+    } finally {
+      setRemovingUser(false);
+    }
+  };
+
   // Filter users by search
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -184,12 +290,21 @@ const PermissionsManager = () => {
             Permissions Manager
           </h1>
           <p className="text-[15px] text-[#86868b]">
-            Control which pages each user can access
+            Manage users and control which pages they can access
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3]">
-          <Shield className="w-4 h-4" />
-          <span className="text-[13px] font-medium">System Admin</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add User
+          </button>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3]">
+            <Shield className="w-4 h-4" />
+            <span className="text-[13px] font-medium">System Admin</span>
+          </div>
         </div>
       </div>
 
@@ -377,6 +492,17 @@ const PermissionsManager = () => {
                             );
                           })}
                         </div>
+
+                        {/* Remove User */}
+                        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/5">
+                          <button
+                            onClick={() => setUserToRemove(user)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors text-[13px] font-medium"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Remove User
+                          </button>
+                        </div>
                       </>
                     )}
                   </div>
@@ -385,6 +511,154 @@ const PermissionsManager = () => {
             );
           })}
         </div>
+      )}
+
+      {/* Add User Modal */}
+      {showAddModal && (
+        <>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={() => setShowAddModal(false)} />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#ffffff] dark:bg-[#2c2c2e] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#0071e3]/10 flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-[#0071e3]" />
+                  </div>
+                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Add New User</h2>
+                </div>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center"
+                >
+                  <X className="w-5 h-5 text-[#86868b]" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+                    <input
+                      type="email"
+                      value={newUserForm.email}
+                      onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="user@example.com"
+                      className="w-full h-11 pl-10 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+                    <input
+                      type="text"
+                      value={newUserForm.displayName}
+                      onChange={(e) => setNewUserForm(prev => ({ ...prev, displayName: e.target.value }))}
+                      placeholder="John Doe"
+                      className="w-full h-11 pl-10 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                    Role
+                  </label>
+                  <select
+                    value={newUserForm.role}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, role: e.target.value }))}
+                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                  >
+                    <option value="content_director">Content Director</option>
+                    <option value="social_media_manager">Social Media Manager</option>
+                    <option value="hr_manager">HR Manager</option>
+                    <option value="sales_manager">Sales Manager</option>
+                  </select>
+                </div>
+
+                <p className="text-[12px] text-[#86868b]">
+                  The user will be able to sign in with Google using this email. They'll get default page access which you can modify after adding.
+                </p>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-white/5">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="h-10 px-4 rounded-xl text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddUser}
+                  disabled={addingUser || !newUserForm.email || !newUserForm.displayName}
+                  className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addingUser ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  Add User
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Remove User Confirmation Modal */}
+      {userToRemove && (
+        <>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={() => setUserToRemove(null)} />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#ffffff] dark:bg-[#2c2c2e] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+              {/* Modal Header */}
+              <div className="p-5 text-center">
+                <div className="w-16 h-16 rounded-full bg-[#ff3b30]/10 flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="w-8 h-8 text-[#ff3b30]" />
+                </div>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+                  Remove User?
+                </h2>
+                <p className="text-[15px] text-[#86868b]">
+                  Are you sure you want to remove <span className="font-medium text-[#1d1d1f] dark:text-white">{userToRemove.displayName || userToRemove.email}</span>? They will lose access to the platform.
+                </p>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center gap-3 p-5 border-t border-gray-200 dark:border-white/5">
+                <button
+                  onClick={() => setUserToRemove(null)}
+                  className="flex-1 h-11 rounded-xl text-[15px] font-medium text-[#1d1d1f] dark:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRemoveUser}
+                  disabled={removingUser}
+                  className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#ff3b30] text-white text-[15px] font-medium hover:bg-[#ff453a] transition-all disabled:opacity-50"
+                >
+                  {removingUser ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
