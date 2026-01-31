@@ -258,19 +258,21 @@ const InstagramReportsPage = () => {
                   <div className="border-t border-gray-200 dark:border-white/10 p-6 bg-gray-50 dark:bg-white/5">
                     {(report.postLinks?.length > 0) && (
                       <>
-                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Post links</h4>
-                        <div className="flex flex-wrap gap-2 mb-4">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Post previews</h4>
+                        <div className="space-y-2 mb-4">
                           {report.postLinks.map((link, index) => (
-                            <a
-                              key={index}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                            >
-                              <LinkIcon className="w-4 h-4" />
-                              {link.label || link.url || 'Link'}
-                            </a>
+                            <div key={index} className="p-3 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20">
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                              >
+                                <LinkIcon className="w-4 h-4" />
+                                {link.label || link.url || 'Link'}
+                              </a>
+                              {link.comment && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{link.comment}</p>}
+                            </div>
                           ))}
                         </div>
                       </>
@@ -394,13 +396,23 @@ const ReportModal = ({ report, onClose, onSave }) => {
         );
         await instagramOCRService.terminate();
       }
-      setFormData(prev => ({
-        ...prev,
-        metrics: { ...(prev.metrics || {}), ...metrics }
-      }));
+      setFormData(prev => {
+        // Revoke object URLs so we don't leak memory, then dump screenshots (OCR-only)
+        (prev.screenshots || []).forEach((s) => { if (s.previewUrl) URL.revokeObjectURL(s.previewUrl); });
+        return {
+          ...prev,
+          metrics: { ...(prev.metrics || {}), ...metrics },
+          screenshots: []
+        };
+      });
     } catch (error) {
       console.error('Error extracting metrics:', error);
       hasAutoExtractedRef.current = false;
+      // Dump screenshots even on error so user can re-add if needed
+      setFormData(prev => {
+        (prev.screenshots || []).forEach((s) => { if (s.previewUrl) URL.revokeObjectURL(s.previewUrl); });
+        return { ...prev, screenshots: [] };
+      });
     } finally {
       setExtracting(false);
     }
@@ -537,7 +549,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
       const title = String(formData.title ?? '');
       const dateRange = String(formData.dateRange ?? '');
       const notes = String(formData.notes ?? '');
-      const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? '') }));
+      const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') }));
       const metrics = formData.metrics ? JSON.parse(JSON.stringify(formData.metrics)) : null;
 
       if (report) {
@@ -1105,47 +1117,60 @@ const ReportModal = ({ report, onClose, onSave }) => {
             {/* Instagram post links (shown on report as previews) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Instagram post links (for previews on report)
+                Social media post previews
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Add links to Instagram posts to show as preview cards on the report.
+                Add Instagram post links and a comment about each piece of content for the report.
               </p>
               {(formData.postLinks || []).map((link, idx) => (
-                <div key={idx} className="flex gap-2 mb-2">
-                  <input
-                    type="url"
-                    value={link.url || ''}
+                <div key={idx} className="border border-gray-200 dark:border-white/20 rounded-lg p-3 mb-3 space-y-2">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="url"
+                      value={link.url || ''}
+                      onChange={(e) => {
+                        const next = [...(formData.postLinks || [])];
+                        next[idx] = { ...next[idx], url: e.target.value };
+                        setFormData(prev => ({ ...prev, postLinks: next }));
+                      }}
+                      placeholder="https://www.instagram.com/p/..."
+                      className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={link.label || ''}
+                      onChange={(e) => {
+                        const next = [...(formData.postLinks || [])];
+                        next[idx] = { ...next[idx], label: e.target.value };
+                        setFormData(prev => ({ ...prev, postLinks: next }));
+                      }}
+                      placeholder="Label (optional)"
+                      className="w-28 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, postLinks: (prev.postLinks || []).filter((_, i) => i !== idx) }))}
+                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <textarea
+                    value={link.comment || ''}
                     onChange={(e) => {
                       const next = [...(formData.postLinks || [])];
-                      next[idx] = { ...next[idx], url: e.target.value };
+                      next[idx] = { ...next[idx], comment: e.target.value };
                       setFormData(prev => ({ ...prev, postLinks: next }));
                     }}
-                    placeholder="https://www.instagram.com/p/..."
-                    className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                    placeholder="Comment about this post (e.g. insight, performance note)"
+                    rows={2}
+                    className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm resize-none"
                   />
-                  <input
-                    type="text"
-                    value={link.label || ''}
-                    onChange={(e) => {
-                      const next = [...(formData.postLinks || [])];
-                      next[idx] = { ...next[idx], label: e.target.value };
-                      setFormData(prev => ({ ...prev, postLinks: next }));
-                    }}
-                    placeholder="Label (optional)"
-                    className="w-28 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, postLinks: (prev.postLinks || []).filter((_, i) => i !== idx) }))}
-                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               ))}
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, postLinks: [...(prev.postLinks || []), { url: '', label: '' }] }))}
+                onClick={() => setFormData(prev => ({ ...prev, postLinks: [...(prev.postLinks || []), { url: '', label: '', comment: '' }] }))}
                 className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" /> Add link
@@ -1516,38 +1541,47 @@ const ReportPreviewModal = ({ report, onClose }) => {
             </div>
           )}
 
-          {/* Instagram post links (previews) */}
+          {/* Social media post previews (link + comment) */}
           {report.postLinks && report.postLinks.length > 0 && (
             <div className="max-w-4xl mx-auto px-6 py-8">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Instagram Posts
+                  Instagram Content
                 </h2>
                 <p className="text-gray-600 text-sm">
-                  Featured posts from this period
+                  Featured posts and notes from this period
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {report.postLinks.map((link, index) => (
-                  <a
+                  <div
                     key={index}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-4 p-4 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-100"
+                    className="p-4 bg-white rounded-xl shadow-lg border border-gray-100 flex flex-col"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                      <Instagram className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 truncate group-hover:text-purple-600">
-                        {link.label || 'View post'}
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-4 flex-shrink-0"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <Instagram className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate group-hover:text-purple-600">
+                          {link.label || 'View post'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{link.url}</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    </a>
+                    {link.comment && (
+                      <p className="text-sm text-gray-600 mt-3 pt-3 border-t border-gray-100 whitespace-pre-wrap">
+                        {link.comment}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">{link.url}</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  </a>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

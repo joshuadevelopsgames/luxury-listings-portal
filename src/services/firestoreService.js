@@ -1910,7 +1910,7 @@ class FirestoreService {
         title: reportData.title ?? '',
         dateRange: reportData.dateRange ?? '',
         notes: reportData.notes ?? '',
-        postLinks: Array.isArray(reportData.postLinks) ? reportData.postLinks.map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? '') })) : [],
+        postLinks: Array.isArray(reportData.postLinks) ? reportData.postLinks.map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') })) : [],
         metrics: reportData.metrics ?? null,
         screenshots: [] // always empty; screenshots are used for OCR only, not attached to report
       }));

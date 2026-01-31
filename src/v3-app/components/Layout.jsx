@@ -49,30 +49,53 @@ const V3Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
-  // Check if it's after 5 PM Vancouver time (Pacific timezone)
-  const isAfter5PMVancouver = () => {
+  // Vancouver time: dark from 5 PM to 6 AM (switches at 6:00 and 17:00)
+  const getVancouverHour = () => {
     const vancouverTime = new Date().toLocaleString('en-US', { timeZone: 'America/Vancouver' });
-    const hour = new Date(vancouverTime).getHours();
-    return hour >= 17 || hour < 6; // Dark mode from 5 PM to 6 AM
+    return new Date(vancouverTime).getHours();
   };
-  
+  const isAfter5PMVancouver = () => {
+    const hour = getVancouverHour();
+    return hour >= 17 || hour < 6;
+  };
+
+  // Manual toggle overrides time-of-day until the next 6 AM or 5 PM Vancouver
+  const getMsUntilNextTimeOfDaySwitch = () => {
+    const hour = getVancouverHour();
+    let hoursUntil = 0;
+    if (hour < 6) hoursUntil = 6 - hour;
+    else if (hour < 17) hoursUntil = 17 - hour;
+    else hoursUntil = (24 - hour) + 6;
+    return hoursUntil * 60 * 60 * 1000;
+  };
+
   const [darkMode, setDarkMode] = useState(() => isAfter5PMVancouver());
+  const [manualOverrideUntil, setManualOverrideUntil] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [viewAsPermissions, setViewAsPermissions] = useState([]);
-  
-  // Auto-switch dark mode based on Vancouver time
+
+  const handleDarkModeToggle = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    setManualOverrideUntil(Date.now() + getMsUntilNextTimeOfDaySwitch());
+  };
+
+  // Auto-switch dark mode at 6 AM / 5 PM Vancouver; manual toggle overrides until next switch
   useEffect(() => {
     const checkTime = () => {
-      const shouldBeDark = isAfter5PMVancouver();
-      setDarkMode(shouldBeDark);
+      const now = Date.now();
+      if (manualOverrideUntil != null && now >= manualOverrideUntil) {
+        setManualOverrideUntil(null);
+        setDarkMode(isAfter5PMVancouver());
+      } else if (manualOverrideUntil == null) {
+        setDarkMode(isAfter5PMVancouver());
+      }
     };
-    
-    // Check every minute
+
     const interval = setInterval(checkTime, 60000);
-    
     return () => clearInterval(interval);
-  }, []);
+  }, [manualOverrideUntil]);
 
   // Load permissions for the user being viewed as
   useEffect(() => {
@@ -356,7 +379,7 @@ const V3Layout = ({ children }) => {
             <div className="flex items-center gap-2">
               {/* Dark Mode Toggle */}
               <button
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={handleDarkModeToggle}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 {darkMode ? (
