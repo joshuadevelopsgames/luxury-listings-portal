@@ -32,15 +32,10 @@ import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWit
 /**
  * V3 Dashboard - Workflow-Focused with Real Data
  * 
- * REAL DATA:
- * - Today's Priorities (from Tasks)
- * - Upcoming Deadlines (from Tasks)
- * 
- * MOCK DATA (to be built):
- * - Content Pipeline stats
- * - Client Status / Package utilization
- * - Recent Activity
- * - Weekly Stats
+ * All data is pulled from Firestore:
+ * - Tasks (Today's Priorities, Upcoming Deadlines)
+ * - Clients (Client Status, Package utilization)
+ * - Overview stats
  */
 const V3Dashboard = () => {
   const { currentUser, currentRole } = useAuth();
@@ -48,40 +43,47 @@ const V3Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
 
-  // ============================================================================
-  // MOCK DATA - TO BE REMOVED/REPLACED LATER
-  // ============================================================================
-  const mockContentPipeline = {
-    drafts: 8,
-    pendingApproval: 4,
-    scheduled: 12,
-    publishedThisWeek: 23
+  // Fetch clients from Firestore
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        setClientsLoading(true);
+        const clientsData = await firestoreService.getClients();
+        setClients(clientsData || []);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+        setClients([]);
+      } finally {
+        setClientsLoading(false);
+      }
+    };
+    fetchClients();
+  }, []);
+
+  // Get client health data from real clients
+  const getClientHealth = () => {
+    return clients.slice(0, 4).map(client => {
+      const postsUsed = client.postsUsed || 0;
+      const postsTotal = client.packageSize || client.postsTotal || 10;
+      const usagePercent = (postsUsed / postsTotal) * 100;
+      
+      let health = 'good';
+      if (usagePercent >= 100) health = 'critical';
+      else if (usagePercent >= 80) health = 'warning';
+      
+      return {
+        id: client.id,
+        name: client.clientName || 'Unknown Client',
+        package: client.packageType || 'Standard',
+        postsUsed,
+        postsTotal,
+        health
+      };
+    });
   };
-
-  const mockClientHealth = [
-    { id: 1, name: 'Oceanview Properties', package: 'Premium', postsUsed: 16, postsTotal: 20, health: 'good' },
-    { id: 2, name: 'Mountain Realty', package: 'Standard', postsUsed: 14, postsTotal: 15, health: 'warning' },
-    { id: 3, name: 'City Living Estates', package: 'Premium', postsUsed: 5, postsTotal: 20, health: 'good' },
-    { id: 4, name: 'Sunset Homes', package: 'Basic', postsUsed: 10, postsTotal: 10, health: 'critical' },
-  ];
-
-  const mockRecentActivity = [
-    { id: 1, action: 'Post published', detail: 'Beachfront Villa Tour', client: 'Oceanview', time: '2 hours ago', icon: Send },
-    { id: 2, action: 'Content approved', detail: 'Mountain property photos', client: 'Mountain Realty', time: '3 hours ago', icon: CheckCircle2 },
-    { id: 3, action: 'New comment', detail: 'Great engagement on villa post', client: 'Oceanview', time: '4 hours ago', icon: MessageSquare },
-    { id: 4, action: 'Draft created', detail: 'Downtown loft showcase', client: 'City Living', time: '5 hours ago', icon: Edit },
-  ];
-
-  const mockWeeklyStats = {
-    postsPublished: 23,
-    totalReach: '45.2K',
-    engagement: '8.4%',
-    newFollowers: 847
-  };
-  // ============================================================================
-  // END MOCK DATA
-  // ============================================================================
 
   // Fetch real tasks from Firestore
   useEffect(() => {
@@ -254,18 +256,17 @@ const V3Dashboard = () => {
         </div>
       </div>
 
-      {/* Content Pipeline Overview - MOCK DATA */}
+      {/* Quick Stats - Real Data */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Drafts', value: mockContentPipeline.drafts, icon: Edit, color: 'text-[#86868b]' },
-          { label: 'Pending Approval', value: mockContentPipeline.pendingApproval, icon: Clock, color: 'text-[#ff9500]' },
-          { label: 'Scheduled', value: mockContentPipeline.scheduled, icon: Calendar, color: 'text-[#0071e3]' },
-          { label: 'Published This Week', value: mockContentPipeline.publishedThisWeek, icon: CheckCircle2, color: 'text-[#34c759]' },
+          { label: 'Total Clients', value: clients.length, icon: Users, color: 'text-[#0071e3]' },
+          { label: 'Pending Tasks', value: tasks.filter(t => t.status !== 'completed').length, icon: Clock, color: 'text-[#ff9500]' },
+          { label: 'Due Today', value: todaysTasks.length, icon: Calendar, color: 'text-[#ff3b30]' },
+          { label: 'Completed', value: tasks.filter(t => t.status === 'completed').length, icon: CheckCircle2, color: 'text-[#34c759]' },
         ].map((item, idx) => (
           <div key={idx} className="p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all cursor-pointer group">
             <div className="flex items-center justify-between mb-3">
               <item.icon className={`w-5 h-5 ${item.color}`} strokeWidth={1.5} />
-              <span className="text-[10px] text-[#86868b] bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">MOCK</span>
             </div>
             <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{item.value}</p>
             <p className="text-[13px] text-[#86868b]">{item.label}</p>
@@ -337,33 +338,46 @@ const V3Dashboard = () => {
           </div>
         </div>
 
-        {/* Client Health - MOCK DATA */}
+        {/* Client Status - Real Data */}
         <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
             <div>
               <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Client Status</h2>
               <p className="text-[13px] text-[#86868b]">Package utilization</p>
             </div>
-            <span className="text-[10px] text-[#86868b] bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">MOCK</span>
+            <Link to="/v3/clients" className="text-[13px] text-[#0071e3] font-medium hover:underline">
+              View all
+            </Link>
           </div>
           <div className="divide-y divide-black/5 dark:divide-white/5">
-            {mockClientHealth.map((client) => (
-              <div key={client.id} className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${getHealthColor(client.health)}`} />
-                    <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{client.name}</span>
-                  </div>
-                  <span className="text-[12px] text-[#86868b]">{client.postsUsed}/{client.postsTotal}</span>
-                </div>
-                <div className="h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all ${getHealthColor(client.health)}`}
-                    style={{ width: `${(client.postsUsed / client.postsTotal) * 100}%` }}
-                  />
-                </div>
+            {clientsLoading ? (
+              <div className="p-6 text-center">
+                <div className="w-6 h-6 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto" />
               </div>
-            ))}
+            ) : getClientHealth().length > 0 ? (
+              getClientHealth().map((client) => (
+                <div key={client.id} className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${getHealthColor(client.health)}`} />
+                      <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">{client.name}</span>
+                    </div>
+                    <span className="text-[12px] text-[#86868b]">{client.postsUsed}/{client.postsTotal}</span>
+                  </div>
+                  <div className="h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${getHealthColor(client.health)}`}
+                      style={{ width: `${Math.min((client.postsUsed / client.postsTotal) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center">
+                <Users className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
+                <p className="text-[13px] text-[#86868b]">No clients yet</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -404,58 +418,80 @@ const V3Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Activity - MOCK DATA */}
+        {/* Team Overview */}
         <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Recent Activity</h2>
-            <span className="text-[10px] text-[#86868b] bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">MOCK</span>
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Quick Links</h2>
           </div>
           <div className="divide-y divide-black/5 dark:divide-white/5">
-            {mockRecentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 p-4">
-                <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0">
-                  <activity.icon className="w-4 h-4 text-[#86868b]" strokeWidth={1.5} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{activity.action}</p>
-                  <p className="text-[12px] text-[#86868b] truncate">{activity.detail}</p>
-                  <p className="text-[11px] text-[#c7c7cc] mt-0.5">{activity.time}</p>
-                </div>
+            <Link to="/v3/clients" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-[#0071e3]/10 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
               </div>
-            ))}
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">View All Clients</p>
+                <p className="text-[12px] text-[#86868b]">{clients.length} total clients</p>
+              </div>
+            </Link>
+            <Link to="/v3/tasks" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-[#ff9500]/10 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-4 h-4 text-[#ff9500]" strokeWidth={1.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Task Management</p>
+                <p className="text-[12px] text-[#86868b]">{tasks.filter(t => t.status !== 'completed').length} pending tasks</p>
+              </div>
+            </Link>
+            <Link to="/v3/team" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-[#34c759]" strokeWidth={1.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Team Directory</p>
+                <p className="text-[12px] text-[#86868b]">View team members</p>
+              </div>
+            </Link>
+            <Link to="/v3/resources" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-[#5856d6]/10 flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 text-[#5856d6]" strokeWidth={1.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Resources & Docs</p>
+                <p className="text-[12px] text-[#86868b]">Tutorials and guides</p>
+              </div>
+            </Link>
           </div>
         </div>
 
-        {/* Weekly Performance - MOCK DATA */}
+        {/* Summary Card */}
         <div className="rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] p-6 text-white relative overflow-hidden">
-          <span className="absolute top-3 right-3 text-[10px] text-white/50 bg-white/10 px-1.5 py-0.5 rounded">MOCK</span>
           <div className="flex items-center gap-2 mb-6">
             <Sparkles className="w-5 h-5" />
-            <h2 className="text-[17px] font-semibold">This Week</h2>
+            <h2 className="text-[17px] font-semibold">Overview</h2>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[28px] font-semibold">{mockWeeklyStats.postsPublished}</p>
-              <p className="text-[13px] text-white/70">Posts Published</p>
+              <p className="text-[28px] font-semibold">{clients.length}</p>
+              <p className="text-[13px] text-white/70">Total Clients</p>
             </div>
             <div>
-              <p className="text-[28px] font-semibold">{mockWeeklyStats.totalReach}</p>
-              <p className="text-[13px] text-white/70">Total Reach</p>
+              <p className="text-[28px] font-semibold">{tasks.length}</p>
+              <p className="text-[13px] text-white/70">Total Tasks</p>
             </div>
             <div>
-              <p className="text-[28px] font-semibold">{mockWeeklyStats.engagement}</p>
-              <p className="text-[13px] text-white/70">Engagement</p>
+              <p className="text-[28px] font-semibold">{tasks.filter(t => t.status === 'completed').length}</p>
+              <p className="text-[13px] text-white/70">Completed</p>
             </div>
             <div>
-              <p className="text-[28px] font-semibold">+{mockWeeklyStats.newFollowers}</p>
-              <p className="text-[13px] text-white/70">New Followers</p>
+              <p className="text-[28px] font-semibold">{clients.filter(c => c.packageType?.toLowerCase() === 'premium').length}</p>
+              <p className="text-[13px] text-white/70">Premium Clients</p>
             </div>
           </div>
           <Link 
             to="/v3/analytics" 
             className="mt-6 w-full h-10 rounded-xl bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center gap-2 text-[13px] font-medium"
           >
-            View Full Analytics
+            View Analytics
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

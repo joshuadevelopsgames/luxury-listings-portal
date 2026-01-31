@@ -2,7 +2,7 @@ import React from 'react';
 import { BookOpen, FileText, Video, ExternalLink, Clock, Star } from 'lucide-react';
 
 /**
- * V3 Resources - Mock Data Demo
+ * V3 Resources - Static content tutorials and documents
  */
 const V3Resources = () => {
   const tutorials = [
