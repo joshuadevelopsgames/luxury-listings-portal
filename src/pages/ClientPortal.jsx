@@ -20,7 +20,6 @@ import {
   LogOut
 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
-import { analyticsService } from '../services/analyticsService';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import ClientCalendarApproval from '../components/client/ClientCalendarApproval';

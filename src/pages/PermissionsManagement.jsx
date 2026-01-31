@@ -13,11 +13,11 @@ const AVAILABLE_PAGES = [
   { id: 'tasks', name: 'Tasks', icon: '✅', category: 'Core' },
   { id: 'clients', name: 'Clients', icon: '👥', category: 'Client Management' },
   { id: 'client-packages', name: 'Client Packages', icon: '📦', category: 'Client Management' },
+  { id: 'instagram-reports', name: 'Instagram Reports', icon: '📸', category: 'Client Management' },
   { id: 'content-calendar', name: 'Content Calendar', icon: '📅', category: 'Content' },
   { id: 'crm', name: 'CRM', icon: '💼', category: 'Sales' },
   { id: 'hr-calendar', name: 'HR Calendar', icon: '📆', category: 'HR' },
   { id: 'team', name: 'Team Management', icon: '👨‍👩‍👧‍👦', category: 'HR' },
-  { id: 'analytics', name: 'Analytics', icon: '📊', category: 'Analytics' },
   { id: 'it-support', name: 'IT Support', icon: '🛠️', category: 'Support' },
   { id: 'my-time-off', name: 'My Time Off', icon: '🏖️', category: 'HR' },
 ];

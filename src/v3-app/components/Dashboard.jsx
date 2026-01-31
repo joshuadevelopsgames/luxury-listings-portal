@@ -209,7 +209,7 @@ const V3Dashboard = () => {
   const quickActions = [
     { title: 'Create Post', icon: Plus, color: 'from-[#0071e3] to-[#5856d6]', path: '/v3/content-calendar' },
     { title: 'Schedule Content', icon: Calendar, color: 'from-[#ff9500] to-[#ff3b30]', path: '/v3/content-calendar' },
-    { title: 'View Analytics', icon: BarChart3, color: 'from-[#34c759] to-[#30d158]', path: '/v3/analytics' },
+    { title: 'Instagram Reports', icon: Instagram, color: 'from-[#34c759] to-[#30d158]', path: '/v3/instagram-reports' },
     { title: 'Client Packages', icon: Users, color: 'from-[#5856d6] to-[#af52de]', path: '/v3/client-packages' },
   ];
 
@@ -488,10 +488,10 @@ const V3Dashboard = () => {
             </div>
           </div>
           <Link 
-            to="/v3/analytics" 
+            to="/v3/clients" 
             className="mt-6 w-full h-10 rounded-xl bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center gap-2 text-[13px] font-medium"
           >
-            View Analytics
+            View Clients
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

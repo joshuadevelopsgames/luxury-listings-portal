@@ -20,9 +20,8 @@ import HRCalendar from './pages/HRCalendar';
 import TeamManagement from './pages/TeamManagement';
 import HRAnalytics from './pages/HRAnalytics';
 import CRMPage from './pages/CRMPage';
-import Analytics from './pages/Analytics';
-import GoogleAnalyticsSetup from './components/GoogleAnalyticsSetup';
 import ContentCalendar from './pages/ContentCalendar';
+import InstagramReportsPage from './pages/InstagramReportsPage';
 import ContentManagerMessage from './pages/ContentManagerMessage';
 import MetaCallback from './pages/MetaCallback';
 import WaitingForApproval from './pages/WaitingForApproval';
@@ -151,7 +150,6 @@ function ClassicAppLayout() {
     'crm': { name: 'CRM', icon: User, path: '/classic/crm' },
     'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/classic/hr-calendar' },
     'team': { name: 'Team Management', icon: Users, path: '/classic/team' },
-    'analytics': { name: 'Analytics', icon: BarChart3, path: '/classic/analytics' },
     'it-support': { name: 'Support Tickets', icon: Wrench, path: '/classic/it-support' },
   };
 
@@ -160,7 +158,6 @@ function ClassicAppLayout() {
       const adminPages = [
         allPages['dashboard'],
         allPages['it-support'],
-        allPages['analytics'],
       ];
       return adminPages.map(page => ({
         id: Object.keys(allPages).find(key => allPages[key] === page),
@@ -182,7 +179,6 @@ function ClassicAppLayout() {
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/classic/dashboard' },
           { id: 'it-support', name: 'Support Tickets', icon: Wrench, path: '/classic/it-support' },
-          { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/classic/analytics' },
         ];
       case USER_ROLES.CONTENT_DIRECTOR:
         return [
@@ -286,14 +282,12 @@ function ClassicAppLayout() {
           <Route path="hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
           <Route path="team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
           <Route path="hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
-          <Route path="analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
           <Route path="content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
           <Route path="my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
           <Route path="self-service" element={<ProtectedRoute><EmployeeSelfService /></ProtectedRoute>} />
           <Route path="it-support" element={<ProtectedRoute><ITSupportPage /></ProtectedRoute>} />
           <Route path="onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-          <Route path="setup-ga" element={<ProtectedRoute><GoogleAnalyticsSetup /></ProtectedRoute>} />
           <Route path="demo" element={<ProtectedRoute><DemoPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Routes>
@@ -327,7 +321,7 @@ function MainAppLayout() {
         <Route path="hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
         <Route path="team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
         <Route path="hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
-        <Route path="analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="instagram-reports" element={<ProtectedRoute><InstagramReportsPage /></ProtectedRoute>} />
         <Route path="crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
         <Route path="content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
         <Route path="my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
@@ -335,7 +329,6 @@ function MainAppLayout() {
         <Route path="it-support" element={<ProtectedRoute><ITSupportPage /></ProtectedRoute>} />
         <Route path="client-portal" element={<ClientPortal />} />
         <Route path="meta-callback" element={<MetaCallback />} />
-        <Route path="setup-ga" element={<ProtectedRoute><GoogleAnalyticsSetup /></ProtectedRoute>} />
         <Route path="demo" element={<ProtectedRoute><DemoPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>

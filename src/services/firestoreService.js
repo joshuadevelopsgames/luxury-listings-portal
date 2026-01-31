@@ -43,7 +43,6 @@ class FirestoreService {
     TASKS: 'tasks',
     TASK_TEMPLATES: 'task_templates',
     SMART_FILTERS: 'smart_filters',
-    ANALYTICS_CONFIG: 'analytics_config',
     SYSTEM_CONFIG: 'system_config',
     EMPLOYEES: 'employees',
     LEAVE_REQUESTS: 'leave_requests',
@@ -428,40 +427,6 @@ class FirestoreService {
     }
   }
 
-  // ===== ANALYTICS CONFIGURATION =====
-
-  // Save analytics credentials
-  async saveAnalyticsConfig(propertyId, serviceAccountJson) {
-    try {
-      await setDoc(doc(db, this.collections.ANALYTICS_CONFIG, 'credentials'), {
-        propertyId,
-        serviceAccountJson,
-        updatedAt: serverTimestamp()
-      });
-      console.log('✅ Analytics config saved');
-    } catch (error) {
-      console.error('❌ Error saving analytics config:', error);
-      throw error;
-    }
-  }
-
-  // Get analytics credentials
-  async getAnalyticsConfig() {
-    try {
-      const docRef = doc(db, this.collections.ANALYTICS_CONFIG, 'credentials');
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        return docSnap.data();
-      } else {
-        return null;
-      }
-    } catch (error) {
-      console.error('❌ Error getting analytics config:', error);
-      throw error;
-    }
-  }
-
   // ===== SYSTEM CONFIGURATION =====
 
   // Save system config (like current role)
@@ -471,9 +436,7 @@ class FirestoreService {
         value,
         updatedAt: serverTimestamp()
       });
-      console.log('✅ System config saved:', key);
     } catch (error) {
-      console.error('❌ Error saving system config:', error);
       throw error;
     }
   }
@@ -535,13 +498,6 @@ class FirestoreService {
       const tasks = JSON.parse(localStorage.getItem('luxury-listings-tasks') || '[]');
       for (const task of tasks) {
         await this.addTask(task);
-      }
-      
-      // Migrate analytics config
-      const propertyId = localStorage.getItem('ga-property-id');
-      const serviceAccountJson = localStorage.getItem('ga-service-account');
-      if (propertyId && serviceAccountJson) {
-        await this.saveAnalyticsConfig(propertyId, serviceAccountJson);
       }
       
       // Migrate system config

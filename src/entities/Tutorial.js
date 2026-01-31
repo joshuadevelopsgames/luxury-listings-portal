@@ -365,19 +365,19 @@ export class Tutorial {
           sections: [
             {
               title: "High-Level Architecture",
-              content: "This portal uses a modern React stack: Vite for fast development, Firebase for backend services (Auth + Firestore), and Vercel for deployment. The architecture follows a service-oriented pattern with clear separation of concerns. Key services include firestoreService (data operations), analyticsService (GA4 integration), and remoteConfigService (dynamic config). State management uses React Context (AuthContext, PendingUsersContext) for global state and local useState for component state. The routing system is role-based, with ProtectedRoute components ensuring users only access authorized pages."
+              content: "This portal uses a modern React stack: Vite for fast development, Firebase for backend services (Auth + Firestore), and Vercel for deployment. The architecture follows a service-oriented pattern with clear separation of concerns. Key services include firestoreService (data operations) and remoteConfigService (dynamic config). State management uses React Context (AuthContext, PendingUsersContext) for global state and local useState for component state. The routing system is role-based, with ProtectedRoute components ensuring users only access authorized pages."
             },
             {
               title: "Data Domains & Collections",
-              content: "Firestore collections are designed for specific use cases: approved_users (doc id = email) for authenticated users, pending_users (auto-generated ids) for approval workflow, tasks for daily assignments, analytics_config for GA4 credentials, and system_config for dynamic settings. Critical design principle: never persist internal 'id' fields to Firestore - always use doc.id for operations. Separate read/write flows for pending vs approved users to maintain data integrity and security."
+              content: "Firestore collections are designed for specific use cases: approved_users (doc id = email) for authenticated users, pending_users (auto-generated ids) for approval workflow, tasks for daily assignments, and system_config for dynamic settings. Critical design principle: never persist internal 'id' fields to Firestore - always use doc.id for operations. Separate read/write flows for pending vs approved users to maintain data integrity and security."
             },
             {
               title: "Critical UX Patterns",
-              content: "Multi-role profile switching allows users to access different dashboards while preserving identity. Admin dashboard shows real-time stats (total users, pending approvals, system uptime). User management provides approve/reject workflows with immediate UI updates. Analytics dashboard integrates real GA4 data with proper error handling. Tutorials and tasks provide structured learning and task management experiences. All interactions use optimistic UI updates for better perceived performance."
+              content: "Multi-role profile switching allows users to access different dashboards while preserving identity. Admin dashboard shows real-time stats (total users, pending approvals, system uptime). User management provides approve/reject workflows with immediate UI updates. Tutorials and tasks provide structured learning and task management experiences. All interactions use optimistic UI updates for better perceived performance."
             },
             {
               title: "Development Milestones",
-              content: "1) Project Setup: Scaffold React app, install dependencies, establish UI components and routing. 2) Firebase Integration: Configure Auth, Firestore, and security rules. 3) Authentication & RBAC: Implement Google Auth, approval workflows, and role-based access control. 4) User Management: Build admin interfaces for user approval and role assignment. 5) Analytics Integration: Connect GA4 API with proper authentication and data validation. 6) Realtime Features: Implement Firestore listeners with proper cleanup and state management. 7) Deployment & Config: Deploy to Vercel and implement Remote Config for dynamic settings."
+              content: "1) Project Setup: Scaffold React app, install dependencies, establish UI components and routing. 2) Firebase Integration: Configure Auth, Firestore, and security rules. 3) Authentication & RBAC: Implement Google Auth, approval workflows, and role-based access control. 4) User Management: Build admin interfaces for user approval and role assignment. 5) Realtime Features: Implement Firestore listeners with proper cleanup and state management. 6) Deployment & Config: Deploy to Vercel and implement Remote Config for dynamic settings."
             }
           ]
         }
@@ -408,7 +408,7 @@ export class Tutorial {
             },
             {
               title: "Code Organization & Patterns",
-              content: "Establish clear patterns: services for external API calls (firestoreService, analyticsService), contexts for global state (AuthContext, PendingUsersContext), pages for route components, and entities for data models. Use consistent naming conventions: camelCase for variables, PascalCase for components, kebab-case for files. Implement proper error boundaries, loading states, and error handling throughout the application. Document component APIs and service interfaces for maintainability."
+              content: "Establish clear patterns: services for external API calls (firestoreService), contexts for global state (AuthContext, PendingUsersContext), pages for route components, and entities for data models. Use consistent naming conventions: camelCase for variables, PascalCase for components, kebab-case for files. Implement proper error boundaries, loading states, and error handling throughout the application. Document component APIs and service interfaces for maintainability."
             }
           ]
         }
@@ -431,7 +431,7 @@ export class Tutorial {
             },
             {
               title: "Firestore Collections Design",
-              content: "Request AI to 'Design Firestore collections for user management with approval workflow.' AI will suggest: approved_users (doc id = user email) for authenticated users, pending_users (auto-generated ids) for approval queue, tasks for daily assignments, analytics_config for GA4 credentials, and system_config for dynamic settings. AI will provide the exact collection structure with proper field types and indexing recommendations. Include validation rules and data integrity constraints."
+              content: "Request AI to 'Design Firestore collections for user management with approval workflow.' AI will suggest: approved_users (doc id = user email) for authenticated users, pending_users (auto-generated ids) for approval queue, tasks for daily assignments, and system_config for dynamic settings. AI will provide the exact collection structure with proper field types and indexing recommendations. Include validation rules and data integrity constraints."
             },
             {
               title: "Critical ID Management",
@@ -508,31 +508,19 @@ export class Tutorial {
       },
       {
         id: 106,
-        title: "Analytics (GA4) Integration",
-        description: "Wire up GA4 via Service Account + Data API with valid metrics/dimensions and a setup page.",
+        title: "Analytics",
+        description: "Analytics page placeholder. Google Analytics has been removed from this site.",
         category: "admin-portal",
-        difficulty: "intermediate",
-        estimated_time: 75,
+        difficulty: "beginner",
+        estimated_time: 5,
         order_index: 16,
-        is_required: true,
+        is_required: false,
         prerequisites: [105],
         content: {
           sections: [
             {
-              title: "Google Analytics Setup with AI",
-              content: "Ask AI to 'Help me set up Google Analytics 4 integration with service account authentication.' AI will guide you through: 1) Creating a Google Cloud project and enabling Analytics Data API, 2) Creating a service account and downloading the JSON key file, 3) Granting GA4 Property Viewer access to the service account email, 4) Setting up proper authentication flow. AI will provide the exact steps, required permissions, and security best practices for GA4 integration."
-            },
-            {
-              title: "GA4 API Schema & Valid Metrics",
-              content: "Request AI to 'Help me implement GA4 Data API with correct metrics and dimensions.' AI will provide the valid GA4 schema: metrics (totalUsers, newUsers, sessions, screenPageViews, bounceRate, averageSessionDuration, userEngagementDuration), dimensions (pageTitle, date), and computed metrics (returningUsers = totalUsers - newUsers, avgTimePerPage = userEngagementDuration / screenPageViews). AI will show how to structure API requests, handle responses, and validate data. Include error handling for invalid metrics and rate limiting."
-            },
-            {
-              title: "Analytics Dashboard Implementation",
-              content: "Ask AI to 'Create an analytics dashboard that displays GA4 data with proper error handling.' AI will build: 1) Analytics component with data visualization, 2) Data fetching logic with proper authentication, 3) Error handling for API failures and invalid data, 4) Loading states and data refresh functionality. AI will provide the complete dashboard with charts, metrics cards, and proper data formatting. Include fallback displays for when GA4 is not configured."
-            },
-            {
-              title: "Analytics Configuration Management",
-              content: "Request AI to 'Build a GA4 setup page for configuring analytics credentials.' AI will create: 1) GoogleAnalyticsSetup component with form inputs, 2) Credential validation and testing functionality, 3) Secure storage of credentials in Firestore, 4) JWT token generation for API authentication. AI will provide the complete setup flow with proper validation, error handling, and success feedback. Include credential rotation and security best practices."
+              title: "Analytics Dashboard",
+              content: "The Analytics page is a placeholder. Google Analytics has been removed from this site. Use internal tools or other analytics providers if you need usage data."
             }
           ]
         }

@@ -85,7 +85,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
           quickActions: [
             { text: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
             { text: 'Brand Guidelines', icon: BookOpen },
-            { text: 'Analytics Dashboard', icon: TrendingUp }
+            { text: 'Client Packages', icon: TrendingUp, path: '/client-packages' }
           ]
         };
 
@@ -175,7 +175,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
         navigate('/v3/permissions');
         break;
       case 'System Monitoring':
-        navigate('/analytics');
+        navigate('/dashboard');
         break;
       case 'View Style Guide':
         navigate('/resources');
@@ -184,16 +184,19 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
         navigate('/team');
         break;
       case 'Review Competitors':
-        navigate('/analytics');
+        navigate('/dashboard');
         break;
       case 'Content Calendar':
         navigate('/content-calendar');
+        break;
+      case 'Client Packages':
+        navigate('/client-packages');
         break;
       case 'Brand Guidelines':
         navigate('/resources');
         break;
       case 'Analytics Dashboard':
-        navigate('/analytics');
+        navigate('/dashboard');
         break;
       case 'Team Directory':
         navigate('/team');

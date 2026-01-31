@@ -11,7 +11,6 @@ import {
   CheckSquare, 
   Users, 
   Calendar, 
-  BarChart3, 
   LogOut,
   Menu,
   Bell,
@@ -29,7 +28,8 @@ import {
   Target,
   TrendingUp,
   Briefcase,
-  UserCircle
+  UserCircle,
+  Instagram
 } from 'lucide-react';
 
 // Import Apple-style CSS
@@ -85,12 +85,12 @@ const AppleLayout = ({ children }) => {
     'clients': { name: 'Clients', icon: User, path: '/clients' },
     'client-packages': { name: 'Client Packages', icon: Briefcase, path: '/client-packages' },
     'pending-clients': { name: 'Pending Clients', icon: Clock, path: '/pending-clients' },
+    'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/instagram-reports' },
     'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
     'crm': { name: 'CRM', icon: Target, path: '/crm' },
     'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
     'team': { name: 'Team Management', icon: Users, path: '/team' },
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
-    'analytics': { name: 'Analytics', icon: BarChart3, path: '/analytics' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
@@ -103,11 +103,11 @@ const AppleLayout = ({ children }) => {
       return [
         {
           title: 'Main',
-          items: ['dashboard', 'tasks', 'analytics']
+          items: ['dashboard', 'tasks']
         },
         {
           title: 'Clients',
-          items: ['clients', 'client-packages', 'pending-clients', 'content-calendar', 'crm']
+          items: ['clients', 'client-packages', 'pending-clients', 'instagram-reports', 'content-calendar', 'crm']
         },
         {
           title: 'Team',
@@ -134,7 +134,7 @@ const AppleLayout = ({ children }) => {
 
     // Role-based fallback
     const roleNavs = {
-      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'analytics', 'it-support'],
+      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'it-support'],
       [USER_ROLES.CONTENT_DIRECTOR]: ['dashboard', 'tasks', 'client-packages', 'content-calendar'],
       [USER_ROLES.SOCIAL_MEDIA_MANAGER]: ['dashboard', 'tasks', 'clients', 'content-calendar'],
       [USER_ROLES.HR_MANAGER]: ['dashboard', 'tasks', 'hr-calendar', 'team', 'hr-analytics'],

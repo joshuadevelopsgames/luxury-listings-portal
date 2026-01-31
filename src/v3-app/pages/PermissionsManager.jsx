@@ -17,7 +17,6 @@ import {
   CheckSquare,
   Users,
   Calendar,
-  BarChart3,
   Target,
   TrendingUp,
   Wrench,
@@ -30,7 +29,8 @@ import {
   Trash2,
   UserPlus,
   Mail,
-  Eye
+  Eye,
+  Instagram
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -46,7 +46,7 @@ const ALL_PAGES = {
   'hr-calendar': { name: 'HR Calendar', icon: Calendar, description: 'Team calendar' },
   'team': { name: 'Team Management', icon: Users, description: 'Team directory' },
   'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, description: 'HR metrics and reports' },
-  'analytics': { name: 'Analytics', icon: BarChart3, description: 'Business analytics' },
+  'instagram-reports': { name: 'Instagram Reports', icon: Instagram, description: 'Instagram analytics reports for clients' },
   'it-support': { name: 'IT Support', icon: Wrench, description: 'Technical support' },
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },

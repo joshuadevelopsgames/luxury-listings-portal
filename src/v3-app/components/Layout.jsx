@@ -11,7 +11,6 @@ import {
   CheckSquare, 
   Users, 
   Calendar, 
-  BarChart3, 
   Settings,
   LogOut,
   Menu,
@@ -107,7 +106,6 @@ const V3Layout = ({ children }) => {
     'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/v3/hr-calendar' },
     'team': { name: 'Team Management', icon: Users, path: '/v3/team' },
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/v3/hr-analytics' },
-    'analytics': { name: 'Analytics', icon: BarChart3, path: '/v3/analytics' },
     'permissions': { name: 'Users & Permissions', icon: Settings, path: '/v3/permissions' },
     'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/v3/instagram-reports' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/v3/it-support' },
@@ -130,11 +128,11 @@ const V3Layout = ({ children }) => {
       return [
         {
           title: 'Main',
-          items: ['dashboard', 'tasks', 'analytics']
+          items: ['dashboard', 'tasks']
         },
         {
           title: 'Clients',
-          items: ['clients', 'client-packages', 'pending-clients', 'content-calendar', 'crm']
+          items: ['clients', 'client-packages', 'pending-clients', 'instagram-reports', 'content-calendar', 'crm']
         },
         {
           title: 'Team',
@@ -142,7 +140,7 @@ const V3Layout = ({ children }) => {
         },
         {
           title: 'Admin',
-          items: ['permissions', 'instagram-reports', 'it-support']
+          items: ['permissions', 'it-support']
         },
         {
           title: 'Resources',
@@ -161,7 +159,7 @@ const V3Layout = ({ children }) => {
 
     // Role-based fallback
     const roleNavs = {
-      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'analytics', 'it-support'],
+      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'it-support'],
       [USER_ROLES.CONTENT_DIRECTOR]: ['dashboard', 'tasks', 'client-packages', 'content-calendar'],
       [USER_ROLES.SOCIAL_MEDIA_MANAGER]: ['dashboard', 'tasks', 'clients', 'content-calendar'],
       [USER_ROLES.HR_MANAGER]: ['dashboard', 'tasks', 'hr-calendar', 'team', 'hr-analytics'],

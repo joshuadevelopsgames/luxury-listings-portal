@@ -16,7 +16,6 @@ import TasksPage from '../pages/TasksPage';
 import ClientsPage from '../pages/ClientsPage';
 import ClientPackages from '../pages/ClientPackages';
 import ContentCalendar from '../pages/ContentCalendar';
-import Analytics from '../pages/Analytics';
 import TeamManagement from '../pages/TeamManagement';
 import HRCalendar from '../pages/HRCalendar';
 import HRAnalytics from '../pages/HRAnalytics';
@@ -112,11 +111,6 @@ const V3App = () => {
               <Route path="hr-analytics" element={
                 <PermissionRoute pageId="hr-analytics" pageName="HR Analytics">
                   <HRAnalytics />
-                </PermissionRoute>
-              } />
-              <Route path="analytics" element={
-                <PermissionRoute pageId="analytics" pageName="Analytics">
-                  <Analytics />
                 </PermissionRoute>
               } />
               <Route path="it-support" element={
