@@ -33,7 +33,14 @@ import {
   TrendingUp,
   Heart,
   MousePointer,
-  Wand2
+  Wand2,
+  MessageCircle,
+  UserPlus,
+  UserMinus,
+  Activity,
+  Clock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -315,6 +322,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
   const [extracting, setExtracting] = useState(false);
   const [extractionProgress, setExtractionProgress] = useState({ current: 0, total: 0, status: '' });
   const [showMetricsEditor, setShowMetricsEditor] = useState(!!report?.metrics);
+  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFileUpload = async (files) => {
@@ -1026,14 +1034,15 @@ const ReportModal = ({ report, onClose, onSave }) => {
 
         {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
-          <a
-            href="/report-demo"
-            target="_blank"
-            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+          <Button
+            variant="outline"
+            onClick={() => setShowPreview(true)}
+            disabled={!formData.title || !formData.clientName}
+            className="text-purple-600 border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
           >
-            <Eye className="w-4 h-4" />
-            Preview Demo Report
-          </a>
+            <Eye className="w-4 h-4 mr-2" />
+            Preview Report
+          </Button>
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={onClose} className="dark:border-white/20 dark:text-white">
               Cancel
@@ -1058,6 +1067,450 @@ const ReportModal = ({ report, onClose, onSave }) => {
           </div>
         </div>
       </div>
+
+      {/* Live Preview Modal */}
+      {showPreview && (
+        <ReportPreviewModal
+          report={formData}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+// Report Preview Modal - Shows live preview of the report being created/edited
+const ReportPreviewModal = ({ report, onClose }) => {
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightbox = (index) => {
+    setLightboxIndex(index);
+    setLightboxImage(report.screenshots[index]);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+  };
+
+  const navigateLightbox = (direction) => {
+    const newIndex = lightboxIndex + direction;
+    if (newIndex >= 0 && newIndex < report.screenshots.length) {
+      setLightboxIndex(newIndex);
+      setLightboxImage(report.screenshots[newIndex]);
+    }
+  };
+
+  // Handle keyboard navigation in lightbox
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxImage) {
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') navigateLightbox(-1);
+        if (e.key === 'ArrowRight') navigateLightbox(1);
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxImage, lightboxIndex]);
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+        {/* Preview Header */}
+        <div className="px-6 py-3 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+          <div className="flex items-center gap-2">
+            <Eye className="w-5 h-5" />
+            <span className="font-medium">Report Preview</span>
+            <Badge className="bg-white/20 text-white text-xs">Live</Badge>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Preview Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+          {/* Hero Section */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500" />
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjLTItNC00LTItNC0ycy0yIDItMiA0YzAgMiAyIDQgMiA0czIgMiA0IDJjMiA0IDQgMiA0IDJzMi0yIDItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10" />
+            
+            <div className="relative max-w-4xl mx-auto px-6 py-12 sm:py-16">
+              <div className="text-center text-white">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm mb-4">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-sm font-medium">{report.dateRange || 'Date Range'}</span>
+                </div>
+                
+                <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+                  {report.title || 'Report Title'}
+                </h1>
+                
+                <div className="flex items-center justify-center gap-2 text-white/90">
+                  <User className="w-5 h-5" />
+                  <span className="text-lg">{report.clientName || 'Client Name'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Wave Decoration */}
+            <div className="absolute bottom-0 left-0 right-0">
+              <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 80L60 70C120 60 240 40 360 30C480 20 600 20 720 25C840 30 960 40 1080 45C1200 50 1320 50 1380 50L1440 50V80H1380C1320 80 1200 80 1080 80C960 80 840 80 720 80C600 80 480 80 360 80C240 80 120 80 60 80H0Z" fill="rgb(250, 245, 255)" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Key Metrics Overview */}
+          {report.metrics && (
+            <div className="max-w-4xl mx-auto px-6 -mt-6 relative z-10">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { 
+                    icon: Eye, 
+                    label: 'Total Views', 
+                    value: report.metrics.views?.toLocaleString() || '—', 
+                    color: 'from-purple-500 to-purple-600',
+                    subtext: report.metrics.viewsFollowerPercent ? `${report.metrics.viewsFollowerPercent}% from followers` : null
+                  },
+                  { 
+                    icon: Users, 
+                    label: 'Followers', 
+                    value: report.metrics.followers?.toLocaleString() || '—', 
+                    color: 'from-pink-500 to-pink-600',
+                    subtext: report.metrics.followerChange ? `${report.metrics.followerChange > 0 ? '+' : ''}${report.metrics.followerChange}` : null,
+                    subtextColor: report.metrics.followerChange > 0 ? 'text-green-600' : 'text-red-500'
+                  },
+                  { 
+                    icon: Heart, 
+                    label: 'Interactions', 
+                    value: report.metrics.interactions?.toLocaleString() || '—', 
+                    color: 'from-orange-500 to-orange-600',
+                    subtext: report.metrics.interactionsFollowerPercent ? `${report.metrics.interactionsFollowerPercent}% from followers` : null
+                  },
+                  { 
+                    icon: MousePointer, 
+                    label: 'Profile Visits', 
+                    value: report.metrics.profileVisits?.toLocaleString() || '—', 
+                    color: 'from-blue-500 to-blue-600',
+                    subtext: report.metrics.profileVisitsChange ? `${report.metrics.profileVisitsChange}` : null,
+                    subtextColor: report.metrics.profileVisitsChange?.startsWith?.('+') ? 'text-green-600' : 'text-red-500'
+                  },
+                ].map((stat, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-xl shadow-lg p-4"
+                  >
+                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center mb-2`}>
+                      <stat.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <p className="text-xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-xs text-gray-500">{stat.label}</p>
+                    {stat.subtext && (
+                      <p className={`text-xs mt-1 ${stat.subtextColor || 'text-gray-400'}`}>{stat.subtext}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes Section */}
+          {report.notes && (
+            <div className="max-w-4xl mx-auto px-6 mt-8">
+              <div className="bg-white rounded-xl shadow-lg p-5">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-purple-500" />
+                  Report Highlights
+                </h2>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">
+                  {report.notes}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Detailed Metrics Section */}
+          {report.metrics && (
+            <div className="max-w-4xl mx-auto px-6 mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                
+                {/* Content Performance */}
+                {report.metrics.contentBreakdown && report.metrics.contentBreakdown.length > 0 && (
+                  <div className="bg-white rounded-xl shadow-lg p-5">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-purple-500" />
+                      Content Performance
+                    </h3>
+                    <div className="space-y-3">
+                      {report.metrics.contentBreakdown.map((item, idx) => (
+                        <div key={idx}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-600">{item.type}</span>
+                            <span className="font-medium text-gray-900">{item.percentage}%</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div 
+                              className="h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                              style={{ width: `${item.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Top Locations */}
+                {report.metrics.topCities && report.metrics.topCities.length > 0 && (
+                  <div className="bg-white rounded-xl shadow-lg p-5">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-pink-500" />
+                      Top Locations
+                    </h3>
+                    <div className="space-y-2">
+                      {report.metrics.topCities.map((city, idx) => (
+                        <div key={idx} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">{city.name}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-100 rounded-full h-2">
+                              <div 
+                                className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-500"
+                                style={{ width: `${(city.percentage / (report.metrics.topCities[0]?.percentage || 100)) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-gray-900 w-10 text-right">{city.percentage}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Age Demographics */}
+                {report.metrics.ageRanges && report.metrics.ageRanges.length > 0 && (
+                  <div className="bg-white rounded-xl shadow-lg p-5">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-500" />
+                      Age Distribution
+                    </h3>
+                    <div className="space-y-2">
+                      {report.metrics.ageRanges.map((range, idx) => (
+                        <div key={idx} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">{range.range}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-100 rounded-full h-2">
+                              <div 
+                                className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                style={{ width: `${(range.percentage / (report.metrics.ageRanges[0]?.percentage || 100)) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-gray-900 w-10 text-right">{range.percentage}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Gender Split */}
+                {report.metrics.gender && (report.metrics.gender.men || report.metrics.gender.women) && (
+                  <div className="bg-white rounded-xl shadow-lg p-5">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-orange-500" />
+                      Audience Gender
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-gray-600">Men</span>
+                          <span className="font-medium text-gray-900">{report.metrics.gender.men}%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-3">
+                          <div 
+                            className="h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+                            style={{ width: `${report.metrics.gender.men}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-gray-600">Women</span>
+                          <span className="font-medium text-gray-900">{report.metrics.gender.women}%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-3">
+                          <div 
+                            className="h-3 rounded-full bg-gradient-to-r from-pink-400 to-pink-600"
+                            style={{ width: `${report.metrics.gender.women}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Growth Metrics */}
+                {report.metrics.growth && (report.metrics.growth.overall !== undefined || report.metrics.growth.follows || report.metrics.growth.unfollows) && (
+                  <div className="bg-white rounded-xl shadow-lg p-5 lg:col-span-2">
+                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-green-500" />
+                      Follower Growth
+                    </h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <div className={`text-2xl font-bold ${report.metrics.growth.overall >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                          {report.metrics.growth.overall >= 0 ? '+' : ''}{report.metrics.growth.overall}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Net Change</p>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center justify-center gap-1">
+                          <UserPlus className="w-4 h-4 text-green-600" />
+                          <span className="text-2xl font-bold text-green-600">{report.metrics.growth.follows?.toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">New Follows</p>
+                      </div>
+                      <div className="text-center p-3 bg-red-50 rounded-lg">
+                        <div className="flex items-center justify-center gap-1">
+                          <UserMinus className="w-4 h-4 text-red-500" />
+                          <span className="text-2xl font-bold text-red-500">{report.metrics.growth.unfollows?.toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Unfollows</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Screenshots Gallery */}
+          {report.screenshots && report.screenshots.length > 0 && (
+            <div className="max-w-4xl mx-auto px-6 py-8">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Analytics Screenshots
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Detailed performance metrics from your Instagram account
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {report.screenshots.map((screenshot, index) => (
+                  <div
+                    key={index}
+                    onClick={() => openLightbox(index)}
+                    className="group bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <img
+                        src={screenshot.url}
+                        alt={screenshot.caption || `Screenshot ${index + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    {screenshot.caption && (
+                      <div className="p-3">
+                        <p className="text-sm text-gray-700">{screenshot.caption}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty state for screenshots */}
+          {(!report.screenshots || report.screenshots.length === 0) && (
+            <div className="max-w-4xl mx-auto px-6 py-8">
+              <div className="text-center py-12 bg-white/50 rounded-xl border-2 border-dashed border-gray-200">
+                <Image className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-500">No screenshots uploaded yet</p>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <footer className="bg-white border-t border-gray-200 mt-8">
+            <div className="max-w-4xl mx-auto px-6 py-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src="/Luxury-listings-logo-CLR.png" 
+                    alt="Luxury Listings" 
+                    className="h-6 w-auto"
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Luxury Listings</p>
+                    <p className="text-xs text-gray-500">Social Media Management</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Preview generated {format(new Date(), 'MMMM d, yyyy')}
+                </p>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[70] flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {lightboxIndex > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); navigateLightbox(-1); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </button>
+          )}
+          
+          {lightboxIndex < report.screenshots.length - 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); navigateLightbox(1); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </button>
+          )}
+
+          <div 
+            className="max-w-[90vw] max-h-[85vh] relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={lightboxImage.url}
+              alt={lightboxImage.caption || 'Screenshot'}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg"
+            />
+          </div>
+
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+            <p className="text-white text-sm">
+              {lightboxIndex + 1} / {report.screenshots.length}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
