@@ -384,13 +384,13 @@ function LoginWithDevRedirect() {
   }
   
   if (isDevMode() && currentUser) {
-    console.log('🔧 DEV MODE: User logged in, redirecting to dashboard');
-    return <Navigate to="/dashboard" replace />;
+    console.log('🔧 DEV MODE: User logged in, redirecting to V3 dashboard');
+    return <Navigate to="/v3/dashboard" replace />;
   }
   
-  // If user is already logged in (non-dev), redirect to dashboard
+  // If user is already logged in (non-dev), redirect to V3 dashboard
   if (currentUser) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/v3/dashboard" replace />;
   }
   
   return <Login />;
@@ -399,9 +399,9 @@ function LoginWithDevRedirect() {
 function RootRedirect() {
   const { currentUser, loading } = useAuth();
   
-  if (isDevMode() && !loading && currentUser) {
-    console.log('🔧 DEV MODE: Root redirect - user logged in, going to dashboard');
-    return <Navigate to="/dashboard" replace />;
+  if (!loading && currentUser) {
+    console.log('🔄 Root redirect - user logged in, going to V3 dashboard');
+    return <Navigate to="/v3/dashboard" replace />;
   }
   
   return <Navigate to="/login" replace />;
