@@ -65,13 +65,13 @@ const Login = () => {
           {/* Hero Content */}
           <div className="max-w-lg">
             <h2 className="text-[56px] font-semibold text-[#1d1d1f] leading-[1.05] tracking-[-0.03em] mb-6">
-              Everything you need,{' '}
+              Your team's{' '}
               <span className="bg-gradient-to-r from-[#0071e3] to-[#5856d6] bg-clip-text text-transparent">
-                beautifully designed.
+                workspace.
               </span>
             </h2>
             <p className="text-[19px] text-[#86868b] leading-relaxed font-normal mb-8">
-              Your comprehensive platform for luxury real estate content excellence, with a refined interface that's a joy to use.
+              Manage clients, content calendars, tasks, and team operations — all in one place.
             </p>
           </div>
 
