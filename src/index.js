@@ -6,9 +6,19 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // Add global error handler
 window.addEventListener('error', (event) => {
-  // Suppress Firestore internal assertion errors (SDK bug, not app issue)
-  if (event.error?.message?.includes('FIRESTORE') && event.error?.message?.includes('INTERNAL ASSERTION')) {
-    console.warn('⚠️ Firestore SDK internal error (suppressed):', event.error.message);
+  const message = event.error?.message || '';
+  
+  // Suppress Firebase/Firestore internal errors
+  if (message.includes('FIRESTORE') && message.includes('INTERNAL ASSERTION')) {
+    event.preventDefault();
+    return;
+  }
+  if (message.includes('Remote Config') || message.includes('indexedDB')) {
+    event.preventDefault();
+    return;
+  }
+  if (message.includes('Quota exceeded') || message.includes('resource-exhausted')) {
+    console.warn('⚠️ Firebase quota exceeded - check your Firebase console');
     event.preventDefault();
     return;
   }
@@ -16,10 +26,24 @@ window.addEventListener('error', (event) => {
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-  // Suppress Firestore internal assertion errors
   const reason = event.reason?.message || event.reason?.toString() || '';
+  
+  // Suppress Firebase/Firestore internal errors
   if (reason.includes('FIRESTORE') && reason.includes('INTERNAL ASSERTION')) {
-    console.warn('⚠️ Firestore SDK internal error (suppressed):', reason);
+    event.preventDefault();
+    return;
+  }
+  if (reason.includes('Remote Config') || reason.includes('indexedDB') || reason.includes('storage-open')) {
+    event.preventDefault();
+    return;
+  }
+  if (reason.includes('Quota exceeded') || reason.includes('resource-exhausted')) {
+    console.warn('⚠️ Firebase quota exceeded - check your Firebase console');
+    event.preventDefault();
+    return;
+  }
+  if (reason.includes('Missing or insufficient permissions')) {
+    // Don't spam console with permission errors
     event.preventDefault();
     return;
   }
