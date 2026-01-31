@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
+import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
+// Fallback to browser-based OCR if Cloud Vision fails
 import { instagramOCRService } from '../services/instagramOCRService';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
@@ -408,18 +410,34 @@ const ReportModal = ({ report, onClose, onSave }) => {
     }
 
     setExtracting(true);
-    setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Initializing OCR...' });
+    setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Initializing Cloud Vision...' });
 
     try {
-      // Use local files if available (much faster than re-downloading from Firebase)
-      // Falls back to URLs for existing reports that don't have local files
-      const images = formData.screenshots.map(s => s.localFile || s.url);
-      const metrics = await instagramOCRService.processScreenshots(
-        images,
-        (current, total, status) => {
-          setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
-        }
-      );
+      // Try Cloud Vision first (fast, ~5-10 seconds total)
+      const images = formData.screenshots.map(s => ({ localFile: s.localFile, url: s.url }));
+      
+      let metrics;
+      try {
+        metrics = await cloudVisionOCRService.processScreenshots(
+          images,
+          (current, total, status) => {
+            setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
+          }
+        );
+      } catch (cloudError) {
+        console.warn('Cloud Vision failed, falling back to browser OCR:', cloudError);
+        setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Cloud Vision unavailable, using browser OCR...' });
+        
+        // Fall back to browser-based OCR (slower but works without Cloud Functions)
+        const imageFiles = formData.screenshots.map(s => s.localFile || s.url);
+        metrics = await instagramOCRService.processScreenshots(
+          imageFiles,
+          (current, total, status) => {
+            setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
+          }
+        );
+        await instagramOCRService.terminate();
+      }
 
       console.log('Extracted metrics:', metrics);
       
@@ -432,9 +450,6 @@ const ReportModal = ({ report, onClose, onSave }) => {
       }));
       
       setShowMetricsEditor(true);
-      
-      // Cleanup OCR worker
-      await instagramOCRService.terminate();
     } catch (error) {
       console.error('Error extracting metrics:', error);
       alert('Failed to extract metrics. You can still enter them manually.');
