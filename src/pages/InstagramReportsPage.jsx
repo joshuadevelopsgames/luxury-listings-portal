@@ -555,6 +555,8 @@ const ReportModal = ({ report, onClose, onSave }) => {
   };
 
   return (
+    <>
+      <>
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
         {/* Modal Header */}
@@ -1186,8 +1188,8 @@ const ReportModal = ({ report, onClose, onSave }) => {
             </Button>
           </div>
         </div>
-      </div>
-
+        </div>
+      </>
       {/* Live Preview Modal */}
       {showPreview && (
         <ReportPreviewModal
@@ -1195,7 +1197,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
           onClose={() => setShowPreview(false)}
         />
       )}
-    </div>
+    </>
   );
 };
 
