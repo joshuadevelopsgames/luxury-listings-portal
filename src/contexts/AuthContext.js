@@ -67,18 +67,20 @@ const getDepartmentForRole = (role) => {
   return departments[role] || 'General';
 };
 
-// Helper function to navigate based on user role (only from login page)
+// Only log redirect skip once per session to avoid console spam
+let _redirectSkipLogged = false;
 const navigateBasedOnRole = (role, userData) => {
-  // Only navigate if user is on login or waiting page, not on page reloads
   const currentPath = window.location.pathname;
-  
-  // Only redirect from login page or waiting page
   const shouldRedirect = currentPath === '/login' || currentPath === '/waiting-for-approval' || currentPath === '/';
   
   if (!shouldRedirect) {
-    console.log('🔍 Skipping redirect - user is already on a page:', currentPath);
+    if (!_redirectSkipLogged) {
+      _redirectSkipLogged = true;
+      console.log('🔍 Skipping redirect - user is already on:', currentPath);
+    }
     return;
   }
+  _redirectSkipLogged = false;
   
   if (role === 'pending' && currentPath !== '/waiting-for-approval') {
     console.log('🔄 Navigating pending user to approval page...');

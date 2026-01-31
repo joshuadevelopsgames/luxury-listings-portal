@@ -191,6 +191,44 @@ class InstagramOCRService {
       metrics.externalLinkTaps = this.parseNumber(linkTapsMatch[1]);
     }
 
+    // === SAVES ===
+    const savesMatch = text.match(/Saves?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Saves?/i);
+    if (savesMatch) {
+      metrics.saves = this.parseNumber(savesMatch[1]);
+    }
+
+    // === SHARES ===
+    const sharesMatch = text.match(/Shares?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Shares?/i);
+    if (sharesMatch) {
+      metrics.shares = this.parseNumber(sharesMatch[1]);
+    }
+
+    // === IMPRESSIONS (total times content was seen) ===
+    const impressionsMatch = text.match(/Impressions?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Impressions?/i);
+    if (impressionsMatch) {
+      metrics.impressions = this.parseNumber(impressionsMatch[1]);
+    }
+
+    // === REACH (unique accounts - sometimes labeled separately) ===
+    const reachMatch = text.match(/Reach\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Reach/i);
+    if (reachMatch) {
+      metrics.reach = this.parseNumber(reachMatch[1]);
+    }
+
+    // === ACCOUNTS REACHED TREND % ===
+    const accountsReachedChangeMatch = text.match(/Accounts?\s*reached[^0-9]*([+-]?[0-9.]+%)/i) ||
+                                        text.match(/([+-][0-9.]+%)\s*.*Accounts?\s*reached/i);
+    if (accountsReachedChangeMatch) {
+      metrics.accountsReachedChange = accountsReachedChangeMatch[1];
+    }
+
+    // === ENGAGEMENT RATE (if shown on screen) ===
+    const engagementRateMatch = text.match(/Engagement\s*(?:rate)?\s*[\n\s]*([0-9.]+)%/i) ||
+                                text.match(/([0-9.]+)%\s*Engagement/i);
+    if (engagementRateMatch) {
+      metrics.engagementRatePercent = parseFloat(engagementRateMatch[1]);
+    }
+
     // === CONTENT BREAKDOWN (Posts, Stories, Reels) ===
     const contentBreakdown = [];
     

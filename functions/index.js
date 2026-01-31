@@ -199,6 +199,30 @@ function parseInstagramMetrics(text) {
     metrics.externalLinkTaps = parseNumber(linkTapsMatch[1]);
   }
 
+  // === SAVES ===
+  const savesMatch = text.match(/Saves?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Saves?/i);
+  if (savesMatch) metrics.saves = parseNumber(savesMatch[1]);
+
+  // === SHARES ===
+  const sharesMatch = text.match(/Shares?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Shares?/i);
+  if (sharesMatch) metrics.shares = parseNumber(sharesMatch[1]);
+
+  // === IMPRESSIONS ===
+  const impressionsMatch = text.match(/Impressions?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Impressions?/i);
+  if (impressionsMatch) metrics.impressions = parseNumber(impressionsMatch[1]);
+
+  // === REACH ===
+  const reachMatch = text.match(/Reach\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Reach/i);
+  if (reachMatch) metrics.reach = parseNumber(reachMatch[1]);
+
+  // === ACCOUNTS REACHED TREND % ===
+  const accountsReachedChangeMatch = text.match(/Accounts?\s*reached[^0-9]*([+-]?[0-9.]+%)/i);
+  if (accountsReachedChangeMatch) metrics.accountsReachedChange = accountsReachedChangeMatch[1];
+
+  // === ENGAGEMENT RATE % ===
+  const engagementRateMatch = text.match(/Engagement\s*(?:rate)?\s*[\n\s]*([0-9.]+)%/i) || text.match(/([0-9.]+)%\s*Engagement/i);
+  if (engagementRateMatch) metrics.engagementRatePercent = parseFloat(engagementRateMatch[1]);
+
   // === CONTENT BREAKDOWN ===
   const contentBreakdown = [];
   const postsMatch = text.match(/Posts?\s*[\n\s]*([0-9.]+)%/i);

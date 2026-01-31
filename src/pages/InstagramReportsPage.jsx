@@ -35,7 +35,6 @@ import {
   TrendingUp,
   Heart,
   MousePointer,
-  Wand2,
   MessageCircle,
   UserPlus,
   UserMinus,
@@ -323,9 +322,64 @@ const ReportModal = ({ report, onClose, onSave }) => {
   const [dragOver, setDragOver] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractionProgress, setExtractionProgress] = useState({ current: 0, total: 0, status: '' });
-  const [showMetricsEditor, setShowMetricsEditor] = useState(!!report?.metrics);
+  const [metricsSectionCollapsed, setMetricsSectionCollapsed] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef(null);
+  const hasAutoExtractedRef = useRef(false);
+
+  // Reset auto-extract ref when opening create modal (new report)
+  useEffect(() => {
+    if (!report) hasAutoExtractedRef.current = false;
+  }, [report]);
+
+  // Auto-run extraction when screenshots are added
+  useEffect(() => {
+    if (
+      formData.screenshots.length === 0 ||
+      extracting ||
+      hasAutoExtractedRef.current
+    ) return;
+    hasAutoExtractedRef.current = true;
+    runExtraction();
+  }, [formData.screenshots.length, extracting]);
+
+  const runExtraction = async () => {
+    if (formData.screenshots.length === 0) return;
+    setExtracting(true);
+    setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Reading screenshots...' });
+    try {
+      const images = formData.screenshots.map(s => ({ localFile: s.localFile, url: s.url }));
+      let metrics;
+      try {
+        metrics = await cloudVisionOCRService.processScreenshots(
+          images,
+          (current, total, status) => {
+            setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
+          }
+        );
+      } catch (cloudError) {
+        console.warn('Cloud Vision failed, falling back to browser OCR:', cloudError);
+        setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Reading screenshots…' });
+        const imageFiles = formData.screenshots.map(s => s.localFile || s.url);
+        metrics = await instagramOCRService.processScreenshots(
+          imageFiles,
+          (current, total, status) => {
+            setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
+          }
+        );
+        await instagramOCRService.terminate();
+      }
+      setFormData(prev => ({
+        ...prev,
+        metrics: { ...(prev.metrics || {}), ...metrics }
+      }));
+    } catch (error) {
+      console.error('Error extracting metrics:', error);
+      hasAutoExtractedRef.current = false;
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   const handleFileUpload = async (files) => {
     if (!files?.length) return;
@@ -400,62 +454,6 @@ const ReportModal = ({ report, onClose, onSave }) => {
         i === index ? { ...s, caption } : s
       )
     }));
-  };
-
-  // Extract metrics from screenshots using OCR
-  const handleExtractMetrics = async () => {
-    if (formData.screenshots.length === 0) {
-      alert('Please upload screenshots first');
-      return;
-    }
-
-    setExtracting(true);
-    setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Initializing Cloud Vision...' });
-
-    try {
-      // Try Cloud Vision first (fast, ~5-10 seconds total)
-      const images = formData.screenshots.map(s => ({ localFile: s.localFile, url: s.url }));
-      
-      let metrics;
-      try {
-        metrics = await cloudVisionOCRService.processScreenshots(
-          images,
-          (current, total, status) => {
-            setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
-          }
-        );
-      } catch (cloudError) {
-        console.warn('Cloud Vision failed, falling back to browser OCR:', cloudError);
-        setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Cloud Vision unavailable, using browser OCR...' });
-        
-        // Fall back to browser-based OCR (slower but works without Cloud Functions)
-        const imageFiles = formData.screenshots.map(s => s.localFile || s.url);
-        metrics = await instagramOCRService.processScreenshots(
-          imageFiles,
-          (current, total, status) => {
-            setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
-          }
-        );
-        await instagramOCRService.terminate();
-      }
-
-      console.log('Extracted metrics:', metrics);
-      
-      setFormData(prev => ({
-        ...prev,
-        metrics: {
-          ...prev.metrics,
-          ...metrics
-        }
-      }));
-      
-      setShowMetricsEditor(true);
-    } catch (error) {
-      console.error('Error extracting metrics:', error);
-      alert('Failed to extract metrics. You can still enter them manually.');
-    } finally {
-      setExtracting(false);
-    }
   };
 
   // Update a specific metric value
@@ -665,32 +663,9 @@ const ReportModal = ({ report, onClose, onSave }) => {
               </div>
             </div>
 
-            {/* Screenshots Grid with Extract Button */}
+            {/* Screenshots + extraction progress */}
             {formData.screenshots.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Uploaded Screenshots ({formData.screenshots.length})
-                  </h4>
-                  <Button
-                    onClick={handleExtractMetrics}
-                    disabled={extracting}
-                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-                  >
-                    {extracting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {extractionProgress.status || 'Extracting...'}
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="w-4 h-4 mr-2" />
-                        Extract Data (OCR)
-                      </>
-                    )}
-                  </Button>
-                </div>
-                
                 {extracting && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
                     <div className="flex items-center gap-3 mb-2">
@@ -702,12 +677,16 @@ const ReportModal = ({ report, onClose, onSave }) => {
                     <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2">
                       <div 
                         className="bg-amber-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(extractionProgress.current / extractionProgress.total) * 100}%` }}
+                        style={{ width: `${extractionProgress.total ? (extractionProgress.current / extractionProgress.total) * 100 : 0}%` }}
                       />
                     </div>
                   </div>
                 )}
-
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Uploaded Screenshots ({formData.screenshots.length}){extracting ? ' — reading numbers from your screenshots…' : ''}
+                  </h4>
+                </div>
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
                   {formData.screenshots.map((screenshot, index) => (
                     <div key={index} className="relative group border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
@@ -716,41 +695,47 @@ const ReportModal = ({ report, onClose, onSave }) => {
                         alt={screenshot.name}
                         className="w-full h-28 object-cover"
                       />
-                      <button
-                        onClick={() => handleRemoveScreenshot(index)}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      {!extracting && (
+                        <button
+                          onClick={() => handleRemoveScreenshot(index)}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Metrics Editor Section */}
-            {showMetricsEditor && (
+            {/* Metrics section — open by default when there are screenshots; manual entry for missing fields */}
+            {formData.screenshots.length > 0 && (
               <div className="border border-purple-200 dark:border-purple-800 rounded-xl overflow-hidden">
                 <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-white">
                     <BarChart3 className="w-5 h-5" />
-                    <span className="font-medium">Extracted Metrics</span>
-                    <Badge className="bg-white/20 text-white text-xs">Editable</Badge>
+                    <span className="font-medium">Metrics</span>
+                    <Badge className="bg-white/20 text-white text-xs">Add or edit any field below</Badge>
                   </div>
                   <button
-                    onClick={() => setShowMetricsEditor(false)}
+                    onClick={() => setMetricsSectionCollapsed((c) => !c)}
                     className="text-white/80 hover:text-white"
                   >
-                    <ChevronUp className="w-5 h-5" />
+                    {metricsSectionCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
                   </button>
                 </div>
                 
+                {!metricsSectionCollapsed && (
                 <div className="p-4 bg-purple-50 dark:bg-purple-900/10 space-y-6">
-                  {/* Key Metrics */}
+                  {/* Key Metrics — manual entry for missing fields */}
                   <div>
-                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
                       <Eye className="w-4 h-4" /> Key Metrics
                     </h5>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      Numbers are read from your screenshots when possible; add or edit any field below.
+                    </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div>
                         <label className="text-xs text-gray-500">Views</label>
@@ -790,6 +775,56 @@ const ReportModal = ({ report, onClose, onSave }) => {
                           onChange={(e) => updateMetric('profileVisits', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="907"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Accounts Reached</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.accountsReached || ''}
+                          onChange={(e) => updateMetric('accountsReached', parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="858"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Reach</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.reach || ''}
+                          onChange={(e) => updateMetric('reach', parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="Optional"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Impressions</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.impressions || ''}
+                          onChange={(e) => updateMetric('impressions', parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="Optional"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Saves</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.saves || ''}
+                          onChange={(e) => updateMetric('saves', parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="Optional"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Shares</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.shares || ''}
+                          onChange={(e) => updateMetric('shares', parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="Optional"
                         />
                       </div>
                     </div>
@@ -834,6 +869,27 @@ const ReportModal = ({ report, onClose, onSave }) => {
                           onChange={(e) => updateMetric('interactionsFollowerPercent', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="94.5"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Accounts Reached Change</label>
+                        <input
+                          type="text"
+                          value={formData.metrics?.accountsReachedChange || ''}
+                          onChange={(e) => updateMetric('accountsReachedChange', e.target.value)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="-34.3%"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Engagement Rate %</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={formData.metrics?.engagementRatePercent || ''}
+                          onChange={(e) => updateMetric('engagementRatePercent', parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="Optional"
                         />
                       </div>
                     </div>
@@ -1035,18 +1091,8 @@ const ReportModal = ({ report, onClose, onSave }) => {
                     </div>
                   </div>
                 </div>
+                )}
               </div>
-            )}
-
-            {/* Show Metrics Editor Button (when hidden) */}
-            {!showMetricsEditor && formData.screenshots.length > 0 && (
-              <button
-                onClick={() => setShowMetricsEditor(true)}
-                className="w-full py-3 border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors flex items-center justify-center gap-2"
-              >
-                <BarChart3 className="w-5 h-5" />
-                {formData.metrics ? 'Edit Extracted Metrics' : 'Add Metrics Manually'}
-              </button>
             )}
           </div>
         </div>
