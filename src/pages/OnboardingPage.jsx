@@ -499,8 +499,8 @@ const OnboardingPage = () => {
                   <ListTodo className="h-7 w-7 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-2">Daily Tasks</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">Daily Tasks</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     Manage your tasks, collaborate with teammates, and track your progress
                   </p>
                 </div>

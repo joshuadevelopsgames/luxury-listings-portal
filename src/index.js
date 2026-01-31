@@ -6,10 +6,23 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // Add global error handler
 window.addEventListener('error', (event) => {
+  // Suppress Firestore internal assertion errors (SDK bug, not app issue)
+  if (event.error?.message?.includes('FIRESTORE') && event.error?.message?.includes('INTERNAL ASSERTION')) {
+    console.warn('⚠️ Firestore SDK internal error (suppressed):', event.error.message);
+    event.preventDefault();
+    return;
+  }
   console.error('❌ Global error:', event.error);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
+  // Suppress Firestore internal assertion errors
+  const reason = event.reason?.message || event.reason?.toString() || '';
+  if (reason.includes('FIRESTORE') && reason.includes('INTERNAL ASSERTION')) {
+    console.warn('⚠️ Firestore SDK internal error (suppressed):', reason);
+    event.preventDefault();
+    return;
+  }
   console.error('❌ Unhandled promise rejection:', event.reason);
 });
 

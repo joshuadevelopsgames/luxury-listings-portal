@@ -1,0 +1,342 @@
+/**
+ * Demo App Global Styles - Apple Design Language
+ * 
+ * Inspired by Apple's Human Interface Guidelines:
+ * - Clean, minimal aesthetic
+ * - Subtle animations and transitions
+ * - Consistent spacing and typography
+ * - Refined color palette
+ */
+
+/* ==========================================================================
+   Font & Typography (SF Pro inspired)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Apple Color Palette */
+  --color-blue: #0071e3;
+  --color-blue-light: #0077ed;
+  --color-purple: #5856d6;
+  --color-pink: #ff2d55;
+  --color-red: #ff3b30;
+  --color-orange: #ff9500;
+  --color-yellow: #ffcc00;
+  --color-green: #34c759;
+  --color-teal: #5ac8fa;
+  --color-gray: #8e8e93;
+  
+  /* Light Theme */
+  --color-background: #f5f5f7;
+  --color-surface: rgba(255, 255, 255, 0.8);
+  --color-text-primary: #1d1d1f;
+  --color-text-secondary: #86868b;
+  --color-border: rgba(0, 0, 0, 0.05);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --shadow-blue: 0 6px 20px rgba(0, 113, 227, 0.25);
+  
+  /* Transitions */
+  --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dark Theme Variables */
+.dark {
+  --color-background: #1d1d1f;
+  --color-surface: rgba(45, 45, 45, 0.8);
+  --color-text-primary: #f5f5f7;
+  --color-text-secondary: #86868b;
+  --color-border: rgba(255, 255, 255, 0.05);
+}
+
+/* ==========================================================================
+   Base Styles
+   ========================================================================== */
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+/* Fade In */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Slide Up */
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* Scale In */
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+/* Subtle Pulse */
+@keyframes subtlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* Spin */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Animation Classes */
+.animate-in {
+  animation: slideUp 0.3s var(--ease-apple) forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.2s var(--ease-apple) forwards;
+}
+
+.scale-in {
+  animation: scaleIn 0.2s var(--ease-apple) forwards;
+}
+
+/* Staggered Animation Delays */
+.delay-1 { animation-delay: 50ms; }
+.delay-2 { animation-delay: 100ms; }
+.delay-3 { animation-delay: 150ms; }
+.delay-4 { animation-delay: 200ms; }
+
+/* ==========================================================================
+   Scrollbar (Apple-style)
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   Selection
+   ========================================================================== */
+
+::selection {
+  background-color: rgba(0, 113, 227, 0.2);
+  color: inherit;
+}
+
+/* ==========================================================================
+   Focus States
+   ========================================================================== */
+
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.3);
+  border-radius: inherit;
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+/* Glass Effect */
+.glass {
+  background: var(--color-surface);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--color-border);
+}
+
+/* Card Hover Effect */
+.card-hover {
+  transition: all 0.3s var(--ease-apple);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Button Press Effect */
+.press-effect {
+  transition: transform 0.1s var(--ease-apple);
+}
+
+.press-effect:active {
+  transform: scale(0.98);
+}
+
+/* Text Gradient */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ==========================================================================
+   Component Styles
+   ========================================================================== */
+
+/* Apple-style Toggle */
+.toggle {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  background: #e9e9eb;
+  border-radius: 15.5px;
+  transition: background-color 0.2s var(--ease-apple);
+  cursor: pointer;
+}
+
+.toggle.active {
+  background: var(--color-green);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s var(--ease-apple);
+}
+
+.toggle.active::after {
+  transform: translateX(20px);
+}
+
+/* Apple-style Input */
+.input-apple {
+  height: 36px;
+  padding: 0 12px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  transition: all 0.2s var(--ease-apple);
+}
+
+.dark .input-apple {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.input-apple:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.3);
+}
+
+.input-apple::placeholder {
+  color: var(--color-text-secondary);
+}
+
+/* Apple-style Button */
+.btn-apple {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  background: var(--color-blue);
+  color: white;
+  border: none;
+  border-radius: 980px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-apple);
+  box-shadow: var(--shadow-blue);
+}
+
+.btn-apple:hover {
+  background: var(--color-blue-light);
+  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.3);
+}
+
+.btn-apple:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================================
+   Animation Classes (Tailwind-compatible)
+   ========================================================================== */
+
+.slide-in-from-left-2 {
+  animation: slideInLeft 0.2s var(--ease-apple) forwards;
+}
+
+@keyframes slideInLeft {
+  from { 
+    opacity: 0; 
+    transform: translateX(-8px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+  * {
+    background: white !important;
+    color: black !important;
+  }
+}

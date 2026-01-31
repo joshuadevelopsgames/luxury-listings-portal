@@ -203,7 +203,7 @@ const HRAnalytics = () => {
               </option>
             ))}
           </select>
-          <Button variant="outline" className="flex items-center space-x-2">
+          <Button variant="outline" className="flex items-center space-x-2 dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20">
             <Download className="w-4 h-4" />
             <span>Export Report</span>
           </Button>

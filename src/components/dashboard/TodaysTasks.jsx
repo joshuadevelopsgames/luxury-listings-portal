@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
-import { CheckCircle2, Clock, BookOpen, Target, Calendar, TrendingUp, FileText, Users, BarChart3, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock, BookOpen, Target, Calendar, TrendingUp, FileText, Users, BarChart3, ArrowRight, Palette, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TodaysTasks = ({ tasks = [] }) => {

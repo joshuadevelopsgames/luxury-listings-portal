@@ -1,0 +1,553 @@
+/**
+ * V3 App Global Styles - Apple Design
+ * 
+ * Simple dark mode support - only override v1 pages that don't have their own dark mode
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Apple Color Palette */
+  --color-blue: #0071e3;
+  --color-blue-light: #0077ed;
+  --color-purple: #5856d6;
+  --color-pink: #ff2d55;
+  --color-red: #ff3b30;
+  --color-orange: #ff9500;
+  --color-yellow: #ffcc00;
+  --color-green: #34c759;
+  --color-teal: #5ac8fa;
+  --color-gray: #8e8e93;
+  
+  /* Light Theme */
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-text-primary: #1d1d1f;
+  --color-text-secondary: #86868b;
+  --color-border: rgba(0, 0, 0, 0.08);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  
+  /* Transitions */
+  --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dark {
+  --color-background: #161617;
+  --color-surface: #2c2c2e;
+  --color-text-primary: #f5f5f7;
+  --color-text-secondary: #86868b;
+  --color-border: rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   Base Styles
+   ========================================================================== */
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   V3 Content Wrapper - Dark Mode Overrides for V1 Pages ONLY
+   These styles only apply to v1 pages that don't have their own dark: classes
+   ========================================================================== */
+
+/* 
+ * IMPORTANT: These rules use low specificity so they DON'T override 
+ * components that already have proper Tailwind dark: variants.
+ * Only v1 pages without dark mode support will be affected.
+ */
+
+/* Dark mode backgrounds for v1 page containers */
+.dark .v3-content-wrapper > div > .bg-gray-50,
+.dark .v3-content-wrapper > div > .bg-gray-100,
+.dark .v3-content-wrapper > div > .min-h-screen.bg-gray-50,
+.dark .v3-content-wrapper > div > .min-h-screen.bg-gray-100 {
+  background: transparent !important;
+}
+
+/* Dark mode for v1 cards (bg-white without dark: variant) */
+.dark .v3-content-wrapper .bg-white:not([class*="dark\:bg"]) {
+  background: #2c2c2e !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dark mode text for v1 pages */
+.dark .v3-content-wrapper .text-gray-900,
+.dark .v3-content-wrapper .text-gray-800,
+.dark .v3-content-wrapper .text-gray-700,
+.dark .v3-content-wrapper .text-slate-900,
+.dark .v3-content-wrapper .text-slate-800,
+.dark .v3-content-wrapper .text-slate-700 {
+  color: #f5f5f7 !important;
+}
+
+.dark .v3-content-wrapper .text-gray-600,
+.dark .v3-content-wrapper .text-gray-500,
+.dark .v3-content-wrapper .text-slate-600,
+.dark .v3-content-wrapper .text-slate-500 {
+  color: #a1a1a6 !important;
+}
+
+.dark .v3-content-wrapper .text-gray-400,
+.dark .v3-content-wrapper .text-slate-400 {
+  color: #86868b !important;
+}
+
+/* Dark mode borders for v1 pages */
+.dark .v3-content-wrapper .border-gray-200,
+.dark .v3-content-wrapper .border-gray-100,
+.dark .v3-content-wrapper .border-gray-300,
+.dark .v3-content-wrapper .border-slate-200,
+.dark .v3-content-wrapper .border-slate-100,
+.dark .v3-content-wrapper .border-slate-300 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dark mode slate backgrounds */
+.dark .v3-content-wrapper .bg-slate-50,
+.dark .v3-content-wrapper .bg-slate-100 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .v3-content-wrapper .bg-gray-50,
+.dark .v3-content-wrapper .bg-gray-100 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Dark mode inputs for v1 pages */
+.dark .v3-content-wrapper input:not([class*="dark\:"]),
+.dark .v3-content-wrapper textarea:not([class*="dark\:"]),
+.dark .v3-content-wrapper select:not([class*="dark\:"]) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f5f5f7;
+}
+
+.dark .v3-content-wrapper input::placeholder,
+.dark .v3-content-wrapper textarea::placeholder {
+  color: #636366;
+}
+
+/* Dark mode tables for v1 pages */
+.dark .v3-content-wrapper thead {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dark .v3-content-wrapper th {
+  color: #a1a1a6;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .v3-content-wrapper td {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .v3-content-wrapper tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ==========================================================================
+   Dark Mode - Buttons & Interactive Elements (for ClientPackages, CRM, etc.)
+   ========================================================================== */
+
+/* Shadcn/UI Outline buttons - these have border-input class */
+.dark .v3-content-wrapper button.border-input:not([class*="dark\:bg"]),
+.dark .v3-content-wrapper button[class*="hover:bg-accent"]:not([class*="dark\:bg"]) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #f5f5f7 !important;
+}
+
+.dark .v3-content-wrapper button.border-input:not([class*="dark\:bg"]):hover,
+.dark .v3-content-wrapper button[class*="hover:bg-accent"]:not([class*="dark\:bg"]):hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Outline/Secondary buttons */
+.dark .v3-content-wrapper button.bg-gray-100,
+.dark .v3-content-wrapper button.bg-gray-50,
+.dark .v3-content-wrapper .bg-gray-100[role="button"],
+.dark .v3-content-wrapper [class*="hover:bg-gray-50"]:hover,
+.dark .v3-content-wrapper [class*="hover:bg-gray-100"]:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Button text colors */
+.dark .v3-content-wrapper button.text-gray-700,
+.dark .v3-content-wrapper button.text-gray-600 {
+  color: #f5f5f7 !important;
+}
+
+/* Hover states */
+.dark .v3-content-wrapper .hover\:bg-gray-50:hover,
+.dark .v3-content-wrapper .hover\:bg-gray-100:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .v3-content-wrapper .hover\:bg-gray-200:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Focus rings */
+.dark .v3-content-wrapper .focus\:ring-gray-500:focus,
+.dark .v3-content-wrapper .focus\:ring-gray-400:focus {
+  --tw-ring-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Dividers */
+.dark .v3-content-wrapper .divide-gray-200 > * + *,
+.dark .v3-content-wrapper .divide-gray-100 > * + * {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Cards with shadows */
+.dark .v3-content-wrapper .shadow,
+.dark .v3-content-wrapper .shadow-sm,
+.dark .v3-content-wrapper .shadow-md,
+.dark .v3-content-wrapper .shadow-lg {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Rounded containers often used as cards */
+.dark .v3-content-wrapper .rounded-lg.border,
+.dark .v3-content-wrapper .rounded-xl.border,
+.dark .v3-content-wrapper .rounded-md.border {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ==========================================================================
+   Dark Mode - Status Badges (for ClientPackages, CRM)
+   ========================================================================== */
+
+/* Green status badges */
+.dark .v3-content-wrapper .bg-green-50,
+.dark .v3-content-wrapper .bg-green-100 {
+  background: rgba(52, 199, 89, 0.15) !important;
+}
+
+.dark .v3-content-wrapper .text-green-700,
+.dark .v3-content-wrapper .text-green-800,
+.dark .v3-content-wrapper .text-green-600 {
+  color: #34c759 !important;
+}
+
+.dark .v3-content-wrapper .border-green-200,
+.dark .v3-content-wrapper .border-green-300 {
+  border-color: rgba(52, 199, 89, 0.3) !important;
+}
+
+/* Red status badges */
+.dark .v3-content-wrapper .bg-red-50,
+.dark .v3-content-wrapper .bg-red-100 {
+  background: rgba(255, 59, 48, 0.15) !important;
+}
+
+.dark .v3-content-wrapper .text-red-700,
+.dark .v3-content-wrapper .text-red-800,
+.dark .v3-content-wrapper .text-red-600 {
+  color: #ff3b30 !important;
+}
+
+.dark .v3-content-wrapper .border-red-200,
+.dark .v3-content-wrapper .border-red-300 {
+  border-color: rgba(255, 59, 48, 0.3) !important;
+}
+
+/* Yellow/Orange status badges */
+.dark .v3-content-wrapper .bg-yellow-50,
+.dark .v3-content-wrapper .bg-yellow-100,
+.dark .v3-content-wrapper .bg-orange-50,
+.dark .v3-content-wrapper .bg-orange-100,
+.dark .v3-content-wrapper .bg-amber-50,
+.dark .v3-content-wrapper .bg-amber-100 {
+  background: rgba(255, 149, 0, 0.15) !important;
+}
+
+.dark .v3-content-wrapper .text-yellow-700,
+.dark .v3-content-wrapper .text-yellow-800,
+.dark .v3-content-wrapper .text-yellow-600,
+.dark .v3-content-wrapper .text-orange-700,
+.dark .v3-content-wrapper .text-orange-800,
+.dark .v3-content-wrapper .text-orange-600,
+.dark .v3-content-wrapper .text-amber-700,
+.dark .v3-content-wrapper .text-amber-800 {
+  color: #ff9500 !important;
+}
+
+.dark .v3-content-wrapper .border-yellow-200,
+.dark .v3-content-wrapper .border-yellow-300,
+.dark .v3-content-wrapper .border-orange-200,
+.dark .v3-content-wrapper .border-amber-200 {
+  border-color: rgba(255, 149, 0, 0.3) !important;
+}
+
+/* Blue status badges */
+.dark .v3-content-wrapper .bg-blue-50,
+.dark .v3-content-wrapper .bg-blue-100 {
+  background: rgba(0, 113, 227, 0.15) !important;
+}
+
+.dark .v3-content-wrapper .text-blue-700,
+.dark .v3-content-wrapper .text-blue-800,
+.dark .v3-content-wrapper .text-blue-600 {
+  color: #0071e3 !important;
+}
+
+.dark .v3-content-wrapper .border-blue-200,
+.dark .v3-content-wrapper .border-blue-300 {
+  border-color: rgba(0, 113, 227, 0.3) !important;
+}
+
+/* Purple/Indigo badges */
+.dark .v3-content-wrapper .bg-purple-50,
+.dark .v3-content-wrapper .bg-purple-100,
+.dark .v3-content-wrapper .bg-indigo-50,
+.dark .v3-content-wrapper .bg-indigo-100 {
+  background: rgba(88, 86, 214, 0.15) !important;
+}
+
+.dark .v3-content-wrapper .text-purple-700,
+.dark .v3-content-wrapper .text-purple-800,
+.dark .v3-content-wrapper .text-indigo-700,
+.dark .v3-content-wrapper .text-indigo-800 {
+  color: #5856d6 !important;
+}
+
+/* ==========================================================================
+   Dark Mode - Modals & Dropdowns
+   ========================================================================== */
+
+.dark .v3-content-wrapper [role="dialog"],
+.dark .v3-content-wrapper [role="menu"],
+.dark .v3-content-wrapper [role="listbox"] {
+  background: #2c2c2e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .v3-content-wrapper [role="menuitem"]:hover,
+.dark .v3-content-wrapper [role="option"]:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ==========================================================================
+   Dark Mode - Progress Bars
+   ========================================================================== */
+
+.dark .v3-content-wrapper .bg-gray-200[role="progressbar"],
+.dark .v3-content-wrapper [class*="Progress"] .bg-gray-200,
+.dark .v3-content-wrapper .h-2.bg-gray-200,
+.dark .v3-content-wrapper .h-1.bg-gray-200,
+.dark .v3-content-wrapper .h-1\.5.bg-gray-200 {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ==========================================================================
+   Dark Mode - Tabs & Tab Panels
+   ========================================================================== */
+
+.dark .v3-content-wrapper [role="tablist"] {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .v3-content-wrapper [role="tab"] {
+  color: #a1a1a6 !important;
+}
+
+.dark .v3-content-wrapper [role="tab"][aria-selected="true"],
+.dark .v3-content-wrapper [role="tab"][data-state="active"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #f5f5f7 !important;
+}
+
+/* ==========================================================================
+   Dark Mode - Search Inputs
+   ========================================================================== */
+
+.dark .v3-content-wrapper input[type="search"],
+.dark .v3-content-wrapper input[placeholder*="Search"],
+.dark .v3-content-wrapper input[placeholder*="search"] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f5f5f7 !important;
+}
+
+/* ==========================================================================
+   Dark Mode - Labels & Small Text
+   ========================================================================== */
+
+.dark .v3-content-wrapper label {
+  color: #a1a1a6 !important;
+}
+
+.dark .v3-content-wrapper .text-xs.text-gray-500,
+.dark .v3-content-wrapper .text-sm.text-gray-500,
+.dark .v3-content-wrapper .text-xs.text-gray-600,
+.dark .v3-content-wrapper .text-sm.text-gray-600 {
+  color: #86868b !important;
+}
+
+/* ==========================================================================
+   Dark Mode - Toggle/Switch backgrounds
+   ========================================================================== */
+
+.dark .v3-content-wrapper .bg-gray-200.rounded-full,
+.dark .v3-content-wrapper [role="switch"]:not([aria-checked="true"]) {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ==========================================================================
+   Apple Colors - Consistent across both modes
+   ========================================================================== */
+
+/* These enhance Tailwind colors to use Apple's exact shades */
+.v3-content-wrapper .bg-blue-600,
+.v3-content-wrapper .bg-blue-500 {
+  background: #0071e3 !important;
+}
+
+.v3-content-wrapper .text-blue-600,
+.v3-content-wrapper .text-blue-500 {
+  color: #0071e3 !important;
+}
+
+.v3-content-wrapper .bg-green-500,
+.v3-content-wrapper .bg-green-600 {
+  background: #34c759 !important;
+}
+
+.v3-content-wrapper .text-green-500,
+.v3-content-wrapper .text-green-600 {
+  color: #34c759 !important;
+}
+
+.v3-content-wrapper .bg-red-500,
+.v3-content-wrapper .bg-red-600 {
+  background: #ff3b30 !important;
+}
+
+.v3-content-wrapper .text-red-500,
+.v3-content-wrapper .text-red-600 {
+  color: #ff3b30 !important;
+}
+
+.v3-content-wrapper .bg-yellow-500,
+.v3-content-wrapper .bg-orange-500 {
+  background: #ff9500 !important;
+}
+
+.v3-content-wrapper .text-yellow-500,
+.v3-content-wrapper .text-orange-500 {
+  color: #ff9500 !important;
+}
+
+.v3-content-wrapper .bg-purple-500,
+.v3-content-wrapper .bg-purple-600 {
+  background: #5856d6 !important;
+}
+
+.v3-content-wrapper .text-purple-500,
+.v3-content-wrapper .text-purple-600 {
+  color: #5856d6 !important;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes slideInLeft {
+  from { 
+    opacity: 0; 
+    transform: translateX(-8px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+.animate-in {
+  animation: slideUp 0.3s var(--ease-apple) forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.2s var(--ease-apple) forwards;
+}
+
+.slide-in-from-left-2 {
+  animation: slideInLeft 0.2s var(--ease-apple) forwards;
+}
+
+/* ==========================================================================
+   Scrollbar (Apple-style)
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   Selection
+   ========================================================================== */
+
+::selection {
+  background-color: rgba(0, 113, 227, 0.2);
+  color: inherit;
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+  * {
+    background: white !important;
+    color: black !important;
+  }
+}

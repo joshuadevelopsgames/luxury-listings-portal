@@ -7,10 +7,20 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
+    // Ignore Firestore internal SDK errors - they don't affect the app
+    if (error?.message?.includes('FIRESTORE') && error?.message?.includes('INTERNAL ASSERTION')) {
+      console.warn('⚠️ Firestore SDK error ignored by ErrorBoundary');
+      return { hasError: false, error: null };
+    }
     return { hasError: true, error };
   }
 
   componentDidCatch(error, errorInfo) {
+    // Ignore Firestore internal SDK errors
+    if (error?.message?.includes('FIRESTORE') && error?.message?.includes('INTERNAL ASSERTION')) {
+      console.warn('⚠️ Firestore SDK internal error (suppressed):', error.message);
+      return;
+    }
     console.error('❌ ErrorBoundary caught an error:', error, errorInfo);
   }
 

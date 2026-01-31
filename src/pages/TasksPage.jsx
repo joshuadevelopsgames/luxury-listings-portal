@@ -913,11 +913,11 @@ const TasksPage = () => {
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Daily Tasks</h1>
-          <p className="text-slate-600">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Daily Tasks</h1>
+          <p className="text-slate-600 dark:text-slate-400">
             Stay on top of your onboarding activities
             <span className="ml-3 text-xs text-slate-400">
-              Press <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-600">⌘K</kbd> to quick add
+              Press <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20 rounded text-slate-600 dark:text-slate-300">⌘K</kbd> to quick add
             </span>
           </p>
         </div>

@@ -570,33 +570,57 @@ class FirestoreService {
 
   // Listen to pending users changes
   onPendingUsersChange(callback) {
-    return onSnapshot(collection(db, this.collections.PENDING_USERS), (snapshot) => {
-      const pendingUsers = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data() || {};
-        // Never allow an internal `id` field to overwrite the Firestore document id
-        const { id: _ignoredInternalId, ...rest } = data;
-        pendingUsers.push({
-          id: docSnap.id,
-          ...rest
-        });
-      });
-      callback(pendingUsers);
-    });
+    try {
+      return onSnapshot(
+        collection(db, this.collections.PENDING_USERS), 
+        (snapshot) => {
+          const pendingUsers = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() || {};
+            // Never allow an internal `id` field to overwrite the Firestore document id
+            const { id: _ignoredInternalId, ...rest } = data;
+            pendingUsers.push({
+              id: docSnap.id,
+              ...rest
+            });
+          });
+          callback(pendingUsers);
+        },
+        (error) => {
+          console.warn('⚠️ Firestore listener error (pending users):', error.message);
+          callback([]);
+        }
+      );
+    } catch (error) {
+      console.warn('⚠️ Error setting up pending users listener:', error.message);
+      return () => {};
+    }
   }
 
   // Listen to approved users changes
   onApprovedUsersChange(callback) {
-    return onSnapshot(collection(db, this.collections.APPROVED_USERS), (snapshot) => {
-      const approvedUsers = [];
-      snapshot.forEach((doc) => {
-        approvedUsers.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      callback(approvedUsers);
-    });
+    try {
+      return onSnapshot(
+        collection(db, this.collections.APPROVED_USERS), 
+        (snapshot) => {
+          const approvedUsers = [];
+          snapshot.forEach((doc) => {
+            approvedUsers.push({
+              id: doc.id,
+              ...doc.data()
+            });
+          });
+          callback(approvedUsers);
+        },
+        (error) => {
+          console.warn('⚠️ Firestore listener error (approved users):', error.message);
+          callback([]);
+        }
+      );
+    } catch (error) {
+      console.warn('⚠️ Error setting up approved users listener:', error.message);
+      return () => {};
+    }
   }
 
   // Listen to tasks changes for a specific user
@@ -1906,15 +1930,28 @@ class FirestoreService {
 
   // Listen to user's page permissions in real-time
   onUserPagePermissionsChange(userEmail, callback) {
-    const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
-    return onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        callback(userData.pagePermissions || []);
-      } else {
-        callback([]);
-      }
-    });
+    try {
+      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      return onSnapshot(
+        userRef, 
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            callback(userData.pagePermissions || []);
+          } else {
+            callback([]);
+          }
+        },
+        (error) => {
+          // Handle Firestore listener errors gracefully
+          console.warn('⚠️ Firestore listener error (permissions):', error.message);
+          callback([]);
+        }
+      );
+    } catch (error) {
+      console.warn('⚠️ Error setting up permissions listener:', error.message);
+      return () => {}; // Return empty cleanup function
+    }
   }
 }
 

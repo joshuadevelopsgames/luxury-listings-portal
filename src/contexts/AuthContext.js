@@ -13,6 +13,20 @@ import { firestoreService } from '../services/firestoreService';
 // Import the pending users context
 import { usePendingUsers } from './PendingUsersContext';
 
+// Helper function to get department for a role
+const getDepartmentForRole = (role) => {
+  if (!role) return 'General';
+  
+  const departments = {
+    'admin': 'Administration',
+    'content_director': 'Content & Creative',
+    'social_media_manager': 'Marketing',
+    'hr_manager': 'Human Resources',
+    'sales_manager': 'Sales'
+  };
+  return departments[role] || 'General';
+};
+
 // Helper function to navigate based on user role (only from login page)
 const navigateBasedOnRole = (role, userData) => {
   // Only navigate if user is on login or waiting page, not on page reloads

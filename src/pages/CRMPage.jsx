@@ -42,6 +42,9 @@ import { toast } from 'react-hot-toast';
 const CRMPage = () => {
   const { currentUser, currentRole, hasPermission } = useAuth();
   
+  // Initialize CRM service instance
+  const crmService = new CRMGoogleSheetsService();
+  
   // Check permissions
   const canManageCRM = hasPermission(PERMISSIONS.MANAGE_CRM);
   const canManageLeads = hasPermission(PERMISSIONS.MANAGE_LEADS);
@@ -653,40 +656,40 @@ const CRMPage = () => {
   const totalLeads = totalWarmLeads + totalContacted + totalColdLeads;
 
   const renderClientCard = (client) => (
-    <Card key={client.id} className="hover:shadow-md transition-shadow">
+    <Card key={client.id} className="hover:shadow-md transition-shadow dark:bg-[#2c2c2e] dark:border-white/10">
       <CardContent className="p-6 pt-8">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h4 className="font-medium text-gray-900">{client.contactName}</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white">{client.contactName}</h4>
             
             {/* Organization - New prominent field */}
             {client.organization && (
               <div className="flex items-center gap-2 mt-2">
-                <Building className="w-3 h-3 text-gray-400" />
-                <p className="text-sm text-gray-600 font-medium">{client.organization}</p>
+                <Building className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">{client.organization}</p>
               </div>
             )}
             
             <div className="flex items-center gap-2 mt-2">
-              <Mail className="w-3 h-3 text-gray-400" />
-              <p className="text-sm text-gray-600">{client.email}</p>
+              <Mail className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">{client.email}</p>
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <Phone className="w-3 h-3 text-gray-400" />
-              <p className="text-sm text-gray-600">{client.phone}</p>
+              <Phone className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">{client.phone}</p>
             </div>
             {client.instagram && (
               <div className="flex items-center gap-2 mt-2">
-                <Instagram className="w-3 h-3 text-gray-400" />
-                <p className="text-sm text-gray-600">@{client.instagram}</p>
+                <Instagram className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">@{client.instagram}</p>
               </div>
             )}
             
             {/* Website - New prominent field */}
             {client.website && (
               <div className="flex items-center gap-2 mt-2">
-                <ExternalLink className="w-3 h-3 text-gray-400" />
-                <p className="text-sm text-gray-600">{client.website}</p>
+                <ExternalLink className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">{client.website}</p>
               </div>
             )}
           </div>
@@ -698,9 +701,9 @@ const CRMPage = () => {
         <div className="space-y-3 mb-5">
           {/* Notes section - now cleaner without organization/website clutter */}
           {client.notes && client.notes !== 'No additional information' && (
-            <p className="text-sm text-gray-700">{client.notes}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{client.notes}</p>
           )}
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <Clock className="w-3 h-3" />
             <span>Last contact: {client.lastContact}</span>
           </div>
@@ -723,7 +726,7 @@ const CRMPage = () => {
             variant="outline"
             size="sm"
             onClick={() => setSelectedClient(client)}
-            className="flex-1"
+            className="flex-1 dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
           >
             <Eye className="w-4 h-4 mr-2" />
             View Details
@@ -732,7 +735,7 @@ const CRMPage = () => {
             variant="outline" 
             size="sm" 
             onClick={() => openEditModal(client)}
-            className="flex-1"
+            className="flex-1 dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
           >
             <Edit className="w-4 h-4 mr-2" />
             Edit
@@ -747,8 +750,8 @@ const CRMPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">CRM Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage your leads and client relationships</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">CRM Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your leads and client relationships</p>
           {isConnectedToGoogleSheets && (
             <div className="flex items-center gap-2 mt-2">
               <CheckCircle className="w-4 h-4 text-green-600" />
@@ -806,57 +809,57 @@ const CRMPage = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+        <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-green-200 dark:border-green-700/50">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600 mb-2">Warm Leads</p>
-                <p className="text-3xl font-bold text-green-900">{totalWarmLeads}</p>
+                <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">Warm Leads</p>
+                <p className="text-3xl font-bold text-green-900 dark:text-green-100">{totalWarmLeads}</p>
               </div>
-              <div className="p-3 rounded-full bg-green-200">
-                <Star className="w-6 h-6 text-green-600" />
+              <div className="p-3 rounded-full bg-green-200 dark:bg-green-700/50">
+                <Star className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 border-blue-200 dark:border-blue-700/50">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-600 mb-2">Contacted</p>
-                <p className="text-3xl font-bold text-blue-900">{totalContacted}</p>
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">Contacted</p>
+                <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{totalContacted}</p>
               </div>
-              <div className="p-3 rounded-full bg-blue-200">
-                <CheckCircle className="w-6 h-6 text-blue-600" />
+              <div className="p-3 rounded-full bg-blue-200 dark:bg-blue-700/50">
+                <CheckCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200">
+        <Card className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/30 border-gray-200 dark:border-gray-600/50">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-2">Cold Leads</p>
-                <p className="text-3xl font-bold text-gray-900">{totalColdLeads}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Cold Leads</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalColdLeads}</p>
               </div>
-              <div className="p-3 rounded-full bg-gray-200">
-                <Clock className="w-6 h-6 text-gray-600" />
+              <div className="p-3 rounded-full bg-gray-200 dark:bg-gray-600/50">
+                <Clock className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
+        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/20 border-purple-200 dark:border-purple-700/50">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-600 mb-2">Total Leads</p>
-                <p className="text-3xl font-bold text-purple-900">{totalLeads}</p>
+                <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-2">Total Leads</p>
+                <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{totalLeads}</p>
               </div>
-              <div className="p-3 rounded-full bg-purple-200">
-                <Users className="w-6 h-6 text-purple-600" />
+              <div className="p-3 rounded-full bg-purple-200 dark:bg-purple-700/50">
+                <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </CardContent>
@@ -866,46 +869,46 @@ const CRMPage = () => {
       {/* Search */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
           <input
             type="text"
             placeholder="Search leads by name, email, or Instagram..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#0071e3] focus:border-transparent"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-white/10">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('warm-leads')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'warm-leads'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-[#0071e3] text-[#0071e3]'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30'
             }`}
           >
             Warm Leads ({totalWarmLeads})
           </button>
           <button
             onClick={() => setActiveTab('contacted')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'contacted'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-[#0071e3] text-[#0071e3]'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30'
             }`}
           >
             Contacted Before ({totalContacted})
           </button>
           <button
             onClick={() => setActiveTab('cold-leads')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'cold-leads'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-[#0071e3] text-[#0071e3]'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30'
             }`}
           >
             Cold Leads ({totalColdLeads})
@@ -917,8 +920,8 @@ const CRMPage = () => {
       {activeTab === 'warm-leads' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Warm Leads</h2>
-            <p className="text-sm text-gray-600">Leads showing interest and engagement</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Warm Leads</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Leads showing interest and engagement</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredWarmLeads.map(renderClientCard)}
@@ -929,8 +932,8 @@ const CRMPage = () => {
       {activeTab === 'contacted' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Clients We've Contacted Before</h2>
-            <p className="text-sm text-gray-600">Leads with previous communication history</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Clients We've Contacted Before</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Leads with previous communication history</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredContactedClients.map(renderClientCard)}
@@ -941,8 +944,8 @@ const CRMPage = () => {
       {activeTab === 'cold-leads' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Cold Leads</h2>
-            <p className="text-sm text-gray-600">Leads requiring initial outreach or re-engagement</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Cold Leads</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Leads requiring initial outreach or re-engagement</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredColdLeads.map(renderClientCard)}
@@ -952,7 +955,7 @@ const CRMPage = () => {
 
       {/* Add New Lead Modal */}
       {showAddModal && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900">Add New Lead</h3>
@@ -1100,12 +1103,13 @@ const CRMPage = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Client Detail Modal */}
       {selectedClient && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900">Lead Details</h3>
@@ -1324,12 +1328,13 @@ const CRMPage = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Modal */}
       {showEditModal && editingClient && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Edit Lead</h3>
@@ -1460,7 +1465,8 @@ const CRMPage = () => {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Toast Notification */}

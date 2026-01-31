@@ -1252,7 +1252,7 @@ export default function ClientPackages() {
       console.error('Error details:', {
         message: error.message,
         stack: error.stack,
-        clientData: requestBody.clientData
+        editingClient: editingClient ? editingClient.clientName : 'unknown'
       });
       
       showToast(`❌ Error updating Google Sheets: ${error.message}`, 'error');

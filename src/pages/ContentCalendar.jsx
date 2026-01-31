@@ -273,11 +273,11 @@ const ContentCalendar = () => {
   }, [contentItems, selectedCalendarId, filteredContent.length, filterPlatform, filterStatus]);
 
   const nextMonth = () => {
-    setCurrentMonth(addDays(currentMonth, 32));
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
   const prevMonth = () => {
-    setCurrentMonth(addDays(currentMonth, -32));
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   };
 
   // ========== CALENDAR MANAGEMENT ==========
@@ -1076,14 +1076,14 @@ const ContentCalendar = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Content Calendar</h1>
-          <p className="text-gray-600">Plan and schedule your social media content</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Content Calendar</h1>
+          <p className="text-gray-600 dark:text-gray-400">Plan and schedule your social media content</p>
         </div>
         <div className="flex gap-2">
           <Button 
             onClick={handleStartImport}
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
             disabled={!canCreateContent}
             title={!canCreateContent ? 'You need CREATE_CONTENT permission' : 'Import from Google Sheets'}
           >
@@ -1092,7 +1092,7 @@ const ContentCalendar = () => {
           </Button>
           <Button 
             onClick={() => canCreateContent ? setShowAddModal(true) : toast.error('You need CREATE_CONTENT permission')} 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-[#0071e3] hover:bg-[#0077ed] text-white shadow-lg shadow-[#0071e3]/25"
             disabled={!canCreateContent}
             title={!canCreateContent ? 'You need CREATE_CONTENT permission' : ''}
           >
@@ -1123,8 +1123,8 @@ const ContentCalendar = () => {
                   return (
                     <div
                       key={cal.id}
-                      className={`px-3 py-2 rounded-md border transition-colors ${
-                        isActive ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
+                      className={`px-3 py-2 rounded-lg border transition-all ${
+                        isActive ? 'border-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/20' : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5'
                       }`}
                     >
                       {isEditing ? (
@@ -1194,11 +1194,11 @@ const ContentCalendar = () => {
                             onClick={() => setSelectedCalendarId(cal.id)}
                             className="flex-1 flex items-center justify-between text-left min-w-0"
                           >
-                            <span className={`truncate ${isActive ? 'text-blue-900 font-medium' : 'text-gray-900'}`}>
+                            <span className={`truncate ${isActive ? 'text-[#0071e3] dark:text-white font-medium' : 'text-gray-900 dark:text-white'}`}>
                               {cal.name}
                             </span>
                             <span className={`ml-2 text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                              isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                              isActive ? 'bg-[#0071e3] text-white' : 'bg-gray-200 dark:bg-white/20 text-gray-700 dark:text-gray-300'
                             }`}>
                               {count}
                             </span>
@@ -1277,11 +1277,11 @@ const ContentCalendar = () => {
                   </div>
                 </div>
               ) : (
-                <Button variant="outline" className="w-full flex items-center gap-2" onClick={() => setShowAddCalendar(true)}>
+                <Button variant="outline" className="w-full flex items-center gap-2 dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20" onClick={() => setShowAddCalendar(true)}>
                   <FolderPlus className="w-4 h-4" /> New Calendar
                 </Button>
               )}
-              <p className="text-xs text-gray-500">Posts you create will be saved in the selected calendar.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Posts you create will be saved in the selected calendar.</p>
             </CardContent>
           </Card>
         </div>
@@ -1293,20 +1293,20 @@ const ContentCalendar = () => {
             <CardContent className="p-4" style={{ padding: '26px' }}>
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Filters:</span>
+                  <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
                 </div>
                 
                 {/* Platform Filters */}
                 <div>
-                  <span className="text-sm font-medium text-gray-700 mb-2 block">Platform:</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Platform:</span>
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setFilterPlatform('all')}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         filterPlatform === 'all' 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[#0071e3] text-white shadow-lg shadow-[#0071e3]/25' 
+                          : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/20 border border-transparent dark:border-white/10'
                       }`}
                     >
                       All Platforms
@@ -1315,10 +1315,10 @@ const ContentCalendar = () => {
                       <button
                         key={platform.id}
                         onClick={() => setFilterPlatform(platform.id)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
                           filterPlatform === platform.id 
-                            ? `${platform.color} text-white` 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? `${platform.color} text-white shadow-lg` 
+                            : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/20 border border-transparent dark:border-white/10'
                         }`}
                       >
                         <platform.icon className="w-4 h-4" isSelected={filterPlatform === platform.id} />
@@ -1330,14 +1330,14 @@ const ContentCalendar = () => {
 
                 {/* Status Filters */}
                 <div>
-                  <span className="text-sm font-medium text-gray-700 mb-2 block">Status:</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Status:</span>
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setFilterStatus('all')}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         filterStatus === 'all' 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[#0071e3] text-white shadow-lg shadow-[#0071e3]/25' 
+                          : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/20 border border-transparent dark:border-white/10'
                       }`}
                     >
                       All Status
@@ -1346,10 +1346,10 @@ const ContentCalendar = () => {
                       <button
                         key={status.id}
                         onClick={() => setFilterStatus(status.id)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                           filterStatus === status.id 
-                            ? `${status.color} text-white` 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? `${status.color} text-white shadow-lg` 
+                            : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/20 border border-transparent dark:border-white/10'
                         }`}
                       >
                         {status.name}
@@ -1370,10 +1370,10 @@ const ContentCalendar = () => {
               {format(currentMonth, 'MMMM yyyy')}
             </CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={prevMonth}>
+              <Button variant="outline" size="sm" onClick={prevMonth} className="dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20">
                 ←
               </Button>
-              <Button variant="outline" size="sm" onClick={nextMonth}>
+              <Button variant="outline" size="sm" onClick={nextMonth} className="dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20">
                 →
               </Button>
             </div>
@@ -1383,7 +1383,7 @@ const ContentCalendar = () => {
           <div className="grid grid-cols-7 gap-1">
             {/* Day headers */}
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="p-2 text-center text-sm font-medium text-gray-500 bg-gray-50">
+              <div key={day} className="p-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5">
                 {day}
               </div>
             ))}
@@ -1396,9 +1396,9 @@ const ContentCalendar = () => {
               return (
                 <div
                   key={index}
-                  className={`min-h-[120px] p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    !isCurrentMonth ? 'bg-gray-100 text-gray-400' : ''
-                  } ${isToday(date) ? 'bg-blue-50 border-blue-300' : ''}`}
+                  className={`min-h-[120px] p-2 border border-gray-200 dark:border-white/10 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors ${
+                    !isCurrentMonth ? 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500' : 'dark:text-white'
+                  } ${isToday(date) ? 'bg-blue-50 dark:bg-[#0071e3]/20 border-blue-300 dark:border-[#0071e3]/50' : ''}`}
                   onDoubleClick={() => isCurrentMonth && handleDateDoubleClick(date)}
                 >
                   <div className="text-sm font-medium mb-1">
@@ -1426,7 +1426,7 @@ const ContentCalendar = () => {
                       </div>
                     ))}
                     {dayContent.length > 2 && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         +{dayContent.length - 2} more
                       </div>
                     )}
@@ -1448,7 +1448,7 @@ const ContentCalendar = () => {
             {filteredContent.map(content => {
               const PlatformIcon = getPlatformIcon(content.platform);
               return (
-                <div key={content.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                <div key={content.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-white/10 rounded-lg hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     {/* Image Preview */}
                     {content.imageUrl && (
