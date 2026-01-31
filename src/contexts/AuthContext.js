@@ -14,6 +14,50 @@ import Loader from '../components/Loader';
 // Import the pending users context
 import { usePendingUsers } from './PendingUsersContext';
 
+// ============================================================================
+// SYSTEM ADMINS - These users have full access to everything
+// ============================================================================
+const SYSTEM_ADMINS = [
+  'jrsschroeder@gmail.com',
+  'joshua@luxury-listings.com'
+];
+
+// Helper to check if email is a system admin
+const isSystemAdmin = (email) => SYSTEM_ADMINS.includes(email?.toLowerCase());
+
+// ============================================================================
+// LOCAL STORAGE PERSISTENCE
+// ============================================================================
+const AUTH_STORAGE_KEY = 'luxury_listings_auth';
+
+const saveAuthToStorage = (user) => {
+  try {
+    if (user) {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      console.log('💾 Auth saved to localStorage');
+    } else {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      console.log('🗑️ Auth removed from localStorage');
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not save auth to localStorage:', error);
+  }
+};
+
+const loadAuthFromStorage = () => {
+  try {
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (stored) {
+      const user = JSON.parse(stored);
+      console.log('📂 Auth loaded from localStorage:', user.email);
+      return user;
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not load auth from localStorage:', error);
+  }
+  return null;
+};
+
 // Helper function to get department for a role
 const getDepartmentForRole = (role) => {
   if (!role) return 'General';
@@ -91,15 +135,23 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [currentRole, setCurrentRole] = useState(USER_ROLES.CONTENT_DIRECTOR);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userData, setUserData] = useState(null); // Full employee data from Firestore
-  const [loading, setLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  // Initialize from localStorage for instant restore on page refresh
+  const storedAuth = loadAuthFromStorage();
+  
+  const [currentRole, setCurrentRole] = useState(storedAuth?.role || USER_ROLES.CONTENT_DIRECTOR);
+  const [currentUser, setCurrentUser] = useState(storedAuth);
+  const [userData, setUserData] = useState(storedAuth); // Full employee data from Firestore
+  const [loading, setLoading] = useState(!storedAuth); // If we have stored auth, don't show loading
+  const [isInitialized, setIsInitialized] = useState(!!storedAuth);
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
   
   // Get pending users functions
   const { addPendingUser } = usePendingUsers();
+  
+  // Log restored auth
+  if (storedAuth) {
+    console.log('🔄 Restored auth from localStorage:', storedAuth.email);
+  }
 
   function signInWithGoogle() {
     if (GOOGLE_AUTH_DISABLED) {
@@ -111,6 +163,12 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    // Clear localStorage on logout
+    saveAuthToStorage(null);
+    setCurrentUser(null);
+    setUserData(null);
+    setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+    
     if (GOOGLE_AUTH_DISABLED) {
       // Bypass logout for development
       console.log('Logout bypassed - Google authentication is disabled');
@@ -130,9 +188,9 @@ export function AuthProvider({ children }) {
       return;
     }
     
-    // Admin users (jrsschroeder@gmail.com) can always switch to any role
-    if (currentUser.email === 'jrsschroeder@gmail.com') {
-      console.log('✅ Admin user - allowing role switch to:', newRole);
+    // System admin users can always switch to any role
+    if (isSystemAdmin(currentUser.email)) {
+      console.log('✅ System admin - allowing role switch to:', newRole);
     } else {
       // Check if user has this role in their assigned roles from Firestore
       const assignedRoles = currentUser.roles || [currentUser.primaryRole || currentUser.role] || ['content_director'];
@@ -346,9 +404,9 @@ export function AuthProvider({ children }) {
           if (user) {
             console.log('✅ User signed in:', user.email);
             
-            // Special handling for admin user
-            if (user.email === 'jrsschroeder@gmail.com') {
-              console.log('✅ Admin user detected - setting up admin access');
+            // Special handling for system admin users
+            if (isSystemAdmin(user.email)) {
+              console.log('✅ System admin detected:', user.email);
               
               // Load saved role from Firestore or use admin as default
               let savedRole;
@@ -395,6 +453,7 @@ export function AuthProvider({ children }) {
               
               setCurrentUser(adminUser);
               setUserData(adminUser); // Admin doesn't need onboarding
+              saveAuthToStorage(adminUser); // Persist to localStorage
               console.log('🔄 Navigating admin user to dashboard...');
               navigateBasedOnRole(roleToUse, adminUser);
               setLoading(false);
@@ -456,16 +515,19 @@ export function AuthProvider({ children }) {
                 };
                 
                 setCurrentUser(mergedUser);
+                saveAuthToStorage(mergedUser); // Persist to localStorage
                 
                 // Load full employee data from Firestore (including onboarding status)
                 try {
                   const employeeData = await firestoreService.getEmployeeByEmail(user.email);
                   if (employeeData) {
+                    const fullUser = { ...mergedUser, ...employeeData };
                     setUserData(employeeData);
+                    saveAuthToStorage(fullUser); // Update with full data
                     console.log('✅ Loaded employee data from Firestore:', employeeData);
                     
                     // Update navigation with employee data
-                    navigateBasedOnRole(roleToUse, { ...mergedUser, ...employeeData });
+                    navigateBasedOnRole(roleToUse, fullUser);
                   } else {
                     setUserData(mergedUser);
                     navigateBasedOnRole(roleToUse, mergedUser);
@@ -566,6 +628,9 @@ export function AuthProvider({ children }) {
           } else {
             console.log('❌ User signed out');
             
+            // Clear localStorage on sign out
+            saveAuthToStorage(null);
+            
             // Dev mode: Auto-login again if signed out
             if (DEV_MODE_AUTO_LOGIN) {
               console.log('🔧 DEV MODE: User signed out, auto-logging back in...');
@@ -575,6 +640,7 @@ export function AuthProvider({ children }) {
             }
             
             setCurrentUser(null);
+            setUserData(null);
             setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
           }
         } catch (error) {
