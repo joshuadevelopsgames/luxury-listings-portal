@@ -36,13 +36,10 @@ const Login = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] relative overflow-hidden">
-      {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50" />
-      
-      {/* Animated gradient shapes */}
-      <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl" />
-      <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl" />
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-[#f0f0f5] to-[#e8e8f0] relative overflow-hidden">
+      {/* Lightweight gradient accents - no heavy blur */}
+      <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-[#0071e3]/5 to-transparent" />
+      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-[#5856d6]/5 to-transparent" />
 
       <div className="min-h-screen flex relative z-10">
         {/* Left Side - Branding & Features */}
@@ -81,7 +78,7 @@ const Login = () => {
             {features.map((feature, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-2xl bg-white/60 backdrop-blur-xl border border-black/5"
+                className="p-4 rounded-2xl bg-white/90 border border-black/5"
               >
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center mb-3 shadow-lg shadow-[#0071e3]/20">
                   <feature.icon className="w-4 h-4 text-white" strokeWidth={1.5} />
@@ -112,7 +109,7 @@ const Login = () => {
             </div>
 
             {/* Login Card */}
-            <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-10 border border-black/5 shadow-2xl shadow-black/5">
+            <div className="bg-white rounded-3xl p-10 border border-black/5 shadow-2xl shadow-black/5">
               <div className="text-center mb-10">
                 <h2 className="text-[28px] font-semibold text-[#1d1d1f] tracking-[-0.02em] mb-2">
                   Welcome back
