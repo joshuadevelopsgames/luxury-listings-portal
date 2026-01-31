@@ -432,9 +432,15 @@ function App() {
             <Route path="/v2/*" element={<DemoApp />} />
             <Route path="/v3/*" element={<V3App />} />
             
-            {/* Main App with Apple Layout (New default) */}
+            {/* Redirect old routes to V3 */}
+            <Route path="/dashboard" element={<Navigate to="/v3/dashboard" replace />} />
+            <Route path="/onboarding" element={<Navigate to="/v3/onboarding" replace />} />
+            
+            {/* Main App root */}
             <Route path="/" element={<RootRedirect />} />
-            <Route path="/*" element={<MainAppLayout />} />
+            
+            {/* Fallback to V3 for any other routes */}
+            <Route path="/*" element={<Navigate to="/v3/dashboard" replace />} />
           </Routes>
         </Router>
       </AuthProvider>
