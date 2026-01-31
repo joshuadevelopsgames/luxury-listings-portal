@@ -3,7 +3,12 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, loading } = useAuth();
+
+  // Wait for auth to initialize before making redirect decisions
+  if (loading) {
+    return null; // The global loader in AuthContext handles the loading UI
+  }
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
