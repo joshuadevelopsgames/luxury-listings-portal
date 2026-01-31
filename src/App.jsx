@@ -413,40 +413,32 @@ function RootRedirect() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public routes - no PendingUsersProvider needed */}
-          <Route path="/login" element={<LoginWithDevRedirect />} />
-          <Route path="/client-login" element={<ClientLogin />} />
-          <Route path="/client-password-reset" element={<ClientPasswordReset />} />
-          <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
-          <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
-          <Route path="/__/auth/action" element={<FirebaseAuthHandler />} />
-          
-          {/* Authenticated routes - wrap with PendingUsersProvider */}
-          <Route path="/classic/*" element={
-            <PendingUsersProvider>
-              <ClassicAppLayout />
-            </PendingUsersProvider>
-          } />
-          
-          <Route path="/v2/*" element={<DemoApp />} />
-          <Route path="/v3/*" element={
-            <PendingUsersProvider>
-              <V3App />
-            </PendingUsersProvider>
-          } />
-          
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="/*" element={
-            <PendingUsersProvider>
-              <MainAppLayout />
-            </PendingUsersProvider>
-          } />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <PendingUsersProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<LoginWithDevRedirect />} />
+            <Route path="/client-login" element={<ClientLogin />} />
+            <Route path="/client-password-reset" element={<ClientPasswordReset />} />
+            <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
+            <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
+            <Route path="/__/auth/action" element={<FirebaseAuthHandler />} />
+            
+            {/* Classic Layout (Original v1 design - fully preserved) */}
+            <Route path="/classic/*" element={<ClassicAppLayout />} />
+            
+            {/* Demo Apps */}
+            <Route path="/v2/*" element={<DemoApp />} />
+            <Route path="/v3/*" element={<V3App />} />
+            
+            {/* Main App with Apple Layout (New default) */}
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="/*" element={<MainAppLayout />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </PendingUsersProvider>
   );
 }
 

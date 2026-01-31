@@ -16,31 +16,25 @@ export function PendingUsersProvider({ children }) {
 
   // Subscribe to real-time pending users changes with debouncing
   useEffect(() => {
-    console.log('🔄 Setting up pending users real-time listener...');
-    console.log('🔍 DEBUG: PendingUsersContext useEffect triggered');
-    console.log('🔍 DEBUG: Current pendingUsers count:', pendingUsers.length);
-    console.log('🔍 DEBUG: Current loading state:', loading);
-    console.log('🔍 DEBUG: Stack trace:', new Error().stack);
+    // Skip loading on public pages (login, client-login, etc.) for faster initial load
+    const publicPaths = ['/login', '/client-login', '/client-password-reset', '/waiting-for-approval', '/client-waiting-for-approval'];
+    const isPublicPage = publicPaths.some(path => window.location.pathname.startsWith(path));
     
-    // TEMPORARILY DISABLED: Use manual refresh only to prevent infinite loops
-    console.log('⚠️ Real-time listener temporarily disabled to prevent infinite loops');
+    if (isPublicPage) {
+      console.log('⏭️ Skipping pending users load on public page');
+      setLoading(false);
+      return;
+    }
     
     // Load initial data manually
     const loadInitialData = async () => {
       try {
-        console.log('🔍 DEBUG: Starting loadInitialData...');
         const users = await firestoreService.getPendingUsers();
-        console.log('📡 Initial pending users loaded:', users);
-        console.log('🔍 DEBUG: Setting pendingUsers state with', users.length, 'users');
-        console.log('🔍 DEBUG: Users to set:', users.map(u => ({ id: u.id, email: u.email })));
+        console.log('📡 Initial pending users loaded:', users.length);
         setPendingUsers(users);
         setLoading(false);
-        console.log('🔍 DEBUG: State updated, loading set to false');
       } catch (error) {
         console.error('❌ Error loading initial pending users:', error);
-        console.error('🔍 DEBUG: Error stack:', error.stack);
-        console.warn('⚠️ Firestore connection failed, using empty pending users list');
-        // Set empty array instead of failing
         setPendingUsers([]);
         setLoading(false);
       }
@@ -48,11 +42,7 @@ export function PendingUsersProvider({ children }) {
     
     loadInitialData();
     
-    // Return empty cleanup function since listener is disabled
-    return () => {
-      console.log('🔄 Real-time listener cleanup (disabled)');
-      console.log('🔍 DEBUG: PendingUsersContext useEffect cleanup');
-    };
+    return () => {};
     
     /* DISABLED REAL-TIME LISTENER CODE:
     // Generate a unique listener ID to prevent multiple listeners
