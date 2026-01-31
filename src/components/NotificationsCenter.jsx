@@ -14,37 +14,52 @@ const NotificationsCenter = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load notifications
+  // Load notifications once (no real-time listener for performance)
   useEffect(() => {
     if (!currentUser?.email) {
       setLoading(false);
       return;
     }
 
-    setLoading(true);
+    let isMounted = true;
 
-    // Timeout fallback
-    const timeoutId = setTimeout(() => {
-      console.log('⚠️ Notifications loading timeout - assuming no notifications');
-      setLoading(false);
-    }, 5000);
+    // Load notifications asynchronously without blocking page render
+    const loadNotifications = async () => {
+      try {
+        // Short timeout (2s) - notifications are not critical for page function
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('timeout')), 2000)
+        );
+        
+        const fetchPromise = firestoreService.getNotifications(currentUser.email);
+        
+        const notifs = await Promise.race([fetchPromise, timeoutPromise]);
+        if (isMounted) {
+          setNotifications(notifs || []);
+        }
+      } catch (error) {
+        if (error.message === 'timeout') {
+          console.log('⚠️ Notifications timeout - assuming none');
+        } else {
+          console.error('❌ Error loading notifications:', error);
+        }
+        if (isMounted) {
+          setNotifications([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-    try {
-      const unsubscribe = firestoreService.onNotificationsChange(currentUser.email, (notifs) => {
-        clearTimeout(timeoutId);
-        setNotifications(notifs);
-        setLoading(false);
-      });
+    // Don't block - set loading false immediately for non-critical feature
+    setLoading(false);
+    loadNotifications();
 
-      return () => {
-        clearTimeout(timeoutId);
-        unsubscribe();
-      };
-    } catch (error) {
-      console.error('❌ Error loading notifications:', error);
-      clearTimeout(timeoutId);
-      setLoading(false);
-    }
+    return () => {
+      isMounted = false;
+    };
   }, [currentUser?.email]);
 
   const unreadCount = notifications.filter(n => !n.read).length;

@@ -31,6 +31,7 @@ import EmployeeSelfService from '../pages/EmployeeSelfService';
 import OnboardingPage from '../pages/OnboardingPage';
 import ContentManagerMessage from '../pages/ContentManagerMessage';
 import PermissionsManager from './pages/PermissionsManager';
+import InstagramReportsPage from '../pages/InstagramReportsPage';
 
 // Import styles
 import './styles/globals.css';
@@ -119,11 +120,6 @@ const V3App = () => {
                   <Analytics />
                 </PermissionRoute>
               } />
-              <Route path="user-management" element={
-                <PermissionRoute pageId="user-management" pageName="User Management">
-                  <UserManagement />
-                </PermissionRoute>
-              } />
               <Route path="it-support" element={
                 <PermissionRoute pageId="it-support" pageName="IT Support">
                   <ITSupportPage />
@@ -148,6 +144,7 @@ const V3App = () => {
               
               {/* System admin only */}
               <Route path="permissions" element={<PermissionsManager />} />
+              <Route path="instagram-reports" element={<InstagramReportsPage />} />
               
               {/* Catch all */}
               <Route path="*" element={<Navigate to="dashboard" replace />} />

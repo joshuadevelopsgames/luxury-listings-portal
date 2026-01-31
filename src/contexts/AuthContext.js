@@ -18,8 +18,7 @@ import { usePendingUsers } from './PendingUsersContext';
 // SYSTEM ADMINS - These users have full access to everything
 // ============================================================================
 const SYSTEM_ADMINS = [
-  'jrsschroeder@gmail.com',
-  'joshua@luxury-listings.com'
+  'jrsschroeder@gmail.com'
 ];
 
 // Helper to check if email is a system admin

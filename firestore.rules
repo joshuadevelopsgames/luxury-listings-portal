@@ -9,8 +9,7 @@ service cloud.firestore {
     // Helper function to check if user is admin
     function isAdmin() {
       return isAuthenticated() && 
-             (request.auth.token.email == 'jrsschroeder@gmail.com' ||
-              request.auth.token.email == 'joshua@luxury-listings.com');
+             request.auth.token.email == 'jrsschroeder@gmail.com';
     }
     
     // Helper function to get user email
@@ -127,6 +126,12 @@ service cloud.firestore {
     match /leave_requests/{requestId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
+    }
+    
+    // Instagram reports - public read (for client report links), admin write only
+    match /instagram_reports/{reportId} {
+      allow read: if true;  // Public access for client viewing via shareable links
+      allow write: if isAdmin();
     }
     
     // Note: The catch-all rule below is commented out to maintain current functionality

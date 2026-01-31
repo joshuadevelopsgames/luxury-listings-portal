@@ -33,7 +33,8 @@ import {
   Briefcase,
   UserCircle,
   Eye,
-  X
+  X,
+  Instagram
 } from 'lucide-react';
 
 /**
@@ -107,8 +108,8 @@ const V3Layout = ({ children }) => {
     'team': { name: 'Team Management', icon: Users, path: '/v3/team' },
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/v3/hr-analytics' },
     'analytics': { name: 'Analytics', icon: BarChart3, path: '/v3/analytics' },
-    'user-management': { name: 'User Management', icon: Users, path: '/v3/user-management' },
-    'permissions': { name: 'Permissions', icon: Settings, path: '/v3/permissions' },
+    'permissions': { name: 'Users & Permissions', icon: Settings, path: '/v3/permissions' },
+    'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/v3/instagram-reports' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/v3/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/v3/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/v3/resources' },
@@ -141,7 +142,7 @@ const V3Layout = ({ children }) => {
         },
         {
           title: 'Admin',
-          items: ['user-management', 'permissions', 'it-support']
+          items: ['permissions', 'instagram-reports', 'it-support']
         },
         {
           title: 'Resources',

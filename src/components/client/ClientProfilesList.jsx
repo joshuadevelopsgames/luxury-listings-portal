@@ -43,15 +43,9 @@ const ClientProfilesList = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({});
 
+  // Load data once on mount (no real-time listener for performance)
   useEffect(() => {
     loadData();
-    
-    // Set up real-time listener for clients
-    const unsubscribe = firestoreService.onClientsChange((updatedClients) => {
-      setClients(updatedClients || []);
-    });
-    
-    return () => unsubscribe();
   }, []);
 
   const loadData = async () => {

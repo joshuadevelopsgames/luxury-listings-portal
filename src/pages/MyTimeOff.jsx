@@ -67,6 +67,23 @@ const MyTimeOff = () => {
   const [myRequests, setMyRequests] = useState([]);
 
   // Load leave requests from Firestore on mount
+  // Load leave requests once (no real-time listener for performance)
+  const loadLeaveRequests = async () => {
+    if (!currentUser?.email) return;
+    
+    try {
+      const requests = await firestoreService.getLeaveRequests(currentUser.email);
+      console.log('📥 Leave requests loaded:', requests?.length || 0);
+      setMyRequests(requests || []);
+      setError(null);
+    } catch (err) {
+      console.error('❌ Error loading leave requests:', err);
+      setError(err.message || 'Failed to load leave requests');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!currentUser?.email) {
       setLoading(false);
@@ -75,25 +92,7 @@ const MyTimeOff = () => {
 
     setLoading(true);
     setError(null);
-    
-    try {
-      // Set up real-time listener for leave requests
-      const unsubscribe = firestoreService.onLeaveRequestsChange((requests) => {
-        console.log('📡 Leave requests updated:', requests.length);
-        setMyRequests(requests);
-        setLoading(false);
-        setError(null);
-      }, currentUser.email);
-
-      // Cleanup listener on unmount
-      return () => {
-        if (unsubscribe) unsubscribe();
-      };
-    } catch (err) {
-      console.error('❌ Error setting up leave requests listener:', err);
-      setError(err.message || 'Failed to load leave requests');
-      setLoading(false);
-    }
+    loadLeaveRequests();
   }, [currentUser?.email]);
 
   // Load leave balances from Firestore

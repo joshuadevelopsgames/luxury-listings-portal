@@ -33,8 +33,7 @@ const PermissionsManagement = () => {
   const [saving, setSaving] = useState(false);
 
   // Check if user is system admin
-  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com' || 
-                        currentUser?.email === 'joshua@luxury-listings.com';
+  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com';
 
   useEffect(() => {
     if (!isSystemAdmin) {

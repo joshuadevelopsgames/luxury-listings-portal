@@ -55,8 +55,7 @@ const ALL_PAGES = {
 
 // System admins (for full access display)
 const SYSTEM_ADMINS = [
-  'jrsschroeder@gmail.com',
-  'joshua@luxury-listings.com'
+  'jrsschroeder@gmail.com'
 ];
 
 // Protected admins that cannot be removed

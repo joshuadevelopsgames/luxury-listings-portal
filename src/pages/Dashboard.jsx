@@ -57,50 +57,40 @@ export default function Dashboard() {
     loadDashboardData();
   }, [currentRole]);
 
-  // Add real-time listeners for admin stats
+  // Load admin stats once (no real-time listeners for performance)
+  // Deferred to after initial page render
   useEffect(() => {
     if (currentRole === 'admin') {
-      console.log('📡 Setting up real-time admin stats listeners...');
-      
-      // Initialize Remote Config for system uptime
-      remoteConfigService.initialize().then(() => {
-        console.log('✅ Remote Config initialized for admin dashboard');
-      });
-      
-      // Listen for approved users changes
-      const approvedUsersUnsubscribe = firestoreService.onApprovedUsersChange((users) => {
-        console.log('📡 Approved users updated:', users.length);
-        setAdminStats(prev => ({
-          ...prev,
-          totalUsers: users.length
-        }));
-      });
-
-      // Listen for pending users changes
-      const pendingUsersUnsubscribe = firestoreService.onPendingUsersChange((users) => {
-        console.log('📡 Pending users updated:', users.length);
-        setAdminStats(prev => ({
-          ...prev,
-          pendingApprovals: users.length
-        }));
-      });
-
-      // Listen to system uptime from Remote Config
-      const uptimeUnsubscribe = remoteConfigService.addListener((values) => {
-        console.log('📡 System uptime updated from Remote Config:', values.systemUptime);
-        setAdminStats(prev => ({
-          ...prev,
-          systemUptime: values.systemUptime
-        }));
-      });
-
-      // Cleanup listeners on unmount
-      return () => {
-        console.log('🧹 Cleaning up admin stats listeners...');
-        approvedUsersUnsubscribe();
-        pendingUsersUnsubscribe();
-        uptimeUnsubscribe();
+      // Use requestIdleCallback or setTimeout to defer non-critical loads
+      const loadAdminStatsDeferred = async () => {
+        try {
+          // Initialize Remote Config (deferred)
+          await remoteConfigService.initialize();
+          console.log('✅ Remote Config initialized for admin dashboard');
+          
+          // Fetch counts once
+          const [approvedUsers, pendingUsers] = await Promise.all([
+            firestoreService.getApprovedUsers(),
+            firestoreService.getPendingUsers()
+          ]);
+          
+          const configValues = remoteConfigService.getAllValues();
+          
+          setAdminStats({
+            totalUsers: approvedUsers?.length || 0,
+            activeUsers: approvedUsers?.filter(u => u.isApproved)?.length || 0,
+            pendingApprovals: pendingUsers?.length || 0,
+            systemUptime: configValues?.systemUptime || '99.9%'
+          });
+          console.log('✅ Admin stats loaded');
+        } catch (error) {
+          console.error('Error loading admin stats:', error);
+        }
       };
+
+      // Defer loading to not block initial render
+      const timeoutId = setTimeout(loadAdminStatsDeferred, 100);
+      return () => clearTimeout(timeoutId);
     }
   }, [currentRole]);
 

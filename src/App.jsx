@@ -39,6 +39,7 @@ import ClientPasswordReset from './pages/ClientPasswordReset';
 import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
 import PendingClients from './pages/PendingClients';
 import DemoPage from './demo/DemoPage';
+import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
 
 // Demo Apps
 import DemoApp from './demo-app/App';
@@ -119,9 +120,9 @@ function ClassicAppLayout() {
   const [userPermissions, setUserPermissions] = React.useState([]);
   const [loadingPermissions, setLoadingPermissions] = React.useState(true);
 
-  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com' || 
-                        currentUser?.email === 'joshua@luxury-listings.com';
+  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com';
 
+  // Load permissions once (no real-time listener for performance)
   React.useEffect(() => {
     if (!currentUser?.email) return;
 
@@ -139,17 +140,6 @@ function ClassicAppLayout() {
     };
 
     loadPermissions();
-
-    const unsubscribe = firestoreService.onUserPagePermissionsChange(
-      currentUser.email,
-      (permissions) => {
-        setUserPermissions(permissions || []);
-      }
-    );
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
   }, [currentUser?.email]);
 
   const allPages = {
@@ -424,6 +414,9 @@ function App() {
             <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
             <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
             <Route path="/__/auth/action" element={<FirebaseAuthHandler />} />
+            
+            {/* Public Instagram Report View */}
+            <Route path="/report/:publicLinkId" element={<PublicInstagramReportPage />} />
             
             {/* Classic Layout (Original v1 design - fully preserved) */}
             <Route path="/classic/*" element={<ClassicAppLayout />} />

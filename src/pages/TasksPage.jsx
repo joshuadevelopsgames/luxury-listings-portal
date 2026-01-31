@@ -424,19 +424,34 @@ const TasksPage = () => {
     }
   }, [showRequestModal]);
 
-  // Load task requests
+  // Load task requests once (no real-time listener for performance)
   useEffect(() => {
     if (!currentUser?.email) return;
 
-    const unsubscribe = firestoreService.onTaskRequestsChange(currentUser.email, (requests) => {
-      const pendingRequests = requests.filter(r => r.status === 'pending');
-      setTaskRequests(pendingRequests);
-    });
+    const loadTaskRequests = async () => {
+      try {
+        const requests = await firestoreService.getTaskRequests(currentUser.email);
+        const pendingRequests = (requests || []).filter(r => r.status === 'pending');
+        setTaskRequests(pendingRequests);
+      } catch (error) {
+        console.error('Error loading task requests:', error);
+      }
+    };
 
-    return () => unsubscribe();
+    loadTaskRequests();
   }, [currentUser?.email]);
 
-  // Load initial data and set up real-time listener
+  // Refresh tasks function - call after create/edit/delete actions
+  const refreshTasks = async () => {
+    try {
+      const tasksData = await DailyTask.filter({ assigned_to: currentUser.email }, '-due_date');
+      setTasks(tasksData);
+    } catch (error) {
+      console.error('Error refreshing tasks:', error);
+    }
+  };
+
+  // Load initial data once (no real-time listener for performance)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -451,16 +466,6 @@ const TasksPage = () => {
     };
 
     loadData();
-
-    // Set up real-time listener for user's tasks
-    const unsubscribe = DailyTask.onUserTasksChange(currentUser.email, (tasksData) => {
-      console.log('📡 Tasks updated via real-time listener:', tasksData);
-      setTasks(tasksData);
-    });
-
-    return () => {
-      unsubscribe();
-    };
   }, [currentUser.email]);
 
   // Force re-filter every minute to auto-hide tasks that pass 24-hour mark
@@ -685,7 +690,8 @@ const TasksPage = () => {
         toast.success('✓ Task created!');
       }
       
-      // No need to reload data - real-time listener will update automatically
+      // Refresh tasks after creation
+      await refreshTasks();
       setShowForm(false);
     } catch (error) {
       console.error("Error creating task:", error);
@@ -732,7 +738,8 @@ const TasksPage = () => {
         }
       }
       
-      // No need to reload data - real-time listener will update automatically
+      // Refresh tasks after status update
+      await refreshTasks();
     } catch (error) {
       console.error("Error updating task status:", error);
       toast.error('Failed to update task status. Please try again.');
@@ -752,6 +759,7 @@ const TasksPage = () => {
       setToast(null);
       setLastCompletedTask(null);
       toast.success('Task restored');
+      await refreshTasks();
     } catch (error) {
       console.error("Error undoing task completion:", error);
       toast.error("Failed to undo");
@@ -790,7 +798,8 @@ const TasksPage = () => {
       
       await DailyTask.update(updatedTask.id, updates);
       
-      // No need to reload data - real-time listener will update automatically
+      // Refresh tasks after update
+      await refreshTasks();
       setShowEditModal(false);
       setEditingTask(null);
     } catch (error) {
@@ -804,7 +813,8 @@ const TasksPage = () => {
     try {
       await DailyTask.delete(task.id);
       
-      // No need to reload data - real-time listener will update automatically
+      // Refresh tasks after delete
+      await refreshTasks();
       setShowEditModal(false);
       setEditingTask(null);
     } catch (error) {

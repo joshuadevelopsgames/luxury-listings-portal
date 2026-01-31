@@ -55,7 +55,8 @@ class FirestoreService {
     CLIENT_MESSAGES: 'client_messages',
     CLIENT_REPORTS: 'client_reports',
     PENDING_CLIENTS: 'pending_clients',
-    CLIENT_CONTRACTS: 'client_contracts'
+    CLIENT_CONTRACTS: 'client_contracts',
+    INSTAGRAM_REPORTS: 'instagram_reports'
   };
 
   // Test connection method
@@ -812,7 +813,39 @@ class FirestoreService {
     }
   }
 
-  // Listen to leave requests changes
+  // Get leave requests (one-time fetch, no listener for performance)
+  async getLeaveRequests(userEmail = null) {
+    try {
+      let q;
+      if (userEmail) {
+        q = query(
+          collection(db, this.collections.LEAVE_REQUESTS),
+          where('employeeEmail', '==', userEmail),
+          orderBy('submittedDate', 'desc')
+        );
+      } else {
+        q = query(
+          collection(db, this.collections.LEAVE_REQUESTS),
+          orderBy('submittedDate', 'desc')
+        );
+      }
+      
+      const snapshot = await getDocs(q);
+      const requests = [];
+      snapshot.forEach((doc) => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      return requests;
+    } catch (error) {
+      console.error('❌ Error getting leave requests:', error);
+      return [];
+    }
+  }
+
+  // Listen to leave requests changes (real-time listener - kept for backwards compatibility)
   onLeaveRequestsChange(callback, userEmail = null) {
     let q;
     try {
@@ -1161,7 +1194,36 @@ class FirestoreService {
     }
   }
 
-  // Get notifications for user
+  // Get notifications for user (one-time fetch, no listener for performance)
+  async getNotifications(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.NOTIFICATIONS),
+        where('userEmail', '==', userEmail)
+      );
+      
+      const snapshot = await getDocs(q);
+      const notifications = [];
+      snapshot.forEach((doc) => {
+        notifications.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      // Sort by createdAt descending (newest first)
+      return notifications.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+    } catch (error) {
+      console.error('❌ Error getting notifications:', error);
+      return [];
+    }
+  }
+
+  // Get notifications for user (real-time listener - kept for backwards compatibility)
   onNotificationsChange(userEmail, callback) {
     // Don't use orderBy with where to avoid requiring composite index
     // We'll sort in the app instead
@@ -1283,7 +1345,36 @@ class FirestoreService {
     }
   }
 
-  // Get task requests for user (received requests)
+  // Get task requests for user (one-time fetch, no listener for performance)
+  async getTaskRequests(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.TASK_REQUESTS),
+        where('toUserEmail', '==', userEmail)
+      );
+      
+      const snapshot = await getDocs(q);
+      const requests = [];
+      snapshot.forEach((doc) => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      // Sort by createdAt descending (newest first)
+      return requests.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+    } catch (error) {
+      console.error('❌ Error getting task requests:', error);
+      return [];
+    }
+  }
+
+  // Get task requests for user (real-time listener - kept for backwards compatibility)
   onTaskRequestsChange(userEmail, callback) {
     const q = query(
       collection(db, this.collections.TASK_REQUESTS),
@@ -1853,6 +1944,149 @@ class FirestoreService {
       console.error('❌ Error deleting contract:', error);
       throw error;
     }
+  }
+
+  // ===== INSTAGRAM REPORTS =====
+
+  // Generate a unique public link ID
+  generatePublicLinkId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 12; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  // Create an Instagram report
+  async createInstagramReport(reportData) {
+    try {
+      const publicLinkId = this.generatePublicLinkId();
+      const docRef = await addDoc(collection(db, this.collections.INSTAGRAM_REPORTS), {
+        ...reportData,
+        publicLinkId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Instagram report created:', docRef.id);
+      return { success: true, id: docRef.id, publicLinkId };
+    } catch (error) {
+      console.error('❌ Error creating Instagram report:', error);
+      throw error;
+    }
+  }
+
+  // Get all Instagram reports
+  async getInstagramReports() {
+    try {
+      const q = query(
+        collection(db, this.collections.INSTAGRAM_REPORTS),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const reports = [];
+      snapshot.forEach((doc) => {
+        reports.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Fetched Instagram reports:', reports.length);
+      return reports;
+    } catch (error) {
+      console.error('❌ Error fetching Instagram reports:', error);
+      return [];
+    }
+  }
+
+  // Get Instagram report by ID
+  async getInstagramReportById(reportId) {
+    try {
+      const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return {
+          id: docSnap.id,
+          ...docSnap.data()
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting Instagram report:', error);
+      throw error;
+    }
+  }
+
+  // Get Instagram report by public link ID (for public viewing)
+  async getInstagramReportByPublicLink(publicLinkId) {
+    try {
+      const q = query(
+        collection(db, this.collections.INSTAGRAM_REPORTS),
+        where('publicLinkId', '==', publicLinkId)
+      );
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        return null;
+      }
+      
+      const doc = snapshot.docs[0];
+      return {
+        id: doc.id,
+        ...doc.data()
+      };
+    } catch (error) {
+      console.error('❌ Error getting Instagram report by public link:', error);
+      throw error;
+    }
+  }
+
+  // Update Instagram report
+  async updateInstagramReport(reportId, updates) {
+    try {
+      const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Instagram report updated:', reportId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating Instagram report:', error);
+      throw error;
+    }
+  }
+
+  // Delete Instagram report
+  async deleteInstagramReport(reportId) {
+    try {
+      const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
+      await deleteDoc(docRef);
+      console.log('✅ Instagram report deleted:', reportId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting Instagram report:', error);
+      throw error;
+    }
+  }
+
+  // Listen to Instagram reports changes
+  onInstagramReportsChange(callback) {
+    const q = query(
+      collection(db, this.collections.INSTAGRAM_REPORTS),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const reports = [];
+      snapshot.forEach((doc) => {
+        reports.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(reports);
+    });
   }
 
   // ===== PAGE PERMISSIONS MANAGEMENT =====
