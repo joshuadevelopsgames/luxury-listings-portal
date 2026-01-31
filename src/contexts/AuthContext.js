@@ -389,7 +389,8 @@ export function AuthProvider({ children }) {
                 bio: userData.bio,
                 skills: userData.skills,
                 stats: userData.stats,
-                isApproved: true
+                isApproved: true,
+                onboardingCompleted: true // Admin doesn't need onboarding
               };
               
               setCurrentUser(adminUser);

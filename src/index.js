@@ -6,7 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // Add global error handler
 window.addEventListener('error', (event) => {
-  const message = event.error?.message || '';
+  const message = event.error?.message || event.message || '';
   
   // Suppress Firebase/Firestore internal errors
   if (message.includes('FIRESTORE') && message.includes('INTERNAL ASSERTION')) {
@@ -18,7 +18,10 @@ window.addEventListener('error', (event) => {
     return;
   }
   if (message.includes('Quota exceeded') || message.includes('resource-exhausted')) {
-    console.warn('⚠️ Firebase quota exceeded - check your Firebase console');
+    event.preventDefault();
+    return;
+  }
+  if (message.includes('Cross-Origin-Opener-Policy')) {
     event.preventDefault();
     return;
   }
@@ -38,12 +41,14 @@ window.addEventListener('unhandledrejection', (event) => {
     return;
   }
   if (reason.includes('Quota exceeded') || reason.includes('resource-exhausted')) {
-    console.warn('⚠️ Firebase quota exceeded - check your Firebase console');
     event.preventDefault();
     return;
   }
   if (reason.includes('Missing or insufficient permissions')) {
-    // Don't spam console with permission errors
+    event.preventDefault();
+    return;
+  }
+  if (reason.includes('Cross-Origin-Opener-Policy')) {
     event.preventDefault();
     return;
   }
