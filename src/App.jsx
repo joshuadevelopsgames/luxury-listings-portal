@@ -39,6 +39,7 @@ import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
 import PendingClients from './pages/PendingClients';
 import DemoPage from './demo/DemoPage';
 import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
+import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
 
 // Demo Apps
 import DemoApp from './demo-app/App';
@@ -411,6 +412,9 @@ function App() {
             
             {/* Public Instagram Report View */}
             <Route path="/report/:publicLinkId" element={<PublicInstagramReportPage />} />
+            
+            {/* Demo Instagram Report (for previewing the layout) */}
+            <Route path="/report-demo" element={<DemoInstagramReportPage />} />
             
             {/* Classic Layout (Original v1 design - fully preserved) */}
             <Route path="/classic/*" element={<ClassicAppLayout />} />

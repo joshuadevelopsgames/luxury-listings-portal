@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   BarChart3,
   TrendingUp,
+  TrendingDown,
   Heart,
   MessageCircle,
   Users,
@@ -16,7 +17,14 @@ import {
   X,
   Loader2,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Eye,
+  MousePointer,
+  MapPin,
+  Clock,
+  UserPlus,
+  UserMinus,
+  Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -164,28 +172,84 @@ const PublicInstagramReportPage = () => {
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { icon: ImageIcon, label: 'Screenshots', value: report.screenshots?.length || 0, color: 'from-purple-500 to-purple-600' },
-            { icon: TrendingUp, label: 'Performance', value: 'Insights', color: 'from-pink-500 to-pink-600' },
-            { icon: Heart, label: 'Engagement', value: 'Metrics', color: 'from-orange-500 to-orange-600' },
-            { icon: Users, label: 'Audience', value: 'Analytics', color: 'from-red-500 to-red-600' },
-          ].map((stat, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl shadow-lg p-5 transform hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-3`}>
-                <stat.icon className="w-6 h-6 text-white" />
+      {/* Key Metrics Overview */}
+      {report.metrics && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { 
+                icon: Eye, 
+                label: 'Total Views', 
+                value: report.metrics.views?.toLocaleString() || '—', 
+                color: 'from-purple-500 to-purple-600',
+                subtext: report.metrics.viewsFollowerPercent ? `${report.metrics.viewsFollowerPercent}% from followers` : null
+              },
+              { 
+                icon: Users, 
+                label: 'Followers', 
+                value: report.metrics.followers?.toLocaleString() || '—', 
+                color: 'from-pink-500 to-pink-600',
+                subtext: report.metrics.followerChange ? `${report.metrics.followerChange > 0 ? '+' : ''}${report.metrics.followerChange}` : null,
+                subtextColor: report.metrics.followerChange > 0 ? 'text-green-600' : 'text-red-500'
+              },
+              { 
+                icon: Heart, 
+                label: 'Interactions', 
+                value: report.metrics.interactions?.toLocaleString() || '—', 
+                color: 'from-orange-500 to-orange-600',
+                subtext: report.metrics.interactionsFollowerPercent ? `${report.metrics.interactionsFollowerPercent}% from followers` : null
+              },
+              { 
+                icon: MousePointer, 
+                label: 'Profile Visits', 
+                value: report.metrics.profileVisits?.toLocaleString() || '—', 
+                color: 'from-blue-500 to-blue-600',
+                subtext: report.metrics.profileVisitsChange ? `${report.metrics.profileVisitsChange}` : null,
+                subtextColor: report.metrics.profileVisitsChange?.startsWith('+') ? 'text-green-600' : 'text-red-500'
+              },
+            ].map((stat, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-2xl shadow-lg p-5 transform hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-3`}>
+                  <stat.icon className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-sm text-gray-500">{stat.label}</p>
+                {stat.subtext && (
+                  <p className={`text-xs mt-1 ${stat.subtextColor || 'text-gray-400'}`}>{stat.subtext}</p>
+                )}
               </div>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-sm text-gray-500">{stat.label}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Fallback Stats if no metrics */}
+      {!report.metrics && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { icon: ImageIcon, label: 'Screenshots', value: report.screenshots?.length || 0, color: 'from-purple-500 to-purple-600' },
+              { icon: TrendingUp, label: 'Performance', value: 'Insights', color: 'from-pink-500 to-pink-600' },
+              { icon: Heart, label: 'Engagement', value: 'Metrics', color: 'from-orange-500 to-orange-600' },
+              { icon: Users, label: 'Audience', value: 'Analytics', color: 'from-red-500 to-red-600' },
+            ].map((stat, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-2xl shadow-lg p-5 transform hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-3`}>
+                  <stat.icon className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-sm text-gray-500">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Notes Section (if exists) */}
       {report.notes && (
@@ -198,6 +262,181 @@ const PublicInstagramReportPage = () => {
             <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
               {report.notes}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Metrics Section */}
+      {report.metrics && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Content Performance */}
+            {report.metrics.contentBreakdown && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-purple-500" />
+                  Content Performance
+                </h3>
+                <div className="space-y-4">
+                  {report.metrics.contentBreakdown.map((item, idx) => (
+                    <div key={idx}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">{item.type}</span>
+                        <span className="font-medium text-gray-900">{item.percentage}%</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-3">
+                        <div 
+                          className="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                          style={{ width: `${item.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Audience Demographics */}
+            {report.metrics.topCities && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-pink-500" />
+                  Top Locations
+                </h3>
+                <div className="space-y-3">
+                  {report.metrics.topCities.map((city, idx) => (
+                    <div key={idx} className="flex items-center justify-between">
+                      <span className="text-gray-700">{city.name}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 bg-gray-100 rounded-full h-2">
+                          <div 
+                            className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-500"
+                            style={{ width: `${(city.percentage / (report.metrics.topCities[0]?.percentage || 100)) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 w-12 text-right">{city.percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Age Demographics */}
+            {report.metrics.ageRanges && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-500" />
+                  Age Distribution
+                </h3>
+                <div className="space-y-3">
+                  {report.metrics.ageRanges.map((range, idx) => (
+                    <div key={idx} className="flex items-center justify-between">
+                      <span className="text-gray-700">{range.range}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 bg-gray-100 rounded-full h-2">
+                          <div 
+                            className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                            style={{ width: `${(range.percentage / (report.metrics.ageRanges[0]?.percentage || 100)) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 w-12 text-right">{range.percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Gender Split */}
+            {report.metrics.gender && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-orange-500" />
+                  Audience Gender
+                </h3>
+                <div className="flex items-center gap-6">
+                  <div className="flex-1">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">Men</span>
+                      <span className="font-medium text-gray-900">{report.metrics.gender.men}%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-4">
+                      <div 
+                        className="h-4 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+                        style={{ width: `${report.metrics.gender.men}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">Women</span>
+                      <span className="font-medium text-gray-900">{report.metrics.gender.women}%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-4">
+                      <div 
+                        className="h-4 rounded-full bg-gradient-to-r from-pink-400 to-pink-600"
+                        style={{ width: `${report.metrics.gender.women}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Growth Metrics */}
+            {report.metrics.growth && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  Follower Growth
+                </h3>
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="text-center p-4 bg-gray-50 rounded-xl">
+                    <div className={`text-3xl font-bold ${report.metrics.growth.overall >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      {report.metrics.growth.overall >= 0 ? '+' : ''}{report.metrics.growth.overall}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Net Change</p>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded-xl">
+                    <div className="flex items-center justify-center gap-2">
+                      <UserPlus className="w-5 h-5 text-green-600" />
+                      <span className="text-3xl font-bold text-green-600">{report.metrics.growth.follows?.toLocaleString()}</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">New Follows</p>
+                  </div>
+                  <div className="text-center p-4 bg-red-50 rounded-xl">
+                    <div className="flex items-center justify-center gap-2">
+                      <UserMinus className="w-5 h-5 text-red-500" />
+                      <span className="text-3xl font-bold text-red-500">{report.metrics.growth.unfollows?.toLocaleString()}</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Unfollows</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Most Active Times */}
+            {report.metrics.activeTimes && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-purple-500" />
+                  Most Active Times
+                </h3>
+                <div className="flex items-end justify-between gap-2 h-32">
+                  {report.metrics.activeTimes.map((time, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center">
+                      <div 
+                        className="w-full bg-gradient-to-t from-purple-500 to-pink-500 rounded-t-lg transition-all duration-300 hover:from-purple-600 hover:to-pink-600"
+                        style={{ height: `${time.activity}%` }}
+                      />
+                      <span className="text-xs text-gray-500 mt-2">{time.hour}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
