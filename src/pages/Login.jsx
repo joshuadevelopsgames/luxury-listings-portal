@@ -65,7 +65,8 @@ const Login = () => {
           {/* Hero Content */}
           <div className="max-w-lg">
             <h2 className="text-[56px] font-semibold text-[#1d1d1f] leading-[1.05] tracking-[-0.03em] mb-6">
-              Your team's workspace,{' '}
+              Your team's workspace,
+              <br />
               <span className="bg-gradient-to-r from-[#0071e3] to-[#5856d6] bg-clip-text text-transparent">
                 all in one place.
               </span>
