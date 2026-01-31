@@ -65,7 +65,7 @@ const DemoLayout = ({ children }) => {
           <div className="h-[60px] px-5 flex items-center border-b border-black/5 dark:border-white/5">
             <div className="flex items-center gap-3">
               <img 
-                src="/Luxury-listings-logo-CLR.png" 
+                src={darkMode ? "/Luxury-listings-logo-CLR-reverse.png" : "/Luxury-listings-logo-CLR.png"}
                 alt="Luxury Listings" 
                 className="h-8 w-auto"
               />

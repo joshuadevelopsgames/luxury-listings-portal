@@ -217,7 +217,7 @@ const V3Layout = ({ children }) => {
           <div className="h-[60px] px-5 flex items-center justify-between border-b border-black/5 dark:border-white/5">
             <Link to="/v3/dashboard" className="flex items-center gap-3">
               <img 
-                src="/Luxury-listings-logo-CLR.png" 
+                src={darkMode ? "/Luxury-listings-logo-CLR-reverse.png" : "/Luxury-listings-logo-CLR.png"}
                 alt="Luxury Listings" 
                 className="h-8 w-auto"
               />
