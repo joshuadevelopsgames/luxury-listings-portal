@@ -787,10 +787,18 @@ export function AuthProvider({ children }) {
     setFadeOut(false);
   };
 
+  // Check if on login page for special loader colors
+  const isOnLoginPage = isLightThemedPage();
+
   return (
     <AuthContext.Provider value={value}>
       {showLoader && (
-        <Loader isDark={isDarkMode} fadeOut={fadeOut} onFadeComplete={handleFadeComplete} />
+        <Loader 
+          isDark={isDarkMode} 
+          fadeOut={fadeOut} 
+          onFadeComplete={handleFadeComplete}
+          useLoginColors={isOnLoginPage}
+        />
       )}
       {children}
     </AuthContext.Provider>

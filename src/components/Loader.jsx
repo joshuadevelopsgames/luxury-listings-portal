@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const Loader = ({ isDark = true, fadeOut = false, onFadeComplete }) => {
+const Loader = ({ isDark = true, fadeOut = false, onFadeComplete, useLoginColors = false }) => {
   const [opacity, setOpacity] = useState(1);
 
   useEffect(() => {
@@ -15,6 +15,15 @@ const Loader = ({ isDark = true, fadeOut = false, onFadeComplete }) => {
     }
   }, [fadeOut, onFadeComplete]);
 
+  // Login page colors: black (#1d1d1f) and blue (#0071e3)
+  const getSquareColor = (index) => {
+    if (useLoginColors) {
+      // Alternate between black and blue for login page
+      return index % 2 === 0 ? 'bg-[#1d1d1f]' : 'bg-[#0071e3]';
+    }
+    return isDark ? 'bg-white' : 'bg-[#1d1d1f]';
+  };
+
   return (
     <div 
       className={`w-full min-h-screen flex items-center justify-center fixed inset-0 z-50 transition-opacity duration-500 ${isDark ? 'bg-[#161617]' : 'bg-[#f5f5f7]'}`}
@@ -24,9 +33,7 @@ const Loader = ({ isDark = true, fadeOut = false, onFadeComplete }) => {
         {[...Array(7)].map((_, i) => (
           <div
             key={i}
-            className={`absolute top-0 left-0 w-3.5 h-3.5 animate-square ${
-              isDark ? 'bg-white' : 'bg-[#1d1d1f]'
-            }`}
+            className={`absolute top-0 left-0 w-3.5 h-3.5 animate-square ${getSquareColor(i)}`}
             style={{
               animationDelay: `${-1.4285714286 * i}s`
             }}
