@@ -752,6 +752,12 @@ export function AuthProvider({ children }) {
     refreshCurrentUser
   };
 
+  // Check if we're on a light-themed page (login pages are always light)
+  const isLightThemedPage = () => {
+    const lightPages = ['/login', '/client-login', '/client-password-reset', '/waiting-for-approval', '/client-waiting-for-approval'];
+    return lightPages.some(path => window.location.pathname.startsWith(path));
+  };
+
   // Check if it's after 5 PM Vancouver time for dark mode
   const isAfter5PMVancouver = () => {
     const vancouverTime = new Date().toLocaleString('en-US', { timeZone: 'America/Vancouver' });
@@ -761,7 +767,9 @@ export function AuthProvider({ children }) {
 
   const [showLoader, setShowLoader] = useState(loading);
   const [fadeOut, setFadeOut] = useState(false);
-  const isDarkMode = isAfter5PMVancouver();
+  
+  // Use light mode for login pages, otherwise use time-based dark mode
+  const isDarkMode = isLightThemedPage() ? false : isAfter5PMVancouver();
 
   // Handle fade transition when loading completes
   useEffect(() => {
