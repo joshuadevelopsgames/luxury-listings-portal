@@ -752,13 +752,39 @@ export function AuthProvider({ children }) {
     refreshCurrentUser
   };
 
+  // Check if it's after 5 PM Vancouver time for dark mode
+  const isAfter5PMVancouver = () => {
+    const vancouverTime = new Date().toLocaleString('en-US', { timeZone: 'America/Vancouver' });
+    const hour = new Date(vancouverTime).getHours();
+    return hour >= 17 || hour < 6;
+  };
+
+  const [showLoader, setShowLoader] = useState(loading);
+  const [fadeOut, setFadeOut] = useState(false);
+  const isDarkMode = isAfter5PMVancouver();
+
+  // Handle fade transition when loading completes
+  useEffect(() => {
+    if (!loading && showLoader) {
+      // Start fade out
+      setFadeOut(true);
+    } else if (loading) {
+      setShowLoader(true);
+      setFadeOut(false);
+    }
+  }, [loading, showLoader]);
+
+  const handleFadeComplete = () => {
+    setShowLoader(false);
+    setFadeOut(false);
+  };
+
   return (
     <AuthContext.Provider value={value}>
-      {loading ? (
-        <Loader isDark={true} />
-      ) : (
-        children
+      {showLoader && (
+        <Loader isDark={isDarkMode} fadeOut={fadeOut} onFadeComplete={handleFadeComplete} />
       )}
+      {children}
     </AuthContext.Provider>
   );
 }

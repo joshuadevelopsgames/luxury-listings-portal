@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Loader from '../components/Loader';
 
 // V3 Layout and Components (Apple-styled)
 import V3Layout from './components/Layout';
@@ -44,12 +43,7 @@ import './styles/globals.css';
  * (they'll inherit some Apple styling via CSS)
  */
 const V3App = () => {
-  const { currentUser, loading } = useAuth();
-
-  // Loading state
-  if (loading) {
-    return <Loader isDark={true} />;
-  }
+  const { currentUser } = useAuth();
 
   return (
     <Routes>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Loader from '../components/Loader';
 
 // Demo App Pages (Apple-like redesign)
 import DemoLogin from './pages/Login';
@@ -23,11 +22,7 @@ import './styles/globals.css';
  * Apple-like aesthetic inspired by 21st.dev
  */
 const DemoApp = () => {
-  const { currentUser, loading } = useAuth();
-
-  if (loading) {
-    return <Loader isDark={true} />;
-  }
+  const { currentUser } = useAuth();
 
   return (
     <Routes>

@@ -1,8 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-const Loader = ({ isDark = true }) => {
+const Loader = ({ isDark = true, fadeOut = false, onFadeComplete }) => {
+  const [opacity, setOpacity] = useState(1);
+
+  useEffect(() => {
+    if (fadeOut) {
+      // Start fade out
+      setOpacity(0);
+      // Call callback after transition completes
+      const timer = setTimeout(() => {
+        if (onFadeComplete) onFadeComplete();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [fadeOut, onFadeComplete]);
+
   return (
-    <div className={`w-full min-h-screen flex items-center justify-center transition-colors duration-300 ${isDark ? 'bg-[#161617]' : 'bg-[#f5f5f7]'}`}>
+    <div 
+      className={`w-full min-h-screen flex items-center justify-center fixed inset-0 z-50 transition-opacity duration-500 ${isDark ? 'bg-[#161617]' : 'bg-[#f5f5f7]'}`}
+      style={{ opacity }}
+    >
       <div className="relative w-12 h-12 rotate-45">
         {[...Array(7)].map((_, i) => (
           <div
