@@ -20,7 +20,6 @@ const AVAILABLE_PAGES = [
   { id: 'analytics', name: 'Analytics', icon: '📊', category: 'Analytics' },
   { id: 'it-support', name: 'IT Support', icon: '🛠️', category: 'Support' },
   { id: 'my-time-off', name: 'My Time Off', icon: '🏖️', category: 'HR' },
-  { id: 'user-management', name: 'User Management', icon: '👤', category: 'Admin' },
 ];
 
 const PermissionsManagement = () => {

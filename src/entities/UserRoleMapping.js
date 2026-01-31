@@ -10,12 +10,6 @@ export const USER_ROLE_MAPPING = {
   },
   
   // Regular users - restricted to their assigned role
-  'joshua@luxury-listings.com': {
-    role: 'content_director',
-    canSwitchProfiles: false,
-    allowedRoles: ['content_director']
-  },
-  
   'joshua.mitchell@luxuryrealestate.com': {
     role: 'content_director',
     canSwitchProfiles: false,

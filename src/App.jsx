@@ -20,7 +20,6 @@ import HRCalendar from './pages/HRCalendar';
 import TeamManagement from './pages/TeamManagement';
 import HRAnalytics from './pages/HRAnalytics';
 import CRMPage from './pages/CRMPage';
-import UserManagement from './pages/UserManagement';
 import Analytics from './pages/Analytics';
 import GoogleAnalyticsSetup from './components/GoogleAnalyticsSetup';
 import ContentCalendar from './pages/ContentCalendar';
@@ -153,7 +152,6 @@ function ClassicAppLayout() {
     'team': { name: 'Team Management', icon: Users, path: '/classic/team' },
     'analytics': { name: 'Analytics', icon: BarChart3, path: '/classic/analytics' },
     'it-support': { name: 'Support Tickets', icon: Wrench, path: '/classic/it-support' },
-    'user-management': { name: 'User Management', icon: Users, path: '/classic/user-management' },
   };
 
   const getNavigationItems = () => {
@@ -161,7 +159,6 @@ function ClassicAppLayout() {
       const adminPages = [
         allPages['dashboard'],
         allPages['it-support'],
-        allPages['user-management'],
         allPages['analytics'],
       ];
       return adminPages.map(page => ({
@@ -184,7 +181,6 @@ function ClassicAppLayout() {
         return [
           { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/classic/dashboard' },
           { id: 'it-support', name: 'Support Tickets', icon: Wrench, path: '/classic/it-support' },
-          { id: 'user-management', name: 'User Management', icon: Users, path: '/classic/user-management' },
           { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/classic/analytics' },
         ];
       case USER_ROLES.CONTENT_DIRECTOR:
@@ -289,7 +285,6 @@ function ClassicAppLayout() {
           <Route path="hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
           <Route path="team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
           <Route path="hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
-          <Route path="user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
           <Route path="analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
           <Route path="content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
@@ -331,7 +326,6 @@ function MainAppLayout() {
         <Route path="hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
         <Route path="team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
         <Route path="hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
-        <Route path="user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
         <Route path="analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
         <Route path="crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
         <Route path="content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />

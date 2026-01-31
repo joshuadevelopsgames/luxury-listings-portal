@@ -23,7 +23,6 @@ import HRAnalytics from '../pages/HRAnalytics';
 import TutorialsPage from '../pages/TutorialsPage';
 import ResourcesPage from '../pages/ResourcesPage';
 import CRMPage from '../pages/CRMPage';
-import UserManagement from '../pages/UserManagement';
 import ITSupportPage from '../pages/ITSupportPage';
 import PendingClients from '../pages/PendingClients';
 import MyTimeOff from '../pages/MyTimeOff';

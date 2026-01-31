@@ -172,7 +172,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
   const handleQuickAction = (actionText) => {
     switch (actionText) {
       case 'User Management':
-        navigate('/user-management');
+        navigate('/v3/permissions');
         break;
       case 'System Monitoring':
         navigate('/analytics');

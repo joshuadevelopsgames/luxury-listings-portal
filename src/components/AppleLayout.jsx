@@ -91,7 +91,6 @@ const AppleLayout = ({ children }) => {
     'team': { name: 'Team Management', icon: Users, path: '/team' },
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
     'analytics': { name: 'Analytics', icon: BarChart3, path: '/analytics' },
-    'user-management': { name: 'User Management', icon: Users, path: '/user-management' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
@@ -116,7 +115,7 @@ const AppleLayout = ({ children }) => {
         },
         {
           title: 'Admin',
-          items: ['user-management', 'it-support']
+          items: ['it-support']
         },
         {
           title: 'Resources',
@@ -135,7 +134,7 @@ const AppleLayout = ({ children }) => {
 
     // Role-based fallback
     const roleNavs = {
-      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'analytics', 'user-management', 'it-support'],
+      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'analytics', 'it-support'],
       [USER_ROLES.CONTENT_DIRECTOR]: ['dashboard', 'tasks', 'client-packages', 'content-calendar'],
       [USER_ROLES.SOCIAL_MEDIA_MANAGER]: ['dashboard', 'tasks', 'clients', 'content-calendar'],
       [USER_ROLES.HR_MANAGER]: ['dashboard', 'tasks', 'hr-calendar', 'team', 'hr-analytics'],

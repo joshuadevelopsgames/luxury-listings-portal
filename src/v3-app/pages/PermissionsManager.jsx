@@ -47,7 +47,6 @@ const ALL_PAGES = {
   'team': { name: 'Team Management', icon: Users, description: 'Team directory' },
   'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, description: 'HR metrics and reports' },
   'analytics': { name: 'Analytics', icon: BarChart3, description: 'Business analytics' },
-  'user-management': { name: 'User Management', icon: Users, description: 'User approvals (Admin)' },
   'it-support': { name: 'IT Support', icon: Wrench, description: 'Technical support' },
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },

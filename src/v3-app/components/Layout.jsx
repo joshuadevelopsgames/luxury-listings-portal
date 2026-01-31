@@ -161,7 +161,7 @@ const V3Layout = ({ children }) => {
 
     // Role-based fallback
     const roleNavs = {
-      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'analytics', 'user-management', 'it-support'],
+      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'analytics', 'it-support'],
       [USER_ROLES.CONTENT_DIRECTOR]: ['dashboard', 'tasks', 'client-packages', 'content-calendar'],
       [USER_ROLES.SOCIAL_MEDIA_MANAGER]: ['dashboard', 'tasks', 'clients', 'content-calendar'],
       [USER_ROLES.HR_MANAGER]: ['dashboard', 'tasks', 'hr-calendar', 'team', 'hr-analytics'],

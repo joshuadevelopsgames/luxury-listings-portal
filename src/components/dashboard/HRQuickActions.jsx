@@ -290,10 +290,10 @@ const HRQuickActions = () => {
             <Button 
               variant="outline" 
               className="flex flex-col items-center justify-center h-24 space-y-2"
-              onClick={() => navigate('/user-management')}
+              onClick={() => navigate('/v3/permissions')}
             >
               <UserPlus className="w-6 h-6 text-orange-600" />
-              <span className="text-sm font-medium">Add Employee</span>
+              <span className="text-sm font-medium">Manage Users</span>
             </Button>
           </div>
         </CardContent>
