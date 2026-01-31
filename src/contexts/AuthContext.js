@@ -474,6 +474,7 @@ export function AuthProvider({ children }) {
                   setUserData(mergedUser);
                   navigateBasedOnRole(roleToUse, mergedUser);
                 }
+                setLoading(false);
               } else {
                 console.log('🆕 New user - no approval found, setting to pending');
                 // New user - no approval yet, they need admin approval
@@ -546,6 +547,7 @@ export function AuthProvider({ children }) {
                 
                 console.log('🔄 Navigating pending user to approval page...');
                 navigateBasedOnRole('pending', newUser);
+                setLoading(false);
               }
             } catch (error) {
               console.error('❌ Error checking user approval status:', error);
@@ -558,6 +560,7 @@ export function AuthProvider({ children }) {
                 role: 'pending',
                 isApproved: false
               });
+              setLoading(false);
             }
           } else {
             console.log('❌ User signed out');
