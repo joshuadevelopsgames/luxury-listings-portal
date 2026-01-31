@@ -164,8 +164,13 @@ const TasksPage = () => {
     setSelectedTasks(filteredTasks.map(t => t.id));
   };
 
-  // Clear selection
+  // Clear selection (keeps bulk mode active)
   const clearSelection = () => {
+    setSelectedTasks([]);
+  };
+  
+  // Exit bulk mode completely
+  const exitBulkMode = () => {
     setSelectedTasks([]);
     setBulkActionMode(false);
   };
@@ -179,7 +184,7 @@ const TasksPage = () => {
         )
       );
       toast.success(`✓ Completed ${selectedTasks.length} tasks`);
-      clearSelection();
+      exitBulkMode();
     } catch (error) {
       console.error('Error bulk completing tasks:', error);
       toast.error('Failed to complete tasks');
@@ -195,7 +200,7 @@ const TasksPage = () => {
         selectedTasks.map(taskId => DailyTask.delete(taskId))
       );
       toast.success(`✓ Deleted ${selectedTasks.length} tasks`);
-      clearSelection();
+      exitBulkMode();
     } catch (error) {
       console.error('Error bulk deleting tasks:', error);
       toast.error('Failed to delete tasks');
@@ -1070,42 +1075,59 @@ const TasksPage = () => {
       </div>
 
       {/* Bulk Actions Toolbar */}
-      {bulkActionMode && selectedTasks.length > 0 && (
-        <div className="sticky top-0 z-30 bg-blue-600 text-white p-4 rounded-lg shadow-lg">
+      {bulkActionMode && (
+        <div className="sticky top-0 z-30 bg-blue-600 text-white p-4 rounded-lg shadow-lg dark:bg-blue-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <span className="font-semibold">{selectedTasks.length} task{selectedTasks.length !== 1 ? 's' : ''} selected</span>
+              <span className="font-semibold">
+                {selectedTasks.length > 0 
+                  ? `${selectedTasks.length} task${selectedTasks.length !== 1 ? 's' : ''} selected`
+                  : 'Select tasks or use Select All'
+                }
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={selectAllTasks}
-                className="text-white hover:bg-blue-700"
+                onClick={selectedTasks.length === filteredTasks.length ? clearSelection : selectAllTasks}
+                className="text-white hover:bg-blue-700 dark:hover:bg-blue-600 border border-white/30"
               >
-                Select All ({filteredTasks.length})
+                {selectedTasks.length === filteredTasks.length ? (
+                  <>
+                    <X className="w-4 h-4 mr-2" />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Select All ({filteredTasks.length})
+                  </>
+                )}
               </Button>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={bulkCompleteTasks}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={selectedTasks.length === 0}
+                className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 Complete
               </Button>
               <Button
                 onClick={bulkDeleteTasks}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={selectedTasks.length === 0}
+                className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete
               </Button>
               <Button
                 variant="ghost"
-                onClick={clearSelection}
-                className="text-white hover:bg-blue-700"
+                onClick={() => setBulkActionMode(false)}
+                className="text-white hover:bg-blue-700 dark:hover:bg-blue-600"
               >
                 <X className="w-4 h-4 mr-2" />
-                Clear
+                Cancel
               </Button>
             </div>
           </div>
