@@ -314,6 +314,11 @@ function ClassicAppLayout() {
 
 function MainAppLayout() {
   const { currentUser, loading } = useAuth();
+  const location = useLocation();
+
+  // #region agent log
+  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.jsx:MainAppLayout',message:'MainAppLayout render',data:{pathname:location.pathname,loading,hasUser:!!currentUser,branch:loading?'loading':!currentUser?'redirect_login':'outlet'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H3'})}).catch(()=>{});
+  // #endregion
 
   // Show loading state while Firebase is checking auth
   if (loading) {

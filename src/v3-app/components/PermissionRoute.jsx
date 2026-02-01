@@ -12,6 +12,12 @@ import NoPermission from './NoPermission';
  */
 const PermissionRoute = ({ pageId, pageName, children }) => {
   const { hasPermission, loading } = usePermissions();
+  const allowed = !loading && hasPermission(pageId);
+  const branch = loading ? 'loading' : !hasPermission(pageId) ? 'noperm' : 'children';
+
+  // #region agent log
+  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PermissionRoute.jsx',message:'PermissionRoute render',data:{pageId,loading,allowed,branch},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2,H5'})}).catch(()=>{});
+  // #endregion
 
   // Loading state - show squares loader
   if (loading) {
