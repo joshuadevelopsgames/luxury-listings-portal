@@ -1,10 +1,11 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { createBrowserRouter, RouterProvider, Routes, Route, Navigate, Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
 import { PermissionsProvider } from './contexts/PermissionsContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { setNavigate } from './utils/navigation';
 
 // V3 Layout and Components (Apple-styled) - Now the main design
 import V3Layout from './v3-app/components/Layout';
@@ -67,12 +68,33 @@ import { USER_ROLES } from './entities/UserRoles';
 import { firestoreService } from './services/firestoreService';
 
 // ============================================================================
+// ROOT LAYOUT - Injects NavigateSetter for client-side navigation utility
+// ============================================================================
+
+function NavigateSetter() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    setNavigate(navigate);
+  }, [navigate]);
+  return null;
+}
+
+function RootLayout() {
+  return (
+    <>
+      <NavigateSetter />
+      <Outlet />
+    </>
+  );
+}
+
+// ============================================================================
 // CLASSIC LAYOUT (Original v1 design - preserved at /classic/*)
 // ============================================================================
 
 function ClassicNavigation({ navigation }) {
   const location = useLocation();
-  
+
   return (
     <>
       {/* Desktop Navigation */}
@@ -95,7 +117,7 @@ function ClassicNavigation({ navigation }) {
           );
         })}
       </div>
-      
+
       {/* Mobile Navigation */}
       <div className="lg:hidden border-t border-gray-200 pt-2 pb-2">
         <div className="flex items-center space-x-2 overflow-x-auto">
@@ -240,9 +262,9 @@ function ClassicAppLayout() {
         <div className="w-full px-2 sm:px-4 lg:px-6">
           <div className="flex items-center justify-between h-16 max-w-7xl mx-auto gap-2">
             <div className="flex-shrink-0 flex items-center gap-2 min-w-0">
-              <img 
-                src="/Luxury-listings-logo-CLR.png" 
-                alt="Luxury Listings Logo" 
+              <img
+                src="/Luxury-listings-logo-CLR.png"
+                alt="Luxury Listings Logo"
                 className="h-7 w-7 object-contain flex-shrink-0"
               />
               <Link to="/classic/dashboard">
@@ -250,19 +272,19 @@ function ClassicAppLayout() {
               </Link>
               <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Classic</span>
             </div>
-            
+
             <ClassicNavigation navigation={navigation} />
-            
+
             <div className="flex items-center space-x-2 flex-shrink-0">
-              <Link 
-                to="/dashboard" 
+              <Link
+                to="/dashboard"
                 className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
               >
                 New Design →
               </Link>
               <NotificationsCenter />
               <RoleSwitcher />
-              
+
               <button
                 onClick={handleLogout}
                 className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
@@ -309,7 +331,7 @@ function ClassicAppLayout() {
 
 // ============================================================================
 // MAIN APP LAYOUT (V3 Apple Design - Now the primary experience)
-// V3Layout uses useOutlet() internally for proper React Router nested route rendering
+// Thin auth gate — V3Layout renders <Outlet /> internally
 // ============================================================================
 
 function MainAppLayout() {
@@ -332,15 +354,8 @@ function MainAppLayout() {
     return <Navigate to="/login" replace />;
   }
 
-  // Authenticated - show the app with V3 layout
-  // V3Layout uses useOutlet() internally to render the matched child route
-  return (
-    <PermissionsProvider>
-      <ViewAsProvider>
-        <V3Layout />
-      </ViewAsProvider>
-    </PermissionsProvider>
-  );
+  // Authenticated - V3Layout renders <Outlet /> for child routes
+  return <V3Layout />;
 }
 
 // ============================================================================
@@ -349,28 +364,18 @@ function MainAppLayout() {
 
 function LoginWithDevRedirect() {
   const { currentUser, loading } = useAuth();
-  
+
   // Show login immediately while auth is loading
   if (loading) {
     return <V3Login />;
   }
-  
+
   // If user is already logged in, redirect to dashboard
   if (currentUser) {
     return <Navigate to="/dashboard" replace />;
   }
-  
-  return <V3Login />;
-}
 
-function RootRedirect() {
-  const { currentUser, loading } = useAuth();
-  
-  if (!loading && currentUser) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  return <Navigate to="/login" replace />;
+  return <V3Login />;
 }
 
 // Redirect component for /v3/* backwards compatibility
@@ -382,126 +387,95 @@ function V3Redirect() {
 }
 
 // ============================================================================
-// MAIN APP
+// ROUTER CONFIGURATION (React Router v7 data router)
+// ============================================================================
+
+const router = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
+      // Public routes
+      { path: '/login', element: <LoginWithDevRedirect /> },
+      { path: '/client-login', element: <ClientLogin /> },
+      { path: '/client-password-reset', element: <ClientPasswordReset /> },
+      { path: '/client-waiting-for-approval', element: <ClientWaitingForApproval /> },
+      { path: '/waiting-for-approval', element: <WaitingForApproval /> },
+      { path: '/__/auth/action', element: <FirebaseAuthHandler /> },
+
+      // Public Instagram Report View
+      { path: '/report/:publicLinkId', element: <PublicInstagramReportPage /> },
+
+      // Demo Instagram Report (for previewing the layout)
+      { path: '/report-demo', element: <DemoInstagramReportPage /> },
+
+      // Classic Layout (Original v1 design - preserved at /classic/*)
+      { path: '/classic/*', element: <ClassicAppLayout /> },
+
+      // Demo App (v2)
+      { path: '/v2/*', element: <DemoApp /> },
+
+      // Backwards compatibility: redirect /v3/* to /*
+      { path: '/v3/*', element: <V3Redirect /> },
+
+      // Main app routes (V3 design at root level)
+      {
+        path: '/',
+        element: <MainAppLayout />,
+        children: [
+          // Index renders dashboard directly so first load is never blank
+          { index: true, element: <V3Dashboard /> },
+
+          // Dashboard - always accessible
+          { path: 'dashboard', element: <V3Dashboard /> },
+
+          // Permission-protected pages
+          { path: 'tasks', element: <PermissionRoute pageId="tasks" pageName="Tasks"><TasksPage /></PermissionRoute> },
+          { path: 'clients', element: <PermissionRoute pageId="clients" pageName="Clients"><ClientsPage /></PermissionRoute> },
+          { path: 'client-packages', element: <PermissionRoute pageId="client-packages" pageName="Client Packages"><ClientPackages /></PermissionRoute> },
+          { path: 'pending-clients', element: <PermissionRoute pageId="pending-clients" pageName="Pending Clients"><PendingClients /></PermissionRoute> },
+          { path: 'content-calendar', element: <PermissionRoute pageId="content-calendar" pageName="Content Calendar"><ContentCalendar /></PermissionRoute> },
+          { path: 'crm', element: <PermissionRoute pageId="crm" pageName="CRM"><CRMPage /></PermissionRoute> },
+          { path: 'team', element: <PermissionRoute pageId="team" pageName="Team Management"><TeamManagement /></PermissionRoute> },
+          { path: 'hr-calendar', element: <PermissionRoute pageId="hr-calendar" pageName="HR Calendar"><HRCalendar /></PermissionRoute> },
+          { path: 'hr-analytics', element: <PermissionRoute pageId="hr-analytics" pageName="HR Analytics"><HRAnalytics /></PermissionRoute> },
+          { path: 'it-support', element: <PermissionRoute pageId="it-support" pageName="IT Support"><ITSupportPage /></PermissionRoute> },
+          { path: 'tutorials', element: <PermissionRoute pageId="tutorials" pageName="Tutorials"><TutorialsPage /></PermissionRoute> },
+          { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
+
+          // Profile pages - always accessible
+          { path: 'my-time-off', element: <MyTimeOff /> },
+          { path: 'self-service', element: <EmployeeSelfService /> },
+          { path: 'onboarding', element: <OnboardingPage /> },
+          { path: 'content-manager-message', element: <ContentManagerMessage /> },
+
+          // System admin only
+          { path: 'permissions', element: <PermissionsManager /> },
+          { path: 'instagram-reports', element: <InstagramReportsPage /> },
+
+          // Meta callback
+          { path: 'meta-callback', element: <MetaCallback /> },
+
+          // Catch all unmatched routes - redirect to dashboard
+          { path: '*', element: <Navigate to="/dashboard" replace /> },
+        ],
+      },
+    ],
+  },
+]);
+
+// ============================================================================
+// MAIN APP - All providers outside the router
 // ============================================================================
 
 function App() {
   return (
     <PendingUsersProvider>
       <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<LoginWithDevRedirect />} />
-            <Route path="/client-login" element={<ClientLogin />} />
-            <Route path="/client-password-reset" element={<ClientPasswordReset />} />
-            <Route path="/client-waiting-for-approval" element={<ClientWaitingForApproval />} />
-            <Route path="/waiting-for-approval" element={<WaitingForApproval />} />
-            <Route path="/__/auth/action" element={<FirebaseAuthHandler />} />
-            
-            {/* Public Instagram Report View */}
-            <Route path="/report/:publicLinkId" element={<PublicInstagramReportPage />} />
-            
-            {/* Demo Instagram Report (for previewing the layout) */}
-            <Route path="/report-demo" element={<DemoInstagramReportPage />} />
-            
-            {/* Classic Layout (Original v1 design - preserved at /classic/*) */}
-            <Route path="/classic/*" element={<ClassicAppLayout />} />
-            
-            {/* Demo App (v2) */}
-            <Route path="/v2/*" element={<DemoApp />} />
-            
-            {/* Backwards compatibility: redirect /v3/* to /* */}
-            <Route path="/v3/*" element={<V3Redirect />} />
-            
-            {/* Main app routes (V3 design at root level) - using explicit path layout route */}
-            <Route path="/" element={<MainAppLayout />}>
-              {/* Index renders dashboard directly so first load is never blank (no Navigate flash) */}
-              <Route index element={<V3Dashboard />} />
-              
-              {/* Dashboard - always accessible */}
-              <Route path="dashboard" element={<V3Dashboard />} />
-              
-              {/* Permission-protected pages - using RELATIVE paths */}
-              <Route path="tasks" element={
-                <PermissionRoute pageId="tasks" pageName="Tasks">
-                  <TasksPage />
-                </PermissionRoute>
-              } />
-              <Route path="clients" element={
-                <PermissionRoute pageId="clients" pageName="Clients">
-                  <ClientsPage />
-                </PermissionRoute>
-              } />
-              <Route path="client-packages" element={
-                <PermissionRoute pageId="client-packages" pageName="Client Packages">
-                  <ClientPackages />
-                </PermissionRoute>
-              } />
-              <Route path="pending-clients" element={
-                <PermissionRoute pageId="pending-clients" pageName="Pending Clients">
-                  <PendingClients />
-                </PermissionRoute>
-              } />
-              <Route path="content-calendar" element={
-                <PermissionRoute pageId="content-calendar" pageName="Content Calendar">
-                  <ContentCalendar />
-                </PermissionRoute>
-              } />
-              <Route path="crm" element={
-                <PermissionRoute pageId="crm" pageName="CRM">
-                  <CRMPage />
-                </PermissionRoute>
-              } />
-              <Route path="team" element={
-                <PermissionRoute pageId="team" pageName="Team Management">
-                  <TeamManagement />
-                </PermissionRoute>
-              } />
-              <Route path="hr-calendar" element={
-                <PermissionRoute pageId="hr-calendar" pageName="HR Calendar">
-                  <HRCalendar />
-                </PermissionRoute>
-              } />
-              <Route path="hr-analytics" element={
-                <PermissionRoute pageId="hr-analytics" pageName="HR Analytics">
-                  <HRAnalytics />
-                </PermissionRoute>
-              } />
-              <Route path="it-support" element={
-                <PermissionRoute pageId="it-support" pageName="IT Support">
-                  <ITSupportPage />
-                </PermissionRoute>
-              } />
-              <Route path="tutorials" element={
-                <PermissionRoute pageId="tutorials" pageName="Tutorials">
-                  <TutorialsPage />
-                </PermissionRoute>
-              } />
-              <Route path="resources" element={
-                <PermissionRoute pageId="resources" pageName="Resources">
-                  <ResourcesPage />
-                </PermissionRoute>
-              } />
-              
-              {/* Profile pages - always accessible */}
-              <Route path="my-time-off" element={<MyTimeOff />} />
-              <Route path="self-service" element={<EmployeeSelfService />} />
-              <Route path="onboarding" element={<OnboardingPage />} />
-              <Route path="content-manager-message" element={<ContentManagerMessage />} />
-              
-              {/* System admin only */}
-              <Route path="permissions" element={<PermissionsManager />} />
-              <Route path="instagram-reports" element={<InstagramReportsPage />} />
-              
-              {/* Meta callback */}
-              <Route path="meta-callback" element={<MetaCallback />} />
-              
-              {/* Catch all unmatched routes - redirect to dashboard */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Route>
-          </Routes>
-        </Router>
+        <PermissionsProvider>
+          <ViewAsProvider>
+            <RouterProvider router={router} />
+          </ViewAsProvider>
+        </PermissionsProvider>
       </AuthProvider>
     </PendingUsersProvider>
   );

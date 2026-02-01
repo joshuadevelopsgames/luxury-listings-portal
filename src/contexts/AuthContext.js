@@ -10,6 +10,7 @@ import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserR
 import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAULT_ROLE } from '../entities/UserRoleMapping';
 import { firestoreService } from '../services/firestoreService';
 import Loader from '../components/Loader';
+import { appNavigate } from '../utils/navigation';
 
 // Import the pending users context
 import { usePendingUsers } from './PendingUsersContext';
@@ -83,15 +84,15 @@ const navigateBasedOnRole = (role, userData) => {
 
   if (role === 'pending' && currentPath !== '/waiting-for-approval') {
     console.log('🔄 Navigating pending user to approval page...');
-    window.location.href = '/waiting-for-approval';
+    appNavigate('/waiting-for-approval', { replace: true });
   } else if (role && role !== 'pending') {
     // Check if user needs onboarding
     if (!userData?.onboardingCompleted && currentPath !== '/onboarding') {
       console.log('🎓 New user detected - navigating to onboarding...');
-      window.location.href = '/onboarding';
+      appNavigate('/onboarding', { replace: true });
     } else if (currentPath === '/login' || currentPath === '/') {
       console.log('🔄 Navigating approved user to dashboard...');
-      window.location.href = '/dashboard';
+      appNavigate('/dashboard', { replace: true });
     }
   }
 };
@@ -303,9 +304,7 @@ export function AuthProvider({ children }) {
         // Navigate to dashboard if on login page
         const currentPath = window.location.pathname;
         if (currentPath === '/login' || currentPath === '/') {
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 100);
+          appNavigate('/dashboard', { replace: true });
         }
       } catch (error) {
         console.error('❌ Error in dev mode auto-login:', error);

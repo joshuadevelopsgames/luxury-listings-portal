@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate, useOutlet } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
@@ -46,7 +46,6 @@ const V3Layout = () => {
   const { permissions: userPermissions, isSystemAdmin } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
-  const outlet = useOutlet();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
@@ -460,9 +459,9 @@ const V3Layout = () => {
         {/* Page Content */}
         <main className="p-4 lg:p-8">
           <div className="max-w-[1600px] mx-auto">
-            {/* Apple-style content wrapper - keyed by pathname to force remount on navigation */}
-            <div className="v3-content-wrapper" key={location.pathname}>
-              {outlet}
+            {/* Apple-style content wrapper */}
+            <div className="v3-content-wrapper">
+              <Outlet />
             </div>
           </div>
         </main>
