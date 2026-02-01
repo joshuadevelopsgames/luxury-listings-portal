@@ -17,7 +17,7 @@ const V3Login = () => {
       setError('');
       setLoading(true);
       await signInWithGoogle();
-      navigate('/v3/dashboard');
+      navigate('/dashboard');
     } catch (error) {
       setError('Unable to sign in. Please try again.');
     } finally {

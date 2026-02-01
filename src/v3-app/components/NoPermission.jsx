@@ -31,7 +31,7 @@ const NoPermission = ({ pageName = 'this page' }) => {
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            to="/v3/dashboard"
+            to="/dashboard"
             className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all w-full sm:w-auto"
           >
             <Home className="w-4 h-4" />

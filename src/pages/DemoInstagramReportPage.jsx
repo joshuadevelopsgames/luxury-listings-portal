@@ -146,7 +146,7 @@ const DemoInstagramReportPage = () => {
               </div>
             </div>
             <a
-              href="/v3/instagram-reports"
+              href="/instagram-reports"
               className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
             >
               Back to Reports <ExternalLink className="w-3 h-3" />

@@ -87,12 +87,12 @@ const navigateBasedOnRole = (role, userData) => {
     window.location.href = '/waiting-for-approval';
   } else if (role && role !== 'pending') {
     // Check if user needs onboarding
-    if (!userData?.onboardingCompleted && currentPath !== '/v3/onboarding') {
+    if (!userData?.onboardingCompleted && currentPath !== '/onboarding') {
       console.log('🎓 New user detected - navigating to onboarding...');
-      window.location.href = '/v3/onboarding';
-    } else if (!currentPath.startsWith('/v3/') && currentPath !== '/v3/onboarding') {
-      console.log('🔄 Navigating approved user to V3 dashboard...');
-      window.location.href = '/v3/dashboard';
+      window.location.href = '/onboarding';
+    } else if (currentPath === '/login' || currentPath === '/') {
+      console.log('🔄 Navigating approved user to dashboard...');
+      window.location.href = '/dashboard';
     }
   }
 };

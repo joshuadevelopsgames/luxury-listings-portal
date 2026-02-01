@@ -2,10 +2,19 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
+import { ViewAsProvider } from './contexts/ViewAsContext';
+import { PermissionsProvider } from './contexts/PermissionsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Layouts
-import AppleLayout from './components/AppleLayout';
+// V3 Layout and Components (Apple-styled) - Now the main design
+import V3Layout from './v3-app/components/Layout';
+import V3Login from './v3-app/components/Login';
+import V3Dashboard from './v3-app/components/Dashboard';
+import PermissionRoute from './v3-app/components/PermissionRoute';
+import PermissionsManager from './v3-app/pages/PermissionsManager';
+
+// Import V3 styles
+import './v3-app/styles/globals.css';
 
 // Pages
 import Login from './pages/Login';
@@ -42,7 +51,6 @@ import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
 
 // Demo Apps
 import DemoApp from './demo-app/App';
-import V3App from './v3-app/App';
 
 // UI Components
 import ChatWidget from './components/ui/chat-widget';
@@ -300,39 +308,107 @@ function ClassicAppLayout() {
 }
 
 // ============================================================================
-// NEW APPLE LAYOUT (Main site with Apple design)
+// MAIN APP LAYOUT (V3 Apple Design - Now the primary experience)
 // ============================================================================
 
 function MainAppLayout() {
+  const { currentUser } = useAuth();
+
+  // Not authenticated - redirect to login
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Authenticated - show the app with V3 layout
   return (
-    <AppleLayout>
-      <Routes>
-        <Route path="onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-        <Route path="test-onboarding" element={<ProtectedRoute><OnboardingTestPage /></ProtectedRoute>} />
-        <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="tutorials" element={<ProtectedRoute><TutorialsPage /></ProtectedRoute>} />
-        <Route path="content-manager-message" element={<ProtectedRoute><ContentManagerMessage /></ProtectedRoute>} />
-        <Route path="tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
-        <Route path="resources" element={<ProtectedRoute><ResourcesPage /></ProtectedRoute>} />
-        <Route path="clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
-        <Route path="programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
-        <Route path="client-packages" element={<ProtectedRoute><ClientPackages /></ProtectedRoute>} />
-        <Route path="pending-clients" element={<ProtectedRoute><PendingClients /></ProtectedRoute>} />
-        <Route path="hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
-        <Route path="team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
-        <Route path="hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
-        <Route path="instagram-reports" element={<ProtectedRoute><InstagramReportsPage /></ProtectedRoute>} />
-        <Route path="crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
-        <Route path="content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
-        <Route path="my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
-        <Route path="self-service" element={<ProtectedRoute><EmployeeSelfService /></ProtectedRoute>} />
-        <Route path="it-support" element={<ProtectedRoute><ITSupportPage /></ProtectedRoute>} />
-        <Route path="client-portal" element={<ClientPortal />} />
-        <Route path="meta-callback" element={<MetaCallback />} />
-        <Route path="demo" element={<ProtectedRoute><DemoPage /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
-      </Routes>
-    </AppleLayout>
+    <PermissionsProvider>
+      <ViewAsProvider>
+        <V3Layout>
+          <Routes>
+            {/* Dashboard - always accessible */}
+            <Route path="dashboard" element={<V3Dashboard />} />
+            
+            {/* Permission-protected pages */}
+            <Route path="tasks" element={
+              <PermissionRoute pageId="tasks" pageName="Tasks">
+                <TasksPage />
+              </PermissionRoute>
+            } />
+            <Route path="clients" element={
+              <PermissionRoute pageId="clients" pageName="Clients">
+                <ClientsPage />
+              </PermissionRoute>
+            } />
+            <Route path="client-packages" element={
+              <PermissionRoute pageId="client-packages" pageName="Client Packages">
+                <ClientPackages />
+              </PermissionRoute>
+            } />
+            <Route path="pending-clients" element={
+              <PermissionRoute pageId="pending-clients" pageName="Pending Clients">
+                <PendingClients />
+              </PermissionRoute>
+            } />
+            <Route path="content-calendar" element={
+              <PermissionRoute pageId="content-calendar" pageName="Content Calendar">
+                <ContentCalendar />
+              </PermissionRoute>
+            } />
+            <Route path="crm" element={
+              <PermissionRoute pageId="crm" pageName="CRM">
+                <CRMPage />
+              </PermissionRoute>
+            } />
+            <Route path="team" element={
+              <PermissionRoute pageId="team" pageName="Team Management">
+                <TeamManagement />
+              </PermissionRoute>
+            } />
+            <Route path="hr-calendar" element={
+              <PermissionRoute pageId="hr-calendar" pageName="HR Calendar">
+                <HRCalendar />
+              </PermissionRoute>
+            } />
+            <Route path="hr-analytics" element={
+              <PermissionRoute pageId="hr-analytics" pageName="HR Analytics">
+                <HRAnalytics />
+              </PermissionRoute>
+            } />
+            <Route path="it-support" element={
+              <PermissionRoute pageId="it-support" pageName="IT Support">
+                <ITSupportPage />
+              </PermissionRoute>
+            } />
+            <Route path="tutorials" element={
+              <PermissionRoute pageId="tutorials" pageName="Tutorials">
+                <TutorialsPage />
+              </PermissionRoute>
+            } />
+            <Route path="resources" element={
+              <PermissionRoute pageId="resources" pageName="Resources">
+                <ResourcesPage />
+              </PermissionRoute>
+            } />
+            
+            {/* Profile pages - always accessible */}
+            <Route path="my-time-off" element={<MyTimeOff />} />
+            <Route path="self-service" element={<EmployeeSelfService />} />
+            <Route path="onboarding" element={<OnboardingPage />} />
+            <Route path="content-manager-message" element={<ContentManagerMessage />} />
+            
+            {/* System admin only */}
+            <Route path="permissions" element={<PermissionsManager />} />
+            <Route path="instagram-reports" element={<InstagramReportsPage />} />
+            
+            {/* Meta callback */}
+            <Route path="meta-callback" element={<MetaCallback />} />
+            
+            {/* Catch all - redirect to dashboard */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </V3Layout>
+      </ViewAsProvider>
+    </PermissionsProvider>
   );
 }
 
@@ -340,49 +416,38 @@ function MainAppLayout() {
 // HELPERS
 // ============================================================================
 
-function isDevMode() {
-  const isVercelPreview = 
-    process.env.VERCEL_ENV === 'preview' ||
-    process.env.VERCEL === '1' ||
-    (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app'));
-  
-  return (
-    process.env.NODE_ENV === 'development' || 
-    isVercelPreview ||
-    process.env.REACT_APP_DEV_AUTO_LOGIN === 'true'
-  );
-}
-
 function LoginWithDevRedirect() {
   const { currentUser, loading } = useAuth();
   
   // Show login immediately while auth is loading
   if (loading) {
-    return <Login />;
+    return <V3Login />;
   }
   
-  if (isDevMode() && currentUser) {
-    console.log('🔧 DEV MODE: User logged in, redirecting to V3 dashboard');
-    return <Navigate to="/v3/dashboard" replace />;
-  }
-  
-  // If user is already logged in (non-dev), redirect to V3 dashboard
+  // If user is already logged in, redirect to dashboard
   if (currentUser) {
-    return <Navigate to="/v3/dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
-  return <Login />;
+  return <V3Login />;
 }
 
 function RootRedirect() {
   const { currentUser, loading } = useAuth();
   
   if (!loading && currentUser) {
-    console.log('🔄 Root redirect - user logged in, going to V3 dashboard');
-    return <Navigate to="/v3/dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <Navigate to="/login" replace />;
+}
+
+// Redirect component for /v3/* backwards compatibility
+function V3Redirect() {
+  const location = useLocation();
+  // Remove /v3 prefix and redirect to the same path at root
+  const newPath = location.pathname.replace(/^\/v3/, '') || '/dashboard';
+  return <Navigate to={newPath} replace />;
 }
 
 // ============================================================================
@@ -409,22 +474,20 @@ function App() {
             {/* Demo Instagram Report (for previewing the layout) */}
             <Route path="/report-demo" element={<DemoInstagramReportPage />} />
             
-            {/* Classic Layout (Original v1 design - fully preserved) */}
+            {/* Classic Layout (Original v1 design - preserved at /classic/*) */}
             <Route path="/classic/*" element={<ClassicAppLayout />} />
             
-            {/* Demo Apps */}
+            {/* Demo App (v2) */}
             <Route path="/v2/*" element={<DemoApp />} />
-            <Route path="/v3/*" element={<V3App />} />
             
-            {/* Redirect old routes to V3 */}
-            <Route path="/dashboard" element={<Navigate to="/v3/dashboard" replace />} />
-            <Route path="/onboarding" element={<Navigate to="/v3/onboarding" replace />} />
+            {/* Backwards compatibility: redirect /v3/* to /* */}
+            <Route path="/v3/*" element={<V3Redirect />} />
             
             {/* Main App root */}
             <Route path="/" element={<RootRedirect />} />
             
-            {/* Fallback to V3 for any other routes */}
-            <Route path="/*" element={<Navigate to="/v3/dashboard" replace />} />
+            {/* Main app routes (V3 design at root level) */}
+            <Route path="/*" element={<MainAppLayout />} />
           </Routes>
         </Router>
       </AuthProvider>

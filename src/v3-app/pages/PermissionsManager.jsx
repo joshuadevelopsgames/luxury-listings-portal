@@ -274,7 +274,7 @@ const PermissionsManager = () => {
       displayName: user.displayName || user.email,
       avatar: user.avatar || user.photoURL
     });
-    navigate('/v3/dashboard');
+    navigate('/dashboard');
     toast.success(`Now viewing as ${user.displayName || user.email}`);
   };
 

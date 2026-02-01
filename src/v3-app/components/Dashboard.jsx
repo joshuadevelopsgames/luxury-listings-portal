@@ -207,10 +207,10 @@ const V3Dashboard = () => {
   };
 
   const quickActions = [
-    { title: 'Create Post', icon: Plus, color: 'from-[#0071e3] to-[#5856d6]', path: '/v3/content-calendar' },
-    { title: 'Schedule Content', icon: Calendar, color: 'from-[#ff9500] to-[#ff3b30]', path: '/v3/content-calendar' },
-    { title: 'Instagram Reports', icon: Instagram, color: 'from-[#34c759] to-[#30d158]', path: '/v3/instagram-reports' },
-    { title: 'Client Packages', icon: Users, color: 'from-[#5856d6] to-[#af52de]', path: '/v3/client-packages' },
+    { title: 'Create Post', icon: Plus, color: 'from-[#0071e3] to-[#5856d6]', path: '/content-calendar' },
+    { title: 'Schedule Content', icon: Calendar, color: 'from-[#ff9500] to-[#ff3b30]', path: '/content-calendar' },
+    { title: 'Instagram Reports', icon: Instagram, color: 'from-[#34c759] to-[#30d158]', path: '/instagram-reports' },
+    { title: 'Client Packages', icon: Users, color: 'from-[#5856d6] to-[#af52de]', path: '/client-packages' },
   ];
 
   if (loading) {
@@ -240,14 +240,14 @@ const V3Dashboard = () => {
         </div>
         <div className="flex items-center gap-3">
           <Link 
-            to="/v3/tasks"
+            to="/tasks"
             className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
           >
             <CheckCircle2 className="w-4 h-4" />
             {tasks.filter(t => t.status !== 'completed').length} Tasks
           </Link>
           <Link 
-            to="/v3/content-calendar"
+            to="/content-calendar"
             className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -288,7 +288,7 @@ const V3Dashboard = () => {
                 {todaysTasks.length > 0 ? `${todaysTasks.length} tasks due today` : 'No tasks due today'}
               </p>
             </div>
-            <Link to="/v3/tasks" className="text-[13px] text-[#0071e3] font-medium hover:underline flex items-center gap-1">
+            <Link to="/tasks" className="text-[13px] text-[#0071e3] font-medium hover:underline flex items-center gap-1">
               View all tasks <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -313,7 +313,7 @@ const V3Dashboard = () => {
                         {task.due_time && ` • ${task.due_time}`}
                       </p>
                     </div>
-                    <Link to="/v3/tasks" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <Link to="/tasks" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                       <Play className="w-4 h-4 text-[#0071e3]" />
                     </Link>
                   </div>
@@ -329,7 +329,7 @@ const V3Dashboard = () => {
           </div>
           <div className="p-4 border-t border-black/5 dark:border-white/5">
             <Link 
-              to="/v3/tasks"
+              to="/tasks"
               className="w-full h-10 rounded-xl border-2 border-dashed border-black/10 dark:border-white/10 text-[13px] font-medium text-[#86868b] hover:border-[#0071e3] hover:text-[#0071e3] transition-colors flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
@@ -345,7 +345,7 @@ const V3Dashboard = () => {
               <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Client Status</h2>
               <p className="text-[13px] text-[#86868b]">Package utilization</p>
             </div>
-            <Link to="/v3/clients" className="text-[13px] text-[#0071e3] font-medium hover:underline">
+            <Link to="/clients" className="text-[13px] text-[#0071e3] font-medium hover:underline">
               View all
             </Link>
           </div>
@@ -424,7 +424,7 @@ const V3Dashboard = () => {
             <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Quick Links</h2>
           </div>
           <div className="divide-y divide-black/5 dark:divide-white/5">
-            <Link to="/v3/clients" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+            <Link to="/clients" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div className="w-8 h-8 rounded-lg bg-[#0071e3]/10 flex items-center justify-center shrink-0">
                 <Users className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
               </div>
@@ -433,7 +433,7 @@ const V3Dashboard = () => {
                 <p className="text-[12px] text-[#86868b]">{clients.length} total clients</p>
               </div>
             </Link>
-            <Link to="/v3/tasks" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+            <Link to="/tasks" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div className="w-8 h-8 rounded-lg bg-[#ff9500]/10 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-4 h-4 text-[#ff9500]" strokeWidth={1.5} />
               </div>
@@ -442,7 +442,7 @@ const V3Dashboard = () => {
                 <p className="text-[12px] text-[#86868b]">{tasks.filter(t => t.status !== 'completed').length} pending tasks</p>
               </div>
             </Link>
-            <Link to="/v3/team" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+            <Link to="/team" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center shrink-0">
                 <Users className="w-4 h-4 text-[#34c759]" strokeWidth={1.5} />
               </div>
@@ -451,7 +451,7 @@ const V3Dashboard = () => {
                 <p className="text-[12px] text-[#86868b]">View team members</p>
               </div>
             </Link>
-            <Link to="/v3/resources" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+            <Link to="/resources" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div className="w-8 h-8 rounded-lg bg-[#5856d6]/10 flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4 text-[#5856d6]" strokeWidth={1.5} />
               </div>
@@ -488,7 +488,7 @@ const V3Dashboard = () => {
             </div>
           </div>
           <Link 
-            to="/v3/clients" 
+            to="/clients" 
             className="mt-6 w-full h-10 rounded-xl bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center gap-2 text-[13px] font-medium"
           >
             View Clients

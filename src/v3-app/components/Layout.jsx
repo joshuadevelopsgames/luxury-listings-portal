@@ -119,21 +119,21 @@ const V3Layout = ({ children }) => {
 
   // All available pages with their icons
   const allPages = {
-    'dashboard': { name: 'Dashboard', icon: Home, path: '/v3/dashboard' },
-    'tasks': { name: 'Tasks', icon: CheckSquare, path: '/v3/tasks' },
-    'clients': { name: 'Clients', icon: User, path: '/v3/clients' },
-    'client-packages': { name: 'Client Packages', icon: Briefcase, path: '/v3/client-packages' },
-    'pending-clients': { name: 'Pending Clients', icon: Clock, path: '/v3/pending-clients' },
-    'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/v3/content-calendar' },
-    'crm': { name: 'CRM', icon: Target, path: '/v3/crm' },
-    'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/v3/hr-calendar' },
-    'team': { name: 'Team Management', icon: Users, path: '/v3/team' },
-    'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/v3/hr-analytics' },
-    'permissions': { name: 'Users & Permissions', icon: Settings, path: '/v3/permissions' },
-    'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/v3/instagram-reports' },
-    'it-support': { name: 'IT Support', icon: Wrench, path: '/v3/it-support' },
-    'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/v3/tutorials' },
-    'resources': { name: 'Resources', icon: FileText, path: '/v3/resources' },
+    'dashboard': { name: 'Dashboard', icon: Home, path: '/dashboard' },
+    'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
+    'clients': { name: 'Clients', icon: User, path: '/clients' },
+    'client-packages': { name: 'Client Packages', icon: Briefcase, path: '/client-packages' },
+    'pending-clients': { name: 'Pending Clients', icon: Clock, path: '/pending-clients' },
+    'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
+    'crm': { name: 'CRM', icon: Target, path: '/crm' },
+    'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
+    'team': { name: 'Team Management', icon: Users, path: '/team' },
+    'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
+    'permissions': { name: 'Users & Permissions', icon: Settings, path: '/permissions' },
+    'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/instagram-reports' },
+    'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
+    'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
+    'resources': { name: 'Resources', icon: FileText, path: '/resources' },
   };
 
   // Navigation sections based on role/permissions
@@ -199,7 +199,7 @@ const V3Layout = ({ children }) => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/v3/login');
+    navigate('/login');
   };
 
   const isActive = (path) => location.pathname === path;
@@ -230,7 +230,7 @@ const V3Layout = ({ children }) => {
         <div className="h-full bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-r border-gray-200 dark:border-white/5 flex flex-col">
           {/* Logo */}
           <div className="h-[72px] px-4 flex items-center justify-between border-b border-black/5 dark:border-white/5">
-            <Link to="/v3/dashboard" className="flex items-center gap-3 min-w-0">
+            <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
                 <img 
                   src="/Luxury-listings-logo-CLR.png"
@@ -430,15 +430,15 @@ const V3Layout = ({ children }) => {
                         <p className="text-[12px] text-[#86868b] truncate">{currentUser?.email}</p>
                       </div>
                       <div className="py-1">
-                        <Link to="/v3/self-service" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
+                        <Link to="/self-service" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
                           <UserCircle className="w-4 h-4" strokeWidth={1.5} />
                           My Profile
                         </Link>
-                        <Link to="/v3/my-time-off" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
+                        <Link to="/my-time-off" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
                           <Clock className="w-4 h-4" strokeWidth={1.5} />
                           My Time Off
                         </Link>
-                        <Link to="/v3/resources" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
+                        <Link to="/resources" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
                           <FileText className="w-4 h-4" strokeWidth={1.5} />
                           Resources
                         </Link>
