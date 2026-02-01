@@ -46,9 +46,6 @@ const V3Layout = () => {
   const { permissions: userPermissions, isSystemAdmin } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
-  // Force re-render counter - incremented on every sidebar navigation click
-  // to guarantee Outlet re-renders even if React Router optimizes it away
-  const [navKey, setNavKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
@@ -207,14 +204,11 @@ const V3Layout = () => {
 
   const isActive = (path) => location.pathname === path || (path === '/dashboard' && location.pathname === '/');
 
-  // Programmatic navigation handler - ensures page always updates
+  // Navigation handler
   const handleNavigation = useCallback((path) => {
     setSidebarOpen(false);
-    if (location.pathname !== path) {
-      setNavKey(k => k + 1);
-      navigate(path);
-    }
-  }, [location.pathname, navigate]);
+    navigate(path);
+  }, [navigate]);
 
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
@@ -473,7 +467,7 @@ const V3Layout = () => {
           <div className="max-w-[1600px] mx-auto">
             {/* Apple-style content wrapper */}
             <div className="v3-content-wrapper">
-              <Outlet key={`${location.pathname}-${navKey}`} />
+              <Outlet />
             </div>
           </div>
         </main>

@@ -9,7 +9,7 @@ import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
 import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAULT_ROLE } from '../entities/UserRoleMapping';
 import { firestoreService } from '../services/firestoreService';
-import Loader from '../components/Loader';
+// Loader moved to App.jsx - no longer rendered in AuthContext
 import { appNavigate } from '../utils/navigation';
 
 // Import the pending users context
@@ -724,54 +724,8 @@ export function AuthProvider({ children }) {
     refreshCurrentUser
   };
 
-  // Check if we're on a light-themed page (login pages are always light)
-  const isLightThemedPage = () => {
-    const lightPages = ['/login', '/client-login', '/client-password-reset', '/waiting-for-approval', '/client-waiting-for-approval'];
-    return lightPages.some(path => window.location.pathname.startsWith(path));
-  };
-
-  // Check if it's after 5 PM Vancouver time for dark mode
-  const isAfter5PMVancouver = () => {
-    const vancouverTime = new Date().toLocaleString('en-US', { timeZone: 'America/Vancouver' });
-    const hour = new Date(vancouverTime).getHours();
-    return hour >= 17 || hour < 6;
-  };
-
-  const [showLoader, setShowLoader] = useState(loading);
-  const [fadeOut, setFadeOut] = useState(false);
-  
-  // Use light mode for login pages, otherwise use time-based dark mode
-  const isDarkMode = isLightThemedPage() ? false : isAfter5PMVancouver();
-
-  // Handle fade transition when loading completes
-  useEffect(() => {
-    if (!loading && showLoader) {
-      // Start fade out
-      setFadeOut(true);
-    } else if (loading) {
-      setShowLoader(true);
-      setFadeOut(false);
-    }
-  }, [loading, showLoader]);
-
-  const handleFadeComplete = () => {
-    setShowLoader(false);
-    setFadeOut(false);
-  };
-
-  // Check if on login page for special loader colors
-  const isOnLoginPage = isLightThemedPage();
-
   return (
     <AuthContext.Provider value={value}>
-      {showLoader && (
-        <Loader 
-          isDark={isDarkMode} 
-          fadeOut={fadeOut} 
-          onFadeComplete={handleFadeComplete}
-          useLoginColors={isOnLoginPage}
-        />
-      )}
       {children}
     </AuthContext.Provider>
   );
