@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ViewAsProvider } from '../contexts/ViewAsContext';
 import { PermissionsProvider } from '../contexts/PermissionsContext';
@@ -39,15 +39,10 @@ import './styles/globals.css';
  * Uses Outlet for proper React Router v7 nested route rendering
  */
 const ProtectedLayoutWrapper = () => {
-  // #region agent log
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.jsx:ProtectedLayoutWrapper',message:'ProtectedLayoutWrapper rendering',data:{hasOutlet:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
   return (
     <PermissionsProvider>
       <ViewAsProvider>
-        <V3Layout>
-          <Outlet />
-        </V3Layout>
+        <V3Layout />
       </ViewAsProvider>
     </PermissionsProvider>
   );
@@ -58,9 +53,6 @@ const ProtectedLayoutWrapper = () => {
  */
 const RequireAuth = ({ children }) => {
   const { currentUser } = useAuth();
-  // #region agent log
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.jsx:RequireAuth',message:'RequireAuth check',data:{hasUser:!!currentUser,userEmail:currentUser?.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
-  // #endregion
   
   if (!currentUser) {
     return <Navigate to="login" replace />;

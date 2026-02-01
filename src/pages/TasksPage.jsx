@@ -110,9 +110,6 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 
 const TasksPage = () => {
   console.log('🚀 TasksPage component initializing...'); // Debug log
-  // #region agent log
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'TasksPage.jsx:TasksPage',message:'TasksPage component rendering',data:{componentName:'TasksPage'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
   const { currentUser, hasPermission } = useAuth();
   
   // Check permissions

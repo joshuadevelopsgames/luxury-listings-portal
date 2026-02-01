@@ -38,9 +38,6 @@ import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWit
  * - Overview stats
  */
 const V3Dashboard = () => {
-  // #region agent log
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:V3Dashboard',message:'Dashboard component rendering',data:{componentName:'V3Dashboard'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
   const { currentUser, currentRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState([]);
