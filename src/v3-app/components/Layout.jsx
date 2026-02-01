@@ -205,7 +205,7 @@ const V3Layout = ({ children }) => {
     navigate('/login');
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || (path === '/dashboard' && location.pathname === '/');
 
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>

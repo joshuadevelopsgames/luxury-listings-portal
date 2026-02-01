@@ -423,8 +423,8 @@ function App() {
             
             {/* Main app routes (V3 design at root level) - using explicit path layout route */}
             <Route path="/" element={<MainAppLayout />}>
-              {/* Index redirects to dashboard */}
-              <Route index element={<Navigate to="dashboard" replace />} />
+              {/* Index renders dashboard directly so first load is never blank (no Navigate flash) */}
+              <Route index element={<V3Dashboard />} />
               
               {/* Dashboard - always accessible */}
               <Route path="dashboard" element={<V3Dashboard />} />
