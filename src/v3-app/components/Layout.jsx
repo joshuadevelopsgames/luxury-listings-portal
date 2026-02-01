@@ -46,9 +46,6 @@ const V3Layout = ({ children }) => {
   const { permissions: userPermissions, isSystemAdmin } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
-  // #region agent log
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Layout.jsx:V3Layout',message:'V3Layout render',data:{pathname:location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H3'})}).catch(()=>{});
-  // #endregion
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   

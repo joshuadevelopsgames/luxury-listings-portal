@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { firestoreService } from '../../services/firestoreService';
 import { 
@@ -38,10 +38,6 @@ import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWit
  * - Overview stats
  */
 const V3Dashboard = () => {
-  const location = useLocation();
-  // #region agent log
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:V3Dashboard',message:'V3Dashboard render',data:{pathname:location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
   const { currentUser, currentRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState([]);

@@ -72,16 +72,6 @@ let _redirectSkipLogged = false;
 const navigateBasedOnRole = (role, userData) => {
   const currentPath = window.location.pathname;
   const shouldRedirect = currentPath === '/login' || currentPath === '/waiting-for-approval' || currentPath === '/';
-  // #region agent log
-  var _doRedirect = false;
-  if (role === 'pending' && currentPath !== '/waiting-for-approval') _doRedirect = true;
-  else if (role && role !== 'pending') {
-    if (!userData?.onboardingCompleted && currentPath !== '/onboarding') _doRedirect = true;
-    else if (currentPath === '/login' || currentPath === '/') _doRedirect = true;
-  }
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.js:navigateBasedOnRole',message:'navigateBasedOnRole',data:{currentPath,shouldRedirect,doRedirect:shouldRedirect&&_doRedirect},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
-  // #endregion
-
   if (!shouldRedirect) {
     if (!_redirectSkipLogged) {
       _redirectSkipLogged = true;
