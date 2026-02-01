@@ -70,7 +70,10 @@ const getDepartmentForRole = (role) => {
 
 // Only log redirect skip once per session to avoid console spam
 let _redirectSkipLogged = false;
+// Flag to prevent redirects during logout - set by logout(), cleared after signOut completes
+let _loggingOut = false;
 const navigateBasedOnRole = (role, userData) => {
+  if (_loggingOut) return; // Don't redirect during logout
   const currentPath = window.location.pathname;
   const shouldRedirect = currentPath === '/login' || currentPath === '/waiting-for-approval' || currentPath === '/';
   if (!shouldRedirect) {
@@ -137,12 +140,13 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(!storedAuth); // If we have stored auth, don't show loading
   const [isInitialized, setIsInitialized] = useState(!!storedAuth);
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
-  
+
   // Get pending users functions
   const { addPendingUser } = usePendingUsers();
-  
+
   // Track if auth listener is already set up to prevent duplicates
   const [authListenerSetup, setAuthListenerSetup] = useState(false);
+
 
   function signInWithGoogle() {
     if (GOOGLE_AUTH_DISABLED) {
@@ -154,18 +158,22 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    // Set flag FIRST to prevent navigateBasedOnRole from redirecting during sign-out
+    _loggingOut = true;
     // Clear localStorage on logout
     saveAuthToStorage(null);
     setCurrentUser(null);
     setUserData(null);
     setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
-    
+
     if (GOOGLE_AUTH_DISABLED) {
-      // Bypass logout for development
       console.log('Logout bypassed - Google authentication is disabled');
+      _loggingOut = false;
       return Promise.resolve();
     }
-    return signOut(auth);
+    return signOut(auth).finally(() => {
+      _loggingOut = false;
+    });
   }
 
   async function switchRole(newRole) {
