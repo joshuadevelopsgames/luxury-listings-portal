@@ -57,28 +57,21 @@ const V3Login = () => {
               <h1 className="text-xl font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
                 Luxury Listings
               </h1>
-              <p className="text-[13px] text-[#86868b]">Professional Portal v3</p>
+              <p className="text-[13px] text-[#86868b]">Team Portal</p>
             </div>
           </div>
 
           {/* Hero Content */}
           <div className="max-w-lg">
             <h2 className="text-[56px] font-semibold text-[#1d1d1f] dark:text-white leading-[1.05] tracking-[-0.03em] mb-6">
-              Everything you need,{' '}
+              Elevate your{' '}
               <span className="bg-gradient-to-r from-[#0071e3] to-[#5856d6] bg-clip-text text-transparent">
-                beautifully redesigned.
+                luxury real estate marketing.
               </span>
             </h2>
-            <p className="text-[19px] text-[#86868b] leading-relaxed font-normal mb-8">
-              All the powerful features you rely on, now with a refined Apple-inspired interface that's a joy to use.
+            <p className="text-[19px] text-[#86868b] leading-relaxed font-normal">
+              Manage clients, schedule content, track analytics, and grow your brand — all in one powerful platform.
             </p>
-            
-            {/* Version comparison */}
-            <div className="flex items-center gap-4 text-[13px]">
-              <span className="px-3 py-1.5 rounded-full bg-[#0071e3] text-white font-medium">v3 Full Features</span>
-              <a href="/v2/login" className="text-[#86868b] hover:text-[#0071e3] transition-colors">v2 Demo →</a>
-              <a href="/login" className="text-[#86868b] hover:text-[#0071e3] transition-colors">Classic →</a>
-            </div>
           </div>
 
           {/* Features Grid */}
@@ -112,7 +105,7 @@ const V3Login = () => {
                 <h1 className="text-xl font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
                   Luxury Listings
                 </h1>
-                <p className="text-[13px] text-[#86868b]">Professional Portal v3</p>
+                <p className="text-[13px] text-[#86868b]">Team Portal</p>
               </div>
             </div>
 
@@ -176,15 +169,6 @@ const V3Login = () => {
               </div>
             </div>
 
-            {/* Version Links */}
-            <div className="mt-10 flex items-center justify-center gap-6 text-[13px]">
-              <a href="/login" className="text-[#86868b] hover:text-[#0071e3] transition-colors">
-                ← Classic version
-              </a>
-              <a href="/v2/login" className="text-[#86868b] hover:text-[#0071e3] transition-colors">
-                v2 Demo →
-              </a>
-            </div>
           </div>
         </div>
       </div>
