@@ -416,88 +416,88 @@ function App() {
             {/* Backwards compatibility: redirect /v3/* to /* */}
             <Route path="/v3/*" element={<V3Redirect />} />
             
-            {/* Main App root */}
-            <Route path="/" element={<RootRedirect />} />
-            
-            {/* Main app routes (V3 design at root level) - using layout route pattern */}
-            <Route element={<MainAppLayout />}>
-              {/* Dashboard - always accessible */}
-              <Route path="/dashboard" element={<V3Dashboard />} />
+            {/* Main app routes (V3 design at root level) - using explicit path layout route */}
+            <Route path="/" element={<MainAppLayout />}>
+              {/* Index redirects to dashboard */}
+              <Route index element={<Navigate to="dashboard" replace />} />
               
-              {/* Permission-protected pages */}
-              <Route path="/tasks" element={
+              {/* Dashboard - always accessible */}
+              <Route path="dashboard" element={<V3Dashboard />} />
+              
+              {/* Permission-protected pages - using RELATIVE paths */}
+              <Route path="tasks" element={
                 <PermissionRoute pageId="tasks" pageName="Tasks">
                   <TasksPage />
                 </PermissionRoute>
               } />
-              <Route path="/clients" element={
+              <Route path="clients" element={
                 <PermissionRoute pageId="clients" pageName="Clients">
                   <ClientsPage />
                 </PermissionRoute>
               } />
-              <Route path="/client-packages" element={
+              <Route path="client-packages" element={
                 <PermissionRoute pageId="client-packages" pageName="Client Packages">
                   <ClientPackages />
                 </PermissionRoute>
               } />
-              <Route path="/pending-clients" element={
+              <Route path="pending-clients" element={
                 <PermissionRoute pageId="pending-clients" pageName="Pending Clients">
                   <PendingClients />
                 </PermissionRoute>
               } />
-              <Route path="/content-calendar" element={
+              <Route path="content-calendar" element={
                 <PermissionRoute pageId="content-calendar" pageName="Content Calendar">
                   <ContentCalendar />
                 </PermissionRoute>
               } />
-              <Route path="/crm" element={
+              <Route path="crm" element={
                 <PermissionRoute pageId="crm" pageName="CRM">
                   <CRMPage />
                 </PermissionRoute>
               } />
-              <Route path="/team" element={
+              <Route path="team" element={
                 <PermissionRoute pageId="team" pageName="Team Management">
                   <TeamManagement />
                 </PermissionRoute>
               } />
-              <Route path="/hr-calendar" element={
+              <Route path="hr-calendar" element={
                 <PermissionRoute pageId="hr-calendar" pageName="HR Calendar">
                   <HRCalendar />
                 </PermissionRoute>
               } />
-              <Route path="/hr-analytics" element={
+              <Route path="hr-analytics" element={
                 <PermissionRoute pageId="hr-analytics" pageName="HR Analytics">
                   <HRAnalytics />
                 </PermissionRoute>
               } />
-              <Route path="/it-support" element={
+              <Route path="it-support" element={
                 <PermissionRoute pageId="it-support" pageName="IT Support">
                   <ITSupportPage />
                 </PermissionRoute>
               } />
-              <Route path="/tutorials" element={
+              <Route path="tutorials" element={
                 <PermissionRoute pageId="tutorials" pageName="Tutorials">
                   <TutorialsPage />
                 </PermissionRoute>
               } />
-              <Route path="/resources" element={
+              <Route path="resources" element={
                 <PermissionRoute pageId="resources" pageName="Resources">
                   <ResourcesPage />
                 </PermissionRoute>
               } />
               
               {/* Profile pages - always accessible */}
-              <Route path="/my-time-off" element={<MyTimeOff />} />
-              <Route path="/self-service" element={<EmployeeSelfService />} />
-              <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route path="/content-manager-message" element={<ContentManagerMessage />} />
+              <Route path="my-time-off" element={<MyTimeOff />} />
+              <Route path="self-service" element={<EmployeeSelfService />} />
+              <Route path="onboarding" element={<OnboardingPage />} />
+              <Route path="content-manager-message" element={<ContentManagerMessage />} />
               
               {/* System admin only */}
-              <Route path="/permissions" element={<PermissionsManager />} />
-              <Route path="/instagram-reports" element={<InstagramReportsPage />} />
+              <Route path="permissions" element={<PermissionsManager />} />
+              <Route path="instagram-reports" element={<InstagramReportsPage />} />
               
               {/* Meta callback */}
-              <Route path="/meta-callback" element={<MetaCallback />} />
+              <Route path="meta-callback" element={<MetaCallback />} />
               
               {/* Catch all unmatched routes - redirect to dashboard */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
