@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
@@ -46,6 +46,9 @@ const V3Layout = () => {
   const { permissions: userPermissions, isSystemAdmin } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
+  // Force re-render counter - incremented on every sidebar navigation click
+  // to guarantee Outlet re-renders even if React Router optimizes it away
+  const [navKey, setNavKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
@@ -204,6 +207,15 @@ const V3Layout = () => {
 
   const isActive = (path) => location.pathname === path || (path === '/dashboard' && location.pathname === '/');
 
+  // Programmatic navigation handler - ensures page always updates
+  const handleNavigation = useCallback((path) => {
+    setSidebarOpen(false);
+    if (location.pathname !== path) {
+      setNavKey(k => k + 1);
+      navigate(path);
+    }
+  }, [location.pathname, navigate]);
+
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
       {/* Background */}
@@ -271,16 +283,16 @@ const V3Layout = () => {
                     const page = allPages[pageId];
                     const Icon = page.icon;
                     const active = isActive(page.path);
-                    
+
                     return (
-                      <Link
+                      <button
                         key={pageId}
-                        to={page.path}
+                        type="button"
                         title={sidebarCollapsed ? page.name : undefined}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={() => handleNavigation(page.path)}
                         className={`
-                          flex items-center gap-3 px-3 py-2 rounded-lg
-                          transition-all duration-200 ease-out
+                          w-full flex items-center gap-3 px-3 py-2 rounded-lg
+                          transition-all duration-200 ease-out text-left
                           ${active
                             ? 'bg-[#0071e3] text-white shadow-sm shadow-[#0071e3]/30'
                             : 'text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-black/5 dark:hover:bg-white/5'
@@ -291,7 +303,7 @@ const V3Layout = () => {
                         {!sidebarCollapsed && (
                           <span className="text-[13px] font-medium truncate">{page.name}</span>
                         )}
-                      </Link>
+                      </button>
                     );
                   })}
                 </div>
@@ -430,18 +442,18 @@ const V3Layout = () => {
                         <p className="text-[12px] text-[#86868b] truncate">{currentUser?.email}</p>
                       </div>
                       <div className="py-1">
-                        <Link to="/self-service" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation('/self-service'); }}>
                           <UserCircle className="w-4 h-4" strokeWidth={1.5} />
                           My Profile
-                        </Link>
-                        <Link to="/my-time-off" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
+                        </button>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation('/my-time-off'); }}>
                           <Clock className="w-4 h-4" strokeWidth={1.5} />
                           My Time Off
-                        </Link>
-                        <Link to="/resources" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
+                        </button>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation('/resources'); }}>
                           <FileText className="w-4 h-4" strokeWidth={1.5} />
                           Resources
-                        </Link>
+                        </button>
                       </div>
                       <div className="py-1 border-t border-black/5 dark:border-white/5">
                         <Link to="/classic/dashboard" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
@@ -461,7 +473,7 @@ const V3Layout = () => {
           <div className="max-w-[1600px] mx-auto">
             {/* Apple-style content wrapper */}
             <div className="v3-content-wrapper">
-              <Outlet />
+              <Outlet key={`${location.pathname}-${navKey}`} />
             </div>
           </div>
         </main>

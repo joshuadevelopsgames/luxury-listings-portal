@@ -18,7 +18,6 @@ import PermissionsManager from './v3-app/pages/PermissionsManager';
 import './v3-app/styles/globals.css';
 
 // Pages
-import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import TutorialsPage from './pages/TutorialsPage';
 import TasksPage from './pages/TasksPage';
@@ -39,8 +38,6 @@ import MyTimeOff from './pages/MyTimeOff';
 import EmployeeSelfService from './pages/EmployeeSelfService';
 import ITSupportPage from './pages/ITSupportPage';
 import OnboardingPage from './pages/OnboardingPage';
-import OnboardingTestPage from './pages/OnboardingTestPage';
-import ClientPortal from './pages/ClientPortal';
 import ClientLogin from './pages/ClientLogin';
 import ClientWaitingForApproval from './pages/ClientWaitingForApproval';
 import ClientPasswordReset from './pages/ClientPasswordReset';
@@ -49,9 +46,6 @@ import PendingClients from './pages/PendingClients';
 import DemoPage from './demo/DemoPage';
 import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
 import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
-
-// Demo Apps
-import DemoApp from './demo-app/App';
 
 // UI Components
 import ChatWidget from './components/ui/chat-widget';
@@ -410,9 +404,6 @@ const router = createBrowserRouter([
 
       // Classic Layout (Original v1 design - preserved at /classic/*)
       { path: '/classic/*', element: <ClassicAppLayout /> },
-
-      // Demo App (v2)
-      { path: '/v2/*', element: <DemoApp /> },
 
       // Backwards compatibility: redirect /v3/* to /*
       { path: '/v3/*', element: <V3Redirect /> },
