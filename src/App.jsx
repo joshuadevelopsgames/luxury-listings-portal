@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
@@ -309,16 +309,11 @@ function ClassicAppLayout() {
 
 // ============================================================================
 // MAIN APP LAYOUT (V3 Apple Design - Now the primary experience)
-// Uses Outlet for proper React Router nested route rendering
+// V3Layout uses useOutlet() internally for proper React Router nested route rendering
 // ============================================================================
 
 function MainAppLayout() {
   const { currentUser, loading } = useAuth();
-  const location = useLocation();
-
-  // #region agent log
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.jsx:MainAppLayout',message:'MainAppLayout render',data:{pathname:location.pathname,loading,hasUser:!!currentUser},timestamp:Date.now(),sessionId:'debug-v2',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
 
   // Show loading state while Firebase is checking auth
   if (loading) {
@@ -338,14 +333,11 @@ function MainAppLayout() {
   }
 
   // Authenticated - show the app with V3 layout
-  // Outlet renders the matched child route. key forces remount when pathname changes
-  // so the correct route element is always rendered (workaround for RR outlet not updating).
+  // V3Layout uses useOutlet() internally to render the matched child route
   return (
     <PermissionsProvider>
       <ViewAsProvider>
-        <V3Layout>
-          <Outlet key={location.pathname} />
-        </V3Layout>
+        <V3Layout />
       </ViewAsProvider>
     </PermissionsProvider>
   );

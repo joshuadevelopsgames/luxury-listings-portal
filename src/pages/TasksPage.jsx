@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useLocation } from 'react-router-dom';
+
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical } from 'lucide-react';
@@ -110,10 +110,6 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 };
 
 const TasksPage = () => {
-  const location = useLocation();
-  // #region agent log
-  fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'TasksPage.jsx',message:'TasksPage MOUNTED/RENDERED',data:{pathname:location.pathname},timestamp:Date.now(),sessionId:'debug-v2',hypothesisId:'H-TASKS'})}).catch(()=>{});
-  // #endregion
   const { currentUser, hasPermission } = useAuth();
   
   // Check permissions

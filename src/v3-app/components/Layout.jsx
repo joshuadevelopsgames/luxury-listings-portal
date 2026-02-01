@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useOutlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
@@ -40,12 +40,13 @@ import {
  * V3 Layout - Apple Design System with Real Firestore Data
  * Full sidebar navigation with permission-based pages
  */
-const V3Layout = ({ children }) => {
+const V3Layout = () => {
   const { currentUser, currentRole, logout } = useAuth();
   const { viewingAsUser, isViewingAs, stopViewingAs } = useViewAs();
   const { permissions: userPermissions, isSystemAdmin } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
+  const outlet = useOutlet();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
@@ -277,12 +278,7 @@ const V3Layout = ({ children }) => {
                         key={pageId}
                         to={page.path}
                         title={sidebarCollapsed ? page.name : undefined}
-                        onClick={() => {
-                          // #region agent log
-                          fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Layout.jsx:Link',message:'Sidebar link clicked',data:{targetPath:page.path,currentPath:location.pathname},timestamp:Date.now(),sessionId:'debug-v2',hypothesisId:'H-CLICK'})}).catch(()=>{});
-                          // #endregion
-                          setSidebarOpen(false);
-                        }}
+                        onClick={() => setSidebarOpen(false)}
                         className={`
                           flex items-center gap-3 px-3 py-2 rounded-lg
                           transition-all duration-200 ease-out
@@ -464,9 +460,9 @@ const V3Layout = ({ children }) => {
         {/* Page Content */}
         <main className="p-4 lg:p-8">
           <div className="max-w-[1600px] mx-auto">
-            {/* Apple-style content wrapper */}
-            <div className="v3-content-wrapper">
-              {children}
+            {/* Apple-style content wrapper - keyed by pathname to force remount on navigation */}
+            <div className="v3-content-wrapper" key={location.pathname}>
+              {outlet}
             </div>
           </div>
         </main>
