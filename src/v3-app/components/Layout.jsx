@@ -307,13 +307,6 @@ const V3Layout = () => {
 
           {/* Bottom Section */}
           <div className="px-3 py-4 border-t border-black/5 dark:border-white/5">
-            <Link
-              to="/classic/dashboard"
-              onClick={() => setSidebarOpen(false)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-200 mb-2"
-            >
-              {!sidebarCollapsed && <span className="text-[13px] font-medium">Switch to Classic</span>}
-            </Link>
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-all duration-200"
@@ -448,11 +441,6 @@ const V3Layout = () => {
                           <FileText className="w-4 h-4" strokeWidth={1.5} />
                           Resources
                         </button>
-                      </div>
-                      <div className="py-1 border-t border-black/5 dark:border-white/5">
-                        <Link to="/classic/dashboard" className="flex items-center gap-3 px-4 py-2 text-[13px] text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setProfileMenuOpen(false)}>
-                          Switch to Classic View
-                        </Link>
                       </div>
                     </div>
                   </>

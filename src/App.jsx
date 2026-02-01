@@ -1,70 +1,51 @@
 import React, { useEffect } from 'react';
-import { createBrowserRouter, RouterProvider, Routes, Route, Navigate, Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
 import { PermissionsProvider } from './contexts/PermissionsContext';
-import ProtectedRoute from './components/ProtectedRoute';
 import { setNavigate } from './utils/navigation';
 
-// V3 Layout and Components (Apple-styled) - Now the main design
+// V3 Components (Apple-styled design)
 import V3Layout from './v3-app/components/Layout';
 import V3Login from './v3-app/components/Login';
 import V3Dashboard from './v3-app/components/Dashboard';
 import PermissionRoute from './v3-app/components/PermissionRoute';
 import PermissionsManager from './v3-app/pages/PermissionsManager';
 
-// Import V3 styles
+// V3 Styles
 import './v3-app/styles/globals.css';
 
-// Pages
-import Dashboard from './pages/Dashboard';
-import TutorialsPage from './pages/TutorialsPage';
+// Pages (wrapped in V3 layout)
 import TasksPage from './pages/TasksPage';
-import AppSetupPage from './pages/AppSetupPage';
-import ResourcesPage from './pages/ResourcesPage';
-import ClientPackages from './pages/ClientPackages';
 import ClientsPage from './pages/ClientsPage';
-import HRCalendar from './pages/HRCalendar';
-import TeamManagement from './pages/TeamManagement';
-import HRAnalytics from './pages/HRAnalytics';
-import CRMPage from './pages/CRMPage';
+import ClientPackages from './pages/ClientPackages';
+import PendingClients from './pages/PendingClients';
 import ContentCalendar from './pages/ContentCalendar';
-import InstagramReportsPage from './pages/InstagramReportsPage';
-import ContentManagerMessage from './pages/ContentManagerMessage';
-import MetaCallback from './pages/MetaCallback';
-import WaitingForApproval from './pages/WaitingForApproval';
+import CRMPage from './pages/CRMPage';
+import TeamManagement from './pages/TeamManagement';
+import HRCalendar from './pages/HRCalendar';
+import HRAnalytics from './pages/HRAnalytics';
+import ITSupportPage from './pages/ITSupportPage';
+import TutorialsPage from './pages/TutorialsPage';
+import ResourcesPage from './pages/ResourcesPage';
 import MyTimeOff from './pages/MyTimeOff';
 import EmployeeSelfService from './pages/EmployeeSelfService';
-import ITSupportPage from './pages/ITSupportPage';
 import OnboardingPage from './pages/OnboardingPage';
+import ContentManagerMessage from './pages/ContentManagerMessage';
+import InstagramReportsPage from './pages/InstagramReportsPage';
+import MetaCallback from './pages/MetaCallback';
+import WaitingForApproval from './pages/WaitingForApproval';
 import ClientLogin from './pages/ClientLogin';
 import ClientWaitingForApproval from './pages/ClientWaitingForApproval';
 import ClientPasswordReset from './pages/ClientPasswordReset';
 import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
-import PendingClients from './pages/PendingClients';
-import DemoPage from './demo/DemoPage';
 import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
 import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
 
-// UI Components
-import ChatWidget from './components/ui/chat-widget';
-import MigrationBanner from './components/MigrationBanner';
-import NotificationsCenter from './components/NotificationsCenter';
-import RoleSwitcher from './components/ui/role-switcher';
-
-// Icons
-import { BookOpen, Home, User, CheckSquare, Settings, FileText, LogOut, Calendar, Users, BarChart3, Target, TrendingUp, MessageSquare, UserCircle, Wrench, Clock, Shield } from 'lucide-react';
-
-// Auth & Services
-import { useAuth } from './contexts/AuthContext';
-import { USER_ROLES } from './entities/UserRoles';
-import { firestoreService } from './services/firestoreService';
-
 // ============================================================================
-// ROOT LAYOUT - Injects NavigateSetter for client-side navigation utility
+// NAVIGATION HELPER - Sets up programmatic navigation
 // ============================================================================
-
 function NavigateSetter() {
   const navigate = useNavigate();
   useEffect(() => {
@@ -73,6 +54,9 @@ function NavigateSetter() {
   return null;
 }
 
+// ============================================================================
+// ROOT LAYOUT - Wraps all routes, sets up navigation
+// ============================================================================
 function RootLayout() {
   return (
     <>
@@ -83,288 +67,18 @@ function RootLayout() {
 }
 
 // ============================================================================
-// CLASSIC LAYOUT (Original v1 design - preserved at /classic/*)
+// LOGIN PAGE - Shows login, redirects if already authenticated
 // ============================================================================
-
-function ClassicNavigation({ navigation }) {
-  const location = useLocation();
-
-  return (
-    <>
-      {/* Desktop Navigation */}
-      <div className="hidden lg:flex items-center space-x-2 mx-4">
-        {navigation.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.id}
-              to={item.path}
-              className={`px-2 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                location.pathname === item.path
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Icon className="w-4 h-4 inline mr-1" />
-              {item.name}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Mobile Navigation */}
-      <div className="lg:hidden border-t border-gray-200 pt-2 pb-2">
-        <div className="flex items-center space-x-2 overflow-x-auto">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.id}
-                to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
-                  location.pathname === item.path
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="w-4 h-4 inline mr-2" />
-                {item.name}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function ClassicAppLayout() {
-  const { currentUser, currentRole, logout } = useAuth();
-  const [userPermissions, setUserPermissions] = React.useState([]);
-  const [loadingPermissions, setLoadingPermissions] = React.useState(true);
-
-  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com';
-
-  // Load permissions once (no real-time listener for performance)
-  React.useEffect(() => {
-    if (!currentUser?.email) return;
-
-    const loadPermissions = async () => {
-      try {
-        setLoadingPermissions(true);
-        const permissions = await firestoreService.getUserPagePermissions(currentUser.email);
-        setUserPermissions(permissions || []);
-      } catch (error) {
-        console.error('Error loading permissions:', error);
-        setUserPermissions([]);
-      } finally {
-        setLoadingPermissions(false);
-      }
-    };
-
-    loadPermissions();
-  }, [currentUser?.email]);
-
-  const allPages = {
-    'dashboard': { name: 'Dashboard', icon: Home, path: '/classic/dashboard', default: true },
-    'tasks': { name: 'Tasks', icon: CheckSquare, path: '/classic/tasks', default: true },
-    'clients': { name: 'Clients', icon: User, path: '/classic/clients' },
-    'client-packages': { name: 'Client Packages', icon: User, path: '/classic/client-packages' },
-    'content-calendar': { name: 'Calendars', icon: Calendar, path: '/classic/content-calendar' },
-    'crm': { name: 'CRM', icon: User, path: '/classic/crm' },
-    'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/classic/hr-calendar' },
-    'team': { name: 'Team Management', icon: Users, path: '/classic/team' },
-    'it-support': { name: 'Support Tickets', icon: Wrench, path: '/classic/it-support' },
-  };
-
-  const getNavigationItems = () => {
-    if (isSystemAdmin) {
-      const adminPages = [
-        allPages['dashboard'],
-        allPages['it-support'],
-      ];
-      return adminPages.map(page => ({
-        id: Object.keys(allPages).find(key => allPages[key] === page),
-        ...page
-      }));
-    }
-
-    if (!loadingPermissions && userPermissions.length > 0) {
-      return userPermissions
-        .filter(pageId => allPages[pageId])
-        .map(pageId => ({
-          id: pageId,
-          ...allPages[pageId]
-        }));
-    }
-
-    switch (currentRole) {
-      case USER_ROLES.ADMIN:
-        return [
-          { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/classic/dashboard' },
-          { id: 'it-support', name: 'Support Tickets', icon: Wrench, path: '/classic/it-support' },
-        ];
-      case USER_ROLES.CONTENT_DIRECTOR:
-        return [
-          { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/classic/dashboard' },
-          { id: 'client-packages', name: 'Client Packages', icon: User, path: '/classic/client-packages' },
-          { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/classic/content-calendar' },
-          { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/classic/tasks' },
-        ];
-      case USER_ROLES.SOCIAL_MEDIA_MANAGER:
-        return [
-          { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/classic/dashboard' },
-          { id: 'clients', name: 'Clients', icon: User, path: '/classic/clients' },
-          { id: 'content-calendar', name: 'Calendars', icon: Calendar, path: '/classic/content-calendar' },
-          { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/classic/tasks' },
-        ];
-      case USER_ROLES.HR_MANAGER:
-        return [
-          { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/classic/dashboard' },
-          { id: 'hr-calendar', name: 'HR Calendar', icon: Calendar, path: '/classic/hr-calendar' },
-          { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/classic/tasks' },
-          { id: 'team', name: 'Team Management', icon: Users, path: '/classic/team' },
-        ];
-      case USER_ROLES.SALES_MANAGER:
-        return [
-          { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/classic/dashboard' },
-          { id: 'crm', name: 'CRM', icon: User, path: '/classic/crm' },
-          { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/classic/tasks' },
-        ];
-      default:
-        return [
-          { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/classic/dashboard' },
-          { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/classic/tasks' },
-        ];
-    }
-  };
-
-  const navigation = getNavigationItems();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
-      {/* Navigation Header */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="w-full px-2 sm:px-4 lg:px-6">
-          <div className="flex items-center justify-between h-16 max-w-7xl mx-auto gap-2">
-            <div className="flex-shrink-0 flex items-center gap-2 min-w-0">
-              <img
-                src="/Luxury-listings-logo-CLR.png"
-                alt="Luxury Listings Logo"
-                className="h-7 w-7 object-contain flex-shrink-0"
-              />
-              <Link to="/classic/dashboard">
-                <h1 className="text-lg font-bold text-gray-900 truncate hidden sm:block cursor-pointer">Luxury Listings Portal</h1>
-              </Link>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Classic</span>
-            </div>
-
-            <ClassicNavigation navigation={navigation} />
-
-            <div className="flex items-center space-x-2 flex-shrink-0">
-              <Link
-                to="/dashboard"
-                className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
-              >
-                New Design →
-              </Link>
-              <NotificationsCenter />
-              <RoleSwitcher />
-
-              <button
-                onClick={handleLogout}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="w-full overflow-x-hidden">
-        <Routes>
-          <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="tutorials" element={<ProtectedRoute><TutorialsPage /></ProtectedRoute>} />
-          <Route path="content-manager-message" element={<ProtectedRoute><ContentManagerMessage /></ProtectedRoute>} />
-          <Route path="tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
-          <Route path="resources" element={<ProtectedRoute><ResourcesPage /></ProtectedRoute>} />
-          <Route path="clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
-          <Route path="programs" element={<ProtectedRoute><AppSetupPage /></ProtectedRoute>} />
-          <Route path="client-packages" element={<ProtectedRoute><ClientPackages /></ProtectedRoute>} />
-          <Route path="pending-clients" element={<ProtectedRoute><PendingClients /></ProtectedRoute>} />
-          <Route path="hr-calendar" element={<ProtectedRoute><HRCalendar /></ProtectedRoute>} />
-          <Route path="team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
-          <Route path="hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
-          <Route path="crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
-          <Route path="content-calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
-          <Route path="my-time-off" element={<ProtectedRoute><MyTimeOff /></ProtectedRoute>} />
-          <Route path="self-service" element={<ProtectedRoute><EmployeeSelfService /></ProtectedRoute>} />
-          <Route path="it-support" element={<ProtectedRoute><ITSupportPage /></ProtectedRoute>} />
-          <Route path="onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-          <Route path="demo" element={<ProtectedRoute><DemoPage /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="dashboard" replace />} />
-        </Routes>
-      </main>
-
-      <ChatWidget />
-      <MigrationBanner />
-    </div>
-  );
-}
-
-// ============================================================================
-// MAIN APP LAYOUT (V3 Apple Design - Now the primary experience)
-// Thin auth gate — V3Layout renders <Outlet /> internally
-// ============================================================================
-
-function MainAppLayout() {
+function LoginPage() {
   const { currentUser, loading } = useAuth();
 
-  // Show loading state while Firebase is checking auth
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#86868b] text-sm">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Not authenticated - redirect to login
-  if (!currentUser) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Authenticated - V3Layout renders <Outlet /> for child routes
-  return <V3Layout />;
-}
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-function LoginWithDevRedirect() {
-  const { currentUser, loading } = useAuth();
-
-  // While auth is loading, show login page (not a blank screen)
+  // Show login page immediately (even while loading)
+  // This prevents blank screen while auth initializes
   if (loading) {
     return <V3Login />;
   }
 
-  // If user is already logged in, redirect to dashboard
+  // Already logged in - go to dashboard
   if (currentUser) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -372,92 +86,59 @@ function LoginWithDevRedirect() {
   return <V3Login />;
 }
 
-// Loading spinner component (same visual as before, but inline — not fixed overlay)
-function AppLoadingSpinner() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
-      <div className="relative w-12 h-12 rotate-45">
-        {[...Array(7)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute top-0 left-0 w-3.5 h-3.5 bg-[#1d1d1f] animate-square"
-            style={{ animationDelay: `${-1.4285714286 * i}s` }}
-          />
-        ))}
+// ============================================================================
+// PROTECTED APP - Requires authentication
+// ============================================================================
+function ProtectedApp() {
+  const { currentUser, loading } = useAuth();
+
+  // Show loading spinner while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#86868b] text-sm">Loading...</p>
+        </div>
       </div>
-      <style>{`
-        @keyframes square-animation {
-          0% { left: 0; top: 0; }
-          10.5% { left: 0; top: 0; }
-          12.5% { left: 16px; top: 0; }
-          23% { left: 16px; top: 0; }
-          25% { left: 32px; top: 0; }
-          35.5% { left: 32px; top: 0; }
-          37.5% { left: 32px; top: 16px; }
-          48% { left: 32px; top: 16px; }
-          50% { left: 16px; top: 16px; }
-          60.5% { left: 16px; top: 16px; }
-          62.5% { left: 16px; top: 32px; }
-          73% { left: 16px; top: 32px; }
-          75% { left: 0; top: 32px; }
-          85.5% { left: 0; top: 32px; }
-          87.5% { left: 0; top: 16px; }
-          98% { left: 0; top: 16px; }
-          100% { left: 0; top: 0; }
-        }
-        .animate-square {
-          animation: square-animation 10s ease-in-out infinite both;
-        }
-      `}</style>
-    </div>
-  );
-}
+    );
+  }
 
-// Redirect component for /v3/* backwards compatibility
-function V3Redirect() {
-  const location = useLocation();
-  // Remove /v3 prefix and redirect to the same path at root
-  const newPath = location.pathname.replace(/^\/v3/, '') || '/dashboard';
-  return <Navigate to={newPath} replace />;
+  // Not logged in - redirect to login
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Logged in - show V3 layout with child routes
+  return <V3Layout />;
 }
 
 // ============================================================================
-// ROUTER CONFIGURATION (React Router v7 data router)
+// ROUTER CONFIGURATION
 // ============================================================================
-
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      // Public routes
-      { path: '/login', element: <LoginWithDevRedirect /> },
+      // Public routes (no auth required)
+      { path: '/login', element: <LoginPage /> },
       { path: '/client-login', element: <ClientLogin /> },
       { path: '/client-password-reset', element: <ClientPasswordReset /> },
       { path: '/client-waiting-for-approval', element: <ClientWaitingForApproval /> },
       { path: '/waiting-for-approval', element: <WaitingForApproval /> },
       { path: '/__/auth/action', element: <FirebaseAuthHandler /> },
-
-      // Public Instagram Report View
+      
+      // Public Instagram reports
       { path: '/report/:publicLinkId', element: <PublicInstagramReportPage /> },
-
-      // Demo Instagram Report (for previewing the layout)
       { path: '/report-demo', element: <DemoInstagramReportPage /> },
 
-      // Classic Layout (Original v1 design - preserved at /classic/*)
-      { path: '/classic/*', element: <ClassicAppLayout /> },
-
-      // Backwards compatibility: redirect /v3/* to /*
-      { path: '/v3/*', element: <V3Redirect /> },
-
-      // Main app routes (V3 design at root level)
+      // Protected app routes (requires auth)
       {
         path: '/',
-        element: <MainAppLayout />,
+        element: <ProtectedApp />,
         children: [
-          // Index renders dashboard directly so first load is never blank
+          // Dashboard - default route
           { index: true, element: <V3Dashboard /> },
-
-          // Dashboard - always accessible
           { path: 'dashboard', element: <V3Dashboard /> },
 
           // Permission-protected pages
@@ -474,20 +155,20 @@ const router = createBrowserRouter([
           { path: 'tutorials', element: <PermissionRoute pageId="tutorials" pageName="Tutorials"><TutorialsPage /></PermissionRoute> },
           { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
 
-          // Profile pages - always accessible
+          // Profile pages - always accessible when logged in
           { path: 'my-time-off', element: <MyTimeOff /> },
           { path: 'self-service', element: <EmployeeSelfService /> },
           { path: 'onboarding', element: <OnboardingPage /> },
           { path: 'content-manager-message', element: <ContentManagerMessage /> },
 
-          // System admin only
+          // Admin pages
           { path: 'permissions', element: <PermissionsManager /> },
           { path: 'instagram-reports', element: <InstagramReportsPage /> },
 
-          // Meta callback
+          // Meta OAuth callback
           { path: 'meta-callback', element: <MetaCallback /> },
 
-          // Catch all unmatched routes - redirect to dashboard
+          // Catch-all - redirect to dashboard
           { path: '*', element: <Navigate to="/dashboard" replace /> },
         ],
       },
@@ -496,9 +177,8 @@ const router = createBrowserRouter([
 ]);
 
 // ============================================================================
-// MAIN APP - All providers outside the router
+// APP - Main entry point with all providers
 // ============================================================================
-
 function App() {
   return (
     <PendingUsersProvider>

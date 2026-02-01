@@ -1,32 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged,
-  GoogleAuthProvider 
-} from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
-import { getUserRoleMapping, canUserSwitchToRole, getAllowedRolesForUser, DEFAULT_ROLE } from '../entities/UserRoleMapping';
 import { firestoreService } from '../services/firestoreService';
-// Loader moved to App.jsx - no longer rendered in AuthContext
 import { appNavigate } from '../utils/navigation';
-
-// Import the pending users context
 import { usePendingUsers } from './PendingUsersContext';
 
 // ============================================================================
-// SYSTEM ADMINS - These users have full access to everything
+// SYSTEM ADMINS - Full access to everything
 // ============================================================================
-const SYSTEM_ADMINS = [
-  'jrsschroeder@gmail.com'
-];
-
-// Helper to check if email is a system admin
+const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
 const isSystemAdmin = (email) => SYSTEM_ADMINS.includes(email?.toLowerCase());
 
 // ============================================================================
-// LOCAL STORAGE PERSISTENCE
+// LOCAL STORAGE - Persist auth state for faster page loads
 // ============================================================================
 const AUTH_STORAGE_KEY = 'luxury_listings_auth';
 
@@ -37,27 +24,20 @@ const saveAuthToStorage = (user) => {
     } else {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
-  } catch (error) {
-    // Silent fail for localStorage
-  }
+  } catch (e) { /* silent */ }
 };
 
 const loadAuthFromStorage = () => {
   try {
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (error) {
-    // Silent fail for localStorage
+    return stored ? JSON.parse(stored) : null;
+  } catch (e) {
+    return null;
   }
-  return null;
 };
 
-// Helper function to get department for a role
+// Helper to get department for a role
 const getDepartmentForRole = (role) => {
-  if (!role) return 'General';
-  
   const departments = {
     'admin': 'Administration',
     'content_director': 'Content & Creative',
@@ -68,62 +48,9 @@ const getDepartmentForRole = (role) => {
   return departments[role] || 'General';
 };
 
-// Only log redirect skip once per session to avoid console spam
-let _redirectSkipLogged = false;
-// Flag to prevent redirects during logout - set by logout(), cleared after signOut completes
-let _loggingOut = false;
-const navigateBasedOnRole = (role, userData) => {
-  if (_loggingOut) return; // Don't redirect during logout
-  const currentPath = window.location.pathname;
-  const shouldRedirect = currentPath === '/login' || currentPath === '/waiting-for-approval' || currentPath === '/';
-  if (!shouldRedirect) {
-    if (!_redirectSkipLogged) {
-      _redirectSkipLogged = true;
-      console.log('🔍 Skipping redirect - user is already on:', currentPath);
-    }
-    return;
-  }
-  _redirectSkipLogged = false;
-
-  if (role === 'pending' && currentPath !== '/waiting-for-approval') {
-    console.log('🔄 Navigating pending user to approval page...');
-    appNavigate('/waiting-for-approval', { replace: true });
-  } else if (role && role !== 'pending') {
-    // Check if user needs onboarding
-    if (!userData?.onboardingCompleted && currentPath !== '/onboarding') {
-      console.log('🎓 New user detected - navigating to onboarding...');
-      appNavigate('/onboarding', { replace: true });
-    } else if (currentPath === '/login' || currentPath === '/') {
-      console.log('🔄 Navigating approved user to dashboard...');
-      appNavigate('/dashboard', { replace: true });
-    }
-  }
-};
-
-// Flag to disable Google authentication
-const GOOGLE_AUTH_DISABLED = false;
-
-// Dev mode: Auto-login as jrsschroeder@gmail.com
-// Works in: local development OR Vercel preview deployments (dev branch)
-// Check multiple ways to detect preview/dev environment
-const isVercelPreview = 
-  process.env.VERCEL_ENV === 'preview' ||
-  process.env.VERCEL === '1' ||
-  window.location.hostname.includes('vercel.app');
-
-const DEV_MODE_AUTO_LOGIN = 
-  process.env.NODE_ENV === 'development' || 
-  isVercelPreview ||
-  process.env.REACT_APP_DEV_AUTO_LOGIN === 'true';
-
-const DEV_AUTO_LOGIN_EMAIL = 'jrsschroeder@gmail.com';
-
-// Dev mode status logged only once on initial load (not on every render)
-if (typeof window !== 'undefined' && !window.__devModeLogged) {
-  window.__devModeLogged = true;
-  console.log('🔍 Dev Mode:', DEV_MODE_AUTO_LOGIN ? 'ENABLED' : 'DISABLED');
-}
-
+// ============================================================================
+// AUTH CONTEXT
+// ============================================================================
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -131,103 +58,75 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  // Initialize from localStorage for instant restore on page refresh
+  // Initialize from localStorage for instant restore on refresh
   const storedAuth = loadAuthFromStorage();
   
-  const [currentRole, setCurrentRole] = useState(storedAuth?.role || USER_ROLES.CONTENT_DIRECTOR);
   const [currentUser, setCurrentUser] = useState(storedAuth);
-  const [userData, setUserData] = useState(storedAuth); // Full employee data from Firestore
-  const [loading, setLoading] = useState(!storedAuth); // If we have stored auth, don't show loading
-  const [isInitialized, setIsInitialized] = useState(!!storedAuth);
+  const [userData, setUserData] = useState(storedAuth);
+  const [currentRole, setCurrentRole] = useState(storedAuth?.role || USER_ROLES.CONTENT_DIRECTOR);
+  const [loading, setLoading] = useState(!storedAuth); // No loading if we have cached auth
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
 
-  // Get pending users functions
   const { addPendingUser } = usePendingUsers();
 
-  // Track if auth listener is already set up to prevent duplicates
-  const [authListenerSetup, setAuthListenerSetup] = useState(false);
-
-
+  // ============================================================================
+  // AUTH METHODS
+  // ============================================================================
+  
   function signInWithGoogle() {
-    if (GOOGLE_AUTH_DISABLED) {
-      // Bypass authentication for development
-      console.log('Google authentication is currently disabled');
-      return Promise.resolve();
-    }
     return signInWithPopup(auth, googleProvider);
   }
 
   function logout() {
-    // Set flag FIRST to prevent navigateBasedOnRole from redirecting during sign-out
-    _loggingOut = true;
-    // Clear localStorage on logout
     saveAuthToStorage(null);
     setCurrentUser(null);
     setUserData(null);
     setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
-
-    if (GOOGLE_AUTH_DISABLED) {
-      console.log('Logout bypassed - Google authentication is disabled');
-      _loggingOut = false;
-      return Promise.resolve();
-    }
-    return signOut(auth).finally(() => {
-      _loggingOut = false;
-    });
+    return signOut(auth);
   }
 
   async function switchRole(newRole) {
-    if (!currentUser || !currentUser.email) {
-      return;
-    }
+    if (!currentUser?.email) return;
     
-    // System admin users can always switch to any role
+    // System admins can switch to any role
     if (!isSystemAdmin(currentUser.email)) {
-      // Check if user has this role in their assigned roles from Firestore
       const assignedRoles = currentUser.roles || [currentUser.primaryRole || currentUser.role] || ['content_director'];
       if (!assignedRoles.includes(newRole)) {
-        alert('You are not authorized to switch to this role. Please contact your administrator.');
+        alert('You are not authorized to switch to this role.');
         return;
       }
     }
     
-    const validRoles = Object.values(USER_ROLES);
-    
-    if (validRoles.includes(newRole)) {
-      // Update the current role first
-      setCurrentRole(newRole);
-      
-      // Save role to Firestore for persistence
-      try {
-        await firestoreService.saveSystemConfig('currentRole', newRole);
-      } catch (error) {
-        // Silent fail
-      }
-      
-      // Update current user with new role data
-      const roleUserData = getUserByRole(newRole);
-      
-      const updatedUser = {
-        ...currentUser,
-        ...roleUserData,
-        role: newRole,
-        primaryRole: newRole,
-        email: currentUser.email,
-        firstName: currentUser.firstName,
-        lastName: currentUser.lastName,
-        displayName: currentUser.displayName,
-        avatar: currentUser.avatar,
-        uid: currentUser.uid,
-        customPermissions: currentUser.customPermissions || []
-      };
-      
-      setCurrentUser(updatedUser);
-      
-      // Trigger chatbot reset
-      setChatbotResetTrigger(prev => prev + 1);
-    } else {
-      alert(`Invalid role: ${newRole}. Please try again.`);
+    if (!Object.values(USER_ROLES).includes(newRole)) {
+      alert(`Invalid role: ${newRole}`);
+      return;
     }
+
+    setCurrentRole(newRole);
+    
+    // Save to Firestore
+    try {
+      await firestoreService.saveSystemConfig('currentRole', newRole);
+    } catch (e) { /* silent */ }
+    
+    // Update user with new role data
+    const roleUserData = getUserByRole(newRole);
+    const updatedUser = {
+      ...currentUser,
+      ...roleUserData,
+      role: newRole,
+      primaryRole: newRole,
+      email: currentUser.email,
+      firstName: currentUser.firstName,
+      lastName: currentUser.lastName,
+      displayName: currentUser.displayName,
+      avatar: currentUser.avatar,
+      uid: currentUser.uid,
+      customPermissions: currentUser.customPermissions || []
+    };
+    
+    setCurrentUser(updatedUser);
+    setChatbotResetTrigger(prev => prev + 1);
   }
 
   function getCurrentRolePermissions() {
@@ -235,31 +134,198 @@ export function AuthProvider({ children }) {
   }
 
   function hasPermission(permission) {
-    // Special handling for admin user - always grant all permissions
-    if (currentUser?.email === 'jrsschroeder@gmail.com') {
-      return true;
-    }
+    // System admin always has all permissions
+    if (isSystemAdmin(currentUser?.email)) return true;
     
-    // Check user-specific permissions first (these override role permissions)
-    if (currentUser?.customPermissions && Array.isArray(currentUser.customPermissions)) {
-      if (currentUser.customPermissions.includes(permission)) {
-        return true;
-      }
-    }
+    // Check custom permissions
+    const customPerms = currentUser?.customPermissions || userData?.customPermissions || [];
+    if (customPerms.includes(permission)) return true;
     
-    // Also check userData for custom permissions
-    if (userData?.customPermissions && Array.isArray(userData.customPermissions)) {
-      if (userData.customPermissions.includes(permission)) {
-        return true;
-      }
-    }
-    
-    // Fall back to role-based permissions
+    // Check role permissions
     const permissions = getCurrentRolePermissions();
     return permissions.permissions[permission] || false;
   }
 
-  // Load current role from Firestore only when user is authenticated (avoids permission error on login page)
+  // ============================================================================
+  // FIREBASE AUTH LISTENER
+  // ============================================================================
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        if (firebaseUser) {
+          // User is signed in
+          await handleUserSignIn(firebaseUser);
+        } else {
+          // User signed out
+          saveAuthToStorage(null);
+          setCurrentUser(null);
+          setUserData(null);
+          setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
+        setCurrentUser(null);
+        setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Handle user sign-in logic
+  async function handleUserSignIn(firebaseUser) {
+    const { uid, email, displayName, photoURL } = firebaseUser;
+
+    // System admin - full access
+    if (isSystemAdmin(email)) {
+      let savedRole;
+      try {
+        savedRole = await firestoreService.getSystemConfig('currentRole');
+      } catch (e) {
+        savedRole = null;
+      }
+      
+      const roleToUse = savedRole && Object.values(USER_ROLES).includes(savedRole) 
+        ? savedRole 
+        : USER_ROLES.ADMIN;
+      
+      const roleUserData = getUserByRole(roleToUse);
+      const adminUser = {
+        uid,
+        email,
+        displayName: displayName || roleUserData.displayName,
+        firstName: displayName?.split(' ')[0] || roleUserData.firstName,
+        lastName: displayName?.split(' ').slice(1).join(' ') || roleUserData.lastName,
+        role: roleToUse,
+        roles: Object.values(USER_ROLES), // Admin can access all roles
+        primaryRole: USER_ROLES.ADMIN,
+        department: roleUserData.department,
+        startDate: roleUserData.startDate,
+        avatar: photoURL || roleUserData.avatar,
+        bio: roleUserData.bio,
+        skills: roleUserData.skills,
+        stats: roleUserData.stats,
+        isApproved: true,
+        onboardingCompleted: true
+      };
+      
+      setCurrentRole(roleToUse);
+      setCurrentUser(adminUser);
+      setUserData(adminUser);
+      saveAuthToStorage(adminUser);
+      return;
+    }
+
+    // Check if user is approved
+    try {
+      const approvedUsers = await firestoreService.getApprovedUsers();
+      const approvedUser = approvedUsers.find(u => u.email === email);
+      
+      if (approvedUser?.isApproved) {
+        // Approved user
+        const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
+        const primaryRole = assignedRoles[0] || 'content_director';
+        
+        let savedRole;
+        try {
+          savedRole = await firestoreService.getSystemConfig('currentRole');
+        } catch (e) {
+          savedRole = null;
+        }
+        
+        const roleToUse = savedRole && assignedRoles.includes(savedRole) ? savedRole : primaryRole;
+        const roleUserData = getUserByRole(roleToUse);
+        
+        const mergedUser = {
+          uid,
+          email,
+          displayName: approvedUser.displayName || displayName || roleUserData.displayName,
+          firstName: approvedUser.firstName || displayName?.split(' ')[0] || roleUserData.firstName,
+          lastName: approvedUser.lastName || displayName?.split(' ').slice(1).join(' ') || roleUserData.lastName,
+          role: roleToUse,
+          roles: assignedRoles,
+          primaryRole,
+          department: approvedUser.department || roleUserData.department,
+          startDate: approvedUser.startDate || roleUserData.startDate,
+          avatar: approvedUser.avatar || photoURL || roleUserData.avatar,
+          bio: approvedUser.bio || roleUserData.bio,
+          skills: approvedUser.skills || roleUserData.skills,
+          stats: approvedUser.stats || roleUserData.stats,
+          customPermissions: approvedUser.customPermissions || [],
+          isApproved: true,
+          onboardingCompleted: approvedUser.onboardingCompleted
+        };
+        
+        setCurrentRole(roleToUse);
+        setCurrentUser(mergedUser);
+        setUserData(mergedUser);
+        saveAuthToStorage(mergedUser);
+        
+        // Navigate based on status
+        const currentPath = window.location.pathname;
+        if (currentPath === '/login' || currentPath === '/') {
+          if (!mergedUser.onboardingCompleted) {
+            appNavigate('/onboarding', { replace: true });
+          } else {
+            appNavigate('/dashboard', { replace: true });
+          }
+        }
+      } else {
+        // New/pending user
+        const newUser = {
+          uid,
+          email,
+          displayName: displayName || 'New User',
+          firstName: displayName?.split(' ')[0] || 'New',
+          lastName: displayName?.split(' ').slice(1).join(' ') || 'User',
+          role: 'pending',
+          department: 'Pending Approval',
+          startDate: new Date().toISOString().split('T')[0],
+          avatar: photoURL,
+          isApproved: false
+        };
+        
+        setCurrentUser(newUser);
+        setUserData(newUser);
+        setCurrentRole('pending');
+        
+        // Add to pending users in Firestore
+        try {
+          const existingPending = await firestoreService.getPendingUsers();
+          const alreadyPending = existingPending.some(u => u.email === email);
+          
+          if (!alreadyPending) {
+            await firestoreService.addPendingUser({
+              ...newUser,
+              id: `pending-${Date.now()}`,
+              createdAt: new Date().toISOString()
+            });
+          }
+        } catch (e) {
+          console.warn('Could not add to pending users:', e);
+        }
+        
+        // Navigate to waiting page
+        if (window.location.pathname !== '/waiting-for-approval') {
+          appNavigate('/waiting-for-approval', { replace: true });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking user approval:', error);
+      setCurrentRole('pending');
+      setCurrentUser({
+        uid,
+        email,
+        displayName: displayName || 'New User',
+        role: 'pending',
+        isApproved: false
+      });
+    }
+  }
+
+  // Load saved role when user changes
   useEffect(() => {
     if (!currentUser) return;
 
@@ -269,459 +335,39 @@ export function AuthProvider({ children }) {
         if (savedRole && Object.values(USER_ROLES).includes(savedRole)) {
           setCurrentRole(savedRole);
         }
-      } catch (error) {
-        // Use default role on error (e.g. insufficient permissions before auth)
-      }
+      } catch (e) { /* silent */ }
     };
 
     loadCurrentRole();
   }, [currentUser]);
 
-  useEffect(() => {
-    // Dev mode: Auto-login as jrsschroeder@gmail.com
-    if (DEV_MODE_AUTO_LOGIN && !isInitialized) {
-      try {
-        console.log('🔧 DEV MODE: Auto-logging in as', DEV_AUTO_LOGIN_EMAIL);
-        setIsInitialized(true);
-        
-        // Create mock admin user for dev mode
-        const adminUserData = getUserByRole(USER_ROLES.ADMIN);
-        const devUser = {
-          uid: 'dev-user-' + Date.now(),
-          email: DEV_AUTO_LOGIN_EMAIL,
-          displayName: 'Joshua Schroeder',
-          firstName: 'Joshua',
-          lastName: 'Schroeder',
-          role: USER_ROLES.ADMIN,
-          roles: Object.values(USER_ROLES), // Admin can access all roles
-          primaryRole: USER_ROLES.ADMIN,
-          department: adminUserData?.department || 'Administration',
-          startDate: adminUserData?.startDate || new Date().toISOString().split('T')[0],
-          avatar: adminUserData?.avatar || 'JS',
-          bio: adminUserData?.bio || 'Development Admin User',
-          skills: adminUserData?.skills || [],
-          stats: adminUserData?.stats || {},
-          isApproved: true
-        };
-        
-        setCurrentUser(devUser);
-        setUserData(devUser);
-        setCurrentRole(USER_ROLES.ADMIN);
-        setLoading(false);
-        
-        // Navigate to dashboard if on login page
-        const currentPath = window.location.pathname;
-        if (currentPath === '/login' || currentPath === '/') {
-          appNavigate('/dashboard', { replace: true });
-        }
-      } catch (error) {
-        console.error('❌ Error in dev mode auto-login:', error);
-        setLoading(false);
-      }
-      return;
-    }
-
-    if (GOOGLE_AUTH_DISABLED && !isInitialized) {
-      // Only initialize once
-      setIsInitialized(true);
-      
-      // Get the current role (either from localStorage or default)
-      const roleUserData = getUserByRole(currentRole);
-      const mockUser = {
-        uid: roleUserData.uid,
-        email: roleUserData.email,
-        displayName: roleUserData.displayName,
-        firstName: roleUserData.firstName,
-        lastName: roleUserData.lastName,
-        role: roleUserData.role,
-        department: roleUserData.department,
-        startDate: roleUserData.startDate,
-        avatar: roleUserData.avatar,
-        bio: roleUserData.bio,
-        skills: roleUserData.skills,
-        stats: roleUserData.stats
-      };
-      setCurrentUser(mockUser);
-      setLoading(false);
-      return;
-    }
-
-    // Skip Firebase auth if dev mode is enabled or already setup
-    if (DEV_MODE_AUTO_LOGIN || authListenerSetup) {
-      return;
-    }
-
-    if (!GOOGLE_AUTH_DISABLED) {
-      // Mark that we're setting up the listener to prevent duplicates
-      setAuthListenerSetup(true);
-      
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        try {
-          if (user) {
-            // Special handling for system admin users
-            if (isSystemAdmin(user.email)) {
-              // Load saved role from Firestore or use admin as default
-              let savedRole;
-              try {
-                savedRole = await firestoreService.getSystemConfig('currentRole');
-              } catch (error) {
-                savedRole = null;
-              }
-              
-              // Use saved role if valid, otherwise use admin
-              const roleToUse = savedRole && Object.values(USER_ROLES).includes(savedRole) ? savedRole : USER_ROLES.ADMIN;
-              
-              // Get user data for the role
-              const roleUserData = getUserByRole(roleToUse);
-              
-              // Create admin user object
-              const adminUser = {
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName || roleUserData.displayName,
-                firstName: user.displayName?.split(' ')[0] || roleUserData.firstName,
-                lastName: user.displayName?.split(' ').slice(1).join(' ') || roleUserData.lastName,
-                role: roleToUse,
-                roles: Object.values(USER_ROLES), // Admin can access all roles
-                primaryRole: USER_ROLES.ADMIN, // Keep admin as primary
-                department: roleUserData.department,
-                startDate: roleUserData.startDate,
-                avatar: user.photoURL || roleUserData.avatar,
-                bio: roleUserData.bio,
-                skills: roleUserData.skills,
-                stats: roleUserData.stats,
-                isApproved: true,
-                onboardingCompleted: true // Admin doesn't need onboarding
-              };
-              
-              setCurrentRole(roleToUse);
-              setCurrentUser(adminUser);
-              setUserData(adminUser);
-              saveAuthToStorage(adminUser);
-              navigateBasedOnRole(roleToUse, adminUser);
-              setLoading(false);
-              return;
-            }
-            
-            // Check if user has been approved by admin (from Firestore)
-            try {
-              const approvedUsers = await firestoreService.getApprovedUsers();
-              const approvedUser = approvedUsers.find(u => u.email === user.email);
-              
-              if (approvedUser && approvedUser.isApproved) {
-                // User was approved by admin - set their approved roles
-                const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
-                const primaryRole = assignedRoles[0] || 'content_director';
-                
-                // Load saved role from Firestore or use primary role
-                let savedRole;
-                try {
-                  savedRole = await firestoreService.getSystemConfig('currentRole');
-                } catch (error) {
-                  savedRole = null;
-                }
-                
-                const roleToUse = savedRole && assignedRoles.includes(savedRole) ? savedRole : primaryRole;
-                
-                // Get user data for the role
-                const roleUserData = getUserByRole(roleToUse);
-                
-                // Merge Firebase user data with role data
-                const mergedUser = {
-                  uid: user.uid,
-                  email: user.email,
-                  displayName: approvedUser.displayName || user.displayName || roleUserData.displayName,
-                  firstName: approvedUser.firstName || user.displayName?.split(' ')[0] || roleUserData.firstName,
-                  lastName: approvedUser.lastName || user.displayName?.split(' ').slice(1).join(' ') || roleUserData.lastName,
-                  role: roleToUse,
-                  roles: assignedRoles,
-                  primaryRole: primaryRole,
-                  department: approvedUser.department || roleUserData.department,
-                  startDate: approvedUser.startDate || roleUserData.startDate,
-                  avatar: approvedUser.avatar || user.photoURL || roleUserData.avatar,
-                  bio: approvedUser.bio || roleUserData.bio,
-                  skills: approvedUser.skills || roleUserData.skills,
-                  stats: approvedUser.stats || roleUserData.stats,
-                  customPermissions: approvedUser.customPermissions || [],
-                  isApproved: true
-                };
-                
-                setCurrentRole(roleToUse);
-                setCurrentUser(mergedUser);
-                saveAuthToStorage(mergedUser);
-                
-                // Load full employee data from Firestore
-                try {
-                  const employeeData = await firestoreService.getEmployeeByEmail(user.email);
-                  if (employeeData) {
-                    const fullUser = { ...mergedUser, ...employeeData };
-                    setUserData(employeeData);
-                    saveAuthToStorage(fullUser);
-                    navigateBasedOnRole(roleToUse, fullUser);
-                  } else {
-                    setUserData(mergedUser);
-                    navigateBasedOnRole(roleToUse, mergedUser);
-                  }
-                } catch (error) {
-                  setUserData(mergedUser);
-                  navigateBasedOnRole(roleToUse, mergedUser);
-                }
-                setLoading(false);
-              } else {
-                // New user - no approval yet, they need admin approval
-                const newUser = {
-                  uid: user.uid,
-                  email: user.email,
-                  displayName: user.displayName || 'New User',
-                  firstName: user.displayName?.split(' ')[0] || 'New',
-                  lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
-                  role: 'pending',
-                  department: 'Pending Approval',
-                  startDate: new Date().toISOString().split('T')[0],
-                  avatar: user.photoURL,
-                  bio: 'Account pending administrator approval',
-                  skills: [],
-                  stats: {},
-                  isApproved: false,
-                  createdAt: new Date().toISOString()
-                };
-                
-                setCurrentUser(newUser);
-                setUserData(newUser);
-                setCurrentRole('pending');
-                
-                // Add this user to the pending users system
-                const pendingUserData = {
-                  id: `pending-${Date.now()}`,
-                  email: user.email,
-                  displayName: user.displayName || 'New User',
-                  firstName: user.displayName?.split(' ')[0] || 'New',
-                  lastName: user.displayName?.split(' ').slice(1).join(' ') || 'User',
-                  role: 'pending',
-                  department: 'Pending Approval',
-                  startDate: new Date().toISOString().split('T')[0],
-                  avatar: user.photoURL,
-                  bio: 'Account pending administrator approval',
-                  skills: [],
-                  stats: {},
-                  isApproved: false,
-                  createdAt: new Date().toISOString()
-                };
-                
-                // Add to pending users in Firestore
-                try {
-                  const existingPending = await firestoreService.getPendingUsers();
-                  const alreadyPending = existingPending.some(u => u.email === user.email);
-                  
-                  if (!alreadyPending) {
-                    await firestoreService.addPendingUser(pendingUserData);
-                  }
-                } catch (error) {
-                  console.warn('⚠️ Could not add user to pending users:', error);
-                }
-                
-                navigateBasedOnRole('pending', newUser);
-                setLoading(false);
-              }
-            } catch (error) {
-              console.error('❌ Error checking user approval status:', error);
-              setCurrentRole('pending');
-              setCurrentUser({
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName || 'New User',
-                role: 'pending',
-                isApproved: false
-              });
-              setLoading(false);
-            }
-          } else {
-            // Clear localStorage on sign out
-            saveAuthToStorage(null);
-            setCurrentUser(null);
-            setUserData(null);
-            setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
-            setLoading(false);
-          }
-        } catch (error) {
-          console.error('❌ Error in auth state change handler:', error);
-          setCurrentUser(null);
-          setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
-          setLoading(false);
-        }
-      });
-
-      return () => {
-        unsubscribe();
-        setAuthListenerSetup(false);
-      };
-    }
-  }, [isInitialized, authListenerSetup]);
-
-  // Safety timeout: if loading takes too long, show app anyway
+  // Safety timeout - show app after 10s even if auth is stuck
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (loading) {
-        console.warn('⚠️ Auth loading timeout - showing app anyway');
+        console.warn('Auth timeout - showing app');
         setLoading(false);
       }
-    }, 10000); // 10 second timeout
+    }, 10000);
 
     return () => clearTimeout(timeout);
   }, [loading]);
 
-  const handleApproveUser = async (pendingUser) => {
-    try {
-      console.log('✅ Approving user:', pendingUser);
-      
-      // Create approved user data with support for multiple roles
-      const approvedUserData = {
-        email: pendingUser.email,
-        firstName: pendingUser.firstName || 'User',
-        lastName: pendingUser.lastName || 'Name',
-        role: pendingUser.requestedRole || 'content_director', // Keep for backward compatibility
-        primaryRole: pendingUser.requestedRole || 'content_director', // Primary role
-        roles: [pendingUser.requestedRole || 'content_director'], // Array of all roles
-        bio: pendingUser.bio || '',
-        skills: pendingUser.skills || [],
-        isApproved: true,
-        approvedAt: new Date().toISOString(),
-        approvedBy: currentUser.email,
-        uid: pendingUser.uid || `user-${Date.now()}`, // Generate uid if not present
-        displayName: pendingUser.displayName || `${pendingUser.firstName || 'User'} ${pendingUser.lastName || 'Name'}`,
-        department: getDepartmentForRole(pendingUser.requestedRole || 'content_director'),
-        startDate: new Date().toISOString().split('T')[0],
-        phone: pendingUser.phone || '',
-        location: pendingUser.location || 'Remote',
-        avatar: pendingUser.avatar || ''
-      };
-
-      // Remove any undefined values to prevent Firestore errors
-      Object.keys(approvedUserData).forEach(key => {
-        if (approvedUserData[key] === undefined) {
-          delete approvedUserData[key];
-        }
-      });
-
-      // Approve the user (this will move them from pending to approved)
-      await firestoreService.approveUser(pendingUser.id, approvedUserData);
-      
-      console.log('✅ User approved successfully');
-    } catch (error) {
-      console.error('❌ Error approving user:', error);
-      alert('Failed to approve user. Please try again.');
-    }
-  };
-
-  // Function to refresh current user data from Firestore
-  const refreshCurrentUser = async () => {
-    if (GOOGLE_AUTH_DISABLED || !auth.currentUser) {
-      return;
-    }
-
-    const user = auth.currentUser;
-    try {
-      // Special handling for admin user
-      if (user.email === 'jrsschroeder@gmail.com') {
-        const savedRole = await firestoreService.getSystemConfig('currentRole');
-        const roleToUse = savedRole && Object.values(USER_ROLES).includes(savedRole) ? savedRole : USER_ROLES.ADMIN;
-        setCurrentRole(roleToUse);
-        
-        // Try to get admin user data from Firestore
-        let approvedUser = null;
-        try {
-          const approvedUsers = await firestoreService.getApprovedUsers();
-          approvedUser = approvedUsers.find(u => u.email === user.email);
-        } catch (error) {
-          console.warn('⚠️ Could not fetch approved users for admin:', error);
-        }
-        
-        const userData = getUserByRole(roleToUse);
-        const adminUser = {
-          uid: user.uid,
-          email: user.email,
-          displayName: approvedUser?.displayName || user.displayName || userData.displayName,
-          firstName: approvedUser?.firstName || user.displayName?.split(' ')[0] || userData.firstName,
-          lastName: approvedUser?.lastName || user.displayName?.split(' ').slice(1).join(' ') || userData.lastName,
-          role: roleToUse,
-          roles: Object.values(USER_ROLES),
-          primaryRole: USER_ROLES.ADMIN,
-          department: approvedUser?.department || userData.department,
-          startDate: approvedUser?.startDate || userData.startDate,
-          avatar: approvedUser?.avatar || user.photoURL || userData.avatar,
-          bio: approvedUser?.bio || userData.bio,
-          skills: approvedUser?.skills || userData.skills,
-          stats: approvedUser?.stats || userData.stats,
-          isApproved: true
-        };
-        setCurrentUser(adminUser);
-        setUserData(adminUser);
-        return;
-      }
-
-      // For regular users, fetch from approved users
-      const approvedUsers = await firestoreService.getApprovedUsers();
-      const approvedUser = approvedUsers.find(u => u.email === user.email);
-      
-      if (approvedUser && approvedUser.isApproved) {
-        const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
-        const primaryRole = assignedRoles[0] || 'content_director';
-        
-        const savedRole = await firestoreService.getSystemConfig('currentRole');
-        const roleToUse = savedRole && assignedRoles.includes(savedRole) ? savedRole : primaryRole;
-        setCurrentRole(roleToUse);
-        
-        const userData = getUserByRole(roleToUse);
-        const mergedUser = {
-          uid: user.uid,
-          email: user.email,
-          displayName: approvedUser.displayName || user.displayName || userData.displayName,
-          firstName: approvedUser.firstName || user.displayName?.split(' ')[0] || userData.firstName,
-          lastName: approvedUser.lastName || user.displayName?.split(' ').slice(1).join(' ') || userData.lastName,
-          role: roleToUse,
-          roles: assignedRoles,
-          primaryRole: primaryRole,
-          department: approvedUser.department || userData.department,
-          startDate: approvedUser.startDate || userData.startDate,
-          avatar: approvedUser.avatar || user.photoURL || userData.avatar,
-          bio: approvedUser.bio || userData.bio,
-          skills: approvedUser.skills || userData.skills,
-          stats: approvedUser.stats || userData.stats,
-          customPermissions: approvedUser.customPermissions || [],
-          isApproved: true
-        };
-        
-        setCurrentUser(mergedUser);
-        
-        try {
-          const employeeData = await firestoreService.getEmployeeByEmail(user.email);
-          if (employeeData) {
-            setUserData(employeeData);
-          } else {
-            setUserData(mergedUser);
-          }
-        } catch (error) {
-          console.warn('⚠️ Could not load employee data:', error);
-          setUserData(mergedUser);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error refreshing current user:', error);
-    }
-  };
-
+  // ============================================================================
+  // CONTEXT VALUE
+  // ============================================================================
+  
   const value = {
     currentUser,
     userData,
     currentRole,
+    loading,
     switchRole,
     getCurrentRolePermissions,
     hasPermission,
     signInWithGoogle,
     logout,
-    isGoogleAuthDisabled: GOOGLE_AUTH_DISABLED,
     chatbotResetTrigger,
-    refreshCurrentUser
   };
 
   return (
@@ -730,4 +376,3 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
