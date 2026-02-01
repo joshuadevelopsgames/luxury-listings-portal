@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ViewAsProvider } from '../contexts/ViewAsContext';
 import { PermissionsProvider } from '../contexts/PermissionsContext';
@@ -47,6 +47,7 @@ import './styles/globals.css';
  */
 const V3App = () => {
   const { currentUser } = useAuth();
+  const location = useLocation();
 
   // If not authenticated, show login
   if (!currentUser) {
@@ -59,11 +60,12 @@ const V3App = () => {
   }
 
   // Authenticated - show the app with layout
+  // Key on location.pathname forces re-render when route changes
   return (
     <PermissionsProvider>
       <ViewAsProvider>
         <V3Layout>
-          <Routes>
+          <Routes location={location} key={location.pathname}>
             <Route index element={<Navigate to="dashboard" replace />} />
             
             {/* Dashboard - always accessible */}
