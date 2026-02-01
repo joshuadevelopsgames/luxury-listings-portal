@@ -312,7 +312,19 @@ function ClassicAppLayout() {
 // ============================================================================
 
 function MainAppLayout() {
-  const { currentUser } = useAuth();
+  const { currentUser, loading } = useAuth();
+
+  // Show loading state while Firebase is checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#86868b] text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Not authenticated - redirect to login
   if (!currentUser) {
