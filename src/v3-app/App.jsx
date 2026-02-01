@@ -35,33 +35,6 @@ import InstagramReportsPage from '../pages/InstagramReportsPage';
 import './styles/globals.css';
 
 /**
- * Protected Layout Wrapper - wraps V3Layout with providers
- * Uses Outlet for proper React Router v7 nested route rendering
- */
-const ProtectedLayoutWrapper = () => {
-  return (
-    <PermissionsProvider>
-      <ViewAsProvider>
-        <V3Layout />
-      </ViewAsProvider>
-    </PermissionsProvider>
-  );
-};
-
-/**
- * Auth Guard - redirects to login if not authenticated
- */
-const RequireAuth = ({ children }) => {
-  const { currentUser } = useAuth();
-  
-  if (!currentUser) {
-    return <Navigate to="login" replace />;
-  }
-  
-  return children;
-};
-
-/**
  * V3 App - Apple Design + Real Firestore Data
  * 
  * Uses Apple-styled V3 components where available:
@@ -75,96 +48,108 @@ const RequireAuth = ({ children }) => {
 const V3App = () => {
   const { currentUser } = useAuth();
 
-  return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="login" element={
-        currentUser ? <Navigate to="/v3/dashboard" replace /> : <V3Login />
-      } />
+  // If not authenticated, show login
+  if (!currentUser) {
+    return (
+      <Routes>
+        <Route path="login" element={<V3Login />} />
+        <Route path="*" element={<Navigate to="login" replace />} />
+      </Routes>
+    );
+  }
 
-      {/* Protected routes - using proper nested route pattern with Outlet */}
-      <Route element={<RequireAuth><ProtectedLayoutWrapper /></RequireAuth>}>
-        <Route index element={<Navigate to="dashboard" replace />} />
-        
-        {/* Dashboard - always accessible */}
-        <Route path="dashboard" element={<V3Dashboard />} />
-        
-        {/* Permission-protected pages */}
-        <Route path="tasks" element={
-          <PermissionRoute pageId="tasks" pageName="Tasks">
-            <TasksPage />
-          </PermissionRoute>
-        } />
-        <Route path="clients" element={
-          <PermissionRoute pageId="clients" pageName="Clients">
-            <ClientsPage />
-          </PermissionRoute>
-        } />
-        <Route path="client-packages" element={
-          <PermissionRoute pageId="client-packages" pageName="Client Packages">
-            <ClientPackages />
-          </PermissionRoute>
-        } />
-        <Route path="pending-clients" element={
-          <PermissionRoute pageId="pending-clients" pageName="Pending Clients">
-            <PendingClients />
-          </PermissionRoute>
-        } />
-        <Route path="content-calendar" element={
-          <PermissionRoute pageId="content-calendar" pageName="Content Calendar">
-            <ContentCalendar />
-          </PermissionRoute>
-        } />
-        <Route path="crm" element={
-          <PermissionRoute pageId="crm" pageName="CRM">
-            <CRMPage />
-          </PermissionRoute>
-        } />
-        <Route path="team" element={
-          <PermissionRoute pageId="team" pageName="Team Management">
-            <TeamManagement />
-          </PermissionRoute>
-        } />
-        <Route path="hr-calendar" element={
-          <PermissionRoute pageId="hr-calendar" pageName="HR Calendar">
-            <HRCalendar />
-          </PermissionRoute>
-        } />
-        <Route path="hr-analytics" element={
-          <PermissionRoute pageId="hr-analytics" pageName="HR Analytics">
-            <HRAnalytics />
-          </PermissionRoute>
-        } />
-        <Route path="it-support" element={
-          <PermissionRoute pageId="it-support" pageName="IT Support">
-            <ITSupportPage />
-          </PermissionRoute>
-        } />
-        <Route path="tutorials" element={
-          <PermissionRoute pageId="tutorials" pageName="Tutorials">
-            <TutorialsPage />
-          </PermissionRoute>
-        } />
-        <Route path="resources" element={
-          <PermissionRoute pageId="resources" pageName="Resources">
-            <ResourcesPage />
-          </PermissionRoute>
-        } />
-        
-        {/* Profile pages - always accessible */}
-        <Route path="my-time-off" element={<MyTimeOff />} />
-        <Route path="self-service" element={<EmployeeSelfService />} />
-        <Route path="onboarding" element={<OnboardingPage />} />
-        <Route path="content-manager-message" element={<ContentManagerMessage />} />
-        
-        {/* System admin only */}
-        <Route path="permissions" element={<PermissionsManager />} />
-        <Route path="instagram-reports" element={<InstagramReportsPage />} />
-        
-        {/* Catch all */}
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
-      </Route>
-    </Routes>
+  // Authenticated - show the app with layout
+  return (
+    <PermissionsProvider>
+      <ViewAsProvider>
+        <V3Layout>
+          <Routes>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            
+            {/* Dashboard - always accessible */}
+            <Route path="dashboard" element={<V3Dashboard />} />
+            
+            {/* Permission-protected pages */}
+            <Route path="tasks" element={
+              <PermissionRoute pageId="tasks" pageName="Tasks">
+                <TasksPage />
+              </PermissionRoute>
+            } />
+            <Route path="clients" element={
+              <PermissionRoute pageId="clients" pageName="Clients">
+                <ClientsPage />
+              </PermissionRoute>
+            } />
+            <Route path="client-packages" element={
+              <PermissionRoute pageId="client-packages" pageName="Client Packages">
+                <ClientPackages />
+              </PermissionRoute>
+            } />
+            <Route path="pending-clients" element={
+              <PermissionRoute pageId="pending-clients" pageName="Pending Clients">
+                <PendingClients />
+              </PermissionRoute>
+            } />
+            <Route path="content-calendar" element={
+              <PermissionRoute pageId="content-calendar" pageName="Content Calendar">
+                <ContentCalendar />
+              </PermissionRoute>
+            } />
+            <Route path="crm" element={
+              <PermissionRoute pageId="crm" pageName="CRM">
+                <CRMPage />
+              </PermissionRoute>
+            } />
+            <Route path="team" element={
+              <PermissionRoute pageId="team" pageName="Team Management">
+                <TeamManagement />
+              </PermissionRoute>
+            } />
+            <Route path="hr-calendar" element={
+              <PermissionRoute pageId="hr-calendar" pageName="HR Calendar">
+                <HRCalendar />
+              </PermissionRoute>
+            } />
+            <Route path="hr-analytics" element={
+              <PermissionRoute pageId="hr-analytics" pageName="HR Analytics">
+                <HRAnalytics />
+              </PermissionRoute>
+            } />
+            <Route path="it-support" element={
+              <PermissionRoute pageId="it-support" pageName="IT Support">
+                <ITSupportPage />
+              </PermissionRoute>
+            } />
+            <Route path="tutorials" element={
+              <PermissionRoute pageId="tutorials" pageName="Tutorials">
+                <TutorialsPage />
+              </PermissionRoute>
+            } />
+            <Route path="resources" element={
+              <PermissionRoute pageId="resources" pageName="Resources">
+                <ResourcesPage />
+              </PermissionRoute>
+            } />
+            
+            {/* Profile pages - always accessible */}
+            <Route path="my-time-off" element={<MyTimeOff />} />
+            <Route path="self-service" element={<EmployeeSelfService />} />
+            <Route path="onboarding" element={<OnboardingPage />} />
+            <Route path="content-manager-message" element={<ContentManagerMessage />} />
+            
+            {/* System admin only */}
+            <Route path="permissions" element={<PermissionsManager />} />
+            <Route path="instagram-reports" element={<InstagramReportsPage />} />
+            
+            {/* Login redirect for authenticated users */}
+            <Route path="login" element={<Navigate to="/v3/dashboard" replace />} />
+            
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
+          </Routes>
+        </V3Layout>
+      </ViewAsProvider>
+    </PermissionsProvider>
   );
 };
 

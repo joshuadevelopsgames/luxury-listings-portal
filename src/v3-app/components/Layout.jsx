@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
@@ -39,9 +39,8 @@ import {
 /**
  * V3 Layout - Apple Design System with Real Firestore Data
  * Full sidebar navigation with permission-based pages
- * Uses Outlet directly for React Router v7 nested route rendering
  */
-const V3Layout = () => {
+const V3Layout = ({ children }) => {
   const { currentUser, currentRole, logout } = useAuth();
   const { viewingAsUser, isViewingAs, stopViewingAs } = useViewAs();
   const { permissions: userPermissions, isSystemAdmin } = usePermissions();
@@ -462,7 +461,7 @@ const V3Layout = () => {
           <div className="max-w-[1600px] mx-auto">
             {/* Apple-style content wrapper */}
             <div className="v3-content-wrapper">
-              <Outlet />
+              {children}
             </div>
           </div>
         </main>
