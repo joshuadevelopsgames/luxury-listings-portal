@@ -134,9 +134,9 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
-    // Error reports - any authenticated user can create, only admin can read/update
+    // Error reports - ANYONE can create (even unauthenticated), only admin can read/update
     match /error_reports/{reportId} {
-      allow create: if isAuthenticated();  // Anyone can submit error reports
+      allow create: if true;  // Anyone can submit error reports (even before login)
       allow read, update, delete: if isAdmin();  // Only admin can view/manage reports
     }
     
