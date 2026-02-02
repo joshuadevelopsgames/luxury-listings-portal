@@ -568,9 +568,8 @@ const ReportModal = ({ report, onClose, onSave }) => {
 
   return (
     <>
-      <>
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -1112,7 +1111,6 @@ const ReportModal = ({ report, onClose, onSave }) => {
                 </div>
                 )}
               </div>
-            </div>
 
             {/* Instagram post links (shown on report as previews) */}
             <div>
@@ -1214,7 +1212,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
           </div>
         </div>
         </div>
-      </>
+      </div>
       {/* Live Preview Modal */}
       {showPreview && (
         <ReportPreviewModal
@@ -1292,7 +1290,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500" />
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjLTItNC00LTItNC0ycy0yIDItMiA0YzAgMiAyIDQgMiA0czIgMiA0IDJjMiA0IDQgMiA0IDJzMi0yIDItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10" />
             
-            <div className="relative max-w-4xl mx-auto px-6 py-12 sm:py-16">
+            <div className="relative max-w-4xl mx-auto px-6 py-12 sm:py-16 pb-20 sm:pb-24">
               <div className="text-center text-white">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm mb-4">
                   <Calendar className="w-4 h-4" />
@@ -1303,7 +1301,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                   {report.title || 'Report Title'}
                 </h1>
                 
-                <div className="flex items-center justify-center gap-2 text-white/90">
+                <div className="flex items-center justify-center gap-2 text-white/90 mb-6">
                   <User className="w-5 h-5" />
                   <span className="text-lg">{report.clientName || 'Client Name'}</span>
                 </div>
@@ -1513,28 +1511,39 @@ const ReportPreviewModal = ({ report, onClose }) => {
                       <TrendingUp className="w-4 h-4 text-green-500" />
                       Follower Growth
                     </h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <div className={`text-2xl font-bold ${report.metrics.growth.overall >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                          {report.metrics.growth.overall >= 0 ? '+' : ''}{report.metrics.growth.overall}
+                    {(() => {
+                      // Auto-calculate net change if we have follows and unfollows
+                      const follows = report.metrics.growth.follows || 0;
+                      const unfollows = report.metrics.growth.unfollows || 0;
+                      const netChange = report.metrics.growth.overall !== undefined && report.metrics.growth.overall !== 0
+                        ? report.metrics.growth.overall 
+                        : (follows - unfollows);
+                      
+                      return (
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="text-center p-3 bg-gray-50 rounded-lg">
+                            <div className={`text-2xl font-bold ${netChange >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                              {netChange >= 0 ? '+' : ''}{netChange.toLocaleString()}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Net Change</p>
+                          </div>
+                          <div className="text-center p-3 bg-green-50 rounded-lg">
+                            <div className="flex items-center justify-center gap-1">
+                              <UserPlus className="w-4 h-4 text-green-600" />
+                              <span className="text-2xl font-bold text-green-600">{follows.toLocaleString()}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">New Follows</p>
+                          </div>
+                          <div className="text-center p-3 bg-red-50 rounded-lg">
+                            <div className="flex items-center justify-center gap-1">
+                              <UserMinus className="w-4 h-4 text-red-500" />
+                              <span className="text-2xl font-bold text-red-500">{unfollows.toLocaleString()}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Unfollows</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Net Change</p>
-                      </div>
-                      <div className="text-center p-3 bg-green-50 rounded-lg">
-                        <div className="flex items-center justify-center gap-1">
-                          <UserPlus className="w-4 h-4 text-green-600" />
-                          <span className="text-2xl font-bold text-green-600">{report.metrics.growth.follows?.toLocaleString()}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">New Follows</p>
-                      </div>
-                      <div className="text-center p-3 bg-red-50 rounded-lg">
-                        <div className="flex items-center justify-center gap-1">
-                          <UserMinus className="w-4 h-4 text-red-500" />
-                          <span className="text-2xl font-bold text-red-500">{report.metrics.growth.unfollows?.toLocaleString()}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Unfollows</p>
-                      </div>
-                    </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

@@ -238,39 +238,72 @@ function parseInstagramMetrics(text) {
     metrics.contentBreakdown = contentBreakdown;
   }
 
-  // === TOP CITIES ===
+  // === TOP CITIES === (flexible for OCR: newlines, spacing)
   const cities = [];
+  const citySeen = new Set();
   const cityPatterns = [
     'Calgary', 'Vancouver', 'Toronto', 'Montreal', 'Edmonton', 'Ottawa',
     'Burnaby', 'Surrey', 'Richmond', 'Victoria', 'Winnipeg', 'Halifax',
     'Los Angeles', 'New York', 'San Francisco', 'Chicago', 'Houston',
     'Miami', 'Seattle', 'Denver', 'Phoenix', 'Dallas', 'Austin',
-    'London', 'Paris', 'Sydney', 'Melbourne', 'Dubai', 'Singapore'
+    'London', 'Paris', 'Sydney', 'Melbourne', 'Dubai', 'Singapore',
+    'Mississauga', 'Brampton', 'Hamilton', 'Quebec City', 'Laval'
   ];
+  const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   for (const city of cityPatterns) {
-    const regex = new RegExp(`${city}\\s*[\\n\\s]*([0-9.]+)%`, 'i');
-    const match = text.match(regex);
-    if (match) cities.push({ name: city, percentage: parseFloat(match[1]) });
+    const escaped = escapeRegex(city);
+    const regex = new RegExp(`${escaped}[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'gi');
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const pct = parseFloat(match[1]);
+      const key = `${city.toLowerCase()}-${pct}`;
+      if (!citySeen.has(key) && pct <= 100) {
+        citySeen.add(key);
+        cities.push({ name: city, percentage: pct });
+      }
+    }
+  }
+  // Generic "Word(s) number%" for cities not in list
+  const skipWords = new Set(['posts', 'stories', 'reels', 'men', 'women', 'followers', 'accounts', 'profile', 'external', 'overall', 'growth', 'engagement', 'content', 'reach', 'impressions', 'saves', 'shares', 'link', 'taps', 'visits', 'interactions', 'views', 'non']);
+  const genericCityRegex = /(?:^|[\n])\s*([A-Za-z][A-Za-z\s.\-']{1,40}?)\s*[\s\n]+\s*([0-9]+(?:\.[0-9]+)?)\s*%/gm;
+  let genericMatch;
+  while ((genericMatch = genericCityRegex.exec(text)) !== null) {
+    const name = genericMatch[1].trim();
+    const firstWord = name.split(/\s+/)[0].toLowerCase();
+    if (skipWords.has(firstWord) || name.length < 2) continue;
+    const pct = parseFloat(genericMatch[2]);
+    if (pct > 100) continue;
+    const key = `${name.toLowerCase()}-${pct}`;
+    if (citySeen.has(key)) continue;
+    const alreadyListed = cities.some(c => c.name.toLowerCase() === name.toLowerCase());
+    if (!alreadyListed) {
+      citySeen.add(key);
+      cities.push({ name, percentage: pct });
+    }
   }
   if (cities.length > 0) {
     cities.sort((a, b) => b.percentage - a.percentage);
     metrics.topCities = cities;
   }
 
-  // === AGE RANGES ===
+  // === AGE RANGES === (flexible: en-dash, spacing, newlines)
   const ageRanges = [];
+  const dashClass = '[\\-\\s\u2013\u2014]';
   const agePatterns = [
-    { pattern: /13[- ]?17\s*[\n\s]*([0-9.]+)%/i, range: '13-17' },
-    { pattern: /18[- ]?24\s*[\n\s]*([0-9.]+)%/i, range: '18-24' },
-    { pattern: /25[- ]?34\s*[\n\s]*([0-9.]+)%/i, range: '25-34' },
-    { pattern: /35[- ]?44\s*[\n\s]*([0-9.]+)%/i, range: '35-44' },
-    { pattern: /45[- ]?54\s*[\n\s]*([0-9.]+)%/i, range: '45-54' },
-    { pattern: /55[- ]?64\s*[\n\s]*([0-9.]+)%/i, range: '55-64' },
-    { pattern: /65\+\s*[\n\s]*([0-9.]+)%/i, range: '65+' }
+    { pattern: new RegExp(`13${dashClass}*17[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '13-17' },
+    { pattern: new RegExp(`18${dashClass}*24[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '18-24' },
+    { pattern: new RegExp(`25${dashClass}*34[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '25-34' },
+    { pattern: new RegExp(`35${dashClass}*44[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '35-44' },
+    { pattern: new RegExp(`45${dashClass}*54[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '45-54' },
+    { pattern: new RegExp(`55${dashClass}*64[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '55-64' },
+    { pattern: /65\s*\+\s*[\s\n]*([0-9]+(?:\.[0-9]+)?)\s*%/i, range: '65+' }
   ];
   for (const { pattern, range } of agePatterns) {
     const match = text.match(pattern);
-    if (match) ageRanges.push({ range, percentage: parseFloat(match[1]) });
+    if (match) {
+      const pct = parseFloat(match[1]);
+      if (pct <= 100) ageRanges.push({ range, percentage: pct });
+    }
   }
   if (ageRanges.length > 0) {
     ageRanges.sort((a, b) => b.percentage - a.percentage);

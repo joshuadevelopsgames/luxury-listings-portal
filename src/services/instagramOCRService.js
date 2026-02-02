@@ -305,67 +305,94 @@ class InstagramOCRService {
   }
 
   /**
-   * Extract city data from text
+   * Escape special regex characters in a string
+   */
+  escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
+   * Extract city data from text (flexible for OCR: newlines, spacing, layout)
    */
   extractCities(text) {
     const cities = [];
-    
-    // Common city names that might appear in Instagram analytics
+    const seen = new Set();
+
+    // Known city names that commonly appear in Instagram analytics
     const cityPatterns = [
       'Calgary', 'Vancouver', 'Toronto', 'Montreal', 'Edmonton', 'Ottawa',
       'Burnaby', 'Surrey', 'Richmond', 'Victoria', 'Winnipeg', 'Halifax',
       'Los Angeles', 'New York', 'San Francisco', 'Chicago', 'Houston',
       'Miami', 'Seattle', 'Denver', 'Phoenix', 'Dallas', 'Austin',
-      'London', 'Paris', 'Sydney', 'Melbourne', 'Dubai', 'Singapore'
+      'London', 'Paris', 'Sydney', 'Melbourne', 'Dubai', 'Singapore',
+      'Mississauga', 'Brampton', 'Hamilton', 'Quebec City', 'Laval'
     ];
-    
+
     for (const city of cityPatterns) {
-      const regex = new RegExp(`${city}\\s*[\\n\\s]*([0-9.]+)%`, 'i');
-      const match = text.match(regex);
-      if (match) {
-        cities.push({
-          name: city,
-          percentage: parseFloat(match[1])
-        });
+      const escaped = this.escapeRegex(city);
+      // Allow flexible whitespace/newlines between city name and percentage
+      const regex = new RegExp(`${escaped}[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'gi');
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        const pct = parseFloat(match[1]);
+        const key = `${city.toLowerCase()}-${pct}`;
+        if (!seen.has(key) && pct <= 100) {
+          seen.add(key);
+          cities.push({ name: city, percentage: pct });
+        }
       }
     }
-    
-    // Sort by percentage descending
+
+    // Fallback: generic "Word(s) number%" pattern for lines that look like cities (e.g. "City Name 12.5%")
+    const genericRegex = /(?:^|[\n])\s*([A-Za-z][A-Za-z\s\.\-']{1,40}?)\s*[\s\n]+\s*([0-9]+(?:\.[0-9]+)?)\s*%/gm;
+    const skipWords = new Set(['posts', 'stories', 'reels', 'men', 'women', 'followers', 'accounts', 'profile', 'external', 'overall', 'growth', 'engagement', 'content', 'reach', 'impressions', 'saves', 'shares', 'link', 'taps', 'visits', 'interactions', 'views', 'non']);
+    let genericMatch;
+    while ((genericMatch = genericRegex.exec(text)) !== null) {
+      const name = genericMatch[1].trim();
+      const firstWord = name.split(/\s+/)[0].toLowerCase();
+      if (skipWords.has(firstWord) || name.length < 2) continue;
+      const pct = parseFloat(genericMatch[2]);
+      if (pct > 100) continue;
+      const key = `${name.toLowerCase()}-${pct}`;
+      if (seen.has(key)) continue;
+      // Avoid duplicating if we already have this city from the list
+      const alreadyListed = cities.some(c => c.name.toLowerCase() === name.toLowerCase());
+      if (!alreadyListed) {
+        seen.add(key);
+        cities.push({ name, percentage: pct });
+      }
+    }
+
     cities.sort((a, b) => b.percentage - a.percentage);
-    
     return cities;
   }
 
   /**
-   * Extract age range data from text
+   * Extract age range data from text (flexible for OCR: en-dash, spacing, newlines)
    */
   extractAgeRanges(text) {
     const ageRanges = [];
-    
-    // Common age range patterns
+    // Hyphen, en-dash, em-dash, or space between numbers; allow newlines before %
+    const dashClass = '[\\-\\s\u2013\u2014]';
     const agePatterns = [
-      { pattern: /13[- ]?17\s*[\n\s]*([0-9.]+)%/i, range: '13-17' },
-      { pattern: /18[- ]?24\s*[\n\s]*([0-9.]+)%/i, range: '18-24' },
-      { pattern: /25[- ]?34\s*[\n\s]*([0-9.]+)%/i, range: '25-34' },
-      { pattern: /35[- ]?44\s*[\n\s]*([0-9.]+)%/i, range: '35-44' },
-      { pattern: /45[- ]?54\s*[\n\s]*([0-9.]+)%/i, range: '45-54' },
-      { pattern: /55[- ]?64\s*[\n\s]*([0-9.]+)%/i, range: '55-64' },
-      { pattern: /65\+\s*[\n\s]*([0-9.]+)%/i, range: '65+' }
+      { pattern: new RegExp(`13${dashClass}*17[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '13-17' },
+      { pattern: new RegExp(`18${dashClass}*24[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '18-24' },
+      { pattern: new RegExp(`25${dashClass}*34[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '25-34' },
+      { pattern: new RegExp(`35${dashClass}*44[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '35-44' },
+      { pattern: new RegExp(`45${dashClass}*54[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '45-54' },
+      { pattern: new RegExp(`55${dashClass}*64[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'i'), range: '55-64' },
+      { pattern: /65\s*\+\s*[\s\n]*([0-9]+(?:\.[0-9]+)?)\s*%/i, range: '65+' }
     ];
-    
+
     for (const { pattern, range } of agePatterns) {
       const match = text.match(pattern);
       if (match) {
-        ageRanges.push({
-          range,
-          percentage: parseFloat(match[1])
-        });
+        const pct = parseFloat(match[1]);
+        if (pct <= 100) ageRanges.push({ range, percentage: pct });
       }
     }
-    
-    // Sort by percentage descending
+
     ageRanges.sort((a, b) => b.percentage - a.percentage);
-    
     return ageRanges;
   }
 
