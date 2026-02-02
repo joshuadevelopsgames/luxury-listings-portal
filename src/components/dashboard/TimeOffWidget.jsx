@@ -14,7 +14,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { safeFormatDate } from '../../utils/dateUtils';
 
 const TimeOffWidget = () => {
   const navigate = useNavigate();
@@ -97,7 +97,7 @@ const TimeOffWidget = () => {
             </div>
             {pendingRequests.map((request) => (
               <div key={request.id} className="text-sm text-yellow-800">
-                {format(new Date(request.startDate), 'MMM dd')} - {format(new Date(request.endDate), 'MMM dd')} ({request.days} days)
+                {safeFormatDate(request.startDate, 'MMM dd')} - {safeFormatDate(request.endDate, 'MMM dd')} ({request.days} days)
               </div>
             ))}
           </div>
@@ -112,7 +112,7 @@ const TimeOffWidget = () => {
             </div>
             {upcomingTimeOff.map((timeOff) => (
               <div key={timeOff.id} className="text-sm text-green-800">
-                {format(new Date(timeOff.startDate), 'MMM dd')} - {format(new Date(timeOff.endDate), 'MMM dd')} ({timeOff.days} days)
+                {safeFormatDate(timeOff.startDate, 'MMM dd')} - {safeFormatDate(timeOff.endDate, 'MMM dd')} ({timeOff.days} days)
               </div>
             ))}
           </div>

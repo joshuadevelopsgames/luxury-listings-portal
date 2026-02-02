@@ -15,7 +15,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { safeFormatDate, safeFormatDateRange } from '../../utils/dateUtils';
 
 const HRQuickActions = () => {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const HRQuickActions = () => {
           id: r.id,
           employeeName: r.employeeName || r.employeeEmail,
           type: r.type,
-          dates: r.startDate && r.endDate ? `${format(new Date(r.startDate), 'MMM d')} - ${format(new Date(r.endDate), 'MMM d, yyyy')}` : '',
+          dates: safeFormatDateRange(r.startDate, r.endDate, 'MMM d', ' - '),
           days: r.days || 1,
           status: r.status
         }));

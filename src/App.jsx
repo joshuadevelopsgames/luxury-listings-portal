@@ -46,6 +46,9 @@ import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
 // Module Pages
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
 
+// Error Handling
+import { RouteErrorPage } from './components/ErrorBoundary';
+
 // ============================================================================
 // NAVIGATION HELPER - Sets up programmatic navigation
 // ============================================================================
@@ -122,6 +125,7 @@ function ProtectedApp() {
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       // Public routes (no auth required)
       { path: '/login', element: <LoginPage /> },

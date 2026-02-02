@@ -37,6 +37,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
+import { safeFormatDate } from '../utils/dateUtils';
 import { toast } from 'react-hot-toast';
 
 const MyTimeOff = () => {
@@ -498,7 +499,7 @@ const MyTimeOff = () => {
                             </Badge>
                           </div>
                           <p className="text-sm text-gray-600">
-                            {format(new Date(request.startDate), 'MMM dd, yyyy')} - {format(new Date(request.endDate), 'MMM dd, yyyy')}
+                            {safeFormatDate(request.startDate, 'MMM dd, yyyy')} - {safeFormatDate(request.endDate, 'MMM dd, yyyy')}
                             <span className="mx-2">•</span>
                             {request.days} {request.days === 1 ? 'day' : 'days'}
                           </p>
@@ -507,7 +508,7 @@ const MyTimeOff = () => {
                       </div>
                       <div className="flex items-center space-x-3">
                         <div className="text-right text-sm text-gray-500">
-                          <p>Submitted {request.submittedDate ? format(new Date(request.submittedDate?.toDate ? request.submittedDate.toDate() : request.submittedDate), 'MMM dd') : 'N/A'}</p>
+                          <p>Submitted {safeFormatDate(request.submittedDate, 'MMM dd')}</p>
                           {request.reviewedBy && (
                             <p className="text-xs mt-1">
                               {request.status === 'approved' ? 'Approved' : 'Reviewed'} by {request.reviewedBy}
@@ -566,7 +567,7 @@ const MyTimeOff = () => {
                                 <p key={idx} className="text-xs text-gray-600">
                                   <span className="font-medium capitalize">{entry.action}</span>
                                   {' by '}{entry.by}
-                                  {' on '}{format(new Date(entry.timestamp), 'MMM dd, yyyy h:mm a')}
+                                  {' on '}{safeFormatDate(entry.timestamp, 'MMM dd, yyyy h:mm a')}
                                   {entry.notes && <span className="italic"> - {entry.notes}</span>}
                                 </p>
                               ))}
@@ -887,11 +888,11 @@ const MyTimeOff = () => {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <p className="text-sm text-gray-600">Start Date</p>
-                  <p className="font-medium">{format(new Date(selectedRequest.startDate), 'MMM dd, yyyy')}</p>
+                  <p className="font-medium">{safeFormatDate(selectedRequest.startDate, 'MMM dd, yyyy')}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">End Date</p>
-                  <p className="font-medium">{format(new Date(selectedRequest.endDate), 'MMM dd, yyyy')}</p>
+                  <p className="font-medium">{safeFormatDate(selectedRequest.endDate, 'MMM dd, yyyy')}</p>
                 </div>
               </div>
 
@@ -902,7 +903,7 @@ const MyTimeOff = () => {
 
               <div className="pt-4 border-t">
                 <p className="text-sm text-gray-600 mb-1">Submitted</p>
-                <p className="text-gray-900">{format(new Date(selectedRequest.submittedDate), 'MMMM dd, yyyy')}</p>
+                <p className="text-gray-900">{safeFormatDate(selectedRequest.submittedDate, 'MMMM dd, yyyy')}</p>
               </div>
 
               {selectedRequest.reviewedBy && (
@@ -910,7 +911,7 @@ const MyTimeOff = () => {
                   <p className="text-sm text-gray-600 mb-1">Reviewed By</p>
                   <p className="text-gray-900">{selectedRequest.reviewedBy}</p>
                   <p className="text-sm text-gray-600 mt-1">
-                    on {format(new Date(selectedRequest.reviewedDate), 'MMMM dd, yyyy')}
+                    on {safeFormatDate(selectedRequest.reviewedDate, 'MMMM dd, yyyy')}
                   </p>
                 </div>
               )}
