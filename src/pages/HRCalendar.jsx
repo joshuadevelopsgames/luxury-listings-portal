@@ -43,6 +43,7 @@ const HRCalendar = () => {
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showNotesModal, setShowNotesModal] = useState(null); // 'approve' or 'reject' or null
   const [processingRequest, setProcessingRequest] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
   // Admin balance editor state
@@ -300,42 +301,72 @@ const HRCalendar = () => {
 
   // Handle approve leave request with notes and notifications
   const handleApproveRequest = async (requestId, notes = '') => {
-    setProcessingRequest(requestId);
+    console.log('📝 handleApproveRequest called with ID:', requestId);
+    
+    if (!requestId) {
+      console.error('❌ No request ID provided');
+      toast.error('Error: No request ID');
+      return;
+    }
+    
+    setModalLoading(true);
+    toast.loading('Processing approval...', { id: 'approve-request' });
+    
     try {
       // Find the request to get employee info
       const request = leaveRequests.find(r => r.id === requestId);
+      console.log('📋 Found request:', request);
+      
+      if (!request) {
+        console.error('❌ Request not found in local state');
+        toast.dismiss('approve-request');
+        toast.error('Request not found');
+        return;
+      }
       
       // Use enhanced method with history tracking
+      console.log('📤 Updating status in Firestore...');
       await firestoreService.updateLeaveRequestStatusEnhanced(requestId, 'approved', currentUser?.email, notes);
+      console.log('✅ Firestore updated successfully');
       
       // Deduct from employee's leave balance
-      if (request) {
+      try {
         await firestoreService.deductLeaveBalance(
           request.employeeId || request.employeeEmail,
           request.type,
           request.days || 1,
           requestId
         );
-        
-        // Send notification to employee
-        await timeOffNotifications.notifyApproved(request, currentUser?.email);
-        
-        // Auto-sync to Google Calendar if connected
-        if (isGoogleConnected) {
-          try {
-            await googleCalendarService.createLeaveEvent(request);
-            toast.success('Leave approved & added to Google Calendar!');
-          } catch (calError) {
-            console.error('Failed to sync to Google Calendar:', calError);
-            toast.success('Leave approved (calendar sync failed)');
-          }
-        } else {
-          toast.success('Leave request approved');
-        }
-      } else {
-        toast.success('Leave request approved');
+        console.log('✅ Leave balance deducted');
+      } catch (balanceError) {
+        console.warn('⚠️ Could not deduct balance:', balanceError);
       }
       
+      // Send notification to employee
+      try {
+        await timeOffNotifications.notifyApproved(request, currentUser?.email);
+        console.log('✅ Notification sent');
+      } catch (notifError) {
+        console.warn('⚠️ Could not send notification:', notifError);
+      }
+      
+      // Auto-sync to Google Calendar if connected
+      if (isGoogleConnected) {
+        try {
+          await googleCalendarService.createLeaveEvent(request);
+          toast.dismiss('approve-request');
+          toast.success('Leave approved & added to Google Calendar!');
+        } catch (calError) {
+          console.warn('⚠️ Failed to sync to Google Calendar:', calError);
+          toast.dismiss('approve-request');
+          toast.success('Leave approved (calendar sync failed)');
+        }
+      } else {
+        toast.dismiss('approve-request');
+        toast.success('Leave request approved!');
+      }
+      
+      // Update local state
       setLeaveRequests(prev => 
         prev.map(req => req.id === requestId ? { ...req, status: 'approved', managerNotes: notes } : req)
       );
@@ -347,9 +378,11 @@ const HRCalendar = () => {
         loadGoogleCalendarEvents();
       }
     } catch (error) {
-      console.error('Error approving request:', error);
-      toast.error('Failed to approve request');
+      console.error('❌ Error approving request:', error);
+      toast.dismiss('approve-request');
+      toast.error(`Failed to approve: ${error.message || 'Unknown error'}`);
     } finally {
+      setModalLoading(false);
       setProcessingRequest(null);
     }
   };
@@ -361,7 +394,9 @@ const HRCalendar = () => {
       return;
     }
     
-    setProcessingRequest(requestId);
+    setModalLoading(true);
+    toast.loading('Processing rejection...', { id: 'reject-request' });
+    
     try {
       // Find the request to get employee info
       const request = leaveRequests.find(r => r.id === requestId);
@@ -371,19 +406,26 @@ const HRCalendar = () => {
       
       // Send notification to employee
       if (request) {
-        await timeOffNotifications.notifyRejected(request, currentUser?.email, reason);
+        try {
+          await timeOffNotifications.notifyRejected(request, currentUser?.email, reason);
+        } catch (notifError) {
+          console.warn('⚠️ Could not send notification:', notifError);
+        }
       }
       
       setLeaveRequests(prev => 
         prev.map(req => req.id === requestId ? { ...req, status: 'rejected', managerNotes: reason } : req)
       );
+      toast.dismiss('reject-request');
       toast.success('Leave request rejected');
       setShowNotesModal(null);
       setApprovalNotes('');
     } catch (error) {
       console.error('Error rejecting request:', error);
-      toast.error('Failed to reject request');
+      toast.dismiss('reject-request');
+      toast.error(`Failed to reject: ${error.message || 'Unknown error'}`);
     } finally {
+      setModalLoading(false);
       setProcessingRequest(null);
     }
   };
@@ -1488,16 +1530,16 @@ const HRCalendar = () => {
 
       {/* Approval/Rejection Notes Modal */}
       {showNotesModal && processingRequest && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {showNotesModal === 'approve' ? 'Approve Request' : 'Reject Request'}
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full shadow-xl">
+            <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {showNotesModal === 'approve' ? '✓ Approve Request' : '✗ Reject Request'}
               </h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {showNotesModal === 'approve' ? 'Notes (Optional)' : 'Reason for Rejection *'}
                 </label>
                 <textarea
@@ -1507,8 +1549,9 @@ const HRCalendar = () => {
                     ? 'Add any notes for the employee...' 
                     : 'Please provide a reason for rejection...'}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                   required={showNotesModal === 'reject'}
+                  disabled={modalLoading}
                 />
               </div>
               
@@ -1520,13 +1563,15 @@ const HRCalendar = () => {
                     setProcessingRequest(null);
                     setApprovalNotes('');
                   }}
+                  disabled={modalLoading}
+                  className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   Cancel
                 </Button>
                 <Button
                   className={showNotesModal === 'approve' 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-red-600 hover:bg-red-700'}
+                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600' 
+                    : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600'}
                   onClick={() => {
                     if (showNotesModal === 'approve') {
                       handleApproveRequest(processingRequest, approvalNotes);
@@ -1534,9 +1579,16 @@ const HRCalendar = () => {
                       handleRejectRequest(processingRequest, approvalNotes);
                     }
                   }}
-                  disabled={showNotesModal === 'reject' && !approvalNotes.trim()}
+                  disabled={(showNotesModal === 'reject' && !approvalNotes.trim()) || modalLoading}
                 >
-                  {showNotesModal === 'approve' ? 'Approve' : 'Reject'}
+                  {modalLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    showNotesModal === 'approve' ? 'Approve' : 'Reject'
+                  )}
                 </Button>
               </div>
             </div>
