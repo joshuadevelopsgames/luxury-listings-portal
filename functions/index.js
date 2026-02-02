@@ -193,7 +193,7 @@ function parseInstagramMetrics(text) {
     let numMatch;
     while ((numMatch = numRe.exec(block)) !== null) {
       const nextChar = block[numMatch.index + numMatch[0].length];
-      if (nextChar === '.' || nextChar === ',') continue;
+      if (nextChar === '.' || nextChar === ',' || nextChar === '%') continue;
       numbersInBlock.push(numMatch[1]);
     }
     if (numbersInBlock.length > 0) {

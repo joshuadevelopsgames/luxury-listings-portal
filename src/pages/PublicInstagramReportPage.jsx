@@ -553,16 +553,8 @@ const PublicInstagramReportPage = () => {
       )}
 
       {/* Screenshots Gallery */}
+      {report.screenshots && report.screenshots.length > 0 && (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">
-            Analytics Screenshots
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Detailed performance metrics and insights from your Instagram account
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {report.screenshots?.map((screenshot, index) => (
             <div
@@ -590,6 +582,7 @@ const PublicInstagramReportPage = () => {
           ))}
         </div>
       </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200">

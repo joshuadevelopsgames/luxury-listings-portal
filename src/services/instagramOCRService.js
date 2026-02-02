@@ -178,7 +178,7 @@ class InstagramOCRService {
       let m;
       while ((m = numRe.exec(block)) !== null) {
         const nextChar = block[m.index + m[0].length];
-        if (nextChar === '.' || nextChar === ',') continue;
+        if (nextChar === '.' || nextChar === ',' || nextChar === '%') continue;
         numbersInBlock.push(m[1]);
       }
       if (numbersInBlock.length > 0) {

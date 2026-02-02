@@ -1875,15 +1875,6 @@ const ReportPreviewModal = ({ report, onClose }) => {
           {/* Legacy screenshots gallery */}
           {report.screenshots && report.screenshots.length > 0 && (
             <div className="max-w-4xl mx-auto px-6 py-8">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Analytics Screenshots
-                </h2>
-                <p className="text-gray-600 text-sm">
-                  Detailed performance metrics from your Instagram account
-                </p>
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 {report.screenshots.map((screenshot, index) => (
                   <div
