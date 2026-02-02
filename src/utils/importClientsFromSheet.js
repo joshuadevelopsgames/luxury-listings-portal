@@ -14,7 +14,6 @@ const CLIENTS_DATA = [
   // Dylan's clients
   {
     clientName: 'The Agency Corp',
-    tier: 'A',
     instagramUsername: '@theagencyre',
     platforms: { instagram: true, linkedin: true, youtube: true, facebook: true, tiktok: false, x: false },
     assignedManagerName: 'Dylan',
@@ -22,7 +21,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency New York',
-    tier: 'B',
     instagramUsername: '@theagencynewyork',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Dylan',
@@ -30,7 +28,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency SoCal',
-    tier: 'B',
     instagramUsername: '@theagencysocal',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Dylan',
@@ -38,7 +35,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency NorthCal',
-    tier: 'B',
     instagramUsername: '@theresopteam',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Dylan',
@@ -46,7 +42,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency Naples',
-    tier: 'B',
     instagramUsername: '@theagencynaplesfl',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Dylan',
@@ -56,7 +51,6 @@ const CLIENTS_DATA = [
   // Mikayla's clients
   {
     clientName: 'Heather Domi',
-    tier: 'A',
     instagramUsername: '@heatherdomi.re',
     platforms: { instagram: true, linkedin: true, youtube: true, facebook: true, tiktok: false, x: false },
     assignedManagerName: 'Mikayla',
@@ -64,7 +58,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Compass Sports and Entertainment',
-    tier: 'A',
     instagramUsername: '@compass.se',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Mikayla',
@@ -72,7 +65,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Blair Chang',
-    tier: 'B',
     instagramUsername: '@blairchang_re',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Mikayla',
@@ -80,7 +72,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Whitney McLaughlin',
-    tier: 'B',
     instagramUsername: '@mclaughlinteam',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Mikayla',
@@ -88,7 +79,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency Austin',
-    tier: 'B',
     instagramUsername: '@theagency.austin',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Mikayla',
@@ -96,7 +86,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Resop Team',
-    tier: 'B',
     instagramUsername: '@theresopteam',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Mikayla',
@@ -104,7 +93,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency Florida Keys',
-    tier: 'B',
     instagramUsername: '@theagencyfloridakeys',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Mikayla',
@@ -114,7 +102,6 @@ const CLIENTS_DATA = [
   // Daniella's clients
   {
     clientName: 'Stockton Group',
-    tier: 'A',
     instagramUsername: '@thestocktongroup_vail',
     platforms: { instagram: true, facebook: true, youtube: true, linkedin: false, tiktok: false, x: false },
     assignedManagerName: 'Daniella',
@@ -122,7 +109,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Meg Garrido',
-    tier: 'A',
     instagramUsername: '@makeitmegatlvail',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Daniella',
@@ -130,7 +116,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Tye Stockton',
-    tier: 'A',
     instagramUsername: '@tyestocktonvail',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Daniella',
@@ -138,7 +123,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: "The Agency Martha's Vineyard",
-    tier: 'B',
     instagramUsername: '@theagencymarthasvineyard',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Daniella',
@@ -146,7 +130,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Kirstin Stroh (Naples)',
-    tier: 'B',
     instagramUsername: '@kristin_stroh',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Daniella',
@@ -154,7 +137,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency NWFL',
-    tier: 'B',
     instagramUsername: '@theagency.nwfl',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Daniella',
@@ -163,7 +145,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'HQ Residences Miami',
-    tier: 'A',
     instagramUsername: '@hqresidences',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Matthew',
@@ -173,7 +154,6 @@ const CLIENTS_DATA = [
   // Michelle's clients
   {
     clientName: 'The Agency Cayman',
-    tier: 'A',
     instagramUsername: '@theagencyrecayman',
     platforms: { instagram: true, linkedin: true, youtube: true, facebook: true, tiktok: false, x: false },
     assignedManagerName: 'Michelle',
@@ -181,7 +161,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Stefan Cohen',
-    tier: 'B',
     instagramUsername: '@stefancohen',
     platforms: { instagram: true, linkedin: true, facebook: true, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Michelle',
@@ -189,7 +168,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Heather Sinclair',
-    tier: 'B',
     instagramUsername: '@aspenheather1',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Michelle',
@@ -197,7 +175,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Kodiak Club',
-    tier: 'B',
     instagramUsername: '@thekodiakclub',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Michelle',
@@ -207,7 +184,6 @@ const CLIENTS_DATA = [
   // Tara's clients
   {
     clientName: 'Emil Hartoonian',
-    tier: 'B',
     instagramUsername: '@emilhartoonian',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Tara',
@@ -215,7 +191,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Resnick and Nash',
-    tier: 'B',
     instagramUsername: '@resnickandnash',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Tara',
@@ -223,7 +198,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'Ann Newton Cane',
-    tier: 'A',
     instagramUsername: '@annnewtoncane',
     platforms: { instagram: true, linkedin: true, facebook: true, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Tara',
@@ -231,7 +205,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency Aspen',
-    tier: 'B',
     instagramUsername: '@agencyaspen',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Tara',
@@ -239,7 +212,6 @@ const CLIENTS_DATA = [
   },
   {
     clientName: 'The Agency Nashville',
-    tier: 'B',
     instagramUsername: '@theagencynashville',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Tara',
@@ -249,7 +221,6 @@ const CLIENTS_DATA = [
   // Luca's clients
   {
     clientName: 'Paul McClean',
-    tier: 'A',
     instagramUsername: '@mccleandesign',
     platforms: { instagram: true, facebook: true, linkedin: false, youtube: false, tiktok: false, x: false },
     assignedManagerName: 'Luca',
@@ -257,11 +228,8 @@ const CLIENTS_DATA = [
   }
 ];
 
-// Package sizes based on tier
-const TIER_PACKAGES = {
-  'A': { packageType: 'Premium', packageSize: 20 },
-  'B': { packageType: 'Standard', packageSize: 10 }
-};
+// Default package settings
+const DEFAULT_PACKAGE = { packageType: 'Standard', packageSize: 10 };
 
 /**
  * Find manager email by name from approved users
@@ -329,26 +297,22 @@ export const importClients = async () => {
       );
       
       try {
-        // Get package info based on tier
-        const tierPackage = TIER_PACKAGES[clientData.tier] || TIER_PACKAGES['B'];
-        
         // Build client record
         const clientRecord = {
           clientName: clientData.clientName,
           instagramUsername: clientData.instagramUsername,
-          tier: clientData.tier,
           platforms: clientData.platforms,
-          packageType: tierPackage.packageType,
-          packageSize: tierPackage.packageSize,
+          packageType: DEFAULT_PACKAGE.packageType,
+          packageSize: DEFAULT_PACKAGE.packageSize,
           postsUsed: 0,
-          postsRemaining: tierPackage.packageSize,
+          postsRemaining: DEFAULT_PACKAGE.packageSize,
           hasAds: clientData.hasAds,
           assignedManager: managerEmails[clientData.assignedManagerName] || null,
           assignedManagerName: clientData.assignedManagerName,
           paymentStatus: 'Pending',
           approvalStatus: 'Approved',
           status: 'active',
-          notes: clientData.notes || `${clientData.tier === 'A' ? 'Premium' : 'Standard'} client - ${clientData.assignedManagerName}`,
+          notes: clientData.notes || `Client - ${clientData.assignedManagerName}`,
           startDate: new Date().toISOString().split('T')[0],
           lastContact: new Date().toISOString().split('T')[0],
           postedOn: 'Luxury Listings'
@@ -359,7 +323,7 @@ export const importClients = async () => {
           const updateData = {
             ...clientRecord,
             postsUsed: existingClient.postsUsed || 0,
-            postsRemaining: existingClient.postsRemaining || tierPackage.packageSize
+            postsRemaining: existingClient.postsRemaining || DEFAULT_PACKAGE.packageSize
           };
           
           await firestoreService.updateClient(existingClient.id, updateData);

@@ -46,7 +46,6 @@ const ClientProfilesList = () => {
 
   // Permissions
   const canManageClients = hasPermission(PERMISSIONS.MANAGE_CLIENTS);
-  const canDeleteClients = hasPermission(PERMISSIONS.DELETE_CLIENTS);
   const canAssignManagers = hasPermission(PERMISSIONS.ASSIGN_CLIENT_MANAGERS);
   const canEditPackages = hasPermission(PERMISSIONS.EDIT_CLIENT_PACKAGES);
 
@@ -447,7 +446,7 @@ const ClientProfilesList = () => {
                       <Pencil className="w-3.5 h-3.5 text-[#0071e3]" />
                     </button>
                   )}
-                  {canDeleteClients && (
+                  {canManageClients && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -626,7 +625,7 @@ const ClientProfilesList = () => {
                       <Pencil className="w-4 h-4 text-[#0071e3]" />
                     </button>
                   )}
-                  {canDeleteClients && (
+                  {canManageClients && (
                     <button
                       onClick={() => setShowDeleteConfirm(selectedClient)}
                       className="p-2 rounded-lg hover:bg-[#ff3b30]/10 transition-colors"
