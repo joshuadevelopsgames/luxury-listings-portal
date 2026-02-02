@@ -165,10 +165,18 @@ class InstagramOCRService {
     }
 
     // === INTERACTIONS ===
+    // Early: number immediately after "Interactions" (flexible whitespace; not part of % or date).
+    const immediateInteractions = text.match(/(?:Total\s+)?Interacti[o0]ns\s*[\s\n]*([0-9,]{1,6})(?!\s*%)/i);
+    if (immediateInteractions) {
+      const n = this.parseNumber(immediateInteractions[1]);
+      if (n >= 1 && n <= 99999 && n !== 1 && n !== 30 && n !== 31) {
+        metrics.interactions = n;
+      }
+    }
     // Primary: Interactions section = from "Interactions" to growth/end; find big number (standalone line or first valid number).
     const lowForInteractions = text.toLowerCase();
     const interactionsSectionStart = Math.max(lowForInteractions.indexOf('interactions'), lowForInteractions.indexOf('interacti0ns'));
-    if (interactionsSectionStart >= 0) {
+    if (metrics.interactions === undefined && interactionsSectionStart >= 0) {
       const growthIdx = lowForInteractions.indexOf('growth', interactionsSectionStart + 1);
       const endByGrowth = growthIdx > interactionsSectionStart ? growthIdx : text.length;
       const sectionEnd = Math.min(text.length, interactionsSectionStart + 900, endByGrowth);
@@ -189,7 +197,21 @@ class InstagramOCRService {
         }
       }
 
-      // 2) No newlines / one long line: take FIRST number in section that isn't date or % (big number usually after "Interactions" and date)
+      // 2) Number at end of line (e.g. "Interactions\n25" or "Something 25")
+      if (metrics.interactions === undefined) {
+        for (const line of lines) {
+          const endNum = line.match(/\s+([0-9,]{1,5})\s*$/);
+          if (endNum) {
+            const n = this.parseNumber(endNum[1]);
+            if (n >= 1 && n <= 99999 && !dateFragments.has(n) && !(n === 30 && has30Days)) {
+              metrics.interactions = n;
+              break;
+            }
+          }
+        }
+      }
+
+      // 3) No newlines / one long line: take FIRST number in section that isn't date or % (big number usually after "Interactions" and date)
       if (metrics.interactions === undefined) {
         const numbersInOrder = [];
         const numRe = /\b([0-9,]+)\b/g;
@@ -477,7 +499,14 @@ class InstagramOCRService {
     ].filter(i => i >= 0);
     if (candidates.length === 0) return text;
     const start = Math.min(...candidates);
-    return text.slice(start, start + 1200);
+    let chunk = text.slice(start, start + 1200);
+    // End section at "Age range" or "Gender" so we don't pull in Reels/Posts/age data
+    const endMarkers = ['age range', 'gender', 'by content type'];
+    for (const marker of endMarkers) {
+      const idx = chunk.toLowerCase().indexOf(marker);
+      if (idx > 80) chunk = chunk.slice(0, idx);
+    }
+    return chunk;
   }
 
   /**
@@ -515,14 +544,21 @@ class InstagramOCRService {
     }
 
     // Fallback: in locations section, any "Name(s) number%" (line-start or word-boundary so OCR without newlines still matches)
-    const uiWords = new Set(['all', 'followers', 'non-followers', 'nonfollowers', 'posts', 'cities', 'countries', 'top', 'locations', 'stories', 'reels', 'by', 'content', 'type', 'where', 'your', 'are', 'from']);
+    const uiWords = new Set(['all', 'followers', 'non-followers', 'nonfollowers', 'posts', 'cities', 'countries', 'top', 'locations', 'stories', 'reels', 'by', 'content', 'type', 'where', 'your', 'are', 'from', 'indie', 'men', 'women']);
+    const nonCitySubstrings = ['indie', 'reels', 'posts', 'stories', ' li']; // names containing these are not cities
     const lineStartRe = /(?:^|\n)\s*([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
     let genMatch;
+    const rejectName = (n, nLower) => {
+      if (n.length < 2 || n.length > 35) return true;
+      if (uiWords.has(nLower) || /\d/.test(n)) return true;
+      if (nLower.endsWith(' -') || n.endsWith(' -')) return true;
+      if (nonCitySubstrings.some(s => nLower.includes(s))) return true;
+      return false;
+    };
     while ((genMatch = lineStartRe.exec(section)) !== null) {
-      const name = genMatch[1].trim().replace(/\s+/g, ' ');
+      const name = genMatch[1].trim().replace(/\s+/g, ' ').replace(/\s*-\s*$/, '');
       const nameLower = name.toLowerCase();
-      if (name.length < 2 || name.length > 35) continue;
-      if (uiWords.has(nameLower) || /\d/.test(name)) continue;
+      if (rejectName(name, nameLower)) continue;
       const pct = parseFloat(genMatch[2].replace(/,/g, '.'));
       if (pct <= 0 || pct > 100) continue;
       const key = `${nameLower}-${pct}`;
@@ -534,10 +570,9 @@ class InstagramOCRService {
     // Also match "Name number%" with word boundary (catches "Toronto 15.2% Vancouver 12.1%" on one line)
     const wordBoundRe = /\b([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
     while ((genMatch = wordBoundRe.exec(section)) !== null) {
-      const name = genMatch[1].trim().replace(/\s+/g, ' ');
+      const name = genMatch[1].trim().replace(/\s+/g, ' ').replace(/\s*-\s*$/, '');
       const nameLower = name.toLowerCase();
-      if (name.length < 2 || name.length > 35) continue;
-      if (uiWords.has(nameLower) || /\d/.test(name)) continue;
+      if (rejectName(name, nameLower)) continue;
       const pct = parseFloat(genMatch[2].replace(/,/g, '.'));
       if (pct <= 0 || pct > 100) continue;
       const key = `${nameLower}-${pct}`;

@@ -181,10 +181,17 @@ function parseInstagramMetrics(text) {
   }
 
   // === INTERACTIONS ===
-  // Primary: Interactions section; find big number (standalone line or first valid number when OCR has no newlines).
+  // Early: number immediately after "Interactions" (flexible whitespace; not part of % or date).
+  const immediateInteractions = text.match(/(?:Total\s+)?Interacti[o0]ns\s*[\s\n]*([0-9,]{1,6})(?!\s*%)/i);
+  if (immediateInteractions) {
+    const n = parseNumber(immediateInteractions[1]);
+    if (n >= 1 && n <= 99999 && n !== 1 && n !== 30 && n !== 31) {
+      metrics.interactions = n;
+    }
+  }
   const low = text.toLowerCase();
   const interactionsSectionStart = Math.max(low.indexOf('interactions'), low.indexOf('interacti0ns'));
-  if (interactionsSectionStart >= 0) {
+  if (metrics.interactions === undefined && interactionsSectionStart >= 0) {
     const growthIdx = low.indexOf('growth', interactionsSectionStart + 1);
     const endByGrowth = growthIdx > interactionsSectionStart ? growthIdx : text.length;
     const sectionEnd = Math.min(text.length, interactionsSectionStart + 900, endByGrowth);
@@ -200,6 +207,18 @@ function parseInstagramMetrics(text) {
         if (n >= 1 && n <= 99999 && !dateFragments.has(n)) {
           metrics.interactions = n;
           break;
+        }
+      }
+    }
+    if (metrics.interactions === undefined) {
+      for (const line of lines) {
+        const endNum = line.match(/\s+([0-9,]{1,5})\s*$/);
+        if (endNum) {
+          const n = parseNumber(endNum[1]);
+          if (n >= 1 && n <= 99999 && !dateFragments.has(n) && !(n === 30 && has30Days)) {
+            metrics.interactions = n;
+            break;
+          }
         }
       }
     }
@@ -352,14 +371,21 @@ function parseInstagramMetrics(text) {
       }
     }
   }
-  const uiWords = new Set(['all', 'followers', 'non-followers', 'nonfollowers', 'posts', 'cities', 'countries', 'top', 'locations', 'stories', 'reels', 'by', 'content', 'type', 'where', 'your', 'are', 'from']);
+  const uiWords = new Set(['all', 'followers', 'non-followers', 'nonfollowers', 'posts', 'cities', 'countries', 'top', 'locations', 'stories', 'reels', 'by', 'content', 'type', 'where', 'your', 'are', 'from', 'indie', 'men', 'women']);
+  const nonCitySubstrings = ['indie', 'reels', 'posts', 'stories', ' li'];
+  const rejectName = (n, nLower) => {
+    if (n.length < 2 || n.length > 35) return true;
+    if (uiWords.has(nLower) || /\d/.test(n)) return true;
+    if (nLower.endsWith(' -') || n.endsWith(' -')) return true;
+    if (nonCitySubstrings.some(s => nLower.includes(s))) return true;
+    return false;
+  };
   const lineStartRe = /(?:^|\n)\s*([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
   let genMatch;
   while ((genMatch = lineStartRe.exec(locationsSection)) !== null) {
-    const name = genMatch[1].trim().replace(/\s+/g, ' ');
+    const name = genMatch[1].trim().replace(/\s+/g, ' ').replace(/\s*-\s*$/, '');
     const nameLower = name.toLowerCase();
-    if (name.length < 2 || name.length > 35) continue;
-    if (uiWords.has(nameLower) || /\d/.test(name)) continue;
+    if (rejectName(name, nameLower)) continue;
     const pct = parseFloat(genMatch[2].replace(/,/g, '.'));
     if (pct <= 0 || pct > 100) continue;
     const key = `${nameLower}-${pct}`;
@@ -370,10 +396,9 @@ function parseInstagramMetrics(text) {
   }
   const wordBoundRe = /\b([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
   while ((genMatch = wordBoundRe.exec(locationsSection)) !== null) {
-    const name = genMatch[1].trim().replace(/\s+/g, ' ');
+    const name = genMatch[1].trim().replace(/\s+/g, ' ').replace(/\s*-\s*$/, '');
     const nameLower = name.toLowerCase();
-    if (name.length < 2 || name.length > 35) continue;
-    if (uiWords.has(nameLower) || /\d/.test(name)) continue;
+    if (rejectName(name, nameLower)) continue;
     const pct = parseFloat(genMatch[2].replace(/,/g, '.'));
     if (pct <= 0 || pct > 100) continue;
     const key = `${nameLower}-${pct}`;
@@ -502,7 +527,13 @@ function getLocationsSection(text) {
   ].filter(i => i >= 0);
   if (candidates.length === 0) return text;
   const start = Math.min(...candidates);
-  return text.slice(start, start + 1200);
+  let chunk = text.slice(start, start + 1200);
+  const endMarkers = ['age range', 'gender', 'by content type'];
+  for (const marker of endMarkers) {
+    const idx = chunk.toLowerCase().indexOf(marker);
+    if (idx > 80) chunk = chunk.slice(0, idx);
+  }
+  return chunk;
 }
 
 function parseNumber(str) {
