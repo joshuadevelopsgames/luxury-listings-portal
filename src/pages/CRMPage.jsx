@@ -710,8 +710,8 @@ const CRMPage = () => {
   const totalLeads = totalWarmLeads + totalContacted + totalColdLeads;
 
   const renderClientCard = (client) => (
-    <Card key={client.id} className="hover:shadow-md transition-shadow dark:bg-[#2c2c2e] dark:border-white/10">
-      <CardContent className="p-6 pt-8">
+    <div key={client.id} className="p-5 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/10 hover:shadow-lg transition-shadow">
+      <div>
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h4 className="font-medium text-gray-900 dark:text-white">{client.contactName}</h4>
@@ -747,9 +747,9 @@ const CRMPage = () => {
               </div>
             )}
           </div>
-          <Badge className={getStatusColor(client.status)}>
+          <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
             {client.status ? client.status.charAt(0).toUpperCase() + client.status.slice(1) : 'Unknown'}
-          </Badge>
+          </span>
         </div>
         
         <div className="space-y-3 mb-5">
@@ -776,27 +776,23 @@ const CRMPage = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => setSelectedClient(client)}
-            className="flex-1 dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
           >
-            <Eye className="w-4 h-4 mr-2" />
+            <Eye className="w-3.5 h-3.5" />
             View Details
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          </button>
+          <button 
             onClick={() => openEditModal(client)}
-            className="flex-1 dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
           >
-            <Edit className="w-4 h-4 mr-2" />
+            <Edit className="w-3.5 h-3.5" />
             Edit
-          </Button>
+          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 
   const renderClientRow = (client, isExisting = false) => (
@@ -813,31 +809,27 @@ const CRMPage = () => {
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.email}</td>
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.phone || '—'}</td>
       <td className="py-3 px-4">
-        <Badge className={getStatusColor(client.status)}>
+        <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
           {client.status ? String(client.status).charAt(0).toUpperCase() + String(client.status).slice(1) : '—'}
-        </Badge>
+        </span>
       </td>
       <td className="py-3 px-4">
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => setSelectedClient(client)}
-            className="dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
           >
-            <Eye className="w-4 h-4 mr-1" />
+            <Eye className="w-3.5 h-3.5" />
             View
-          </Button>
+          </button>
           {!isExisting && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => openEditModal(client)}
-              className="dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
             >
-              <Edit className="w-4 h-4 mr-1" />
+              <Edit className="w-3.5 h-3.5" />
               Edit
-            </Button>
+            </button>
           )}
         </div>
       </td>
@@ -1136,17 +1128,15 @@ const CRMPage = () => {
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900">Add New Lead</h3>
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => {
                   setShowAddModal(false);
                   resetNewLeadForm();
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#86868b] transition-colors"
               >
                 ✕
-              </Button>
+              </button>
             </div>
             
             <div className="space-y-4">
@@ -1261,22 +1251,22 @@ const CRMPage = () => {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 pt-4">
-                <Button 
+                <button 
                   onClick={handleAddNewLead}
                   disabled={isAddingLead}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
                 >
                   {isAddingLead ? 'Adding...' : 'Add Lead'}
-                </Button>
-                <Button 
-                  variant="outline"
+                </button>
+                <button 
                   onClick={() => {
                     setShowAddModal(false);
                     resetNewLeadForm();
                   }}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >
                   Cancel
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -1290,14 +1280,12 @@ const CRMPage = () => {
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900">Lead Details</h3>
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => setSelectedClient(null)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#86868b] transition-colors"
               >
                 ✕
-              </Button>
+              </button>
             </div>
             
             <div className="space-y-4">
@@ -1308,9 +1296,9 @@ const CRMPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <Badge className={getStatusColor(selectedClient.status)}>
+                  <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(selectedClient.status)}`}>
                     {selectedClient.status ? selectedClient.status.charAt(0).toUpperCase() + selectedClient.status.slice(1) : 'Unknown'}
-                  </Badge>
+                  </span>
                 </div>
                 
                 {/* Organization - New prominent field */}
@@ -1369,9 +1357,8 @@ const CRMPage = () => {
                 </div>
               )}
               
-              <div className="flex items-center gap-2 pt-4">
-                <Button 
-                  className="bg-blue-600 hover:bg-blue-700"
+              <div className="flex flex-wrap items-center gap-2 pt-4">
+                <button 
                   onClick={() => {
                     if (selectedClient.phone) {
                       window.open(`tel:${selectedClient.phone.replace(/\D/g, '')}`, '_self');
@@ -1379,28 +1366,25 @@ const CRMPage = () => {
                       alert('No phone number available for this lead');
                     }
                   }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
                 >
-                  <Phone className="w-4 h-4 mr-2" />
+                  <Phone className="w-3.5 h-3.5" />
                   Call Lead
-                </Button>
-                <Button 
-                  variant="outline"
+                </button>
+                <button 
                   onClick={() => {
                     if (selectedClient.email) {
                       const subject = encodeURIComponent(`Follow up - ${selectedClient.contactName}`);
                       const body = encodeURIComponent(`Hi ${selectedClient.contactName},\n\nI hope this email finds you well. I wanted to follow up regarding our previous conversation.\n\nBest regards,\n[Your Name]`);
                       
-                      // Try multiple Gmail URL formats to ensure it opens Gmail
                       const gmailUrls = [
                         `https://mail.google.com/mail/u/0/#compose?to=${encodeURIComponent(selectedClient.email)}&subject=${subject}&body=${body}`,
                         `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(selectedClient.email)}&su=${subject}&body=${body}`,
                         `https://mail.google.com/mail/u/0/#compose?to=${encodeURIComponent(selectedClient.email)}&su=${subject}&body=${body}`
                       ];
                       
-                      // Try the first URL, if it fails, fall back to mailto
                       const gmailWindow = window.open(gmailUrls[0], '_blank');
                       
-                      // Fallback: if Gmail doesn't open properly, use mailto
                       setTimeout(() => {
                         if (!gmailWindow || gmailWindow.closed) {
                           const mailtoUrl = `mailto:${selectedClient.email}?subject=${subject}&body=${body}`;
@@ -1412,45 +1396,44 @@ const CRMPage = () => {
                     }
                   }}
                   title="Opens Gmail compose with pre-filled details (fallback to default email client)"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >
-                  <Mail className="w-4 h-4 mr-2" />
+                  <Mail className="w-3.5 h-3.5" />
                   Send Email
-                </Button>
-                <Button 
-                  variant="outline"
+                </button>
+                <button 
                   onClick={() => {
-                    // Create Google Calendar event
                     const eventTitle = encodeURIComponent(`Meeting with ${selectedClient.contactName}`);
                     const eventDetails = encodeURIComponent(`Follow up meeting with ${selectedClient.contactName}\n\nNotes: ${selectedClient.notes || 'No additional notes'}`);
                     const startDate = new Date();
-                    startDate.setDate(startDate.getDate() + 1); // Tomorrow
-                    startDate.setHours(10, 0, 0, 0); // 10 AM
+                    startDate.setDate(startDate.getDate() + 1);
+                    startDate.setHours(10, 0, 0, 0);
                     
                     const endDate = new Date(startDate);
-                    endDate.setHours(11, 0, 0, 0); // 11 AM
+                    endDate.setHours(11, 0, 0, 0);
                     
-                    // Include lead's email as attendee if available
                     const attendees = selectedClient.email ? `&add=${encodeURIComponent(selectedClient.email)}` : '';
                     
                     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&details=${eventDetails}&dates=${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}${attendees}`;
                     
                     window.open(googleCalendarUrl, '_blank');
                   }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >
-                  <Calendar className="w-4 h-4 mr-2" />
+                  <Calendar className="w-3.5 h-3.5" />
                   Schedule Meeting
-                </Button>
+                </button>
                 {selectedClient.instagram && (
-                  <Button 
-                    variant="outline"
+                  <button 
                     onClick={() => {
                       const instagramUrl = `https://www.instagram.com/${selectedClient.instagram.replace('@', '')}`;
                       window.open(instagramUrl, '_blank');
                     }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                   >
-                    <Instagram className="w-4 h-4 mr-2" />
+                    <Instagram className="w-3.5 h-3.5" />
                     View Instagram
-                  </Button>
+                  </button>
                 )}
               </div>
 
@@ -1458,9 +1441,7 @@ const CRMPage = () => {
               <div className="border-t pt-4 mt-4">
                 <h4 className="text-sm font-medium text-gray-700 mb-3">Quick Actions</h4>
                 <div className="flex flex-wrap gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
+                  <button 
                     onClick={() => {
                       if (selectedClient.website) {
                         window.open(selectedClient.website.startsWith('http') ? selectedClient.website : `https://${selectedClient.website}`, '_blank');
@@ -1468,39 +1449,35 @@ const CRMPage = () => {
                         alert('No website available for this lead');
                       }
                     }}
-                    className="text-xs"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[11px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                   >
-                    <ExternalLink className="w-3 h-3 mr-1" />
+                    <ExternalLink className="w-3 h-3" />
                     Visit Website
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
+                  </button>
+                  <button 
                     onClick={() => {
                       const notes = `Follow up with ${selectedClient.contactName} - ${new Date().toLocaleDateString()}`;
                       navigator.clipboard.writeText(notes).then(() => {
                         alert('Notes copied to clipboard!');
                       });
                     }}
-                    className="text-xs"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[11px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                   >
-                    <Edit className="w-3 h-3 mr-1" />
+                    <Edit className="w-3 h-3" />
                     Copy Notes
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
+                  </button>
+                  <button 
                     onClick={() => {
                       const contactInfo = `Name: ${selectedClient.contactName}\nEmail: ${selectedClient.email}\nPhone: ${selectedClient.phone}\nInstagram: ${selectedClient.instagram || 'N/A'}\nWebsite: ${selectedClient.website || 'N/A'}`;
                       navigator.clipboard.writeText(contactInfo).then(() => {
                         alert('Contact info copied to clipboard!');
                       });
                     }}
-                    className="text-xs"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[11px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                   >
-                    <Users className="w-3 h-3 mr-1" />
+                    <Users className="w-3 h-3" />
                     Copy Contact Info
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1515,14 +1492,12 @@ const CRMPage = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Edit Lead</h3>
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={handleEditCancel}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#86868b] transition-colors"
               >
                 <X className="w-4 h-4" />
-              </Button>
+              </button>
             </div>
 
             <div className="space-y-4">
@@ -1614,32 +1589,30 @@ const CRMPage = () => {
             </div>
 
             <div className="flex items-center gap-3 mt-6">
-              <Button
+              <button
                 onClick={handleEditSubmit}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
               >
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="w-4 h-4" />
                 Save Changes
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={handleEditCancel}
-                variant="outline"
-                className="flex-1"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
               >
                 Cancel
-              </Button>
+              </button>
             </div>
 
             {/* Delete Button */}
             <div className="mt-4 pt-4 border-t">
-              <Button
+              <button
                 onClick={() => deleteLead(editingClient)}
-                variant="destructive"
-                className="w-full"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e5342b] transition-colors"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
+                <Trash2 className="w-4 h-4" />
                 Delete Lead
-              </Button>
+              </button>
             </div>
           </div>
         </div>,
