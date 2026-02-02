@@ -164,6 +164,9 @@ const HRCalendar = () => {
 
   // Leave requests state - loaded from Firestore
   const [leaveRequests, setLeaveRequests] = useState([]);
+  
+  // Team members state - loaded from Firestore
+  const [teamMembers, setTeamMembers] = useState([]);
 
   // Leave type definitions with colors
   const leaveTypes = {
@@ -263,6 +266,36 @@ const HRCalendar = () => {
 
     loadLeaveRequests();
   }, [currentUser?.email]);
+
+  // Load team members from Firestore
+  useEffect(() => {
+    const loadTeamMembers = async () => {
+      try {
+        const users = await firestoreService.getUsers();
+        if (users && users.length > 0) {
+          const formattedMembers = users.map((user, index) => ({
+            id: index + 1,
+            name: user.displayName || user.email?.split('@')[0] || 'Unknown',
+            email: user.email,
+            avatar: (user.displayName || user.email || 'U').charAt(0).toUpperCase(),
+            position: user.position || user.role || 'Team Member',
+            department: user.department || 'General',
+            totalVacationDays: user.leaveBalances?.vacation?.total || 15,
+            usedVacationDays: user.leaveBalances?.vacation?.used || 0,
+            totalSickDays: user.leaveBalances?.sick?.total || 10,
+            usedSickDays: user.leaveBalances?.sick?.used || 0
+          }));
+          setTeamMembers(formattedMembers);
+        }
+      } catch (error) {
+        console.error('Error loading team members:', error);
+        // Set empty array to prevent crashes
+        setTeamMembers([]);
+      }
+    };
+
+    loadTeamMembers();
+  }, []);
 
   // Handle approve leave request with notes and notifications
   const handleApproveRequest = async (requestId, notes = '') => {
