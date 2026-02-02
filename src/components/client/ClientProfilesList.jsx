@@ -532,7 +532,7 @@ const ClientProfilesList = () => {
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
                       ) : client.clientName?.toLowerCase().includes('agency') ? (
                         <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
-                      ) : client.clientName?.toLowerCase().includes('paul mcclean') ? (
+                      ) : (client.clientName?.toLowerCase().includes('paul mcclean') || client.clientName?.toLowerCase().includes('mcclean design')) ? (
                         <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
@@ -679,7 +679,7 @@ const ClientProfilesList = () => {
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
                       ) : client.clientName?.toLowerCase().includes('agency') ? (
                         <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
-                      ) : client.clientName?.toLowerCase().includes('paul mcclean') ? (
+                      ) : (client.clientName?.toLowerCase().includes('paul mcclean') || client.clientName?.toLowerCase().includes('mcclean design')) ? (
                         <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
