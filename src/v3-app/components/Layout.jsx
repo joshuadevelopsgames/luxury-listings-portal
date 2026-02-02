@@ -245,8 +245,9 @@ const V3Layout = () => {
     navigate(path);
   }, [navigate]);
 
-  // Check if current user is Michelle for special theme
-  const isMichelle = currentUser?.email?.toLowerCase() === 'michelle@luxury-listings.com';
+  // Check if current user OR viewed-as user is Michelle for special theme
+  const isMichelle = currentUser?.email?.toLowerCase() === 'michelle@luxury-listings.com' ||
+    (isViewingAs && viewingAsUser?.email?.toLowerCase() === 'michelle@luxury-listings.com');
 
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''} ${isMichelle ? 'michelle-theme' : ''}`}>
