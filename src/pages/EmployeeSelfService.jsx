@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import PersonCard from '../components/PersonCard';
 import { firestoreService } from '../services/firestoreService';
 import { 
@@ -194,160 +190,171 @@ const EmployeeSelfService = () => {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-600 mt-2">Manage your information, time off, and access important resources</p>
+        <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">My Profile</h1>
+        <p className="text-[15px] text-[#86868b] mt-1">Manage your information, time off, and access important resources</p>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {quickActions.map((action, index) => {
           const Icon = action.icon;
+          const colorMap = {
+            blue: { bg: 'bg-[#0071e3]/10', icon: 'text-[#0071e3]' },
+            green: { bg: 'bg-[#34c759]/10', icon: 'text-[#34c759]' },
+            purple: { bg: 'bg-[#af52de]/10', icon: 'text-[#af52de]' },
+            orange: { bg: 'bg-[#ff9500]/10', icon: 'text-[#ff9500]' }
+          };
+          const colors = colorMap[action.color] || colorMap.blue;
           return (
-            <Card 
+            <div 
               key={index} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
+              className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 cursor-pointer hover:shadow-lg transition-all"
               onClick={action.action}
             >
-              <CardHeader className="pb-3">
-                <div className={`p-3 rounded-lg bg-${action.color}-100 w-fit`}>
-                  <Icon className={`w-6 h-6 text-${action.color}-600`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <h3 className="font-semibold text-gray-900 mb-1">{action.label}</h3>
-                <p className="text-sm text-gray-600">{action.description}</p>
-              </CardContent>
-            </Card>
+              <div className={`p-2.5 rounded-xl ${colors.bg} w-fit mb-3`}>
+                <Icon className={`w-5 h-5 ${colors.icon}`} />
+              </div>
+              <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white mb-1">{action.label}</h3>
+              <p className="text-[12px] text-[#86868b]">{action.description}</p>
+            </div>
           );
         })}
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="personal">Personal Info</TabsTrigger>
-          <TabsTrigger value="timeoff">Time Off</TabsTrigger>
-          <TabsTrigger value="compensation">Compensation</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-wrap gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
+        {[
+          { value: 'overview', label: 'Overview' },
+          { value: 'personal', label: 'Personal Info' },
+          { value: 'timeoff', label: 'Time Off' },
+          { value: 'compensation', label: 'Compensation' },
+          { value: 'documents', label: 'Documents' }
+        ].map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveTab(tab.value)}
+            className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+              activeTab === tab.value
+                ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Overview Tab */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Personal Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5" />
-                  <span>Personal Summary</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+                <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Personal Summary</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-[#0071e3] rounded-full flex items-center justify-center text-white text-[17px] font-semibold">
                     {employeeData.personalInfo.firstName[0]}{employeeData.personalInfo.lastName[0]}
                   </div>
                   <div>
-                    <p className="font-semibold text-lg">{employeeData.personalInfo.firstName} {employeeData.personalInfo.lastName}</p>
-                    <p className="text-sm text-gray-600">{employeeData.personalInfo.position}</p>
-                    <p className="text-sm text-gray-600">{employeeData.personalInfo.department}</p>
+                    <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">{employeeData.personalInfo.firstName} {employeeData.personalInfo.lastName}</p>
+                    <p className="text-[12px] text-[#86868b]">{employeeData.personalInfo.position}</p>
+                    <p className="text-[12px] text-[#86868b]">{employeeData.personalInfo.department}</p>
                   </div>
                 </div>
-                <div className="pt-3 border-t space-y-2">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">{employeeData.personalInfo.email}</span>
+                <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-2">
+                  <div className="flex items-center gap-2 text-[12px]">
+                    <Mail className="w-4 h-4 text-[#86868b]" />
+                    <span className="text-[#86868b]">{employeeData.personalInfo.email}</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Briefcase className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">Start Date: {format(new Date(employeeData.personalInfo.startDate), 'MMM dd, yyyy')}</span>
+                  <div className="flex items-center gap-2 text-[12px]">
+                    <Briefcase className="w-4 h-4 text-[#86868b]" />
+                    <span className="text-[#86868b]">Start Date: {format(new Date(employeeData.personalInfo.startDate), 'MMM dd, yyyy')}</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <User className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">Manager: {employeeData.personalInfo.manager}</span>
+                  <div className="flex items-center gap-2 text-[12px]">
+                    <User className="w-4 h-4 text-[#86868b]" />
+                    <span className="text-[#86868b]">Manager: {employeeData.personalInfo.manager}</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Time Off Summary */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center space-x-2">
-                    <Calendar className="w-5 h-5" />
-                    <span>Time Off Balance</span>
-                  </CardTitle>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/my-time-off')}>
-                    View Details
-                  </Button>
+            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+                  <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Time Off Balance</span>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Plane className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-blue-900">Vacation</span>
+                <button onClick={() => navigate('/my-time-off')} className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                  View Details
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-[#0071e3]/5 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Plane className="w-5 h-5 text-[#0071e3]" />
+                    <span className="text-[13px] font-medium text-[#0071e3]">Vacation</span>
                   </div>
-                  <span className="text-xl font-bold text-blue-900">{employeeData.timeOff.vacation.remaining} days</span>
+                  <span className="text-[17px] font-semibold text-[#0071e3]">{employeeData.timeOff.vacation.remaining} days</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Heart className="w-5 h-5 text-red-600" />
-                    <span className="font-medium text-red-900">Sick Leave</span>
+                <div className="flex items-center justify-between p-3 bg-[#ff3b30]/5 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-[#ff3b30]" />
+                    <span className="text-[13px] font-medium text-[#ff3b30]">Sick Leave</span>
                   </div>
-                  <span className="text-xl font-bold text-red-900">{employeeData.timeOff.sick.remaining} days</span>
+                  <span className="text-[17px] font-semibold text-[#ff3b30]">{employeeData.timeOff.sick.remaining} days</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Home className="w-5 h-5 text-purple-600" />
-                    <span className="font-medium text-purple-900">Personal</span>
+                <div className="flex items-center justify-between p-3 bg-[#af52de]/5 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Home className="w-5 h-5 text-[#af52de]" />
+                    <span className="text-[13px] font-medium text-[#af52de]">Personal</span>
                   </div>
-                  <span className="text-xl font-bold text-purple-900">{employeeData.timeOff.personal.remaining} days</span>
+                  <span className="text-[17px] font-semibold text-[#af52de]">{employeeData.timeOff.personal.remaining} days</span>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Recent Requests */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Clock className="w-5 h-5" />
-                <span>Recent Requests</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {employeeData.recentRequests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{request.type}</p>
-                      <p className="text-sm text-gray-600">{request.description}</p>
-                    </div>
-                    <Badge variant={request.status === 'Approved' ? 'secondary' : 'outline'}>
-                      {request.status}
-                    </Badge>
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Recent Requests</span>
+            </div>
+            <div className="space-y-3">
+              {employeeData.recentRequests.map((request) => (
+                <div key={request.id} className="flex items-center justify-between p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
+                  <div>
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{request.type}</p>
+                    <p className="text-[12px] text-[#86868b]">{request.description}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  <span className={`text-[11px] px-2 py-1 rounded-md font-medium ${
+                    request.status === 'Approved' ? 'bg-[#34c759]/10 text-[#34c759]' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                  }`}>
+                    {request.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Personal Info Tab */}
-        <TabsContent value="personal">
+      {/* Personal Info Tab */}
+      {activeTab === 'personal' && (
+        <div>
           {loading ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading employee data...</p>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-12 text-center">
+              <div className="w-12 h-12 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-[14px] text-[#86868b]">Loading employee data...</p>
+            </div>
           ) : (
             <PersonCard 
               person={employeeData.personalInfo}
@@ -358,130 +365,116 @@ const EmployeeSelfService = () => {
               employeeId={employeeFirestoreId}
             />
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Time Off Tab */}
-        <TabsContent value="timeoff">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5" />
-                  <span>Time Off Management</span>
-                </CardTitle>
-                <Button onClick={() => navigate('/my-time-off')}>
-                  Go to My Time Off Page
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                View detailed time-off information, submit requests, and track your leave balances on the dedicated Time Off page.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {Object.entries(employeeData.timeOff).map(([key, balance]) => (
-                  <div key={key} className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-sm font-medium text-gray-600 capitalize mb-2">{key}</p>
-                    <p className="text-3xl font-bold text-gray-900">{balance.remaining}</p>
-                    <p className="text-sm text-gray-600 mt-1">of {balance.total} days remaining</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Compensation Tab */}
-        <TabsContent value="compensation">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5" />
-                  <span>Compensation</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Annual Salary</label>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{employeeData.compensation.salary}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Pay Schedule</label>
-                  <p className="text-gray-900 mt-1">{employeeData.compensation.paySchedule}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Next Pay Date</label>
-                  <p className="text-gray-900 mt-1">{format(new Date(employeeData.compensation.nextPayDate), 'MMMM dd, yyyy')}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">YTD Earnings</label>
-                  <p className="text-gray-900 mt-1">{employeeData.compensation.ytdEarnings}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="w-5 h-5" />
-                  <span>Benefits</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {employeeData.benefits.map((benefit, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{benefit.name}</p>
-                        <p className="text-sm text-gray-600">
-                          {benefit.provider || `Contribution: ${benefit.contribution}` || `Coverage: ${benefit.coverage}`}
-                        </p>
-                      </div>
-                      <Badge variant="secondary">{benefit.status}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+      {/* Time Off Tab */}
+      {activeTab === 'timeoff' && (
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Time Off Management</span>
+            </div>
+            <button onClick={() => navigate('/my-time-off')} className="px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors">
+              Go to My Time Off
+            </button>
           </div>
-        </TabsContent>
-
-        {/* Documents Tab */}
-        <TabsContent value="documents">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <FileText className="w-5 h-5" />
-                <span>My Documents</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {employeeData.documents.map((doc, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-gray-100 rounded">
-                        <FileText className="w-5 h-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{doc.name}</p>
-                        <p className="text-sm text-gray-600">
-                          {doc.category} • {format(new Date(doc.date), 'MMM dd, yyyy')}
-                        </p>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
-                ))}
+          <p className="text-[13px] text-[#86868b] mb-4">
+            View detailed time-off information, submit requests, and track your leave balances on the dedicated Time Off page.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.entries(employeeData.timeOff).map(([key, balance]) => (
+              <div key={key} className="p-4 bg-black/[0.02] dark:bg-white/5 rounded-xl">
+                <p className="text-[12px] font-medium text-[#86868b] capitalize mb-2">{key}</p>
+                <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{balance.remaining}</p>
+                <p className="text-[12px] text-[#86868b] mt-1">of {balance.total} days remaining</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Compensation Tab */}
+      {activeTab === 'compensation' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Compensation</span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-[12px] font-medium text-[#86868b]">Annual Salary</label>
+                <p className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mt-1">{employeeData.compensation.salary}</p>
+              </div>
+              <div>
+                <label className="text-[12px] font-medium text-[#86868b]">Pay Schedule</label>
+                <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1">{employeeData.compensation.paySchedule}</p>
+              </div>
+              <div>
+                <label className="text-[12px] font-medium text-[#86868b]">Next Pay Date</label>
+                <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1">{format(new Date(employeeData.compensation.nextPayDate), 'MMMM dd, yyyy')}</p>
+              </div>
+              <div>
+                <label className="text-[12px] font-medium text-[#86868b]">YTD Earnings</label>
+                <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1">{employeeData.compensation.ytdEarnings}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Benefits</span>
+            </div>
+            <div className="space-y-3">
+              {employeeData.benefits.map((benefit, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
+                  <div>
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{benefit.name}</p>
+                    <p className="text-[12px] text-[#86868b]">
+                      {benefit.provider || `Contribution: ${benefit.contribution}` || `Coverage: ${benefit.coverage}`}
+                    </p>
+                  </div>
+                  <span className="text-[11px] px-2 py-1 rounded-md font-medium bg-[#34c759]/10 text-[#34c759]">{benefit.status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Documents Tab */}
+      {activeTab === 'documents' && (
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">My Documents</span>
+          </div>
+          <div className="space-y-3">
+            {employeeData.documents.map((doc, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-black/[0.02] dark:bg-white/5 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-black/5 dark:bg-white/10 rounded-lg">
+                    <FileText className="w-5 h-5 text-[#86868b]" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{doc.name}</p>
+                    <p className="text-[12px] text-[#86868b]">
+                      {doc.category} • {format(new Date(doc.date), 'MMM dd, yyyy')}
+                    </p>
+                  </div>
+                </div>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
