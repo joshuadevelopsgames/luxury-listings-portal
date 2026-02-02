@@ -179,15 +179,19 @@ class InstagramOCRService {
       const block = text.slice(interactionsBlockStart, blockEnd).slice(0, 400);
       const numbersInBlock = block.match(/\b([0-9,]+)\b/g);
       if (numbersInBlock && numbersInBlock.length > 0) {
-        // Prefer the last number in the block (main metric is usually displayed last before Followers)
-        let candidate = numbersInBlock[numbersInBlock.length - 1];
-        const candidateNum = this.parseNumber(candidate);
-        // If last number is 30 and block contains "30 days", use previous number (date, not metric)
-        if (candidateNum === 30 && /30\s*days?/i.test(block) && numbersInBlock.length >= 2) {
-          candidate = numbersInBlock[numbersInBlock.length - 2];
+        // Date fragments to skip: 1, 30, 31 from "Jan 1 - Jan 30" and "Last 30 days"
+        const isDateFragment = (n) => n === 1 || n === 30 || n === 31;
+        const has30Days = /30\s*days?/i.test(block);
+        let parsed = 0;
+        for (let i = numbersInBlock.length - 1; i >= 0; i--) {
+          const n = this.parseNumber(numbersInBlock[i]);
+          if (n < 1 || n > 999999) continue;
+          if (n === 30 && has30Days) continue;
+          if (isDateFragment(n)) continue;
+          parsed = n;
+          break;
         }
-        const parsed = this.parseNumber(candidate);
-        if (parsed >= 1 && parsed <= 999999) {
+        if (parsed > 0) {
           metrics.interactions = parsed;
         }
       }
@@ -196,7 +200,11 @@ class InstagramOCRService {
       const interactionsMatch = text.match(/Interactions?\s*[\n\s]*([0-9,]+)(?!\s*days?)/i) ||
                                 text.match(/([0-9,]+)\s*Interactions?/i);
       if (interactionsMatch) {
-        metrics.interactions = this.parseNumber(interactionsMatch[1]);
+        const fallbackNum = this.parseNumber(interactionsMatch[1]);
+        // Don't use date fragments (Jan 1, Jan 30, Last 30 days)
+        if (fallbackNum !== 1 && fallbackNum !== 30 && fallbackNum !== 31) {
+          metrics.interactions = fallbackNum;
+        }
       }
     }
 
@@ -301,13 +309,23 @@ class InstagramOCRService {
       metrics.ageRanges = ageRanges;
     }
 
-    // === GENDER ===
-    const menMatch = text.match(/Men\s*[\n\s]*([0-9.]+)%/i);
-    const womenMatch = text.match(/Women\s*[\n\s]*([0-9.]+)%/i);
-    if (menMatch || womenMatch) {
+    // === GENDER === (scope to audience section; allow Male/Female, comma decimal, OCR variants)
+    const genderSection = this.getGenderSection(text);
+    const pctNum = (str) => {
+      if (!str) return null;
+      const n = parseFloat(str.replace(/,/g, '.').replace(/\s/g, ''));
+      return isNaN(n) || n < 0 || n > 100 ? null : n;
+    };
+    let menPct = null;
+    let womenPct = null;
+    const menMatch = genderSection.match(/\b(?:Men|Male|Man)\s*[\n\s]*([0-9]+[.,]?[0-9]*)\s*%/i);
+    const womenMatch = genderSection.match(/\b(?:Women|Female|Wom[ae]n|Womcn)\s*[\n\s]*([0-9]+[.,]?[0-9]*)\s*%/i);
+    if (menMatch) menPct = pctNum(menMatch[1]);
+    if (womenMatch) womenPct = pctNum(womenMatch[1]);
+    if (menPct != null || womenPct != null) {
       metrics.gender = {
-        men: menMatch ? parseFloat(menMatch[1]) : 0,
-        women: womenMatch ? parseFloat(womenMatch[1]) : 0
+        men: menPct ?? 0,
+        women: womenPct ?? 0
       };
     }
 
@@ -337,7 +355,64 @@ class InstagramOCRService {
       metrics.followerChangePercent = parseFloat(followerChangeMatch[1]);
     }
 
+    // === DATE RANGE (e.g. "Jan 1 - Jan 30" or "Last 30 days" on Insights screens) ===
+    const parsedDateRange = this.extractDateRange(text);
+    if (parsedDateRange) {
+      metrics.dateRange = parsedDateRange;
+    }
+
     return metrics;
+  }
+
+  /**
+   * Extract report date range from OCR text (Instagram Insights: "Jan 1 - Jan 30", "Last 30 days", etc.)
+   * @param {string} text - Raw OCR text
+   * @returns {string|null} Display string for the date range, or null
+   */
+  extractDateRange(text) {
+    const normalized = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+    // Explicit range: "Jan 1 - Jan 30" or "Jan 1 - Jan 30, 2025" or "January 1 - January 30, 2025"
+    const monthAbbrev = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
+    const monthFull = 'January|February|March|April|May|June|July|August|September|October|November|December';
+    const explicitRange = normalized.match(
+      new RegExp(`\\b(${monthAbbrev}|${monthFull})[a-z]*\\s+\\d{1,2}\\s*[-–]\\s*(${monthAbbrev}|${monthFull})[a-z]*\\s+\\d{1,2}(?:\\s*,\\s*\\d{4})?`, 'i')
+    );
+    if (explicitRange) {
+      return explicitRange[0].trim();
+    }
+    // "Last N days" → compute range from today for display
+    const lastDaysMatch = normalized.match(/\bLast\s+(\d+)\s+days?\b/i);
+    if (lastDaysMatch) {
+      const n = parseInt(lastDaysMatch[1], 10);
+      if (n >= 1 && n <= 365) {
+        const end = new Date();
+        const start = new Date(end);
+        start.setDate(start.getDate() - n + 1);
+        const fmt = (d) => {
+          const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+          return `${m} ${d.getDate()}`;
+        };
+        const year = end.getFullYear();
+        const sameYear = start.getFullYear() === year;
+        return sameYear
+          ? `${fmt(start)} - ${fmt(end)}, ${year}`
+          : `${fmt(start)}, ${start.getFullYear()} - ${fmt(end)}, ${year}`;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get the section of text that likely contains gender breakdown (Men/Women %)
+   * so we don't match "Men" from other UI (e.g. "Top locations").
+   */
+  getGenderSection(text) {
+    const low = text.toLowerCase();
+    const genderIdx = low.indexOf('gender');
+    const audienceIdx = low.indexOf('audience');
+    const start = genderIdx >= 0 ? (audienceIdx >= 0 ? Math.min(genderIdx, audienceIdx) : genderIdx)
+      : audienceIdx >= 0 ? audienceIdx : 0;
+    return text.slice(start, start + 500);
   }
 
   /**

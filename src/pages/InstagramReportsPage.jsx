@@ -419,6 +419,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
         (prev.screenshots || []).forEach((s) => { if (s.previewUrl) URL.revokeObjectURL(s.previewUrl); });
         return {
           ...prev,
+          dateRange: metrics.dateRange ?? prev.dateRange,
           metrics: { ...(prev.metrics || {}), ...metrics },
           screenshots: []
         };
