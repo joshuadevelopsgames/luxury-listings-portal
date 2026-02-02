@@ -60,6 +60,7 @@ function SortableMainBlock({ id, span, isEditMode, renderBlock }) {
       style={style}
       className={`${span === 2 ? 'lg:col-span-2' : ''} ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
       {...(isEditMode ? { ...attributes, ...listeners } : {})}
+      onClick={isEditMode ? (e) => e.preventDefault() : undefined}
     >
       {renderBlock(id)}
     </div>

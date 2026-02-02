@@ -532,6 +532,33 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Widget scroll area: thin, subtle scrollbar inside cards */
+.widget-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.widget-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.widget-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+}
+
+.widget-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dark .widget-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dark .widget-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* ==========================================================================
    Selection
    ========================================================================== */
