@@ -292,106 +292,99 @@ const PublicInstagramReportPage = () => {
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Insights</h2>
               <p className="text-sm text-gray-500 mb-6">{report.dateRange}</p>
 
-              {/* Circular bars: Views & Interactions (Instagram-style) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12 mb-10">
-                {/* Views circular bar */}
-                {(report.metrics.views != null || report.metrics.viewsFollowerPercent != null) && (
-                  <div className="flex flex-col items-center">
-                    <div className="relative flex-shrink-0 w-[200px] h-[200px]">
-                      <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
-                        <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
-                        <circle
-                          cx="100" cy="100" r="78"
-                          fill="none"
-                          stroke="#9C27B0"
-                          strokeWidth="28"
-                          strokeDasharray={`${(report.metrics.viewsFollowerPercent ?? 50) * 4.9} 490`}
-                          strokeLinecap="round"
-                        />
-                        <circle
-                          cx="100" cy="100" r="78"
-                          fill="none"
-                          stroke="#E040FB"
-                          strokeWidth="28"
-                          strokeDasharray={`${(100 - (report.metrics.viewsFollowerPercent ?? 50)) * 4.9} 490`}
-                          strokeDashoffset={`-${(report.metrics.viewsFollowerPercent ?? 50) * 4.9}`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-gray-500 text-sm font-medium">Views</span>
-                        <span className="text-3xl font-bold text-gray-900 mt-0.5">
-                          {report.metrics.views != null ? report.metrics.views.toLocaleString() : '—'}
-                        </span>
+              {/* Circular bars: Views & Interactions. Single circle = centered; two = grid. Top cities beside Views. */}
+              {(() => {
+                const hasViews = report.metrics.views != null || report.metrics.viewsFollowerPercent != null;
+                const hasInteractions = report.metrics.interactions != null;
+                const hasTopCities = report.metrics.topCities && report.metrics.topCities.length > 0;
+                const oneCircle = [hasViews, hasInteractions].filter(Boolean).length === 1;
+                return (
+                  <div className={oneCircle ? 'flex justify-center mb-10' : 'grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12 mb-10'}>
+                    {hasViews && (
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
+                        <div className="flex flex-col items-center flex-shrink-0">
+                          <div className="relative w-[200px] h-[200px]">
+                            <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
+                              <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
+                              <circle cx="100" cy="100" r="78" fill="none" stroke="#9C27B0" strokeWidth="28" strokeDasharray={`${(report.metrics.viewsFollowerPercent ?? 50) * 4.9} 490`} strokeLinecap="round" />
+                              <circle cx="100" cy="100" r="78" fill="none" stroke="#E040FB" strokeWidth="28" strokeDasharray={`${(100 - (report.metrics.viewsFollowerPercent ?? 50)) * 4.9} 490`} strokeDashoffset={`-${(report.metrics.viewsFollowerPercent ?? 50) * 4.9}`} strokeLinecap="round" />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                              <span className="text-gray-500 text-sm font-medium">Views</span>
+                              <span className="text-3xl font-bold text-gray-900 mt-0.5">{report.metrics.views != null ? report.metrics.views.toLocaleString() : '—'}</span>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full bg-[#9C27B0]" />
+                              <span className="text-sm text-gray-600">Followers</span>
+                              <span className="text-sm font-semibold text-gray-900">{formatPercent(report.metrics.viewsFollowerPercent)}%</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full bg-[#E040FB]" />
+                              <span className="text-sm text-gray-600">Non-followers</span>
+                              <span className="text-sm font-semibold text-gray-900">{nonFollowersPercent(report.metrics.viewsFollowerPercent, report.metrics.nonFollowerPercent)}%</span>
+                            </div>
+                          </div>
+                        </div>
+                        {hasTopCities && (
+                          <div className="min-w-0 flex-1 max-w-xs sm:max-w-sm">
+                            <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                              Top locations
+                            </h3>
+                            <div className="space-y-3">
+                              {report.metrics.topCities.map((city, idx) => {
+                                const maxPct = report.metrics.topCities[0]?.percentage || 100;
+                                const barPct = Math.min(100, (city.percentage / maxPct) * 100);
+                                return (
+                                  <div key={idx} className="flex items-center gap-3">
+                                    <span className="text-sm text-gray-700 w-28 flex-shrink-0 truncate">{city.name}</span>
+                                    <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden min-w-0">
+                                      <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-900 w-12 text-right flex-shrink-0">{city.percentage}%</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#9C27B0]" />
-                        <span className="text-sm text-gray-600">Followers</span>
-                        <span className="text-sm font-semibold text-gray-900">{formatPercent(report.metrics.viewsFollowerPercent)}%</span>
+                    )}
+                    {hasInteractions && (
+                      <div className="flex flex-col items-center flex-shrink-0">
+                        <div className="relative w-[200px] h-[200px]">
+                          <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#E040FB" strokeWidth="28" strokeDasharray={`${((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50) * 4.9} 490`} strokeLinecap="round" />
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#7C4DFF" strokeWidth="28" strokeDasharray={`${(100 - ((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50)) * 4.9} 490`} strokeDashoffset={`-${((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50) * 4.9}`} strokeLinecap="round" />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-gray-500 text-sm font-medium">Interactions</span>
+                            <span className="text-3xl font-bold text-gray-900 mt-0.5">{report.metrics.interactions.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-[#E040FB]" />
+                            <span className="text-sm text-gray-600">Followers</span>
+                            <span className="text-sm font-semibold text-gray-900">{formatPercent(report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent)}%</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-[#7C4DFF]" />
+                            <span className="text-sm text-gray-600">Non-followers</span>
+                            <span className="text-sm font-semibold text-gray-900">{nonFollowersPercent(report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent, null)}%</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#E040FB]" />
-                        <span className="text-sm text-gray-600">Non-followers</span>
-                        <span className="text-sm font-semibold text-gray-900">{nonFollowersPercent(report.metrics.viewsFollowerPercent, report.metrics.nonFollowerPercent)}%</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                )}
+                );
+              })()}
 
-                {/* Interactions circular bar */}
-                {report.metrics.interactions != null && (
-                  <div className="flex flex-col items-center">
-                    <div className="relative flex-shrink-0 w-[200px] h-[200px]">
-                      <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
-                        <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
-                        <circle
-                          cx="100" cy="100" r="78"
-                          fill="none"
-                          stroke="#E040FB"
-                          strokeWidth="28"
-                          strokeDasharray={`${((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50) * 4.9} 490`}
-                          strokeLinecap="round"
-                        />
-                        <circle
-                          cx="100" cy="100" r="78"
-                          fill="none"
-                          stroke="#7C4DFF"
-                          strokeWidth="28"
-                          strokeDasharray={`${(100 - ((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50)) * 4.9} 490`}
-                          strokeDashoffset={`-${((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50) * 4.9}`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-gray-500 text-sm font-medium">Interactions</span>
-                        <span className="text-3xl font-bold text-gray-900 mt-0.5">{report.metrics.interactions.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#E040FB]" />
-                        <span className="text-sm text-gray-600">Followers</span>
-                        <span className="text-sm font-semibold text-gray-900">{formatPercent(report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent)}%</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#7C4DFF]" />
-                        <span className="text-sm text-gray-600">Non-followers</span>
-                        <span className="text-sm font-semibold text-gray-900">
-                          {nonFollowersPercent(
-                            report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent,
-                            null
-                          )}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Top locations */}
-              {report.metrics.topCities && report.metrics.topCities.length > 0 && (
+              {/* Top locations (standalone when no Views circle) */}
+              {report.metrics.topCities && report.metrics.topCities.length > 0 && (report.metrics.views == null && report.metrics.viewsFollowerPercent == null) && (
                 <div className="mt-8">
                   <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-purple-500" />
@@ -405,10 +398,7 @@ const PublicInstagramReportPage = () => {
                         <div key={idx} className="flex items-center gap-3">
                           <span className="text-sm text-gray-700 w-28 flex-shrink-0">{city.name}</span>
                           <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-[#E040FB] transition-all duration-500"
-                              style={{ width: `${barPct}%` }}
-                            />
+                            <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
                           </div>
                           <span className="text-sm font-medium text-gray-900 w-12 text-right">{city.percentage}%</span>
                         </div>

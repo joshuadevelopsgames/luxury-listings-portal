@@ -181,20 +181,22 @@ function parseInstagramMetrics(text) {
   }
 
   // === INTERACTIONS ===
-  // On the Interactions screen, the first number after "Interactions" may be 30 or 1 from dates. Use block heuristic.
+  // Block from "Interactions" to "By content type" only; exclude numbers that are part of percentages (94.5%, 5.5%).
   const low = text.toLowerCase();
   const interactionsIdx = Math.max(low.indexOf('interactions'), low.indexOf('interacti0ns'));
   if (interactionsIdx >= 0) {
-    const candidates = [
-      low.indexOf('followers', interactionsIdx + 1),
-      low.indexOf('by content type', interactionsIdx + 1),
-      low.indexOf('non-followers', interactionsIdx + 1)
-    ].filter(i => i > interactionsIdx);
-    const blockEnd = candidates.length > 0 ? Math.min(...candidates) : text.length;
-    const block = text.slice(interactionsIdx, blockEnd).slice(0, 400);
-    const numbersInBlock = block.match(/\b([0-9,]+)\b/g);
-    if (numbersInBlock && numbersInBlock.length > 0) {
-      // Skip date fragments: 1, 30, 31 from "Jan 1 - Jan 30" and "Last 30 days"
+    const byContentIdx = low.indexOf('by content type', interactionsIdx + 1);
+    const blockEnd = byContentIdx > interactionsIdx ? byContentIdx : text.length;
+    const block = text.slice(interactionsIdx, blockEnd).slice(0, 600);
+    const numbersInBlock = [];
+    const numRe = /\b([0-9,]+)\b/g;
+    let numMatch;
+    while ((numMatch = numRe.exec(block)) !== null) {
+      const nextChar = block[numMatch.index + numMatch[0].length];
+      if (nextChar === '.' || nextChar === ',') continue;
+      numbersInBlock.push(numMatch[1]);
+    }
+    if (numbersInBlock.length > 0) {
       const isDateFragment = (n) => n === 1 || n === 30 || n === 31;
       const has30Days = /30\s*days?/i.test(block);
       let parsed = 0;

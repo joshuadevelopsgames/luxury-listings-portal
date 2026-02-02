@@ -165,21 +165,23 @@ class InstagramOCRService {
     }
 
     // === INTERACTIONS ===
-    // On the Interactions screen, "Interactions" is the title; below it can be "Last 30 days", "Jan 1 - Jan 30", then the main number (e.g. 25).
-    // So the first number after "Interactions" may be 30 or 1 from dates. Extract the block before "Followers"/"By content type" and take the best number.
+    // Extract block from "Interactions" to "By content type" (not "followers") so we include the main number when it appears after "Followers 94.5%".
+    // Exclude numbers that are part of percentages (e.g. 94 in "94.5%", 5 in "5.5%").
     const lowForInteractions = text.toLowerCase();
     const interactionsBlockStart = Math.max(lowForInteractions.indexOf('interactions'), lowForInteractions.indexOf('interacti0ns'));
     if (interactionsBlockStart >= 0) {
-      const candidates = [
-        lowForInteractions.indexOf('followers', interactionsBlockStart + 1),
-        lowForInteractions.indexOf('by content type', interactionsBlockStart + 1),
-        lowForInteractions.indexOf('non-followers', interactionsBlockStart + 1)
-      ].filter(i => i > interactionsBlockStart);
-      const blockEnd = candidates.length > 0 ? Math.min(...candidates) : text.length;
-      const block = text.slice(interactionsBlockStart, blockEnd).slice(0, 400);
-      const numbersInBlock = block.match(/\b([0-9,]+)\b/g);
-      if (numbersInBlock && numbersInBlock.length > 0) {
-        // Date fragments to skip: 1, 30, 31 from "Jan 1 - Jan 30" and "Last 30 days"
+      const byContentIdx = lowForInteractions.indexOf('by content type', interactionsBlockStart + 1);
+      const blockEnd = byContentIdx > interactionsBlockStart ? byContentIdx : text.length;
+      const block = text.slice(interactionsBlockStart, blockEnd).slice(0, 600);
+      const numbersInBlock = [];
+      const numRe = /\b([0-9,]+)\b/g;
+      let m;
+      while ((m = numRe.exec(block)) !== null) {
+        const nextChar = block[m.index + m[0].length];
+        if (nextChar === '.' || nextChar === ',') continue;
+        numbersInBlock.push(m[1]);
+      }
+      if (numbersInBlock.length > 0) {
         const isDateFragment = (n) => n === 1 || n === 30 || n === 31;
         const has30Days = /30\s*days?/i.test(block);
         let parsed = 0;
