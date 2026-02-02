@@ -42,6 +42,7 @@ import ClientPasswordReset from './pages/ClientPasswordReset';
 import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
 import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
 import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 // Module Pages
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
@@ -168,6 +169,7 @@ const router = createBrowserRouter([
           { path: 'self-service', element: <EmployeeSelfService /> },
           { path: 'onboarding', element: <OnboardingPage /> },
           { path: 'content-manager-message', element: <ContentManagerMessage /> },
+          { path: 'notifications', element: <NotificationsPage /> },
 
           // Admin pages
           { path: 'permissions', element: <PermissionsManager /> },
