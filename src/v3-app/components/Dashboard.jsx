@@ -581,7 +581,7 @@ const V3Dashboard = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -683,7 +683,7 @@ const V3Dashboard = () => {
       {isEditMode ? (
         <DndContext collisionDetection={closestCenter} onDragEnd={handleMainContentDragEnd}>
           <SortableContext items={visibleMainContentBlocks} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               {visibleMainContentBlocks.map((blockId) => (
                 <SortableMainBlock
                   key={blockId}
@@ -697,11 +697,11 @@ const V3Dashboard = () => {
           </SortableContext>
         </DndContext>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {visibleMainContentBlocks.map((blockId) => (
             <div
               key={blockId}
-              className={DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'lg:col-span-2' : ''}
+              className={`${DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'lg:col-span-2' : ''} min-h-0`}
             >
               {renderMainContentBlock(blockId)}
             </div>
