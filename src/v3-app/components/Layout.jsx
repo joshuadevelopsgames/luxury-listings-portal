@@ -270,31 +270,51 @@ const V3Layout = () => {
       `}>
         <div className="h-full bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-r border-gray-200 dark:border-white/5 flex flex-col">
           {/* Logo */}
-          <div className="h-[72px] px-4 flex items-center justify-between border-b border-black/5 dark:border-white/5">
-            <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
-                <img 
-                  src="/Luxury-listings-logo-CLR.png"
-                  alt="Luxury Listings" 
-                  className={`h-9 w-auto ${darkMode ? 'brightness-0 invert' : ''}`}
-                />
+          <div className={`h-[72px] flex items-center border-b border-black/5 dark:border-white/5 ${sidebarCollapsed ? 'px-2 justify-center' : 'px-4 justify-between'}`}>
+            {sidebarCollapsed ? (
+              /* Collapsed: show logo and expand button stacked */
+              <div className="flex flex-col items-center gap-2">
+                <Link to="/dashboard" className="w-10 h-10 flex items-center justify-center">
+                  <img 
+                    src="/Luxury-listings-logo-CLR.png"
+                    alt="Luxury Listings" 
+                    className={`h-8 w-auto ${darkMode ? 'brightness-0 invert' : ''}`}
+                  />
+                </Link>
+                <button 
+                  onClick={() => setSidebarCollapsed(false)}
+                  className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  title="Expand sidebar"
+                >
+                  <ChevronRight className="w-4 h-4 text-[#86868b]" />
+                </button>
               </div>
-              {!sidebarCollapsed && (
-                <div className="animate-in fade-in slide-in-from-left-2 duration-200 min-w-0">
-                  <h1 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white tracking-[-0.01em] leading-tight">
-                    Luxury Listings
-                  </h1>
-                  <p className="text-[11px] text-[#86868b] font-medium mt-0.5">Portal</p>
-                </div>
-              )}
-            </Link>
-            {!sidebarCollapsed && (
-              <button 
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="hidden lg:flex w-7 h-7 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/10 flex-shrink-0"
-              >
-                <ChevronRight className={`w-4 h-4 text-[#86868b] transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`} />
-              </button>
+            ) : (
+              /* Expanded: show full logo and collapse button */
+              <>
+                <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
+                    <img 
+                      src="/Luxury-listings-logo-CLR.png"
+                      alt="Luxury Listings" 
+                      className={`h-9 w-auto ${darkMode ? 'brightness-0 invert' : ''}`}
+                    />
+                  </div>
+                  <div className="animate-in fade-in slide-in-from-left-2 duration-200 min-w-0">
+                    <h1 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white tracking-[-0.01em] leading-tight">
+                      Luxury Listings
+                    </h1>
+                    <p className="text-[11px] text-[#86868b] font-medium mt-0.5">Portal</p>
+                  </div>
+                </Link>
+                <button 
+                  onClick={() => setSidebarCollapsed(true)}
+                  className="hidden lg:flex w-7 h-7 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/10 flex-shrink-0"
+                  title="Collapse sidebar"
+                >
+                  <ChevronRight className="w-4 h-4 text-[#86868b] rotate-180" />
+                </button>
+              </>
             )}
           </div>
 
