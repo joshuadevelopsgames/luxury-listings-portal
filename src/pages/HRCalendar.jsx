@@ -319,14 +319,33 @@ const HRCalendar = () => {
         
         // Send notification to employee
         await timeOffNotifications.notifyApproved(request, currentUser?.email);
+        
+        // Auto-sync to Google Calendar if connected
+        if (isGoogleConnected) {
+          try {
+            await googleCalendarService.createLeaveEvent(request);
+            toast.success('Leave approved & added to Google Calendar!');
+          } catch (calError) {
+            console.error('Failed to sync to Google Calendar:', calError);
+            toast.success('Leave approved (calendar sync failed)');
+          }
+        } else {
+          toast.success('Leave request approved');
+        }
+      } else {
+        toast.success('Leave request approved');
       }
       
       setLeaveRequests(prev => 
         prev.map(req => req.id === requestId ? { ...req, status: 'approved', managerNotes: notes } : req)
       );
-      toast.success('Leave request approved');
       setShowNotesModal(null);
       setApprovalNotes('');
+      
+      // Refresh Google Calendar events if connected
+      if (isGoogleConnected) {
+        loadGoogleCalendarEvents();
+      }
     } catch (error) {
       console.error('Error approving request:', error);
       toast.error('Failed to approve request');
@@ -434,39 +453,100 @@ const HRCalendar = () => {
     setShowAddModal(true);
   };
 
+  // Check existing connection (doesn't trigger OAuth popup)
   const checkGoogleCalendarConnection = async () => {
     try {
-      console.log('🔄 Starting Google Calendar connection...');
-      console.log('API Key available:', !!process.env.REACT_APP_GOOGLE_API_KEY);
-      console.log('Client ID available:', !!process.env.REACT_APP_GOOGLE_CLIENT_ID);
-      console.log('Current user:', currentUser?.email);
+      if (!currentUser?.email) return;
       
+      setIsLoadingGoogle(true);
+      
+      // Try to initialize with existing token
+      const status = googleCalendarService.getConnectionStatus();
+      
+      if (status.hasStoredToken) {
+        const isConnected = await googleCalendarService.initialize(currentUser.email);
+        setIsGoogleConnected(isConnected);
+        
+        if (isConnected) {
+          await loadGoogleCalendarEvents();
+        }
+      }
+    } catch (error) {
+      console.error('Error checking Google Calendar connection:', error);
+      setIsGoogleConnected(false);
+    } finally {
+      setIsLoadingGoogle(false);
+    }
+  };
+
+  // Explicitly connect/authorize Google Calendar (triggers OAuth popup)
+  const connectGoogleCalendar = async () => {
+    try {
       if (!currentUser?.email) {
-        toast.error('User email not available. Please log in again.');
+        toast.error('Please log in first to connect Google Calendar.');
         return;
       }
       
       setIsLoadingGoogle(true);
+      toast.loading('Opening Google authorization...', { id: 'google-auth' });
       
-      const isConnected = await googleCalendarService.initialize(currentUser.email);
-      console.log('✅ Google Calendar initialized:', isConnected);
+      // This will trigger the OAuth popup
+      await googleCalendarService.authorize(currentUser.email);
       
-      setIsGoogleConnected(isConnected);
+      toast.dismiss('google-auth');
+      toast.success('🎉 Google Calendar connected successfully!');
+      setIsGoogleConnected(true);
       
-      if (isConnected) {
-        console.log('📅 Loading Google Calendar events...');
-        await loadGoogleCalendarEvents();
-        toast.success('📅 Google Calendar connected successfully!');
-      } else {
-        toast.error('Failed to connect to Google Calendar. Please try again.');
-      }
+      // Load events after successful connection
+      await loadGoogleCalendarEvents();
+      
     } catch (error) {
-      console.error('❌ Failed to connect to Google Calendar:', error);
-      console.error('Error details:', error.message, error.stack);
+      toast.dismiss('google-auth');
+      console.error('Failed to connect Google Calendar:', error);
+      
+      if (error.message?.includes('popup_closed')) {
+        toast.error('Authorization cancelled. Please try again.');
+      } else if (error.message?.includes('access_denied')) {
+        toast.error('Access denied. Please grant calendar permissions.');
+      } else {
+        toast.error(`Failed to connect: ${error.message || 'Unknown error'}`);
+      }
       setIsGoogleConnected(false);
-      toast.error(`Failed to connect Google Calendar: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoadingGoogle(false);
+    }
+  };
+
+  // Disconnect Google Calendar
+  const disconnectGoogleCalendar = async () => {
+    try {
+      await googleCalendarService.signOut();
+      setIsGoogleConnected(false);
+      setGoogleEvents([]);
+      toast.success('Google Calendar disconnected');
+    } catch (error) {
+      console.error('Failed to disconnect:', error);
+      toast.error('Failed to disconnect Google Calendar');
+    }
+  };
+
+  // Sync approved leave request to Google Calendar
+  const syncLeaveToCalendar = async (request) => {
+    if (!isGoogleConnected) {
+      toast.error('Please connect Google Calendar first');
+      return;
+    }
+
+    try {
+      toast.loading('Adding to Google Calendar...', { id: 'sync-leave' });
+      await googleCalendarService.createLeaveEvent(request);
+      toast.dismiss('sync-leave');
+      toast.success('Leave added to Google Calendar!');
+      await loadGoogleCalendarEvents(); // Refresh events
+    } catch (error) {
+      toast.dismiss('sync-leave');
+      console.error('Failed to sync to calendar:', error);
+      toast.error('Failed to add to Google Calendar');
     }
   };
 
@@ -554,38 +634,78 @@ const HRCalendar = () => {
       </div>
 
       {/* Google Calendar Connection Status */}
-      <Card className={`border-2 ${isGoogleConnected ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
+      <Card className={`border-2 ${isGoogleConnected ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
         <CardContent className="p-4 pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <CalendarIcon className={`w-5 h-5 ${isGoogleConnected ? 'text-green-600' : 'text-yellow-600'}`} />
+              <div className={`p-2 rounded-full ${isGoogleConnected ? 'bg-green-100' : 'bg-blue-100'}`}>
+                <CalendarIcon className={`w-6 h-6 ${isGoogleConnected ? 'text-green-600' : 'text-blue-600'}`} />
+              </div>
               <div>
-                <h3 className="font-medium text-gray-900">
-                  Google Calendar {isGoogleConnected ? 'Connected' : 'Not Connected'}
+                <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                  Google Calendar 
+                  {isGoogleConnected && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Connected
+                    </span>
+                  )}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 mt-0.5">
                   {isGoogleConnected 
-                    ? `${googleEvents.length} events synced from Google Calendar`
-                    : 'Connect your Google Calendar to see all team events and meetings'
+                    ? `${googleEvents.length} events synced • Approved leave will sync to your calendar`
+                    : 'Connect to sync events and automatically add approved leave to your calendar'
                   }
                 </p>
               </div>
             </div>
-            <Button 
-              variant={isGoogleConnected ? "outline" : "default"}
-              size="sm"
-              onClick={checkGoogleCalendarConnection}
-              disabled={isLoadingGoogle}
-            >
-              {isLoadingGoogle ? (
+            <div className="flex items-center gap-2">
+              {isGoogleConnected ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-                  Connecting...
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      setIsLoadingGoogle(true);
+                      await loadGoogleCalendarEvents();
+                      setIsLoadingGoogle(false);
+                      toast.success('Calendar refreshed');
+                    }}
+                    disabled={isLoadingGoogle}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingGoogle ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={disconnectGoogleCalendar}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    Disconnect
+                  </Button>
                 </>
               ) : (
-                isGoogleConnected ? 'Reconnect' : 'Connect'
+                <Button 
+                  size="sm"
+                  onClick={connectGoogleCalendar}
+                  disabled={isLoadingGoogle}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isLoadingGoogle ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Connect Google Calendar
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -793,6 +913,17 @@ const HRCalendar = () => {
                         Reject
                       </Button>
                     </div>
+                  )}
+                  {request.status === 'approved' && isGoogleConnected && (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => syncLeaveToCalendar(request)}
+                    >
+                      <CalendarIcon className="w-3 h-3 mr-1" />
+                      Add to Calendar
+                    </Button>
                   )}
                 </div>
               </div>

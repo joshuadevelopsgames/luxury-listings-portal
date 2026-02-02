@@ -5,7 +5,8 @@ class GoogleCalendarService {
     this.apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
     this.clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
     this.discoveryDocs = ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'];
-    this.scopes = 'https://www.googleapis.com/auth/calendar.readonly';
+    // Full calendar access scope for creating, editing, and deleting events
+    this.scopes = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events';
     this.isInitialized = false;
     this.tokenClient = null;
     this.accessToken = null;
@@ -432,6 +433,141 @@ class GoogleCalendarService {
       // Clear stored token
       this.clearStoredToken();
     }
+  }
+
+  // Manual authorization - explicitly request user permission
+  async authorize(userEmail) {
+    console.log('🔐 Starting manual authorization for:', userEmail);
+    
+    if (!userEmail) {
+      throw new Error('User email is required');
+    }
+    
+    this.currentUserEmail = userEmail;
+    
+    // Clear any existing token to force re-auth
+    this.clearStoredToken(userEmail);
+    this.accessToken = null;
+    this.isInitialized = false;
+    
+    try {
+      // Load Google libraries
+      await Promise.all([
+        this.loadGoogleIdentityServices(),
+        this.loadGoogleAPI()
+      ]);
+      
+      // Initialize gapi client
+      await window.gapi.client.init({
+        apiKey: this.apiKey,
+        discoveryDocs: this.discoveryDocs,
+      });
+      
+      // Initialize token client
+      this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: this.clientId,
+        scope: this.scopes,
+        callback: () => {}, // Will be overridden
+      });
+      
+      // Request token with explicit prompt
+      return new Promise((resolve, reject) => {
+        this.tokenClient.callback = (response) => {
+          if (response.error) {
+            console.error('❌ OAuth error:', response);
+            reject(new Error(response.error_description || response.error));
+            return;
+          }
+          
+          console.log('✅ Authorization successful!');
+          this.accessToken = response.access_token;
+          this.isInitialized = true;
+          
+          // Store the token
+          this.storeToken(response.access_token, response.expires_in || 3600, userEmail);
+          
+          // Set token for API calls
+          window.gapi.client.setToken({
+            access_token: this.accessToken
+          });
+          
+          resolve(true);
+        };
+        
+        // Force consent prompt to ensure user sees permissions
+        this.tokenClient.requestAccessToken({ 
+          prompt: 'consent',
+          login_hint: userEmail 
+        });
+      });
+    } catch (error) {
+      console.error('❌ Authorization failed:', error);
+      throw error;
+    }
+  }
+
+  // Create leave request event in Google Calendar
+  async createLeaveEvent(leaveRequest) {
+    if (!this.isInitialized || !this.accessToken) {
+      throw new Error('Google Calendar not connected. Please authorize first.');
+    }
+
+    const startDate = new Date(leaveRequest.startDate);
+    const endDate = new Date(leaveRequest.endDate);
+    // Add one day to end date for all-day events
+    endDate.setDate(endDate.getDate() + 1);
+
+    const event = {
+      summary: `${leaveRequest.employeeName || 'Team Member'} - ${leaveRequest.type?.charAt(0).toUpperCase() + leaveRequest.type?.slice(1) || 'Leave'}`,
+      description: `Leave Type: ${leaveRequest.type || 'Other'}\nReason: ${leaveRequest.reason || 'N/A'}\nStatus: Approved\n\nThis event was automatically created from the Leave Management System.`,
+      start: {
+        date: startDate.toISOString().split('T')[0], // All-day event
+      },
+      end: {
+        date: endDate.toISOString().split('T')[0],
+      },
+      colorId: this.getLeaveColorId(leaveRequest.type),
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: 'popup', minutes: 1440 }, // 1 day before
+        ],
+      },
+    };
+
+    try {
+      const response = await window.gapi.client.calendar.events.insert({
+        calendarId: 'primary',
+        resource: event,
+      });
+      
+      console.log('✅ Leave event created in Google Calendar:', response.result.id);
+      return response.result;
+    } catch (error) {
+      console.error('❌ Failed to create leave event:', error);
+      throw error;
+    }
+  }
+
+  // Get color ID based on leave type
+  getLeaveColorId(type) {
+    const colors = {
+      vacation: '9',    // Blue
+      sick: '11',       // Red
+      personal: '3',    // Purple
+      bereavement: '8', // Gray
+      other: '5',       // Yellow
+    };
+    return colors[type] || '5';
+  }
+
+  // Check connection status without triggering auth
+  getConnectionStatus() {
+    return {
+      isConnected: this.isInitialized && !!this.accessToken,
+      userEmail: this.currentUserEmail,
+      hasStoredToken: !!this.getStoredToken(this.currentUserEmail),
+    };
   }
 
   // Store token in localStorage with expiry
