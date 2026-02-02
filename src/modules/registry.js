@@ -234,6 +234,17 @@ export function getWidgetDefaultSize(widgetId) {
   return WIDGET_DEFAULT_SIZES[widgetId] || 'small';
 }
 
+/** Slot cost for row packing: max 4 slots per row; large in row => 3 widgets (large can shrink to 1/3) */
+export function getWidgetSlotCount(size) {
+  switch (size) {
+    case 'medium':
+    case 'large':
+      return 2;
+    default:
+      return 1;
+  }
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================

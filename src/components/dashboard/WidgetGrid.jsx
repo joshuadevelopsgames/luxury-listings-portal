@@ -6,10 +6,10 @@
  */
 
 import React, { Suspense, lazy, useMemo } from 'react';
-import { DndContext, closestCenter } from '@dnd-kit/core';
+import { DndContext, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { getWidgetsForModules } from '../../modules/registry';
+import { getWidgetsForModules, getWidgetSlotCount } from '../../modules/registry';
 
 // Lazy load widget components
 const widgetComponents = {
@@ -60,20 +60,47 @@ class WidgetErrorBoundary extends React.Component {
   }
 }
 
-// Apple-style grid spans: small 1x1, medium 2x1, large 2x2
-function getGridSpanClasses(size) {
-  switch (size) {
-    case 'large':
-      return 'col-span-2 row-span-2';
-    case 'medium':
-      return 'col-span-2 row-span-1';
-    default:
-      return 'col-span-1 row-span-1';
+const SLOTS_PER_ROW = 4;
+
+/**
+ * Group widgets into rows (max 4 slots per row). When a row has a large widget, that row has 3 columns (large can shrink to 1/3).
+ */
+function computeRows(widgets) {
+  const rows = [];
+  let currentRow = [];
+  let currentSlots = 0;
+
+  for (const widget of widgets) {
+    const slots = getWidgetSlotCount(widget.size);
+    if (currentSlots + slots <= SLOTS_PER_ROW) {
+      currentRow.push(widget);
+      currentSlots += slots;
+    } else {
+      if (currentRow.length > 0) {
+        const hasLarge = currentRow.some((w) => w.size === 'large');
+        rows.push({ columnCount: hasLarge ? 3 : 4, widgets: currentRow });
+      }
+      currentRow = [widget];
+      currentSlots = slots;
+    }
   }
+  if (currentRow.length > 0) {
+    const hasLarge = currentRow.some((w) => w.size === 'large');
+    rows.push({ columnCount: hasLarge ? 3 : 4, widgets: currentRow });
+  }
+  return rows;
 }
 
-function SortableWidgetCell({ widgetId, moduleId, size, isEditMode, children }) {
+/** Span in row: 3-col row => all span 1 (large shrinks to 1/3); 4-col row => small=1, medium/large=2 */
+function getColSpan(columnCount, size) {
+  if (columnCount === 3) return 1;
+  return size === 'small' ? 1 : 2;
+}
+
+function SortableWidgetCell({ widgetId, moduleId, size, columnCount, isEditMode, children }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: widgetId });
+  const span = getColSpan(columnCount, size);
+  const spanClass = span === 1 ? 'col-span-1' : 'col-span-2';
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -82,10 +109,10 @@ function SortableWidgetCell({ widgetId, moduleId, size, isEditMode, children }) 
     <div
       ref={setNodeRef}
       style={style}
-      className={`${getGridSpanClasses(size)} min-h-[160px] ${isDragging ? 'opacity-60 z-10 scale-[0.98]' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+      className={`${spanClass} min-h-0 ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
       {...(isEditMode ? { ...attributes, ...listeners } : {})}
     >
-      <div className="h-full min-h-[160px]">
+      <div className="h-full min-h-[120px] flex flex-col">
         {children}
       </div>
     </div>
@@ -123,6 +150,8 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
     );
   }
 
+  const rows = useMemo(() => computeRows(widgets), [widgets]);
+
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id || !onWidgetOrderChange) return;
@@ -134,32 +163,47 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
   };
 
   const gridContent = (
-    <div className={`grid grid-cols-2 md:grid-cols-4 grid-auto-rows-[minmax(160px,auto)] gap-6 items-start ${className}`}>
-      {widgets.map(({ widgetId, moduleId, size }) => {
-        const WidgetComponent = widgetComponents[widgetId];
-        if (!WidgetComponent) return null;
-        const cell = (
-          <WidgetErrorBoundary key={`${moduleId}-${widgetId}`} widgetId={widgetId}>
-            <Suspense fallback={<WidgetSkeleton />}>
-              <WidgetComponent moduleId={moduleId} />
-            </Suspense>
-          </WidgetErrorBoundary>
-        );
-        const spanClasses = getGridSpanClasses(size);
-        return isEditMode ? (
-          <SortableWidgetCell key={widgetId} widgetId={widgetId} moduleId={moduleId} size={size} isEditMode={isEditMode}>
-            {cell}
-          </SortableWidgetCell>
-        ) : (
-          <div key={widgetId} className={`${spanClasses} min-h-[160px]`}>{cell}</div>
-        );
-      })}
+    <div className={`space-y-6 ${className}`}>
+      {rows.map((row, rowIndex) => (
+        <div
+          key={rowIndex}
+          className={`grid gap-6 items-stretch ${row.columnCount === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}
+        >
+          {row.widgets.map(({ widgetId, moduleId, size }) => {
+            const WidgetComponent = widgetComponents[widgetId];
+            if (!WidgetComponent) return null;
+            const span = getColSpan(row.columnCount, size);
+            const spanClass = span === 1 ? 'col-span-1' : 'col-span-2';
+            const cell = (
+              <WidgetErrorBoundary key={`${moduleId}-${widgetId}`} widgetId={widgetId}>
+                <Suspense fallback={<WidgetSkeleton />}>
+                  <WidgetComponent moduleId={moduleId} />
+                </Suspense>
+              </WidgetErrorBoundary>
+            );
+            return isEditMode ? (
+              <SortableWidgetCell
+                key={widgetId}
+                widgetId={widgetId}
+                moduleId={moduleId}
+                size={size}
+                columnCount={row.columnCount}
+                isEditMode={isEditMode}
+              >
+                {cell}
+              </SortableWidgetCell>
+            ) : (
+              <div key={widgetId} className={`${spanClass} min-h-[120px] flex flex-col`}>{cell}</div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 
   if (isEditMode && onWidgetOrderChange) {
     return (
-      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
         <SortableContext items={widgets.map((w) => w.widgetId)} strategy={rectSortingStrategy}>
           {gridContent}
         </SortableContext>
