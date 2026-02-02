@@ -197,36 +197,55 @@
   background-color: rgba(249, 15, 198, 0.2) !important;
 }
 
-/* Text colors - standalone pink text (no background) */
+/* Text colors - standalone pink text (no background) - for icons and text without bg */
 .michelle-theme.dark [class*="text-[#0071e3]"]:not([class*="bg-[#0071e3]"]) {
   color: #f90fc6 !important;
 }
 
-/* Elements with BOTH background AND text classes need special handling */
-/* Make background more visible and keep text pink with good contrast */
+/* SOLID PINK BACKGROUNDS - text should be WHITE */
+/* Full solid bg-[#0071e3] buttons/elements */
+.michelle-theme.dark [class*="bg-[#0071e3]"]:not([class*="bg-[#0071e3]/"]) {
+  color: #ffffff !important;
+}
+
+/* Elements with BOTH background AND text classes - WHITE text for readability */
 .michelle-theme.dark [class*="bg-[#0071e3]/5"][class*="text-[#0071e3]"],
 .michelle-theme.dark [class*="bg-[#0071e3]/10"][class*="text-[#0071e3]"],
 .michelle-theme.dark [class*="bg-[#0071e3]/20"][class*="text-[#0071e3]"] {
-  background-color: rgba(249, 15, 198, 0.2) !important;
-  color: #ff6ee0 !important;
+  background-color: rgba(249, 15, 198, 0.25) !important;
+  color: #ffffff !important;
 }
 
 /* Hover states for these elements */
 .michelle-theme.dark [class*="hover:bg-[#0071e3]/20"][class*="text-[#0071e3]"]:hover {
-  background-color: rgba(249, 15, 198, 0.3) !important;
+  background-color: rgba(249, 15, 198, 0.35) !important;
 }
 
-/* Text INSIDE pink background containers */
+/* Text INSIDE pink background containers - WHITE */
 .michelle-theme.dark [class*="bg-[#0071e3]/5"] [class*="text-[#0071e3]"],
 .michelle-theme.dark [class*="bg-[#0071e3]/10"] [class*="text-[#0071e3]"],
 .michelle-theme.dark [class*="bg-[#0071e3]/20"] [class*="text-[#0071e3]"] {
-  color: #ff6ee0 !important;
+  color: #ffffff !important;
 }
 
 .michelle-theme.dark [class*="bg-[#0071e3]"] [class*="text-[#0071e3]/80"],
 .michelle-theme.dark [class*="bg-[#0071e3]/5"] [class*="text-[#0071e3]/80"],
 .michelle-theme.dark [class*="bg-[#0071e3]/10"] [class*="text-[#0071e3]/80"] {
-  color: rgba(255, 110, 224, 0.9) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Ensure white text in solid pink buttons */
+.michelle-theme.dark button[class*="bg-[#0071e3]"],
+.michelle-theme.dark a[class*="bg-[#0071e3]"] {
+  color: #ffffff !important;
+}
+
+/* Keep icon-only elements pink (they typically don't have text-[#0071e3] class on the same element) */
+/* Icons inside pink backgrounds should stay white for contrast */
+.michelle-theme.dark [class*="bg-[#0071e3]"] svg,
+.michelle-theme.dark [class*="bg-[#0071e3]/10"] svg,
+.michelle-theme.dark [class*="bg-[#0071e3]/20"] svg {
+  color: inherit !important;
 }
 
 /* Border colors */
