@@ -109,13 +109,41 @@ class ErrorBoundary extends React.Component {
         errorTimestamp: systemInfo.timestamp
       };
 
-      // Submit to Firestore
-      const result = await firestoreService.submitErrorReport(report);
-      
-      if (result.success) {
+      // Submit to Firestore (for backup/viewing in console)
+      const firestoreResult = await firestoreService.submitErrorReport(report);
+      console.log('Firestore result:', firestoreResult);
+
+      // Send email via FormSubmit (free email service)
+      const emailResponse = await fetch('https://formsubmit.co/ajax/jrsschroeder@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          _subject: `🚨 Error Report: ${report.errorMessage.substring(0, 50)}`,
+          error_message: report.errorMessage,
+          error_stack: report.errorStack?.substring(0, 2000) || 'N/A',
+          user_email: report.userEmail,
+          user_name: report.userName,
+          url: report.url,
+          timestamp: report.errorTimestamp,
+          browser: report.userAgent,
+          screen_size: report.screenSize,
+          console_logs: report.consoleLogsText?.substring(0, 5000) || 'N/A',
+          _template: 'table'
+        })
+      });
+
+      if (emailResponse.ok) {
         this.setState({ reportSent: true, sendingReport: false });
       } else {
-        throw new Error(result.error || 'Failed to submit report');
+        // Even if email fails, Firestore backup worked
+        if (firestoreResult.success) {
+          this.setState({ reportSent: true, sendingReport: false });
+        } else {
+          throw new Error('Failed to send report');
+        }
       }
     } catch (err) {
       console.error('Failed to send error report:', err);
@@ -358,12 +386,41 @@ export function RouteErrorPage() {
         errorTimestamp: systemInfo.timestamp
       };
 
-      const result = await firestoreService.submitErrorReport(report);
-      
-      if (result.success) {
+      // Submit to Firestore (for backup/viewing in console)
+      const firestoreResult = await firestoreService.submitErrorReport(report);
+      console.log('Firestore result:', firestoreResult);
+
+      // Send email via FormSubmit (free email service)
+      const emailResponse = await fetch('https://formsubmit.co/ajax/jrsschroeder@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          _subject: `🚨 Error Report: ${report.errorMessage.substring(0, 50)}`,
+          error_message: report.errorMessage,
+          error_stack: report.errorStack?.substring(0, 2000) || 'N/A',
+          user_email: report.userEmail,
+          user_name: report.userName,
+          url: report.url,
+          timestamp: report.errorTimestamp,
+          browser: report.userAgent,
+          screen_size: report.screenSize,
+          console_logs: report.consoleLogsText?.substring(0, 5000) || 'N/A',
+          _template: 'table'
+        })
+      });
+
+      if (emailResponse.ok) {
         setReportSent(true);
       } else {
-        throw new Error(result.error || 'Failed to submit report');
+        // Even if email fails, Firestore backup worked
+        if (firestoreResult.success) {
+          setReportSent(true);
+        } else {
+          throw new Error('Failed to send report');
+        }
       }
     } catch (err) {
       console.error('Failed to send error report:', err);
