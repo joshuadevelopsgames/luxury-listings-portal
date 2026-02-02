@@ -162,23 +162,55 @@ function parseInstagramMetrics(text) {
     metrics.followers = parseNumber(followersCountMatch[1]);
   }
 
-  // === FOLLOWER PERCENTAGE ===
-  const followerPercentMatch = text.match(/Followers?\s*[\n\s]*([0-9.]+)%/i);
-  if (followerPercentMatch) {
-    metrics.viewsFollowerPercent = parseFloat(followerPercentMatch[1]);
-  }
-
-  // === NON-FOLLOWERS PERCENTAGE ===
-  const nonFollowerMatch = text.match(/Non[- ]?followers?\s*[\n\s]*([0-9.]+)%/i);
-  if (nonFollowerMatch) {
-    metrics.nonFollowerPercent = parseFloat(nonFollowerMatch[1]);
+  // === FOLLOWER / NON-FOLLOWER % (context-aware: Views vs Interactions) ===
+  const interactionsIdx = text.toLowerCase().indexOf('interactions');
+  if (interactionsIdx >= 0) {
+    const viewsBlock = text.slice(0, interactionsIdx);
+    const interactionsBlock = text.slice(interactionsIdx);
+    const viewsFollowerMatch = viewsBlock.match(/Followers?\s*[\n\s]*([0-9.]+)%/i);
+    const viewsNonFollowerMatch = viewsBlock.match(/Non[- ]?followers?\s*[\n\s]*([0-9.]+)%/i);
+    const interactionsFollowerMatch = interactionsBlock.match(/Followers?\s*[\n\s]*([0-9.]+)%/i);
+    if (viewsFollowerMatch) metrics.viewsFollowerPercent = parseFloat(viewsFollowerMatch[1]);
+    if (viewsNonFollowerMatch) metrics.nonFollowerPercent = parseFloat(viewsNonFollowerMatch[1]);
+    if (interactionsFollowerMatch) metrics.interactionsFollowerPercent = parseFloat(interactionsFollowerMatch[1]);
+  } else {
+    const followerPercentMatch = text.match(/Followers?\s*[\n\s]*([0-9.]+)%/i);
+    if (followerPercentMatch) metrics.viewsFollowerPercent = parseFloat(followerPercentMatch[1]);
+    const nonFollowerMatch = text.match(/Non[- ]?followers?\s*[\n\s]*([0-9.]+)%/i);
+    if (nonFollowerMatch) metrics.nonFollowerPercent = parseFloat(nonFollowerMatch[1]);
   }
 
   // === INTERACTIONS ===
-  const interactionsMatch = text.match(/Interactions?\s*[\n\s]*([0-9,]+)/i) ||
-                            text.match(/([0-9,]+)\s*Interactions?/i);
-  if (interactionsMatch) {
-    metrics.interactions = parseNumber(interactionsMatch[1]);
+  // On the Interactions screen, the first number after "Interactions" may be 30 or 1 from dates. Use block heuristic.
+  const low = text.toLowerCase();
+  const interactionsIdx = Math.max(low.indexOf('interactions'), low.indexOf('interacti0ns'));
+  if (interactionsIdx >= 0) {
+    const candidates = [
+      low.indexOf('followers', interactionsIdx + 1),
+      low.indexOf('by content type', interactionsIdx + 1),
+      low.indexOf('non-followers', interactionsIdx + 1)
+    ].filter(i => i > interactionsIdx);
+    const blockEnd = candidates.length > 0 ? Math.min(...candidates) : text.length;
+    const block = text.slice(interactionsIdx, blockEnd).slice(0, 400);
+    const numbersInBlock = block.match(/\b([0-9,]+)\b/g);
+    if (numbersInBlock && numbersInBlock.length > 0) {
+      let candidate = numbersInBlock[numbersInBlock.length - 1];
+      const candidateNum = parseNumber(candidate);
+      if (candidateNum === 30 && /30\s*days?/i.test(block) && numbersInBlock.length >= 2) {
+        candidate = numbersInBlock[numbersInBlock.length - 2];
+      }
+      const parsed = parseNumber(candidate);
+      if (parsed >= 1 && parsed <= 999999) {
+        metrics.interactions = parsed;
+      }
+    }
+  }
+  if (metrics.interactions === undefined) {
+    const interactionsMatch = text.match(/Interactions?\s*[\n\s]*([0-9,]+)(?!\s*days?)/i) ||
+                              text.match(/([0-9,]+)\s*Interactions?/i);
+    if (interactionsMatch) {
+      metrics.interactions = parseNumber(interactionsMatch[1]);
+    }
   }
 
   // === ACCOUNTS REACHED ===
@@ -225,14 +257,21 @@ function parseInstagramMetrics(text) {
   const engagementRateMatch = text.match(/Engagement\s*(?:rate)?\s*[\n\s]*([0-9.]+)%/i) || text.match(/([0-9.]+)%\s*Engagement/i);
   if (engagementRateMatch) metrics.engagementRatePercent = parseFloat(engagementRateMatch[1]);
 
-  // === CONTENT BREAKDOWN ===
+  // === CONTENT BREAKDOWN === (scope to "By content type" section; allow comma decimal)
   const contentBreakdown = [];
-  const postsMatch = text.match(/Posts?\s*[\n\s]*([0-9.]+)%/i);
-  if (postsMatch) contentBreakdown.push({ type: 'Posts', percentage: parseFloat(postsMatch[1]) });
-  const storiesMatch = text.match(/Stories?\s*[\n\s]*([0-9.]+)%/i);
-  if (storiesMatch) contentBreakdown.push({ type: 'Stories', percentage: parseFloat(storiesMatch[1]) });
-  const reelsMatch = text.match(/Reels?\s*[\n\s]*([0-9.]+)%/i);
-  if (reelsMatch) contentBreakdown.push({ type: 'Reels', percentage: parseFloat(reelsMatch[1]) });
+  const contentTypeIdx = text.toLowerCase().indexOf('by content type');
+  const section = contentTypeIdx >= 0 ? text.slice(contentTypeIdx, contentTypeIdx + 600) : text;
+  const tryContentType = (labelRegex, typeName) => {
+    const m = section.match(labelRegex);
+    if (m) {
+      const pctStr = m[1].replace(/,/g, '.');
+      const pct = parseFloat(pctStr);
+      if (!isNaN(pct) && pct <= 100) contentBreakdown.push({ type: typeName, percentage: pct });
+    }
+  };
+  tryContentType(/Stor(?:ies|ics|les)\s*[\n\s]*([0-9]+(?:[.,][0-9]+)?)\s*%/i, 'Stories');
+  tryContentType(/Posts?\s*[\n\s]*([0-9]+(?:[.,][0-9]+)?)\s*%(?!\s*from)/i, 'Posts');
+  tryContentType(/Reels?\s*[\n\s]*([0-9]+(?:[.,][0-9]+)?)\s*%/i, 'Reels');
   if (contentBreakdown.length > 0) {
     contentBreakdown.sort((a, b) => b.percentage - a.percentage);
     metrics.contentBreakdown = contentBreakdown;

@@ -45,6 +45,24 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
+// Normalize percentage for display (OCR sometimes loses decimal or misreads)
+const formatPercent = (value) => {
+  if (value == null || value === '') return '—';
+  const n = Number(value);
+  if (Number.isNaN(n)) return '—';
+  const normalized = n > 100 && n < 1000 ? n / 10 : n;
+  return Math.min(100, Math.max(0, normalized)).toFixed(1);
+};
+
+// Non-followers %: if stored value is invalid (>100), use complement of followers so they add to 100%
+const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
+  const followers = followersPercent != null ? Number(followersPercent) : null;
+  const stored = storedNonFollowers != null ? Number(storedNonFollowers) : null;
+  if (stored != null && stored <= 100 && !Number.isNaN(stored)) return formatPercent(stored);
+  if (followers != null && !Number.isNaN(followers)) return formatPercent(100 - followers);
+  return formatPercent(stored);
+};
+
 const InstagramReportsPage = () => {
   const { currentUser } = useAuth();
   const [reports, setReports] = useState([]);
@@ -1412,12 +1430,12 @@ const ReportPreviewModal = ({ report, onClose }) => {
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-[#9C27B0]" />
                             <span className="text-xs text-gray-600">Followers</span>
-                            <span className="text-xs font-semibold text-gray-900">{report.metrics.viewsFollowerPercent ?? '—'}%</span>
+                            <span className="text-xs font-semibold text-gray-900">{formatPercent(report.metrics.viewsFollowerPercent)}%</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-[#E040FB]" />
                             <span className="text-xs text-gray-600">Non-followers</span>
-                            <span className="text-xs font-semibold text-gray-900">{report.metrics.nonFollowerPercent ?? (100 - (report.metrics.viewsFollowerPercent ?? 0)).toFixed(1)}%</span>
+                            <span className="text-xs font-semibold text-gray-900">{nonFollowersPercent(report.metrics.viewsFollowerPercent, report.metrics.nonFollowerPercent)}%</span>
                           </div>
                         </div>
                       </div>
@@ -1439,12 +1457,12 @@ const ReportPreviewModal = ({ report, onClose }) => {
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-[#E040FB]" />
                             <span className="text-xs text-gray-600">Followers</span>
-                            <span className="text-xs font-semibold text-gray-900">{report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent ?? '—'}%</span>
+                            <span className="text-xs font-semibold text-gray-900">{formatPercent(report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent)}%</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-[#7C4DFF]" />
                             <span className="text-xs text-gray-600">Non-followers</span>
-                            <span className="text-xs font-semibold text-gray-900">{report.metrics.interactionsFollowerPercent != null ? (100 - report.metrics.interactionsFollowerPercent).toFixed(1) : report.metrics.viewsFollowerPercent != null ? (100 - report.metrics.viewsFollowerPercent).toFixed(1) : '—'}%</span>
+                            <span className="text-xs font-semibold text-gray-900">{nonFollowersPercent(report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent, null)}%</span>
                           </div>
                         </div>
                       </div>
