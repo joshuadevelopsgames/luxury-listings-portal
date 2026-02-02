@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -40,6 +41,7 @@ import { safeFormatDate } from '../utils/dateUtils';
 
 const TeamManagement = () => {
   const { currentUser, currentRole } = useAuth();
+  const { hasFeaturePermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -49,6 +51,7 @@ const TeamManagement = () => {
   const [loading, setLoading] = useState(true);
   
   const isHRManager = currentRole === 'hr_manager';
+  const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
 
   // Team members loaded from Firestore
   const [teamMembers, setTeamMembers] = useState([]);
@@ -239,19 +242,21 @@ const TeamManagement = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
-          <CardContent className="p-6 pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Salary</p>
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${(teamStats.totalSalary / 1000).toFixed(0)}k</p>
+        {canViewFinancials && (
+          <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+            <CardContent className="p-6 pt-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Salary</p>
+                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${(teamStats.totalSalary / 1000).toFixed(0)}k</p>
+                </div>
+                <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+                  <TrendingUp className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
               </div>
-              <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
-                <TrendingUp className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
           <CardContent className="p-6 pt-8">

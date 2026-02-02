@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { firestoreService } from '../../services/firestoreService';
+import { FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import { 
   Shield, 
   Search, 
@@ -30,10 +31,38 @@ import {
   Mail,
   Eye,
   Instagram,
-  Star
+  Star,
+  DollarSign,
+  UserCog,
+  Clock,
+  BarChart3
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
+
+// Feature permissions with descriptions
+const ALL_FEATURES = {
+  [FEATURE_PERMISSIONS.VIEW_FINANCIALS]: { 
+    name: 'View Financial Data', 
+    icon: DollarSign, 
+    description: 'See salary, compensation, and other financial information' 
+  },
+  [FEATURE_PERMISSIONS.MANAGE_USERS]: { 
+    name: 'Manage Users', 
+    icon: UserCog, 
+    description: 'Add, edit, or remove users and change roles' 
+  },
+  [FEATURE_PERMISSIONS.APPROVE_TIME_OFF]: { 
+    name: 'Approve Time Off', 
+    icon: Clock, 
+    description: 'Approve or deny employee time off requests' 
+  },
+  [FEATURE_PERMISSIONS.VIEW_ANALYTICS]: { 
+    name: 'View Analytics', 
+    icon: BarChart3, 
+    description: 'Access analytics dashboards and reports' 
+  },
+};
 
 // Build ALL_PAGES from module registry + additional pages
 const ALL_PAGES = {
@@ -79,6 +108,7 @@ const PermissionsManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedUser, setExpandedUser] = useState(null);
   const [userPermissions, setUserPermissions] = useState({});
+  const [userFeaturePermissions, setUserFeaturePermissions] = useState({});
   const [hasChanges, setHasChanges] = useState({});
   
   // Add user modal state
@@ -105,17 +135,21 @@ const PermissionsManager = () => {
         const approvedUsers = await firestoreService.getApprovedUsers();
         setUsers(approvedUsers);
 
-        // Load permissions for each user
+        // Load permissions for each user (pages + features)
         const permissionsMap = {};
+        const featurePermissionsMap = {};
         for (const user of approvedUsers) {
           try {
-            const perms = await firestoreService.getUserPagePermissions(user.email);
-            permissionsMap[user.email] = perms || [];
+            const result = await firestoreService.getUserPermissions(user.email);
+            permissionsMap[user.email] = result?.pages || [];
+            featurePermissionsMap[user.email] = result?.features || [];
           } catch (e) {
             permissionsMap[user.email] = [];
+            featurePermissionsMap[user.email] = [];
           }
         }
         setUserPermissions(permissionsMap);
+        setUserFeaturePermissions(featurePermissionsMap);
       } catch (error) {
         console.error('Error loading users:', error);
         toast.error('Failed to load users');
@@ -147,6 +181,25 @@ const PermissionsManager = () => {
     setHasChanges(prev => ({ ...prev, [userEmail]: true }));
   };
 
+  // Toggle a feature permission for a user
+  const toggleFeaturePermission = (userEmail, featureId) => {
+    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase())) {
+      toast.error("Cannot modify system admin permissions");
+      return;
+    }
+
+    setUserFeaturePermissions(prev => {
+      const currentPerms = prev[userEmail] || [];
+      const newPerms = currentPerms.includes(featureId)
+        ? currentPerms.filter(id => id !== featureId)
+        : [...currentPerms, featureId];
+      
+      return { ...prev, [userEmail]: newPerms };
+    });
+
+    setHasChanges(prev => ({ ...prev, [userEmail]: true }));
+  };
+
   // Grant all pages to a user
   const grantAllPages = (userEmail) => {
     if (SYSTEM_ADMINS.includes(userEmail.toLowerCase())) return;
@@ -170,11 +223,14 @@ const PermissionsManager = () => {
     setHasChanges(prev => ({ ...prev, [userEmail]: true }));
   };
 
-  // Save permissions for a user
+  // Save permissions for a user (both pages and features)
   const saveUserPermissions = async (userEmail) => {
     try {
       setSaving(userEmail);
-      await firestoreService.setUserPagePermissions(userEmail, userPermissions[userEmail] || []);
+      await firestoreService.setUserFullPermissions(userEmail, {
+        pages: userPermissions[userEmail] || [],
+        features: userFeaturePermissions[userEmail] || []
+      });
       toast.success(`Permissions saved for ${userEmail}`);
       setHasChanges(prev => ({ ...prev, [userEmail]: false }));
     } catch (error) {
@@ -418,7 +474,7 @@ const PermissionsManager = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[13px] text-[#86868b]">
-                      {isAdmin ? 'Full Access' : `${perms.length} pages`}
+                      {isAdmin ? 'Full Access' : `${perms.length} pages, ${(userFeaturePermissions[user.email] || []).length} features`}
                     </span>
                     {isExpanded ? (
                       <ChevronDown className="w-5 h-5 text-[#86868b]" />
@@ -558,6 +614,57 @@ const PermissionsManager = () => {
                               </button>
                             );
                           })}
+                        </div>
+
+                        {/* Feature Permissions Section */}
+                        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/5">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Shield className="w-4 h-4 text-[#af52de]" />
+                            <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Feature Permissions</span>
+                          </div>
+                          <p className="text-[12px] text-[#86868b] mb-3">
+                            Control what data and actions this user can access within pages.
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {Object.entries(ALL_FEATURES).map(([featureId, feature]) => {
+                              const featurePerms = userFeaturePermissions[user.email] || [];
+                              const hasFeature = featurePerms.includes(featureId);
+                              const Icon = feature.icon;
+
+                              return (
+                                <button
+                                  key={featureId}
+                                  onClick={() => toggleFeaturePermission(user.email, featureId)}
+                                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                                    hasFeature
+                                      ? 'bg-[#af52de]/10 border-[#af52de]/30'
+                                      : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent hover:bg-black/5 dark:hover:bg-white/5'
+                                  }`}
+                                >
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                    hasFeature 
+                                      ? 'bg-[#af52de]/20' 
+                                      : 'bg-black/5 dark:bg-white/5'
+                                  }`}>
+                                    <Icon className={`w-4 h-4 ${hasFeature ? 'text-[#af52de]' : 'text-[#86868b]'}`} />
+                                  </div>
+                                  <div className="flex-1 text-left min-w-0">
+                                    <p className={`text-[13px] font-medium ${
+                                      hasFeature ? 'text-[#af52de]' : 'text-[#1d1d1f] dark:text-white'
+                                    }`}>
+                                      {feature.name}
+                                    </p>
+                                    <p className="text-[10px] text-[#86868b] truncate">
+                                      {feature.description}
+                                    </p>
+                                  </div>
+                                  {hasFeature && (
+                                    <Check className="w-4 h-4 flex-shrink-0 text-[#af52de]" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
 
                         {/* Remove User */}

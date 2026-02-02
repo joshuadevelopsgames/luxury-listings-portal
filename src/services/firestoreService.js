@@ -2365,17 +2365,19 @@ class FirestoreService {
 
   // ===== PAGE PERMISSIONS MANAGEMENT =====
 
-  // Get user's page permissions
-  async getUserPagePermissions(userEmail) {
+  // Get user's full permissions (pages and features)
+  async getUserPermissions(userEmail) {
     try {
-      // Normalize email (Firestore document IDs are case-sensitive)
       const normalizedEmail = userEmail.toLowerCase().trim();
       const userRef = doc(db, this.collections.APPROVED_USERS, normalizedEmail);
       const userSnap = await getDoc(userRef);
       
       if (userSnap.exists()) {
         const userData = userSnap.data();
-        return userData.pagePermissions || [];
+        return {
+          pages: userData.pagePermissions || [],
+          features: userData.featurePermissions || []
+        };
       }
       
       // If document doesn't exist with normalized email, try original email
@@ -2384,11 +2386,25 @@ class FirestoreService {
         const altSnap = await getDoc(altRef);
         if (altSnap.exists()) {
           const userData = altSnap.data();
-          return userData.pagePermissions || [];
+          return {
+            pages: userData.pagePermissions || [],
+            features: userData.featurePermissions || []
+          };
         }
       }
       
-      return [];
+      return { pages: [], features: [] };
+    } catch (error) {
+      console.error('❌ Error getting user permissions:', error);
+      throw error;
+    }
+  }
+
+  // Get user's page permissions (legacy support)
+  async getUserPagePermissions(userEmail) {
+    try {
+      const result = await this.getUserPermissions(userEmail);
+      return result.pages || [];
     } catch (error) {
       console.error('❌ Error getting user page permissions:', error);
       console.error('❌ Email used:', userEmail);
@@ -2444,6 +2460,69 @@ class FirestoreService {
       console.error('❌ Error code:', error.code);
       console.error('❌ Error message:', error.message);
       console.error('❌ Error stack:', error.stack);
+      throw error;
+    }
+  }
+
+  // Set user's feature permissions (granular access within pages)
+  async setUserFeaturePermissions(userEmail, featureIds) {
+    try {
+      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      const userSnap = await getDoc(userRef);
+      
+      console.log('📝 Setting feature permissions for user:', userEmail);
+      console.log('📝 New feature permissions:', featureIds);
+
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          email: userEmail,
+          featurePermissions: featureIds,
+          permissionsUpdatedAt: serverTimestamp(),
+          createdAt: serverTimestamp()
+        }, { merge: true });
+      } else {
+        await updateDoc(userRef, {
+          featurePermissions: featureIds,
+          permissionsUpdatedAt: serverTimestamp()
+        });
+      }
+      
+      console.log('✅ Feature permissions saved for:', userEmail);
+    } catch (error) {
+      console.error('❌ Error setting user feature permissions:', error);
+      throw error;
+    }
+  }
+
+  // Set both page and feature permissions at once
+  async setUserFullPermissions(userEmail, { pages = [], features = [] }) {
+    try {
+      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      const userSnap = await getDoc(userRef);
+      
+      console.log('📝 Setting full permissions for user:', userEmail);
+      console.log('📝 Page permissions:', pages);
+      console.log('📝 Feature permissions:', features);
+
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          email: userEmail,
+          pagePermissions: pages,
+          featurePermissions: features,
+          permissionsUpdatedAt: serverTimestamp(),
+          createdAt: serverTimestamp()
+        }, { merge: true });
+      } else {
+        await updateDoc(userRef, {
+          pagePermissions: pages,
+          featurePermissions: features,
+          permissionsUpdatedAt: serverTimestamp()
+        });
+      }
+      
+      console.log('✅ Full permissions saved for:', userEmail);
+    } catch (error) {
+      console.error('❌ Error setting user full permissions:', error);
       throw error;
     }
   }

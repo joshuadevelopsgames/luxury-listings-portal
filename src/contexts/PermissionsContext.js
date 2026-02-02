@@ -10,6 +10,14 @@ const SYSTEM_ADMINS = [
   'jrsschroeder@gmail.com'
 ];
 
+// Feature permissions - granular access within pages
+export const FEATURE_PERMISSIONS = {
+  VIEW_FINANCIALS: 'view_financials',      // See salary, compensation, financial data
+  MANAGE_USERS: 'manage_users',            // Add/remove users, change roles
+  APPROVE_TIME_OFF: 'approve_time_off',    // Approve/deny time off requests
+  VIEW_ANALYTICS: 'view_analytics',        // Access to analytics dashboards
+};
+
 // localStorage key for caching permissions
 const PERMISSIONS_CACHE_KEY = 'luxury_listings_permissions';
 
@@ -20,6 +28,7 @@ export function usePermissions() {
 /**
  * PermissionsProvider - Caches user permissions to avoid repeated Firestore calls
  * Loads once on auth, caches in localStorage, NO real-time listener for performance
+ * Supports both page permissions and feature permissions (granular access)
  */
 export function PermissionsProvider({ children }) {
   const { currentUser } = useAuth();
@@ -34,6 +43,17 @@ export function PermissionsProvider({ children }) {
     } catch (e) {}
     return [];
   });
+  const [featurePermissions, setFeaturePermissions] = useState(() => {
+    // Load feature permissions from localStorage
+    try {
+      const cached = localStorage.getItem(PERMISSIONS_CACHE_KEY);
+      if (cached) {
+        const { email, features } = JSON.parse(cached);
+        if (email === currentUser?.email) return features || [];
+      }
+    } catch (e) {}
+    return [];
+  });
   const [loading, setLoading] = useState(true);
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
 
@@ -42,12 +62,18 @@ export function PermissionsProvider({ children }) {
     if (!currentUser?.email || isSystemAdmin) return;
     
     try {
-      const perms = await firestoreService.getUserPagePermissions(currentUser.email);
-      setPermissions(perms || []);
+      const result = await firestoreService.getUserPermissions(currentUser.email);
+      const pagePerms = result?.pages || result || [];
+      const featurePerms = result?.features || [];
+      
+      setPermissions(Array.isArray(pagePerms) ? pagePerms : []);
+      setFeaturePermissions(Array.isArray(featurePerms) ? featurePerms : []);
+      
       // Cache to localStorage
       localStorage.setItem(PERMISSIONS_CACHE_KEY, JSON.stringify({
         email: currentUser.email,
-        perms: perms || []
+        perms: pagePerms,
+        features: featurePerms
       }));
     } catch (error) {
       console.error('Error refreshing permissions:', error);
@@ -57,6 +83,7 @@ export function PermissionsProvider({ children }) {
   useEffect(() => {
     if (!currentUser?.email) {
       setPermissions([]);
+      setFeaturePermissions([]);
       setLoading(false);
       setIsSystemAdmin(false);
       localStorage.removeItem(PERMISSIONS_CACHE_KEY);
@@ -70,6 +97,7 @@ export function PermissionsProvider({ children }) {
     // System admins don't need to load permissions
     if (adminStatus) {
       setPermissions([]);
+      setFeaturePermissions([]);
       setLoading(false);
       return;
     }
@@ -79,19 +107,26 @@ export function PermissionsProvider({ children }) {
     // Load permissions once (no real-time listener for performance)
     const loadPermissions = async () => {
       try {
-        const perms = await firestoreService.getUserPagePermissions(currentUser.email);
+        const result = await firestoreService.getUserPermissions(currentUser.email);
+        const pagePerms = result?.pages || result || [];
+        const featurePerms = result?.features || [];
+        
         if (isMounted) {
-          setPermissions(perms || []);
+          setPermissions(Array.isArray(pagePerms) ? pagePerms : []);
+          setFeaturePermissions(Array.isArray(featurePerms) ? featurePerms : []);
+          
           // Cache to localStorage
           localStorage.setItem(PERMISSIONS_CACHE_KEY, JSON.stringify({
             email: currentUser.email,
-            perms: perms || []
+            perms: pagePerms,
+            features: featurePerms
           }));
         }
       } catch (error) {
         console.error('Error loading permissions:', error);
         if (isMounted) {
           setPermissions([]);
+          setFeaturePermissions([]);
         }
       } finally {
         if (isMounted) {
@@ -123,11 +158,22 @@ export function PermissionsProvider({ children }) {
     return permissions.includes(pageId);
   };
 
+  // Check if user has a specific feature permission (granular access)
+  const hasFeaturePermission = (featureId) => {
+    // System admins have access to all features
+    if (isSystemAdmin) return true;
+    
+    // Check user's feature permissions
+    return featurePermissions.includes(featureId);
+  };
+
   const value = {
     permissions,
+    featurePermissions,
     loading,
     isSystemAdmin,
     hasPermission,
+    hasFeaturePermission,
     refreshPermissions // Expose for manual refresh when needed
   };
 
