@@ -11,7 +11,8 @@ import {
   where, 
   orderBy,
   onSnapshot,
-  serverTimestamp 
+  serverTimestamp,
+  arrayUnion 
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { auth } from '../firebase'; // Added missing import for auth
@@ -828,6 +829,274 @@ class FirestoreService {
         callback([]);
       }
     );
+  }
+
+  // ===== LEAVE REQUEST - ENHANCED METHODS =====
+
+  // Get user's leave balances from their user document
+  async getUserLeaveBalances(userEmail) {
+    try {
+      const userDoc = await getDoc(doc(db, this.collections.APPROVED_USERS, userEmail));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        return data.leaveBalances || {
+          vacation: { total: 15, used: 0, remaining: 15 },
+          sick: { total: 10, used: 0, remaining: 10 },
+          personal: { total: 3, used: 0, remaining: 3 }
+        };
+      }
+      // Return defaults if user not found
+      return {
+        vacation: { total: 15, used: 0, remaining: 15 },
+        sick: { total: 10, used: 0, remaining: 10 },
+        personal: { total: 3, used: 0, remaining: 3 }
+      };
+    } catch (error) {
+      console.error('❌ Error getting leave balances:', error);
+      return {
+        vacation: { total: 15, used: 0, remaining: 15 },
+        sick: { total: 10, used: 0, remaining: 10 },
+        personal: { total: 3, used: 0, remaining: 3 }
+      };
+    }
+  }
+
+  // Update user's leave balances (admin function)
+  async updateUserLeaveBalances(userEmail, balances) {
+    try {
+      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      await updateDoc(userRef, {
+        leaveBalances: balances,
+        leaveBalancesUpdatedAt: serverTimestamp()
+      });
+      console.log('✅ Leave balances updated for:', userEmail);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating leave balances:', error);
+      throw error;
+    }
+  }
+
+  // Get all users with their leave balances (for admin view)
+  async getAllUsersWithLeaveBalances() {
+    try {
+      const users = await this.getApprovedUsers();
+      const usersWithBalances = await Promise.all(
+        users.map(async (user) => {
+          const balances = await this.getUserLeaveBalances(user.email);
+          return { ...user, leaveBalances: balances };
+        })
+      );
+      return usersWithBalances;
+    } catch (error) {
+      console.error('❌ Error getting users with balances:', error);
+      return [];
+    }
+  }
+
+  // Get all time off admins
+  async getTimeOffAdmins() {
+    try {
+      const q = query(
+        collection(db, this.collections.APPROVED_USERS),
+        where('isTimeOffAdmin', '==', true)
+      );
+      const snapshot = await getDocs(q);
+      const admins = [];
+      snapshot.forEach((doc) => {
+        admins.push({ id: doc.id, ...doc.data() });
+      });
+      console.log('✅ Found time off admins:', admins.length);
+      return admins;
+    } catch (error) {
+      console.error('❌ Error getting time off admins:', error);
+      return [];
+    }
+  }
+
+  // Set user as time off admin
+  async setTimeOffAdmin(userEmail, isAdmin) {
+    try {
+      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      await updateDoc(userRef, {
+        isTimeOffAdmin: isAdmin,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Time off admin status updated:', userEmail, isAdmin);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error setting time off admin:', error);
+      throw error;
+    }
+  }
+
+  // Check if user is time off admin
+  async isTimeOffAdmin(userEmail) {
+    try {
+      const userDoc = await getDoc(doc(db, this.collections.APPROVED_USERS, userEmail));
+      if (userDoc.exists()) {
+        return userDoc.data().isTimeOffAdmin === true;
+      }
+      return false;
+    } catch (error) {
+      console.error('❌ Error checking time off admin:', error);
+      return false;
+    }
+  }
+
+  // Cancel leave request
+  async cancelLeaveRequest(requestId, cancelledBy, reason = null) {
+    try {
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      const historyEntry = {
+        action: 'cancelled',
+        by: cancelledBy,
+        timestamp: new Date().toISOString(),
+        notes: reason
+      };
+      
+      await updateDoc(docRef, {
+        status: 'cancelled',
+        cancelledBy,
+        cancelReason: reason,
+        cancelledAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        history: arrayUnion(historyEntry)
+      });
+      console.log('✅ Leave request cancelled:', requestId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error cancelling leave request:', error);
+      throw error;
+    }
+  }
+
+  // Check for overlapping leave requests
+  async hasOverlappingRequest(userEmail, startDate, endDate, excludeRequestId = null) {
+    try {
+      const requests = await this.getLeaveRequests(userEmail);
+      return requests.some(req => {
+        // Skip the request we're editing
+        if (excludeRequestId && req.id === excludeRequestId) return false;
+        // Skip cancelled/rejected requests
+        if (req.status === 'cancelled' || req.status === 'rejected') return false;
+        
+        // Check date overlap
+        const reqStart = new Date(req.startDate);
+        const reqEnd = new Date(req.endDate);
+        const newStart = new Date(startDate);
+        const newEnd = new Date(endDate);
+        
+        return (newStart <= reqEnd && newEnd >= reqStart);
+      });
+    } catch (error) {
+      console.error('❌ Error checking overlap:', error);
+      return false;
+    }
+  }
+
+  // Add entry to request history
+  async addToRequestHistory(requestId, action, byEmail, notes = null) {
+    try {
+      const historyEntry = {
+        action,
+        by: byEmail,
+        timestamp: new Date().toISOString(),
+        notes
+      };
+      
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      await updateDoc(docRef, {
+        history: arrayUnion(historyEntry),
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ History entry added:', requestId, action);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error adding history entry:', error);
+      throw error;
+    }
+  }
+
+  // Submit leave request with history and travel fields
+  async submitLeaveRequestEnhanced(requestData) {
+    try {
+      const historyEntry = {
+        action: 'created',
+        by: requestData.employeeEmail,
+        timestamp: new Date().toISOString(),
+        notes: null
+      };
+
+      const docRef = await addDoc(collection(db, this.collections.LEAVE_REQUESTS), {
+        ...requestData,
+        status: 'pending',
+        submittedDate: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        history: [historyEntry],
+        // Travel fields (optional)
+        isTravel: requestData.isTravel || false,
+        destination: requestData.destination || '',
+        travelPurpose: requestData.travelPurpose || '',
+        estimatedExpenses: requestData.estimatedExpenses || 0,
+        // Manager notes (for rejection feedback)
+        managerNotes: ''
+      });
+      console.log('✅ Enhanced leave request submitted:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error submitting enhanced leave request:', error);
+      throw error;
+    }
+  }
+
+  // Update leave request status with history tracking
+  async updateLeaveRequestStatusEnhanced(requestId, status, reviewedBy, notes = null) {
+    try {
+      const historyEntry = {
+        action: status === 'approved' ? 'approved' : 'rejected',
+        by: reviewedBy,
+        timestamp: new Date().toISOString(),
+        notes
+      };
+
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      await updateDoc(docRef, {
+        status,
+        reviewedBy,
+        reviewedDate: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        managerNotes: notes || '',
+        history: arrayUnion(historyEntry)
+      });
+      console.log('✅ Leave request status updated with history:', requestId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating leave request:', error);
+      throw error;
+    }
+  }
+
+  // Deduct from user's leave balance after approval
+  async deductLeaveBalance(userEmail, leaveType, days, requestId) {
+    try {
+      const balances = await this.getUserLeaveBalances(userEmail);
+      if (balances[leaveType]) {
+        balances[leaveType].used += days;
+        balances[leaveType].remaining = balances[leaveType].total - balances[leaveType].used;
+        await this.updateUserLeaveBalances(userEmail, balances);
+        
+        // Add history entry to the request
+        await this.addToRequestHistory(requestId, 'balance_deducted', 'system', `${days} ${leaveType} days deducted`);
+        
+        console.log('✅ Leave balance deducted:', userEmail, leaveType, days);
+        return { success: true };
+      }
+      return { success: false, error: 'Invalid leave type' };
+    } catch (error) {
+      console.error('❌ Error deducting leave balance:', error);
+      throw error;
+    }
   }
 
   // ===== CLIENT MANAGEMENT =====

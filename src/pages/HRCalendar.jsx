@@ -9,6 +9,7 @@ import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 import { PERMISSIONS } from '../entities/Permissions';
 import { firestoreService } from '../services/firestoreService';
+import { timeOffNotifications } from '../services/timeOffNotificationService';
 import { 
   Calendar as CalendarIcon, 
   Plus, 
@@ -34,11 +35,27 @@ import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 const HRCalendar = () => {
   const { currentUser, hasPermission } = useAuth();
   
-  // Check permissions
+  // Check permissions - simplified to isTimeOffAdmin
   const canManageLeave = hasPermission(PERMISSIONS.MANAGE_LEAVE_REQUESTS);
   const canApproveLeave = hasPermission(PERMISSIONS.APPROVE_LEAVE);
   const canViewHRData = hasPermission(PERMISSIONS.VIEW_HR_DATA);
+  const [isTimeOffAdmin, setIsTimeOffAdmin] = useState(false);
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const [showNotesModal, setShowNotesModal] = useState(null); // 'approve' or 'reject' or null
+  const [processingRequest, setProcessingRequest] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // Admin balance editor state
+  const [showBalanceEditor, setShowBalanceEditor] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editBalances, setEditBalances] = useState({
+    vacation: { total: 15, used: 0 },
+    sick: { total: 10, used: 0 },
+    personal: { total: 3, used: 0 }
+  });
+  const [savingBalances, setSavingBalances] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [filterType, setFilterType] = useState('all');
@@ -57,6 +74,72 @@ const HRCalendar = () => {
     setSelectedDate(null);
     setSelectedEvent(null);
   }, [currentUser?.email]);
+
+  // Check if current user is a time off admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!currentUser?.email) return;
+      try {
+        const adminStatus = await firestoreService.isTimeOffAdmin(currentUser.email);
+        setIsTimeOffAdmin(adminStatus);
+        console.log('📅 Time off admin status:', adminStatus);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      }
+    };
+    checkAdminStatus();
+  }, [currentUser?.email]);
+
+  // Load all users with balances for admin
+  const loadUsersWithBalances = async () => {
+    setLoadingUsers(true);
+    try {
+      const users = await firestoreService.getAllUsersWithLeaveBalances();
+      setAllUsers(users);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Start editing a user's balances
+  const startEditingUser = (user) => {
+    setEditingUser(user);
+    setEditBalances(user.leaveBalances || {
+      vacation: { total: 15, used: 0 },
+      sick: { total: 10, used: 0 },
+      personal: { total: 3, used: 0 }
+    });
+  };
+
+  // Save user balances
+  const saveUserBalances = async () => {
+    if (!editingUser) return;
+    setSavingBalances(true);
+    try {
+      await firestoreService.updateUserLeaveBalances(editingUser.email, editBalances);
+      
+      // Send notification to user
+      await timeOffNotifications.notifyBalanceChange(
+        editingUser.email,
+        currentUser?.email,
+        'leave',
+        'updated',
+        'new values'
+      );
+      
+      toast.success(`Updated leave balances for ${editingUser.displayName || editingUser.email}`);
+      setEditingUser(null);
+      loadUsersWithBalances(); // Refresh list
+    } catch (error) {
+      console.error('Error saving balances:', error);
+      toast.error('Failed to save balances');
+    } finally {
+      setSavingBalances(false);
+    }
+  };
 
   // Leave request form state
   const [leaveForm, setLeaveForm] = useState({
@@ -293,32 +376,82 @@ const HRCalendar = () => {
     loadLeaveRequests();
   }, [currentUser?.email]);
 
-  // Handle approve leave request
-  const handleApproveRequest = async (requestId) => {
+  // Handle approve leave request with notes and notifications
+  const handleApproveRequest = async (requestId, notes = '') => {
+    setProcessingRequest(requestId);
     try {
-      await firestoreService.updateLeaveRequestStatus(requestId, 'approved', currentUser?.email);
+      // Find the request to get employee info
+      const request = leaveRequests.find(r => r.id === requestId);
+      
+      // Use enhanced method with history tracking
+      await firestoreService.updateLeaveRequestStatusEnhanced(requestId, 'approved', currentUser?.email, notes);
+      
+      // Deduct from employee's leave balance
+      if (request) {
+        await firestoreService.deductLeaveBalance(
+          request.employeeId || request.employeeEmail,
+          request.type,
+          request.days || 1,
+          requestId
+        );
+        
+        // Send notification to employee
+        await timeOffNotifications.notifyApproved(request, currentUser?.email);
+      }
+      
       setLeaveRequests(prev => 
-        prev.map(req => req.id === requestId ? { ...req, status: 'approved' } : req)
+        prev.map(req => req.id === requestId ? { ...req, status: 'approved', managerNotes: notes } : req)
       );
       toast.success('Leave request approved');
+      setShowNotesModal(null);
+      setApprovalNotes('');
     } catch (error) {
       console.error('Error approving request:', error);
       toast.error('Failed to approve request');
+    } finally {
+      setProcessingRequest(null);
     }
   };
 
-  // Handle reject leave request
-  const handleRejectRequest = async (requestId) => {
+  // Handle reject leave request with reason and notifications
+  const handleRejectRequest = async (requestId, reason = '') => {
+    if (!reason.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+    
+    setProcessingRequest(requestId);
     try {
-      await firestoreService.updateLeaveRequestStatus(requestId, 'rejected', currentUser?.email);
+      // Find the request to get employee info
+      const request = leaveRequests.find(r => r.id === requestId);
+      
+      // Use enhanced method with history tracking
+      await firestoreService.updateLeaveRequestStatusEnhanced(requestId, 'rejected', currentUser?.email, reason);
+      
+      // Send notification to employee
+      if (request) {
+        await timeOffNotifications.notifyRejected(request, currentUser?.email, reason);
+      }
+      
       setLeaveRequests(prev => 
-        prev.map(req => req.id === requestId ? { ...req, status: 'rejected' } : req)
+        prev.map(req => req.id === requestId ? { ...req, status: 'rejected', managerNotes: reason } : req)
       );
       toast.success('Leave request rejected');
+      setShowNotesModal(null);
+      setApprovalNotes('');
     } catch (error) {
       console.error('Error rejecting request:', error);
       toast.error('Failed to reject request');
+    } finally {
+      setProcessingRequest(null);
     }
+  };
+  
+  // Open notes modal for approve/reject with reason
+  const openNotesModal = (requestId, action) => {
+    setProcessingRequest(requestId);
+    setShowNotesModal(action);
+    setApprovalNotes('');
   };
 
   // Form handling functions
@@ -723,15 +856,17 @@ const HRCalendar = () => {
                         size="sm" 
                         variant="outline" 
                         className="text-green-600 hover:text-green-700"
-                        onClick={() => handleApproveRequest(request.id)}
+                        onClick={() => openNotesModal(request.id, 'approve')}
+                        disabled={processingRequest === request.id}
                       >
-                        Approve
+                        {processingRequest === request.id ? 'Processing...' : 'Approve'}
                       </Button>
                       <Button 
                         size="sm" 
                         variant="outline" 
                         className="text-red-600 hover:text-red-700"
-                        onClick={() => handleRejectRequest(request.id)}
+                        onClick={() => openNotesModal(request.id, 'reject')}
+                        disabled={processingRequest === request.id}
                       >
                         Reject
                       </Button>
@@ -743,6 +878,224 @@ const HRCalendar = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Admin: Team Leave Balances */}
+      {isTimeOffAdmin && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Users className="w-5 h-5" />
+                <span>Team Leave Balances</span>
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowBalanceEditor(!showBalanceEditor);
+                  if (!showBalanceEditor && allUsers.length === 0) {
+                    loadUsersWithBalances();
+                  }
+                }}
+              >
+                {showBalanceEditor ? 'Hide' : 'Manage Balances'}
+              </Button>
+            </div>
+          </CardHeader>
+          
+          {showBalanceEditor && (
+            <CardContent>
+              {loadingUsers ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-gray-600">Loading team members...</p>
+                </div>
+              ) : allUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600">No team members found</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {allUsers.map((user) => {
+                    const balances = user.leaveBalances || {};
+                    const isEditing = editingUser?.email === user.email;
+                    
+                    return (
+                      <div 
+                        key={user.email}
+                        className={`p-4 border rounded-lg ${isEditing ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-medium text-gray-900">{user.displayName || user.email}</p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </div>
+                          {!isEditing && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => startEditingUser(user)}
+                            >
+                              Edit Balances
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {isEditing ? (
+                          <div className="space-y-4">
+                            {/* Vacation */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Vacation Total Days
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editBalances.vacation?.total || 0}
+                                  onChange={(e) => setEditBalances(prev => ({
+                                    ...prev,
+                                    vacation: { ...prev.vacation, total: parseInt(e.target.value) || 0 }
+                                  }))}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Vacation Used Days
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editBalances.vacation?.used || 0}
+                                  onChange={(e) => setEditBalances(prev => ({
+                                    ...prev,
+                                    vacation: { ...prev.vacation, used: parseInt(e.target.value) || 0 }
+                                  }))}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Sick */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Sick Leave Total Days
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editBalances.sick?.total || 0}
+                                  onChange={(e) => setEditBalances(prev => ({
+                                    ...prev,
+                                    sick: { ...prev.sick, total: parseInt(e.target.value) || 0 }
+                                  }))}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Sick Leave Used Days
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editBalances.sick?.used || 0}
+                                  onChange={(e) => setEditBalances(prev => ({
+                                    ...prev,
+                                    sick: { ...prev.sick, used: parseInt(e.target.value) || 0 }
+                                  }))}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Personal */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Personal Days Total
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editBalances.personal?.total || 0}
+                                  onChange={(e) => setEditBalances(prev => ({
+                                    ...prev,
+                                    personal: { ...prev.personal, total: parseInt(e.target.value) || 0 }
+                                  }))}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Personal Days Used
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editBalances.personal?.used || 0}
+                                  onChange={(e) => setEditBalances(prev => ({
+                                    ...prev,
+                                    personal: { ...prev.personal, used: parseInt(e.target.value) || 0 }
+                                  }))}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2 pt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingUser(null)}
+                                disabled={savingBalances}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700"
+                                onClick={saveUserBalances}
+                                disabled={savingBalances}
+                              >
+                                {savingBalances ? 'Saving...' : 'Save Changes'}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-500">Vacation</p>
+                              <p className="font-medium">
+                                {(balances.vacation?.total || 15) - (balances.vacation?.used || 0)} / {balances.vacation?.total || 15} days
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Sick</p>
+                              <p className="font-medium">
+                                {(balances.sick?.total || 10) - (balances.sick?.used || 0)} / {balances.sick?.total || 10} days
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Personal</p>
+                              <p className="font-medium">
+                                {(balances.personal?.total || 3) - (balances.personal?.used || 0)} / {balances.personal?.total || 3} days
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* Leave Request Form Modal */}
       {showAddModal && createPortal(
@@ -1034,6 +1387,65 @@ const HRCalendar = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Approval/Rejection Notes Modal */}
+      {showNotesModal && processingRequest && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {showNotesModal === 'approve' ? 'Approve Request' : 'Reject Request'}
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {showNotesModal === 'approve' ? 'Notes (Optional)' : 'Reason for Rejection *'}
+                </label>
+                <textarea
+                  value={approvalNotes}
+                  onChange={(e) => setApprovalNotes(e.target.value)}
+                  placeholder={showNotesModal === 'approve' 
+                    ? 'Add any notes for the employee...' 
+                    : 'Please provide a reason for rejection...'}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required={showNotesModal === 'reject'}
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowNotesModal(null);
+                    setProcessingRequest(null);
+                    setApprovalNotes('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className={showNotesModal === 'approve' 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-red-600 hover:bg-red-700'}
+                  onClick={() => {
+                    if (showNotesModal === 'approve') {
+                      handleApproveRequest(processingRequest, approvalNotes);
+                    } else {
+                      handleRejectRequest(processingRequest, approvalNotes);
+                    }
+                  }}
+                  disabled={showNotesModal === 'reject' && !approvalNotes.trim()}
+                >
+                  {showNotesModal === 'approve' ? 'Approve' : 'Reject'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>,
         document.body

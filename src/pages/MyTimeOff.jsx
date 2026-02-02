@@ -6,6 +6,14 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
 import { firestoreService } from '../services/firestoreService';
+import { timeOffNotifications } from '../services/timeOffNotificationService';
+import { 
+  validateLeaveRequest, 
+  calculateBusinessDays,
+  canCancelRequest,
+  getStatusColor as getStatusColorHelper,
+  formatDateRange
+} from '../utils/timeOffHelpers';
 import { 
   Calendar, 
   Plus, 
@@ -18,9 +26,17 @@ import {
   Plane,
   Heart,
   Home,
-  Info
+  Info,
+  X,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Briefcase,
+  DollarSign,
+  History
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 const MyTimeOff = () => {
   const { currentUser } = useAuth();
@@ -39,8 +55,19 @@ const MyTimeOff = () => {
     endTime: '17:00',
     isAllDay: true,
     reason: '',
-    notes: ''
+    notes: '',
+    // Travel fields
+    isTravel: false,
+    destination: '',
+    travelPurpose: '',
+    estimatedExpenses: ''
   });
+
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [validationWarnings, setValidationWarnings] = useState([]);
+  const [cancelling, setCancelling] = useState(null);
+  const [expandedRequest, setExpandedRequest] = useState(null);
 
   // Leave balances - loaded from Firestore
   const [leaveBalances, setLeaveBalances] = useState({
@@ -101,23 +128,35 @@ const MyTimeOff = () => {
 
     const loadLeaveBalances = async () => {
       try {
-        // TODO: Implement getLeaveBalances in firestoreService
-        // For now, calculate from leave requests
-        const balances = {
-          vacation: { total: 20, used: 0, remaining: 20, pending: 0 },
-          sick: { total: 10, used: 0, remaining: 10, pending: 0 },
-          personal: { total: 5, used: 0, remaining: 5, pending: 0 }
-        };
+        // Load balances from user's Firestore document
+        const storedBalances = await firestoreService.getUserLeaveBalances(currentUser.email);
         
-        // Calculate used/pending from myRequests
+        // Calculate pending from current requests
+        const pendingCounts = { vacation: 0, sick: 0, personal: 0 };
         myRequests.forEach(request => {
-          if (request.status === 'approved') {
-            balances[request.type].used += request.days || 1;
-            balances[request.type].remaining -= request.days || 1;
-          } else if (request.status === 'pending') {
-            balances[request.type].pending += request.days || 1;
+          if (request.status === 'pending' && pendingCounts[request.type] !== undefined) {
+            pendingCounts[request.type] += request.days || 1;
           }
         });
+        
+        // Merge stored balances with pending counts
+        const balances = {
+          vacation: { 
+            ...storedBalances.vacation,
+            remaining: storedBalances.vacation.total - storedBalances.vacation.used,
+            pending: pendingCounts.vacation 
+          },
+          sick: { 
+            ...storedBalances.sick,
+            remaining: storedBalances.sick.total - storedBalances.sick.used,
+            pending: pendingCounts.sick 
+          },
+          personal: { 
+            ...storedBalances.personal,
+            remaining: storedBalances.personal.total - storedBalances.personal.used,
+            pending: pendingCounts.personal 
+          }
+        };
         
         setLeaveBalances(balances);
       } catch (err) {
@@ -184,33 +223,77 @@ const MyTimeOff = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate the request before submitting
+    const validation = validateLeaveRequest(leaveForm, leaveBalances, myRequests);
+    setValidationErrors(validation.errors);
+    setValidationWarnings(validation.warnings);
+    
+    if (!validation.valid) {
+      toast.error('Please fix the errors before submitting');
+      return;
+    }
+    
     setSubmitting(true);
     
     try {
       const newRequest = {
         employeeEmail: currentUser.email,
-        employeeName: `${currentUser.firstName} ${currentUser.lastName}`,
+        employeeName: currentUser.displayName || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email,
         type: leaveForm.type,
         startDate: leaveForm.startDate,
         endDate: leaveForm.endDate,
-        days: calculateDays(),
+        days: validation.requestedDays || calculateDays(),
         reason: leaveForm.reason,
-        notes: leaveForm.notes
+        notes: leaveForm.notes,
+        // Travel fields
+        isTravel: leaveForm.isTravel,
+        destination: leaveForm.destination,
+        travelPurpose: leaveForm.travelPurpose,
+        estimatedExpenses: leaveForm.estimatedExpenses ? parseFloat(leaveForm.estimatedExpenses) : 0
       };
 
-      const result = await firestoreService.submitLeaveRequest(newRequest);
+      // Use enhanced submission with history tracking
+      const result = await firestoreService.submitLeaveRequestEnhanced(newRequest);
       
       if (result.success) {
         console.log('✅ Leave request submitted to Firestore:', result.id);
-        alert('Time off request submitted successfully! ✅\n\nYour request has been sent to HR for approval.');
+        
+        // Send notifications to admins
+        await timeOffNotifications.notifyNewRequest({ ...newRequest, id: result.id });
+        
+        toast.success('Time off request submitted! Your request has been sent for approval.');
         setShowRequestModal(false);
         resetForm();
+        
+        // Reload requests to show the new one
+        loadLeaveRequests();
       }
     } catch (error) {
       console.error('❌ Error submitting leave request:', error);
-      alert(`Failed to submit request: ${error.message}\n\nPlease try again.`);
+      toast.error(`Failed to submit request: ${error.message}`);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Cancel a pending request
+  const handleCancelRequest = async (request) => {
+    if (!canCancelRequest(currentUser, request)) {
+      toast.error('You can only cancel your own pending requests');
+      return;
+    }
+    
+    setCancelling(request.id);
+    
+    try {
+      await firestoreService.cancelLeaveRequest(request.id, currentUser.email, 'Cancelled by employee');
+      toast.success('Request cancelled');
+      loadLeaveRequests();
+    } catch (error) {
+      console.error('❌ Error cancelling request:', error);
+      toast.error('Failed to cancel request');
+    } finally {
+      setCancelling(null);
     }
   };
 
@@ -223,8 +306,14 @@ const MyTimeOff = () => {
       endTime: '17:00',
       isAllDay: true,
       reason: '',
-      notes: ''
+      notes: '',
+      isTravel: false,
+      destination: '',
+      travelPurpose: '',
+      estimatedExpenses: ''
     });
+    setValidationErrors([]);
+    setValidationWarnings([]);
   };
 
   // Show loading state
@@ -354,43 +443,143 @@ const MyTimeOff = () => {
               </div>
             ) : (
               myRequests.map((request) => {
-                const type = leaveTypes[request.type];
-                const Icon = type.icon;
+                const type = leaveTypes[request.type] || leaveTypes.vacation;
+                const Icon = type?.icon || Calendar;
+                const isExpanded = expandedRequest === request.id;
                 
                 return (
                   <div 
                     key={request.id} 
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => setSelectedRequest(request)}
+                    className="border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-3 rounded-lg ${type.color}`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2 mb-1">
-                          <p className="font-medium text-gray-900">{type.label}</p>
-                          <Badge className={`${getStatusColor(request.status)} flex items-center space-x-1`}>
-                            {getStatusIcon(request.status)}
-                            <span className="capitalize">{request.status}</span>
-                          </Badge>
+                    <div 
+                      className="flex items-center justify-between p-4 cursor-pointer"
+                      onClick={() => setExpandedRequest(isExpanded ? null : request.id)}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-3 rounded-lg ${type.color}`}>
+                          <Icon className="w-5 h-5" />
                         </div>
-                        <p className="text-sm text-gray-600">
-                          {format(new Date(request.startDate), 'MMM dd, yyyy')} - {format(new Date(request.endDate), 'MMM dd, yyyy')}
-                          <span className="mx-2">•</span>
-                          {request.days} {request.days === 1 ? 'day' : 'days'}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">{request.reason}</p>
+                        <div>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <p className="font-medium text-gray-900">{type.label}</p>
+                            {request.isTravel && (
+                              <Badge className="bg-orange-100 text-orange-800">
+                                <Plane className="w-3 h-3 mr-1" />
+                                Travel
+                              </Badge>
+                            )}
+                            <Badge className={`${getStatusColor(request.status)} flex items-center space-x-1`}>
+                              {getStatusIcon(request.status)}
+                              <span className="capitalize">{request.status}</span>
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {format(new Date(request.startDate), 'MMM dd, yyyy')} - {format(new Date(request.endDate), 'MMM dd, yyyy')}
+                            <span className="mx-2">•</span>
+                            {request.days} {request.days === 1 ? 'day' : 'days'}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-1">{request.reason}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="text-right text-sm text-gray-500">
+                          <p>Submitted {request.submittedDate ? format(new Date(request.submittedDate?.toDate ? request.submittedDate.toDate() : request.submittedDate), 'MMM dd') : 'N/A'}</p>
+                          {request.reviewedBy && (
+                            <p className="text-xs mt-1">
+                              {request.status === 'approved' ? 'Approved' : 'Reviewed'} by {request.reviewedBy}
+                            </p>
+                          )}
+                        </div>
+                        {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
                       </div>
                     </div>
-                    <div className="text-right text-sm text-gray-500">
-                      <p>Submitted {format(new Date(request.submittedDate), 'MMM dd')}</p>
-                      {request.reviewedDate && (
-                        <p className="text-xs mt-1">
-                          Reviewed by {request.reviewedBy}
-                        </p>
-                      )}
-                    </div>
+                    
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 border-t border-gray-100 pt-4 space-y-3">
+                        {/* Travel Details */}
+                        {request.isTravel && (
+                          <div className="bg-orange-50 rounded-lg p-3 space-y-2">
+                            <p className="text-sm font-medium text-orange-900">Travel Details</p>
+                            {request.destination && (
+                              <p className="text-sm text-orange-700 flex items-center">
+                                <MapPin className="w-4 h-4 mr-2" />
+                                {request.destination}
+                              </p>
+                            )}
+                            {request.travelPurpose && (
+                              <p className="text-sm text-orange-700 flex items-center">
+                                <Briefcase className="w-4 h-4 mr-2" />
+                                {request.travelPurpose}
+                              </p>
+                            )}
+                            {request.estimatedExpenses > 0 && (
+                              <p className="text-sm text-orange-700 flex items-center">
+                                <DollarSign className="w-4 h-4 mr-2" />
+                                Estimated: ${request.estimatedExpenses}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Manager Notes (for rejected) */}
+                        {request.status === 'rejected' && request.managerNotes && (
+                          <div className="bg-red-50 rounded-lg p-3">
+                            <p className="text-sm font-medium text-red-900 mb-1">Rejection Reason</p>
+                            <p className="text-sm text-red-700">{request.managerNotes}</p>
+                          </div>
+                        )}
+                        
+                        {/* History */}
+                        {request.history && request.history.length > 0 && (
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                              <History className="w-4 h-4 mr-2" />
+                              Request History
+                            </p>
+                            <div className="space-y-1">
+                              {request.history.map((entry, idx) => (
+                                <p key={idx} className="text-xs text-gray-600">
+                                  <span className="font-medium capitalize">{entry.action}</span>
+                                  {' by '}{entry.by}
+                                  {' on '}{format(new Date(entry.timestamp), 'MMM dd, yyyy h:mm a')}
+                                  {entry.notes && <span className="italic"> - {entry.notes}</span>}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Cancel Button */}
+                        {request.status === 'pending' && (
+                          <div className="flex justify-end pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelRequest(request);
+                              }}
+                              disabled={cancelling === request.id}
+                            >
+                              {cancelling === request.id ? (
+                                <span className="flex items-center">
+                                  <span className="animate-spin mr-2">⏳</span>
+                                  Cancelling...
+                                </span>
+                              ) : (
+                                <span className="flex items-center">
+                                  <X className="w-4 h-4 mr-1" />
+                                  Cancel Request
+                                </span>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -482,8 +671,110 @@ const MyTimeOff = () => {
               {calculateDays() > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-900">Total Days Requested:</span>
+                    <span className="text-sm font-medium text-blue-900">Total Business Days Requested:</span>
                     <span className="text-2xl font-bold text-blue-900">{calculateDays()}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Validation Errors */}
+              {validationErrors.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-red-900 mb-2 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Please fix the following errors:
+                  </p>
+                  <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                    {validationErrors.map((error, idx) => (
+                      <li key={idx}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Validation Warnings */}
+              {validationWarnings.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-yellow-900 mb-2 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Warnings:
+                  </p>
+                  <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                    {validationWarnings.map((warning, idx) => (
+                      <li key={idx}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Travel Toggle */}
+              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="isTravel"
+                  checked={leaveForm.isTravel}
+                  onChange={(e) => handleFormChange('isTravel', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="isTravel" className="flex items-center text-sm font-medium text-gray-700">
+                  <Plane className="w-4 h-4 mr-2 text-orange-500" />
+                  This is a business travel request
+                </label>
+              </div>
+
+              {/* Travel Fields */}
+              {leaveForm.isTravel && (
+                <div className="space-y-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-sm font-medium text-orange-900">Travel Details</p>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Destination
+                    </label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={leaveForm.destination}
+                        onChange={(e) => handleFormChange('destination', e.target.value)}
+                        placeholder="City, Country"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Purpose
+                    </label>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={leaveForm.travelPurpose}
+                        onChange={(e) => handleFormChange('travelPurpose', e.target.value)}
+                        placeholder="e.g., Client meeting, Conference"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Estimated Expenses ($)
+                    </label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="number"
+                        value={leaveForm.estimatedExpenses}
+                        onChange={(e) => handleFormChange('estimatedExpenses', e.target.value)}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
                   </div>
                 </div>
               )}

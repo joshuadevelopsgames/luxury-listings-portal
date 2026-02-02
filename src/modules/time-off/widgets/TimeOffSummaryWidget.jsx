@@ -1,10 +1,11 @@
 /**
  * TimeOffSummaryWidget - Dashboard widget showing leave balances and pending requests
+ * Shows admin-specific pending approvals count if user is time off admin.
  */
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Plus } from 'lucide-react';
+import { Calendar, Clock, Plus, AlertCircle, Users } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { firestoreService } from '../../../services/firestoreService';
 
@@ -14,12 +15,14 @@ const TimeOffSummaryWidget = () => {
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [upcomingTimeOff, setUpcomingTimeOff] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
   
-  // Default balances (would come from HR system in production)
-  const [balances] = useState({
-    vacation: { used: 5, total: 15 },
-    sick: { used: 2, total: 10 },
-    personal: { used: 1, total: 3 }
+  // Leave balances from Firestore
+  const [balances, setBalances] = useState({
+    vacation: { used: 0, total: 15 },
+    sick: { used: 0, total: 10 },
+    personal: { used: 0, total: 3 }
   });
 
   useEffect(() => {
@@ -27,9 +30,18 @@ const TimeOffSummaryWidget = () => {
       if (!currentUser?.email) return;
       
       try {
+        // Check if user is admin
+        const adminStatus = await firestoreService.isTimeOffAdmin(currentUser.email);
+        setIsAdmin(adminStatus);
+        
+        // Load user's leave balances
+        const userBalances = await firestoreService.getUserLeaveBalances(currentUser.email);
+        setBalances(userBalances);
+        
+        // Load user's requests
         const requests = await firestoreService.getLeaveRequests(currentUser.email);
         
-        // Count pending requests
+        // Count user's pending requests
         const pending = requests.filter(r => r.status === 'pending');
         setPendingCount(pending.length);
         
@@ -37,6 +49,13 @@ const TimeOffSummaryWidget = () => {
         const approved = requests.filter(r => r.status === 'approved');
         const upcoming = approved.find(r => new Date(r.startDate) > new Date());
         setUpcomingTimeOff(upcoming);
+        
+        // If admin, count all pending approvals
+        if (adminStatus) {
+          const allRequests = await firestoreService.getAllLeaveRequests();
+          const allPending = allRequests.filter(r => r.status === 'pending');
+          setPendingApprovals(allPending.length);
+        }
       } catch (error) {
         console.error('Error loading time off data:', error);
       } finally {
@@ -109,13 +128,31 @@ const TimeOffSummaryWidget = () => {
         </div>
       </div>
 
+      {/* Admin: Pending Approvals Badge */}
+      {isAdmin && pendingApprovals > 0 && (
+        <div 
+          className="mb-4 p-3 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20 cursor-pointer hover:bg-[#ff3b30]/15 transition-colors"
+          onClick={() => navigate('/hr-calendar')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-[#ff3b30]" strokeWidth={1.5} />
+              <span className="text-[13px] font-medium text-[#ff3b30]">
+                {pendingApprovals} request{pendingApprovals > 1 ? 's' : ''} awaiting approval
+              </span>
+            </div>
+            <Users className="w-4 h-4 text-[#ff3b30]" strokeWidth={1.5} />
+          </div>
+        </div>
+      )}
+
       {/* Status */}
       <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-2">
         {pendingCount > 0 && (
           <div className="flex items-center gap-2 text-[13px]">
             <Clock className="w-4 h-4 text-[#ff9500]" strokeWidth={1.5} />
             <span className="text-[#1d1d1f] dark:text-white">
-              {pendingCount} pending request{pendingCount > 1 ? 's' : ''}
+              {pendingCount} pending request{pendingCount > 1 ? 's' : ''} (your requests)
             </span>
           </div>
         )}
@@ -129,8 +166,12 @@ const TimeOffSummaryWidget = () => {
           </div>
         )}
         
-        {pendingCount === 0 && !upcomingTimeOff && (
+        {pendingCount === 0 && !upcomingTimeOff && !isAdmin && (
           <p className="text-[13px] text-[#86868b]">No upcoming time off scheduled</p>
+        )}
+        
+        {pendingCount === 0 && !upcomingTimeOff && isAdmin && pendingApprovals === 0 && (
+          <p className="text-[13px] text-[#86868b]">All caught up! No pending approvals.</p>
         )}
       </div>
     </div>
