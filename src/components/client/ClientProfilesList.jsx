@@ -17,7 +17,12 @@ import {
   Trash2,
   Pencil,
   LayoutGrid,
-  List
+  List,
+  Plus,
+  Instagram,
+  Facebook,
+  Linkedin,
+  Youtube
 } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { format } from 'date-fns';
@@ -45,6 +50,19 @@ const ClientProfilesList = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'card'
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({
+    clientName: '',
+    clientEmail: '',
+    phone: '',
+    notes: '',
+    packageType: 'Standard',
+    packageSize: 10,
+    postsRemaining: 10,
+    paymentStatus: 'Pending',
+    platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+  });
+  const [adding, setAdding] = useState(false);
 
   // Permissions
   const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
@@ -179,6 +197,55 @@ const ClientProfilesList = () => {
       toast.error('Failed to remove client');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleAddClient = async () => {
+    if (!addForm.clientName.trim()) {
+      toast.error('Please enter a client name');
+      return;
+    }
+
+    try {
+      setAdding(true);
+      const newClient = {
+        clientName: addForm.clientName.trim(),
+        clientEmail: addForm.clientEmail.trim(),
+        phone: addForm.phone.trim(),
+        notes: addForm.notes.trim(),
+        packageType: addForm.packageType,
+        packageSize: addForm.packageSize,
+        postsUsed: 0,
+        postsRemaining: addForm.postsRemaining,
+        paymentStatus: addForm.paymentStatus,
+        platforms: addForm.platforms,
+        approvalStatus: 'Approved',
+        status: 'active',
+        startDate: new Date().toISOString().split('T')[0],
+        lastContact: new Date().toISOString().split('T')[0],
+        postedOn: 'Luxury Listings'
+      };
+
+      await firestoreService.addClient(newClient);
+      toast.success('Client added successfully');
+      setShowAddModal(false);
+      setAddForm({
+        clientName: '',
+        clientEmail: '',
+        phone: '',
+        notes: '',
+        packageType: 'Standard',
+        packageSize: 10,
+        postsRemaining: 10,
+        paymentStatus: 'Pending',
+        platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+      });
+      await loadData();
+    } catch (error) {
+      console.error('Error adding client:', error);
+      toast.error('Failed to add client');
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -351,6 +418,17 @@ const ClientProfilesList = () => {
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Add Client Button */}
+              {canManageClients && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Client
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -513,7 +591,8 @@ const ClientProfilesList = () => {
                             packageSize: client.packageSize || 10,
                             postsUsed: client.postsUsed || 0,
                             postsRemaining: client.postsRemaining || 0,
-                            paymentStatus: client.paymentStatus || 'Pending'
+                            paymentStatus: client.paymentStatus || 'Pending',
+                            platforms: client.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
                           });
                           setShowEditModal(true);
                         }}
@@ -568,7 +647,8 @@ const ClientProfilesList = () => {
                           packageSize: client.packageSize || 10,
                           postsUsed: client.postsUsed || 0,
                           postsRemaining: client.postsRemaining || 0,
-                          paymentStatus: client.paymentStatus || 'Pending'
+                          paymentStatus: client.paymentStatus || 'Pending',
+                          platforms: client.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
                         });
                         setShowEditModal(true);
                       }}
@@ -747,7 +827,8 @@ const ClientProfilesList = () => {
                           packageSize: selectedClient.packageSize || 10,
                           postsUsed: selectedClient.postsUsed || 0,
                           postsRemaining: selectedClient.postsRemaining || 0,
-                          paymentStatus: selectedClient.paymentStatus || 'Pending'
+                          paymentStatus: selectedClient.paymentStatus || 'Pending',
+                          platforms: selectedClient.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
                         });
                         setShowEditModal(true);
                       }}
@@ -1144,6 +1225,43 @@ const ClientProfilesList = () => {
                         <option value="Partial">Partial</option>
                       </select>
                     </div>
+
+                    {/* Social Media Platforms */}
+                    <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-3">
+                        Social Media Platforms
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { key: 'instagram', label: 'Instagram', icon: Instagram },
+                          { key: 'facebook', label: 'Facebook', icon: Facebook },
+                          { key: 'linkedin', label: 'LinkedIn', icon: Linkedin },
+                          { key: 'youtube', label: 'YouTube', icon: Youtube },
+                          { key: 'tiktok', label: 'TikTok', icon: null },
+                          { key: 'x', label: 'X', icon: null }
+                        ].map(({ key, label, icon: Icon }) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setEditForm({
+                              ...editForm,
+                              platforms: {
+                                ...(editForm.platforms || {}),
+                                [key]: !(editForm.platforms?.[key])
+                              }
+                            })}
+                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors ${
+                              editForm.platforms?.[key]
+                                ? 'bg-[#0071e3] text-white'
+                                : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                            }`}
+                          >
+                            {Icon && <Icon className="w-3.5 h-3.5" />}
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
@@ -1203,6 +1321,198 @@ const ClientProfilesList = () => {
                   ) : (
                     'Remove'
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Client Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between z-10">
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Add New Client</h2>
+              <button
+                onClick={() => {
+                  setShowAddModal(false);
+                  setAddForm({
+                    clientName: '',
+                    clientEmail: '',
+                    phone: '',
+                    notes: '',
+                    packageType: 'Standard',
+                    packageSize: 10,
+                    postsRemaining: 10,
+                    paymentStatus: 'Pending',
+                    platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+                  });
+                }}
+                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5 text-[#86868b]" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {/* Client Name */}
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Client Name *
+                  </label>
+                  <input
+                    value={addForm.clientName}
+                    onChange={(e) => setAddForm({...addForm, clientName: e.target.value})}
+                    placeholder="Enter client name"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={addForm.clientEmail}
+                    onChange={(e) => setAddForm({...addForm, clientEmail: e.target.value})}
+                    placeholder="client@example.com"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Phone
+                  </label>
+                  <input
+                    value={addForm.phone}
+                    onChange={(e) => setAddForm({...addForm, phone: e.target.value})}
+                    placeholder="+1 (555) 123-4567"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+
+                {/* Package Type & Size */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      Package Type
+                    </label>
+                    <select
+                      value={addForm.packageType}
+                      onChange={(e) => setAddForm({...addForm, packageType: e.target.value})}
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    >
+                      <option value="Standard">Standard</option>
+                      <option value="Bundled">Bundled</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      Posts Included
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={addForm.postsRemaining}
+                      onChange={(e) => setAddForm({...addForm, postsRemaining: parseInt(e.target.value) || 0, packageSize: parseInt(e.target.value) || 0})}
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
+                </div>
+
+                {/* Social Media Platforms */}
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-3">
+                    Social Media Platforms
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { key: 'instagram', label: 'Instagram', icon: Instagram },
+                      { key: 'facebook', label: 'Facebook', icon: Facebook },
+                      { key: 'linkedin', label: 'LinkedIn', icon: Linkedin },
+                      { key: 'youtube', label: 'YouTube', icon: Youtube },
+                      { key: 'tiktok', label: 'TikTok', icon: null },
+                      { key: 'x', label: 'X', icon: null }
+                    ].map(({ key, label, icon: Icon }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setAddForm({
+                          ...addForm,
+                          platforms: {
+                            ...addForm.platforms,
+                            [key]: !addForm.platforms[key]
+                          }
+                        })}
+                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors ${
+                          addForm.platforms[key]
+                            ? 'bg-[#0071e3] text-white'
+                            : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                        }`}
+                      >
+                        {Icon && <Icon className="w-3.5 h-3.5" />}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Notes
+                  </label>
+                  <textarea
+                    value={addForm.notes}
+                    onChange={(e) => setAddForm({...addForm, notes: e.target.value})}
+                    placeholder="Additional notes about this client..."
+                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-6 border-t border-black/5 dark:border-white/10">
+                <button
+                  onClick={handleAddClient}
+                  disabled={adding || !addForm.clientName.trim()}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                >
+                  {adding ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Add Client
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setAddForm({
+                      clientName: '',
+                      clientEmail: '',
+                      phone: '',
+                      notes: '',
+                      packageType: 'Standard',
+                      packageSize: 10,
+                      postsRemaining: 10,
+                      paymentStatus: 'Pending',
+                      platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+                    });
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
