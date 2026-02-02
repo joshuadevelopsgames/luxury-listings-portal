@@ -165,7 +165,7 @@ class InstagramOCRService {
     }
 
     // === INTERACTIONS ===
-    // Primary: analyse the Interactions "phase" and find the big number in the middle (standalone number on its own line).
+    // Primary: Interactions section = from "Interactions" to growth/end; find big number (standalone line or first valid number).
     const lowForInteractions = text.toLowerCase();
     const interactionsSectionStart = Math.max(lowForInteractions.indexOf('interactions'), lowForInteractions.indexOf('interacti0ns'));
     if (interactionsSectionStart >= 0) {
@@ -173,8 +173,11 @@ class InstagramOCRService {
       const endByGrowth = growthIdx > interactionsSectionStart ? growthIdx : text.length;
       const sectionEnd = Math.min(text.length, interactionsSectionStart + 900, endByGrowth);
       const section = text.slice(interactionsSectionStart, sectionEnd);
-      const lines = section.split(/\r?\n/);
       const dateFragments = new Set([1, 30, 31]);
+      const has30Days = /30\s*days?/i.test(section);
+
+      // 1) Standalone line: line that is only digits (OCR often puts the big number on its own line)
+      const lines = section.split(/\r?\n/);
       for (const line of lines) {
         const standalone = line.match(/^\s*([0-9]{1,5})\s*$/);
         if (standalone) {
@@ -185,8 +188,28 @@ class InstagramOCRService {
           }
         }
       }
+
+      // 2) No newlines / one long line: take FIRST number in section that isn't date or % (big number usually after "Interactions" and date)
+      if (metrics.interactions === undefined) {
+        const numbersInOrder = [];
+        const numRe = /\b([0-9,]+)\b/g;
+        let m;
+        while ((m = numRe.exec(section)) !== null) {
+          const nextChar = section[m.index + m[0].length];
+          if (nextChar === '.' || nextChar === ',' || nextChar === '%') continue;
+          numbersInOrder.push(m[1]);
+        }
+        for (const numStr of numbersInOrder) {
+          const n = this.parseNumber(numStr);
+          if (n < 1 || n > 99999) continue;
+          if (n === 30 && has30Days) continue;
+          if (dateFragments.has(n)) continue;
+          metrics.interactions = n;
+          break;
+        }
+      }
     }
-    // Fallback: block heuristic (exclude numbers that are part of percentages)
+    // Fallback: block heuristic (exclude numbers that are part of percentages) — walk backward
     if (metrics.interactions === undefined && interactionsSectionStart >= 0) {
       const byContentIdx = lowForInteractions.indexOf('by content type', interactionsSectionStart + 1);
       const endAfterByContent = byContentIdx > interactionsSectionStart ? byContentIdx + 400 : text.length;
@@ -441,31 +464,48 @@ class InstagramOCRService {
   }
 
   /**
-   * Extract city data from text (flexible for OCR: newlines, spacing, layout)
+   * Get the section of text that contains "Top locations" / "Cities" so we only match there.
+   */
+  getLocationsSection(text) {
+    const low = text.toLowerCase();
+    const candidates = [
+      low.indexOf('top cities'),
+      low.indexOf('top locations'),
+      low.indexOf('cities'),
+      low.indexOf('locations'),
+      low.indexOf('where your followers')
+    ].filter(i => i >= 0);
+    if (candidates.length === 0) return text;
+    const start = Math.min(...candidates);
+    return text.slice(start, start + 1200);
+  }
+
+  /**
+   * Extract city data from text (scope to locations section; allow comma decimal; fallback for any "Name %").
    */
   extractCities(text) {
+    const section = this.getLocationsSection(text);
     const cities = [];
     const seen = new Set();
 
-    // Known city names that commonly appear in Instagram analytics
+    // Known city names (longer names first so "New York" matches before "York")
     const cityPatterns = [
+      'Los Angeles', 'San Francisco', 'New York', 'Quebec City',
       'Calgary', 'Vancouver', 'Toronto', 'Montreal', 'Edmonton', 'Ottawa',
       'Burnaby', 'Surrey', 'Richmond', 'Victoria', 'Winnipeg', 'Halifax',
-      'Los Angeles', 'New York', 'San Francisco', 'Chicago', 'Houston',
-      'Miami', 'Seattle', 'Denver', 'Phoenix', 'Dallas', 'Austin',
+      'Chicago', 'Houston', 'Miami', 'Seattle', 'Denver', 'Phoenix', 'Dallas', 'Austin',
       'London', 'Paris', 'Sydney', 'Melbourne', 'Dubai', 'Singapore',
-      'Mississauga', 'Brampton', 'Hamilton', 'Quebec City', 'Laval'
+      'Mississauga', 'Brampton', 'Hamilton', 'Laval', 'Nashville', 'Boston', 'Atlanta',
+      'Las Vegas', 'San Diego', 'Philadelphia', 'Washington', 'Portland'
     ];
 
-    // Only extract cities from the known list so we never capture UI text
-    // (e.g. "All Followers Non-followers Posts", "Top locations Cities Countries")
+    const pctRegex = /([0-9]+(?:[.,][0-9]+)?)\s*%/;
     for (const city of cityPatterns) {
       const escaped = this.escapeRegex(city);
-      // City name must appear as a distinct token: preceded by start/whitespace, followed by space/newline then percentage
-      const regex = new RegExp(`(?:^|[\\s\\n])${escaped}[\\s\\n]+([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'gi');
+      const regex = new RegExp(`(?:^|[\\s\\n])${escaped}[\\s\\n]+([0-9]+(?:[.,][0-9]+)?)\\s*%`, 'gi');
       let match;
-      while ((match = regex.exec(text)) !== null) {
-        const pct = parseFloat(match[1]);
+      while ((match = regex.exec(section)) !== null) {
+        const pct = parseFloat(match[1].replace(/,/g, '.'));
         const key = `${city.toLowerCase()}-${pct}`;
         if (!seen.has(key) && pct <= 100) {
           seen.add(key);
@@ -474,7 +514,39 @@ class InstagramOCRService {
       }
     }
 
-    // Sort by percentage descending (Instagram order)
+    // Fallback: in locations section, any "Name(s) number%" (line-start or word-boundary so OCR without newlines still matches)
+    const uiWords = new Set(['all', 'followers', 'non-followers', 'nonfollowers', 'posts', 'cities', 'countries', 'top', 'locations', 'stories', 'reels', 'by', 'content', 'type', 'where', 'your', 'are', 'from']);
+    const lineStartRe = /(?:^|\n)\s*([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
+    let genMatch;
+    while ((genMatch = lineStartRe.exec(section)) !== null) {
+      const name = genMatch[1].trim().replace(/\s+/g, ' ');
+      const nameLower = name.toLowerCase();
+      if (name.length < 2 || name.length > 35) continue;
+      if (uiWords.has(nameLower) || /\d/.test(name)) continue;
+      const pct = parseFloat(genMatch[2].replace(/,/g, '.'));
+      if (pct <= 0 || pct > 100) continue;
+      const key = `${nameLower}-${pct}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        cities.push({ name, percentage: pct });
+      }
+    }
+    // Also match "Name number%" with word boundary (catches "Toronto 15.2% Vancouver 12.1%" on one line)
+    const wordBoundRe = /\b([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
+    while ((genMatch = wordBoundRe.exec(section)) !== null) {
+      const name = genMatch[1].trim().replace(/\s+/g, ' ');
+      const nameLower = name.toLowerCase();
+      if (name.length < 2 || name.length > 35) continue;
+      if (uiWords.has(nameLower) || /\d/.test(name)) continue;
+      const pct = parseFloat(genMatch[2].replace(/,/g, '.'));
+      if (pct <= 0 || pct > 100) continue;
+      const key = `${nameLower}-${pct}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        cities.push({ name, percentage: pct });
+      }
+    }
+
     cities.sort((a, b) => b.percentage - a.percentage);
     return cities;
   }

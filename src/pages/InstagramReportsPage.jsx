@@ -166,7 +166,7 @@ const InstagramReportsPage = () => {
         </div>
       ) : reports.length === 0 ? (
         <Card className="border-dashed border-2">
-          <CardContent className="p-12 text-center">
+          <CardContent className="p-12 pt-20 text-center">
             <Instagram className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">No reports yet</h3>
             <p className="text-gray-500 mt-2 mb-6">

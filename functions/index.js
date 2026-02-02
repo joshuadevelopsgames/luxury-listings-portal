@@ -181,7 +181,7 @@ function parseInstagramMetrics(text) {
   }
 
   // === INTERACTIONS ===
-  // Primary: analyse the Interactions section and find the big number in the middle (standalone number on its own line).
+  // Primary: Interactions section; find big number (standalone line or first valid number when OCR has no newlines).
   const low = text.toLowerCase();
   const interactionsSectionStart = Math.max(low.indexOf('interactions'), low.indexOf('interacti0ns'));
   if (interactionsSectionStart >= 0) {
@@ -189,8 +189,10 @@ function parseInstagramMetrics(text) {
     const endByGrowth = growthIdx > interactionsSectionStart ? growthIdx : text.length;
     const sectionEnd = Math.min(text.length, interactionsSectionStart + 900, endByGrowth);
     const section = text.slice(interactionsSectionStart, sectionEnd);
-    const lines = section.split(/\r?\n/);
     const dateFragments = new Set([1, 30, 31]);
+    const has30Days = /30\s*days?/i.test(section);
+
+    const lines = section.split(/\r?\n/);
     for (const line of lines) {
       const standalone = line.match(/^\s*([0-9]{1,5})\s*$/);
       if (standalone) {
@@ -199,6 +201,24 @@ function parseInstagramMetrics(text) {
           metrics.interactions = n;
           break;
         }
+      }
+    }
+    if (metrics.interactions === undefined) {
+      const numbersInOrder = [];
+      const numRe = /\b([0-9,]+)\b/g;
+      let numMatch;
+      while ((numMatch = numRe.exec(section)) !== null) {
+        const nextChar = section[numMatch.index + numMatch[0].length];
+        if (nextChar === '.' || nextChar === ',' || nextChar === '%') continue;
+        numbersInOrder.push(numMatch[1]);
+      }
+      for (const numStr of numbersInOrder) {
+        const n = parseNumber(numStr);
+        if (n < 1 || n > 99999) continue;
+        if (n === 30 && has30Days) continue;
+        if (dateFragments.has(n)) continue;
+        metrics.interactions = n;
+        break;
       }
     }
   }
@@ -305,30 +325,61 @@ function parseInstagramMetrics(text) {
     metrics.contentBreakdown = contentBreakdown;
   }
 
-  // === TOP CITIES === (flexible for OCR: newlines, spacing)
+  // === TOP CITIES === (scope to locations section; comma decimal; fallback for any "Name %")
+  const locationsSection = getLocationsSection(text);
   const cities = [];
   const citySeen = new Set();
   const cityPatterns = [
+    'Los Angeles', 'San Francisco', 'New York', 'Quebec City',
     'Calgary', 'Vancouver', 'Toronto', 'Montreal', 'Edmonton', 'Ottawa',
     'Burnaby', 'Surrey', 'Richmond', 'Victoria', 'Winnipeg', 'Halifax',
-    'Los Angeles', 'New York', 'San Francisco', 'Chicago', 'Houston',
-    'Miami', 'Seattle', 'Denver', 'Phoenix', 'Dallas', 'Austin',
+    'Chicago', 'Houston', 'Miami', 'Seattle', 'Denver', 'Phoenix', 'Dallas', 'Austin',
     'London', 'Paris', 'Sydney', 'Melbourne', 'Dubai', 'Singapore',
-    'Mississauga', 'Brampton', 'Hamilton', 'Quebec City', 'Laval'
+    'Mississauga', 'Brampton', 'Hamilton', 'Laval', 'Nashville', 'Boston', 'Atlanta',
+    'Las Vegas', 'San Diego', 'Philadelphia', 'Washington', 'Portland'
   ];
-  // Only extract cities from the known list so we never capture UI text as locations
   const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   for (const city of cityPatterns) {
     const escaped = escapeRegex(city);
-    const regex = new RegExp(`(?:^|[\\s\\n])${escaped}[\\s\\n]+([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'gi');
+    const regex = new RegExp(`(?:^|[\\s\\n])${escaped}[\\s\\n]+([0-9]+(?:[.,][0-9]+)?)\\s*%`, 'gi');
     let match;
-    while ((match = regex.exec(text)) !== null) {
-      const pct = parseFloat(match[1]);
+    while ((match = regex.exec(locationsSection)) !== null) {
+      const pct = parseFloat(match[1].replace(/,/g, '.'));
       const key = `${city.toLowerCase()}-${pct}`;
       if (!citySeen.has(key) && pct <= 100) {
         citySeen.add(key);
         cities.push({ name: city, percentage: pct });
       }
+    }
+  }
+  const uiWords = new Set(['all', 'followers', 'non-followers', 'nonfollowers', 'posts', 'cities', 'countries', 'top', 'locations', 'stories', 'reels', 'by', 'content', 'type', 'where', 'your', 'are', 'from']);
+  const lineStartRe = /(?:^|\n)\s*([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
+  let genMatch;
+  while ((genMatch = lineStartRe.exec(locationsSection)) !== null) {
+    const name = genMatch[1].trim().replace(/\s+/g, ' ');
+    const nameLower = name.toLowerCase();
+    if (name.length < 2 || name.length > 35) continue;
+    if (uiWords.has(nameLower) || /\d/.test(name)) continue;
+    const pct = parseFloat(genMatch[2].replace(/,/g, '.'));
+    if (pct <= 0 || pct > 100) continue;
+    const key = `${nameLower}-${pct}`;
+    if (!citySeen.has(key)) {
+      citySeen.add(key);
+      cities.push({ name, percentage: pct });
+    }
+  }
+  const wordBoundRe = /\b([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
+  while ((genMatch = wordBoundRe.exec(locationsSection)) !== null) {
+    const name = genMatch[1].trim().replace(/\s+/g, ' ');
+    const nameLower = name.toLowerCase();
+    if (name.length < 2 || name.length > 35) continue;
+    if (uiWords.has(nameLower) || /\d/.test(name)) continue;
+    const pct = parseFloat(genMatch[2].replace(/,/g, '.'));
+    if (pct <= 0 || pct > 100) continue;
+    const key = `${nameLower}-${pct}`;
+    if (!citySeen.has(key)) {
+      citySeen.add(key);
+      cities.push({ name, percentage: pct });
     }
   }
   if (cities.length > 0) {
@@ -438,6 +489,20 @@ function getGenderSection(text) {
   const start = genderIdx >= 0 ? (audienceIdx >= 0 ? Math.min(genderIdx, audienceIdx) : genderIdx)
     : audienceIdx >= 0 ? audienceIdx : 0;
   return text.slice(start, start + 500);
+}
+
+function getLocationsSection(text) {
+  const low = text.toLowerCase();
+  const candidates = [
+    low.indexOf('top cities'),
+    low.indexOf('top locations'),
+    low.indexOf('cities'),
+    low.indexOf('locations'),
+    low.indexOf('where your followers')
+  ].filter(i => i >= 0);
+  if (candidates.length === 0) return text;
+  const start = Math.min(...candidates);
+  return text.slice(start, start + 1200);
 }
 
 function parseNumber(str) {
