@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardHeader, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { 
   CheckCircle2, 
   Calendar, 
@@ -775,54 +773,53 @@ const OnboardingPage = () => {
   const StepIcon = currentStepData.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] to-white dark:from-[#1d1d1f] dark:to-[#0a0a0a] py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <span className="text-[13px] font-medium text-[#86868b]">
               Step {currentStep + 1} of {steps.length}
             </span>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <span className="text-[13px] font-medium text-[#86868b]">
               {Math.round(((currentStep + 1) / steps.length) * 100)}% Complete
             </span>
           </div>
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-[#0071e3] to-[#5856d6] transition-all duration-500 ease-out"
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Main Card */}
-        <Card className="shadow-xl">
-          <CardHeader className="pb-4">
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-xl overflow-hidden">
+          <div className="p-6 pb-4">
             <div className="flex items-start gap-4">
-              <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center flex-shrink-0">
                 <StepIcon className="h-7 w-7 text-white" />
               </div>
               <div className="flex-1">
-                <h1 className="text-2xl font-bold mb-1">{currentStepData.title}</h1>
-                <p className="text-gray-600 dark:text-gray-400">{currentStepData.description}</p>
+                <h1 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-1">{currentStepData.title}</h1>
+                <p className="text-[14px] text-[#86868b]">{currentStepData.description}</p>
               </div>
             </div>
-          </CardHeader>
+          </div>
 
-          <CardContent className="pt-6">
+          <div className="p-6 pt-4">
             {currentStepData.content}
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <Button
-                variant="outline"
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-black/5 dark:border-white/10">
+              <button
                 onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
                 disabled={currentStep === 0}
-                className="gap-2"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Previous
-              </Button>
+              </button>
 
               <div className="flex items-center gap-2">
                 {/* Step Indicators */}
@@ -830,12 +827,12 @@ const OnboardingPage = () => {
                   {steps.map((step, index) => (
                     <div
                       key={step.id}
-                      className={`h-2 w-2 rounded-full transition-all ${
+                      className={`h-2 rounded-full transition-all ${
                         index === currentStep
-                          ? 'bg-blue-500 w-8'
+                          ? 'bg-[#0071e3] w-8'
                           : index < currentStep
-                          ? 'bg-blue-300 dark:bg-blue-700'
-                          : 'bg-gray-300 dark:bg-gray-600'
+                          ? 'bg-[#0071e3]/40 w-2'
+                          : 'bg-black/10 dark:bg-white/10 w-2'
                       }`}
                     />
                   ))}
@@ -843,22 +840,22 @@ const OnboardingPage = () => {
               </div>
 
               {currentStep < steps.length - 1 ? (
-                <Button
+                <button
                   onClick={() => setCurrentStep(currentStep + 1)}
-                  className="gap-2"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
                 >
                   Next
                   <ArrowRight className="h-4 w-4" />
-                </Button>
+                </button>
               ) : (
-                <Button
+                <button
                   onClick={handleCompleteOnboarding}
                   disabled={completing}
-                  className="gap-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 shadow-lg"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#5856d6] via-[#af52de] to-[#ff2d55] text-white text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg"
                 >
                   {completing ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       Finishing...
                     </>
                   ) : (
@@ -867,7 +864,7 @@ const OnboardingPage = () => {
                       <Home className="h-4 w-4" />
                     </>
                   )}
-                </Button>
+                </button>
               )}
             </div>
 
@@ -876,17 +873,17 @@ const OnboardingPage = () => {
               <div className="text-center mt-4">
                 <button
                   onClick={handleSkip}
-                  className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+                  className="text-[13px] text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white underline"
                 >
                   Skip onboarding for now
                 </button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Help Text */}
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+        <p className="text-center text-[13px] text-[#86868b] mt-6">
           Questions? Click the AI assistant icon in the bottom right corner anytime! 💬
         </p>
       </div>
