@@ -144,11 +144,19 @@ class GoogleCalendarService {
   // Load Google API script
   loadGoogleAPI() {
     return new Promise((resolve, reject) => {
-      if (window.gapi) {
+      // If gapi and gapi.client are already loaded, resolve immediately
+      if (window.gapi?.client) {
         resolve();
         return;
       }
 
+      // If gapi exists but client isn't loaded, just load the client
+      if (window.gapi) {
+        window.gapi.load('client', resolve);
+        return;
+      }
+
+      // Otherwise load the full script
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';
       script.onload = () => {

@@ -271,7 +271,8 @@ const HRCalendar = () => {
   useEffect(() => {
     const loadTeamMembers = async () => {
       try {
-        const users = await firestoreService.getUsers();
+        // Use getAllUsersWithLeaveBalances which includes leave balance data
+        const users = await firestoreService.getAllUsersWithLeaveBalances();
         if (users && users.length > 0) {
           const formattedMembers = users.map((user, index) => ({
             id: index + 1,
