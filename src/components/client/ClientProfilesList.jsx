@@ -74,6 +74,13 @@ const ClientProfilesList = () => {
     loadData();
   }, []);
 
+  // Listen for add client modal trigger from parent
+  useEffect(() => {
+    const handleOpenAddModal = () => setShowAddModal(true);
+    window.addEventListener('openAddClientModal', handleOpenAddModal);
+    return () => window.removeEventListener('openAddClientModal', handleOpenAddModal);
+  }, []);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -418,17 +425,6 @@ const ClientProfilesList = () => {
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Add Client Button */}
-              {canManageClients && (
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Client
-                </button>
-              )}
             </div>
           </div>
         </div>

@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ClientProfilesList from '../components/client/ClientProfilesList';
 import PendingClients from './PendingClients';
-import { Users, Clock } from 'lucide-react';
+import { Users, Clock, Plus } from 'lucide-react';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 
 const ClientsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabParam === 'pending' ? 'pending' : 'profiles');
+  const { hasFeaturePermission } = usePermissions();
+  const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
 
   // Sync URL with tab (e.g. /clients?tab=pending)
   useEffect(() => {
@@ -46,29 +49,42 @@ const ClientsPage = () => {
       </div>
       
       {/* Tab Navigation */}
-      <div className="flex gap-2 p-1 bg-black/5 dark:bg-white/10 rounded-xl w-fit">
-        <button
-          onClick={() => handleTabChange('profiles')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
-            activeTab === 'profiles'
-              ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          Client Profiles
-        </button>
-        <button
-          onClick={() => handleTabChange('pending')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
-            activeTab === 'pending'
-              ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          Pending Approvals
-        </button>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex gap-2 p-1 bg-black/5 dark:bg-white/10 rounded-xl">
+          <button
+            onClick={() => handleTabChange('profiles')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
+              activeTab === 'profiles'
+                ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Client Profiles
+          </button>
+          <button
+            onClick={() => handleTabChange('pending')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
+              activeTab === 'pending'
+                ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            Pending Approvals
+          </button>
+        </div>
+
+        {/* Add Client Button */}
+        {canManageClients && activeTab === 'profiles' && (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('openAddClientModal'))}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Client
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
