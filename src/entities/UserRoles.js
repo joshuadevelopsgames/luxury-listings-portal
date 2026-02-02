@@ -294,6 +294,13 @@ export const DEFAULT_USER_BY_ROLE = {
     skills: [],
     stats: {}
   },
+  [USER_ROLES.DIRECTOR]: {
+    role: USER_ROLES.DIRECTOR,
+    department: 'Leadership',
+    bio: '',
+    skills: [],
+    stats: {}
+  },
   [USER_ROLES.CONTENT_DIRECTOR]: {
     role: USER_ROLES.CONTENT_DIRECTOR,
     department: 'Content & Creative',

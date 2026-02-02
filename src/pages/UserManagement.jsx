@@ -589,7 +589,8 @@ const UserManagement = () => {
     if (!role) return 'Unknown Role';
     
     const roleNames = {
-      'admin': 'System Administrator',
+      'admin': 'Admin',
+      'director': 'Director',
       'content_director': 'Content Manager',
       'social_media_manager': 'Social Media Manager',
       'hr_manager': 'HR Manager',
@@ -604,6 +605,7 @@ const UserManagement = () => {
     
     const colors = {
       'admin': 'bg-red-100 text-red-800',
+      'director': 'bg-indigo-100 text-indigo-800',
       'content_director': 'bg-blue-100 text-blue-800',
       'social_media_manager': 'bg-purple-100 text-purple-800',
       'hr_manager': 'bg-green-100 text-green-800',
@@ -975,6 +977,7 @@ const UserManagement = () => {
     
     const departments = {
       'admin': 'Administration',
+      'director': 'Leadership',
       'content_director': 'Content & Creative',
       'social_media_manager': 'Marketing',
       'hr_manager': 'Human Resources',
@@ -1138,6 +1141,8 @@ const UserManagement = () => {
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="admin">Admin</option>
+                <option value="director">Director</option>
                 <option value="content_director">Content Manager</option>
                 <option value="social_media_manager">Social Media Manager</option>
                 <option value="hr_manager">HR Manager</option>
