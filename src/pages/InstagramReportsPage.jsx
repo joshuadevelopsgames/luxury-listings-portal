@@ -987,7 +987,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
                   <div className="flex items-center gap-2 text-white">
                     <BarChart3 className="w-5 h-5" />
                     <span className="font-medium">Metrics</span>
-                    <Badge className="bg-white/20 text-white text-xs">Add or edit any field below</Badge>
+                    <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-xs">Add or edit any field below</span>
                   </div>
                   <button
                     onClick={() => setMetricsSectionCollapsed((c) => !c)}
@@ -1432,23 +1432,25 @@ const ReportModal = ({ report, onClose, onSave }) => {
 
         {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
-          <Button
-            variant="outline"
+          <button
             onClick={() => setShowPreview(true)}
             disabled={!formData.title || !formData.clientName}
-            className="text-purple-600 border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
+            className="flex items-center px-4 py-2 rounded-xl border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 text-[14px] font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors disabled:opacity-50"
           >
             <Eye className="w-4 h-4 mr-2" />
             Preview Report
-          </Button>
+          </button>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={onClose} className="dark:border-white/20 dark:text-white">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-black/10 dark:border-white/20 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={handleSave}
               disabled={saving || uploading || extracting}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              className="flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -1461,7 +1463,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
                   {report ? 'Save Changes' : 'Create Report'}
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </div>
         </div>
@@ -1526,7 +1528,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
           <div className="flex items-center gap-2">
             <Eye className="w-5 h-5" />
             <span className="font-medium">Report Preview</span>
-            <Badge className="bg-white/20 text-white text-xs">Live</Badge>
+            <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-xs">Live</span>
           </div>
           <button
             onClick={onClose}
