@@ -167,7 +167,8 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
       {rows.map((row, rowIndex) => (
         <div
           key={rowIndex}
-          className={`grid gap-6 items-stretch min-h-[220px] h-[220px] max-h-[220px] ${row.columnCount === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}
+          style={{ height: 220, minHeight: 220, maxHeight: 220 }}
+          className={`grid grid-rows-1 gap-6 items-stretch ${row.columnCount === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}
         >
           {row.widgets.map(({ widgetId, moduleId, size }) => {
             const WidgetComponent = widgetComponents[widgetId];
