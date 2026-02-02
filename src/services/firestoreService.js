@@ -2485,10 +2485,17 @@ class FirestoreService {
     }
   }
 
-  // Listen to Instagram reports changes
+  // Listen to Instagram reports changes for current user only
   onInstagramReportsChange(callback) {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      callback([]);
+      return () => {}; // Return empty unsubscribe function
+    }
+    
     const q = query(
       collection(db, this.collections.INSTAGRAM_REPORTS),
+      where('userId', '==', uid),
       orderBy('createdAt', 'desc')
     );
     
