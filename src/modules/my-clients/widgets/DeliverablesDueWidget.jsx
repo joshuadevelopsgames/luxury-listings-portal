@@ -14,16 +14,21 @@ const DeliverablesDueWidget = () => {
   const [loading, setLoading] = useState(true);
   const [deliverables, setDeliverables] = useState([]);
 
+  const isAssignedToMe = (client) => {
+    const am = (client.assignedManager || '').trim().toLowerCase();
+    if (!am) return false;
+    const email = (currentUser?.email || '').trim().toLowerCase();
+    const uid = (currentUser?.uid || '').trim().toLowerCase();
+    return am === email || (uid && am === uid);
+  };
+
   useEffect(() => {
     const loadDeliverables = async () => {
-      if (!currentUser?.email) return;
-      
+      if (!currentUser?.email && !currentUser?.uid) return;
+
       try {
-        // Get all clients assigned to user
         const allClients = await firestoreService.getClients();
-        const myClients = allClients.filter(
-          c => c.assignedManager?.toLowerCase() === currentUser.email.toLowerCase()
-        );
+        const myClients = allClients.filter(isAssignedToMe);
         
         // Create deliverables from client data
         // In a full implementation, this would come from client_contracts
@@ -48,7 +53,7 @@ const DeliverablesDueWidget = () => {
     };
 
     loadDeliverables();
-  }, [currentUser?.email]);
+  }, [currentUser?.email, currentUser?.uid]);
 
   const getStatusStyle = (status) => {
     if (status === 'urgent') {

@@ -52,15 +52,20 @@ const V3Dashboard = () => {
   const effectivePermissions = isViewingAs ? viewAsPermissions : permissions;
   const effectiveIsSystemAdmin = isViewingAs ? false : isSystemAdmin; // When viewing as, don't use admin privileges
   
-  // Get enabled modules for widget rendering
-  // When viewing as, use that user's permissions; otherwise system admins see ALL modules
-  const enabledModules = effectiveIsSystemAdmin 
-    ? getAllModuleIds() 
-    : (effectivePermissions.length > 0 ? effectivePermissions : getBaseModuleIds());
+  // Get enabled modules: merge base (always) with user permissions so "Your Modules" and nav stay in sync
+  const baseModuleIds = getBaseModuleIds();
+  const enabledModules = effectiveIsSystemAdmin
+    ? getAllModuleIds()
+    : [...new Set([...baseModuleIds, ...effectivePermissions])];
   
   // Check if tasks module is enabled (affects dashboard display)
   const hasTasksModule = enabledModules.includes('tasks');
-  
+  // Client-related access: any of these means show Client Status / client stats
+  const hasClientAccess = enabledModules.some((id) => ['my-clients', 'clients', 'client-packages'].includes(id));
+  // Full client access = can see all clients; only my-clients = see assigned count only
+  const hasFullClientAccess = enabledModules.includes('clients') || enabledModules.includes('client-packages');
+  const hasOnlyMyClients = hasClientAccess && !hasFullClientAccess;
+
   const [tasks, setTasks] = useState([]);
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
@@ -84,9 +89,21 @@ const V3Dashboard = () => {
     fetchClients();
   }, []);
 
-  // Get client health data from real clients
+  // Clients to display: all if full access, else only those assigned to effective user
+  const displayClients = hasFullClientAccess
+    ? clients
+    : clients.filter((c) => {
+        const am = (c.assignedManager || '').trim().toLowerCase();
+        const email = (effectiveUser?.email || '').trim().toLowerCase();
+        const uid = effectiveUser?.uid || '';
+        return am === email || (uid && am === uid.toLowerCase());
+      });
+  const clientCountForDisplay = displayClients.length;
+  const clientLabelForDisplay = hasFullClientAccess ? 'Total Clients' : 'My Clients';
+
+  // Get client health data from the list we're allowed to show
   const getClientHealth = () => {
-    return clients.slice(0, 4).map(client => {
+    return displayClients.slice(0, 4).map(client => {
       const postsUsed = client.postsUsed || 0;
       const postsTotal = client.packageSize || client.postsTotal || 10;
       const usagePercent = (postsUsed / postsTotal) * 100;
@@ -227,12 +244,23 @@ const V3Dashboard = () => {
     }
   };
 
-  const quickActions = [
-    { title: 'Create Post', icon: Plus, color: 'from-[#0071e3] to-[#5856d6]', path: '/content-calendar' },
-    { title: 'Schedule Content', icon: Calendar, color: 'from-[#ff9500] to-[#ff3b30]', path: '/content-calendar' },
-    { title: 'Instagram Reports', icon: Instagram, color: 'from-[#34c759] to-[#30d158]', path: '/instagram-reports' },
-    { title: 'Client Packages', icon: Users, color: 'from-[#5856d6] to-[#af52de]', path: '/client-packages' },
+  // Quick Actions: only show for enabled modules (registry IDs)
+  const quickActionsConfig = [
+    { title: 'Create Post', icon: Plus, color: 'from-[#0071e3] to-[#5856d6]', path: '/content-calendar', moduleId: 'content-calendar' },
+    { title: 'Schedule Content', icon: Calendar, color: 'from-[#ff9500] to-[#ff3b30]', path: '/content-calendar', moduleId: 'content-calendar' },
+    { title: 'Instagram Reports', icon: Instagram, color: 'from-[#34c759] to-[#30d158]', path: '/instagram-reports', moduleId: 'instagram-reports' },
+    { title: 'Client Packages', icon: Users, color: 'from-[#5856d6] to-[#af52de]', path: '/client-packages', moduleId: 'client-packages' },
   ];
+  const quickActions = quickActionsConfig.filter(
+    (a) => enabledModules.includes(a.moduleId)
+  );
+  // Dedupe by path so "Create Post" and "Schedule Content" don't both show for content-calendar
+  const seenPaths = new Set();
+  const quickActionsDeduped = quickActions.filter((a) => {
+    if (seenPaths.has(a.path)) return false;
+    seenPaths.add(a.path);
+    return true;
+  });
 
   if (loading) {
     return (
@@ -269,6 +297,7 @@ const V3Dashboard = () => {
               {tasks.filter(t => t.status !== 'completed').length} Tasks
             </Link>
           )}
+          {enabledModules.includes('time-off') && (
           <Link 
             to="/my-time-off"
             className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2"
@@ -276,13 +305,14 @@ const V3Dashboard = () => {
             <Plus className="w-4 h-4" />
             Request Time Off
           </Link>
+          )}
         </div>
       </div>
 
-      {/* Quick Stats - Real Data (conditionally show task stats) */}
-      <div className={`grid grid-cols-2 ${hasTasksModule ? 'md:grid-cols-4' : 'md:grid-cols-2'} gap-4`}>
+      {/* Quick Stats - Real Data (only show stats for enabled modules) */}
+      <div className={`grid grid-cols-2 ${(hasTasksModule ? 2 : 0) + (hasClientAccess ? 1 : 0) > 2 ? 'md:grid-cols-4' : 'md:grid-cols-2'} gap-4`}>
         {[
-          { label: 'Total Clients', value: clients.length, icon: Users, color: 'text-[#0071e3]', show: true },
+          { label: clientLabelForDisplay, value: clientCountForDisplay, icon: Users, color: 'text-[#0071e3]', show: hasClientAccess },
           { label: 'Pending Tasks', value: tasks.filter(t => t.status !== 'completed').length, icon: Clock, color: 'text-[#ff9500]', show: hasTasksModule },
           { label: 'Due Today', value: todaysTasks.length, icon: Calendar, color: 'text-[#ff3b30]', show: hasTasksModule },
           { label: 'Completed', value: tasks.filter(t => t.status === 'completed').length, icon: CheckCircle2, color: 'text-[#34c759]', show: hasTasksModule },
@@ -369,14 +399,15 @@ const V3Dashboard = () => {
         </div>
         )}
 
-        {/* Client Status - Real Data (expands when tasks module disabled) */}
+        {/* Client Status - only when user has client-related access */}
+        {hasClientAccess && (
         <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
             <div>
               <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Client Status</h2>
               <p className="text-[13px] text-[#86868b]">Package utilization</p>
             </div>
-            <Link to="/clients" className="text-[13px] text-[#0071e3] font-medium hover:underline">
+            <Link to={enabledModules.includes('clients') ? '/clients' : '/my-clients'} className="text-[13px] text-[#0071e3] font-medium hover:underline">
               View all
             </Link>
           </div>
@@ -411,6 +442,7 @@ const V3Dashboard = () => {
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Second Row */}
@@ -451,21 +483,23 @@ const V3Dashboard = () => {
         </div>
         )}
 
-        {/* Quick Links */}
+        {/* Quick Links - only for enabled modules */}
         <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
             <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Quick Links</h2>
           </div>
           <div className="divide-y divide-black/5 dark:divide-white/5">
-            <Link to="/clients" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+            {(enabledModules.includes('my-clients') || enabledModules.includes('clients')) && (
+            <Link to={enabledModules.includes('clients') ? '/clients' : '/my-clients'} className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div className="w-8 h-8 rounded-lg bg-[#0071e3]/10 flex items-center justify-center shrink-0">
                 <Users className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">View All Clients</p>
-                <p className="text-[12px] text-[#86868b]">{clients.length} total clients</p>
+                <p className="text-[12px] text-[#86868b]">{hasFullClientAccess ? `${clientCountForDisplay} total clients` : `${clientCountForDisplay} assigned to you`}</p>
               </div>
             </Link>
+            )}
             {hasTasksModule && (
             <Link to="/tasks" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div className="w-8 h-8 rounded-lg bg-[#ff9500]/10 flex items-center justify-center shrink-0">
@@ -477,6 +511,7 @@ const V3Dashboard = () => {
               </div>
             </Link>
             )}
+            {enabledModules.includes('team') && (
             <Link to="/team" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center shrink-0">
                 <Users className="w-4 h-4 text-[#34c759]" strokeWidth={1.5} />
@@ -486,6 +521,8 @@ const V3Dashboard = () => {
                 <p className="text-[12px] text-[#86868b]">View team members</p>
               </div>
             </Link>
+            )}
+            {enabledModules.includes('resources') && (
             <Link to="/resources" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div className="w-8 h-8 rounded-lg bg-[#5856d6]/10 flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4 text-[#5856d6]" strokeWidth={1.5} />
@@ -495,20 +532,29 @@ const V3Dashboard = () => {
                 <p className="text-[12px] text-[#86868b]">Tutorials and guides</p>
               </div>
             </Link>
+            )}
           </div>
         </div>
 
-        {/* Summary Card */}
+        {/* Summary Card - Overview (clients + optional tasks) */}
         <div className="rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] p-6 text-white relative overflow-hidden">
           <div className="flex items-center gap-2 mb-6">
             <Sparkles className="w-5 h-5" />
             <h2 className="text-[17px] font-semibold">Overview</h2>
           </div>
-          <div className={`grid ${hasTasksModule ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
-            <div>
-              <p className="text-[28px] font-semibold">{clients.length}</p>
-              <p className="text-[13px] text-white/70">Total Clients</p>
-            </div>
+          <div className={`grid ${hasTasksModule && hasClientAccess ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+            {hasClientAccess && (
+              <>
+                <div>
+                  <p className="text-[28px] font-semibold">{clientCountForDisplay}</p>
+                  <p className="text-[13px] text-white/70">{clientLabelForDisplay}</p>
+                </div>
+                <div>
+                  <p className="text-[28px] font-semibold">{displayClients.filter(c => c.packageType?.toLowerCase() === 'premium').length}</p>
+                  <p className="text-[13px] text-white/70">Premium Clients</p>
+                </div>
+              </>
+            )}
             {hasTasksModule && (
               <>
                 <div>
@@ -521,24 +567,26 @@ const V3Dashboard = () => {
                 </div>
               </>
             )}
-            <div>
-              <p className="text-[28px] font-semibold">{clients.filter(c => c.packageType?.toLowerCase() === 'premium').length}</p>
-              <p className="text-[13px] text-white/70">Premium Clients</p>
-            </div>
+            {!hasClientAccess && !hasTasksModule && (
+              <p className="text-[13px] text-white/70">Enable Clients or Tasks to see metrics here.</p>
+            )}
           </div>
+          {hasClientAccess && (
           <Link 
-            to="/clients" 
+            to={enabledModules.includes('clients') ? '/clients' : '/my-clients'} 
             className="mt-6 w-full h-10 rounded-xl bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center gap-2 text-[13px] font-medium"
           >
             View Clients
             <ArrowRight className="w-4 h-4" />
           </Link>
+          )}
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-4 gap-4">
-        {quickActions.map((action, idx) => (
+      {/* Quick Actions - only modules you have access to */}
+      {(quickActionsDeduped.length > 0) && (
+      <div className={`grid gap-4 ${quickActionsDeduped.length === 1 ? 'grid-cols-1' : quickActionsDeduped.length === 2 ? 'grid-cols-2' : quickActionsDeduped.length === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+        {quickActionsDeduped.map((action, idx) => (
           <Link
             key={idx}
             to={action.path}
@@ -551,6 +599,7 @@ const V3Dashboard = () => {
           </Link>
         ))}
       </div>
+      )}
     </div>
   );
 };

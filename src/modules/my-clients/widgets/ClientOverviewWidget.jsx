@@ -14,17 +14,22 @@ const ClientOverviewWidget = () => {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState([]);
 
+  const isAssignedToMe = (client) => {
+    const am = (client.assignedManager || '').trim().toLowerCase();
+    if (!am) return false;
+    const email = (currentUser?.email || '').trim().toLowerCase();
+    const uid = (currentUser?.uid || '').trim().toLowerCase();
+    return am === email || (uid && am === uid);
+  };
+
   useEffect(() => {
     const loadClients = async () => {
-      if (!currentUser?.email) return;
-      
+      if (!currentUser?.email && !currentUser?.uid) return;
+
       try {
         const allClients = await firestoreService.getClients();
-        // Filter to only clients assigned to current user
-        const myClients = allClients.filter(
-          c => c.assignedManager?.toLowerCase() === currentUser.email.toLowerCase()
-        );
-        setClients(myClients.slice(0, 4)); // Show top 4
+        const myClients = allClients.filter(isAssignedToMe).slice(0, 4);
+        setClients(myClients);
       } catch (error) {
         console.error('Error loading clients:', error);
       } finally {
@@ -33,7 +38,7 @@ const ClientOverviewWidget = () => {
     };
 
     loadClients();
-  }, [currentUser?.email]);
+  }, [currentUser?.email, currentUser?.uid]);
 
   const getHealthStatus = (client) => {
     const postsRemaining = client.postsRemaining || 0;
