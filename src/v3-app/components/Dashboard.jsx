@@ -588,8 +588,17 @@ const V3Dashboard = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
+          <h1 className="text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1 flex items-center gap-3">
             {greeting()}, {effectiveUser?.displayName?.split(' ')[0] || effectiveUser?.firstName || 'there'}
+            {/* Michelle's special cat icon */}
+            {effectiveUser?.email?.toLowerCase() === 'michelle@luxury-listings.com' && (
+              <img 
+                src="/michelle-cat.png" 
+                alt="🐱" 
+                className="w-8 h-8 inline-block"
+                style={{ filter: 'var(--michelle-cat-filter, none)' }}
+              />
+            )}
           </h1>
           <p className="text-[17px] text-[#86868b]">
             {format(new Date(), 'EEEE, MMMM d')} • Here's your workflow overview

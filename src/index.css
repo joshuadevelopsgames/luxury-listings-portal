@@ -252,6 +252,11 @@
   box-shadow: 0 1px 3px rgba(249, 15, 198, 0.3) !important;
 }
 
+/* Michelle's cat icon - make it pink in dark mode */
+.michelle-theme.dark {
+  --michelle-cat-filter: brightness(0) saturate(100%) invert(45%) sepia(96%) saturate(2754%) hue-rotate(295deg) brightness(101%) contrast(101%);
+}
+
 
 
 
