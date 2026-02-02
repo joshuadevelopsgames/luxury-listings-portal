@@ -22,13 +22,12 @@ import { format } from 'date-fns';
 import ClientContractsSection from './ClientContractsSection';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePermissions } from '../../contexts/PermissionsContext';
-import { PERMISSIONS } from '../../entities/Permissions';
+import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import PlatformIcons from '../PlatformIcons';
 
 const ClientProfilesList = () => {
   const { currentUser } = useAuth();
-  const { hasPermission } = usePermissions();
+  const { hasFeaturePermission } = usePermissions();
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,9 +44,9 @@ const ClientProfilesList = () => {
   const [deleting, setDeleting] = useState(false);
 
   // Permissions
-  const canManageClients = hasPermission(PERMISSIONS.MANAGE_CLIENTS);
-  const canAssignManagers = hasPermission(PERMISSIONS.ASSIGN_CLIENT_MANAGERS);
-  const canEditPackages = hasPermission(PERMISSIONS.EDIT_CLIENT_PACKAGES);
+  const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
+  const canAssignManagers = hasFeaturePermission(FEATURE_PERMISSIONS.ASSIGN_CLIENT_MANAGERS);
+  const canEditPackages = hasFeaturePermission(FEATURE_PERMISSIONS.EDIT_CLIENT_PACKAGES);
 
   // Load data once on mount (no real-time listener for performance)
   useEffect(() => {

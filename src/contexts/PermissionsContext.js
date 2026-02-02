@@ -16,6 +16,10 @@ export const FEATURE_PERMISSIONS = {
   MANAGE_USERS: 'manage_users',            // Add/remove users, change roles
   APPROVE_TIME_OFF: 'approve_time_off',    // Approve/deny time off requests
   VIEW_ANALYTICS: 'view_analytics',        // Access to analytics dashboards
+  // Client Management
+  MANAGE_CLIENTS: 'manage_clients',        // Edit client info, remove clients
+  ASSIGN_CLIENT_MANAGERS: 'assign_client_managers', // Assign managers to clients
+  EDIT_CLIENT_PACKAGES: 'edit_client_packages',     // Edit package details
 };
 
 export function usePermissions() {

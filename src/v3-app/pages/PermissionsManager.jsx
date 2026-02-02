@@ -62,6 +62,21 @@ const ALL_FEATURES = {
     icon: BarChart3, 
     description: 'Access analytics dashboards and reports' 
   },
+  [FEATURE_PERMISSIONS.MANAGE_CLIENTS]: { 
+    name: 'Manage Clients', 
+    icon: Users, 
+    description: 'Edit client info, remove clients from the system' 
+  },
+  [FEATURE_PERMISSIONS.ASSIGN_CLIENT_MANAGERS]: { 
+    name: 'Assign Client Managers', 
+    icon: UserPlus, 
+    description: 'Assign social media managers to clients' 
+  },
+  [FEATURE_PERMISSIONS.EDIT_CLIENT_PACKAGES]: { 
+    name: 'Edit Client Packages', 
+    icon: Briefcase, 
+    description: 'Edit package type, posts remaining, and payment status' 
+  },
 };
 
 // Build ALL_PAGES from module registry + additional pages
