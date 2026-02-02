@@ -124,7 +124,7 @@ const V3Layout = () => {
   const allPages = {
     'dashboard': { name: 'Dashboard', icon: Home, path: '/dashboard' },
     // Base modules (always available)
-    'time-off': { name: 'Time Off', icon: Calendar, path: '/my-time-off' },
+    'time-off': { name: 'My Time Off', icon: Calendar, path: '/my-time-off' },
     'my-clients': { name: 'My Clients', icon: Users, path: '/my-clients' },
     'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, path: '/instagram-reports' },
     // Upgrade modules
