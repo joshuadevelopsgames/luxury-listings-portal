@@ -5,6 +5,7 @@ import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
 import { PermissionsProvider } from './contexts/PermissionsContext';
 import { setNavigate } from './utils/navigation';
+import MobileInstallPrompt from './components/MobileInstallPrompt';
 
 // V3 Components (Apple-styled design)
 import V3Layout from './v3-app/components/Layout';
@@ -197,6 +198,7 @@ function App() {
         <PermissionsProvider>
           <ViewAsProvider>
             <RouterProvider router={router} />
+            <MobileInstallPrompt />
           </ViewAsProvider>
         </PermissionsProvider>
       </AuthProvider>
