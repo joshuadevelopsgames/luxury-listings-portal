@@ -352,24 +352,34 @@ const V3Layout = () => {
       <div className={`min-h-screen bg-[#f5f5f7] dark:bg-[#161617] transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
         {/* View As Banner */}
         {isViewingAs && viewingAsUser && (
-          <div className="sticky top-0 z-40 bg-gradient-to-r from-[#ff9500] to-[#ff3b30] text-white px-4 py-2">
+          <div className="sticky top-0 z-40 bg-gradient-to-r from-[#5856d6] to-[#af52de] text-white px-4 py-2.5 shadow-lg">
             <div className="flex items-center justify-between max-w-[1600px] mx-auto">
-              <div className="flex items-center gap-3">
-                <Eye className="w-5 h-5" />
-                <span className="text-[13px] font-medium">
-                  Viewing as: <span className="font-semibold">{viewingAsUser.displayName || viewingAsUser.email}</span>
-                </span>
-                <span className="text-[12px] opacity-80">
-                  ({viewAsPermissions.length} pages)
-                </span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                  <Eye className="w-4 h-4" />
+                  <span className="text-[12px] font-semibold uppercase tracking-wide">View Mode</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[14px] font-semibold">
+                    {viewingAsUser.displayName || viewingAsUser.email}
+                  </span>
+                  <span className="text-[11px] opacity-80">
+                    {viewingAsUser.role || viewingAsUser.primaryRole || 'User'} • {viewingAsUser.email} • {viewAsPermissions.length} pages accessible
+                  </span>
+                </div>
               </div>
-              <button
-                onClick={stopViewingAs}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-[13px] font-medium"
-              >
-                <X className="w-4 h-4" />
-                Exit View Mode
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] opacity-70 hidden sm:block">
+                  Data shown is from this user's perspective
+                </span>
+                <button
+                  onClick={stopViewingAs}
+                  className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white text-[#5856d6] hover:bg-white/90 transition-colors text-[13px] font-semibold shadow-sm"
+                >
+                  <X className="w-4 h-4" />
+                  Exit
+                </button>
+              </div>
             </div>
           </div>
         )}

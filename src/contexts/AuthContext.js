@@ -5,6 +5,7 @@ import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserR
 import { firestoreService } from '../services/firestoreService';
 import { appNavigate } from '../utils/navigation';
 import { usePendingUsers } from './PendingUsersContext';
+import { useViewAs } from './ViewAsContext';
 
 // ============================================================================
 // SYSTEM ADMINS - Full access to everything
@@ -368,6 +369,9 @@ export function AuthProvider({ children }) {
     signInWithGoogle,
     logout,
     chatbotResetTrigger,
+    // For View As feature - real user is always available
+    realUser: currentUser,
+    isSystemAdmin: isSystemAdmin(currentUser?.email),
   };
 
   return (
@@ -375,4 +379,46 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+/**
+ * useEffectiveAuth - Hook that returns the effective user (viewed user if in View As mode)
+ * Use this in components that should respect View As mode
+ */
+export function useEffectiveAuth() {
+  const auth = useAuth();
+  
+  // Try to get ViewAs context - it might not be available in all contexts
+  let viewAs = null;
+  try {
+    viewAs = useViewAs();
+  } catch (e) {
+    // ViewAs context not available, use real user
+  }
+  
+  if (viewAs?.isViewingAs && viewAs?.viewingAsUser) {
+    return {
+      ...auth,
+      currentUser: {
+        ...viewAs.viewingAsUser,
+        _realUser: auth.currentUser,
+        _isViewingAs: true
+      },
+      currentRole: viewAs.viewAsRole || auth.currentRole,
+      hasPermission: (permission) => {
+        // When viewing as, check the viewed user's permissions
+        return viewAs.viewAsPermissions?.includes(permission) || false;
+      },
+      isViewingAs: true,
+      realUser: auth.currentUser,
+      viewingAsUser: viewAs.viewingAsUser
+    };
+  }
+  
+  return {
+    ...auth,
+    isViewingAs: false,
+    realUser: auth.currentUser,
+    viewingAsUser: null
+  };
 }

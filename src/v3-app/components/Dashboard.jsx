@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
+import { useViewAs } from '../../contexts/ViewAsContext';
 import { firestoreService } from '../../services/firestoreService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';
 import { getBaseModuleIds, getAllModuleIds } from '../../modules/registry';
@@ -43,13 +44,19 @@ import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWit
 const V3Dashboard = () => {
   const { currentUser, currentRole } = useAuth();
   const { permissions, isSystemAdmin } = usePermissions();
+  const { isViewingAs, viewingAsUser, viewAsPermissions } = useViewAs();
   const [loading, setLoading] = useState(true);
   
+  // Get effective user - when viewing as, use that user's data
+  const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
+  const effectivePermissions = isViewingAs ? viewAsPermissions : permissions;
+  const effectiveIsSystemAdmin = isViewingAs ? false : isSystemAdmin; // When viewing as, don't use admin privileges
+  
   // Get enabled modules for widget rendering
-  // System admins see ALL modules, others see their permissions or base modules
-  const enabledModules = isSystemAdmin 
+  // When viewing as, use that user's permissions; otherwise system admins see ALL modules
+  const enabledModules = effectiveIsSystemAdmin 
     ? getAllModuleIds() 
-    : (permissions.length > 0 ? permissions : getBaseModuleIds());
+    : (effectivePermissions.length > 0 ? effectivePermissions : getBaseModuleIds());
   
   // Check if tasks module is enabled (affects dashboard display)
   const hasTasksModule = enabledModules.includes('tasks');
@@ -105,13 +112,13 @@ const V3Dashboard = () => {
       try {
         setLoading(true);
         
-        // Get all tasks (or tasks assigned to current user)
+        // Get all tasks (or tasks assigned to effective user - respects View As mode)
         let allTasks = [];
         
-        if (currentUser?.email) {
+        if (effectiveUser?.email) {
           // Try to get user's tasks first
           try {
-            allTasks = await firestoreService.getTasksByUser(currentUser.email);
+            allTasks = await firestoreService.getTasksByUser(effectiveUser.email);
           } catch (e) {
             // Fallback to all tasks
             allTasks = await firestoreService.getTasks();
@@ -172,7 +179,7 @@ const V3Dashboard = () => {
     };
 
     fetchTasks();
-  }, [currentUser?.email]);
+  }, [effectiveUser?.email]);
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -246,7 +253,7 @@ const V3Dashboard = () => {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
-            {greeting()}, {currentUser?.displayName?.split(' ')[0] || 'there'}
+            {greeting()}, {effectiveUser?.displayName?.split(' ')[0] || effectiveUser?.firstName || 'there'}
           </h1>
           <p className="text-[17px] text-[#86868b]">
             {format(new Date(), 'EEEE, MMMM d')} • Here's your workflow overview
