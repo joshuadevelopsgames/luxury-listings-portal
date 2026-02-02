@@ -162,14 +162,14 @@ export default function ResourcesPage() {
 
   return (
     <div className="w-full">
-      <div className="border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#1c1c1e] px-6 pt-4">
-        <div className="flex gap-1">
+      <div className="px-6 pt-6 pb-4">
+        <div className="inline-flex p-1 rounded-xl bg-black/5 dark:bg-white/10">
           <button 
             onClick={() => setActiveTab("resources")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-[14px] font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${
               activeTab === "resources"
-                ? 'bg-[#0071e3]/10 text-[#0071e3]'
-                : 'text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
+                ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -177,10 +177,10 @@ export default function ResourcesPage() {
           </button>
           <button 
             onClick={() => setActiveTab("programs")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-[14px] font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${
               activeTab === "programs"
-                ? 'bg-[#0071e3]/10 text-[#0071e3]'
-                : 'text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
+                ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
             <Settings className="w-4 h-4" />
