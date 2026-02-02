@@ -175,10 +175,7 @@
    Michelle's Special Theme - Pink in Dark Mode
    ============================================ */
 
-/* Michelle's cat icon filter */
-.michelle-theme.dark {
-  --michelle-cat-filter: brightness(0) saturate(100%) invert(45%) sepia(96%) saturate(2754%) hue-rotate(295deg) brightness(101%) contrast(101%);
-}
+/* Michelle's theme uses separate cat images for light/dark mode */
 
 /* Override blue (#0071e3) with hot pink (#f90fc6) in dark mode for Michelle */
 /* Using attribute selectors for reliability */
