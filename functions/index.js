@@ -4,8 +4,10 @@
  */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const vision = require('@google-cloud/vision');
+const nodemailer = require('nodemailer');
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -305,3 +307,118 @@ function parseNumber(str) {
   const num = parseInt(cleaned, 10);
   return isNaN(num) ? 0 : num;
 }
+
+// ============================================================================
+// ERROR REPORT EMAIL NOTIFICATION
+// ============================================================================
+
+/**
+ * Send email notification when an error report is created
+ * Triggers automatically when a new document is added to error_reports collection
+ */
+exports.sendErrorReportEmail = onDocumentCreated(
+  {
+    document: 'error_reports/{reportId}',
+    region: 'us-central1',
+    secrets: ['EMAIL_PASS'],
+  },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      console.log('No data in error report');
+      return;
+    }
+
+    const report = snapshot.data();
+    const reportId = event.params.reportId;
+
+    console.log('📧 Sending error report email for:', reportId);
+
+    // Create email transporter using Gmail
+    // Note: You need to set these environment variables using:
+    // firebase functions:config:set email.user="your-email@gmail.com" email.pass="your-app-password"
+    // Or use Firebase v2 secrets
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER || 'jrsschroeder@gmail.com',
+        pass: process.env.EMAIL_PASS || '', // App password required
+      },
+    });
+
+    // Format console logs for email
+    const consoleLogs = report.consoleLogsText || 'No console logs captured';
+    
+    // Build email content
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #ff3b30, #ff9500); padding: 20px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">⚠️ Error Report</h1>
+          <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0;">Luxury Listings Portal</p>
+        </div>
+        
+        <div style="background: #f5f5f7; padding: 20px; border-radius: 0 0 12px 12px;">
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #ff3b30; margin: 0 0 10px 0;">Error Message</h3>
+            <p style="color: #1d1d1f; margin: 0; font-family: monospace; background: #f5f5f7; padding: 10px; border-radius: 4px; word-break: break-all;">
+              ${report.errorMessage || 'Unknown error'}
+            </p>
+          </div>
+          
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #1d1d1f; margin: 0 0 10px 0;">User Info</h3>
+            <p style="margin: 5px 0;"><strong>Email:</strong> ${report.userEmail || 'Unknown'}</p>
+            <p style="margin: 5px 0;"><strong>Name:</strong> ${report.userName || 'Unknown'}</p>
+          </div>
+          
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #1d1d1f; margin: 0 0 10px 0;">System Info</h3>
+            <p style="margin: 5px 0;"><strong>URL:</strong> ${report.url || 'Unknown'}</p>
+            <p style="margin: 5px 0;"><strong>Time:</strong> ${report.errorTimestamp || 'Unknown'}</p>
+            <p style="margin: 5px 0;"><strong>Browser:</strong> ${report.userAgent || 'Unknown'}</p>
+            <p style="margin: 5px 0;"><strong>Screen:</strong> ${report.screenSize || 'Unknown'}</p>
+          </div>
+          
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #1d1d1f; margin: 0 0 10px 0;">Stack Trace</h3>
+            <pre style="color: #86868b; margin: 0; font-size: 11px; background: #1d1d1f; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;">
+${report.errorStack || 'No stack trace'}
+            </pre>
+          </div>
+          
+          <div style="background: white; padding: 15px; border-radius: 8px;">
+            <h3 style="color: #1d1d1f; margin: 0 0 10px 0;">Console Logs (Last 50)</h3>
+            <pre style="color: #86868b; margin: 0; font-size: 10px; background: #1d1d1f; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto;">
+${consoleLogs.substring(0, 5000)}
+            </pre>
+          </div>
+          
+          <p style="color: #86868b; font-size: 12px; text-align: center; margin-top: 20px;">
+            Report ID: ${reportId}
+          </p>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: '"Luxury Listings Portal" <jrsschroeder@gmail.com>',
+      to: 'jrsschroeder@gmail.com',
+      subject: `🚨 Error Report: ${(report.errorMessage || 'Unknown error').substring(0, 50)}`,
+      html: emailHtml,
+    };
+
+    try {
+      // Only send if email credentials are configured
+      if (process.env.EMAIL_PASS) {
+        await transporter.sendMail(mailOptions);
+        console.log('✅ Error report email sent successfully');
+      } else {
+        console.log('⚠️ Email not sent - EMAIL_PASS not configured');
+        console.log('📋 Error report stored in Firestore:', reportId);
+      }
+    } catch (error) {
+      console.error('❌ Failed to send error report email:', error);
+      // Don't throw - we still want the report saved in Firestore
+    }
+  }
+);
