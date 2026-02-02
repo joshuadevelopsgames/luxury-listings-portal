@@ -63,7 +63,7 @@ class WidgetErrorBoundary extends React.Component {
 const SLOTS_PER_ROW = 4;
 /**
  * Group widgets into rows (max 4 slots per row). 
- * columnCount = actual slots used in the row, so widgets stretch to fill the full width.
+ * columnCount = number of widgets in row, so each widget gets equal width.
  */
 function computeRows(widgets) {
   const rows = [];
@@ -77,28 +77,21 @@ function computeRows(widgets) {
       currentSlots += slots;
     } else {
       if (currentRow.length > 0) {
-        // columnCount = total slots used, so grid columns match content
-        rows.push({ columnCount: currentSlots, widgets: currentRow });
+        // columnCount = number of widgets (not slots) for equal-width columns
+        rows.push({ columnCount: currentRow.length, widgets: currentRow });
       }
       currentRow = [widget];
       currentSlots = slots;
     }
   }
   if (currentRow.length > 0) {
-    rows.push({ columnCount: currentSlots, widgets: currentRow });
+    rows.push({ columnCount: currentRow.length, widgets: currentRow });
   }
   return rows;
 }
 
-/** Span = widget's slot count (small=1, medium/large=2) */
-function getColSpan(columnCount, size) {
-  return getWidgetSlotCount(size);
-}
-
-function SortableWidgetCell({ widgetId, moduleId, size, columnCount, isEditMode, children }) {
+function SortableWidgetCell({ widgetId, isEditMode, children }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: widgetId });
-  const span = getColSpan(columnCount, size);
-  const spanClass = span === 1 ? 'col-span-1' : 'col-span-2';
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -107,7 +100,7 @@ function SortableWidgetCell({ widgetId, moduleId, size, columnCount, isEditMode,
     <div
       ref={setNodeRef}
       style={style}
-      className={`${spanClass} min-h-0 min-w-0 ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+      className={`col-span-1 min-h-0 min-w-0 ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
       {...(isEditMode ? { ...attributes, ...listeners } : {})}
     >
       {children}
@@ -166,11 +159,9 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
           className="grid w-full gap-6"
           style={{ gridTemplateColumns: `repeat(${row.columnCount}, minmax(0, 1fr))` }}
         >
-          {row.widgets.map(({ widgetId, moduleId, size }) => {
+          {row.widgets.map(({ widgetId, moduleId }) => {
             const WidgetComponent = widgetComponents[widgetId];
             if (!WidgetComponent) return null;
-            const span = getColSpan(row.columnCount, size);
-            const spanClass = span === 1 ? 'col-span-1' : 'col-span-2';
             const cell = (
               <WidgetErrorBoundary key={`${moduleId}-${widgetId}`} widgetId={widgetId}>
                 <Suspense fallback={<WidgetSkeleton />}>
@@ -182,15 +173,12 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
               <SortableWidgetCell
                 key={widgetId}
                 widgetId={widgetId}
-                moduleId={moduleId}
-                size={size}
-                columnCount={row.columnCount}
                 isEditMode={isEditMode}
               >
                 {cell}
               </SortableWidgetCell>
             ) : (
-              <div key={widgetId} className={`${spanClass} min-h-0 min-w-0`}>
+              <div key={widgetId} className="col-span-1 min-h-0 min-w-0">
                 {cell}
               </div>
             );
