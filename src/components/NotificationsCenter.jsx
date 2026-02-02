@@ -89,6 +89,9 @@ const NotificationsCenter = () => {
         return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'task_rejected':
         return <Bell className="w-4 h-4 text-red-600" />;
+      // Error reports
+      case 'error_report':
+        return <AlertCircle className="w-4 h-4 text-[#ff3b30]" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-600" />;
     }

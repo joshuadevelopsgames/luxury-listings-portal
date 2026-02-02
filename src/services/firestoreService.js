@@ -43,7 +43,8 @@ class FirestoreService {
     CLIENT_REPORTS: 'client_reports',
     PENDING_CLIENTS: 'pending_clients',
     CLIENT_CONTRACTS: 'client_contracts',
-    INSTAGRAM_REPORTS: 'instagram_reports'
+    INSTAGRAM_REPORTS: 'instagram_reports',
+    ERROR_REPORTS: 'error_reports'
   };
 
   // Test connection method
@@ -2419,6 +2420,86 @@ class FirestoreService {
     } catch (error) {
       console.warn('⚠️ Error setting up permissions listener:', error.message);
       return () => {}; // Return empty cleanup function
+    }
+  }
+
+  // ===== ERROR REPORTING =====
+
+  /**
+   * Submit an error report to Firestore and notify the developer
+   */
+  async submitErrorReport(reportData) {
+    try {
+      const report = {
+        ...reportData,
+        status: 'new',
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, this.collections.ERROR_REPORTS), report);
+      console.log('✅ Error report submitted:', docRef.id);
+
+      // Also create a notification for the developer
+      await this.createNotification({
+        userEmail: 'jrsschroeder@gmail.com',
+        type: 'error_report',
+        title: 'New Error Report',
+        message: `Error: ${reportData.errorMessage?.substring(0, 100) || 'Unknown error'}`,
+        link: null, // Admin would view reports in Firestore console or a reports page
+        read: false,
+        metadata: {
+          reportId: docRef.id,
+          userEmail: reportData.userEmail,
+          url: reportData.url
+        }
+      });
+
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error submitting error report:', error);
+      // Don't throw - we don't want error reporting to cause more errors
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Get all error reports (for admin viewing)
+   */
+  async getErrorReports() {
+    try {
+      const q = query(
+        collection(db, this.collections.ERROR_REPORTS),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const reports = [];
+      snapshot.forEach((doc) => {
+        reports.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      return reports;
+    } catch (error) {
+      console.error('❌ Error getting error reports:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Mark error report as resolved
+   */
+  async resolveErrorReport(reportId, notes = '') {
+    try {
+      await updateDoc(doc(db, this.collections.ERROR_REPORTS, reportId), {
+        status: 'resolved',
+        resolvedAt: serverTimestamp(),
+        resolvedNotes: notes
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error resolving error report:', error);
+      throw error;
     }
   }
 }
