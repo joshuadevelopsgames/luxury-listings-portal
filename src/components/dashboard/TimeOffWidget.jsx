@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
+import { useAuth } from '../../contexts/AuthContext';
+import { firestoreService } from '../../services/firestoreService';
 import { 
   Calendar, 
   Plane, 
@@ -16,44 +18,35 @@ import { format } from 'date-fns';
 
 const TimeOffWidget = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [leaveBalances, setLeaveBalances] = useState({ vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 10, used: 0, remaining: 10 } });
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [upcomingTimeOff, setUpcomingTimeOff] = useState([]);
 
-  // Mock data - in production this would come from Firestore
-  const leaveBalances = {
-    vacation: {
-      total: 20,
-      used: 8,
-      remaining: 12
-    },
-    sick: {
-      total: 10,
-      used: 2,
-      remaining: 8
-    }
-  };
+  useEffect(() => {
+    const loadData = async () => {
+      if (!currentUser?.email) return;
+      try {
+        const balances = await firestoreService.getUserLeaveBalances(currentUser.email);
+        setLeaveBalances({
+          vacation: { ...balances.vacation, remaining: balances.vacation.total - balances.vacation.used },
+          sick: { ...balances.sick, remaining: balances.sick.total - balances.sick.used }
+        });
+        
+        const requests = await firestoreService.getLeaveRequests(currentUser.email);
+        setPendingRequests(requests.filter(r => r.status === 'pending'));
+        setUpcomingTimeOff(requests.filter(r => r.status === 'approved' && new Date(r.startDate) > new Date()));
+      } catch (error) {
+        console.error('Error loading time off data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [currentUser?.email]);
 
-  const pendingRequests = [
-    {
-      id: 1,
-      type: 'vacation',
-      startDate: '2024-03-10',
-      endDate: '2024-03-12',
-      days: 3,
-      status: 'pending'
-    }
-  ];
-
-  const upcomingTimeOff = [
-    {
-      id: 1,
-      type: 'vacation',
-      startDate: '2024-02-15',
-      endDate: '2024-02-19',
-      days: 5,
-      status: 'approved'
-    }
-  ];
-
-  const vacationUsagePercent = (leaveBalances.vacation.used / leaveBalances.vacation.total) * 100;
+  const vacationUsagePercent = leaveBalances.vacation.total > 0 ? (leaveBalances.vacation.used / leaveBalances.vacation.total) * 100 : 0;
 
   return (
     <Card>

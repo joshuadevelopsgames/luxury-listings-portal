@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { firestoreService } from '../../services/firestoreService';
 import { 
   Calendar, 
   User, 
@@ -14,68 +15,40 @@ import {
   FileText
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 
 const HRQuickActions = () => {
   const navigate = useNavigate();
+  const [pendingLeaveRequests, setPendingLeaveRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - in production this would come from your HR system
-  const pendingLeaveRequests = [
-    {
-      id: 1,
-      employeeName: 'Emma Rodriguez',
-      type: 'vacation',
-      dates: 'Feb 1-5, 2024',
-      days: 5,
-      status: 'pending'
-    },
-    {
-      id: 2,
-      employeeName: 'David Kim',
-      type: 'sick',
-      dates: 'Jan 22, 2024',
-      days: 1,
-      status: 'pending'
-    },
-    {
-      id: 3,
-      employeeName: 'Sarah Johnson',
-      type: 'personal',
-      dates: 'Feb 10-12, 2024',
-      days: 3,
-      status: 'pending'
-    }
-  ];
+  // Load real data from Firestore
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const allRequests = await firestoreService.getAllLeaveRequests();
+        const pending = allRequests.filter(r => r.status === 'pending').slice(0, 5).map(r => ({
+          id: r.id,
+          employeeName: r.employeeName || r.employeeEmail,
+          type: r.type,
+          dates: r.startDate && r.endDate ? `${format(new Date(r.startDate), 'MMM d')} - ${format(new Date(r.endDate), 'MMM d, yyyy')}` : '',
+          days: r.days || 1,
+          status: r.status
+        }));
+        setPendingLeaveRequests(pending);
+      } catch (error) {
+        console.error('Error loading HR data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
-  const upcomingReviews = [
-    {
-      id: 1,
-      employeeName: 'Mike Chen',
-      department: 'Sales',
-      dueDate: 'This Week',
-      type: 'Quarterly Review'
-    },
-    {
-      id: 2,
-      employeeName: 'Emma Rodriguez',
-      department: 'Design',
-      dueDate: 'Next Week',
-      type: '90-Day Review'
-    }
-  ];
-
-  const todayAbsences = [
-    { name: 'Sarah Johnson', reason: 'Vacation', duration: 'All Day' },
-    { name: 'Alex Thompson', reason: 'Sick Leave', duration: 'All Day' }
-  ];
-
-  const recentHires = [
-    {
-      name: 'James Wilson',
-      position: 'Marketing Specialist',
-      startDate: 'Jan 15, 2024',
-      onboardingProgress: 75
-    }
-  ];
+  // These would come from a reviews/onboarding system - show empty for now
+  const upcomingReviews = [];
+  const todayAbsences = [];
+  const recentHires = [];
 
   const getLeaveTypeEmoji = (type) => {
     switch (type) {

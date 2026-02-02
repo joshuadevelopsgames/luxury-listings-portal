@@ -8,93 +8,13 @@ class FirebaseApiService {
   }
 
   // Get approved users via API
+  // Note: This is a legacy method. Use firestoreService.getApprovedUsers() for real data.
   async getApprovedUsers() {
     try {
       console.log('🔍 API: Getting approved users...');
-      
-      // For now, return mock data directly since Google Apps Script needs to be redeployed
-      const mockUsers = [
-        {
-          id: 'aamin@luxury-listings.com',
-          email: 'aamin@luxury-listings.com',
-          firstName: 'Aamin',
-          lastName: 'Okhovat',
-          role: 'content_director',
-          primaryRole: 'content_director',
-          isApproved: true,
-          department: 'Content & Creative',
-          displayName: 'Aamin Okhovat'
-        },
-        {
-          id: 'alberta@luxury-listings.com',
-          email: 'alberta@luxury-listings.com',
-          firstName: 'Alberta',
-          lastName: 'K',
-          role: 'content_director',
-          primaryRole: 'content_director',
-          isApproved: true,
-          department: 'Content & Creative',
-          displayName: 'Alberta K'
-        },
-        {
-          id: 'brooklynjoy11@gmail.com',
-          email: 'brooklynjoy11@gmail.com',
-          firstName: 'Brooklyn',
-          lastName: 'Schroeder',
-          role: 'content_director',
-          primaryRole: 'content_director',
-          isApproved: true,
-          department: 'Content & Creative',
-          displayName: 'Brooklyn Schroeder'
-        },
-        {
-          id: 'joshua@luxury-listings.com',
-          email: 'joshua@luxury-listings.com',
-          firstName: 'Joshua',
-          lastName: 'Schroeder',
-          role: 'content_director',
-          primaryRole: 'content_director',
-          isApproved: true,
-          department: 'Content & Creative',
-          displayName: 'Joshua Schroeder'
-        },
-        {
-          id: 'jrsschroeder@gmail.com',
-          email: 'jrsschroeder@gmail.com',
-          firstName: 'Joshua',
-          lastName: 'Schroeder',
-          role: 'admin',
-          primaryRole: 'admin',
-          isApproved: true,
-          department: 'Administration',
-          displayName: 'Joshua Schroeder (Josh)'
-        },
-        {
-          id: 'matthew@luxury-listings.com',
-          email: 'matthew@luxury-listings.com',
-          firstName: 'Matthew',
-          lastName: 'Kan',
-          role: 'content_director',
-          primaryRole: 'social_media_manager',
-          isApproved: true,
-          department: 'Content & Creative',
-          displayName: 'Matthew Kan'
-        },
-        {
-          id: 'michelle@luxury-listings.com',
-          email: 'michelle@luxury-listings.com',
-          firstName: 'Michelle',
-          lastName: 'Zhang',
-          role: 'sales_manager',
-          primaryRole: 'social_media_manager',
-          isApproved: true,
-          department: 'Content & Creative',
-          displayName: 'Michelle Zhang'
-        }
-      ];
-      
-      console.log(`✅ API: Found ${mockUsers.length} approved users (mock data)`);
-      return mockUsers;
+      // Return empty array - real data comes from Firestore
+      console.log('ℹ️ API: Use firestoreService.getApprovedUsers() for real data');
+      return [];
     } catch (error) {
       console.error('❌ API: Error getting approved users:', error);
       return [];
@@ -105,12 +25,8 @@ class FirebaseApiService {
   async getPendingUsers() {
     try {
       console.log('🔍 API: Getting pending users...');
-      
-      // For now, return empty array since there are no pending users
-      const mockUsers = [];
-      
-      console.log(`✅ API: Found ${mockUsers.length} pending users (mock data)`);
-      return mockUsers;
+      // Return empty array - real data comes from Firestore
+      return [];
     } catch (error) {
       console.error('❌ API: Error getting pending users:', error);
       return [];

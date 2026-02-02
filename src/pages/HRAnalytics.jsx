@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { firestoreService } from '../services/firestoreService';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -40,110 +41,47 @@ const HRAnalytics = () => {
   const { currentUser } = useAuth();
   const [timeRange, setTimeRange] = useState('6months');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState({
+    teamOverview: { totalEmployees: 0, activeEmployees: 0, newHires: 0, terminations: 0, retentionRate: 0, averageTenure: 0, genderDistribution: {}, ageDistribution: {} },
+    performance: { averageRating: 0, topPerformers: 0, needsImprovement: 0, onTrack: 0, ratingDistribution: {}, monthlyTrend: [] },
+    departmentPerformance: {},
+    turnover: { overallRate: 0, voluntary: 0, involuntary: 0, byDepartment: {}, reasons: {}, costPerHire: 0, totalTurnoverCost: 0 },
+    training: { totalPrograms: 0, activeEnrollments: 0, completionRate: 0, averageScore: 0, popularPrograms: [], skillGaps: [] },
+    compensation: { averageSalary: 0, salaryRange: { min: 0, max: 0 }, byDepartment: {}, benefitsUtilization: 0, satisfaction: 0 },
+    satisfaction: { overall: 0, byCategory: {}, monthlyTrend: [], feedbackCount: 0 },
+    attendance: { averageAttendance: 0, lateArrivals: 0, earlyDepartures: 0, overtimeHours: 0, remoteWorkDays: 0, byDepartment: {} }
+  });
 
-  // Mock analytics data
-  const analyticsData = {
-    // Team Overview
-    teamOverview: {
-      totalEmployees: 25,
-      activeEmployees: 23,
-      newHires: 3,
-      terminations: 1,
-      retentionRate: 96.0,
-      averageTenure: 2.4,
-      genderDistribution: { male: 12, female: 13 },
-      ageDistribution: { '18-25': 2, '26-35': 8, '36-45': 10, '46-55': 4, '55+': 1 }
-    },
-
-    // Performance Metrics
-    performance: {
-      averageRating: 4.6,
-      topPerformers: 8,
-      needsImprovement: 2,
-      onTrack: 13,
-      ratingDistribution: { '5.0': 3, '4.5-4.9': 8, '4.0-4.4': 10, '3.5-3.9': 3, '3.0-3.4': 1 },
-      monthlyTrend: [4.2, 4.3, 4.4, 4.5, 4.6, 4.6]
-    },
-
-    // Department Performance
-    departmentPerformance: {
-      'Marketing': { avgRating: 4.7, headcount: 6, turnover: 0, satisfaction: 4.8 },
-      'Sales': { avgRating: 4.5, headcount: 5, turnover: 1, satisfaction: 4.6 },
-      'Design': { avgRating: 4.8, headcount: 4, turnover: 0, satisfaction: 4.9 },
-      'Engineering': { avgRating: 4.6, headcount: 6, turnover: 0, satisfaction: 4.7 },
-      'HR': { avgRating: 4.9, headcount: 2, turnover: 0, satisfaction: 5.0 },
-      'Finance': { avgRating: 4.4, headcount: 2, turnover: 0, satisfaction: 4.5 }
-    },
-
-    // Turnover Analysis
-    turnover: {
-      overallRate: 4.0,
-      voluntary: 2.0,
-      involuntary: 2.0,
-      byDepartment: { 'Sales': 20.0, 'Marketing': 0.0, 'Design': 0.0, 'Engineering': 0.0, 'HR': 0.0, 'Finance': 0.0 },
-      reasons: { 'Career Growth': 50, 'Relocation': 25, 'Performance': 25 },
-      costPerHire: 15000,
-      totalTurnoverCost: 60000
-    },
-
-    // Training & Development
-    training: {
-      totalPrograms: 12,
-      activeEnrollments: 18,
-      completionRate: 85.0,
-      averageScore: 88.0,
-      popularPrograms: ['Leadership Skills', 'Technical Training', 'Communication', 'Project Management'],
-      skillGaps: ['Advanced Analytics', 'AI/ML', 'Cybersecurity', 'Data Science']
-    },
-
-    // Compensation & Benefits
-    compensation: {
-      averageSalary: 72000,
-      salaryRange: { min: 45000, max: 120000 },
-      byDepartment: {
-        'Marketing': 68000,
-        'Sales': 75000,
-        'Design': 72000,
-        'Engineering': 85000,
-        'HR': 65000,
-        'Finance': 70000
-      },
-      benefitsUtilization: 92.0,
-      satisfaction: 4.3
-    },
-
-    // Employee Satisfaction
-    satisfaction: {
-      overall: 4.4,
-      byCategory: {
-        'Work Environment': 4.5,
-        'Compensation': 4.2,
-        'Career Growth': 4.6,
-        'Work-Life Balance': 4.3,
-        'Management': 4.4,
-        'Company Culture': 4.7
-      },
-      monthlyTrend: [4.1, 4.2, 4.3, 4.3, 4.4, 4.4],
-      feedbackCount: 156
-    },
-
-    // Time & Attendance
-    attendance: {
-      averageAttendance: 96.5,
-      lateArrivals: 2.1,
-      earlyDepartures: 1.8,
-      overtimeHours: 8.5,
-      remoteWorkDays: 2.3,
-      byDepartment: {
-        'Marketing': 97.2,
-        'Sales': 95.8,
-        'Design': 96.9,
-        'Engineering': 96.1,
-        'HR': 98.0,
-        'Finance': 96.8
+  // Load analytics data from Firestore
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      try {
+        setLoading(true);
+        const users = await firestoreService.getApprovedUsers();
+        const totalEmployees = users.length;
+        const activeEmployees = users.filter(u => u.status !== 'inactive').length;
+        
+        // Group by department
+        const deptCounts = {};
+        users.forEach(u => {
+          const dept = u.department || 'General';
+          deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+        });
+        
+        setAnalyticsData(prev => ({
+          ...prev,
+          teamOverview: { ...prev.teamOverview, totalEmployees, activeEmployees, retentionRate: totalEmployees > 0 ? (activeEmployees / totalEmployees) * 100 : 0 },
+          departmentPerformance: Object.keys(deptCounts).reduce((acc, dept) => ({ ...acc, [dept]: { headcount: deptCounts[dept], avgRating: 0, turnover: 0, satisfaction: 0 } }), {})
+        }));
+      } catch (error) {
+        console.error('Error loading analytics:', error);
+      } finally {
+        setLoading(false);
       }
-    }
-  };
+    };
+    loadAnalytics();
+  }, []);
 
   // Time range options
   const timeRanges = [

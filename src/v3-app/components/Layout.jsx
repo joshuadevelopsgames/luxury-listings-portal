@@ -6,7 +6,7 @@ import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
-import { modules, getBaseModuleIds } from '../../modules/registry';
+import { modules, getBaseModuleIds, getNavItemsForModules } from '../../modules/registry';
 import { 
   Home, 
   CheckSquare, 
@@ -142,64 +142,87 @@ const V3Layout = () => {
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
   };
 
-  // Navigation sections based on role/permissions
+  // Navigation sections based on role/permissions - properly categorized
   const getNavSections = () => {
     // Get base module IDs that all users should have access to
     const baseModules = getBaseModuleIds();
     
-    // When viewing as another user, show their permissions
+    // Determine which modules the user has access to
+    let enabledModules = [];
+    
     if (isViewingAs && viewAsPermissions.length > 0) {
-      return [{
-        title: 'Menu',
-        items: ['dashboard', ...viewAsPermissions.filter(id => allPages[id])]
-      }];
-    }
-
-    // System admins see everything organized (when not viewing as someone else)
-    if (isSystemAdmin && !isViewingAs) {
-      return [
-        {
-          title: 'Main',
-          items: ['dashboard', 'tasks']
-        },
-        {
-          title: 'My Work',
-          items: ['my-clients', 'time-off', 'instagram-reports']
-        },
-        {
-          title: 'Clients',
-          items: ['clients', 'client-packages', 'pending-clients', 'content-calendar', 'crm']
-        },
-        {
-          title: 'Team',
-          items: ['team', 'hr-calendar', 'hr-analytics']
-        },
-        {
-          title: 'Admin',
-          items: ['permissions', 'it-support']
-        },
-        {
-          title: 'Resources',
-          items: ['tutorials', 'resources']
-        }
-      ];
-    }
-
-    // Permission-based navigation - include base modules + user permissions
-    if (userPermissions.length > 0) {
+      enabledModules = viewAsPermissions;
+    } else if (isSystemAdmin && !isViewingAs) {
+      // System admins see all modules
+      enabledModules = Object.keys(modules);
+    } else if (userPermissions.length > 0) {
       // Combine base modules with user's additional permissions
-      const allUserModules = [...new Set([...baseModules, ...userPermissions])];
-      return [{
-        title: 'Menu',
-        items: ['dashboard', ...allUserModules.filter(id => allPages[id])]
-      }];
+      enabledModules = [...new Set([...baseModules, ...userPermissions])];
+    } else {
+      // Default: base modules only
+      enabledModules = baseModules;
     }
 
-    // Default: Show dashboard + base modules
-    return [{
-      title: 'Menu',
-      items: ['dashboard', ...baseModules.filter(id => allPages[id])]
-    }];
+    // Get navigation items grouped by section from the registry
+    const sectionedModules = getNavItemsForModules(enabledModules);
+    
+    // Define section display order and titles
+    const sectionOrder = ['Main', 'Clients', 'Team', 'Admin', 'Resources'];
+    const sectionTitles = {
+      'Main': 'Main',
+      'Clients': 'Clients',
+      'Team': 'Team',
+      'Admin': 'Admin',
+      'Resources': 'Resources'
+    };
+    
+    // Build ordered sections - Dashboard always first
+    const sections = [];
+    
+    // Always show Dashboard at the top
+    sections.push({
+      title: 'Dashboard',
+      items: ['dashboard']
+    });
+    
+    // Add sections in order, only if they have items
+    for (const sectionKey of sectionOrder) {
+      if (sectionedModules[sectionKey] && sectionedModules[sectionKey].length > 0) {
+        sections.push({
+          title: sectionTitles[sectionKey],
+          items: sectionedModules[sectionKey].map(item => item.id)
+        });
+      }
+    }
+    
+    // Add admin-only items for system admins
+    if (isSystemAdmin && !isViewingAs) {
+      // Add clients and pending-clients to Clients section if not already there
+      const clientsSection = sections.find(s => s.title === 'Clients');
+      if (clientsSection) {
+        if (!clientsSection.items.includes('clients')) {
+          clientsSection.items.unshift('clients');
+        }
+        if (!clientsSection.items.includes('pending-clients')) {
+          clientsSection.items.push('pending-clients');
+        }
+      }
+      
+      // Add permissions to Admin section
+      const adminSection = sections.find(s => s.title === 'Admin');
+      if (adminSection) {
+        if (!adminSection.items.includes('permissions')) {
+          adminSection.items.unshift('permissions');
+        }
+      } else {
+        sections.push({
+          title: 'Admin',
+          items: ['permissions']
+        });
+      }
+    }
+    
+    return sections;
   };
 
   const navSections = getNavSections();

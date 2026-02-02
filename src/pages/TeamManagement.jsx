@@ -45,147 +45,45 @@ const TeamManagement = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   const isHRManager = currentRole === 'hr_manager';
 
-  // Mock team data
-  const [teamMembers, setTeamMembers] = useState([
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@luxuryrealestate.com',
-      phone: '+1 (555) 123-4567',
-      department: 'Marketing',
-      position: 'Content Specialist',
-      startDate: '2023-01-15',
-      status: 'active',
-      avatar: 'SJ',
-      performance: {
-        rating: 4.8,
-        projectsCompleted: 24,
-        onTimeDelivery: 95,
-        clientSatisfaction: 4.9,
-        lastReview: '2024-01-15'
-      },
-      skills: ['Content Creation', 'SEO', 'Social Media', 'Analytics'],
-      certifications: ['Google Analytics', 'HubSpot Marketing'],
-      leaveBalance: {
-        vacation: { total: 20, used: 12, remaining: 8 },
-        sick: { total: 10, used: 3, remaining: 7 },
-        personal: { total: 5, used: 1, remaining: 4 }
-      },
-      salary: 65000,
-      manager: 'Joshua Mitchell'
-    },
-    {
-      id: 2,
-      name: 'Mike Chen',
-      email: 'mike.chen@luxuryrealestate.com',
-      phone: '+1 (555) 234-5678',
-      department: 'Sales',
-      position: 'Account Manager',
-      startDate: '2023-06-20',
-      status: 'active',
-      avatar: 'MC',
-      performance: {
-        rating: 4.6,
-        projectsCompleted: 18,
-        onTimeDelivery: 92,
-        clientSatisfaction: 4.7,
-        lastReview: '2024-01-10'
-      },
-      skills: ['Client Relations', 'Sales Strategy', 'CRM Management', 'Negotiation'],
-      certifications: ['Salesforce Admin', 'Sales Training'],
-      leaveBalance: {
-        vacation: { total: 20, used: 8, remaining: 12 },
-        sick: { total: 10, used: 1, remaining: 9 },
-        personal: { total: 5, used: 0, remaining: 5 }
-      },
-      salary: 70000,
-      manager: 'Joshua Mitchell'
-    },
-    {
-      id: 3,
-      name: 'Emma Rodriguez',
-      email: 'emma.rodriguez@luxuryrealestate.com',
-      phone: '+1 (555) 345-6789',
-      department: 'Design',
-      position: 'UI/UX Designer',
-      startDate: '2023-03-10',
-      status: 'active',
-      avatar: 'ER',
-      performance: {
-        rating: 4.9,
-        projectsCompleted: 31,
-        onTimeDelivery: 98,
-        clientSatisfaction: 5.0,
-        lastReview: '2024-01-20'
-      },
-      skills: ['UI Design', 'UX Research', 'Figma', 'Prototyping', 'User Testing'],
-      certifications: ['Google UX Design', 'Figma Advanced'],
-      leaveBalance: {
-        vacation: { total: 20, used: 15, remaining: 5 },
-        sick: { total: 10, used: 2, remaining: 8 },
-        personal: { total: 5, used: 2, remaining: 3 }
-      },
-      salary: 75000,
-      manager: 'Joshua Mitchell'
-    },
-    {
-      id: 4,
-      name: 'David Kim',
-      email: 'david.kim@luxuryrealestate.com',
-      phone: '+1 (555) 456-7890',
-      department: 'Engineering',
-      position: 'Frontend Developer',
-      startDate: '2022-09-10',
-      status: 'active',
-      avatar: 'DK',
-      performance: {
-        rating: 4.7,
-        projectsCompleted: 28,
-        onTimeDelivery: 94,
-        clientSatisfaction: 4.8,
-        lastReview: '2024-01-05'
-      },
-      skills: ['React', 'JavaScript', 'TypeScript', 'CSS', 'Git'],
-      certifications: ['AWS Developer', 'React Advanced'],
-      leaveBalance: {
-        vacation: { total: 20, used: 6, remaining: 14 },
-        sick: { total: 10, used: 0, remaining: 10 },
-        personal: { total: 5, used: 1, remaining: 4 }
-      },
-      salary: 80000,
-      manager: 'Joshua Mitchell'
-    },
-    {
-      id: 5,
-      name: 'Lisa Thompson',
-      email: 'lisa.thompson@luxuryrealestate.com',
-      phone: '+1 (555) 567-8901',
-      department: 'Marketing',
-      position: 'Social Media Manager',
-      startDate: '2023-08-15',
-      status: 'probation',
-      avatar: 'LT',
-      performance: {
-        rating: 4.2,
-        projectsCompleted: 12,
-        onTimeDelivery: 88,
-        clientSatisfaction: 4.3,
-        lastReview: '2024-01-25'
-      },
-      skills: ['Social Media', 'Content Creation', 'Analytics', 'Community Management'],
-      certifications: ['Meta Business Suite', 'Hootsuite'],
-      leaveBalance: {
-        vacation: { total: 20, used: 3, remaining: 17 },
-        sick: { total: 10, used: 1, remaining: 9 },
-        personal: { total: 5, used: 0, remaining: 5 }
-      },
-      salary: 60000,
-      manager: 'Joshua Mitchell'
-    }
-  ]);
+  // Team members loaded from Firestore
+  const [teamMembers, setTeamMembers] = useState([]);
+
+  // Load team members from Firestore
+  useEffect(() => {
+    const loadTeamMembers = async () => {
+      try {
+        setLoading(true);
+        const users = await firestoreService.getApprovedUsers();
+        const formattedMembers = users.map((user, index) => ({
+          id: user.id || index + 1,
+          name: user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+          email: user.email,
+          phone: user.phone || '',
+          department: user.department || 'General',
+          position: user.role || user.position || 'Team Member',
+          startDate: user.createdAt?.toDate?.()?.toISOString?.()?.split('T')[0] || '',
+          status: user.status || 'active',
+          avatar: (user.displayName || user.email || '').substring(0, 2).toUpperCase(),
+          performance: user.performance || { rating: 0, projectsCompleted: 0, onTimeDelivery: 0, clientSatisfaction: 0, lastReview: null },
+          skills: user.skills || [],
+          certifications: user.certifications || [],
+          leaveBalance: user.leaveBalances || { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 10, used: 0, remaining: 10 }, personal: { total: 3, used: 0, remaining: 3 } },
+          salary: user.salary || 0,
+          manager: user.manager || ''
+        }));
+        setTeamMembers(formattedMembers);
+      } catch (error) {
+        console.error('Error loading team members:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTeamMembers();
+  }, []);
 
   // Departments for filtering
   const departments = ['all', 'Marketing', 'Sales', 'Design', 'Engineering', 'HR'];

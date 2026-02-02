@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { firestoreService } from '../../services/firestoreService';
 import { 
   BookOpen, 
   CheckCircle2, 
@@ -20,6 +21,25 @@ import {
 } from 'lucide-react';
 
 const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRole }) => {
+  const [hrMetrics, setHrMetrics] = useState({ pendingLeaveRequests: 0, teamAbsencesToday: 0, teamSatisfaction: 0 });
+
+  // Load real HR metrics for HR managers
+  useEffect(() => {
+    const loadHrMetrics = async () => {
+      if (currentRole === 'hr_manager') {
+        try {
+          const requests = await firestoreService.getAllLeaveRequests();
+          const pending = requests.filter(r => r.status === 'pending').length;
+          const today = new Date().toISOString().split('T')[0];
+          const absences = requests.filter(r => r.status === 'approved' && r.startDate <= today && r.endDate >= today).length;
+          setHrMetrics({ pendingLeaveRequests: pending, teamAbsencesToday: absences, teamSatisfaction: 0 });
+        } catch (error) {
+          console.error('Error loading HR metrics:', error);
+        }
+      }
+    };
+    loadHrMetrics();
+  }, [currentRole]);
   const completedTutorials = progress.filter(p => p.status === 'completed').length;
   const inProgressTutorials = progress.filter(p => p.status === 'in_progress').length;
   const pendingTasks = todaysTasks.filter(task => task.status !== 'completed').length;
@@ -228,12 +248,7 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
 
   const roleContent = getRoleSpecificContent();
 
-  // HR-specific metrics
-  const hrMetrics = {
-    pendingLeaveRequests: 3, // Mock data - would come from actual leave request system
-    teamAbsencesToday: 2, // Mock data - team members out today
-    teamSatisfaction: 4.4, // Mock data - out of 5.0
-  };
+  // HR-specific metrics are now loaded from state via useEffect
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
