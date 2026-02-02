@@ -657,21 +657,21 @@ const ITSupportPage = () => {
 
       {/* Submit Support Request Modal */}
       {showRequestModal && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Submit Support Request</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowRequestModal(false)}>
-                  <X className="w-5 h-5" />
-                </Button>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Submit Support Request</h2>
+                <button onClick={() => setShowRequestModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                  <X className="w-5 h-5 text-[#86868b]" />
+                </button>
               </div>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               {/* Issue Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   Issue Title *
                 </label>
                 <input
@@ -679,17 +679,17 @@ const ITSupportPage = () => {
                   value={supportForm.title}
                   onChange={(e) => handleFormChange('title', e.target.value)}
                   placeholder="Brief summary of the issue"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                   required
                 />
               </div>
 
               {/* Category Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-3">
                   Category *
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {categories.map((cat) => {
                     const Icon = cat.icon;
                     return (
@@ -697,14 +697,14 @@ const ITSupportPage = () => {
                         key={cat.value}
                         type="button"
                         onClick={() => handleFormChange('category', cat.value)}
-                        className={`p-4 border-2 rounded-lg text-left transition-all min-h-[80px] flex flex-col ${
+                        className={`p-3 rounded-xl text-left transition-all min-h-[70px] flex flex-col ${
                           supportForm.category === cat.value 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200 hover:border-gray-300'
+                            ? 'bg-[#0071e3]/10 ring-2 ring-[#0071e3]' 
+                            : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15'
                         }`}
                       >
-                        <Icon className={`w-5 h-5 text-${cat.color}-600 mb-2`} />
-                        <p className="text-xs font-medium leading-tight">{cat.label}</p>
+                        <Icon className={`w-5 h-5 mb-2 ${supportForm.category === cat.value ? 'text-[#0071e3]' : 'text-[#86868b]'}`} />
+                        <p className={`text-[11px] font-medium leading-tight ${supportForm.category === cat.value ? 'text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white'}`}>{cat.label}</p>
                       </button>
                     );
                   })}
@@ -713,19 +713,19 @@ const ITSupportPage = () => {
 
               {/* Priority */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   Priority *
                 </label>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 gap-2">
                   {priorities.map((p) => (
                     <button
                       key={p.value}
                       type="button"
                       onClick={() => handleFormChange('priority', p.value)}
-                      className={`px-4 py-2 border-2 rounded-lg text-sm font-medium transition-all ${
+                      className={`px-3 py-2 rounded-xl text-[12px] font-medium transition-all ${
                         supportForm.priority === p.value 
-                          ? 'border-blue-500 ' + p.color
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          ? 'bg-[#0071e3] text-white'
+                          : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
                       }`}
                     >
                       {p.label}
@@ -736,7 +736,7 @@ const ITSupportPage = () => {
 
               {/* Page URL */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   <LinkIcon className="w-4 h-4 inline mr-1" />
                   Page URL (Where the issue is happening)
                 </label>
@@ -745,14 +745,14 @@ const ITSupportPage = () => {
                   value={supportForm.pageUrl}
                   onChange={(e) => handleFormChange('pageUrl', e.target.value)}
                   placeholder="https://smmluxurylistings.info/dashboard"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                 />
-                <p className="text-xs text-gray-500 mt-1">Copy and paste the URL where you're experiencing the issue</p>
+                <p className="text-[11px] text-[#86868b] mt-1">Copy and paste the URL where you're experiencing the issue</p>
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   Description *
                 </label>
                 <textarea
@@ -760,14 +760,14 @@ const ITSupportPage = () => {
                   onChange={(e) => handleFormChange('description', e.target.value)}
                   rows={5}
                   placeholder="Please describe the issue in detail. What were you trying to do? What happened? What did you expect to happen?"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
                   required
                 />
               </div>
 
               {/* Screenshot Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   <ImageIcon className="w-4 h-4 inline mr-1" />
                   Screenshot (Optional)
                 </label>
@@ -780,12 +780,12 @@ const ITSupportPage = () => {
                       <img 
                         src={previewImage} 
                         alt="Preview" 
-                        className="max-h-48 rounded-lg border border-gray-300"
+                        className="max-h-48 rounded-xl border border-black/10 dark:border-white/10"
                       />
                       <button
                         type="button"
                         onClick={handleRemovePreview}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        className="absolute top-2 right-2 bg-[#ff3b30] text-white rounded-full p-1 hover:bg-[#e5342b]"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -793,21 +793,21 @@ const ITSupportPage = () => {
 
                     {/* Uploading state */}
                     {uploading && (
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                          <p className="text-sm text-blue-800">Uploading to imgbb automatically...</p>
+                      <div className="p-4 bg-[#0071e3]/5 border border-[#0071e3]/20 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin"></div>
+                          <p className="text-[13px] text-[#0071e3]">Uploading to imgbb automatically...</p>
                         </div>
                       </div>
                     )}
 
                     {/* Success state */}
                     {!uploading && supportForm.screenshotUrl && !uploadError && (
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm font-medium text-green-900 mb-1">
+                      <div className="p-4 bg-[#34c759]/5 border border-[#34c759]/20 rounded-xl">
+                        <p className="text-[13px] font-medium text-[#34c759] mb-1">
                           ✅ Uploaded successfully!
                         </p>
-                        <p className="text-xs text-green-700 break-all">
+                        <p className="text-[11px] text-[#34c759]/80 break-all">
                           {supportForm.screenshotUrl}
                         </p>
                       </div>
@@ -816,21 +816,21 @@ const ITSupportPage = () => {
                     {/* Error state - show manual upload option */}
                     {!uploading && uploadError && !supportForm.screenshotUrl && (
                       <div className="space-y-3">
-                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                          <p className="text-sm font-medium text-yellow-900 mb-2">
+                        <div className="p-4 bg-[#ff9500]/5 border border-[#ff9500]/20 rounded-xl">
+                          <p className="text-[13px] font-medium text-[#ff9500] mb-2">
                             ⚠️ Automatic upload failed - Please upload manually:
                           </p>
                           <div className="flex gap-2 mb-2">
-                            <Button
+                            <button
                               type="button"
                               onClick={handleOpenImgbb}
-                              className="bg-green-600 hover:bg-green-700 text-sm"
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-colors"
                             >
-                              <ExternalLink className="w-4 h-4 mr-1" />
+                              <ExternalLink className="w-4 h-4" />
                               Open imgbb Upload
-                            </Button>
+                            </button>
                           </div>
-                          <p className="text-xs text-yellow-700">
+                          <p className="text-[11px] text-[#ff9500]/80">
                             Upload your screenshot on imgbb.com, then paste the URL below ⬇️
                           </p>
                         </div>
@@ -840,7 +840,7 @@ const ITSupportPage = () => {
                           value={supportForm.screenshotUrl}
                           onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
                           placeholder="Paste the image URL here"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                         />
                       </div>
                     )}
@@ -853,17 +853,17 @@ const ITSupportPage = () => {
                       onDragLeave={handleDrag}
                       onDragOver={handleDrag}
                       onDrop={handleDrop}
-                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
                         dragActive 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-[#0071e3] bg-[#0071e3]/5' 
+                          : 'border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20'
                       }`}
                     >
-                      <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-gray-700 mb-1">
+                      <ImageIcon className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
+                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">
                         Drag & drop your screenshot here
                       </p>
-                      <p className="text-xs text-gray-500 mb-3">or</p>
+                      <p className="text-[11px] text-[#86868b] mb-3">or</p>
                       <label className="inline-block">
                         <input
                           type="file"
@@ -871,24 +871,24 @@ const ITSupportPage = () => {
                           onChange={handleFileSelect}
                           className="hidden"
                         />
-                        <span className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer inline-block">
+                        <span className="px-4 py-2 bg-[#0071e3] text-white text-[13px] font-medium rounded-xl hover:bg-[#0077ed] cursor-pointer inline-block">
                           Browse Files
                         </span>
                       </label>
-                      <p className="text-xs text-gray-500 mt-3">
+                      <p className="text-[11px] text-[#86868b] mt-3">
                         PNG, JPG, GIF up to 10MB
                       </p>
                     </div>
 
                     {/* Alternative: paste URL directly */}
                     <div className="mt-3">
-                      <p className="text-xs text-gray-600 mb-2">Or paste an image URL directly:</p>
+                      <p className="text-[11px] text-[#86868b] mb-2">Or paste an image URL directly:</p>
                       <input
                         type="url"
                         value={supportForm.screenshotUrl}
                         onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
                         placeholder="https://i.ibb.co/example.png"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        className="w-full h-11 px-4 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                       />
                     </div>
                   </>
@@ -896,23 +896,23 @@ const ITSupportPage = () => {
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                <Button
+              <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setShowRequestModal(false)}
                   disabled={submitting}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
                 >
                   Cancel
-                </Button>
-                <Button 
+                </button>
+                <button 
                   type="submit" 
-                  className="bg-blue-600 hover:bg-blue-700"
                   disabled={submitting}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
                 >
-                  <Send className="w-4 h-4 mr-2" />
+                  <Send className="w-4 h-4" />
                   {submitting ? 'Submitting...' : 'Submit Request'}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
@@ -922,22 +922,22 @@ const ITSupportPage = () => {
 
       {/* Ticket Details Modal */}
       {selectedTicket && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="border-b border-gray-200 px-6 py-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Ticket Details</h2>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedTicket(null)}>
-                  <X className="w-5 h-5" />
-                </Button>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Ticket Details</h2>
+                <button onClick={() => setSelectedTicket(null)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                  <X className="w-5 h-5 text-[#86868b]" />
+                </button>
               </div>
             </div>
             
             <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{selectedTicket.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{selectedTicket.title}</h3>
+                  <p className="text-[12px] text-[#86868b] mt-1">
                     Submitted by {selectedTicket.requesterName} on{' '}
                     {selectedTicket.submittedDate?.toDate 
                       ? format(selectedTicket.submittedDate.toDate(), 'MMMM dd, yyyy')
@@ -945,31 +945,36 @@ const ITSupportPage = () => {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Badge className={getStatusColor(selectedTicket.status)}>
+                  <span className={`text-[11px] px-2 py-1 rounded-lg font-medium flex items-center ${getStatusColor(selectedTicket.status)}`}>
                     {getStatusIcon(selectedTicket.status)}
                     <span className="ml-1 capitalize">{selectedTicket.status?.replace('_', ' ')}</span>
-                  </Badge>
-                  <Badge className={priorities.find(p => p.value === selectedTicket.priority)?.color}>
+                  </span>
+                  <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${
+                    selectedTicket.priority === 'urgent' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
+                    selectedTicket.priority === 'high' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
+                    selectedTicket.priority === 'medium' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
+                    'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                  }`}>
                     {priorities.find(p => p.value === selectedTicket.priority)?.label}
-                  </Badge>
+                  </span>
                 </div>
               </div>
 
-              <div className="pt-4 border-t">
-                <label className="text-sm font-medium text-gray-600">Category</label>
-                <p className="text-gray-900 mt-1 capitalize">
+              <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                <label className="text-[12px] font-medium text-[#86868b]">Category</label>
+                <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1 capitalize">
                   {categories.find(c => c.value === selectedTicket.category)?.label}
                 </p>
               </div>
 
               {selectedTicket.pageUrl && (
-                <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-gray-600">Page URL</label>
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[12px] font-medium text-[#86868b]">Page URL</label>
                   <a 
                     href={selectedTicket.pageUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline mt-1 flex items-center space-x-1"
+                    className="text-[13px] text-[#0071e3] hover:underline mt-1 flex items-center gap-1"
                   >
                     <span className="break-all">{selectedTicket.pageUrl}</span>
                     <ExternalLink className="w-4 h-4 flex-shrink-0" />
@@ -977,19 +982,19 @@ const ITSupportPage = () => {
                 </div>
               )}
 
-              <div className="pt-4 border-t">
-                <label className="text-sm font-medium text-gray-600">Description</label>
-                <p className="text-gray-900 mt-1 whitespace-pre-wrap">{selectedTicket.description}</p>
+              <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                <label className="text-[12px] font-medium text-[#86868b]">Description</label>
+                <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1 whitespace-pre-wrap">{selectedTicket.description}</p>
               </div>
 
               {selectedTicket.screenshotUrl && (
-                <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-gray-600 mb-2 block">Screenshot</label>
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[12px] font-medium text-[#86868b] mb-2 block">Screenshot</label>
                   <a 
                     href={selectedTicket.screenshotUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline flex items-center space-x-1"
+                    className="text-[13px] text-[#0071e3] hover:underline flex items-center gap-1"
                   >
                     <ImageIcon className="w-4 h-4" />
                     <span>View Screenshot</span>
@@ -999,11 +1004,11 @@ const ITSupportPage = () => {
               )}
 
               {selectedTicket.resolvedDate && (
-                <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-gray-600">
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[12px] font-medium text-[#86868b]">
                     {selectedTicket.status === 'closed' ? 'Closed' : 'Resolved'}
                   </label>
-                  <p className="text-gray-900 mt-1">
+                  <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1">
                     {selectedTicket.resolvedDate?.toDate 
                       ? format(selectedTicket.resolvedDate.toDate(), 'MMMM dd, yyyy')
                       : format(new Date(selectedTicket.resolvedDate), 'MMMM dd, yyyy')}
@@ -1013,19 +1018,19 @@ const ITSupportPage = () => {
               )}
 
               {selectedTicket.notes && (
-                <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-gray-600">
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[12px] font-medium text-[#86868b]">
                     {selectedTicket.status === 'closed' ? 'Closing Reason' : 'IT Support Notes'}
                   </label>
-                  <p className="text-gray-900 mt-1 bg-blue-50 border border-blue-200 p-3 rounded">
+                  <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1 bg-[#0071e3]/5 border border-[#0071e3]/20 p-3 rounded-xl">
                     {selectedTicket.notes}
                   </p>
                 </div>
               )}
 
               {/* Comments Section */}
-              <div className="pt-4 border-t">
-                <label className="text-sm font-medium text-gray-600 mb-3 block">
+              <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                <label className="text-[12px] font-medium text-[#86868b] mb-3 block">
                   💬 Comments ({ticketComments.length})
                 </label>
                 
@@ -1068,16 +1073,15 @@ const ITSupportPage = () => {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder={isITSupport ? "Reply to user..." : "Add a comment..."}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="flex-1 h-10 px-4 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                   />
-                  <Button 
+                  <button 
                     type="submit" 
-                    size="sm"
                     disabled={!newComment.trim()}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="px-3 py-2 rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
-                  </Button>
+                  </button>
                 </form>
               </div>
             </div>
@@ -1088,24 +1092,24 @@ const ITSupportPage = () => {
 
       {/* Close Ticket Dialog */}
       {showCloseDialog && ticketToClose && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h2 className="text-xl font-semibold text-gray-900">Close Ticket</h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Close Ticket</h2>
             </div>
             
             <div className="p-6 space-y-4">
               <div>
-                <p className="text-sm text-gray-700 mb-4">
+                <p className="text-[13px] text-[#86868b] mb-4">
                   Are you sure you want to close this ticket?
                 </p>
-                <p className="text-sm font-medium text-gray-900 mb-2">
+                <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   {ticketToClose.title}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   Closing Reason (Optional)
                 </label>
                 <textarea
@@ -1113,30 +1117,30 @@ const ITSupportPage = () => {
                   onChange={(e) => setClosingReason(e.target.value)}
                   rows={3}
                   placeholder="Explain why this ticket is being closed (the user will see this)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-4 py-3 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-[11px] text-[#86868b] mt-1">
                   Examples: "Issue resolved via email", "Duplicate ticket", "User cancelled request"
                 </p>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                <Button
-                  variant="outline"
+              <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+                <button
                   onClick={() => {
                     setShowCloseDialog(false);
                     setTicketToClose(null);
                     setClosingReason('');
                   }}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >
                   Cancel
-                </Button>
-                <Button 
+                </button>
+                <button 
                   onClick={handleConfirmClose}
-                  className="bg-gray-600 hover:bg-gray-700"
+                  className="px-4 py-2.5 rounded-xl bg-[#86868b] text-white text-[14px] font-medium hover:bg-[#6e6e73] transition-colors"
                 >
                   Close Ticket
-                </Button>
+                </button>
               </div>
             </div>
           </div>
