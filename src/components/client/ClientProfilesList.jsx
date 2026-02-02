@@ -950,9 +950,7 @@ const ClientProfilesList = () => {
                           className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                         >
                           <option value="Standard">Standard</option>
-                          <option value="Premium">Premium</option>
-                          <option value="Enterprise">Enterprise</option>
-                          <option value="Custom">Custom</option>
+                          <option value="Bundled">Bundled</option>
                         </select>
                       </div>
                       
