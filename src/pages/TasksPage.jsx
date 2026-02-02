@@ -62,7 +62,7 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
             type="checkbox"
             checked={isSelected}
             onChange={() => onToggleSelect(task.id)}
-            className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            className="h-5 w-5 rounded-md border-black/20 dark:border-white/20 text-[#0071e3] focus:ring-[#0071e3] cursor-pointer accent-[#0071e3]"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
@@ -1023,7 +1023,7 @@ const TasksPage = () => {
             <button
               key={tab.value}
               onClick={() => setActiveFilter(tab.value)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
                 activeFilter === tab.value
                   ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
                   : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
@@ -1037,7 +1037,7 @@ const TasksPage = () => {
         
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex items-center bg-black/5 dark:bg-white/10 rounded-lg overflow-hidden">
+          <div className="flex items-center bg-black/5 dark:bg-white/10 rounded-xl overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 transition-colors ${

@@ -1,8 +1,4 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Checkbox } from '../ui/checkbox';
 import { DailyTask } from '../../entities/DailyTask';
 import { 
   Clock, 
@@ -81,30 +77,15 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
   const getPriorityIcon = (priority) => {
     switch (priority) {
       case 'urgent':
-        return <Zap className="w-4 h-4 text-red-500" />;
+        return <Zap className="w-4 h-4 text-[#ff3b30]" />;
       case 'high':
-        return <AlertTriangle className="w-4 h-4 text-orange-500" />;
+        return <AlertTriangle className="w-4 h-4 text-[#ff9500]" />;
       case 'medium':
-        return <TrendingUp className="w-4 h-4 text-blue-500" />;
+        return <TrendingUp className="w-4 h-4 text-[#0071e3]" />;
       case 'low':
-        return <Clock className="w-4 h-4 text-gray-500" />;
+        return <Clock className="w-4 h-4 text-[#86868b]" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'urgent':
-        return 'border-red-300 bg-red-50 text-red-700';
-      case 'high':
-        return 'border-orange-300 bg-orange-50 text-orange-700';
-      case 'medium':
-        return 'border-blue-300 bg-blue-50 text-blue-700';
-      case 'low':
-        return 'border-gray-300 bg-gray-50 text-gray-700';
-      default:
-        return 'border-gray-300 bg-gray-50 text-gray-700';
+        return <Clock className="w-4 h-4 text-[#86868b]" />;
     }
   };
 
@@ -124,29 +105,13 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
-        return 'border-green-300 bg-green-50 text-green-700';
+        return 'bg-[#34c759]/10 text-[#34c759]';
       case 'in_progress':
-        return 'border-blue-300 bg-blue-50 text-blue-700';
+        return 'bg-[#0071e3]/10 text-[#0071e3]';
       case 'pending':
-        return 'border-gray-300 bg-gray-50 text-gray-700';
+        return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
       default:
-        return 'border-gray-300 bg-gray-50 text-gray-700';
-    }
-  };
-
-  const getDueDateStatus = (dueDate) => {
-    if (!dueDate) return { text: 'No due date', color: 'text-gray-500' };
-    
-    if (isTodayLocal(dueDate)) {
-      return { text: 'Due today', color: 'text-orange-600' };
-    } else if (isPastLocal(dueDate)) {
-      return { text: 'Overdue', color: 'text-red-600' };
-    } else {
-      const taskDate = parseLocalDate(dueDate);
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = monthNames[taskDate.getMonth()];
-      const day = taskDate.getDate();
-      return { text: `Due ${month} ${day}`, color: 'text-gray-600' };
+        return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
     }
   };
 
@@ -155,21 +120,20 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
   };
 
   const isCompleted = task.status === 'completed';
-  const dueDateStatus = getDueDateStatus(task.due_date);
   const isOverdue = task.due_date && isPastLocal(task.due_date) && !isTodayLocal(task.due_date) && task.status !== 'completed';
 
   return (
-    <Card 
-      className={`h-full transition-all duration-200 hover:shadow-md cursor-pointer ${
+    <div 
+      className={`h-full p-4 rounded-2xl transition-all duration-200 cursor-pointer border ${
         isCompleted 
-          ? 'border-green-200 bg-green-50/30' 
+          ? 'bg-[#34c759]/5 border-[#34c759]/20' 
           : isOverdue
-          ? 'border-red-200 bg-red-50/30'
-          : 'border-gray-200 hover:border-blue-300'
+          ? 'bg-[#ff3b30]/5 border-[#ff3b30]/20'
+          : 'bg-white dark:bg-[#1d1d1f] border-black/5 dark:border-white/10 hover:border-[#0071e3]/30 hover:shadow-lg'
       }`}
       onClick={() => onEdit(task)}
     >
-      <CardHeader className="pb-3">
+      <div className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             {editingTitle ? (
@@ -179,40 +143,52 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
                 onChange={(e) => setEditedTitle(e.target.value)}
                 onBlur={handleTitleSave}
                 onKeyPress={(e) => e.key === 'Enter' && handleTitleSave()}
-                className="text-lg font-semibold mb-2 w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="text-[15px] font-semibold mb-2 w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                 autoFocus
               />
             ) : (
-              <CardTitle 
-                className={`text-lg font-semibold mb-2 line-clamp-2 cursor-text hover:bg-gray-50 px-2 py-1 rounded ${
-              isCompleted ? 'line-through text-gray-500' : 'text-gray-900'
+              <h3 
+                className={`text-[15px] font-semibold mb-2 line-clamp-2 cursor-text hover:bg-black/5 dark:hover:bg-white/5 px-2 py-1 rounded-lg transition-colors ${
+              isCompleted ? 'line-through text-[#86868b]' : 'text-[#1d1d1f] dark:text-white'
                 }`}
                 onDoubleClick={() => canEdit && setEditingTitle(true)}
                 title="Double-click to edit"
               >
               {task.title}
-            </CardTitle>
+            </h3>
             )}
             
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               {/* Todoist-style Priority Flag */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${task.priorityFlag.bgColor}`}>
-                <Flag className={`w-3.5 h-3.5 ${task.priorityFlag.color} fill-current`} />
-                <span className={`text-xs font-semibold ${task.priorityFlag.color}`}>
-                  {task.priorityFlag.label}
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg ${
+                task.priority === 'urgent' ? 'bg-[#ff3b30]/10' :
+                task.priority === 'high' ? 'bg-[#ff9500]/10' :
+                task.priority === 'medium' ? 'bg-[#0071e3]/10' :
+                'bg-black/5 dark:bg-white/10'
+              }`}>
+                <Flag className={`w-3.5 h-3.5 ${
+                  task.priority === 'urgent' ? 'text-[#ff3b30]' :
+                  task.priority === 'high' ? 'text-[#ff9500]' :
+                  task.priority === 'medium' ? 'text-[#0071e3]' :
+                  'text-[#86868b]'
+                } fill-current`} />
+                <span className={`text-[11px] font-semibold ${
+                  task.priority === 'urgent' ? 'text-[#ff3b30]' :
+                  task.priority === 'high' ? 'text-[#ff9500]' :
+                  task.priority === 'medium' ? 'text-[#0071e3]' :
+                  'text-[#86868b]'
+                }`}>
+                  {task.priorityFlag?.label || task.priority}
                 </span>
               </div>
               
-              <Badge 
-                variant="outline" 
-                className={`text-xs font-medium ${getStatusColor(task.status)}`}
-              >
+              <span className={`text-[11px] font-medium px-2 py-1 rounded-lg ${getStatusColor(task.status)}`}>
                 {getStatusText(task.status)}
-              </Badge>
+              </span>
               
               {/* Show subtask progress if exists */}
               {task.subtasks && task.subtasks.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-gray-600">
+                <div className="flex items-center gap-1 text-[11px] text-[#86868b]">
                   <CheckSquare className="w-3 h-3" />
                   <span>{task.subtaskProgress}</span>
                 </div>
@@ -220,7 +196,7 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
               
               {/* Show comment count if exists */}
               {task.comments && task.comments.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-gray-600">
+                <div className="flex items-center gap-1 text-[11px] text-[#86868b]">
                   <MessageSquare className="w-3 h-3" />
                   <span>{task.comments.length}</span>
                 </div>
@@ -228,7 +204,7 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
               
               {/* Show recurring indicator */}
               {task.recurring && (
-                <div className="flex items-center gap-1 text-xs text-green-600">
+                <div className="flex items-center gap-1 text-[11px] text-[#34c759]">
                   <Repeat className="w-3 h-3" />
                   <span>{task.recurring.pattern}</span>
                 </div>
@@ -236,7 +212,7 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
               
               {/* Show reminder indicator */}
               {task.reminders && task.reminders.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-blue-600">
+                <div className="flex items-center gap-1 text-[11px] text-[#0071e3]">
                   <Bell className="w-3 h-3" />
                   <span>{task.reminders.length}</span>
                 </div>
@@ -245,39 +221,37 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
           </div>
           
           <div className="relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-10 w-10 p-0"
+            <button
+              className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowActions(!showActions);
               }}
             >
-              <MoreHorizontal className="w-6 h-6" />
-            </Button>
+              <MoreHorizontal className="w-5 h-5 text-[#86868b]" />
+            </button>
             
             {showActions && (
-              <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+              <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 rounded-xl shadow-lg z-10 overflow-hidden">
                 <div className="py-1">
                   <button
-                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-2"
                     onClick={() => {
                       setShowActions(false);
                       onEdit(task);
                     }}
                   >
-                    <Edit className="w-3 h-3" />
+                    <Edit className="w-3.5 h-3.5" />
                     Edit
                   </button>
                   <button
-                    className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-[13px] text-[#ff3b30] hover:bg-[#ff3b30]/5 flex items-center gap-2"
                     onClick={() => {
                       setShowActions(false);
                       onDelete(task);
                     }}
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3.5 h-3.5" />
                     Delete
                   </button>
                 </div>
@@ -285,22 +259,22 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
             )}
           </div>
         </div>
-      </CardHeader>
+      </div>
       
-      <CardContent className="space-y-4">
+      <div className="space-y-3">
         {editingDescription ? (
           <textarea
             value={editedDescription}
             onChange={(e) => setEditedDescription(e.target.value)}
             onBlur={handleDescriptionSave}
-            className="text-sm w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-[13px] w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
             rows={3}
             autoFocus
           />
         ) : (
           <p 
-            className={`text-sm line-clamp-3 cursor-text hover:bg-gray-50 px-2 py-1 rounded ${
-          isCompleted ? 'text-gray-400' : 'text-gray-600'
+            className={`text-[13px] line-clamp-3 cursor-text hover:bg-black/5 dark:hover:bg-white/5 px-2 py-1 rounded-lg transition-colors ${
+          isCompleted ? 'text-[#86868b]/60' : 'text-[#86868b]'
             }`}
             onDoubleClick={() => canEdit && setEditingDescription(true)}
             title="Double-click to edit"
@@ -309,35 +283,43 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
         </p>
         )}
         
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-[11px]">
             {/* Contextual date display (Todoist-style) */}
             {task.formattedDueDate ? (
               <div className="flex items-center gap-1.5">
-                <Calendar className={`w-3 h-3 ${task.formattedDueDate.color}`} />
-                <span className={`font-medium ${task.formattedDueDate.color}`}>
+                <Calendar className={`w-3 h-3 ${
+                  task.formattedDueDate.color?.includes('red') ? 'text-[#ff3b30]' :
+                  task.formattedDueDate.color?.includes('orange') ? 'text-[#ff9500]' :
+                  'text-[#86868b]'
+                }`} />
+                <span className={`font-medium ${
+                  task.formattedDueDate.color?.includes('red') ? 'text-[#ff3b30]' :
+                  task.formattedDueDate.color?.includes('orange') ? 'text-[#ff9500]' :
+                  'text-[#86868b]'
+                }`}>
                   {task.formattedDueDate.text}
             </span>
               </div>
             ) : (
-              <span className="text-gray-400">No due date</span>
+              <span className="text-[#86868b]/60">No due date</span>
             )}
             {task.estimated_time && (
-              <span className="text-gray-500">
+              <span className="text-[#86868b]">
                 ⏱ {task.formattedTime}
               </span>
             )}
           </div>
           
           {task.project && (
-            <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
-              <Target className="w-3 h-3 text-indigo-600" />
+            <div className="flex items-center gap-2 text-[11px] text-[#1d1d1f] dark:text-white font-medium">
+              <Target className="w-3 h-3 text-[#5856d6]" />
               <span>{task.project}{task.section ? ` / ${task.section}` : ''}</span>
             </div>
           )}
           
           {!task.project && task.category && (
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-[11px] text-[#86868b]">
               <Target className="w-3 h-3" />
             <span>Category: {task.category}</span>
           </div>
@@ -347,19 +329,18 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
           {task.labels && task.labels.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
               {task.labels.map((label, index) => (
-                <Badge 
+                <span 
                   key={index} 
-                  variant="outline"
-                  className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 border-purple-200"
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-[#af52de]/10 text-[#af52de]"
                 >
                   {label}
-                </Badge>
+                </span>
               ))}
             </div>
           )}
           
           {task.assignedBy && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-[11px] text-[#86868b]">
               <span>Assigned by: {task.assignedBy}</span>
             </div>
           )}
@@ -367,31 +348,32 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
         
         {/* Subtasks display */}
         {task.subtasks && task.subtasks.length > 0 && (
-          <div className="pt-3 border-t border-gray-100">
-            <div className="text-xs font-medium text-gray-600 mb-2 flex items-center justify-between">
+          <div className="pt-3 border-t border-black/5 dark:border-white/10">
+            <div className="text-[11px] font-medium text-[#86868b] mb-2 flex items-center justify-between">
               <span>Subtasks ({task.subtaskProgress})</span>
-              <div className="flex-1 mx-2 bg-gray-200 rounded-full h-1.5">
+              <div className="flex-1 mx-2 bg-black/5 dark:bg-white/10 rounded-full h-1.5">
                 <div 
-                  className="bg-blue-600 h-1.5 rounded-full transition-all"
+                  className="bg-[#0071e3] h-1.5 rounded-full transition-all"
                   style={{ width: `${task.subtaskPercentage}%` }}
                 ></div>
               </div>
             </div>
             <div className="space-y-1.5 max-h-24 overflow-y-auto">
               {task.subtasks.slice(0, 3).map((subtask) => (
-                <div key={subtask.id} className="flex items-center gap-2 text-xs">
-                  <Checkbox
+                <div key={subtask.id} className="flex items-center gap-2 text-[11px]">
+                  <input
+                    type="checkbox"
                     checked={subtask.completed}
                     disabled
-                    className="h-3 w-3"
+                    className="h-3 w-3 rounded accent-[#0071e3]"
                   />
-                  <span className={subtask.completed ? 'line-through text-gray-400' : 'text-gray-600'}>
+                  <span className={subtask.completed ? 'line-through text-[#86868b]/60' : 'text-[#86868b]'}>
                     {subtask.text}
                   </span>
                 </div>
               ))}
               {task.subtasks.length > 3 && (
-                <p className="text-xs text-gray-400">
+                <p className="text-[11px] text-[#86868b]/60">
                   +{task.subtasks.length - 3} more subtasks...
                 </p>
               )}
@@ -403,54 +385,53 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
         <div className="flex gap-2 pt-2">
           {!isCompleted ? (
             <>
-              <Button
-                onClick={() => handleStatusChange('in_progress')}
-                variant={task.status === 'in_progress' ? 'default' : 'outline'}
-                size="sm"
-                className="flex-1"
+              <button
+                onClick={(e) => { e.stopPropagation(); handleStatusChange('in_progress'); }}
                 disabled={task.status === 'in_progress'}
+                className={`flex-1 py-2 px-3 rounded-xl text-[12px] font-medium transition-colors ${
+                  task.status === 'in_progress' 
+                    ? 'bg-[#0071e3] text-white' 
+                    : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                } disabled:opacity-50`}
               >
                 {task.status === 'in_progress' ? 'In Progress' : 'Start'}
-              </Button>
+              </button>
               
-              <Button
-                onClick={() => handleStatusChange('completed')}
-                variant="outline"
-                size="sm"
-                className="flex-1"
+              <button
+                onClick={(e) => { e.stopPropagation(); handleStatusChange('completed'); }}
+                className="flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-xl bg-[#34c759]/10 text-[#34c759] text-[12px] font-medium hover:bg-[#34c759]/20 transition-colors"
               >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 Complete
-              </Button>
+              </button>
             </>
           ) : (
-            <Button
-              onClick={() => handleStatusChange('pending')}
-              variant="outline"
-              size="sm"
-              className="flex-1"
+            <button
+              onClick={(e) => { e.stopPropagation(); handleStatusChange('pending'); }}
+              className="flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
             >
-              <Clock className="w-4 h-4 mr-1" />
+              <Clock className="w-3.5 h-3.5" />
               Reopen
-            </Button>
+            </button>
           )}
         </div>
         
         {/* Quick checkbox for completion - circular */}        
-        <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-2 pt-2 border-t border-black/5 dark:border-white/10">
           <div onClick={(e) => e.stopPropagation()}>
-            <Checkbox
+            <input
+              type="checkbox"
               checked={isCompleted}
-              onCheckedChange={(checked) => handleStatusChange(checked ? 'completed' : 'pending')}
-              className="mt-1"
+              onChange={(e) => handleStatusChange(e.target.checked ? 'completed' : 'pending')}
+              className="h-4 w-4 rounded-md accent-[#0071e3] cursor-pointer"
             />
           </div>
-          <span className="text-sm text-gray-600">
+          <span className="text-[12px] text-[#86868b]">
             Mark as {isCompleted ? 'incomplete' : 'complete'}
           </span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
