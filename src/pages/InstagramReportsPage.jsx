@@ -1385,6 +1385,232 @@ const ReportPreviewModal = ({ report, onClose }) => {
             </div>
           )}
 
+          {/* Instagram-style Insights (dark theme, graphs) */}
+          {report.metrics && (
+            <div className="max-w-4xl mx-auto px-6 mt-8">
+              <div className="rounded-2xl overflow-hidden bg-[#1a1a1a] text-white shadow-xl">
+                <div className="p-6">
+                  <h2 className="text-lg font-semibold text-white mb-1">Insights</h2>
+                  <p className="text-xs text-gray-400 mb-4">{report.dateRange}</p>
+
+                  {/* Circular bars: Views & Interactions (Instagram-style) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
+                    {/* Views circular bar */}
+                    {(report.metrics.views != null || report.metrics.viewsFollowerPercent != null) && (
+                      <div className="flex flex-col items-center">
+                        <div className="relative flex-shrink-0 w-[180px] h-[180px]">
+                          <svg width="180" height="180" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#2d2d2d" strokeWidth="28" />
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#9C27B0" strokeWidth="28" strokeDasharray={`${(report.metrics.viewsFollowerPercent ?? 50) * 4.9} 490`} strokeLinecap="round" />
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#E040FB" strokeWidth="28" strokeDasharray={`${(100 - (report.metrics.viewsFollowerPercent ?? 50)) * 4.9} 490`} strokeDashoffset={`-${(report.metrics.viewsFollowerPercent ?? 50) * 4.9}`} strokeLinecap="round" />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-gray-400 text-xs font-medium">Views</span>
+                            <span className="text-2xl font-bold text-white mt-0.5">{report.metrics.views != null ? report.metrics.views.toLocaleString() : '—'}</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#9C27B0]" />
+                            <span className="text-xs text-gray-300">Followers</span>
+                            <span className="text-xs font-semibold text-white">{report.metrics.viewsFollowerPercent ?? '—'}%</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#E040FB]" />
+                            <span className="text-xs text-gray-300">Non-followers</span>
+                            <span className="text-xs font-semibold text-white">{report.metrics.nonFollowerPercent ?? (100 - (report.metrics.viewsFollowerPercent ?? 0)).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Interactions circular bar */}
+                    {report.metrics.interactions != null && (
+                      <div className="flex flex-col items-center">
+                        <div className="relative flex-shrink-0 w-[180px] h-[180px]">
+                          <svg width="180" height="180" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#2d2d2d" strokeWidth="28" />
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#E040FB" strokeWidth="28" strokeDasharray={`${((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50) * 4.9} 490`} strokeLinecap="round" />
+                            <circle cx="100" cy="100" r="78" fill="none" stroke="#7C4DFF" strokeWidth="28" strokeDasharray={`${(100 - ((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50)) * 4.9} 490`} strokeDashoffset={`-${((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50) * 4.9}`} strokeLinecap="round" />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-gray-400 text-xs font-medium">Interactions</span>
+                            <span className="text-2xl font-bold text-white mt-0.5">{report.metrics.interactions.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#E040FB]" />
+                            <span className="text-xs text-gray-300">Followers</span>
+                            <span className="text-xs font-semibold text-white">{report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent ?? '—'}%</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#7C4DFF]" />
+                            <span className="text-xs text-gray-300">Non-followers</span>
+                            <span className="text-xs font-semibold text-white">{report.metrics.interactionsFollowerPercent != null ? (100 - report.metrics.interactionsFollowerPercent).toFixed(1) : report.metrics.viewsFollowerPercent != null ? (100 - report.metrics.viewsFollowerPercent).toFixed(1) : '—'}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Top locations */}
+                  {report.metrics.topCities && report.metrics.topCities.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-[#E040FB]" />
+                        Top locations
+                      </h3>
+                      <div className="space-y-2">
+                        {report.metrics.topCities.map((city, idx) => {
+                          const maxPct = report.metrics.topCities[0]?.percentage || 100;
+                          const barPct = Math.min(100, (city.percentage / maxPct) * 100);
+                          return (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-200 w-24 flex-shrink-0">{city.name}</span>
+                              <div className="flex-1 h-2.5 bg-[#2d2d2d] rounded-full overflow-hidden">
+                                <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
+                              </div>
+                              <span className="text-xs font-medium text-white w-10 text-right">{city.percentage}%</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Age range */}
+                  {report.metrics.ageRanges && report.metrics.ageRanges.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                        <Users className="w-3.5 h-3.5 text-[#E040FB]" />
+                        Age range
+                      </h3>
+                      <div className="space-y-2">
+                        {report.metrics.ageRanges.map((range, idx) => {
+                          const maxPct = report.metrics.ageRanges[0]?.percentage || 100;
+                          const barPct = Math.min(100, (range.percentage / maxPct) * 100);
+                          return (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-200 w-14 flex-shrink-0">{range.range}</span>
+                              <div className="flex-1 h-2.5 bg-[#2d2d2d] rounded-full overflow-hidden">
+                                <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
+                              </div>
+                              <span className="text-xs font-medium text-white w-10 text-right">{range.percentage}%</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* By content type */}
+                  {report.metrics.contentBreakdown && report.metrics.contentBreakdown.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                        <BarChart3 className="w-3.5 h-3.5 text-[#E040FB]" />
+                        By content type
+                      </h3>
+                      <div className="space-y-2">
+                        {report.metrics.contentBreakdown.map((item, idx) => {
+                          const maxPct = report.metrics.contentBreakdown[0]?.percentage || 100;
+                          const barPct = Math.min(100, (item.percentage / maxPct) * 100);
+                          return (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-200 w-16 flex-shrink-0">{item.type}</span>
+                              <div className="flex-1 h-2.5 bg-[#2d2d2d] rounded-full overflow-hidden">
+                                <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
+                              </div>
+                              <span className="text-xs font-medium text-white w-10 text-right">{item.percentage}%</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Gender */}
+                  {report.metrics.gender && (report.metrics.gender.men != null || report.metrics.gender.women != null) && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                        <Activity className="w-3.5 h-3.5 text-[#E040FB]" />
+                        Gender
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-gray-300">Men</span>
+                            <span className="font-medium text-white">{report.metrics.gender.men ?? 0}%</span>
+                          </div>
+                          <div className="h-2.5 bg-[#2d2d2d] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-[#E040FB]" style={{ width: `${report.metrics.gender.men ?? 0}%` }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-gray-300">Women</span>
+                            <span className="font-medium text-white">{report.metrics.gender.women ?? 0}%</span>
+                          </div>
+                          <div className="h-2.5 bg-[#2d2d2d] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-[#9C27B0]" style={{ width: `${report.metrics.gender.women ?? 0}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Growth */}
+                  {report.metrics.growth && (report.metrics.growth.follows != null || report.metrics.growth.unfollows != null || report.metrics.growth.overall !== undefined) && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                        <TrendingUp className="w-3.5 h-3.5 text-[#E040FB]" />
+                        Growth
+                      </h3>
+                      {(() => {
+                        const follows = report.metrics.growth.follows ?? 0;
+                        const unfollows = report.metrics.growth.unfollows ?? 0;
+                        const netChange = report.metrics.growth.overall !== undefined ? report.metrics.growth.overall : (follows - unfollows);
+                        return (
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-[#2d2d2d] rounded-lg p-3 text-center">
+                              <div className={`text-lg font-bold ${netChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netChange >= 0 ? '+' : ''}{netChange.toLocaleString()}</div>
+                              <p className="text-[10px] text-gray-400 mt-0.5">Overall</p>
+                            </div>
+                            <div className="bg-[#2d2d2d] rounded-lg p-3 text-center">
+                              <div className="text-lg font-bold text-emerald-400">{follows.toLocaleString()}</div>
+                              <p className="text-[10px] text-gray-400 mt-0.5">Follows</p>
+                            </div>
+                            <div className="bg-[#2d2d2d] rounded-lg p-3 text-center">
+                              <div className="text-lg font-bold text-red-400">{unfollows.toLocaleString()}</div>
+                              <p className="text-[10px] text-gray-400 mt-0.5">Unfollows</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Most active times */}
+                  {report.metrics.activeTimes && report.metrics.activeTimes.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-[#E040FB]" />
+                        Most active times
+                      </h3>
+                      <div className="flex items-end justify-between gap-0.5 h-20">
+                        {report.metrics.activeTimes.map((time, idx) => (
+                          <div key={idx} className="flex-1 flex flex-col items-center min-w-0">
+                            <div className="w-full max-w-[16px] mx-auto bg-[#E040FB] rounded-t transition-all duration-300" style={{ height: `${Math.max(4, time.activity || 0)}%` }} />
+                            <span className="text-[9px] text-gray-400 mt-1 truncate w-full text-center">{time.hour}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Detailed Metrics Section */}
           {report.metrics && (
             <div className="max-w-4xl mx-auto px-6 mt-6">

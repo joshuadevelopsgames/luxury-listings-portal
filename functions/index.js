@@ -249,10 +249,11 @@ function parseInstagramMetrics(text) {
     'London', 'Paris', 'Sydney', 'Melbourne', 'Dubai', 'Singapore',
     'Mississauga', 'Brampton', 'Hamilton', 'Quebec City', 'Laval'
   ];
+  // Only extract cities from the known list so we never capture UI text as locations
   const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   for (const city of cityPatterns) {
     const escaped = escapeRegex(city);
-    const regex = new RegExp(`${escaped}[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'gi');
+    const regex = new RegExp(`(?:^|[\\s\\n])${escaped}[\\s\\n]+([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'gi');
     let match;
     while ((match = regex.exec(text)) !== null) {
       const pct = parseFloat(match[1]);
@@ -261,24 +262,6 @@ function parseInstagramMetrics(text) {
         citySeen.add(key);
         cities.push({ name: city, percentage: pct });
       }
-    }
-  }
-  // Generic "Word(s) number%" for cities not in list
-  const skipWords = new Set(['posts', 'stories', 'reels', 'men', 'women', 'followers', 'accounts', 'profile', 'external', 'overall', 'growth', 'engagement', 'content', 'reach', 'impressions', 'saves', 'shares', 'link', 'taps', 'visits', 'interactions', 'views', 'non']);
-  const genericCityRegex = /(?:^|[\n])\s*([A-Za-z][A-Za-z\s.\-']{1,40}?)\s*[\s\n]+\s*([0-9]+(?:\.[0-9]+)?)\s*%/gm;
-  let genericMatch;
-  while ((genericMatch = genericCityRegex.exec(text)) !== null) {
-    const name = genericMatch[1].trim();
-    const firstWord = name.split(/\s+/)[0].toLowerCase();
-    if (skipWords.has(firstWord) || name.length < 2) continue;
-    const pct = parseFloat(genericMatch[2]);
-    if (pct > 100) continue;
-    const key = `${name.toLowerCase()}-${pct}`;
-    if (citySeen.has(key)) continue;
-    const alreadyListed = cities.some(c => c.name.toLowerCase() === name.toLowerCase());
-    if (!alreadyListed) {
-      citySeen.add(key);
-      cities.push({ name, percentage: pct });
     }
   }
   if (cities.length > 0) {

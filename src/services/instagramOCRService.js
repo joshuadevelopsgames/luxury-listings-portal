@@ -328,10 +328,12 @@ class InstagramOCRService {
       'Mississauga', 'Brampton', 'Hamilton', 'Quebec City', 'Laval'
     ];
 
+    // Only extract cities from the known list so we never capture UI text
+    // (e.g. "All Followers Non-followers Posts", "Top locations Cities Countries")
     for (const city of cityPatterns) {
       const escaped = this.escapeRegex(city);
-      // Allow flexible whitespace/newlines between city name and percentage
-      const regex = new RegExp(`${escaped}[\\s\\n]*([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'gi');
+      // City name must appear as a distinct token: preceded by start/whitespace, followed by space/newline then percentage
+      const regex = new RegExp(`(?:^|[\\s\\n])${escaped}[\\s\\n]+([0-9]+(?:\\.[0-9]+)?)\\s*%`, 'gi');
       let match;
       while ((match = regex.exec(text)) !== null) {
         const pct = parseFloat(match[1]);
@@ -343,26 +345,7 @@ class InstagramOCRService {
       }
     }
 
-    // Fallback: generic "Word(s) number%" pattern for lines that look like cities (e.g. "City Name 12.5%")
-    const genericRegex = /(?:^|[\n])\s*([A-Za-z][A-Za-z\s\.\-']{1,40}?)\s*[\s\n]+\s*([0-9]+(?:\.[0-9]+)?)\s*%/gm;
-    const skipWords = new Set(['posts', 'stories', 'reels', 'men', 'women', 'followers', 'accounts', 'profile', 'external', 'overall', 'growth', 'engagement', 'content', 'reach', 'impressions', 'saves', 'shares', 'link', 'taps', 'visits', 'interactions', 'views', 'non']);
-    let genericMatch;
-    while ((genericMatch = genericRegex.exec(text)) !== null) {
-      const name = genericMatch[1].trim();
-      const firstWord = name.split(/\s+/)[0].toLowerCase();
-      if (skipWords.has(firstWord) || name.length < 2) continue;
-      const pct = parseFloat(genericMatch[2]);
-      if (pct > 100) continue;
-      const key = `${name.toLowerCase()}-${pct}`;
-      if (seen.has(key)) continue;
-      // Avoid duplicating if we already have this city from the list
-      const alreadyListed = cities.some(c => c.name.toLowerCase() === name.toLowerCase());
-      if (!alreadyListed) {
-        seen.add(key);
-        cities.push({ name, percentage: pct });
-      }
-    }
-
+    // Sort by percentage descending (Instagram order)
     cities.sort((a, b) => b.percentage - a.percentage);
     return cities;
   }
