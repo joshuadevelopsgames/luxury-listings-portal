@@ -173,10 +173,12 @@ const V3Layout = () => {
     const sectionedModules = getNavItemsForModules(enabledModules);
     
     // Define section display order and titles
-    const sectionOrder = ['Main', 'Clients', 'Team', 'Admin', 'Resources'];
+    const sectionOrder = ['Main', 'SMM', 'Content Team', 'Sales Team', 'Team', 'Admin', 'Resources'];
     const sectionTitles = {
       'Main': 'Main',
-      'Clients': 'Clients',
+      'SMM': 'SMM',
+      'Content Team': 'Content Team',
+      'Sales Team': 'Sales Team',
       'Team': 'Team',
       'Admin': 'Admin',
       'Resources': 'Resources'
@@ -203,11 +205,11 @@ const V3Layout = () => {
     
     // Add admin-only items for system admins
     if (isSystemAdmin && !isViewingAs) {
-      // Add clients to Clients section if not already there (pending approvals are a tab on Clients)
-      const clientsSection = sections.find(s => s.title === 'Clients');
-      if (clientsSection) {
-        if (!clientsSection.items.includes('clients')) {
-          clientsSection.items.unshift('clients');
+      // Add clients to SMM section if not already there
+      const smmSection = sections.find(s => s.title === 'SMM');
+      if (smmSection) {
+        if (!smmSection.items.includes('clients')) {
+          smmSection.items.unshift('clients');
         }
       }
       

@@ -40,7 +40,7 @@ export const modules = {
     widgets: ['clientOverview', 'deliverablesDue'],
     navItem: {
       path: '/my-clients',
-      section: 'Clients'
+      section: 'SMM'
     },
     baseModule: true
   },
@@ -54,7 +54,7 @@ export const modules = {
     widgets: ['recentReports'],
     navItem: {
       path: '/instagram-reports',
-      section: 'Clients'
+      section: 'SMM'
     },
     baseModule: true
   },
@@ -86,7 +86,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/clients',
-      section: 'Clients'
+      section: 'SMM'
     },
     baseModule: false
   },
@@ -100,7 +100,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/posting-packages',
-      section: 'Content'
+      section: 'Content Team'
     },
     baseModule: false
   },
@@ -114,7 +114,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/content-calendar',
-      section: 'Clients'
+      section: 'SMM'
     },
     baseModule: false
   },
@@ -128,7 +128,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/crm',
-      section: 'Clients'
+      section: 'Sales Team'
     },
     baseModule: false
   },
