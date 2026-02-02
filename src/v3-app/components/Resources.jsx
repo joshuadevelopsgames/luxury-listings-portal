@@ -8,7 +8,7 @@ const V3Resources = () => {
   const tutorials = [
     { id: 1, title: 'Getting Started with the Portal', description: 'Learn the basics of navigating the Luxury Listings Portal', type: 'video', duration: '5 min', category: 'Basics', starred: true },
     { id: 2, title: 'Creating Effective Social Media Content', description: 'Best practices for luxury real estate social media', type: 'article', duration: '10 min', category: 'Content', starred: false },
-    { id: 3, title: 'Managing Client Packages', description: 'How to track and manage client deliverables', type: 'video', duration: '8 min', category: 'Clients', starred: true },
+    { id: 3, title: 'Managing Posting Packages', description: 'How to track and manage @luxury_listings posting deliverables', type: 'video', duration: '8 min', category: 'Content', starred: true },
     { id: 4, title: 'Analytics Deep Dive', description: 'Understanding your content performance metrics', type: 'article', duration: '15 min', category: 'Analytics', starred: false },
     { id: 5, title: 'Content Calendar Mastery', description: 'Planning and scheduling content effectively', type: 'video', duration: '12 min', category: 'Planning', starred: false },
     { id: 6, title: 'Client Communication Best Practices', description: 'How to maintain great client relationships', type: 'article', duration: '8 min', category: 'Clients', starred: false },

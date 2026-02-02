@@ -16,7 +16,7 @@ export const PERMISSIONS = {
   EDIT_ANY_PROFILE: 'edit_any_profile',
   
   // Content Management
-  MANAGE_CLIENT_PACKAGES: 'manage_client_packages',
+  MANAGE_POSTING_PACKAGES: 'manage_posting_packages',
   CREATE_CONTENT: 'create_content',
   DELETE_CONTENT: 'delete_content',
   APPROVE_CONTENT: 'approve_content',
@@ -85,9 +85,9 @@ export const PERMISSION_CATEGORIES = {
   },
   CONTENT_MANAGEMENT: {
     name: 'Content Management',
-    description: 'Manage content and client packages',
+    description: 'Manage content and posting packages',
     permissions: [
-      PERMISSIONS.MANAGE_CLIENT_PACKAGES,
+      PERMISSIONS.MANAGE_POSTING_PACKAGES,
       PERMISSIONS.CREATE_CONTENT,
       PERMISSIONS.DELETE_CONTENT,
       PERMISSIONS.APPROVE_CONTENT
@@ -174,7 +174,7 @@ export const PERMISSION_LABELS = {
   [PERMISSIONS.EDIT_ANY_NAME]: 'Edit Any User\'s Name',
   [PERMISSIONS.EDIT_ANY_PROFILE]: 'Edit Any User\'s Profile',
   
-  [PERMISSIONS.MANAGE_CLIENT_PACKAGES]: 'Manage Client Packages',
+  [PERMISSIONS.MANAGE_POSTING_PACKAGES]: 'Manage Posting Packages',
   [PERMISSIONS.CREATE_CONTENT]: 'Create Content',
   [PERMISSIONS.DELETE_CONTENT]: 'Delete Content',
   [PERMISSIONS.APPROVE_CONTENT]: 'Approve Content',
@@ -226,7 +226,7 @@ export function getPermissionDescription(permission) {
     [PERMISSIONS.EDIT_ANY_NAME]: 'Change any user\'s first and last name',
     [PERMISSIONS.EDIT_ANY_PROFILE]: 'Edit any user\'s profile information',
     
-    [PERMISSIONS.MANAGE_CLIENT_PACKAGES]: 'Add, edit, and manage client packages',
+    [PERMISSIONS.MANAGE_POSTING_PACKAGES]: 'Add, edit, and manage posting packages for @luxury_listings',
     [PERMISSIONS.CREATE_CONTENT]: 'Create new content items',
     [PERMISSIONS.DELETE_CONTENT]: 'Delete content items',
     [PERMISSIONS.APPROVE_CONTENT]: 'Approve content before publishing',

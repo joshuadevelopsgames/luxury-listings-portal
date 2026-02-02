@@ -6,7 +6,7 @@
  * it's included in the base package or requires upgrade.
  */
 
-import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3 } from 'lucide-react';
+import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3, User } from 'lucide-react';
 
 // ============================================================================
 // MODULE DEFINITIONS
@@ -77,16 +77,30 @@ export const modules = {
     baseModule: false
   },
 
-  'client-packages': {
-    id: 'client-packages',
-    name: 'Client Packages',
-    description: 'Manage client packages and post tracking',
-    icon: Briefcase,
-    routes: ['/client-packages'],
+  'clients': {
+    id: 'clients',
+    name: 'Clients',
+    description: 'SMM client directory and management',
+    icon: User,
+    routes: ['/clients'],
     widgets: [],
     navItem: {
-      path: '/client-packages',
+      path: '/clients',
       section: 'Clients'
+    },
+    baseModule: false
+  },
+
+  'posting-packages': {
+    id: 'posting-packages',
+    name: 'Posting Packages',
+    description: 'Manage posting packages for @luxury_listings features',
+    icon: Briefcase,
+    routes: ['/posting-packages'],
+    widgets: [],
+    navItem: {
+      path: '/posting-packages',
+      section: 'Content'
     },
     baseModule: false
   },

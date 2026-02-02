@@ -12,7 +12,7 @@ const AVAILABLE_PAGES = [
   { id: 'dashboard', name: 'Dashboard', icon: '🏠', category: 'Core' },
   { id: 'tasks', name: 'Tasks', icon: '✅', category: 'Core' },
   { id: 'clients', name: 'Clients', icon: '👥', category: 'Client Management' },
-  { id: 'client-packages', name: 'Client Packages', icon: '📦', category: 'Client Management' },
+  { id: 'posting-packages', name: 'Posting Packages', icon: '📦', category: 'Content' },
   { id: 'instagram-reports', name: 'Instagram Analytics', icon: '📸', category: 'Client Management' },
   { id: 'content-calendar', name: 'Content Calendar', icon: '📅', category: 'Content' },
   { id: 'crm', name: 'CRM', icon: '💼', category: 'Sales' },

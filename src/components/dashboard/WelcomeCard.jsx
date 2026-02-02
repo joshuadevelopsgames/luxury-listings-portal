@@ -85,7 +85,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
           quickActions: [
             { text: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
             { text: 'Brand Guidelines', icon: BookOpen },
-            { text: 'Client Packages', icon: TrendingUp, path: '/client-packages' }
+            { text: 'Posting Packages', icon: TrendingUp, path: '/posting-packages' }
           ]
         };
 
@@ -189,8 +189,8 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
       case 'Content Calendar':
         navigate('/content-calendar');
         break;
-      case 'Client Packages':
-        navigate('/client-packages');
+      case 'Posting Packages':
+        navigate('/posting-packages');
         break;
       case 'Brand Guidelines':
         navigate('/resources');

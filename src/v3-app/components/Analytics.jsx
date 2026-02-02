@@ -193,9 +193,9 @@ const V3Analytics = () => {
           </div>
         </div>
 
-        {/* Client Packages */}
+        {/* Posting Packages */}
         <div className="rounded-2xl bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-xl border border-black/5 dark:border-white/5 p-6">
-          <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-4">Client Packages</h2>
+          <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-4">Posting Packages</h2>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#5856d6] to-[#af52de] flex items-center justify-center text-white font-bold text-sm">

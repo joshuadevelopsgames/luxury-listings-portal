@@ -753,3 +753,86 @@ exports.slackProxy = onRequest({
     });
   }
 });
+
+// ============================================================================
+// SLACK OAUTH TOKEN EXCHANGE
+// ============================================================================
+
+/**
+ * Exchange Slack OAuth authorization code for access token
+ * This keeps the client_secret secure on the server side
+ */
+exports.slackOAuthExchange = onRequest({
+  cors: true,
+  maxInstances: 10,
+  secrets: ['SLACK_CLIENT_SECRET'],
+}, async (req, res) => {
+  // Only allow POST
+  if (req.method !== 'POST') {
+    res.status(405).json({ ok: false, error: 'Method not allowed' });
+    return;
+  }
+
+  const { code, redirect_uri } = req.body;
+  const clientId = process.env.REACT_APP_SLACK_CLIENT_ID || req.body.client_id;
+  const clientSecret = process.env.SLACK_CLIENT_SECRET;
+
+  if (!code) {
+    res.status(400).json({ ok: false, error: 'Authorization code is required' });
+    return;
+  }
+
+  if (!clientSecret) {
+    console.error('❌ SLACK_CLIENT_SECRET not configured');
+    res.status(500).json({ ok: false, error: 'Server configuration error' });
+    return;
+  }
+
+  console.log('🔄 Exchanging Slack OAuth code for token...');
+
+  try {
+    // Exchange code for token using Slack's OAuth endpoint
+    const tokenUrl = 'https://slack.com/api/oauth.v2.access';
+    
+    const params = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: code,
+      redirect_uri: redirect_uri || ''
+    });
+
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString()
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      console.error('❌ Slack OAuth error:', data.error);
+      res.status(400).json({ ok: false, error: data.error });
+      return;
+    }
+
+    console.log('✅ Slack OAuth token obtained for team:', data.team?.name);
+
+    // Return the token data (but not the refresh token if any)
+    res.json({
+      ok: true,
+      authed_user: data.authed_user,
+      team: data.team,
+      enterprise: data.enterprise,
+      is_enterprise_install: data.is_enterprise_install
+    });
+
+  } catch (error) {
+    console.error('❌ Slack OAuth exchange error:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: `OAuth exchange failed: ${error.message}` 
+    });
+  }
+});

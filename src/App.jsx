@@ -20,7 +20,7 @@ import './v3-app/styles/globals.css';
 // Pages (wrapped in V3 layout)
 import TasksPage from './pages/TasksPage';
 import ClientsPage from './pages/ClientsPage';
-import ClientPackages from './pages/ClientPackages';
+import PostingPackages from './pages/PostingPackages';
 import ContentCalendar from './pages/ContentCalendar';
 import CRMPage from './pages/CRMPage';
 import TeamManagement from './pages/TeamManagement';
@@ -44,6 +44,7 @@ import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
 import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
 import NotificationsPage from './pages/NotificationsPage';
 import WorkloadPage from './pages/WorkloadPage';
+import SlackCallback from './pages/SlackCallback';
 
 // Module Pages
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
@@ -140,6 +141,9 @@ const router = createBrowserRouter([
       // Public Instagram reports
       { path: '/report/:publicLinkId', element: <PublicInstagramReportPage /> },
       { path: '/report-demo', element: <DemoInstagramReportPage /> },
+      
+      // OAuth callbacks
+      { path: '/slack-callback', element: <SlackCallback /> },
 
       // Protected app routes (requires auth)
       {
@@ -154,7 +158,7 @@ const router = createBrowserRouter([
           { path: 'tasks', element: <PermissionRoute pageId="tasks" pageName="Tasks"><TasksPage /></PermissionRoute> },
           { path: 'my-clients', element: <PermissionRoute pageId="my-clients" pageName="My Clients"><MyClientsPage /></PermissionRoute> },
           { path: 'clients', element: <PermissionRoute pageId="clients" pageName="Clients"><ClientsPage /></PermissionRoute> },
-          { path: 'client-packages', element: <PermissionRoute pageId="client-packages" pageName="Client Packages"><ClientPackages /></PermissionRoute> },
+          { path: 'posting-packages', element: <PermissionRoute pageId="posting-packages" pageName="Posting Packages"><PostingPackages /></PermissionRoute> },
           { path: 'pending-clients', element: <Navigate to="/clients?tab=pending" replace /> },
           { path: 'content-calendar', element: <PermissionRoute pageId="content-calendar" pageName="Content Calendar"><ContentCalendar /></PermissionRoute> },
           { path: 'crm', element: <PermissionRoute pageId="crm" pageName="CRM"><CRMPage /></PermissionRoute> },

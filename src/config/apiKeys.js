@@ -17,9 +17,11 @@ export const API_KEYS = {
 };
 
 // Google Sheets Configuration
+// Google Sheets config for Posting Packages (content team feature)
+// Note: Sheet name in Google Sheets is still "Client Packages" - update sheet name if renaming
 export const GOOGLE_SHEETS_CONFIG = {
   SPREADSHEET_ID: process.env.REACT_APP_GOOGLE_SHEETS_SPREADSHEET_ID || '1QDxr6nxOEQskXIciEeZiZBlVE-lMkGN875k8bBtKSEA',
-  SHEET_NAME: 'Client Packages',
+  SHEET_NAME: 'Client Packages', // External Google Sheet name - rename in Google Sheets if desired
   GOOGLE_APPS_SCRIPT_URL: process.env.REACT_APP_GOOGLE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbx4ugw4vME8hCeaE3Bieu7gsrNJqbGHxkNwZR97vKi0wVbaQNMgGFnG3W-lKrkwXzFkdQ/exec',
 };
 

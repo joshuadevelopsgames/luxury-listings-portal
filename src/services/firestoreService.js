@@ -2960,6 +2960,61 @@ class FirestoreService {
       callback(roles);
     });
   }
+
+  // ============================================================================
+  // SLACK CONNECTIONS
+  // ============================================================================
+
+  /**
+   * Store user's Slack connection/token
+   */
+  async setSlackConnection(userEmail, connectionData) {
+    try {
+      const docRef = doc(db, 'slack_connections', userEmail.toLowerCase());
+      await setDoc(docRef, {
+        ...connectionData,
+        userEmail: userEmail.toLowerCase(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      console.log('✅ Slack connection stored for:', userEmail);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error storing Slack connection:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user's Slack connection
+   */
+  async getSlackConnection(userEmail) {
+    try {
+      const docRef = doc(db, 'slack_connections', userEmail.toLowerCase());
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data();
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting Slack connection:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Remove user's Slack connection
+   */
+  async removeSlackConnection(userEmail) {
+    try {
+      const docRef = doc(db, 'slack_connections', userEmail.toLowerCase());
+      await deleteDoc(docRef);
+      console.log('✅ Slack connection removed for:', userEmail);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error removing Slack connection:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

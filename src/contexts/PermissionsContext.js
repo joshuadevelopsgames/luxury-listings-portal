@@ -18,42 +18,19 @@ export const FEATURE_PERMISSIONS = {
   VIEW_ANALYTICS: 'view_analytics',        // Access to analytics dashboards
 };
 
-// localStorage key for caching permissions
-const PERMISSIONS_CACHE_KEY = 'luxury_listings_permissions';
-
 export function usePermissions() {
   return useContext(PermissionsContext);
 }
 
 /**
- * PermissionsProvider - Caches user permissions to avoid repeated Firestore calls
- * Loads once on auth, caches in localStorage, NO real-time listener for performance
+ * PermissionsProvider - Fetches permissions from Firestore on every page load
+ * Always gets fresh data from server so admin changes take effect on refresh
  * Supports both page permissions and feature permissions (granular access)
  */
 export function PermissionsProvider({ children }) {
   const { currentUser } = useAuth();
-  const [permissions, setPermissions] = useState(() => {
-    // Load from localStorage on init for instant access
-    try {
-      const cached = localStorage.getItem(PERMISSIONS_CACHE_KEY);
-      if (cached) {
-        const { email, perms } = JSON.parse(cached);
-        if (email === currentUser?.email) return perms;
-      }
-    } catch (e) {}
-    return [];
-  });
-  const [featurePermissions, setFeaturePermissions] = useState(() => {
-    // Load feature permissions from localStorage
-    try {
-      const cached = localStorage.getItem(PERMISSIONS_CACHE_KEY);
-      if (cached) {
-        const { email, features } = JSON.parse(cached);
-        if (email === currentUser?.email) return features || [];
-      }
-    } catch (e) {}
-    return [];
-  });
+  const [permissions, setPermissions] = useState([]);
+  const [featurePermissions, setFeaturePermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
 
@@ -68,13 +45,6 @@ export function PermissionsProvider({ children }) {
       
       setPermissions(Array.isArray(pagePerms) ? pagePerms : []);
       setFeaturePermissions(Array.isArray(featurePerms) ? featurePerms : []);
-      
-      // Cache to localStorage
-      localStorage.setItem(PERMISSIONS_CACHE_KEY, JSON.stringify({
-        email: currentUser.email,
-        perms: pagePerms,
-        features: featurePerms
-      }));
     } catch (error) {
       console.error('Error refreshing permissions:', error);
     }
@@ -86,7 +56,6 @@ export function PermissionsProvider({ children }) {
       setFeaturePermissions([]);
       setLoading(false);
       setIsSystemAdmin(false);
-      localStorage.removeItem(PERMISSIONS_CACHE_KEY);
       return;
     }
 
@@ -104,7 +73,7 @@ export function PermissionsProvider({ children }) {
 
     let isMounted = true;
 
-    // Load permissions once (no real-time listener for performance)
+    // Always fetch fresh permissions from Firestore on page load
     const loadPermissions = async () => {
       try {
         const result = await firestoreService.getUserPermissions(currentUser.email);
@@ -114,13 +83,6 @@ export function PermissionsProvider({ children }) {
         if (isMounted) {
           setPermissions(Array.isArray(pagePerms) ? pagePerms : []);
           setFeaturePermissions(Array.isArray(featurePerms) ? featurePerms : []);
-          
-          // Cache to localStorage
-          localStorage.setItem(PERMISSIONS_CACHE_KEY, JSON.stringify({
-            email: currentUser.email,
-            perms: pagePerms,
-            features: featurePerms
-          }));
         }
       } catch (error) {
         console.error('Error loading permissions:', error);

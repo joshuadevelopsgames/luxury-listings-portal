@@ -83,12 +83,21 @@ class SlackService {
   }
 
   /**
-   * Get list of channels the bot/user has access to
+   * Get list of channels the bot is a member of
    */
   async getChannels() {
     try {
-      const data = await this.makeRequest('GET', 'conversations.list?types=public_channel,private_channel&limit=100');
-      this.channels = data.channels || [];
+      // Only get channels where the bot is a member
+      const data = await this.makeRequest('GET', 'conversations.list?types=public_channel,private_channel&limit=100&exclude_archived=true');
+      // Filter to only channels the bot is a member of
+      this.channels = (data.channels || []).filter(ch => ch.is_member);
+      
+      // If no channels, return all channels but mark which ones need joining
+      if (this.channels.length === 0) {
+        console.log('Bot not in any channels - showing all available channels');
+        this.channels = data.channels || [];
+      }
+      
       return this.channels;
     } catch (error) {
       console.error('Error fetching channels:', error);

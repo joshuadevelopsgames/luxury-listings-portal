@@ -2,14 +2,20 @@
 # Get your API key from: https://platform.openai.com/api-keys
 REACT_APP_OPENAI_API_KEY=your_openai_api_key_here
 
-# Slack Integration
-# Get your token from: https://api.slack.com/apps (OAuth & Permissions -> User OAuth Token)
-# Token format: xoxp-... (User Token) or xoxb-... (Bot Token)
-REACT_APP_SLACK_TOKEN=your_slack_token_here
+# Slack Integration (Individual User Login via OAuth)
+# Create a Slack App at: https://api.slack.com/apps
+# 1. Create app -> From scratch
+# 2. Go to OAuth & Permissions
+# 3. Add redirect URL: https://yourdomain.com/slack-callback
+# 4. Add User Token Scopes: channels:read, channels:history, groups:read, groups:history, chat:write, users:read
+# 5. Install to workspace
 
-# Optional: Slack Proxy URL (required for production due to CORS)
-# Set this to your Firebase Function or serverless endpoint that proxies Slack API calls
-# REACT_APP_SLACK_PROXY_URL=https://your-function-url.cloudfunctions.net/slackProxy
+# Slack OAuth credentials (from Basic Information -> App Credentials)
+REACT_APP_SLACK_CLIENT_ID=your_slack_client_id_here
+REACT_APP_SLACK_REDIRECT_URI=http://localhost:3000/slack-callback
+
+# Note: SLACK_CLIENT_SECRET should be set as a Firebase secret, not in .env
+# Run: npx firebase functions:secrets:set SLACK_CLIENT_SECRET --project your-project-id
 
 # Note: Replace placeholder values with your actual keys
 # The REACT_APP_ prefix is required for React to access the environment variable

@@ -131,7 +131,7 @@ const V3Layout = () => {
     // Upgrade modules
     'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
     'clients': { name: 'Clients', icon: User, path: '/clients' },
-    'client-packages': { name: 'Client Packages', icon: Briefcase, path: '/client-packages' },
+    'posting-packages': { name: 'Posting Packages', icon: Briefcase, path: '/posting-packages' },
     'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
     'crm': { name: 'CRM', icon: Target, path: '/crm' },
     'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },

@@ -30,12 +30,12 @@ import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
 import PlatformIcons from '../components/PlatformIcons';
 import { Camera } from 'lucide-react';
 
-export default function ClientPackages() {
+export default function PostingPackages() {
   const [searchParams] = useSearchParams();
   const { hasPermission } = useAuth();
   
   // Check permissions
-  const canManagePackages = hasPermission(PERMISSIONS.MANAGE_CLIENT_PACKAGES);
+  const canManagePackages = hasPermission(PERMISSIONS.MANAGE_POSTING_PACKAGES);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -1858,10 +1858,10 @@ export default function ClientPackages() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
-            Client Packages
+            Posting Packages
           </h1>
           <p className="text-[15px] sm:text-[17px] text-[#86868b]">
-            Manage luxury real estate client relationships and package delivery
+            Manage posting packages for @luxury_listings features
           </p>
         </div>
         
@@ -2020,7 +2020,7 @@ export default function ClientPackages() {
               <button 
                 onClick={handleAddClient}
                 disabled={!canManagePackages}
-                title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
+                title={!canManagePackages ? 'You need MANAGE_POSTING_PACKAGES permission' : ''}
                 className="h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
@@ -2198,7 +2198,7 @@ export default function ClientPackages() {
             <button 
               onClick={handleAddClient}
               disabled={!canManagePackages}
-              title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
+              title={!canManagePackages ? 'You need MANAGE_POSTING_PACKAGES permission' : ''}
               className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
@@ -2237,7 +2237,7 @@ export default function ClientPackages() {
                 <button 
                   onClick={handleAddClient}
                   disabled={!canManagePackages}
-                  title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
+                  title={!canManagePackages ? 'You need MANAGE_POSTING_PACKAGES permission' : ''}
                   className="h-9 px-3 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
@@ -2266,7 +2266,7 @@ export default function ClientPackages() {
                 <button 
                   onClick={handleAddClient}
                   disabled={!canManagePackages}
-                  title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
+                  title={!canManagePackages ? 'You need MANAGE_POSTING_PACKAGES permission' : ''}
                   className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
@@ -2441,8 +2441,8 @@ export default function ClientPackages() {
           <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div>
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Archived Client Packages</h2>
-                <p className="text-[13px] text-[#86868b]">View and manage archived client relationships</p>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Archived Posting Packages</h2>
+                <p className="text-[13px] text-[#86868b]">View and manage archived posting packages</p>
               </div>
               <button 
                 onClick={fetchArchivedClients}

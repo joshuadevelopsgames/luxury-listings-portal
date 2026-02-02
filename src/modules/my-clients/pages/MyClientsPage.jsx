@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useViewAs } from '../../../contexts/ViewAsContext';
 import { firestoreService } from '../../../services/firestoreService';
@@ -31,6 +32,7 @@ import {
 } from 'lucide-react';
 
 const MyClientsPage = () => {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { isViewingAs, viewingAsUser, getEffectiveUser } = useViewAs();
   const [loading, setLoading] = useState(true);
@@ -321,10 +323,19 @@ const MyClientsPage = () => {
                       </div>
                     )}
                     <div className="flex gap-2">
-                      <button className="flex-1 px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/clients?client=${client.id}`);
+                        }}
+                        className="flex-1 px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
+                      >
                         View Details
                       </button>
-                      <button className="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                      >
                         <MoreHorizontal className="w-4 h-4" strokeWidth={1.5} />
                       </button>
                     </div>

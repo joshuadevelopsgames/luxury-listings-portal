@@ -95,9 +95,9 @@ const V3Dashboard = () => {
   // Check if tasks module is enabled (affects dashboard display)
   const hasTasksModule = enabledModules.includes('tasks');
   // Client-related access: any of these means show Client Status / client stats
-  const hasClientAccess = enabledModules.some((id) => ['my-clients', 'clients', 'client-packages'].includes(id));
+  const hasClientAccess = enabledModules.some((id) => ['my-clients', 'clients'].includes(id));
   // Full client access = can see all clients; only my-clients = see assigned count only
-  const hasFullClientAccess = enabledModules.includes('clients') || enabledModules.includes('client-packages');
+  const hasFullClientAccess = enabledModules.includes('clients');
   const hasOnlyMyClients = hasClientAccess && !hasFullClientAccess;
 
   const [tasks, setTasks] = useState([]);
@@ -314,7 +314,7 @@ const V3Dashboard = () => {
     { title: 'Create Post', icon: Plus, color: 'from-[#0071e3] to-[#5856d6]', path: '/content-calendar', moduleId: 'content-calendar' },
     { title: 'Schedule Content', icon: Calendar, color: 'from-[#ff9500] to-[#ff3b30]', path: '/content-calendar', moduleId: 'content-calendar' },
     { title: 'Instagram Analytics', icon: Instagram, color: 'from-[#34c759] to-[#30d158]', path: '/instagram-reports', moduleId: 'instagram-reports' },
-    { title: 'Client Packages', icon: Users, color: 'from-[#5856d6] to-[#af52de]', path: '/client-packages', moduleId: 'client-packages' },
+    { title: 'Posting Packages', icon: Users, color: 'from-[#5856d6] to-[#af52de]', path: '/posting-packages', moduleId: 'posting-packages' },
   ];
   const quickActions = quickActionsConfig.filter(
     (a) => enabledModules.includes(a.moduleId)
