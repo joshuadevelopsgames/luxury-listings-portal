@@ -1,7 +1,4 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { firestoreService } from '../services/firestoreService';
 import { 
   User, 
@@ -21,6 +18,7 @@ import { format } from 'date-fns';
 
 /**
  * PersonCard - Reusable component for displaying employee information
+ * Apple-style design with glass morphism and smooth animations
  * 
  * @param {Object} person - Employee data object
  * @param {boolean} editable - Whether the card can be edited
@@ -102,251 +100,156 @@ const PersonCard = ({
     return field === 'phone' || field === 'address'; // Regular users can only edit these
   };
 
+  // Input field component for consistent styling
+  const InputField = ({ label, icon: Icon, field, type = 'text', value, colSpan = false }) => (
+    <div className={colSpan ? 'md:col-span-2' : ''}>
+      <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
+        <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
+        <span>{label}</span>
+      </label>
+      {canEditField(field) ? (
+        <input
+          type={type}
+          value={editedData[field] ?? value}
+          onChange={(e) => setEditedData({...editedData, [field]: e.target.value})}
+          className="w-full px-4 py-2.5 bg-white/60 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] transition-all"
+        />
+      ) : (
+        <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
+          <p className="text-[15px] text-[#1d1d1f] dark:text-white">{value || 'Not provided'}</p>
+          {!isHRView && isEditing && field !== 'phone' && field !== 'address' && (
+            <p className="text-[11px] text-[#86868b] mt-1">Contact HR to change</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <Card className={`bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 ${className}`}>
-      <CardHeader>
+    <div className={`bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden ${className}`}>
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
-            <User className="w-5 h-5" />
-            <span>Personal Information</span>
-          </CardTitle>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+              <User className="w-4 h-4 text-white" strokeWidth={1.5} />
+            </div>
+            <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Personal Information</h3>
+          </div>
           {editable && !isEditing && (
-            <Button size="sm" variant="outline" onClick={handleEdit}>
-              <Edit className="w-4 h-4 mr-2" />
+            <button 
+              onClick={handleEdit}
+              className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-[#0071e3] hover:bg-[#0071e3]/10 rounded-xl transition-colors"
+            >
+              <Edit className="w-4 h-4" strokeWidth={1.5} />
               Edit
-            </Button>
+            </button>
           )}
           {isEditing && (
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} disabled={saving}>
-                <Save className="w-4 h-4 mr-2" />
+              <button 
+                onClick={handleSave} 
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-[#0071e3] hover:bg-[#0077ed] rounded-xl transition-colors disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" strokeWidth={1.5} />
                 {saving ? 'Saving...' : 'Save'}
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCancel} disabled={saving}>
-                <X className="w-4 h-4 mr-2" />
+              </button>
+              <button 
+                onClick={handleCancel} 
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <X className="w-4 h-4" strokeWidth={1.5} />
                 Cancel
-              </Button>
+              </button>
             </div>
           )}
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+
+      <div className="p-6">
         {/* Avatar and Name Section */}
         {showAvatar && !compact && (
-          <div className="flex items-center space-x-4 mb-6 pb-6 border-b border-gray-200 dark:border-white/10">
-            <div className="w-20 h-20 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+          <div className="flex items-center gap-5 mb-6 pb-6 border-b border-black/5 dark:border-white/10">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-2xl font-semibold shadow-lg shadow-[#0071e3]/30">
               {person.firstName?.[0]}{person.lastName?.[0]}
             </div>
             <div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
                 {person.firstName} {person.lastName}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400">{person.position}</p>
-              <Badge variant="secondary" className="mt-1 dark:bg-white/10 dark:text-gray-200">{person.department}</Badge>
+              <p className="text-[15px] text-[#86868b] mt-0.5">{person.position}</p>
+              <span className="inline-flex items-center px-3 py-1 mt-2 text-[12px] font-medium text-[#0071e3] bg-[#0071e3]/10 rounded-full">
+                {person.department}
+              </span>
             </div>
           </div>
         )}
 
         {/* Personal Information Grid */}
-        <div className={`grid grid-cols-1 ${compact ? 'gap-4' : 'md:grid-cols-2 gap-6'}`}>
-          {/* First Name */}
+        <div className={`grid grid-cols-1 ${compact ? 'gap-4' : 'md:grid-cols-2 gap-5'}`}>
+          <InputField label="First Name" icon={User} field="firstName" value={person.firstName} />
+          <InputField label="Last Name" icon={User} field="lastName" value={person.lastName} />
+          <InputField label="Email" icon={Mail} field="email" type="email" value={person.email} />
+          <InputField label="Phone" icon={Phone} field="phone" type="tel" value={person.phone} />
+          <InputField label="Address" icon={MapPin} field="address" value={person.address} colSpan={!compact} />
+          <InputField label="Department" icon={Building} field="department" value={person.department} />
+          <InputField label="Position" icon={Briefcase} field="position" value={person.position} />
+          
+          {/* Employee ID - Read only */}
           <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <User className="w-3 h-3" />
-              <span>First Name</span>
-            </label>
-            {canEditField('firstName') ? (
-              <input
-                type="text"
-                value={editedData.firstName || person.firstName}
-                onChange={(e) => setEditedData({...editedData, firstName: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <>
-                <p className="text-gray-900 dark:text-white mt-1 font-medium">{person.firstName}</p>
-                {!isHRView && isEditing && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Contact HR to change</p>}
-              </>
-            )}
-          </div>
-
-          {/* Last Name */}
-          <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <User className="w-3 h-3" />
-              <span>Last Name</span>
-            </label>
-            {canEditField('lastName') ? (
-              <input
-                type="text"
-                value={editedData.lastName || person.lastName}
-                onChange={(e) => setEditedData({...editedData, lastName: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <>
-                <p className="text-gray-900 dark:text-white mt-1 font-medium">{person.lastName}</p>
-                {!isHRView && isEditing && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Contact HR to change</p>}
-              </>
-            )}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <Mail className="w-3 h-3" />
-              <span>Email</span>
-            </label>
-            {canEditField('email') ? (
-              <input
-                type="email"
-                value={editedData.email || person.email}
-                onChange={(e) => setEditedData({...editedData, email: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <>
-                <p className="text-gray-900 dark:text-white mt-1">{person.email}</p>
-                {!isHRView && isEditing && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Contact HR to change</p>}
-              </>
-            )}
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <Phone className="w-3 h-3" />
-              <span>Phone</span>
-            </label>
-            {canEditField('phone') ? (
-              <input
-                type="tel"
-                value={editedData.phone || person.phone}
-                onChange={(e) => setEditedData({...editedData, phone: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <p className="text-gray-900 dark:text-white mt-1">{person.phone}</p>
-            )}
-          </div>
-
-          {/* Address */}
-          <div className={compact ? '' : 'md:col-span-2'}>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <MapPin className="w-3 h-3" />
-              <span>Address</span>
-            </label>
-            {canEditField('address') ? (
-              <input
-                type="text"
-                value={editedData.address || person.address}
-                onChange={(e) => setEditedData({...editedData, address: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <p className="text-gray-900 dark:text-white mt-1">{person.address}</p>
-            )}
-          </div>
-
-          {/* Department */}
-          <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <Building className="w-3 h-3" />
-              <span>Department</span>
-            </label>
-            {canEditField('department') ? (
-              <input
-                type="text"
-                value={editedData.department || person.department}
-                onChange={(e) => setEditedData({...editedData, department: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <p className="text-gray-900 dark:text-white mt-1">{person.department}</p>
-            )}
-          </div>
-
-          {/* Position */}
-          <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <Briefcase className="w-3 h-3" />
-              <span>Position</span>
-            </label>
-            {canEditField('position') ? (
-              <input
-                type="text"
-                value={editedData.position || person.position}
-                onChange={(e) => setEditedData({...editedData, position: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <p className="text-gray-900 dark:text-white mt-1">{person.position}</p>
-            )}
-          </div>
-
-          {/* Employee ID */}
-          <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <Shield className="w-3 h-3" />
+            <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
+              <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>Employee ID</span>
             </label>
-            <p className="text-gray-900 dark:text-white mt-1">{person.employeeId}</p>
-            {isEditing && isHRView && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">System-generated, cannot be changed</p>}
+            <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
+              <p className="text-[15px] text-[#1d1d1f] dark:text-white">{person.employeeId || 'Not assigned'}</p>
+              {isEditing && isHRView && (
+                <p className="text-[11px] text-[#86868b] mt-1">System-generated, cannot be changed</p>
+              )}
+            </div>
           </div>
 
           {/* Start Date */}
           <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <Calendar className="w-3 h-3" />
+            <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
+              <Calendar className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>Start Date</span>
             </label>
             {canEditField('startDate') ? (
               <input
                 type="date"
-                value={editedData.startDate || person.startDate}
+                value={editedData.startDate ?? person.startDate}
                 onChange={(e) => setEditedData({...editedData, startDate: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2.5 bg-white/60 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] transition-all"
               />
             ) : (
-              <p className="text-gray-900 dark:text-white mt-1">
-                {person.startDate ? format(new Date(person.startDate), 'MMMM dd, yyyy') : 'N/A'}
-              </p>
+              <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
+                <p className="text-[15px] text-[#1d1d1f] dark:text-white">
+                  {person.startDate ? format(new Date(person.startDate), 'MMMM dd, yyyy') : 'Not provided'}
+                </p>
+              </div>
             )}
           </div>
 
-          {/* Manager */}
-          <div>
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
-              <UserCheck className="w-3 h-3" />
-              <span>Manager</span>
-            </label>
-            {canEditField('manager') ? (
-              <input
-                type="text"
-                value={editedData.manager || person.manager}
-                onChange={(e) => setEditedData({...editedData, manager: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <p className="text-gray-900 dark:text-white mt-1">{person.manager}</p>
-            )}
-          </div>
+          <InputField label="Manager" icon={UserCheck} field="manager" value={person.manager} />
         </div>
 
         {/* Edit Mode Info */}
         {isEditing && (
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+          <div className="mt-6 p-4 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 border border-[#0071e3]/20 rounded-xl">
+            <p className="text-[13px] text-[#0071e3] dark:text-[#5ac8fa]">
               {isHRView ? (
-                <><strong>HR Manager:</strong> You can update all employee information fields except Employee ID.</>
+                <><span className="font-semibold">HR Manager:</span> You can update all employee information fields except Employee ID.</>
               ) : (
-                <><strong>Note:</strong> You can update your phone and address. For changes to name, email, or employment details, please contact HR.</>
+                <><span className="font-semibold">Note:</span> You can update your phone and address. For changes to name, email, or employment details, please contact HR.</>
               )}
             </p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

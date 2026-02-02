@@ -427,18 +427,30 @@ const TeamManagement = () => {
 
       {/* Employee Detail Modal */}
       {showEmployeeModal && selectedEmployee && createPortal(
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-white/10">
-            <div className="sticky top-0 bg-white dark:bg-[#1c1c1e] border-b border-gray-200 dark:border-white/10 px-6 py-4 z-10">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#f5f5f7] dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-black/5 dark:border-white/10">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10 px-6 py-4 z-10">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Employee Details</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowEmployeeModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white">
-                  <XCircle className="w-5 h-5" />
-                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                    <Users className="w-5 h-5 text-white" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Employee Details</h2>
+                    <p className="text-[13px] text-[#86868b]">{selectedEmployee.name}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowEmployeeModal(false)} 
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  <XCircle className="w-5 h-5 text-[#86868b]" strokeWidth={1.5} />
+                </button>
               </div>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
               {/* Personal Information Card */}
               <PersonCard 
                 person={{
@@ -457,22 +469,17 @@ const TeamManagement = () => {
                 isHRView={isHRManager}
                 onSave={async (updatedData) => {
                   try {
-                    // Find employee in Firestore by email
                     const employee = await firestoreService.getEmployeeByEmail(selectedEmployee.email);
-                    
                     if (employee) {
                       await firestoreService.updateEmployee(employee.id, updatedData);
-                      console.log('✅ Employee updated in Firestore');
                     } else {
-                      // Create new employee if not found
                       const newEmployee = {
                         firstName: updatedData.firstName || selectedEmployee.name.split(' ')[0],
                         lastName: updatedData.lastName || selectedEmployee.name.split(' ').slice(1).join(' '),
                         email: selectedEmployee.email,
                         ...updatedData
                       };
-                      const result = await firestoreService.addEmployee(newEmployee);
-                      console.log('✅ Employee created in Firestore:', result.id);
+                      await firestoreService.addEmployee(newEmployee);
                     }
                   } catch (error) {
                     console.error('❌ Error in Team Management save:', error);
@@ -484,98 +491,132 @@ const TeamManagement = () => {
               />
 
               {/* Performance Metrics */}
-              <Card className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
-                    <BarChart3 className="w-5 h-5" />
-                    <span>Performance Metrics</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+                <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#34c759] to-[#30d158] flex items-center justify-center shadow-lg shadow-[#34c759]/20">
+                      <BarChart3 className="w-4 h-4 text-white" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Performance Metrics</h3>
+                  </div>
+                </div>
+                <div className="p-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{selectedEmployee.performance.rating}</p>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">Overall Rating</p>
+                    <div className="text-center p-4 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl">
+                      <p className="text-[28px] font-semibold text-[#0071e3]">{selectedEmployee.performance.rating}</p>
+                      <p className="text-[13px] text-[#0071e3]/80">Overall Rating</p>
                     </div>
-                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">{selectedEmployee.performance.projectsCompleted}</p>
-                      <p className="text-sm text-green-700 dark:text-green-300">Projects Completed</p>
+                    <div className="text-center p-4 bg-[#34c759]/5 dark:bg-[#34c759]/10 rounded-xl">
+                      <p className="text-[28px] font-semibold text-[#34c759]">{selectedEmployee.performance.projectsCompleted}</p>
+                      <p className="text-[13px] text-[#34c759]/80">Projects Completed</p>
                     </div>
-                    <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{selectedEmployee.performance.onTimeDelivery}%</p>
-                      <p className="text-sm text-yellow-700 dark:text-yellow-300">On-Time Delivery</p>
+                    <div className="text-center p-4 bg-[#ff9500]/5 dark:bg-[#ff9500]/10 rounded-xl">
+                      <p className="text-[28px] font-semibold text-[#ff9500]">{selectedEmployee.performance.onTimeDelivery}%</p>
+                      <p className="text-[13px] text-[#ff9500]/80">On-Time Delivery</p>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{selectedEmployee.performance.clientSatisfaction}</p>
-                      <p className="text-sm text-purple-700 dark:text-purple-300">Client Satisfaction</p>
+                    <div className="text-center p-4 bg-[#af52de]/5 dark:bg-[#af52de]/10 rounded-xl">
+                      <p className="text-[28px] font-semibold text-[#af52de]">{selectedEmployee.performance.clientSatisfaction}</p>
+                      <p className="text-[13px] text-[#af52de]/80">Client Satisfaction</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Skills and Certifications */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
-                      <GraduationCap className="w-5 h-5" />
-                      <span>Skills</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedEmployee.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="dark:bg-white/10 dark:text-gray-200">{skill}</Badge>
-                      ))}
+                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5856d6] to-[#af52de] flex items-center justify-center shadow-lg shadow-[#5856d6]/20">
+                        <GraduationCap className="w-4 h-4 text-white" strokeWidth={1.5} />
+                      </div>
+                      <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Skills</h3>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEmployee.skills.length > 0 ? selectedEmployee.skills.map((skill, index) => (
+                        <span key={index} className="px-3 py-1.5 text-[13px] font-medium text-[#5856d6] bg-[#5856d6]/10 rounded-full">
+                          {skill}
+                        </span>
+                      )) : (
+                        <p className="text-[13px] text-[#86868b]">No skills added yet</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-                <Card className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
-                      <Award className="w-5 h-5" />
-                      <span>Certifications</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedEmployee.certifications.map((cert, index) => (
-                        <Badge key={index} variant="outline" className="dark:border-white/20 dark:text-gray-200">{cert}</Badge>
-                      ))}
+                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ff9500] to-[#ff3b30] flex items-center justify-center shadow-lg shadow-[#ff9500]/20">
+                        <Award className="w-4 h-4 text-white" strokeWidth={1.5} />
+                      </div>
+                      <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Certifications</h3>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEmployee.certifications.length > 0 ? selectedEmployee.certifications.map((cert, index) => (
+                        <span key={index} className="px-3 py-1.5 text-[13px] font-medium text-[#ff9500] bg-[#ff9500]/10 rounded-full">
+                          {cert}
+                        </span>
+                      )) : (
+                        <p className="text-[13px] text-[#86868b]">No certifications added yet</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Leave Balance */}
-              <Card className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
-                    <Calendar className="w-5 h-5" />
-                    <span>Leave Balance</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+                <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5ac8fa] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                      <Calendar className="w-4 h-4 text-white" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Leave Balance</h3>
+                  </div>
+                </div>
+                <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{selectedEmployee.leaveBalance.vacation.remaining}</p>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">Vacation Days</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Used: {selectedEmployee.leaveBalance.vacation.used}</p>
+                    <div className="text-center p-5 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-[#0071e3]">{selectedEmployee.leaveBalance.vacation.remaining}</p>
+                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Vacation Days</p>
+                      <p className="text-[13px] text-[#86868b] mt-1">Used: {selectedEmployee.leaveBalance.vacation.used} of {selectedEmployee.leaveBalance.vacation.total}</p>
+                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-[#0071e3] rounded-full transition-all"
+                          style={{ width: `${(selectedEmployee.leaveBalance.vacation.remaining / selectedEmployee.leaveBalance.vacation.total) * 100}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-red-600 dark:text-red-400">{selectedEmployee.leaveBalance.sick.remaining}</p>
-                      <p className="text-sm text-red-700 dark:text-red-300">Sick Days</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Used: {selectedEmployee.leaveBalance.sick.used}</p>
+                    <div className="text-center p-5 bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-[#ff3b30]">{selectedEmployee.leaveBalance.sick.remaining}</p>
+                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Sick Days</p>
+                      <p className="text-[13px] text-[#86868b] mt-1">Used: {selectedEmployee.leaveBalance.sick.used} of {selectedEmployee.leaveBalance.sick.total}</p>
+                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-[#ff3b30] rounded-full transition-all"
+                          style={{ width: `${(selectedEmployee.leaveBalance.sick.remaining / selectedEmployee.leaveBalance.sick.total) * 100}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{selectedEmployee.leaveBalance.personal.remaining}</p>
-                      <p className="text-sm text-purple-700 dark:text-purple-300">Personal Days</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Used: {selectedEmployee.leaveBalance.personal.used}</p>
+                    <div className="text-center p-5 bg-[#af52de]/5 dark:bg-[#af52de]/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-[#af52de]">{selectedEmployee.leaveBalance.personal.remaining}</p>
+                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Personal Days</p>
+                      <p className="text-[13px] text-[#86868b] mt-1">Used: {selectedEmployee.leaveBalance.personal.used} of {selectedEmployee.leaveBalance.personal.total}</p>
+                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-[#af52de] rounded-full transition-all"
+                          style={{ width: `${(selectedEmployee.leaveBalance.personal.remaining / selectedEmployee.leaveBalance.personal.total) * 100}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
         </div>,
