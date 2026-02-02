@@ -13,17 +13,22 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  Trash2,
+  Pencil
 } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { format } from 'date-fns';
 import ClientContractsSection from './ClientContractsSection';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../contexts/PermissionsContext';
+import { PERMISSIONS } from '../../entities/Permissions';
 import PlatformIcons from '../PlatformIcons';
 
 const ClientProfilesList = () => {
   const { currentUser } = useAuth();
+  const { hasPermission } = usePermissions();
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +41,13 @@ const ClientProfilesList = () => {
   const [assigningManager, setAssigningManager] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Permissions
+  const canManageClients = hasPermission(PERMISSIONS.MANAGE_CLIENTS);
+  const canDeleteClients = hasPermission(PERMISSIONS.DELETE_CLIENTS);
+  const canAssignManagers = hasPermission(PERMISSIONS.ASSIGN_CLIENT_MANAGERS);
 
   // Load data once on mount (no real-time listener for performance)
   useEffect(() => {
@@ -149,6 +161,22 @@ const ClientProfilesList = () => {
     } catch (error) {
       console.error('Error updating client:', error);
       toast.error('Failed to update client');
+    }
+  };
+
+  const handleDeleteClient = async (clientId) => {
+    try {
+      setDeleting(true);
+      await firestoreService.deleteClient(clientId);
+      toast.success('Client removed successfully');
+      setShowDeleteConfirm(null);
+      setSelectedClient(null);
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast.error('Failed to remove client');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -389,9 +417,44 @@ const ClientProfilesList = () => {
             return (
               <div 
                 key={client.id} 
-                className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all cursor-pointer"
+                className="relative rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all cursor-pointer group"
                 onClick={() => setSelectedClient(client)}
               >
+                {/* Edit/Delete buttons at top right */}
+                <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  {canManageClients && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedClient(client);
+                        setEditForm({
+                          clientName: client.clientName || '',
+                          clientEmail: client.clientEmail || '',
+                          phone: client.phone || '',
+                          notes: client.notes || ''
+                        });
+                        setShowEditModal(true);
+                      }}
+                      className="p-2 rounded-lg bg-white dark:bg-[#2c2c2e] shadow-sm border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                      title="Edit client"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-[#0071e3]" />
+                    </button>
+                  )}
+                  {canDeleteClients && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteConfirm(client);
+                      }}
+                      className="p-2 rounded-lg bg-white dark:bg-[#2c2c2e] shadow-sm border border-black/5 dark:border-white/10 hover:bg-[#ff3b30]/10 transition-colors"
+                      title="Remove client"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" />
+                    </button>
+                  )}
+                </div>
+
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
@@ -483,29 +546,29 @@ const ClientProfilesList = () => {
                 </div>
 
                 <div className="flex gap-2 pt-4 border-t border-black/5 dark:border-white/10">
-                  <button
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedClient(client);
-                      setShowManagerAssignModal(true);
-                    }}
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    {manager ? 'Reassign' : 'Assign'}
-                  </button>
-                  {manager && (
+                  {canAssignManagers && (
                     <button
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.location.href = `mailto:${client.clientEmail}`;
+                        setSelectedClient(client);
+                        setShowManagerAssignModal(true);
                       }}
                     >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      Contact
+                      <UserPlus className="w-3.5 h-3.5" />
+                      {manager ? 'Reassign' : 'Assign'}
                     </button>
                   )}
+                  <button
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.location.href = `mailto:${client.clientEmail}`;
+                    }}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Contact
+                  </button>
                 </div>
               </div>
             );
@@ -517,7 +580,7 @@ const ClientProfilesList = () => {
       {selectedClient && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10">
+            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 z-10">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-gradient-to-br from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center">
@@ -534,12 +597,40 @@ const ClientProfilesList = () => {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedClient(null)}
-                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                >
-                  <X className="w-5 h-5 text-[#86868b]" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {canManageClients && (
+                    <button
+                      onClick={() => {
+                        setEditForm({
+                          clientName: selectedClient.clientName || '',
+                          clientEmail: selectedClient.clientEmail || '',
+                          phone: selectedClient.phone || '',
+                          notes: selectedClient.notes || ''
+                        });
+                        setShowEditModal(true);
+                      }}
+                      className="p-2 rounded-lg bg-[#0071e3]/10 hover:bg-[#0071e3]/20 transition-colors"
+                      title="Edit client"
+                    >
+                      <Pencil className="w-4 h-4 text-[#0071e3]" />
+                    </button>
+                  )}
+                  {canDeleteClients && (
+                    <button
+                      onClick={() => setShowDeleteConfirm(selectedClient)}
+                      className="p-2 rounded-lg hover:bg-[#ff3b30]/10 transition-colors"
+                      title="Remove client"
+                    >
+                      <Trash2 className="w-4 h-4 text-[#ff3b30]" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedClient(null)}
+                    className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-5 h-5 text-[#86868b]" />
+                  </button>
+                </div>
               </div>
             </div>
             <div className="p-6">
@@ -656,42 +747,26 @@ const ClientProfilesList = () => {
               </div>
 
               <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-black/5 dark:border-white/10">
-                <button
-                  onClick={() => {
-                    setEditForm({
-                      clientName: selectedClient.clientName || '',
-                      clientEmail: selectedClient.clientEmail || '',
-                      phone: selectedClient.phone || '',
-                      notes: selectedClient.notes || ''
-                    });
-                    setShowEditModal(true);
-                  }}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  Edit Info
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedClient(selectedClient);
-                    setShowManagerAssignModal(true);
-                  }}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  {getAssignedManager(selectedClient) ? 'Reassign' : 'Assign'}
-                </button>
-                {getAssignedManager(selectedClient) && (
+                {canAssignManagers && (
                   <button
                     onClick={() => {
-                      window.location.href = `mailto:${selectedClient.clientEmail}`;
+                      setShowManagerAssignModal(true);
                     }}
-                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    Send Email
+                    <UserPlus className="w-4 h-4" />
+                    {getAssignedManager(selectedClient) ? 'Reassign Manager' : 'Assign Manager'}
                   </button>
                 )}
+                <button
+                  onClick={() => {
+                    window.location.href = `mailto:${selectedClient.clientEmail}`;
+                  }}
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Send Email
+                </button>
                 <button
                   onClick={() => setSelectedClient(null)}
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
@@ -852,6 +927,46 @@ const ClientProfilesList = () => {
                   className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-sm w-full border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="p-6 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[#ff3b30]/10 flex items-center justify-center">
+                <Trash2 className="w-7 h-7 text-[#ff3b30]" />
+              </div>
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Remove Client?</h2>
+              <p className="text-[14px] text-[#86868b] mb-6">
+                Are you sure you want to remove <span className="font-medium text-[#1d1d1f] dark:text-white">{showDeleteConfirm.clientName || 'this client'}</span>? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteClient(showDeleteConfirm.id)}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e53529] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Removing...
+                    </>
+                  ) : (
+                    'Remove'
+                  )}
                 </button>
               </div>
             </div>

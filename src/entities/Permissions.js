@@ -39,6 +39,12 @@ export const PERMISSIONS = {
   VIEW_HR_DATA: 'view_hr_data',
   MANAGE_TEAM: 'manage_team',
   
+  // Client Management
+  VIEW_ALL_CLIENTS: 'view_all_clients',
+  MANAGE_CLIENTS: 'manage_clients',
+  DELETE_CLIENTS: 'delete_clients',
+  ASSIGN_CLIENT_MANAGERS: 'assign_client_managers',
+  
   // CRM & Sales
   MANAGE_CRM: 'manage_crm',
   VIEW_LEADS: 'view_leads',
@@ -123,6 +129,16 @@ export const PERMISSION_CATEGORIES = {
       PERMISSIONS.MANAGE_TEAM
     ]
   },
+  CLIENT_MANAGEMENT: {
+    name: 'Client Management',
+    description: 'Manage SMM client profiles and assignments',
+    permissions: [
+      PERMISSIONS.VIEW_ALL_CLIENTS,
+      PERMISSIONS.MANAGE_CLIENTS,
+      PERMISSIONS.DELETE_CLIENTS,
+      PERMISSIONS.ASSIGN_CLIENT_MANAGERS
+    ]
+  },
   CRM_SALES: {
     name: 'CRM & Sales',
     description: 'Customer relationship and sales management',
@@ -194,6 +210,11 @@ export const PERMISSION_LABELS = {
   [PERMISSIONS.VIEW_HR_DATA]: 'View HR Data',
   [PERMISSIONS.MANAGE_TEAM]: 'Manage Team',
   
+  [PERMISSIONS.VIEW_ALL_CLIENTS]: 'View All Clients',
+  [PERMISSIONS.MANAGE_CLIENTS]: 'Manage Clients',
+  [PERMISSIONS.DELETE_CLIENTS]: 'Delete Clients',
+  [PERMISSIONS.ASSIGN_CLIENT_MANAGERS]: 'Assign Client Managers',
+  
   [PERMISSIONS.MANAGE_CRM]: 'Manage CRM',
   [PERMISSIONS.VIEW_LEADS]: 'View Leads',
   [PERMISSIONS.MANAGE_LEADS]: 'Manage Leads',
@@ -245,6 +266,11 @@ export function getPermissionDescription(permission) {
     [PERMISSIONS.APPROVE_LEAVE]: 'Approve or reject leave requests',
     [PERMISSIONS.VIEW_HR_DATA]: 'Access HR data and reports',
     [PERMISSIONS.MANAGE_TEAM]: 'Manage team members and structure',
+    
+    [PERMISSIONS.VIEW_ALL_CLIENTS]: 'View all SMM client profiles',
+    [PERMISSIONS.MANAGE_CLIENTS]: 'Edit client information and details',
+    [PERMISSIONS.DELETE_CLIENTS]: 'Remove clients from the system',
+    [PERMISSIONS.ASSIGN_CLIENT_MANAGERS]: 'Assign social media managers to clients',
     
     [PERMISSIONS.MANAGE_CRM]: 'Full CRM access and management',
     [PERMISSIONS.VIEW_LEADS]: 'View leads and prospects',
