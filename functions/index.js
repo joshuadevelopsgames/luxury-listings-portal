@@ -181,15 +181,32 @@ function parseInstagramMetrics(text) {
   }
 
   // === INTERACTIONS ===
-  // Block through "By content type" + 400 chars so we catch the main number when OCR reads it after section text.
-  // Exclude numbers that are part of percentages (next char is . , or %).
+  // Primary: analyse the Interactions section and find the big number in the middle (standalone number on its own line).
   const low = text.toLowerCase();
-  const interactionsIdx = Math.max(low.indexOf('interactions'), low.indexOf('interacti0ns'));
-  if (interactionsIdx >= 0) {
-    const byContentIdx = low.indexOf('by content type', interactionsIdx + 1);
-    const endAfterByContent = byContentIdx > interactionsIdx ? byContentIdx + 400 : text.length;
+  const interactionsSectionStart = Math.max(low.indexOf('interactions'), low.indexOf('interacti0ns'));
+  if (interactionsSectionStart >= 0) {
+    const growthIdx = low.indexOf('growth', interactionsSectionStart + 1);
+    const endByGrowth = growthIdx > interactionsSectionStart ? growthIdx : text.length;
+    const sectionEnd = Math.min(text.length, interactionsSectionStart + 900, endByGrowth);
+    const section = text.slice(interactionsSectionStart, sectionEnd);
+    const lines = section.split(/\r?\n/);
+    const dateFragments = new Set([1, 30, 31]);
+    for (const line of lines) {
+      const standalone = line.match(/^\s*([0-9]{1,5})\s*$/);
+      if (standalone) {
+        const n = parseNumber(standalone[1]);
+        if (n >= 1 && n <= 99999 && !dateFragments.has(n)) {
+          metrics.interactions = n;
+          break;
+        }
+      }
+    }
+  }
+  if (metrics.interactions === undefined && interactionsSectionStart >= 0) {
+    const byContentIdx = low.indexOf('by content type', interactionsSectionStart + 1);
+    const endAfterByContent = byContentIdx > interactionsSectionStart ? byContentIdx + 400 : text.length;
     const blockEnd = Math.min(endAfterByContent, text.length);
-    const block = text.slice(interactionsIdx, blockEnd).slice(0, 1000);
+    const block = text.slice(interactionsSectionStart, blockEnd).slice(0, 1000);
     const numbersInBlock = [];
     const numRe = /\b([0-9,]+)\b/g;
     let numMatch;
@@ -210,9 +227,7 @@ function parseInstagramMetrics(text) {
         parsed = n;
         break;
       }
-      if (parsed > 0) {
-        metrics.interactions = parsed;
-      }
+      if (parsed > 0) metrics.interactions = parsed;
     }
   }
   if (metrics.interactions === undefined) {
@@ -222,15 +237,6 @@ function parseInstagramMetrics(text) {
       const fallbackNum = parseNumber(interactionsMatch[1]);
       if (fallbackNum !== 1 && fallbackNum !== 30 && fallbackNum !== 31) {
         metrics.interactions = fallbackNum;
-      }
-    }
-  }
-  if (metrics.interactions === undefined) {
-    const standaloneLine = text.match(/Interactions?\s*[\s\S]*?\n\s*([0-9]{1,5})\s*(?:\n|$)/i);
-    if (standaloneLine) {
-      const n = parseNumber(standaloneLine[1]);
-      if (n >= 1 && n <= 99999 && n !== 1 && n !== 30 && n !== 31) {
-        metrics.interactions = n;
       }
     }
   }
