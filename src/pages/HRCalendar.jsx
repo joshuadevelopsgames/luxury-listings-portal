@@ -598,7 +598,9 @@ const HRCalendar = () => {
 
   const filteredRequests = filterType === 'all' 
     ? leaveRequests 
-    : leaveRequests.filter(req => req.type === filterType);
+    : filterType === 'pending' || filterType === 'approved' || filterType === 'rejected'
+      ? leaveRequests.filter(req => req.status === filterType)
+      : leaveRequests.filter(req => req.type === filterType);
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -732,6 +734,126 @@ const HRCalendar = () => {
         })}
       </div>
 
+      {/* Leave Requests - Moved to top for quick admin access */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Clock className="w-5 h-5" />
+              <span>Leave Requests</span>
+              {leaveRequests.filter(r => r.status === 'pending').length > 0 && (
+                <Badge className="bg-yellow-100 text-yellow-800 ml-2">
+                  {leaveRequests.filter(r => r.status === 'pending').length} Pending
+                </Badge>
+              )}
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex space-x-2 mb-4">
+            <Button 
+              variant={filterType === 'all' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setFilterType('all')}
+            >
+              All ({leaveRequests.length})
+            </Button>
+            <Button 
+              variant={filterType === 'pending' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setFilterType('pending')}
+            >
+              ⏳ Pending ({leaveRequests.filter(r => r.status === 'pending').length})
+            </Button>
+            <Button 
+              variant={filterType === 'approved' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setFilterType('approved')}
+            >
+              ✅ Approved ({leaveRequests.filter(r => r.status === 'approved').length})
+            </Button>
+            <Button 
+              variant={filterType === 'vacation' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setFilterType('vacation')}
+            >
+              🏖️ Vacation
+            </Button>
+            <Button 
+              variant={filterType === 'sick' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setFilterType('sick')}
+            >
+              🏥 Sick
+            </Button>
+          </div>
+
+          {filteredRequests.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No leave requests found</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredRequests.map((request) => (
+                <div key={request.id} className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 ${request.status === 'pending' ? 'border-yellow-200 bg-yellow-50/50' : 'border-gray-200'}`}>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-2xl">
+                      {request.type === 'vacation' ? '🏖️' : request.type === 'sick' ? '🏥' : '📅'}
+                    </span>
+                    <div>
+                      <p className="font-medium text-gray-900">{request.employeeName}</p>
+                      <p className="text-sm text-gray-500">
+                        {request.startDate} - {request.endDate} ({request.days} days)
+                      </p>
+                      {request.reason && <p className="text-sm text-gray-600">{request.reason}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge className={`${getStatusColor(request.status)} flex items-center space-x-1`}>
+                      {getStatusIcon(request.status)}
+                      <span className="capitalize">{request.status}</span>
+                    </Badge>
+                    {request.status === 'pending' && (
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => openNotesModal(request.id, 'approve')}
+                          disabled={processingRequest === request.id}
+                        >
+                          {processingRequest === request.id ? 'Processing...' : '✓ Approve'}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => openNotesModal(request.id, 'reject')}
+                          disabled={processingRequest === request.id}
+                        >
+                          ✗ Reject
+                        </Button>
+                      </div>
+                    )}
+                    {request.status === 'approved' && isGoogleConnected && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => syncLeaveToCalendar(request)}
+                      >
+                        <CalendarIcon className="w-3 h-3 mr-1" />
+                        Add to Calendar
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Calendar View */}
       <Card>
         <CardHeader>
@@ -835,99 +957,6 @@ const HRCalendar = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Leave Requests */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CalendarIcon className="w-5 h-5" />
-            <span>Leave Requests</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-2 mb-4">
-            <Button 
-              variant={filterType === 'all' ? 'default' : 'outline'} 
-              size="sm"
-              onClick={() => setFilterType('all')}
-            >
-              All
-            </Button>
-            <Button 
-              variant={filterType === 'vacation' ? 'default' : 'outline'} 
-              size="sm"
-              onClick={() => setFilterType('vacation')}
-            >
-              🏖️ Vacation
-            </Button>
-            <Button 
-              variant={filterType === 'sick' ? 'default' : 'outline'} 
-              size="sm"
-              onClick={() => setFilterType('sick')}
-            >
-              🏥 Sick Leave
-            </Button>
-          </div>
-
-          <div className="space-y-3">
-            {filteredRequests.map((request) => (
-              <div key={request.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                <div className="flex items-center space-x-4">
-                  <span className="text-2xl">
-                    {request.type === 'vacation' ? '🏖️' : '🏥'}
-                  </span>
-                  <div>
-                    <p className="font-medium text-gray-900">{request.employeeName}</p>
-                    <p className="text-sm text-gray-500">
-                      {request.startDate} - {request.endDate} ({request.days} days)
-                    </p>
-                    <p className="text-sm text-gray-600">{request.reason}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Badge className={`${getStatusColor(request.status)} flex items-center space-x-1`}>
-                    {getStatusIcon(request.status)}
-                    <span className="capitalize">{request.status}</span>
-                  </Badge>
-                  {request.status === 'pending' && (
-                    <div className="flex space-x-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="text-green-600 hover:text-green-700"
-                        onClick={() => openNotesModal(request.id, 'approve')}
-                        disabled={processingRequest === request.id}
-                      >
-                        {processingRequest === request.id ? 'Processing...' : 'Approve'}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => openNotesModal(request.id, 'reject')}
-                        disabled={processingRequest === request.id}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-                  {request.status === 'approved' && isGoogleConnected && (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      onClick={() => syncLeaveToCalendar(request)}
-                    >
-                      <CalendarIcon className="w-3 h-3 mr-1" />
-                      Add to Calendar
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
         </CardContent>
       </Card>
