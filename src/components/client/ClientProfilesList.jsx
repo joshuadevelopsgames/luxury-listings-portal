@@ -534,6 +534,8 @@ const ClientProfilesList = () => {
                         <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
                       ) : (client.clientName?.toLowerCase().includes('paul mcclean') || client.clientName?.toLowerCase().includes('mcclean design')) ? (
                         <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
+                      ) : client.clientName?.toLowerCase().includes('resop') ? (
+                        <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                           <span className="text-white font-medium text-sm">
@@ -681,6 +683,8 @@ const ClientProfilesList = () => {
                         <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
                       ) : (client.clientName?.toLowerCase().includes('paul mcclean') || client.clientName?.toLowerCase().includes('mcclean design')) ? (
                         <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
+                      ) : client.clientName?.toLowerCase().includes('resop') ? (
+                        <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                           <span className="text-white font-semibold text-lg">
