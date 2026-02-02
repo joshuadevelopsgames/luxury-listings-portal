@@ -157,7 +157,7 @@ const router = createBrowserRouter([
           // Permission-protected pages
           { path: 'tasks', element: <PermissionRoute pageId="tasks" pageName="Tasks"><TasksPage /></PermissionRoute> },
           { path: 'my-clients', element: <PermissionRoute pageId="my-clients" pageName="My Clients"><MyClientsPage /></PermissionRoute> },
-          { path: 'clients', element: <PermissionRoute pageId="clients" pageName="Clients"><ClientsPage /></PermissionRoute> },
+          { path: 'clients', element: <PermissionRoute pageId="clients" pageName="Client Management"><ClientsPage /></PermissionRoute> },
           { path: 'posting-packages', element: <PermissionRoute pageId="posting-packages" pageName="Posting Packages"><PostingPackages /></PermissionRoute> },
           { path: 'pending-clients', element: <Navigate to="/clients?tab=pending" replace /> },
           { path: 'content-calendar', element: <PermissionRoute pageId="content-calendar" pageName="Content Calendar"><ContentCalendar /></PermissionRoute> },

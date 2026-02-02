@@ -41,7 +41,7 @@ const ClientsPage = () => {
           {/* Header Section */}
           <div className="mb-8">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Client Management</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Manage client profiles and pending approvals
               </p>

@@ -73,7 +73,7 @@ const ALL_PAGES = {
   // Upgrade modules
   'dashboard': { name: 'Dashboard', icon: Home, description: 'Main dashboard overview' },
   'tasks': { name: 'Tasks', icon: CheckSquare, description: 'Task management' },
-  'clients': { name: 'Clients', icon: User, description: 'Client directory and pending approvals' },
+  'clients': { name: 'Client Management', icon: User, description: 'Client directory and pending approvals' },
   'posting-packages': { name: 'Posting Packages', icon: Briefcase, description: 'Manage @luxury_listings posting packages' },
   'content-calendar': { name: 'Content Calendar', icon: Calendar, description: 'Content scheduling' },
   'crm': { name: 'CRM', icon: Target, description: 'Customer relationship management' },

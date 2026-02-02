@@ -79,7 +79,7 @@ export const modules = {
 
   'clients': {
     id: 'clients',
-    name: 'Clients',
+    name: 'Client Management',
     description: 'SMM client directory and management',
     icon: User,
     routes: ['/clients'],
