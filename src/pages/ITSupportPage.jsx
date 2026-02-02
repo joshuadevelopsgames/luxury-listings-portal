@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { 
   Wrench,
   Plus,
@@ -148,11 +145,11 @@ const ITSupportPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'resolved': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'resolved': return 'bg-[#34c759]/10 text-[#34c759]';
+      case 'in_progress': return 'bg-[#0071e3]/10 text-[#0071e3]';
+      case 'pending': return 'bg-[#ff9500]/10 text-[#ff9500]';
+      case 'closed': return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
+      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
     }
   };
 
@@ -452,117 +449,99 @@ const ITSupportPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
             {isITSupport ? 'IT Support Dashboard' : 'IT Support'}
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-[15px] text-[#86868b] mt-1">
             {isITSupport ? 'Manage support tickets and help team members' : 'Submit support requests and track your tickets'}
           </p>
         </div>
         {!isITSupport && (
-          <Button className="flex items-center space-x-2" onClick={() => setShowRequestModal(true)}>
+          <button 
+            onClick={() => setShowRequestModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
             <Plus className="w-4 h-4" />
             <span>New Support Request</span>
-          </Button>
+          </button>
         )}
       </div>
 
       {/* IT Admin Stats Dashboard */}
       {isITSupport && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="!p-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Total Tickets</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{ticketStats.total}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="!p-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Pending</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-2">{ticketStats.pending}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="!p-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">In Progress</p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">{ticketStats.inProgress}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="!p-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Resolved</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">{ticketStats.resolved}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="!p-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">🚨 Urgent</p>
-                <p className="text-3xl font-bold text-red-600 mt-2">{ticketStats.urgent}</p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
+            <p className="text-[12px] text-[#86868b]">Total Tickets</p>
+            <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white mt-1">{ticketStats.total}</p>
+          </div>
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
+            <p className="text-[12px] text-[#86868b]">Pending</p>
+            <p className="text-[28px] font-semibold text-[#ff9500] mt-1">{ticketStats.pending}</p>
+          </div>
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
+            <p className="text-[12px] text-[#86868b]">In Progress</p>
+            <p className="text-[28px] font-semibold text-[#0071e3] mt-1">{ticketStats.inProgress}</p>
+          </div>
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
+            <p className="text-[12px] text-[#86868b]">Resolved</p>
+            <p className="text-[28px] font-semibold text-[#34c759] mt-1">{ticketStats.resolved}</p>
+          </div>
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
+            <p className="text-[12px] text-[#86868b]">🚨 Urgent</p>
+            <p className="text-[28px] font-semibold text-[#ff3b30] mt-1">{ticketStats.urgent}</p>
+          </div>
         </div>
       )}
 
       {/* Support Info Banner (for regular users only) */}
       {!isITSupport && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="!p-8">
-            <div className="flex items-center space-x-3">
-              <Wrench className="w-5 h-5 text-blue-600 flex-shrink-0" />
-              <div>
-                <h3 className="text-sm font-medium text-blue-900 mb-1">How to Get Help</h3>
-                <p className="text-sm text-blue-700">
-                  Submit a detailed support request including the page URL and screenshots if possible. 
-                  Our IT team will respond within 24 hours for standard requests, and immediately for urgent issues.
-                </p>
-              </div>
+        <div className="rounded-2xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-5">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-[#0071e3]/10 rounded-lg">
+              <Wrench className="w-5 h-5 text-[#0071e3]" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h3 className="text-[13px] font-medium text-[#0071e3] mb-1">How to Get Help</h3>
+              <p className="text-[12px] text-[#0071e3]/80">
+                Submit a detailed support request including the page URL and screenshots if possible. 
+                Our IT team will respond within 24 hours for standard requests, and immediately for urgent issues.
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* My Tickets */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FileText className="w-5 h-5" />
-            <span>{isITSupport ? 'All Support Tickets' : 'My Support Tickets'}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">{isITSupport ? 'All Support Tickets' : 'My Support Tickets'}</span>
+          </div>
+        </div>
+        <div className="p-5">
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading tickets...</p>
+              <div className="w-12 h-12 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-[14px] text-[#86868b]">Loading tickets...</p>
             </div>
           ) : myTickets.length === 0 ? (
             <div className="text-center py-8">
-              <Wrench className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600">
+              <Wrench className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
+              <p className="text-[14px] text-[#86868b]">
                 {isITSupport ? 'No support tickets from team members yet' : 'No support tickets yet'}
               </p>
               {!isITSupport && (
-                <Button 
-                  variant="outline" 
-                  className="mt-3"
+                <button 
                   onClick={() => setShowRequestModal(true)}
+                  className="mt-3 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >
                   Submit Your First Request
-                </Button>
+                </button>
               )}
             </div>
           ) : (
@@ -575,42 +554,47 @@ const ITSupportPage = () => {
                 return (
                   <div 
                     key={ticket.id} 
-                    className={`p-4 border-2 rounded-lg transition-all ${
-                      ticket.status === 'pending' ? 'border-yellow-300 bg-yellow-50' :
-                      ticket.status === 'in_progress' ? 'border-blue-300 bg-blue-50' :
-                      ticket.status === 'resolved' ? 'border-green-300 bg-green-50' :
-                      'border-gray-200 bg-white'
+                    className={`p-4 rounded-xl transition-all ${
+                      ticket.status === 'pending' ? 'bg-[#ff9500]/5 border border-[#ff9500]/20' :
+                      ticket.status === 'in_progress' ? 'bg-[#0071e3]/5 border border-[#0071e3]/20' :
+                      ticket.status === 'resolved' ? 'bg-[#34c759]/5 border border-[#34c759]/20' :
+                      'bg-black/[0.02] dark:bg-white/5 border border-transparent'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       {/* Left side - Ticket Info */}
                       <div 
-                        className="flex items-start space-x-4 flex-1 cursor-pointer" 
+                        className="flex items-start gap-4 flex-1 cursor-pointer" 
                         onClick={() => setSelectedTicket(ticket)}
                       >
-                        <div className={`p-3 rounded-lg bg-${category?.color}-100`}>
-                          <CategoryIcon className={`w-5 h-5 text-${category?.color}-600`} />
+                        <div className={`p-2.5 rounded-xl bg-black/5 dark:bg-white/10`}>
+                          <CategoryIcon className={`w-5 h-5 text-[#1d1d1f] dark:text-white`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2 flex-wrap">
-                            <p className="font-semibold text-gray-900">{ticket.title}</p>
-                            <Badge className={priority?.color}>
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{ticket.title}</p>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
+                              priority?.value === 'urgent' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
+                              priority?.value === 'high' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
+                              priority?.value === 'medium' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
+                              'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                            }`}>
                               {priority?.label}
-                            </Badge>
-                            <Badge className={`${getStatusColor(ticket.status)} flex items-center space-x-1`}>
+                            </span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium flex items-center gap-1 ${getStatusColor(ticket.status)}`}>
                               {getStatusIcon(ticket.status)}
                               <span className="capitalize">{ticket.status?.replace('_', ' ')}</span>
-                            </Badge>
+                            </span>
                           </div>
                           {isITSupport && (
-                            <p className="text-sm font-medium text-gray-700 mb-1">
+                            <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
                               👤 {ticket.requesterName} ({ticket.requesterEmail})
                             </p>
                           )}
-                          <p className="text-sm text-gray-600 mb-2">
+                          <p className="text-[12px] text-[#86868b] mb-2">
                             {ticket.description}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-[11px] text-[#86868b]">
                             Submitted {ticket.submittedDate?.toDate 
                               ? format(ticket.submittedDate.toDate(), 'MMM dd, yyyy h:mm a')
                               : format(new Date(ticket.submittedDate), 'MMM dd, yyyy h:mm a')}
@@ -622,48 +606,44 @@ const ITSupportPage = () => {
                       {isITSupport && (
                         <div className="flex flex-col gap-2 flex-shrink-0">
                           {ticket.status === 'pending' && (
-                            <Button
-                              size="sm"
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleStatusUpdate(ticket.id, 'in_progress');
                               }}
-                              className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
+                              className="px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors whitespace-nowrap"
                             >
                               Start Work
-                            </Button>
+                            </button>
                           )}
                           {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
-                            <Button
-                              size="sm"
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleStatusUpdate(ticket.id, 'resolved');
                               }}
-                              className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
+                              className="px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-colors whitespace-nowrap"
                             >
                               Mark Resolved
-                            </Button>
+                            </button>
                           )}
                           {ticket.status !== 'closed' && (
-                            <Button
-                              size="sm"
+                            <button
                               onClick={(e) => handleCloseTicketClick(ticket, e)}
-                              className="bg-gray-600 hover:bg-gray-700 whitespace-nowrap"
+                              className="px-3 py-1.5 rounded-lg bg-[#86868b] text-white text-[12px] font-medium hover:bg-[#6e6e73] transition-colors whitespace-nowrap"
                             >
                               Close Ticket
-                            </Button>
+                            </button>
                           )}
-                          <Button
-                            size="sm"
-                            variant="outline"
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedTicket(ticket);
                             }}
+                            className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                           >
                             View Details
-                          </Button>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -672,8 +652,8 @@ const ITSupportPage = () => {
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Submit Support Request Modal */}
       {showRequestModal && createPortal(
