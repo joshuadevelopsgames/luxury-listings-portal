@@ -634,23 +634,23 @@ const OnboardingPage = () => {
                   <p className="text-gray-600 mb-6">
                     Click below to authorize calendar access
                   </p>
-                  <Button
+                  <button
                     onClick={handleConnectCalendar}
                     disabled={connectingCalendar}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg text-lg px-8 py-6 h-auto"
+                    className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#0071e3] to-[#5856d6] text-white text-[15px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg"
                   >
                     {connectingCalendar ? (
                       <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Connecting...
                       </>
                     ) : (
                       <>
-                        <Calendar className="h-5 w-5 mr-2" />
+                        <Calendar className="h-5 w-5" />
                         Connect Calendar
                       </>
                     )}
-                  </Button>
+                  </button>
                   <p className="text-xs text-gray-500 mt-4">
                     You can always connect later from your calendar page
                   </p>
