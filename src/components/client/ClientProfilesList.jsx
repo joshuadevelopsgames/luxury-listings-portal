@@ -15,7 +15,9 @@ import {
   AlertCircle,
   TrendingUp,
   Trash2,
-  Pencil
+  Pencil,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { format } from 'date-fns';
@@ -42,6 +44,7 @@ const ClientProfilesList = () => {
   const [editForm, setEditForm] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'card'
 
   // Permissions
   const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
@@ -117,7 +120,7 @@ const ClientProfilesList = () => {
       client.approvalStatus?.toLowerCase() === statusFilter.toLowerCase();
     
     return matchesSearch && matchesManager && matchesPackage && matchesStatus;
-  });
+  }).sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
 
   const handleAssignManager = async (clientId, managerEmail) => {
     try {
@@ -330,6 +333,24 @@ const ClientProfilesList = () => {
                 <option value="pending">Pending</option>
                 <option value="rejected">Rejected</option>
               </select>
+
+              {/* View Toggle */}
+              <div className="flex items-center bg-black/5 dark:bg-white/10 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2.5 transition-colors ${viewMode === 'list' ? 'bg-[#0071e3] text-white' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+                  title="List view"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={`p-2.5 transition-colors ${viewMode === 'card' ? 'bg-[#0071e3] text-white' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+                  title="Card view"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -409,7 +430,119 @@ const ClientProfilesList = () => {
             </div>
           )}
         </div>
+      ) : viewMode === 'list' ? (
+        /* List View */
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+          {/* List Header */}
+          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-black/[0.02] dark:bg-white/[0.02] border-b border-black/5 dark:border-white/5 text-[11px] font-semibold text-[#86868b] uppercase tracking-wide">
+            <div className="col-span-4">Client</div>
+            <div className="col-span-2">Package</div>
+            <div className="col-span-3">Manager</div>
+            <div className="col-span-2">Posts</div>
+            <div className="col-span-1">Actions</div>
+          </div>
+          {/* List Items */}
+          <div className="divide-y divide-black/5 dark:divide-white/5">
+            {filteredClients.map((client) => {
+              const manager = getAssignedManager(client);
+              return (
+                <div 
+                  key={client.id} 
+                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 py-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer group items-center"
+                  onClick={() => setSelectedClient(client)}
+                >
+                  {/* Client Info */}
+                  <div className="col-span-4 flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                      {client.profilePhoto ? (
+                        <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
+                          <span className="text-white font-medium text-sm">
+                            {client.clientName ? client.clientName.charAt(0).toUpperCase() : 'C'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                        {client.clientName || 'Unnamed Client'}
+                      </h3>
+                      <p className="text-[11px] text-[#86868b] truncate">{client.clientEmail || 'No email'}</p>
+                    </div>
+                  </div>
+
+                  {/* Package */}
+                  <div className="col-span-2 flex items-center">
+                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#0071e3]/10 text-[#0071e3] font-medium">
+                      {client.packageType || 'Standard'}
+                    </span>
+                  </div>
+
+                  {/* Manager */}
+                  <div className="col-span-3 flex items-center">
+                    {manager ? (
+                      <span className="text-[12px] text-[#34c759] font-medium truncate">
+                        {manager.displayName || manager.email}
+                      </span>
+                    ) : (
+                      <span className="text-[12px] text-[#ff9500]">Unassigned</span>
+                    )}
+                  </div>
+
+                  {/* Posts */}
+                  <div className="col-span-2 flex items-center">
+                    <span className="text-[12px] text-[#86868b]">
+                      {client.postsRemaining !== undefined ? `${client.postsRemaining} remaining` : '—'}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {(canManageClients || canEditPackages) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedClient(client);
+                          setEditForm({
+                            clientName: client.clientName || '',
+                            clientEmail: client.clientEmail || '',
+                            phone: client.phone || '',
+                            notes: client.notes || '',
+                            packageType: client.packageType || 'Standard',
+                            packageSize: client.packageSize || 10,
+                            postsUsed: client.postsUsed || 0,
+                            postsRemaining: client.postsRemaining || 0,
+                            paymentStatus: client.paymentStatus || 'Pending'
+                          });
+                          setShowEditModal(true);
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        title="Edit client"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-[#0071e3]" />
+                      </button>
+                    )}
+                    {canManageClients && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteConfirm(client);
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-[#ff3b30]/10 transition-colors"
+                        title="Remove client"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       ) : (
+        /* Card View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => {
             const manager = getAssignedManager(client);
