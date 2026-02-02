@@ -73,9 +73,6 @@ const InstagramReportsPage = () => {
   const [copiedLink, setCopiedLink] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
 
-  // System admin check
-  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com';
-
   // Load reports
   useEffect(() => {
     const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
@@ -118,24 +115,6 @@ const InstagramReportsPage = () => {
       alert('Failed to delete report. Please try again.');
     }
   };
-
-  if (!isSystemAdmin) {
-    return (
-      <div className="p-6 max-w-4xl mx-auto">
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 text-red-700">
-              <AlertCircle className="w-6 h-6" />
-              <div>
-                <h3 className="font-semibold">Access Denied</h3>
-                <p className="text-sm mt-1">This page is only accessible to system administrators.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
