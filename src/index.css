@@ -175,86 +175,103 @@
    Michelle's Special Theme - Pink in Dark Mode
    ============================================ */
 
+/* Michelle's cat icon filter */
+.michelle-theme.dark {
+  --michelle-cat-filter: brightness(0) saturate(100%) invert(45%) sepia(96%) saturate(2754%) hue-rotate(295deg) brightness(101%) contrast(101%);
+}
+
 /* Override blue (#0071e3) with hot pink (#f90fc6) in dark mode for Michelle */
-.michelle-theme.dark .bg-\[\#0071e3\] {
+/* Using attribute selectors for reliability */
+
+/* Background colors */
+.michelle-theme.dark [class*="bg-[#0071e3]"]:not([class*="hover:"]) {
   background-color: #f90fc6 !important;
 }
 
-.michelle-theme.dark .bg-\[\#0071e3\]\/10 {
+.michelle-theme.dark [class*="bg-[#0071e3]/10"] {
   background-color: rgba(249, 15, 198, 0.1) !important;
 }
 
-.michelle-theme.dark .bg-\[\#0071e3\]\/5 {
+.michelle-theme.dark [class*="bg-[#0071e3]/5"] {
   background-color: rgba(249, 15, 198, 0.05) !important;
 }
 
-.michelle-theme.dark .bg-\[\#0071e3\]\/20 {
+.michelle-theme.dark [class*="bg-[#0071e3]/20"] {
   background-color: rgba(249, 15, 198, 0.2) !important;
 }
 
-.michelle-theme.dark .text-\[\#0071e3\] {
+/* Text colors */
+.michelle-theme.dark [class*="text-[#0071e3]"] {
   color: #f90fc6 !important;
 }
 
-.michelle-theme.dark .border-\[\#0071e3\] {
+/* Border colors */
+.michelle-theme.dark [class*="border-[#0071e3]"] {
   border-color: #f90fc6 !important;
 }
 
-.michelle-theme.dark .ring-\[\#0071e3\] {
+/* Ring colors */
+.michelle-theme.dark [class*="ring-[#0071e3]"] {
   --tw-ring-color: #f90fc6 !important;
 }
 
-.michelle-theme.dark .from-\[\#0071e3\] {
+/* Gradient colors */
+.michelle-theme.dark [class*="from-[#0071e3]"] {
   --tw-gradient-from: #f90fc6 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
-.michelle-theme.dark .to-\[\#0071e3\] {
+.michelle-theme.dark [class*="to-[#0071e3]"] {
   --tw-gradient-to: #f90fc6 !important;
 }
 
-.michelle-theme.dark .hover\:bg-\[\#0077ed\]:hover {
+/* Hover states */
+.michelle-theme.dark [class*="hover:bg-[#0077ed]"]:hover {
   background-color: #ff3fd8 !important;
 }
 
-.michelle-theme.dark .hover\:bg-\[\#0071e3\]\/20:hover {
-  background-color: rgba(249, 15, 198, 0.2) !important;
-}
-
-/* Michelle's dashboard widget icons - #ffb9f6 */
-.michelle-theme.dark .dashboard-widget-icon,
-.michelle-theme.dark [class*="widget"] svg,
-.michelle-theme.dark .v3-content-wrapper .rounded-2xl > div:first-child svg {
-  color: #ffb9f6 !important;
-}
-
-/* Override primary button style for Michelle */
-.michelle-theme.dark button[class*="bg-[#0071e3]"] {
-  background-color: #f90fc6 !important;
-}
-
-.michelle-theme.dark button[class*="bg-[#0071e3]"]:hover {
+.michelle-theme.dark [class*="hover:bg-[#0071e3]"]:hover {
   background-color: #ff3fd8 !important;
-}
-
-/* Active sidebar item */
-.michelle-theme.dark .bg-\[\#0071e3\].text-white {
-  background-color: #f90fc6 !important;
-  box-shadow: 0 1px 3px rgba(249, 15, 198, 0.3) !important;
-}
-
-/* Focus rings */
-.michelle-theme.dark .focus\:ring-\[\#0071e3\]\/50:focus {
-  --tw-ring-color: rgba(249, 15, 198, 0.5) !important;
 }
 
 /* Shadow effects */
-.michelle-theme.dark .shadow-\[\#0071e3\]\/30 {
-  box-shadow: 0 1px 3px rgba(249, 15, 198, 0.3) !important;
+.michelle-theme.dark [class*="shadow-[#0071e3]"] {
+  --tw-shadow-color: rgba(249, 15, 198, 0.3) !important;
 }
 
-/* Michelle's cat icon - make it pink in dark mode */
-.michelle-theme.dark {
-  --michelle-cat-filter: brightness(0) saturate(100%) invert(45%) sepia(96%) saturate(2754%) hue-rotate(295deg) brightness(101%) contrast(101%);
+/* Focus rings */
+.michelle-theme.dark [class*="focus:ring-[#0071e3]"]:focus {
+  --tw-ring-color: rgba(249, 15, 198, 0.5) !important;
+}
+
+/* Accent color for checkboxes and inputs */
+.michelle-theme.dark [class*="accent-[#0071e3]"] {
+  accent-color: #f90fc6 !important;
+}
+
+/* Michelle's dashboard widget icons - #ffb9f6 */
+.michelle-theme.dark .v3-content-wrapper svg {
+  color: #ffb9f6 !important;
+}
+
+/* But keep specific colored icons their original color */
+.michelle-theme.dark .v3-content-wrapper [class*="text-[#34c759]"] svg,
+.michelle-theme.dark .v3-content-wrapper [class*="text-[#ff9500]"] svg,
+.michelle-theme.dark .v3-content-wrapper [class*="text-[#ff3b30]"] svg,
+.michelle-theme.dark .v3-content-wrapper [class*="text-[#5856d6]"] svg,
+.michelle-theme.dark .v3-content-wrapper [class*="text-[#af52de]"] svg {
+  color: inherit !important;
+}
+
+/* Override buttons and interactive elements */
+.michelle-theme.dark button[class*="bg-[#0071e3]"],
+.michelle-theme.dark a[class*="bg-[#0071e3]"] {
+  background-color: #f90fc6 !important;
+}
+
+.michelle-theme.dark button[class*="bg-[#0071e3]"]:hover,
+.michelle-theme.dark a[class*="bg-[#0071e3]"]:hover {
+  background-color: #ff3fd8 !important;
 }
 
 
