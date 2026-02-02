@@ -32,7 +32,7 @@ import { auth } from '../firebase';
 import { PERMISSIONS, PERMISSION_CATEGORIES, PERMISSION_LABELS } from '../entities/Permissions';
 
 const UserManagement = () => {
-  const { currentUser, hasPermission } = useAuth();
+  const { currentUser, hasPermission, isSystemAdmin } = useAuth();
   const { pendingUsers, removePendingUser, approveUser, updatePendingUserRole, refreshPendingUsers } = usePendingUsers();
   const [approvedUsers, setApprovedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +58,17 @@ const UserManagement = () => {
     location: ''
   });
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [customRoles, setCustomRoles] = useState([]);
+  const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
+  const [newRoleForm, setNewRoleForm] = useState({
+    id: '',
+    name: '',
+    displayName: '',
+    description: '',
+    color: 'gray',
+    icon: '👤',
+    permissions: {}
+  });
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
   const [selectedPermissions, setSelectedPermissions] = useState([]);
   const [showUnifiedManageModal, setShowUnifiedManageModal] = useState(false);
@@ -114,6 +125,30 @@ const UserManagement = () => {
 
     loadApprovedUsers();
   }, []);
+
+  // Load custom roles (for system admins)
+  useEffect(() => {
+    if (!isSystemAdmin) return;
+    
+    const loadCustomRoles = async () => {
+      try {
+        const roles = await firestoreService.getCustomRoles();
+        setCustomRoles(roles);
+        console.log('✅ Loaded custom roles:', roles.length);
+      } catch (error) {
+        console.error('❌ Error loading custom roles:', error);
+      }
+    };
+    
+    loadCustomRoles();
+    
+    // Set up real-time listener for custom roles
+    const unsubscribe = firestoreService.onCustomRolesChange((roles) => {
+      setCustomRoles(roles);
+    });
+    
+    return () => unsubscribe();
+  }, [isSystemAdmin]);
 
   // Subscribe to real-time approved users changes
   useEffect(() => {
@@ -578,11 +613,71 @@ const UserManagement = () => {
     return colors[role] || 'bg-gray-100 text-gray-800';
   };
 
-  // Function to handle role assignment modal
+  // Function to handle role assignment modal (system admin only)
   const handleAssignRoles = (user) => {
+    if (!isSystemAdmin) {
+      toast.error('Only system administrators can assign roles');
+      return;
+    }
     setSelectedUserForRoles(user);
     setSelectedRoles(user.roles || [user.role] || []);
     setShowRoleAssignmentModal(true);
+  };
+
+  // Function to handle creating new custom role (system admin only)
+  const handleCreateRole = async () => {
+    if (!isSystemAdmin) {
+      toast.error('Only system administrators can create roles');
+      return;
+    }
+    
+    if (!newRoleForm.name || !newRoleForm.displayName) {
+      toast.error('Please fill in role name and display name');
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      await firestoreService.createCustomRole({
+        ...newRoleForm,
+        id: newRoleForm.name.toLowerCase().replace(/\s+/g, '_')
+      });
+      toast.success('Custom role created successfully');
+      setShowCreateRoleModal(false);
+      setNewRoleForm({
+        id: '',
+        name: '',
+        displayName: '',
+        description: '',
+        color: 'gray',
+        icon: '👤',
+        permissions: {}
+      });
+    } catch (error) {
+      console.error('Error creating role:', error);
+      toast.error('Failed to create role: ' + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Get all available roles (built-in + custom)
+  const getAllRoles = () => {
+    const builtInRoles = Object.entries(USER_ROLES)
+      .filter(([key, value]) => value !== 'pending')
+      .map(([key, role]) => ({
+        id: role,
+        name: role,
+        displayName: getRoleDisplayName(role),
+        isBuiltIn: true
+      }));
+    
+    const custom = customRoles.map(role => ({
+      ...role,
+      isBuiltIn: false
+    }));
+    
+    return [...builtInRoles, ...custom];
   };
 
   // Function to handle unified manage user modal
@@ -1419,34 +1514,79 @@ const UserManagement = () => {
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Roles (First role will be primary)
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Select Roles (First role will be primary)
+                  </label>
+                  {isSystemAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCreateRoleModal(true)}
+                      className="text-xs"
+                    >
+                      + New Role
+                    </Button>
+                  )}
+                </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {Object.entries(USER_ROLES).filter(([key, value]) => value !== 'pending').map(([key, role]) => (
-                    <label key={role} className="flex items-center space-x-3 cursor-pointer">
+                  {/* Built-in Roles */}
+                  <div className="text-xs text-gray-500 font-medium mb-1">Built-in Roles</div>
+                  {getAllRoles().filter(r => r.isBuiltIn).map((roleObj) => (
+                    <label key={roleObj.id} className="flex items-center space-x-3 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={selectedRoles.includes(role)}
+                        checked={selectedRoles.includes(roleObj.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedRoles([...selectedRoles, role]);
+                            setSelectedRoles([...selectedRoles, roleObj.id]);
                           } else {
-                            setSelectedRoles(selectedRoles.filter(r => r !== role));
+                            setSelectedRoles(selectedRoles.filter(r => r !== roleObj.id));
                           }
                         }}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <div className="flex items-center space-x-2">
-                        <Badge className={getRoleBadgeColor(role)}>
-                          {getRoleDisplayName(role)}
+                        <Badge className={getRoleBadgeColor(roleObj.id)}>
+                          {roleObj.displayName}
                         </Badge>
-                        {selectedRoles.includes(role) && selectedRoles.indexOf(role) === 0 && (
+                        {selectedRoles.includes(roleObj.id) && selectedRoles.indexOf(roleObj.id) === 0 && (
                           <span className="text-xs text-blue-600">⭐ Primary</span>
                         )}
                       </div>
                     </label>
                   ))}
+                  
+                  {/* Custom Roles */}
+                  {customRoles.length > 0 && (
+                    <>
+                      <div className="text-xs text-gray-500 font-medium mt-3 mb-1">Custom Roles</div>
+                      {getAllRoles().filter(r => !r.isBuiltIn).map((roleObj) => (
+                        <label key={roleObj.id} className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedRoles.includes(roleObj.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedRoles([...selectedRoles, roleObj.id]);
+                              } else {
+                                setSelectedRoles(selectedRoles.filter(r => r !== roleObj.id));
+                              }
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div className="flex items-center space-x-2">
+                            <Badge className="bg-purple-100 text-purple-800">
+                              {roleObj.icon || '👤'} {roleObj.displayName}
+                            </Badge>
+                            {selectedRoles.includes(roleObj.id) && selectedRoles.indexOf(roleObj.id) === 0 && (
+                              <span className="text-xs text-blue-600">⭐ Primary</span>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
               
@@ -1730,36 +1870,91 @@ const UserManagement = () => {
 
               {/* Role Assignment */}
               <div>
-                <h3 className="font-semibold text-lg mb-4 pb-2 border-b">Assign Roles *</h3>
-                <p className="text-sm text-gray-600 mb-3">Select at least one role. The first role selected will be the primary role.</p>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {Object.entries(USER_ROLES)
-                    .filter(([key, value]) => value !== 'pending')
-                    .map(([key, role]) => (
-                      <label key={role} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={newUserForm.roles.includes(role)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNewUserForm({...newUserForm, roles: [...newUserForm.roles, role]});
-                            } else {
-                              setNewUserForm({...newUserForm, roles: newUserForm.roles.filter(r => r !== role)});
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
-                        />
-                        <div className="flex items-center space-x-2 flex-1">
-                          <Badge className={getRoleBadgeColor(role)}>
-                            {getRoleDisplayName(role)}
-                          </Badge>
-                          {newUserForm.roles.includes(role) && newUserForm.roles.indexOf(role) === 0 && (
-                            <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
-                          )}
-                        </div>
-                      </label>
-                    ))}
+                <div className="flex items-center justify-between mb-4 pb-2 border-b">
+                  <h3 className="font-semibold text-lg">Assign Roles *</h3>
+                  {isSystemAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCreateRoleModal(true)}
+                      className="text-xs"
+                    >
+                      + New Role
+                    </Button>
+                  )}
                 </div>
+                {!isSystemAdmin ? (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-amber-800 text-sm">
+                      Only system administrators can assign roles. Contact jrsschroeder@gmail.com.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600 mb-3">Select at least one role. The first role selected will be the primary role.</p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {/* Built-in Roles */}
+                      <div className="text-xs text-gray-500 font-medium mb-1">Built-in Roles</div>
+                      {Object.entries(USER_ROLES)
+                        .filter(([key, value]) => value !== 'pending')
+                        .map(([key, role]) => (
+                          <label key={role} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={newUserForm.roles.includes(role)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewUserForm({...newUserForm, roles: [...newUserForm.roles, role]});
+                                } else {
+                                  setNewUserForm({...newUserForm, roles: newUserForm.roles.filter(r => r !== role)});
+                                }
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                            />
+                            <div className="flex items-center space-x-2 flex-1">
+                              <Badge className={getRoleBadgeColor(role)}>
+                                {getRoleDisplayName(role)}
+                              </Badge>
+                              {newUserForm.roles.includes(role) && newUserForm.roles.indexOf(role) === 0 && (
+                                <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                      
+                      {/* Custom Roles */}
+                      {customRoles.length > 0 && (
+                        <>
+                          <div className="text-xs text-gray-500 font-medium mt-3 mb-1">Custom Roles</div>
+                          {customRoles.map((role) => (
+                            <label key={role.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={newUserForm.roles.includes(role.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setNewUserForm({...newUserForm, roles: [...newUserForm.roles, role.id]});
+                                  } else {
+                                    setNewUserForm({...newUserForm, roles: newUserForm.roles.filter(r => r !== role.id)});
+                                  }
+                                }}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                              />
+                              <div className="flex items-center space-x-2 flex-1">
+                                <Badge className="bg-purple-100 text-purple-800">
+                                  {role.icon || '👤'} {role.displayName}
+                                </Badge>
+                                {newUserForm.roles.includes(role.id) && newUserForm.roles.indexOf(role.id) === 0 && (
+                                  <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                                )}
+                              </div>
+                            </label>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -1900,28 +2095,83 @@ const UserManagement = () => {
 
               {/* Roles Tab */}
               <TabsContent value="roles" className="space-y-4">
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600 mb-4">
-                    Select roles this user can switch between. The first role will be their primary role.
-                  </p>
-                  {Object.values(USER_ROLES).map((role) => (
-                    <label key={role} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedRoles.includes(role)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedRoles([...selectedRoles, role]);
-                          } else {
-                            setSelectedRoles(selectedRoles.filter(r => r !== role));
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded"
-                      />
-                      <span className="font-medium">{getRoleDisplayName(role)}</span>
-                    </label>
-                  ))}
-                </div>
+                {!isSystemAdmin ? (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-amber-800">
+                      Only system administrators can modify user roles. Contact jrsschroeder@gmail.com for role changes.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm text-gray-600">
+                        Select roles this user can switch between. The first role will be their primary role.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCreateRoleModal(true)}
+                        className="text-xs"
+                      >
+                        + Create Role
+                      </Button>
+                    </div>
+                    
+                    {/* Built-in Roles */}
+                    <div className="text-xs text-gray-500 font-medium mb-2">Built-in Roles</div>
+                    {Object.values(USER_ROLES).filter(role => role !== 'pending').map((role) => (
+                      <label key={role} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedRoles.includes(role)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedRoles([...selectedRoles, role]);
+                            } else {
+                              setSelectedRoles(selectedRoles.filter(r => r !== role));
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <Badge className={getRoleBadgeColor(role)}>
+                          {getRoleDisplayName(role)}
+                        </Badge>
+                        {selectedRoles.includes(role) && selectedRoles.indexOf(role) === 0 && (
+                          <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                        )}
+                      </label>
+                    ))}
+                    
+                    {/* Custom Roles */}
+                    {customRoles.length > 0 && (
+                      <>
+                        <div className="text-xs text-gray-500 font-medium mt-4 mb-2">Custom Roles</div>
+                        {customRoles.map((role) => (
+                          <label key={role.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedRoles.includes(role.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedRoles([...selectedRoles, role.id]);
+                                } else {
+                                  setSelectedRoles(selectedRoles.filter(r => r !== role.id));
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-600 rounded"
+                            />
+                            <Badge className="bg-purple-100 text-purple-800">
+                              {role.icon || '👤'} {role.displayName}
+                            </Badge>
+                            {selectedRoles.includes(role.id) && selectedRoles.indexOf(role.id) === 0 && (
+                              <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                            )}
+                          </label>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
               </TabsContent>
 
               {/* Page Access Tab */}
@@ -2154,6 +2404,157 @@ const UserManagement = () => {
             }
           }}
         />
+      )}
+
+      {/* Create New Role Modal (System Admin Only) */}
+      {showCreateRoleModal && isSystemAdmin && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Create New Custom Role</h2>
+              <button 
+                onClick={() => setShowCreateRoleModal(false)} 
+                className="text-gray-500 hover:text-gray-700"
+                disabled={isProcessing}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Role Name */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Role Name (internal) *
+                  </label>
+                  <input
+                    type="text"
+                    value={newRoleForm.name}
+                    onChange={(e) => setNewRoleForm({...newRoleForm, name: e.target.value})}
+                    placeholder="e.g., project_manager"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Used internally (no spaces)</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Display Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newRoleForm.displayName}
+                    onChange={(e) => setNewRoleForm({...newRoleForm, displayName: e.target.value})}
+                    placeholder="e.g., Project Manager"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={newRoleForm.description}
+                  onChange={(e) => setNewRoleForm({...newRoleForm, description: e.target.value})}
+                  placeholder="Describe what this role can do..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Icon and Color */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Icon (emoji)
+                  </label>
+                  <input
+                    type="text"
+                    value={newRoleForm.icon}
+                    onChange={(e) => setNewRoleForm({...newRoleForm, icon: e.target.value})}
+                    placeholder="👤"
+                    maxLength={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Color
+                  </label>
+                  <select
+                    value={newRoleForm.color}
+                    onChange={(e) => setNewRoleForm({...newRoleForm, color: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="gray">Gray</option>
+                    <option value="blue">Blue</option>
+                    <option value="green">Green</option>
+                    <option value="purple">Purple</option>
+                    <option value="orange">Orange</option>
+                    <option value="red">Red</option>
+                    <option value="indigo">Indigo</option>
+                    <option value="pink">Pink</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Permissions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Base Permissions
+                </label>
+                <div className="border border-gray-200 rounded-md p-4 max-h-60 overflow-y-auto">
+                  {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => (
+                    <div key={categoryKey} className="mb-4 last:mb-0">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">{category.name}</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {category.permissions.map((permission) => (
+                          <label key={permission} className="flex items-center text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={newRoleForm.permissions[permission] || false}
+                              onChange={(e) => setNewRoleForm({
+                                ...newRoleForm,
+                                permissions: {
+                                  ...newRoleForm.permissions,
+                                  [permission]: e.target.checked
+                                }
+                              })}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
+                            />
+                            <span className="text-gray-700">{PERMISSION_LABELS[permission]}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateRoleModal(false)}
+                  disabled={isProcessing}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateRole}
+                  disabled={isProcessing || !newRoleForm.name || !newRoleForm.displayName}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isProcessing ? 'Creating...' : 'Create Role'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+        , document.body
       )}
     </div>
   );

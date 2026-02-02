@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useViewAs } from '../../../contexts/ViewAsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import PlatformIcons from '../../../components/PlatformIcons';
 import { 
@@ -31,29 +32,34 @@ import {
 
 const MyClientsPage = () => {
   const { currentUser } = useAuth();
+  const { isViewingAs, viewingAsUser, getEffectiveUser } = useViewAs();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedClient, setSelectedClient] = useState(null);
 
-  // Match client to current user: assignedManager can be email or uid (normalize and trim)
+  // Get the effective user (viewed-as user or current user)
+  const effectiveUser = getEffectiveUser(currentUser);
+
+  // Match client to effective user: assignedManager can be email or uid (normalize and trim)
   const isAssignedToMe = (client) => {
     const am = (client.assignedManager || '').trim().toLowerCase();
     if (!am) return false;
-    const email = (currentUser?.email || '').trim().toLowerCase();
-    const uid = (currentUser?.uid || '').trim().toLowerCase();
+    const email = (effectiveUser?.email || '').trim().toLowerCase();
+    const uid = (effectiveUser?.uid || '').trim().toLowerCase();
     return am === email || (uid && am === uid);
   };
 
   useEffect(() => {
     const loadClients = async () => {
-      if (!currentUser?.email && !currentUser?.uid) return;
+      if (!effectiveUser?.email && !effectiveUser?.uid) return;
 
       try {
         const allClients = await firestoreService.getClients();
         const myClients = allClients.filter(isAssignedToMe);
         setClients(myClients);
+        console.log(`📋 Loaded ${myClients.length} clients for ${effectiveUser?.email}${isViewingAs ? ' (View As mode)' : ''}`);
       } catch (error) {
         console.error('Error loading clients:', error);
       } finally {
@@ -62,7 +68,7 @@ const MyClientsPage = () => {
     };
 
     loadClients();
-  }, [currentUser?.email, currentUser?.uid]);
+  }, [effectiveUser?.email, effectiveUser?.uid, isViewingAs]);
 
   const getHealthStatus = (client) => {
     const postsRemaining = client.postsRemaining || 0;

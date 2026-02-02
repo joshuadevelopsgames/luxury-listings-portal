@@ -47,7 +47,8 @@ class FirestoreService {
     CLIENT_CONTRACTS: 'client_contracts',
     INSTAGRAM_REPORTS: 'instagram_reports',
     ERROR_REPORTS: 'error_reports',
-    USER_DASHBOARD_PREFERENCES: 'user_dashboard_preferences'
+    USER_DASHBOARD_PREFERENCES: 'user_dashboard_preferences',
+    CUSTOM_ROLES: 'custom_roles'
   };
 
   // Test connection method
@@ -2842,6 +2843,122 @@ class FirestoreService {
       console.error('❌ Error resolving error report:', error);
       throw error;
     }
+  }
+
+  // ===== CUSTOM ROLES MANAGEMENT (System Admin Only) =====
+
+  /**
+   * Get all custom roles
+   */
+  async getCustomRoles() {
+    try {
+      const snapshot = await getDocs(collection(db, this.collections.CUSTOM_ROLES));
+      const roles = [];
+      snapshot.forEach((doc) => {
+        roles.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log('✅ Fetched custom roles:', roles.length);
+      return roles;
+    } catch (error) {
+      console.error('❌ Error fetching custom roles:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Create a new custom role (system admin only)
+   */
+  async createCustomRole(roleData) {
+    try {
+      const email = auth.currentUser?.email;
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
+        throw new Error('Only system administrators can create custom roles');
+      }
+
+      // Use the role ID as the document ID for easy lookup
+      const roleId = roleData.id || roleData.name.toLowerCase().replace(/\s+/g, '_');
+      
+      const docRef = doc(db, this.collections.CUSTOM_ROLES, roleId);
+      await setDoc(docRef, {
+        ...roleData,
+        id: roleId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdBy: email
+      });
+      
+      console.log('✅ Custom role created:', roleId);
+      return { success: true, id: roleId };
+    } catch (error) {
+      console.error('❌ Error creating custom role:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a custom role (system admin only)
+   */
+  async updateCustomRole(roleId, updates) {
+    try {
+      const email = auth.currentUser?.email;
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
+        throw new Error('Only system administrators can update custom roles');
+      }
+
+      const docRef = doc(db, this.collections.CUSTOM_ROLES, roleId);
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+        updatedBy: email
+      });
+      
+      console.log('✅ Custom role updated:', roleId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating custom role:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a custom role (system admin only)
+   */
+  async deleteCustomRole(roleId) {
+    try {
+      const email = auth.currentUser?.email;
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
+        throw new Error('Only system administrators can delete custom roles');
+      }
+
+      await deleteDoc(doc(db, this.collections.CUSTOM_ROLES, roleId));
+      console.log('✅ Custom role deleted:', roleId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting custom role:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Listen to custom roles changes
+   */
+  onCustomRolesChange(callback) {
+    return onSnapshot(collection(db, this.collections.CUSTOM_ROLES), (snapshot) => {
+      const roles = [];
+      snapshot.forEach((doc) => {
+        roles.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      callback(roles);
+    });
   }
 }
 
