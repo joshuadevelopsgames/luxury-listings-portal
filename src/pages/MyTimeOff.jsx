@@ -33,7 +33,8 @@ import {
   MapPin,
   Briefcase,
   DollarSign,
-  History
+  History,
+  RefreshCw
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
@@ -68,6 +69,7 @@ const MyTimeOff = () => {
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [cancelling, setCancelling] = useState(null);
   const [expandedRequest, setExpandedRequest] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Leave balances - loaded from Firestore
   const [leaveBalances, setLeaveBalances] = useState({
@@ -95,19 +97,27 @@ const MyTimeOff = () => {
 
   // Load leave requests from Firestore on mount
   // Load leave requests once (no real-time listener for performance)
-  const loadLeaveRequests = async () => {
+  const loadLeaveRequests = async (isRefresh = false) => {
     if (!currentUser?.email) return;
+    
+    if (isRefresh) {
+      setRefreshing(true);
+    }
     
     try {
       const requests = await firestoreService.getLeaveRequests(currentUser.email);
       console.log('📥 Leave requests loaded:', requests?.length || 0);
       setMyRequests(requests || []);
       setError(null);
+      if (isRefresh) {
+        toast.success('Requests refreshed');
+      }
     } catch (err) {
       console.error('❌ Error loading leave requests:', err);
       setError(err.message || 'Failed to load leave requests');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -121,6 +131,18 @@ const MyTimeOff = () => {
     setError(null);
     loadLeaveRequests();
   }, [currentUser?.email]);
+
+  // Auto-refresh when tab/window gains focus (to catch status updates)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (currentUser?.email && !loading && !refreshing) {
+        loadLeaveRequests(false); // Silent refresh
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [currentUser?.email, loading, refreshing]);
 
   // Load leave balances from Firestore
   useEffect(() => {
@@ -356,10 +378,21 @@ const MyTimeOff = () => {
           <h1 className="text-3xl font-bold text-gray-900">My Time Off</h1>
           <p className="text-gray-600 mt-2">Manage your vacation, sick leave, and time-off requests</p>
         </div>
-        <Button className="flex items-center space-x-2" onClick={() => setShowRequestModal(true)}>
-          <Plus className="w-4 h-4" />
-          <span>Request Time Off</span>
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center space-x-2"
+            onClick={() => loadLeaveRequests(true)}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+          <Button className="flex items-center space-x-2" onClick={() => setShowRequestModal(true)}>
+            <Plus className="w-4 h-4" />
+            <span>Request Time Off</span>
+          </Button>
+        </div>
       </div>
 
       {/* Leave Balances */}

@@ -88,12 +88,25 @@ const NotificationsCenter = () => {
 
   const getNotificationIcon = (type) => {
     switch (type) {
+      // Time off notifications
+      case 'time_off_request':
+        return <Calendar className="w-4 h-4 text-[#ff9500]" />;
+      case 'time_off_approved':
+        return <CheckCircle className="w-4 h-4 text-[#34c759]" />;
+      case 'time_off_rejected':
+        return <X className="w-4 h-4 text-[#ff3b30]" />;
+      case 'time_off_cancelled':
+        return <AlertCircle className="w-4 h-4 text-[#ff9500]" />;
+      case 'leave_balance_updated':
+        return <Calendar className="w-4 h-4 text-[#5856d6]" />;
+      case 'leave_request':
+        return <Calendar className="w-4 h-4 text-purple-600" />;
+      // Support tickets
       case 'ticket_comment':
         return <MessageSquare className="w-4 h-4 text-blue-600" />;
       case 'ticket_status':
         return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'leave_request':
-        return <Calendar className="w-4 h-4 text-purple-600" />;
+      // Tasks
       case 'task_request':
         return <MessageSquare className="w-4 h-4 text-orange-600" />;
       case 'task_accepted':
