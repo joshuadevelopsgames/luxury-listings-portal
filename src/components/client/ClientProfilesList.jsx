@@ -48,6 +48,7 @@ const ClientProfilesList = () => {
   const canManageClients = hasPermission(PERMISSIONS.MANAGE_CLIENTS);
   const canDeleteClients = hasPermission(PERMISSIONS.DELETE_CLIENTS);
   const canAssignManagers = hasPermission(PERMISSIONS.ASSIGN_CLIENT_MANAGERS);
+  const canEditPackages = hasPermission(PERMISSIONS.EDIT_CLIENT_PACKAGES);
 
   // Load data once on mount (no real-time listener for performance)
   useEffect(() => {
@@ -422,7 +423,7 @@ const ClientProfilesList = () => {
               >
                 {/* Edit/Delete buttons at top right */}
                 <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                  {canManageClients && (
+                  {(canManageClients || canEditPackages) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -431,7 +432,12 @@ const ClientProfilesList = () => {
                           clientName: client.clientName || '',
                           clientEmail: client.clientEmail || '',
                           phone: client.phone || '',
-                          notes: client.notes || ''
+                          notes: client.notes || '',
+                          packageType: client.packageType || 'Standard',
+                          packageSize: client.packageSize || 10,
+                          postsUsed: client.postsUsed || 0,
+                          postsRemaining: client.postsRemaining || 0,
+                          paymentStatus: client.paymentStatus || 'Pending'
                         });
                         setShowEditModal(true);
                       }}
@@ -598,14 +604,19 @@ const ClientProfilesList = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {canManageClients && (
+                  {(canManageClients || canEditPackages) && (
                     <button
                       onClick={() => {
                         setEditForm({
                           clientName: selectedClient.clientName || '',
                           clientEmail: selectedClient.clientEmail || '',
                           phone: selectedClient.phone || '',
-                          notes: selectedClient.notes || ''
+                          notes: selectedClient.notes || '',
+                          packageType: selectedClient.packageType || 'Standard',
+                          packageSize: selectedClient.packageSize || 10,
+                          postsUsed: selectedClient.postsUsed || 0,
+                          postsRemaining: selectedClient.postsRemaining || 0,
+                          paymentStatus: selectedClient.paymentStatus || 'Pending'
                         });
                         setShowEditModal(true);
                       }}
@@ -846,9 +857,11 @@ const ClientProfilesList = () => {
       {/* Edit Client Modal */}
       {showEditModal && selectedClient && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Edit Client Information</h2>
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between z-10">
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+                {canManageClients && canEditPackages ? 'Edit Client' : canEditPackages ? 'Edit Package Details' : 'Edit Client Information'}
+              </h2>
               <button
                 onClick={() => {
                   setShowEditModal(false);
@@ -861,55 +874,149 @@ const ClientProfilesList = () => {
             </div>
             <div className="p-6">
               <div className="space-y-4">
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Client Name
-                  </label>
-                  <input
-                    value={editForm.clientName || ''}
-                    onChange={(e) => setEditForm({...editForm, clientName: e.target.value})}
-                    placeholder="Client name"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                  />
-                </div>
+                {/* Basic Client Info - requires MANAGE_CLIENTS */}
+                {canManageClients && (
+                  <>
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                        Client Name
+                      </label>
+                      <input
+                        value={editForm.clientName || ''}
+                        onChange={(e) => setEditForm({...editForm, clientName: e.target.value})}
+                        placeholder="Client name"
+                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={editForm.clientEmail || ''}
+                        onChange={(e) => setEditForm({...editForm, clientEmail: e.target.value})}
+                        placeholder="client@example.com"
+                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                        Phone
+                      </label>
+                      <input
+                        value={editForm.phone || ''}
+                        onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                        placeholder="+1 (555) 123-4567"
+                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      />
+                    </div>
+                  </>
+                )}
                 
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={editForm.clientEmail || ''}
-                    onChange={(e) => setEditForm({...editForm, clientEmail: e.target.value})}
-                    placeholder="client@example.com"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Phone
-                  </label>
-                  <input
-                    value={editForm.phone || ''}
-                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                    placeholder="+1 (555) 123-4567"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Notes
-                  </label>
-                  <textarea
-                    value={editForm.notes || ''}
-                    onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-                    placeholder="Additional notes..."
-                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
-                    rows={4}
-                  />
-                </div>
+                {canManageClients && (
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      value={editForm.notes || ''}
+                      onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
+                      placeholder="Additional notes..."
+                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                      rows={3}
+                    />
+                  </div>
+                )}
+
+                {/* Package Details - Admin Only */}
+                {canEditPackages && (
+                  <>
+                    <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                      <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide flex items-center gap-2">
+                        <Package className="w-3.5 h-3.5" />
+                        Package Details
+                      </h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                          Package Type
+                        </label>
+                        <select
+                          value={editForm.packageType || 'Standard'}
+                          onChange={(e) => setEditForm({...editForm, packageType: e.target.value})}
+                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        >
+                          <option value="Standard">Standard</option>
+                          <option value="Premium">Premium</option>
+                          <option value="Enterprise">Enterprise</option>
+                          <option value="Custom">Custom</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                          Package Size
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editForm.packageSize || 0}
+                          onChange={(e) => setEditForm({...editForm, packageSize: parseInt(e.target.value) || 0})}
+                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                          Posts Used
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editForm.postsUsed || 0}
+                          onChange={(e) => setEditForm({...editForm, postsUsed: parseInt(e.target.value) || 0})}
+                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                          Posts Remaining
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editForm.postsRemaining || 0}
+                          onChange={(e) => setEditForm({...editForm, postsRemaining: parseInt(e.target.value) || 0})}
+                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                        Payment Status
+                      </label>
+                      <select
+                        value={editForm.paymentStatus || 'Pending'}
+                        onChange={(e) => setEditForm({...editForm, paymentStatus: e.target.value})}
+                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Overdue">Overdue</option>
+                        <option value="Partial">Partial</option>
+                      </select>
+                    </div>
+                  </>
+                )}
               </div>
               
               <div className="flex gap-3 mt-6 pt-6 border-t border-black/5 dark:border-white/10">

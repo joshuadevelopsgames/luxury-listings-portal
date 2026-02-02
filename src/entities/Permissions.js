@@ -44,6 +44,7 @@ export const PERMISSIONS = {
   MANAGE_CLIENTS: 'manage_clients',
   DELETE_CLIENTS: 'delete_clients',
   ASSIGN_CLIENT_MANAGERS: 'assign_client_managers',
+  EDIT_CLIENT_PACKAGES: 'edit_client_packages',
   
   // CRM & Sales
   MANAGE_CRM: 'manage_crm',
@@ -136,7 +137,8 @@ export const PERMISSION_CATEGORIES = {
       PERMISSIONS.VIEW_ALL_CLIENTS,
       PERMISSIONS.MANAGE_CLIENTS,
       PERMISSIONS.DELETE_CLIENTS,
-      PERMISSIONS.ASSIGN_CLIENT_MANAGERS
+      PERMISSIONS.ASSIGN_CLIENT_MANAGERS,
+      PERMISSIONS.EDIT_CLIENT_PACKAGES
     ]
   },
   CRM_SALES: {
@@ -214,6 +216,7 @@ export const PERMISSION_LABELS = {
   [PERMISSIONS.MANAGE_CLIENTS]: 'Manage Clients',
   [PERMISSIONS.DELETE_CLIENTS]: 'Delete Clients',
   [PERMISSIONS.ASSIGN_CLIENT_MANAGERS]: 'Assign Client Managers',
+  [PERMISSIONS.EDIT_CLIENT_PACKAGES]: 'Edit Client Packages',
   
   [PERMISSIONS.MANAGE_CRM]: 'Manage CRM',
   [PERMISSIONS.VIEW_LEADS]: 'View Leads',
@@ -271,6 +274,7 @@ export function getPermissionDescription(permission) {
     [PERMISSIONS.MANAGE_CLIENTS]: 'Edit client information and details',
     [PERMISSIONS.DELETE_CLIENTS]: 'Remove clients from the system',
     [PERMISSIONS.ASSIGN_CLIENT_MANAGERS]: 'Assign social media managers to clients',
+    [PERMISSIONS.EDIT_CLIENT_PACKAGES]: 'Edit client package type, posts, and payment status',
     
     [PERMISSIONS.MANAGE_CRM]: 'Full CRM access and management',
     [PERMISSIONS.VIEW_LEADS]: 'View leads and prospects',
