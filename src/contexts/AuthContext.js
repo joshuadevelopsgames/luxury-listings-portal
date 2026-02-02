@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
 import { firestoreService } from '../services/firestoreService';
 import { appNavigate } from '../utils/navigation';
 import { usePendingUsers } from './PendingUsersContext';
 import { useViewAs } from './ViewAsContext';
+import { googleCalendarService } from '../services/googleCalendarService';
 
 // ============================================================================
 // SYSTEM ADMINS - Full access to everything
@@ -74,8 +75,41 @@ export function AuthProvider({ children }) {
   // AUTH METHODS
   // ============================================================================
   
-  function signInWithGoogle() {
-    return signInWithPopup(auth, googleProvider);
+  async function signInWithGoogle() {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Get the Google OAuth credential which includes the access token
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        const userEmail = result.user.email;
+        console.log('🔐 Got Google access token during sign-in for:', userEmail);
+        
+        // Store the token for Google Calendar use (expires in 1 hour)
+        // The googleCalendarService will use this for calendar operations
+        const tokenKey = `google_calendar_token_${userEmail}`;
+        const expiryKey = `google_calendar_token_expiry_${userEmail}`;
+        const expiryTime = Date.now() + (3600 * 1000); // 1 hour
+        
+        localStorage.setItem(tokenKey, credential.accessToken);
+        localStorage.setItem(expiryKey, expiryTime.toString());
+        
+        console.log('✅ Calendar access token stored for:', userEmail);
+        
+        // Try to initialize calendar service with the new token
+        try {
+          await googleCalendarService.tryAutoReconnect(userEmail);
+          console.log('✅ Google Calendar auto-connected on sign-in');
+        } catch (calError) {
+          console.warn('⚠️ Could not auto-connect calendar:', calError);
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Sign-in error:', error);
+      throw error;
+    }
   }
 
   function logout() {

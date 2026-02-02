@@ -32,6 +32,21 @@ class ErrorBoundary extends React.Component {
       console.warn('⚠️ Firestore SDK error ignored by ErrorBoundary');
       return { hasError: false, error: null };
     }
+    
+    // Handle chunk load errors - auto-reload the page
+    if (error?.name === 'ChunkLoadError' || error?.message?.includes('Loading chunk')) {
+      console.warn('⚠️ ChunkLoadError detected, auto-reloading...');
+      const lastReload = sessionStorage.getItem('chunk_reload');
+      const now = Date.now();
+      if (!lastReload || (now - parseInt(lastReload)) > 10000) {
+        sessionStorage.setItem('chunk_reload', now.toString());
+        window.location.reload();
+        return { hasError: false, error: null };
+      }
+      // If we already reloaded recently, show the error
+      return { hasError: true, error, isChunkError: true };
+    }
+    
     return { hasError: true, error };
   }
 
@@ -334,7 +349,24 @@ export function RouteErrorPage() {
   const [reportSent, setReportSent] = React.useState(false);
   const [reportError, setReportError] = React.useState(null);
 
+  // Auto-reload on chunk errors (happens after deployments)
+  React.useEffect(() => {
+    const lastReload = sessionStorage.getItem('chunk_reload');
+    const now = Date.now();
+    // Check if this looks like a chunk error based on the URL or recent errors
+    const isLikelyChunkError = window.location.href.includes('chunk') || 
+      document.querySelector('script[src*="chunk"]') !== null;
+    
+    if (isLikelyChunkError && (!lastReload || (now - parseInt(lastReload)) > 10000)) {
+      console.warn('Route error detected, attempting reload...');
+      sessionStorage.setItem('chunk_reload', now.toString());
+      window.location.reload();
+    }
+  }, []);
+
   const handleReload = () => {
+    // Clear the chunk reload tracker to allow fresh reload
+    sessionStorage.removeItem('chunk_reload');
     window.location.reload();
   };
 

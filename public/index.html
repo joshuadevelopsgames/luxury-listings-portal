@@ -16,6 +16,35 @@
     <!-- Google API Libraries -->
     <script async src="https://apis.google.com/js/api.js"></script>
     <script async src="https://accounts.google.com/gsi/client"></script>
+
+    <!-- Handle chunk load errors (after deployments) -->
+    <script>
+      window.addEventListener('error', function(e) {
+        // Check if it's a chunk loading error
+        if (e.message && e.message.includes('Loading chunk')) {
+          console.warn('Chunk load error detected, reloading...');
+          // Avoid infinite reload loops - check if we just reloaded
+          var lastReload = sessionStorage.getItem('chunk_reload');
+          var now = Date.now();
+          if (!lastReload || (now - parseInt(lastReload)) > 10000) {
+            sessionStorage.setItem('chunk_reload', now.toString());
+            window.location.reload();
+          }
+        }
+      });
+      // Also catch unhandled promise rejections for dynamic imports
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e.reason && e.reason.name === 'ChunkLoadError') {
+          console.warn('ChunkLoadError in promise, reloading...');
+          var lastReload = sessionStorage.getItem('chunk_reload');
+          var now = Date.now();
+          if (!lastReload || (now - parseInt(lastReload)) > 10000) {
+            sessionStorage.setItem('chunk_reload', now.toString());
+            window.location.reload();
+          }
+        }
+      });
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

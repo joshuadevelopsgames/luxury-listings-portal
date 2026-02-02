@@ -33,6 +33,9 @@ googleProvider.setCustomParameters({
 // Set custom OAuth scopes
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
+// Add Google Calendar scope for automatic calendar integration
+googleProvider.addScope('https://www.googleapis.com/auth/calendar');
+googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
 
 export const db = getFirestore(app);
 console.log('🔥 Firestore database initialized:', db);
