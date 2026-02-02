@@ -8,6 +8,7 @@ import { Button } from "../components/ui/button";
 import { useAuth } from "../contexts/AuthContext";
 import { firestoreService } from "../services/firestoreService";
 import { remoteConfigService } from "../services/remoteConfigService";
+import { instagramReportReminderService } from "../services/instagramReportReminderService";
 
 import { 
   CheckCircle2, 
@@ -93,6 +94,30 @@ export default function Dashboard() {
       return () => clearTimeout(timeoutId);
     }
   }, [currentRole]);
+
+  // Check for Instagram report reminders on the 1st of the month
+  useEffect(() => {
+    if (!currentUser?.email || !currentUser?.uid) return;
+    
+    // Defer reminder check to not block initial render
+    const checkReminders = async () => {
+      try {
+        const result = await instagramReportReminderService.checkAndSendReminders(
+          currentUser.email,
+          currentUser.uid
+        );
+        if (result.sent) {
+          console.log('📸 Instagram report reminder sent for', result.clientsNotified, 'clients');
+        }
+      } catch (error) {
+        console.warn('Could not check Instagram report reminders:', error);
+      }
+    };
+
+    // Run after a short delay to not impact page load
+    const timeoutId = setTimeout(checkReminders, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [currentUser?.email, currentUser?.uid]);
 
   const loadDashboardData = async () => {
     try {

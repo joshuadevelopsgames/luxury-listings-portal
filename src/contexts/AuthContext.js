@@ -422,13 +422,8 @@ export function AuthProvider({ children }) {
 export function useEffectiveAuth() {
   const auth = useAuth();
   
-  // Try to get ViewAs context - it might not be available in all contexts
-  let viewAs = null;
-  try {
-    viewAs = useViewAs();
-  } catch (e) {
-    // ViewAs context not available, use real user
-  }
+  // Get ViewAs context - returns safe defaults if not available
+  const viewAs = useViewAs();
   
   if (viewAs?.isViewingAs && viewAs?.viewingAsUser) {
     return {

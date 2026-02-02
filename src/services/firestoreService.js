@@ -12,7 +12,9 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp,
-  arrayUnion 
+  arrayUnion,
+  limit as firestoreLimit,
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { auth } from '../firebase'; // Added missing import for auth
@@ -2214,15 +2216,39 @@ class FirestoreService {
   }
 
   // Create an Instagram report. Screenshots are never stored (OCR-only in the app); we always write screenshots: [].
-  // Reports are scoped per user via userId.
+  // Reports are scoped per user via userId and optionally linked to a client via clientId.
   async createInstagramReport(reportData) {
     try {
       const uid = auth.currentUser?.uid;
       if (!uid) {
         throw new Error('You must be signed in to create an Instagram report');
       }
+      
+      // Convert date strings/objects to Firestore Timestamps if provided
+      let startDateTimestamp = null;
+      let endDateTimestamp = null;
+      
+      if (reportData.startDate) {
+        const startDate = reportData.startDate instanceof Date 
+          ? reportData.startDate 
+          : new Date(reportData.startDate);
+        if (!isNaN(startDate.getTime())) {
+          startDateTimestamp = Timestamp.fromDate(startDate);
+        }
+      }
+      
+      if (reportData.endDate) {
+        const endDate = reportData.endDate instanceof Date 
+          ? reportData.endDate 
+          : new Date(reportData.endDate);
+        if (!isNaN(endDate.getTime())) {
+          endDateTimestamp = Timestamp.fromDate(endDate);
+        }
+      }
+      
       // Use only these fields; never pass through reportData.screenshots (may contain File objects).
       const sanitized = JSON.parse(JSON.stringify({
+        clientId: reportData.clientId ?? null,  // Link to clients collection
         clientName: reportData.clientName ?? '',
         title: reportData.title ?? '',
         dateRange: reportData.dateRange ?? '',
@@ -2231,9 +2257,12 @@ class FirestoreService {
         metrics: reportData.metrics ?? null,
         screenshots: [] // always empty; screenshots are used for OCR only, not attached to report
       }));
+      
       const publicLinkId = this.generatePublicLinkId();
       const docRef = await addDoc(collection(db, this.collections.INSTAGRAM_REPORTS), {
         ...sanitized,
+        startDate: startDateTimestamp,  // Structured date for queries
+        endDate: endDateTimestamp,      // Structured date for queries
         userId: uid,
         publicLinkId,
         createdAt: serverTimestamp(),
@@ -2269,6 +2298,72 @@ class FirestoreService {
       return reports;
     } catch (error) {
       console.error('❌ Error fetching Instagram reports:', error);
+      return [];
+    }
+  }
+
+  // Get Instagram reports for a specific client, ordered by startDate descending.
+  // If startDate is not set, falls back to createdAt ordering.
+  async getInstagramReportsByClient(clientId) {
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return [];
+      if (!clientId) {
+        console.warn('⚠️ getInstagramReportsByClient called without clientId');
+        return [];
+      }
+      
+      const q = query(
+        collection(db, this.collections.INSTAGRAM_REPORTS),
+        where('userId', '==', uid),
+        where('clientId', '==', clientId),
+        orderBy('startDate', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const reports = [];
+      snapshot.forEach((docSnap) => {
+        reports.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      });
+      console.log(`✅ Fetched ${reports.length} Instagram reports for client ${clientId}`);
+      return reports;
+    } catch (error) {
+      console.error('❌ Error fetching Instagram reports by client:', error);
+      return [];
+    }
+  }
+
+  // Get the last N Instagram reports for a client for trend comparison.
+  async getClientInstagramReportHistory(clientId, maxReports = 6) {
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return [];
+      if (!clientId) {
+        console.warn('⚠️ getClientInstagramReportHistory called without clientId');
+        return [];
+      }
+      
+      const q = query(
+        collection(db, this.collections.INSTAGRAM_REPORTS),
+        where('userId', '==', uid),
+        where('clientId', '==', clientId),
+        orderBy('startDate', 'desc'),
+        firestoreLimit(maxReports)
+      );
+      const snapshot = await getDocs(q);
+      const reports = [];
+      snapshot.forEach((docSnap) => {
+        reports.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      });
+      console.log(`✅ Fetched ${reports.length} report history for client ${clientId}`);
+      return reports;
+    } catch (error) {
+      console.error('❌ Error fetching client Instagram report history:', error);
       return [];
     }
   }
@@ -2329,8 +2424,38 @@ class FirestoreService {
       if (!docSnap.exists() || docSnap.data().userId !== uid) {
         throw new Error('Report not found or you do not have permission to update it');
       }
+      
+      // Convert date strings/objects to Firestore Timestamps if provided
+      const processedUpdates = { ...updates };
+      
+      if ('startDate' in updates && updates.startDate !== undefined) {
+        if (updates.startDate === null) {
+          processedUpdates.startDate = null;
+        } else {
+          const startDate = updates.startDate instanceof Date 
+            ? updates.startDate 
+            : new Date(updates.startDate);
+          if (!isNaN(startDate.getTime())) {
+            processedUpdates.startDate = Timestamp.fromDate(startDate);
+          }
+        }
+      }
+      
+      if ('endDate' in updates && updates.endDate !== undefined) {
+        if (updates.endDate === null) {
+          processedUpdates.endDate = null;
+        } else {
+          const endDate = updates.endDate instanceof Date 
+            ? updates.endDate 
+            : new Date(updates.endDate);
+          if (!isNaN(endDate.getTime())) {
+            processedUpdates.endDate = Timestamp.fromDate(endDate);
+          }
+        }
+      }
+      
       await updateDoc(docRef, {
-        ...updates,
+        ...processedUpdates,
         updatedAt: serverTimestamp()
       });
       console.log('✅ Instagram report updated:', reportId);

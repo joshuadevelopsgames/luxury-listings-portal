@@ -72,6 +72,11 @@ const InstagramReportsPage = () => {
   const [editingReport, setEditingReport] = useState(null);
   const [copiedLink, setCopiedLink] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
+  
+  // Filter and sort state
+  const [clients, setClients] = useState([]);
+  const [filterClientId, setFilterClientId] = useState('all');
+  const [sortBy, setSortBy] = useState('date'); // 'date' or 'client'
 
   // Load reports
   useEffect(() => {
@@ -82,6 +87,63 @@ const InstagramReportsPage = () => {
 
     return () => unsubscribe();
   }, []);
+
+  // Load clients for filter dropdown
+  useEffect(() => {
+    const loadClients = async () => {
+      try {
+        const clientsList = await firestoreService.getClients();
+        setClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
+      } catch (error) {
+        console.error('Error loading clients:', error);
+      }
+    };
+    loadClients();
+  }, []);
+
+  // Filter and sort reports
+  const filteredAndSortedReports = React.useMemo(() => {
+    let result = [...reports];
+    
+    // Filter by client
+    if (filterClientId === 'unlinked') {
+      result = result.filter(r => !r.clientId);
+    } else if (filterClientId && filterClientId !== 'all') {
+      result = result.filter(r => r.clientId === filterClientId);
+    }
+    
+    // Sort
+    if (sortBy === 'client') {
+      result.sort((a, b) => {
+        const nameA = (a.clientName || 'zzz').toLowerCase();
+        const nameB = (b.clientName || 'zzz').toLowerCase();
+        if (nameA !== nameB) return nameA.localeCompare(nameB);
+        // Secondary sort by date
+        const dateA = a.startDate?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
+        const dateB = b.startDate?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
+        return dateB - dateA;
+      });
+    } else {
+      // Sort by date (default)
+      result.sort((a, b) => {
+        const dateA = a.startDate?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
+        const dateB = b.startDate?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
+        return dateB - dateA;
+      });
+    }
+    
+    return result;
+  }, [reports, filterClientId, sortBy]);
+
+  // Get unique clients that have reports (for filter dropdown)
+  const clientsWithReports = React.useMemo(() => {
+    const clientIds = new Set(reports.filter(r => r.clientId).map(r => r.clientId));
+    return clients.filter(c => clientIds.has(c.id));
+  }, [reports, clients]);
+
+  const hasUnlinkedReports = React.useMemo(() => {
+    return reports.some(r => !r.clientId);
+  }, [reports]);
 
   const handleCopyLink = (publicLinkId) => {
     const link = `${window.location.origin}/report/${publicLinkId}`;
@@ -138,6 +200,62 @@ const InstagramReportsPage = () => {
         </Button>
       </div>
 
+      {/* Filter and Sort Controls */}
+      {!loading && reports.length > 0 && (
+        <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-gray-500" />
+            <select
+              value={filterClientId}
+              onChange={(e) => setFilterClientId(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="all">All Clients</option>
+              {clientsWithReports.map(client => (
+                <option key={client.id} value={client.id}>
+                  {client.clientName || client.name || 'Unnamed Client'}
+                </option>
+              ))}
+              {hasUnlinkedReports && (
+                <option value="unlinked">⚠️ Unlinked Reports</option>
+              )}
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
+            <div className="flex rounded-lg border border-gray-300 dark:border-white/20 overflow-hidden">
+              <button
+                onClick={() => setSortBy('date')}
+                className={`px-3 py-2 text-sm transition-colors ${
+                  sortBy === 'date'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
+                }`}
+              >
+                <Calendar className="w-4 h-4 inline mr-1" />
+                Date
+              </button>
+              <button
+                onClick={() => setSortBy('client')}
+                className={`px-3 py-2 text-sm transition-colors ${
+                  sortBy === 'client'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
+                }`}
+              >
+                <User className="w-4 h-4 inline mr-1" />
+                Client
+              </button>
+            </div>
+          </div>
+          
+          <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+            Showing {filteredAndSortedReports.length} of {reports.length} reports
+          </div>
+        </div>
+      )}
+
       {/* Reports List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -161,9 +279,19 @@ const InstagramReportsPage = () => {
             </Button>
           </CardContent>
         </Card>
+      ) : filteredAndSortedReports.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <User className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">No reports match filter</h3>
+            <p className="text-gray-500 mt-2">
+              Try selecting a different client or "All Clients"
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
-          {reports.map((report) => (
+          {filteredAndSortedReports.map((report) => (
             <Card key={report.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <CardContent className="p-0">
                 {/* Report Header */}
@@ -173,13 +301,21 @@ const InstagramReportsPage = () => {
                       <BarChart3 className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-                        {report.title}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                          {report.title}
+                        </h3>
+                        {!report.clientId && (
+                          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-xs">
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Unlinked
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <User className="w-4 h-4" />
-                          {report.clientName}
+                          {report.clientName || 'No client'}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
@@ -333,15 +469,35 @@ const InstagramReportsPage = () => {
 
 // Report Create/Edit Modal Component
 const ReportModal = ({ report, onClose, onSave }) => {
+  // Parse existing dates if editing
+  const parseExistingDate = (dateField) => {
+    if (!dateField) return '';
+    // Firestore Timestamp
+    if (dateField?.toDate) return dateField.toDate().toISOString().split('T')[0];
+    // Date object
+    if (dateField instanceof Date) return dateField.toISOString().split('T')[0];
+    // String date
+    if (typeof dateField === 'string') {
+      const d = new Date(dateField);
+      return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+    }
+    return '';
+  };
+
   const [formData, setFormData] = useState({
+    clientId: report?.clientId || '',
     clientName: report?.clientName || '',
     title: report?.title || '',
+    startDate: parseExistingDate(report?.startDate),
+    endDate: parseExistingDate(report?.endDate),
     dateRange: report?.dateRange || '',
     notes: report?.notes || '',
     screenshots: [], // OCR only (not saved); editing loads no screenshots
     postLinks: report?.postLinks || [],
     metrics: report?.metrics || null
   });
+  const [clients, setClients] = useState([]);
+  const [loadingClients, setLoadingClients] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -351,6 +507,49 @@ const ReportModal = ({ report, onClose, onSave }) => {
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef(null);
   const hasAutoExtractedRef = useRef(false);
+
+  // Load clients for dropdown
+  useEffect(() => {
+    const loadClients = async () => {
+      try {
+        const clientsList = await firestoreService.getClients();
+        setClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
+      } catch (error) {
+        console.error('Error loading clients:', error);
+      } finally {
+        setLoadingClients(false);
+      }
+    };
+    loadClients();
+  }, []);
+
+  // Auto-generate dateRange string when dates change
+  useEffect(() => {
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const formatDate = (d) => `${months[d.getMonth()]} ${d.getDate()}`;
+        const year = end.getFullYear();
+        const sameYear = start.getFullYear() === year;
+        const dateRangeStr = sameYear
+          ? `${formatDate(start)} - ${formatDate(end)}, ${year}`
+          : `${formatDate(start)}, ${start.getFullYear()} - ${formatDate(end)}, ${year}`;
+        setFormData(prev => ({ ...prev, dateRange: dateRangeStr }));
+      }
+    }
+  }, [formData.startDate, formData.endDate]);
+
+  // Handle client selection
+  const handleClientSelect = (clientId) => {
+    const selectedClient = clients.find(c => c.id === clientId);
+    setFormData(prev => ({
+      ...prev,
+      clientId: clientId,
+      clientName: selectedClient?.clientName || selectedClient?.name || ''
+    }));
+  };
 
   // Reset auto-extract ref when opening create modal (new report)
   useEffect(() => {
@@ -397,8 +596,21 @@ const ReportModal = ({ report, onClose, onSave }) => {
       setFormData(prev => {
         // Revoke object URLs so we don't leak memory, then dump screenshots (OCR-only)
         (prev.screenshots || []).forEach((s) => { if (s.previewUrl) URL.revokeObjectURL(s.previewUrl); });
+        
+        // Handle structured dates from OCR
+        let newStartDate = prev.startDate;
+        let newEndDate = prev.endDate;
+        if (metrics.startDate instanceof Date && !isNaN(metrics.startDate.getTime())) {
+          newStartDate = metrics.startDate.toISOString().split('T')[0];
+        }
+        if (metrics.endDate instanceof Date && !isNaN(metrics.endDate.getTime())) {
+          newEndDate = metrics.endDate.toISOString().split('T')[0];
+        }
+        
         return {
           ...prev,
+          startDate: newStartDate,
+          endDate: newEndDate,
           dateRange: metrics.dateRange ?? prev.dateRange,
           metrics: { ...(prev.metrics || {}), ...metrics },
           screenshots: []
@@ -535,8 +747,8 @@ const ReportModal = ({ report, onClose, onSave }) => {
   };
 
   const handleSave = async () => {
-    if (!formData.clientName || !formData.title || !formData.dateRange) {
-      alert('Please fill in all required fields');
+    if (!formData.title || !formData.startDate || !formData.endDate) {
+      alert('Please fill in Report Title and Date Range (start and end dates)');
       return;
     }
 
@@ -544,17 +756,20 @@ const ReportModal = ({ report, onClose, onSave }) => {
 
     try {
       // Build payload with only serializable data. Never include formData.screenshots (they hold File objects for OCR only).
+      const clientId = formData.clientId || null;
       const clientName = String(formData.clientName ?? '');
       const title = String(formData.title ?? '');
+      const startDate = formData.startDate ? new Date(formData.startDate) : null;
+      const endDate = formData.endDate ? new Date(formData.endDate) : null;
       const dateRange = String(formData.dateRange ?? '');
       const notes = String(formData.notes ?? '');
       const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') }));
       const metrics = formData.metrics ? JSON.parse(JSON.stringify(formData.metrics)) : null;
 
       if (report) {
-        await firestoreService.updateInstagramReport(report.id, { clientName, title, dateRange, notes, postLinks, metrics });
+        await firestoreService.updateInstagramReport(report.id, { clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
       } else {
-        await firestoreService.createInstagramReport({ clientName, title, dateRange, notes, postLinks, metrics });
+        await firestoreService.createInstagramReport({ clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
       }
       onSave();
     } catch (error) {
@@ -585,19 +800,47 @@ const ReportModal = ({ report, onClose, onSave }) => {
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="space-y-6">
+            {/* Unlinked Report Alert */}
+            {report && !report.clientId && (
+              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-amber-800 dark:text-amber-200">Unlinked Report</h4>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      This report isn't linked to a client. Select a client below to enable filtering and comparison features.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Basic Info Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Client Name *
+                  Client
                 </label>
-                <input
-                  type="text"
-                  value={formData.clientName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-                  placeholder="e.g., ABC Real Estate"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+                <select
+                  value={formData.clientId}
+                  onChange={(e) => handleClientSelect(e.target.value)}
+                  disabled={loadingClients}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                >
+                  <option value="">
+                    {loadingClients ? 'Loading clients...' : 'Select a client (optional)'}
+                  </option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.clientName || client.name || 'Unnamed Client'}
+                    </option>
+                  ))}
+                </select>
+                {!formData.clientId && formData.clientName && (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                    Using custom name: {formData.clientName}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -611,17 +854,46 @@ const ReportModal = ({ report, onClose, onSave }) => {
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
+            </div>
+
+            {/* Date Range Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Date Range *
+                  Start Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  End Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Date Range Display
                 </label>
                 <input
                   type="text"
                   value={formData.dateRange}
                   onChange={(e) => setFormData(prev => ({ ...prev, dateRange: e.target.value }))}
-                  placeholder="e.g., January 2026"
+                  placeholder="Auto-generated or custom"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Auto-generated from dates, or customize
+                </p>
               </div>
             </div>
 

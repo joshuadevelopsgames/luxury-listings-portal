@@ -2,11 +2,20 @@
 # Get your API key from: https://platform.openai.com/api-keys
 REACT_APP_OPENAI_API_KEY=your_openai_api_key_here
 
-# Note: Replace 'your_openai_api_key_here' with your actual OpenAI API key
+# Slack Integration
+# Get your token from: https://api.slack.com/apps (OAuth & Permissions -> User OAuth Token)
+# Token format: xoxp-... (User Token) or xoxb-... (Bot Token)
+REACT_APP_SLACK_TOKEN=your_slack_token_here
+
+# Optional: Slack Proxy URL (required for production due to CORS)
+# Set this to your Firebase Function or serverless endpoint that proxies Slack API calls
+# REACT_APP_SLACK_PROXY_URL=https://your-function-url.cloudfunctions.net/slackProxy
+
+# Note: Replace placeholder values with your actual keys
 # The REACT_APP_ prefix is required for React to access the environment variable
 
 # To use this:
 # 1. Copy this content
 # 2. Create a new file called .env.local in your project root
-# 3. Paste the content and replace 'your_openai_api_key_here' with your real API key
+# 3. Paste the content and replace placeholder values with your real keys
 # 4. Restart your development server

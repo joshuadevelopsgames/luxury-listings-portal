@@ -129,6 +129,8 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
     });
   }, [rawWidgets, widgetOrder]);
 
+  const rows = useMemo(() => computeRows(widgets), [widgets]);
+
   if (widgets.length === 0) {
     return (
       <div className={`text-center py-12 ${className}`}>
@@ -138,8 +140,6 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
       </div>
     );
   }
-
-  const rows = useMemo(() => computeRows(widgets), [widgets]);
 
   const handleDragEnd = (event) => {
     const { active, over } = event;

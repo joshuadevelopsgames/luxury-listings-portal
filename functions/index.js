@@ -1,9 +1,9 @@
 /**
- * Firebase Cloud Functions for Instagram OCR
+ * Firebase Cloud Functions for Instagram OCR and Slack Integration
  * Uses Google Cloud Vision API for fast, accurate text extraction
  */
 
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const vision = require('@google-cloud/vision');
@@ -657,3 +657,99 @@ ${consoleLogs.substring(0, 5000)}
     }
   }
 );
+
+// ============================================================================
+// SLACK API PROXY
+// ============================================================================
+
+/**
+ * Proxy requests to Slack API to bypass CORS restrictions
+ * Supports all Slack Web API methods
+ * 
+ * Usage: POST/GET to this function with:
+ * - endpoint: The Slack API endpoint (e.g., 'conversations.list')
+ * - token: Slack OAuth token (passed in Authorization header or body)
+ * - body: Optional request body for POST requests
+ */
+exports.slackProxy = onRequest({
+  cors: true,
+  maxInstances: 10,
+  secrets: ['SLACK_TOKEN'],
+}, async (req, res) => {
+  // Get Slack token from environment or request
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.replace('Bearer ', '') || 
+                process.env.SLACK_TOKEN ||
+                req.body?.token;
+
+  if (!token) {
+    res.status(401).json({ 
+      ok: false, 
+      error: 'Slack token not provided. Set SLACK_TOKEN secret or pass in Authorization header.' 
+    });
+    return;
+  }
+
+  // Get the Slack endpoint from the URL path or query
+  // e.g., /slackProxy/conversations.list or ?endpoint=conversations.list
+  const pathParts = req.path.split('/').filter(Boolean);
+  const endpoint = pathParts[0] || req.query.endpoint || req.body?.endpoint;
+
+  if (!endpoint) {
+    res.status(400).json({ 
+      ok: false, 
+      error: 'No Slack API endpoint specified. Use path (e.g., /slackProxy/conversations.list) or ?endpoint=...' 
+    });
+    return;
+  }
+
+  const slackUrl = `https://slack.com/api/${endpoint}`;
+  
+  console.log(`🔄 Slack Proxy: ${req.method} ${endpoint}`);
+
+  try {
+    const fetchOptions = {
+      method: req.method === 'POST' ? 'POST' : 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    };
+
+    // For POST requests, forward the body (excluding our proxy-specific fields)
+    if (req.method === 'POST' && req.body) {
+      const { endpoint: _, token: __, ...slackBody } = req.body;
+      if (Object.keys(slackBody).length > 0) {
+        fetchOptions.body = JSON.stringify(slackBody);
+      }
+    }
+
+    // For GET requests, forward query params (excluding our proxy-specific ones)
+    let finalUrl = slackUrl;
+    if (req.method === 'GET' && req.query) {
+      const { endpoint: _, ...slackParams } = req.query;
+      const queryString = new URLSearchParams(slackParams).toString();
+      if (queryString) {
+        finalUrl = `${slackUrl}?${queryString}`;
+      }
+    }
+
+    const response = await fetch(finalUrl, fetchOptions);
+    const data = await response.json();
+
+    // Log success/failure
+    if (data.ok) {
+      console.log(`✅ Slack ${endpoint}: Success`);
+    } else {
+      console.log(`⚠️ Slack ${endpoint}: ${data.error}`);
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error(`❌ Slack proxy error for ${endpoint}:`, error);
+    res.status(500).json({ 
+      ok: false, 
+      error: `Proxy error: ${error.message}` 
+    });
+  }
+});

@@ -276,9 +276,7 @@ const MyTimeOff = () => {
         toast.success('Time off request submitted! Your request has been sent for approval.');
         setShowRequestModal(false);
         resetForm();
-        
-        // Reload requests to show the new one
-        loadLeaveRequests();
+        // Real-time listener will auto-update the requests list
       }
     } catch (error) {
       console.error('❌ Error submitting leave request:', error);
@@ -300,7 +298,7 @@ const MyTimeOff = () => {
     try {
       await firestoreService.cancelLeaveRequest(request.id, currentUser.email, 'Cancelled by employee');
       toast.success('Request cancelled');
-      loadLeaveRequests();
+      // Real-time listener will auto-update the requests list
     } catch (error) {
       console.error('❌ Error cancelling request:', error);
       toast.error('Failed to cancel request');

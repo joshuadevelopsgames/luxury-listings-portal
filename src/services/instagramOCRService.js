@@ -421,7 +421,9 @@ class InstagramOCRService {
     // === DATE RANGE (e.g. "Jan 1 - Jan 30" or "Last 30 days" on Insights screens) ===
     const parsedDateRange = this.extractDateRange(text);
     if (parsedDateRange) {
-      metrics.dateRange = parsedDateRange;
+      metrics.dateRange = parsedDateRange.displayString;  // Keep display string for backward compatibility
+      metrics.startDate = parsedDateRange.startDate;       // Structured date for queries
+      metrics.endDate = parsedDateRange.endDate;           // Structured date for queries
     }
 
     return metrics;
@@ -430,38 +432,74 @@ class InstagramOCRService {
   /**
    * Extract report date range from OCR text (Instagram Insights: "Jan 1 - Jan 30", "Last 30 days", etc.)
    * @param {string} text - Raw OCR text
-   * @returns {string|null} Display string for the date range, or null
+   * @returns {{ startDate: Date|null, endDate: Date|null, displayString: string }|null} Structured date range object, or null
    */
   extractDateRange(text) {
     const normalized = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+    const monthNames = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+    const monthAbbrevs = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    
+    // Helper to parse month name to index (0-11)
+    const parseMonth = (monthStr) => {
+      const m = monthStr.toLowerCase();
+      let idx = monthAbbrevs.findIndex(a => m.startsWith(a));
+      if (idx === -1) idx = monthNames.findIndex(n => m.startsWith(n));
+      return idx;
+    };
+    
+    // Helper to format date for display
+    const formatDate = (d) => {
+      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+      return `${m} ${d.getDate()}`;
+    };
+    
     // Explicit range: "Jan 1 - Jan 30" or "Jan 1 - Jan 30, 2025" or "January 1 - January 30, 2025"
     const monthAbbrev = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
     const monthFull = 'January|February|March|April|May|June|July|August|September|October|November|December';
     const explicitRange = normalized.match(
-      new RegExp(`\\b(${monthAbbrev}|${monthFull})[a-z]*\\s+\\d{1,2}\\s*[-–]\\s*(${monthAbbrev}|${monthFull})[a-z]*\\s+\\d{1,2}(?:\\s*,\\s*\\d{4})?`, 'i')
+      new RegExp(`\\b(${monthAbbrev}|${monthFull})[a-z]*\\s+(\\d{1,2})\\s*[-–]\\s*(${monthAbbrev}|${monthFull})[a-z]*\\s+(\\d{1,2})(?:\\s*,\\s*(\\d{4}))?`, 'i')
     );
+    
     if (explicitRange) {
-      return explicitRange[0].trim();
+      const displayString = explicitRange[0].trim();
+      const startMonth = parseMonth(explicitRange[1]);
+      const startDay = parseInt(explicitRange[2], 10);
+      const endMonth = parseMonth(explicitRange[3]);
+      const endDay = parseInt(explicitRange[4], 10);
+      const year = explicitRange[5] ? parseInt(explicitRange[5], 10) : new Date().getFullYear();
+      
+      if (startMonth >= 0 && endMonth >= 0) {
+        const startDate = new Date(year, startMonth, startDay);
+        // If end month is before start month, assume end is in next year
+        const endYear = endMonth < startMonth ? year + 1 : year;
+        const endDate = new Date(endYear, endMonth, endDay);
+        
+        return { startDate, endDate, displayString };
+      }
+      
+      // Couldn't parse dates, return display string only
+      return { startDate: null, endDate: null, displayString };
     }
-    // "Last N days" → compute range from today for display
+    
+    // "Last N days" → compute range from today
     const lastDaysMatch = normalized.match(/\bLast\s+(\d+)\s+days?\b/i);
     if (lastDaysMatch) {
       const n = parseInt(lastDaysMatch[1], 10);
       if (n >= 1 && n <= 365) {
-        const end = new Date();
-        const start = new Date(end);
-        start.setDate(start.getDate() - n + 1);
-        const fmt = (d) => {
-          const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
-          return `${m} ${d.getDate()}`;
-        };
-        const year = end.getFullYear();
-        const sameYear = start.getFullYear() === year;
-        return sameYear
-          ? `${fmt(start)} - ${fmt(end)}, ${year}`
-          : `${fmt(start)}, ${start.getFullYear()} - ${fmt(end)}, ${year}`;
+        const endDate = new Date();
+        const startDate = new Date(endDate);
+        startDate.setDate(startDate.getDate() - n + 1);
+        
+        const year = endDate.getFullYear();
+        const sameYear = startDate.getFullYear() === year;
+        const displayString = sameYear
+          ? `${formatDate(startDate)} - ${formatDate(endDate)}, ${year}`
+          : `${formatDate(startDate)}, ${startDate.getFullYear()} - ${formatDate(endDate)}, ${year}`;
+        
+        return { startDate, endDate, displayString };
       }
     }
+    
     return null;
   }
 

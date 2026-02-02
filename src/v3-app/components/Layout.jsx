@@ -6,6 +6,7 @@ import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
+import SlackChatWidget from '../../components/ui/slack-chat-widget';
 import { modules, getBaseModuleIds, getNavItemsForModules } from '../../modules/registry';
 import { 
   Home, 
@@ -515,6 +516,9 @@ const V3Layout = () => {
           </p>
         </footer>
       </div>
+
+      {/* Slack Chat Widget */}
+      <SlackChatWidget />
     </div>
   );
 };
