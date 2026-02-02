@@ -53,13 +53,25 @@ const TeamManagement = () => {
   // Team members loaded from Firestore
   const [teamMembers, setTeamMembers] = useState([]);
 
+  // Generate numerical employee ID (EMP-001, EMP-002, etc.)
+  const generateEmployeeId = (index) => {
+    const num = (index + 1).toString().padStart(3, '0');
+    return `EMP-${num}`;
+  };
+
   // Load team members from Firestore
   useEffect(() => {
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
         const users = await firestoreService.getApprovedUsers();
-        const formattedMembers = users.map((user, index) => ({
+        // Sort by createdAt to ensure consistent ordering for employee IDs
+        const sortedUsers = [...users].sort((a, b) => {
+          const dateA = a.createdAt?.toDate?.() || new Date(0);
+          const dateB = b.createdAt?.toDate?.() || new Date(0);
+          return dateA - dateB;
+        });
+        const formattedMembers = sortedUsers.map((user, index) => ({
           id: user.id || index + 1,
           name: user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
           email: user.email,
@@ -74,7 +86,8 @@ const TeamManagement = () => {
           certifications: user.certifications || [],
           leaveBalance: user.leaveBalances || { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 10, used: 0, remaining: 10 }, personal: { total: 3, used: 0, remaining: 3 } },
           salary: user.salary || 0,
-          manager: user.manager || ''
+          manager: user.manager || '',
+          employeeId: user.employeeId || generateEmployeeId(index)
         }));
         setTeamMembers(formattedMembers);
       } catch (error) {
@@ -463,7 +476,7 @@ const TeamManagement = () => {
                   position: selectedEmployee.position,
                   manager: selectedEmployee.manager,
                   startDate: selectedEmployee.startDate,
-                  employeeId: selectedEmployee.employeeId || `EMP-${selectedEmployee.id}`
+                  employeeId: selectedEmployee.employeeId
                 }}
                 editable={isHRManager}
                 isHRView={isHRManager}

@@ -34,36 +34,64 @@ const EmployeeSelfService = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [employeeFirestoreId, setEmployeeFirestoreId] = useState(null);
+  const [employeeNumber, setEmployeeNumber] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const isHRManager = currentRole === 'hr_manager';
 
-  // Load employee Firestore ID when user changes
+  // Generate numerical employee ID (EMP-001, EMP-002, etc.)
+  const generateEmployeeId = (index) => {
+    const num = (index + 1).toString().padStart(3, '0');
+    return `EMP-${num}`;
+  };
+
+  // Load employee Firestore ID and employee number when user changes
   useEffect(() => {
-    const loadEmployeeId = async () => {
+    const loadEmployeeData = async () => {
       if (!currentUser?.email) return;
       
       // Reset state when user changes
       setLoading(true);
       setEmployeeFirestoreId(null);
+      setEmployeeNumber(null);
       setActiveTab('overview');
       
       try {
+        // Get the employee from Firestore
         const employee = await firestoreService.getEmployeeByEmail(currentUser.email);
         if (employee) {
           setEmployeeFirestoreId(employee.id);
-          console.log('✅ Found employee in Firestore:', employee.id, 'for', currentUser.email);
-        } else {
-          console.log('ℹ️ Employee not found in Firestore for', currentUser.email, ', will create on first save');
+          // Use existing employeeId if available
+          if (employee.employeeId) {
+            setEmployeeNumber(employee.employeeId);
+          }
+        }
+        
+        // If no employeeId yet, calculate based on position in approved users list
+        if (!employee?.employeeId) {
+          const allUsers = await firestoreService.getApprovedUsers();
+          // Sort by createdAt to ensure consistent ordering
+          const sortedUsers = [...allUsers].sort((a, b) => {
+            const dateA = a.createdAt?.toDate?.() || new Date(0);
+            const dateB = b.createdAt?.toDate?.() || new Date(0);
+            return dateA - dateB;
+          });
+          const userIndex = sortedUsers.findIndex(u => u.email === currentUser.email);
+          if (userIndex !== -1) {
+            setEmployeeNumber(generateEmployeeId(userIndex));
+          } else {
+            setEmployeeNumber('EMP-001'); // Default fallback
+          }
         }
       } catch (error) {
-        console.error('❌ Error loading employee ID:', error);
+        console.error('❌ Error loading employee data:', error);
+        setEmployeeNumber('EMP-001'); // Fallback on error
       } finally {
         setLoading(false);
       }
     };
 
-    loadEmployeeId();
+    loadEmployeeData();
   }, [currentUser?.email]);
 
   // Mock data
@@ -77,7 +105,7 @@ const EmployeeSelfService = () => {
       department: currentUser?.department || 'Marketing',
       position: 'Marketing Specialist',
       startDate: currentUser?.startDate || '2023-01-15',
-      employeeId: 'EMP-12345',
+      employeeId: employeeNumber || 'Loading...',
       manager: 'Sarah Johnson'
     },
     timeOff: {
