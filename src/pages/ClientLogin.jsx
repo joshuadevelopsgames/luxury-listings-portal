@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { Mail, Lock, Shield, Calendar, MessageSquare, BarChart3, FileText } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { auth } from '../firebase';
@@ -179,15 +177,15 @@ const ClientLogin = () => {
         </div>
 
         {/* Right Side - Login Form */}
-        <Card className="p-8 shadow-xl">
+        <div className="bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
               {isSignUp ? 'Create Your Account' : 'Sign In to Portal'}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-[15px] text-[#86868b]">
               {isSignUp 
                 ? 'Set up your client portal access' 
                 : 'Access your client dashboard'
@@ -196,35 +194,35 @@ const ClientLogin = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="mb-6 p-4 bg-[#ff3b30]/10 border border-[#ff3b30]/20 rounded-xl">
+              <p className="text-[#ff3b30] text-[13px]">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#86868b]" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#86868b]" />
                 <input
                   type="password"
                   value={password}
@@ -232,33 +230,33 @@ const ClientLogin = () => {
                   placeholder={isSignUp ? 'Create a password (min. 6 characters)' : 'Enter your password'}
                   required
                   minLength={6}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                 />
               </div>
             </div>
 
-            <Button
+            <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading 
                 ? (isSignUp ? 'Creating Account...' : 'Signing In...') 
                 : (isSignUp ? 'Create Account' : 'Sign In')
               }
-            </Button>
+            </button>
           </form>
 
           {/* Password Reset Section */}
           {showPasswordReset && !isSignUp && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mt-4 p-4 bg-[#0071e3]/5 border border-[#0071e3]/20 rounded-xl">
               {resetSent ? (
                 <div className="text-center">
-                  <p className="text-sm text-blue-800 font-medium mb-2">✓ Password reset email sent!</p>
-                  <p className="text-xs text-blue-700 mb-2">
+                  <p className="text-[13px] text-[#0071e3] font-medium mb-2">✓ Password reset email sent!</p>
+                  <p className="text-[12px] text-[#0071e3]/80 mb-2">
                     Check your inbox at <strong>{resetEmail || email}</strong> and click the reset link.
                   </p>
-                  <p className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-2 py-1 mb-2">
+                  <p className="text-[11px] text-[#ff9500] bg-[#ff9500]/10 border border-[#ff9500]/20 rounded-lg px-2 py-1 mb-2">
                     ⚠️ Don't see it? Please check your <strong>spam/junk folder</strong> - it may have been filtered there.
                   </p>
                   <button
@@ -267,23 +265,23 @@ const ClientLogin = () => {
                       setResetSent(false);
                       setResetEmail('');
                     }}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-[12px] text-[#0071e3] hover:text-[#0077ed] font-medium"
                   >
                     Close
                   </button>
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm font-medium text-blue-900 mb-2">Forgot Password?</p>
+                  <p className="text-[13px] font-medium text-[#0071e3] mb-2">Forgot Password?</p>
                   <div className="flex gap-2">
                     <input
                       type="email"
                       value={resetEmail || email}
                       onChange={(e) => setResetEmail(e.target.value)}
                       placeholder="Enter your email"
-                      className="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                     />
-                    <Button
+                    <button
                       type="button"
                       onClick={async () => {
                         try {
@@ -311,12 +309,10 @@ const ClientLogin = () => {
                           }
                         }
                       }}
-                      variant="outline"
-                      size="sm"
-                      className="bg-white whitespace-nowrap"
+                      className="px-4 py-2 rounded-xl bg-white dark:bg-black/20 text-[#0071e3] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors whitespace-nowrap"
                     >
                       Send Reset
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
@@ -365,12 +361,12 @@ const ClientLogin = () => {
             </button>
           </div>
 
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-start space-x-3">
-              <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="mt-8 p-4 bg-[#0071e3]/5 rounded-xl border border-[#0071e3]/20">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-[#0071e3] mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm text-blue-800 font-medium">Secure Access</p>
-                <p className="text-xs text-blue-700 mt-1">
+                <p className="text-[13px] text-[#0071e3] font-medium">Secure Access</p>
+                <p className="text-[11px] text-[#0071e3]/80 mt-1">
                   Your account is protected with secure authentication. Only clients with registered emails can access the portal.
                 </p>
               </div>
@@ -378,22 +374,20 @@ const ClientLogin = () => {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-[13px] text-[#86868b]">
               Need help?{' '}
-              <a href="mailto:support@luxury-listings.com" className="text-blue-600 hover:text-blue-700 font-medium">
+              <a href="mailto:support@luxury-listings.com" className="text-[#0071e3] hover:text-[#0077ed] font-medium">
                 Contact Support
               </a>
             </p>
             {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs text-yellow-800 font-medium mb-2">Development Mode</p>
-                <p className="text-xs text-yellow-700 mb-2">
+              <div className="mt-4 p-3 bg-[#ff9500]/10 border border-[#ff9500]/20 rounded-xl">
+                <p className="text-[11px] text-[#ff9500] font-medium mb-2">Development Mode</p>
+                <p className="text-[11px] text-[#ff9500]/80 mb-2">
                   Test account: <strong>joshua@luxury-listings.com</strong>
                 </p>
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={async () => {
                     try {
                       setLoading(true);
@@ -410,15 +404,15 @@ const ClientLogin = () => {
                       setLoading(false);
                     }
                   }}
-                  className="w-full text-xs"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/20 text-[#ff9500] text-[12px] font-medium hover:bg-[#ff9500]/10 transition-colors"
                   disabled={loading}
                 >
                   Create Test Client Account
-                </Button>
+                </button>
               </div>
             )}
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

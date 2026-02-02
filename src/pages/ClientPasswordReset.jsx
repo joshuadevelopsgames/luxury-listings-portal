@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { Lock, CheckCircle, XCircle, Shield } from 'lucide-react';
 import { auth } from '../firebase';
 import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
@@ -97,97 +95,97 @@ const ClientPasswordReset = () => {
 
   if (validating) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-8 shadow-xl">
+      <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-white to-[#f5f5f7] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Verifying reset link...</p>
+            <div className="w-12 h-12 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-[15px] text-[#86868b]">Verifying reset link...</p>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-8 shadow-xl">
+      <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-white to-[#f5f5f7] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 bg-[#34c759]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-8 h-8 text-[#34c759]" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-4">
               Password Reset Successful!
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-[15px] text-[#86868b] mb-6">
               Your password has been reset successfully. Redirecting you to sign in...
             </p>
-            <Button
+            <button
               onClick={() => navigate('/client-login')}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="px-6 py-3 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors"
             >
               Go to Sign In
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
 
   if (!validCode) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-8 shadow-xl">
+      <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-white to-[#f5f5f7] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
           <div className="text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <XCircle className="w-8 h-8 text-red-600" />
+            <div className="w-16 h-16 bg-[#ff3b30]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <XCircle className="w-8 h-8 text-[#ff3b30]" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <h1 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-4">
               Invalid Reset Link
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-[15px] text-[#86868b] mb-6">
               {error || 'This password reset link is invalid or has expired.'}
             </p>
-            <Button
+            <button
               onClick={() => navigate('/client-login')}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="px-6 py-3 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors"
             >
               Go to Sign In
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <Card className="max-w-md w-full p-8 shadow-xl">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-white to-[#f5f5f7] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
             Reset Your Password
           </h1>
-          <p className="text-gray-600">
+          <p className="text-[15px] text-[#86868b]">
             Enter your new password below
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-[#ff3b30]/10 border border-[#ff3b30]/20 rounded-xl">
+            <p className="text-[#ff3b30] text-[13px]">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleResetPassword} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
               New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#86868b]" />
               <input
                 type="password"
                 value={password}
@@ -195,17 +193,17 @@ const ClientPasswordReset = () => {
                 placeholder="Enter new password (min. 6 characters)"
                 required
                 minLength={6}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
               Confirm New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#86868b]" />
               <input
                 type="password"
                 value={confirmPassword}
@@ -213,41 +211,41 @@ const ClientPasswordReset = () => {
                 placeholder="Confirm new password"
                 required
                 minLength={6}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
               />
             </div>
           </div>
 
-          <Button
+          <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-12 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Resetting Password...' : 'Reset Password'}
-          </Button>
+          </button>
         </form>
 
         <div className="mt-6 text-center">
           <button
             onClick={() => navigate('/client-login')}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="text-[13px] text-[#0071e3] hover:text-[#0077ed] font-medium"
           >
             Back to Sign In
           </button>
         </div>
 
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-start space-x-3">
-            <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+        <div className="mt-8 p-4 bg-[#0071e3]/5 rounded-xl border border-[#0071e3]/20">
+          <div className="flex items-start gap-3">
+            <Shield className="w-5 h-5 text-[#0071e3] mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm text-blue-800 font-medium">Security Note</p>
-              <p className="text-xs text-blue-700 mt-1">
+              <p className="text-[13px] text-[#0071e3] font-medium">Security Note</p>
+              <p className="text-[11px] text-[#0071e3]/80 mt-1">
                 Password reset links expire after 1 hour. Make sure to use a strong password.
               </p>
             </div>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
