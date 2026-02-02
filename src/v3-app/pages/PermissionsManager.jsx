@@ -30,12 +30,19 @@ import {
   UserPlus,
   Mail,
   Eye,
-  Instagram
+  Instagram,
+  Star
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
 
-// All available pages that can be granted
+// Build ALL_PAGES from module registry + additional pages
 const ALL_PAGES = {
+  // Base modules (included in base package)
+  'time-off': { name: 'Time Off', icon: Calendar, description: 'Request and manage time off', isBase: true },
+  'my-clients': { name: 'My Clients', icon: Users, description: 'View your assigned clients', isBase: true },
+  'instagram-reports': { name: 'Instagram Reports', icon: Instagram, description: 'Instagram analytics reports', isBase: true },
+  // Upgrade modules
   'dashboard': { name: 'Dashboard', icon: Home, description: 'Main dashboard overview' },
   'tasks': { name: 'Tasks', icon: CheckSquare, description: 'Task management' },
   'clients': { name: 'Clients', icon: User, description: 'Client directory' },
@@ -46,11 +53,13 @@ const ALL_PAGES = {
   'hr-calendar': { name: 'HR Calendar', icon: Calendar, description: 'Team calendar' },
   'team': { name: 'Team Management', icon: Users, description: 'Team directory' },
   'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, description: 'HR metrics and reports' },
-  'instagram-reports': { name: 'Instagram Reports', icon: Instagram, description: 'Instagram analytics reports for clients' },
   'it-support': { name: 'IT Support', icon: Wrench, description: 'Technical support' },
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },
 };
+
+// Get list of base module IDs
+const BASE_MODULE_IDS = getBaseModuleIds();
 
 // System admins (for full access display)
 const SYSTEM_ADMINS = [
@@ -476,9 +485,43 @@ const PermissionsManager = () => {
                           </button>
                         </div>
 
-                        {/* Pages Grid */}
+                        {/* Base Modules Section */}
+                        <div className="mb-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Star className="w-4 h-4 text-[#ff9500]" />
+                            <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Base Modules (Included)</span>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {Object.entries(ALL_PAGES).filter(([_, page]) => page.isBase).map(([pageId, page]) => {
+                              const Icon = page.icon;
+                              return (
+                                <div
+                                  key={pageId}
+                                  className="flex items-center gap-3 p-3 rounded-xl border bg-[#ff9500]/10 border-[#ff9500]/30"
+                                >
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#ff9500]/20">
+                                    <Icon className="w-4 h-4 text-[#ff9500]" />
+                                  </div>
+                                  <div className="flex-1 text-left min-w-0">
+                                    <p className="text-[13px] font-medium truncate text-[#1d1d1f] dark:text-white">
+                                      {page.name}
+                                    </p>
+                                    <p className="text-[10px] text-[#ff9500]">Base package</p>
+                                  </div>
+                                  <Check className="w-4 h-4 flex-shrink-0 text-[#ff9500]" />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Upgrade Modules Section */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <Plus className="w-4 h-4 text-[#0071e3]" />
+                          <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Additional Modules</span>
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {Object.entries(ALL_PAGES).map(([pageId, page]) => {
+                          {Object.entries(ALL_PAGES).filter(([_, page]) => !page.isBase).map(([pageId, page]) => {
                             const hasAccess = perms.includes(pageId);
                             const Icon = page.icon;
                             const isDashboard = pageId === 'dashboard';

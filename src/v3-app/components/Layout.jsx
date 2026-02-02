@@ -6,6 +6,7 @@ import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
+import { modules, getBaseModuleIds } from '../../modules/registry';
 import { 
   Home, 
   CheckSquare, 
@@ -118,8 +119,14 @@ const V3Layout = () => {
   }, [isViewingAs, viewingAsUser?.email]);
 
   // All available pages with their icons
+  // Combines hardcoded pages with module registry
   const allPages = {
     'dashboard': { name: 'Dashboard', icon: Home, path: '/dashboard' },
+    // Base modules (always available)
+    'time-off': { name: 'Time Off', icon: Calendar, path: '/my-time-off' },
+    'my-clients': { name: 'My Clients', icon: Users, path: '/my-clients' },
+    'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/instagram-reports' },
+    // Upgrade modules
     'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
     'clients': { name: 'Clients', icon: User, path: '/clients' },
     'client-packages': { name: 'Client Packages', icon: Briefcase, path: '/client-packages' },
@@ -130,7 +137,6 @@ const V3Layout = () => {
     'team': { name: 'Team Management', icon: Users, path: '/team' },
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
     'permissions': { name: 'Users & Permissions', icon: Settings, path: '/permissions' },
-    'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/instagram-reports' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
@@ -138,11 +144,14 @@ const V3Layout = () => {
 
   // Navigation sections based on role/permissions
   const getNavSections = () => {
+    // Get base module IDs that all users should have access to
+    const baseModules = getBaseModuleIds();
+    
     // When viewing as another user, show their permissions
     if (isViewingAs && viewAsPermissions.length > 0) {
       return [{
         title: 'Menu',
-        items: viewAsPermissions.filter(id => allPages[id])
+        items: ['dashboard', ...viewAsPermissions.filter(id => allPages[id])]
       }];
     }
 
@@ -154,8 +163,12 @@ const V3Layout = () => {
           items: ['dashboard', 'tasks']
         },
         {
+          title: 'My Work',
+          items: ['my-clients', 'time-off', 'instagram-reports']
+        },
+        {
           title: 'Clients',
-          items: ['clients', 'client-packages', 'pending-clients', 'instagram-reports', 'content-calendar', 'crm']
+          items: ['clients', 'client-packages', 'pending-clients', 'content-calendar', 'crm']
         },
         {
           title: 'Team',
@@ -172,26 +185,20 @@ const V3Layout = () => {
       ];
     }
 
-    // Permission-based navigation
+    // Permission-based navigation - include base modules + user permissions
     if (userPermissions.length > 0) {
+      // Combine base modules with user's additional permissions
+      const allUserModules = [...new Set([...baseModules, ...userPermissions])];
       return [{
         title: 'Menu',
-        items: userPermissions.filter(id => allPages[id])
+        items: ['dashboard', ...allUserModules.filter(id => allPages[id])]
       }];
     }
 
-    // Role-based fallback
-    const roleNavs = {
-      [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'it-support'],
-      [USER_ROLES.CONTENT_DIRECTOR]: ['dashboard', 'tasks', 'client-packages', 'content-calendar'],
-      [USER_ROLES.SOCIAL_MEDIA_MANAGER]: ['dashboard', 'tasks', 'clients', 'content-calendar'],
-      [USER_ROLES.HR_MANAGER]: ['dashboard', 'tasks', 'hr-calendar', 'team', 'hr-analytics'],
-      [USER_ROLES.SALES_MANAGER]: ['dashboard', 'tasks', 'crm'],
-    };
-
+    // Default: Show dashboard + base modules
     return [{
       title: 'Menu',
-      items: roleNavs[currentRole] || ['dashboard', 'tasks']
+      items: ['dashboard', ...baseModules.filter(id => allPages[id])]
     }];
   };
 

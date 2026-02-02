@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
+import WidgetGrid from '../../components/dashboard/WidgetGrid';
+import { getBaseModuleIds } from '../../modules/registry';
 import { 
   CheckCircle2, 
   Clock, 
@@ -39,7 +42,14 @@ import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWit
  */
 const V3Dashboard = () => {
   const { currentUser, currentRole } = useAuth();
+  const { permissions, isSystemAdmin } = usePermissions();
   const [loading, setLoading] = useState(true);
+  
+  // Get enabled modules for widget rendering
+  // System admins see all base modules, others see their permissions or base modules
+  const enabledModules = isSystemAdmin 
+    ? getBaseModuleIds() 
+    : (permissions.length > 0 ? permissions : getBaseModuleIds());
   const [tasks, setTasks] = useState([]);
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
@@ -257,7 +267,7 @@ const V3Dashboard = () => {
       </div>
 
       {/* Quick Stats - Real Data */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Total Clients', value: clients.length, icon: Users, color: 'text-[#0071e3]' },
           { label: 'Pending Tasks', value: tasks.filter(t => t.status !== 'completed').length, icon: Clock, color: 'text-[#ff9500]' },
@@ -272,6 +282,12 @@ const V3Dashboard = () => {
             <p className="text-[13px] text-[#86868b]">{item.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Module Widgets - Dynamic based on enabled modules */}
+      <div>
+        <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-4">Your Modules</h2>
+        <WidgetGrid enabledModules={enabledModules} />
       </div>
 
       {/* Main Content Grid */}

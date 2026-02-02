@@ -43,6 +43,9 @@ import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
 import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
 import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
 
+// Module Pages
+import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
+
 // ============================================================================
 // NAVIGATION HELPER - Sets up programmatic navigation
 // ============================================================================
@@ -143,6 +146,7 @@ const router = createBrowserRouter([
 
           // Permission-protected pages
           { path: 'tasks', element: <PermissionRoute pageId="tasks" pageName="Tasks"><TasksPage /></PermissionRoute> },
+          { path: 'my-clients', element: <PermissionRoute pageId="my-clients" pageName="My Clients"><MyClientsPage /></PermissionRoute> },
           { path: 'clients', element: <PermissionRoute pageId="clients" pageName="Clients"><ClientsPage /></PermissionRoute> },
           { path: 'client-packages', element: <PermissionRoute pageId="client-packages" pageName="Client Packages"><ClientPackages /></PermissionRoute> },
           { path: 'pending-clients', element: <PermissionRoute pageId="pending-clients" pageName="Pending Clients"><PendingClients /></PermissionRoute> },

@@ -8,6 +8,7 @@ import Calendar from '../components/ui/calendar';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 import { PERMISSIONS } from '../entities/Permissions';
+import { firestoreService } from '../services/firestoreService';
 import { 
   Calendar as CalendarIcon, 
   Plus, 
@@ -253,6 +254,72 @@ const HRCalendar = () => {
   useEffect(() => {
     checkGoogleCalendarConnection();
   }, []);
+
+  // Load leave requests from Firestore
+  useEffect(() => {
+    const loadLeaveRequests = async () => {
+      try {
+        const requests = await firestoreService.getAllLeaveRequests();
+        if (requests && requests.length > 0) {
+          // Transform Firestore data to match expected format
+          const formattedRequests = requests.map(req => ({
+            id: req.id,
+            employeeId: req.employeeId || req.userEmail,
+            employeeName: req.employeeName || req.userName || 'Unknown',
+            type: req.type || 'vacation',
+            startDate: req.startDate,
+            endDate: req.endDate,
+            startTime: req.startTime || '09:00',
+            endTime: req.endTime || '17:00',
+            isAllDay: req.isAllDay !== false,
+            days: req.days || 1,
+            status: req.status || 'pending',
+            reason: req.reason || '',
+            location: req.location || '',
+            description: req.description || req.notes || '',
+            attendees: req.attendees || '',
+            reminders: req.reminders || ['15'],
+            recurrence: req.recurrence || 'none',
+            tags: req.tags || [],
+            priority: req.priority || 'medium'
+          }));
+          setLeaveRequests(prev => [...formattedRequests, ...prev.filter(r => !requests.find(fr => fr.id === r.id))]);
+        }
+      } catch (error) {
+        console.error('Error loading leave requests from Firestore:', error);
+      }
+    };
+
+    loadLeaveRequests();
+  }, [currentUser?.email]);
+
+  // Handle approve leave request
+  const handleApproveRequest = async (requestId) => {
+    try {
+      await firestoreService.updateLeaveRequestStatus(requestId, 'approved', currentUser?.email);
+      setLeaveRequests(prev => 
+        prev.map(req => req.id === requestId ? { ...req, status: 'approved' } : req)
+      );
+      toast.success('Leave request approved');
+    } catch (error) {
+      console.error('Error approving request:', error);
+      toast.error('Failed to approve request');
+    }
+  };
+
+  // Handle reject leave request
+  const handleRejectRequest = async (requestId) => {
+    try {
+      await firestoreService.updateLeaveRequestStatus(requestId, 'rejected', currentUser?.email);
+      setLeaveRequests(prev => 
+        prev.map(req => req.id === requestId ? { ...req, status: 'rejected' } : req)
+      );
+      toast.success('Leave request rejected');
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      toast.error('Failed to reject request');
+    }
+  };
 
   // Form handling functions
   const handleFormChange = (field, value) => {
@@ -652,10 +719,20 @@ const HRCalendar = () => {
                   </Badge>
                   {request.status === 'pending' && (
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-green-600 hover:text-green-700"
+                        onClick={() => handleApproveRequest(request.id)}
+                      >
                         Approve
                       </Button>
-                      <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleRejectRequest(request.id)}
+                      >
                         Reject
                       </Button>
                     </div>
