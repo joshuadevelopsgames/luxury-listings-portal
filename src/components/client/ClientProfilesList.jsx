@@ -530,6 +530,8 @@ const ClientProfilesList = () => {
                     <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
                       {client.profilePhoto ? (
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
+                      ) : client.clientName?.toLowerCase().includes('agency') ? (
+                        <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                           <span className="text-white font-medium text-sm">
@@ -673,6 +675,8 @@ const ClientProfilesList = () => {
                     <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
                       {client.profilePhoto ? (
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
+                      ) : client.clientName?.toLowerCase().includes('agency') ? (
+                        <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                           <span className="text-white font-semibold text-lg">
@@ -796,10 +800,18 @@ const ClientProfilesList = () => {
             <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 z-10">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-xl">
-                      {selectedClient.clientName ? selectedClient.clientName.charAt(0).toUpperCase() : 'C'}
-                    </span>
+                  <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
+                    {selectedClient.profilePhoto ? (
+                      <img src={selectedClient.profilePhoto} alt="" className="w-full h-full object-cover" />
+                    ) : selectedClient.clientName?.toLowerCase().includes('agency') ? (
+                      <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
+                        <span className="text-white font-semibold text-xl">
+                          {selectedClient.clientName ? selectedClient.clientName.charAt(0).toUpperCase() : 'C'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white mb-1">
