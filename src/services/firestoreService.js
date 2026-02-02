@@ -2414,15 +2414,37 @@ class FirestoreService {
     }
   }
 
-  // Update Instagram report. Fails if report does not belong to current user.
+  // Update Instagram report. Fails if report does not belong to current user (unless admin).
   async updateInstagramReport(reportId, updates) {
     try {
       const uid = auth.currentUser?.uid;
+      const email = auth.currentUser?.email;
       if (!uid) throw new Error('You must be signed in to update a report');
+      
+      // System admins can edit any report
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
+      
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
       const docSnap = await getDoc(docRef);
-      if (!docSnap.exists() || docSnap.data().userId !== uid) {
-        throw new Error('Report not found or you do not have permission to update it');
+      
+      if (!docSnap.exists()) {
+        throw new Error('Report not found');
+      }
+      
+      const reportData = docSnap.data();
+      const isOwner = reportData.userId === uid;
+      const isLegacyReport = !reportData.userId; // Reports created before userId was added
+      
+      // Allow update if: owner, admin, or legacy report (claim ownership)
+      if (!isOwner && !isAdmin && !isLegacyReport) {
+        throw new Error('You do not have permission to update this report');
+      }
+      
+      // If legacy report, claim ownership by setting userId
+      if (isLegacyReport) {
+        updates.userId = uid;
+        console.log('📝 Claiming ownership of legacy report:', reportId);
       }
       
       // Convert date strings/objects to Firestore Timestamps if provided
@@ -2466,16 +2488,32 @@ class FirestoreService {
     }
   }
 
-  // Delete Instagram report. Fails if report does not belong to current user.
+  // Delete Instagram report. Fails if report does not belong to current user (unless admin).
   async deleteInstagramReport(reportId) {
     try {
       const uid = auth.currentUser?.uid;
+      const email = auth.currentUser?.email;
       if (!uid) throw new Error('You must be signed in to delete a report');
+      
+      // System admins can delete any report
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
+      
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
       const docSnap = await getDoc(docRef);
-      if (!docSnap.exists() || docSnap.data().userId !== uid) {
-        throw new Error('Report not found or you do not have permission to delete it');
+      
+      if (!docSnap.exists()) {
+        throw new Error('Report not found');
       }
+      
+      const reportData = docSnap.data();
+      const isOwner = reportData.userId === uid;
+      const isLegacyReport = !reportData.userId;
+      
+      if (!isOwner && !isAdmin && !isLegacyReport) {
+        throw new Error('You do not have permission to delete this report');
+      }
+      
       await deleteDoc(docRef);
       console.log('✅ Instagram report deleted:', reportId);
       return { success: true };
