@@ -686,7 +686,7 @@ const V3Dashboard = () => {
       {isEditMode ? (
         <DndContext collisionDetection={pointerWithin} onDragEnd={handleMainContentDragEnd}>
           <SortableContext items={visibleMainContentBlocks} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch grid-auto-rows-[420px]">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch grid-auto-rows-[327px]">
               {visibleMainContentBlocks.map((blockId) => (
                 <SortableMainBlock
                   key={blockId}
@@ -700,7 +700,7 @@ const V3Dashboard = () => {
           </SortableContext>
         </DndContext>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch grid-auto-rows-[420px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch grid-auto-rows-[327px]">
           {visibleMainContentBlocks.map((blockId) => (
             <div
               key={blockId}

@@ -64,7 +64,7 @@ const DeliverablesDueWidget = () => {
 
   if (loading) {
     return (
-      <div className="h-[420px] min-h-[420px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-black/5 dark:border-white/10 animate-pulse">
+      <div className="h-[327px] min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-black/5 dark:border-white/10 animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
         <div className="space-y-3">
           <div className="h-10 w-full bg-black/5 dark:bg-white/5 rounded" />
@@ -75,7 +75,7 @@ const DeliverablesDueWidget = () => {
   }
 
   return (
-    <div className="h-[420px] min-h-[420px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-black/5 dark:border-white/10">
+    <div className="h-[327px] min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-black/5 dark:border-white/10">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
