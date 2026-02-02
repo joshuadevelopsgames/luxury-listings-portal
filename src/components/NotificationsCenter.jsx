@@ -14,51 +14,27 @@ const NotificationsCenter = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load notifications once (no real-time listener for performance)
+  // Real-time listener for notifications - auto-updates when new notifications arrive
   useEffect(() => {
     if (!currentUser?.email) {
       setLoading(false);
       return;
     }
 
-    let isMounted = true;
-
-    // Load notifications asynchronously without blocking page render
-    const loadNotifications = async () => {
-      try {
-        // Short timeout (2s) - notifications are not critical for page function
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('timeout')), 2000)
-        );
-        
-        const fetchPromise = firestoreService.getNotifications(currentUser.email);
-        
-        const notifs = await Promise.race([fetchPromise, timeoutPromise]);
-        if (isMounted) {
-          setNotifications(notifs || []);
-        }
-      } catch (error) {
-        if (error.message === 'timeout') {
-          console.log('⚠️ Notifications timeout - assuming none');
-        } else {
-          console.error('❌ Error loading notifications:', error);
-        }
-        if (isMounted) {
-          setNotifications([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+    // Set up real-time listener - automatically updates when notifications are created/updated
+    const unsubscribe = firestoreService.onNotificationsChange(
+      currentUser.email,
+      (notifs) => {
+        setNotifications(notifs || []);
+        setLoading(false);
       }
-    };
+    );
 
-    // Don't block - set loading false immediately for non-critical feature
-    setLoading(false);
-    loadNotifications();
-
+    // Cleanup listener on unmount
     return () => {
-      isMounted = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, [currentUser?.email]);
 

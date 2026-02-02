@@ -95,32 +95,7 @@ const MyTimeOff = () => {
 
   const [myRequests, setMyRequests] = useState([]);
 
-  // Load leave requests from Firestore on mount
-  // Load leave requests once (no real-time listener for performance)
-  const loadLeaveRequests = async (isRefresh = false) => {
-    if (!currentUser?.email) return;
-    
-    if (isRefresh) {
-      setRefreshing(true);
-    }
-    
-    try {
-      const requests = await firestoreService.getLeaveRequests(currentUser.email);
-      console.log('📥 Leave requests loaded:', requests?.length || 0);
-      setMyRequests(requests || []);
-      setError(null);
-      if (isRefresh) {
-        toast.success('Requests refreshed');
-      }
-    } catch (err) {
-      console.error('❌ Error loading leave requests:', err);
-      setError(err.message || 'Failed to load leave requests');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
+  // Real-time listener for leave requests - auto-updates when status changes
   useEffect(() => {
     if (!currentUser?.email) {
       setLoading(false);
@@ -129,20 +104,34 @@ const MyTimeOff = () => {
 
     setLoading(true);
     setError(null);
-    loadLeaveRequests();
-  }, [currentUser?.email]);
 
-  // Auto-refresh when tab/window gains focus (to catch status updates)
-  useEffect(() => {
-    const handleFocus = () => {
-      if (currentUser?.email && !loading && !refreshing) {
-        loadLeaveRequests(false); // Silent refresh
+    // Set up real-time listener - automatically updates when data changes in Firestore
+    const unsubscribe = firestoreService.onLeaveRequestsChange(
+      (requests) => {
+        console.log('📥 Leave requests updated (real-time):', requests?.length || 0);
+        setMyRequests(requests || []);
+        setLoading(false);
+        setRefreshing(false);
+        setError(null);
+      },
+      currentUser.email
+    );
+
+    // Cleanup listener on unmount
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
       }
     };
+  }, [currentUser?.email]);
 
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [currentUser?.email, loading, refreshing]);
+  // Manual refresh function (for user-triggered refresh)
+  const handleManualRefresh = () => {
+    setRefreshing(true);
+    // The real-time listener will automatically update, but we show a quick feedback
+    toast.success('Synced with server');
+    setTimeout(() => setRefreshing(false), 500);
+  };
 
   // Load leave balances from Firestore
   useEffect(() => {
@@ -382,11 +371,12 @@ const MyTimeOff = () => {
           <Button 
             variant="outline" 
             className="flex items-center space-x-2"
-            onClick={() => loadLeaveRequests(true)}
+            onClick={handleManualRefresh}
             disabled={refreshing}
+            title="Data syncs automatically in real-time"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">Sync</span>
           </Button>
           <Button className="flex items-center space-x-2" onClick={() => setShowRequestModal(true)}>
             <Plus className="w-4 h-4" />
