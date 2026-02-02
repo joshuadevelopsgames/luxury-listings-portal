@@ -7,6 +7,12 @@ import { PermissionsProvider } from './contexts/PermissionsContext';
 import { setNavigate } from './utils/navigation';
 import MobileInstallPrompt from './components/MobileInstallPrompt';
 
+// Admin utilities - expose to console for easy access
+import { importClients } from './utils/importClientsFromSheet';
+if (typeof window !== 'undefined') {
+  window.importClients = importClients;
+}
+
 // V3 Components (Apple-styled design)
 import V3Layout from './v3-app/components/Layout';
 import V3Login from './v3-app/components/Login';
