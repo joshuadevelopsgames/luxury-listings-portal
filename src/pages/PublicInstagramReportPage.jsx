@@ -27,6 +27,7 @@ import {
   Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
 
 // Normalize percentage for display (OCR sometimes loses decimal or misreads)
 const formatPercent = (value) => {
@@ -582,6 +583,72 @@ const PublicInstagramReportPage = () => {
           ))}
         </div>
       </div>
+      )}
+
+      {/* Instagram Content - embedded posts */}
+      {report.postLinks && report.postLinks.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Instagram Content
+            </h2>
+            <p className="text-gray-600 text-sm">
+              Featured posts and reels from this period
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {report.postLinks.map((link, index) => {
+              const embedUrl = getInstagramEmbedUrl(link.url);
+              return (
+                <div
+                  key={index}
+                  className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col"
+                >
+                  {embedUrl ? (
+                    <div className="w-full max-w-[400px] mx-auto">
+                      <div className="rounded-t-2xl overflow-hidden bg-gray-100">
+                        <iframe
+                          src={embedUrl}
+                          title={link.label || `Instagram post ${index + 1}`}
+                          className="w-full border-0"
+                          style={{ minHeight: 480 }}
+                          allow="encrypted-media"
+                          loading="lazy"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-4 p-5 flex-shrink-0"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <Instagram className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate group-hover:text-purple-600">
+                          {link.label || 'View post'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{link.url}</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    </a>
+                  )}
+                  {(link.label && embedUrl) && (
+                    <p className="px-5 pt-2 text-sm font-medium text-gray-900">{link.label}</p>
+                  )}
+                  {link.comment && (
+                    <p className="p-5 pt-2 text-sm text-gray-600 whitespace-pre-wrap border-t border-gray-100">
+                      {link.comment}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Footer */}
