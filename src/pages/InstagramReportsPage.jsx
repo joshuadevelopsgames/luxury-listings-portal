@@ -5,9 +5,6 @@ import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 // Fallback to browser-based OCR if Cloud Vision fails
 import { instagramOCRService } from '../services/instagramOCRService';
 import { getStorage, ref, deleteObject } from 'firebase/storage';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { 
   Instagram, 
   Plus, 
@@ -179,36 +176,36 @@ const InstagramReportsPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Instagram className="w-8 h-8 text-pink-500" />
-            Instagram Analytics Reports
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] flex items-center gap-3">
+            <Instagram className="w-8 h-8 text-[#E1306C]" />
+            Instagram Analytics
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-[15px] text-[#86868b] mt-1">
             Create beautiful analytics reports from Instagram screenshots for your clients
           </p>
         </div>
-        <Button 
+        <button 
           onClick={() => setShowCreateModal(true)}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           New Report
-        </Button>
+        </button>
       </div>
 
       {/* Filter and Sort Controls */}
       {!loading && reports.length > 0 && (
-        <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
+        <div className="flex flex-wrap items-center gap-4 p-4 bg-black/5 dark:bg-white/5 rounded-2xl">
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-gray-500" />
+            <User className="w-4 h-4 text-[#86868b]" />
             <select
               value={filterClientId}
               onChange={(e) => setFilterClientId(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="h-10 px-3 rounded-xl bg-white dark:bg-[#2c2c2e] border-0 text-[#1d1d1f] dark:text-white text-[13px] focus:outline-none focus:ring-2 focus:ring-[#E1306C]"
             >
               <option value="all">All Clients</option>
               {clientsWithReports.map(client => (
@@ -223,14 +220,14 @@ const InstagramReportsPage = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
-            <div className="flex rounded-lg border border-gray-300 dark:border-white/20 overflow-hidden">
+            <span className="text-[13px] text-[#86868b]">Sort by:</span>
+            <div className="flex rounded-xl bg-black/5 dark:bg-white/10 overflow-hidden">
               <button
                 onClick={() => setSortBy('date')}
-                className={`px-3 py-2 text-sm transition-colors ${
+                className={`px-3 py-2 text-[13px] font-medium transition-colors ${
                   sortBy === 'date'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
+                    ? 'bg-[#E1306C] text-white'
+                    : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
                 }`}
               >
                 <Calendar className="w-4 h-4 inline mr-1" />
@@ -238,10 +235,10 @@ const InstagramReportsPage = () => {
               </button>
               <button
                 onClick={() => setSortBy('client')}
-                className={`px-3 py-2 text-sm transition-colors ${
+                className={`px-3 py-2 text-[13px] font-medium transition-colors ${
                   sortBy === 'client'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
+                    ? 'bg-[#E1306C] text-white'
+                    : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
                 }`}
               >
                 <User className="w-4 h-4 inline mr-1" />
@@ -250,7 +247,7 @@ const InstagramReportsPage = () => {
             </div>
           </div>
           
-          <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+          <div className="ml-auto text-[13px] text-[#86868b]">
             Showing {filteredAndSortedReports.length} of {reports.length} reports
           </div>
         </div>
@@ -259,137 +256,123 @@ const InstagramReportsPage = () => {
       {/* Reports List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-          <span className="ml-3 text-gray-600">Loading reports...</span>
+          <div className="w-8 h-8 border-2 border-[#E1306C] border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 text-[14px] text-[#86868b]">Loading reports...</span>
         </div>
       ) : reports.length === 0 ? (
-        <Card className="border-dashed border-2">
-          <CardContent className="p-12 pt-16 text-center">
-            <Instagram className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">No reports yet</h3>
-            <p className="text-gray-500 mt-2 mb-6">
-              Create your first Instagram analytics report to share with clients
-            </p>
-            <Button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create First Report
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
+          <Instagram className="w-16 h-16 mx-auto text-[#86868b] opacity-50 mb-4" />
+          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No reports yet</h3>
+          <p className="text-[14px] text-[#86868b] mt-2 mb-6">
+            Create your first Instagram analytics report to share with clients
+          </p>
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-4 h-4" />
+            Create First Report
+          </button>
+        </div>
       ) : filteredAndSortedReports.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <User className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">No reports match filter</h3>
-            <p className="text-gray-500 mt-2">
-              Try selecting a different client or "All Clients"
-            </p>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-8 text-center">
+          <User className="w-12 h-12 mx-auto text-[#86868b] opacity-50 mb-4" />
+          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No reports match filter</h3>
+          <p className="text-[14px] text-[#86868b] mt-2">
+            Try selecting a different client or "All Clients"
+          </p>
+        </div>
       ) : (
         <div className="space-y-4">
           {filteredAndSortedReports.map((report) => (
-            <Card key={report.id} className="overflow-hidden hover:shadow-md transition-shadow">
-              <CardContent className="p-0">
-                {/* Report Header */}
-                <div className="p-6 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                      <BarChart3 className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-                          {report.title}
-                        </h3>
-                        {!report.clientId && (
-                          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-xs">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Unlinked
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          {report.clientName || 'No client'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {report.dateRange}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <LinkIcon className="w-4 h-4" />
-                          {report.postLinks?.length || 0} post links
-                        </span>
-                      </div>
-                    </div>
+            <div key={report.id} className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden hover:shadow-lg transition-all">
+              {/* Report Header */}
+              <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] to-[#E1306C] flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-6 h-6 text-white" />
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopyLink(report.publicLinkId)}
-                      className="dark:border-white/20 dark:text-white dark:hover:bg-white/10"
-                    >
-                      {copiedLink === report.publicLinkId ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2 text-green-600" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy Link
-                        </>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
+                        {report.title}
+                      </h3>
+                      {!report.clientId && (
+                        <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-md font-medium bg-[#ff9500]/10 text-[#ff9500]">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          Unlinked
+                        </span>
                       )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(`/report/${report.publicLinkId}`, '_blank')}
-                      className="dark:border-white/20 dark:text-white dark:hover:bg-white/10"
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Preview
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingReport(report)}
-                      className="dark:border-white/20 dark:text-white dark:hover:bg-white/10"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteReport(report)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:border-white/20 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setExpandedReport(expandedReport === report.id ? null : report.id)}
-                    >
-                      {expandedReport === report.id ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </Button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-[12px] text-[#86868b]">
+                      <span className="flex items-center gap-1">
+                        <User className="w-3.5 h-3.5" />
+                        {report.clientName || 'No client'}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {report.dateRange}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <LinkIcon className="w-3.5 h-3.5" />
+                        {report.postLinks?.length || 0} posts
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Expanded: Post links & legacy screenshots */}
-                {expandedReport === report.id && (
-                  <div className="border-t border-gray-200 dark:border-white/10 p-6 bg-gray-50 dark:bg-white/5">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => handleCopyLink(report.publicLinkId)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  >
+                    {copiedLink === report.publicLinkId ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-[#34c759]" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        Copy Link
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => window.open(`/report/${report.publicLinkId}`, '_blank')}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Preview
+                  </button>
+                  <button
+                    onClick={() => setEditingReport(report)}
+                    className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteReport(report)}
+                    className="p-2 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setExpandedReport(expandedReport === report.id ? null : report.id)}
+                    className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[#86868b]"
+                  >
+                    {expandedReport === report.id ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expanded: Post links & legacy screenshots */}
+              {expandedReport === report.id && (
+                <div className="border-t border-black/5 dark:border-white/10 p-5 bg-black/[0.02] dark:bg-white/5">
                     {(report.postLinks?.length > 0) && (
                       <>
                         <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Post previews</h4>
@@ -434,17 +417,16 @@ const InstagramReportsPage = () => {
                     )}
                     {report.notes && (
                       <div className="mt-4 p-4 bg-white dark:bg-white/10 rounded-lg">
-                        <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</h5>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{report.notes}</p>
-                      </div>
-                    )}
-                    <div className="mt-4 text-xs text-gray-500">
-                      Created: {report.createdAt?.toDate ? format(report.createdAt.toDate(), 'PPpp') : 'Unknown'}
+                      <h5 className="text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Notes</h5>
+                      <p className="text-[12px] text-[#86868b] whitespace-pre-wrap">{report.notes}</p>
                     </div>
+                  )}
+                  <div className="mt-4 text-[11px] text-[#86868b]">
+                    Created: {report.createdAt?.toDate ? format(report.createdAt.toDate(), 'PPpp') : 'Unknown'}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
