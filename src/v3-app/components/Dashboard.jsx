@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { DndContext, closestCenter } from '@dnd-kit/core';
+import { DndContext, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '../../contexts/AuthContext';
@@ -58,7 +58,7 @@ function SortableMainBlock({ id, span, isEditMode, renderBlock }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`${span === 2 ? 'lg:col-span-2' : ''} ${isDragging ? 'opacity-60 z-10 scale-[0.98]' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+      className={`${span === 2 ? 'lg:col-span-2' : ''} ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
       {...(isEditMode ? { ...attributes, ...listeners } : {})}
     >
       {renderBlock(id)}
@@ -681,7 +681,7 @@ const V3Dashboard = () => {
 
       {/* Main content - single grid; drag-and-drop when Edit Dashboard is on */}
       {isEditMode ? (
-        <DndContext collisionDetection={closestCenter} onDragEnd={handleMainContentDragEnd}>
+        <DndContext collisionDetection={pointerWithin} onDragEnd={handleMainContentDragEnd}>
           <SortableContext items={visibleMainContentBlocks} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               {visibleMainContentBlocks.map((blockId) => (

@@ -112,7 +112,7 @@ function SortableWidgetCell({ widgetId, moduleId, size, columnCount, isEditMode,
       className={`${spanClass} min-h-0 ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
       {...(isEditMode ? { ...attributes, ...listeners } : {})}
     >
-      <div className="h-full min-h-[120px] flex flex-col">
+      <div className="h-full min-h-0 flex flex-col overflow-auto">
         {children}
       </div>
     </div>
@@ -167,7 +167,7 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
       {rows.map((row, rowIndex) => (
         <div
           key={rowIndex}
-          className={`grid gap-6 items-stretch ${row.columnCount === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}
+          className={`grid gap-6 items-stretch h-[220px] ${row.columnCount === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}
         >
           {row.widgets.map(({ widgetId, moduleId, size }) => {
             const WidgetComponent = widgetComponents[widgetId];
@@ -193,7 +193,7 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
                 {cell}
               </SortableWidgetCell>
             ) : (
-              <div key={widgetId} className={`${spanClass} min-h-[120px] flex flex-col`}>{cell}</div>
+              <div key={widgetId} className={`${spanClass} min-h-0 flex flex-col overflow-auto`}>{cell}</div>
             );
           })}
         </div>
