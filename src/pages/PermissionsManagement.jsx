@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { Shield, User, Check, X, Search, Save } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
@@ -48,7 +45,6 @@ const PermissionsManagement = () => {
       const approvedUsers = await firestoreService.getApprovedUsers();
       setUsers(approvedUsers);
       
-      // Load permissions for each user
       const permissionsMap = {};
       for (const user of approvedUsers) {
         const permissions = await firestoreService.getUserPagePermissions(user.email);
@@ -79,9 +75,7 @@ const PermissionsManagement = () => {
     try {
       setSaving(true);
       const permissions = userPermissions[userEmail] || [];
-      console.log('💾 Saving permissions for:', userEmail, 'Permissions:', permissions);
       
-      // Check if user exists in approved_users collection first
       const userExists = users.find(u => u.email === userEmail);
       if (!userExists) {
         toast.error(`User ${userEmail} not found in approved users`);
@@ -90,15 +84,11 @@ const PermissionsManagement = () => {
       }
 
       await firestoreService.setUserPagePermissions(userEmail, permissions);
-      console.log('✅ Permissions saved successfully');
       toast.success(`Permissions saved for ${userEmail}`);
       
-      // Reload permissions to verify they were saved
-      const updatedPermissions = await firestoreService.getUserPagePermissions(userEmail);
-      console.log('✅ Verified saved permissions:', updatedPermissions);
+      await firestoreService.getUserPagePermissions(userEmail);
     } catch (error) {
-      console.error('❌ Error saving permissions:', error);
-      console.error('❌ Error details:', error.message, error.stack);
+      console.error('Error saving permissions:', error);
       toast.error(`Failed to save permissions: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
@@ -120,146 +110,150 @@ const PermissionsManagement = () => {
 
   if (!isSystemAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="p-8 max-w-md text-center">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-8 max-w-md text-center">
+          <Shield className="w-16 h-16 text-[#ff3b30] mx-auto mb-4" />
+          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Access Denied</h2>
+          <p className="text-[14px] text-[#86868b]">
             Only system administrators can manage page permissions.
           </p>
-        </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Page Permissions Management</h1>
-          </div>
-          <p className="text-gray-600">
-            Control which pages each user can access. Pages will appear in their navigation menu based on permissions.
-          </p>
+    <div className="space-y-6 sm:space-y-8">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-3 mb-2">
+          <Shield className="w-8 h-8 text-[#0071e3]" />
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
+            Page Permissions
+          </h1>
         </div>
-
-        {/* Search */}
-        <Card className="p-4 mb-6">
-          <div className="flex items-center gap-3">
-            <Search className="w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search users by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 border-none outline-none text-gray-900 placeholder-gray-400"
-            />
-          </div>
-        </Card>
-
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 mt-4">Loading users...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Users List */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Users</h2>
-              {filteredUsers.map((user) => (
-                <Card
-                  key={user.email}
-                  className={`p-4 cursor-pointer transition-all ${
-                    selectedUser?.email === user.email
-                      ? 'ring-2 ring-blue-500 bg-blue-50'
-                      : 'hover:shadow-md'
-                  }`}
-                  onClick={() => setSelectedUser(user)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {user.firstName} {user.lastName}
-                        </h3>
-                        <p className="text-sm text-gray-600">{user.email}</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-blue-100 text-blue-800">
-                      {(userPermissions[user.email] || []).length} pages
-                    </Badge>
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            {/* Permissions Editor */}
-            {selectedUser && (
-              <Card className="p-6">
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    Permissions for {selectedUser.firstName} {selectedUser.lastName}
-                  </h2>
-                  <p className="text-sm text-gray-600">{selectedUser.email}</p>
-                </div>
-
-                <div className="space-y-6 max-h-[600px] overflow-y-auto">
-                  {Object.entries(groupedPages).map(([category, pages]) => (
-                    <div key={category}>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">
-                        {category}
-                      </h3>
-                      <div className="space-y-2">
-                        {pages.map((page) => {
-                          const hasPermission = (userPermissions[selectedUser.email] || []).includes(page.id);
-                          return (
-                            <label
-                              key={page.id}
-                              className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={hasPermission}
-                                onChange={() => handleTogglePermission(selectedUser.email, page.id)}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                              />
-                              <span className="text-lg">{page.icon}</span>
-                              <span className="flex-1 font-medium text-gray-900">{page.name}</span>
-                              {hasPermission ? (
-                                <Check className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <X className="w-5 h-5 text-gray-300" />
-                              )}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <Button
-                    onClick={() => handleSavePermissions(selectedUser.email)}
-                    disabled={saving}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Saving...' : 'Save Permissions'}
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </div>
-        )}
+        <p className="text-[15px] sm:text-[17px] text-[#86868b]">
+          Control which pages each user can access. Pages will appear in their navigation menu based on permissions.
+        </p>
       </div>
+
+      {/* Search */}
+      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+        <div className="flex items-center gap-3">
+          <Search className="w-5 h-5 text-[#86868b]" />
+          <input
+            type="text"
+            placeholder="Search users by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b]"
+          />
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-[14px] text-[#86868b]">Loading users...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Users List */}
+          <div className="space-y-4">
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Users</h2>
+            {filteredUsers.map((user) => (
+              <div
+                key={user.email}
+                className={`rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border p-4 cursor-pointer transition-all ${
+                  selectedUser?.email === user.email
+                    ? 'border-[#0071e3] ring-2 ring-[#0071e3]/20'
+                    : 'border-black/5 dark:border-white/10 hover:shadow-lg'
+                }`}
+                onClick={() => setSelectedUser(user)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#0071e3]/10 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-[#0071e3]" />
+                    </div>
+                    <div>
+                      <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">
+                        {user.firstName} {user.lastName}
+                      </h3>
+                      <p className="text-[12px] text-[#86868b]">{user.email}</p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] px-2 py-1 rounded-md bg-[#0071e3]/10 text-[#0071e3] font-medium">
+                    {(userPermissions[user.email] || []).length} pages
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Permissions Editor */}
+          {selectedUser && (
+            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-6">
+              <div className="mb-6">
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">
+                  Permissions for {selectedUser.firstName} {selectedUser.lastName}
+                </h2>
+                <p className="text-[12px] text-[#86868b]">{selectedUser.email}</p>
+              </div>
+
+              <div className="space-y-6 max-h-[500px] overflow-y-auto">
+                {Object.entries(groupedPages).map(([category, pages]) => (
+                  <div key={category}>
+                    <h3 className="text-[11px] font-semibold text-[#86868b] mb-3 uppercase tracking-wider">
+                      {category}
+                    </h3>
+                    <div className="space-y-2">
+                      {pages.map((page) => {
+                        const hasPermission = (userPermissions[selectedUser.email] || []).includes(page.id);
+                        return (
+                          <label
+                            key={page.id}
+                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                              hasPermission 
+                                ? 'bg-[#34c759]/10 border border-[#34c759]/20' 
+                                : 'bg-black/[0.02] dark:bg-white/5 border border-transparent hover:bg-black/5 dark:hover:bg-white/10'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={hasPermission}
+                              onChange={() => handleTogglePermission(selectedUser.email, page.id)}
+                              className="w-4 h-4 text-[#0071e3] rounded focus:ring-[#0071e3]"
+                            />
+                            <span className="text-lg">{page.icon}</span>
+                            <span className="flex-1 text-[13px] font-medium text-[#1d1d1f] dark:text-white">{page.name}</span>
+                            {hasPermission ? (
+                              <Check className="w-5 h-5 text-[#34c759]" />
+                            ) : (
+                              <X className="w-5 h-5 text-[#86868b]/30" />
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-black/5 dark:border-white/10">
+                <button
+                  onClick={() => handleSavePermissions(selectedUser.email)}
+                  disabled={saving}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? 'Saving...' : 'Save Permissions'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

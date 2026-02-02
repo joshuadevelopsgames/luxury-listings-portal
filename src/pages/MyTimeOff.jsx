@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { Progress } from '../components/ui/progress';
 import { firestoreService } from '../services/firestoreService';
 import { timeOffNotifications } from '../services/timeOffNotificationService';
 import { 
@@ -182,33 +178,33 @@ const MyTimeOff = () => {
   const leaveTypes = {
     vacation: { 
       label: 'Vacation', 
-      color: 'bg-blue-100 text-blue-800', 
+      color: 'bg-[#0071e3]/10 text-[#0071e3]', 
       icon: Plane,
-      dotColor: 'bg-blue-500',
+      dotColor: 'bg-[#0071e3]',
       description: 'Paid time off for rest and relaxation'
     },
     sick: { 
       label: 'Sick Leave', 
-      color: 'bg-red-100 text-red-800', 
+      color: 'bg-[#ff3b30]/10 text-[#ff3b30]', 
       icon: Heart,
-      dotColor: 'bg-red-500',
+      dotColor: 'bg-[#ff3b30]',
       description: 'For illness, injury, or medical appointments'
     },
     personal: { 
       label: 'Personal Time', 
-      color: 'bg-purple-100 text-purple-800', 
+      color: 'bg-[#af52de]/10 text-[#af52de]', 
       icon: Home,
-      dotColor: 'bg-purple-500',
+      dotColor: 'bg-[#af52de]',
       description: 'For personal matters and emergencies'
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'approved': return 'bg-[#34c759]/10 text-[#34c759]';
+      case 'pending': return 'bg-[#ff9500]/10 text-[#ff9500]';
+      case 'rejected': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
+      default: return 'bg-black/5 text-[#86868b]';
     }
   };
 
@@ -329,13 +325,9 @@ const MyTimeOff = () => {
   // Show loading state
   if (loading) {
     return (
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your time off requests...</p>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-[14px] text-[#86868b]">Loading your time off requests...</p>
       </div>
     );
   }
@@ -343,125 +335,127 @@ const MyTimeOff = () => {
   // Show error state
   if (error) {
     return (
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <Card className="max-w-md">
-            <CardContent className="p-6 text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Time Off</h2>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={() => window.location.reload()}>Retry</Button>
-            </CardContent>
-          </Card>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-8 max-w-md text-center">
+          <AlertCircle className="w-12 h-12 text-[#ff3b30] mx-auto mb-4" />
+          <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Error Loading Time Off</h2>
+          <p className="text-[14px] text-[#86868b] mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Time Off</h1>
-          <p className="text-gray-600 mt-2">Manage your vacation, sick leave, and time-off requests</p>
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">My Time Off</h1>
+          <p className="text-[15px] sm:text-[17px] text-[#86868b] mt-1">Manage your vacation, sick leave, and time-off requests</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            className="flex items-center space-x-2"
+        <div className="flex items-center gap-2">
+          <button 
             onClick={handleManualRefresh}
             disabled={refreshing}
             title="Data syncs automatically in real-time"
+            className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Sync</span>
-          </Button>
-          <Button className="flex items-center space-x-2" onClick={() => setShowRequestModal(true)}>
+          </button>
+          <button 
+            onClick={() => setShowRequestModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
             <Plus className="w-4 h-4" />
             <span>Request Time Off</span>
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Leave Balances */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {Object.entries(leaveBalances).map(([key, balance]) => {
           const type = leaveTypes[key];
           const Icon = type.icon;
-          const usagePercent = (balance.used / balance.total) * 100;
+          const usagePercent = balance.total > 0 ? (balance.used / balance.total) * 100 : 0;
           
           return (
-            <Card key={key}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center space-x-2 text-lg">
+            <div key={key} className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className={`p-2 rounded-xl ${type.color}`}>
                   <Icon className="w-5 h-5" />
-                  <span>{type.label}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-3xl font-bold text-gray-900">{balance.remaining}</p>
-                      <p className="text-sm text-gray-600">days remaining</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">
-                        {balance.used} used / {balance.total} total
-                      </p>
-                      {balance.pending > 0 && (
-                        <p className="text-sm text-yellow-600 font-medium">
-                          {balance.pending} pending
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <Progress value={usagePercent} className="h-2" />
                 </div>
-              </CardContent>
-            </Card>
+                <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">{type.label}</span>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-[32px] font-semibold text-[#1d1d1f] dark:text-white">{balance.remaining}</p>
+                    <p className="text-[12px] text-[#86868b]">days remaining</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[12px] text-[#86868b]">
+                      {balance.used} used / {balance.total} total
+                    </p>
+                    {balance.pending > 0 && (
+                      <p className="text-[12px] text-[#ff9500] font-medium">
+                        {balance.pending} pending
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all ${type.dotColor}`}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>
 
       {/* Company Policy Info */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="px-6 pt-7 pb-7">
-          <div className="flex items-center space-x-3">
-            <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-blue-900 mb-2">Time Off Policy</h3>
-              <p className="text-sm text-blue-700 leading-relaxed">
-                Vacation requests should be submitted at least 2 weeks in advance. Sick leave can be requested same-day. 
-                Unused vacation days roll over up to 5 days per year. Contact HR if you have questions.
-              </p>
-            </div>
+      <div className="rounded-2xl bg-[#0071e3]/5 dark:bg-[#0071e3]/10 border border-[#0071e3]/20 p-5">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-[#0071e3] flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-[13px] font-medium text-[#0071e3] mb-1">Time Off Policy</h3>
+            <p className="text-[13px] text-[#0071e3]/80 leading-relaxed">
+              Vacation requests should be submitted at least 2 weeks in advance. Sick leave can be requested same-day. 
+              Unused vacation days roll over up to 5 days per year. Contact HR if you have questions.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* My Requests */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CalendarDays className="w-5 h-5" />
-            <span>My Requests</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">My Requests</span>
+          </div>
+        </div>
+        <div className="p-5">
           <div className="space-y-3">
             {myRequests.length === 0 ? (
               <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">No time-off requests yet</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-3"
+                <Calendar className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
+                <p className="text-[14px] text-[#86868b]">No time-off requests yet</p>
+                <button 
                   onClick={() => setShowRequestModal(true)}
+                  className="mt-4 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >
                   Submit Your First Request
-                </Button>
+                </button>
               </div>
             ) : (
               myRequests.map((request) => {
@@ -472,72 +466,72 @@ const MyTimeOff = () => {
                 return (
                   <div 
                     key={request.id} 
-                    className="border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="rounded-xl border border-black/5 dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/5 transition-colors overflow-hidden"
                   >
                     <div 
                       className="flex items-center justify-between p-4 cursor-pointer"
                       onClick={() => setExpandedRequest(isExpanded ? null : request.id)}
                     >
-                      <div className="flex items-center space-x-4">
-                        <div className={`p-3 rounded-lg ${type.color}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${type.color}`}>
                           <Icon className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="flex items-center space-x-2 mb-1">
-                            <p className="font-medium text-gray-900">{type.label}</p>
+                          <div className="flex items-center flex-wrap gap-2 mb-1">
+                            <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{type.label}</p>
                             {request.isTravel && (
-                              <Badge className="bg-orange-100 text-orange-800">
-                                <Plane className="w-3 h-3 mr-1" />
+                              <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#ff9500]/10 text-[#ff9500] font-medium flex items-center gap-1">
+                                <Plane className="w-3 h-3" />
                                 Travel
-                              </Badge>
+                              </span>
                             )}
-                            <Badge className={`${getStatusColor(request.status)} flex items-center space-x-1`}>
+                            <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium flex items-center gap-1 ${getStatusColor(request.status)}`}>
                               {getStatusIcon(request.status)}
                               <span className="capitalize">{request.status}</span>
-                            </Badge>
+                            </span>
                           </div>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-[12px] text-[#86868b]">
                             {safeFormatDate(request.startDate, 'MMM dd, yyyy')} - {safeFormatDate(request.endDate, 'MMM dd, yyyy')}
                             <span className="mx-2">•</span>
                             {request.days} {request.days === 1 ? 'day' : 'days'}
                           </p>
-                          <p className="text-sm text-gray-500 mt-1">{request.reason}</p>
+                          <p className="text-[12px] text-[#86868b] mt-1">{request.reason}</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="text-right text-sm text-gray-500">
-                          <p>Submitted {safeFormatDate(request.submittedDate, 'MMM dd')}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-[11px] text-[#86868b]">Submitted {safeFormatDate(request.submittedDate, 'MMM dd')}</p>
                           {request.reviewedBy && (
-                            <p className="text-xs mt-1">
+                            <p className="text-[10px] text-[#86868b] mt-1">
                               {request.status === 'approved' ? 'Approved' : 'Reviewed'} by {request.reviewedBy}
                             </p>
                           )}
                         </div>
-                        {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                        {isExpanded ? <ChevronUp className="w-5 h-5 text-[#86868b]" /> : <ChevronDown className="w-5 h-5 text-[#86868b]" />}
                       </div>
                     </div>
                     
                     {/* Expanded Details */}
                     {isExpanded && (
-                      <div className="px-4 pb-4 border-t border-gray-100 pt-4 space-y-3">
+                      <div className="px-4 pb-4 border-t border-black/5 dark:border-white/10 pt-4 space-y-3">
                         {/* Travel Details */}
                         {request.isTravel && (
-                          <div className="bg-orange-50 rounded-lg p-3 space-y-2">
-                            <p className="text-sm font-medium text-orange-900">Travel Details</p>
+                          <div className="bg-[#ff9500]/5 rounded-xl p-4 space-y-2">
+                            <p className="text-[12px] font-medium text-[#ff9500]">Travel Details</p>
                             {request.destination && (
-                              <p className="text-sm text-orange-700 flex items-center">
+                              <p className="text-[12px] text-[#ff9500]/80 flex items-center">
                                 <MapPin className="w-4 h-4 mr-2" />
                                 {request.destination}
                               </p>
                             )}
                             {request.travelPurpose && (
-                              <p className="text-sm text-orange-700 flex items-center">
+                              <p className="text-[12px] text-[#ff9500]/80 flex items-center">
                                 <Briefcase className="w-4 h-4 mr-2" />
                                 {request.travelPurpose}
                               </p>
                             )}
                             {request.estimatedExpenses > 0 && (
-                              <p className="text-sm text-orange-700 flex items-center">
+                              <p className="text-[12px] text-[#ff9500]/80 flex items-center">
                                 <DollarSign className="w-4 h-4 mr-2" />
                                 Estimated: ${request.estimatedExpenses}
                               </p>
@@ -547,22 +541,22 @@ const MyTimeOff = () => {
                         
                         {/* Manager Notes (for rejected) */}
                         {request.status === 'rejected' && request.managerNotes && (
-                          <div className="bg-red-50 rounded-lg p-3">
-                            <p className="text-sm font-medium text-red-900 mb-1">Rejection Reason</p>
-                            <p className="text-sm text-red-700">{request.managerNotes}</p>
+                          <div className="bg-[#ff3b30]/5 rounded-xl p-4">
+                            <p className="text-[12px] font-medium text-[#ff3b30] mb-1">Rejection Reason</p>
+                            <p className="text-[12px] text-[#ff3b30]/80">{request.managerNotes}</p>
                           </div>
                         )}
                         
                         {/* History */}
                         {request.history && request.history.length > 0 && (
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                          <div className="bg-black/[0.02] dark:bg-white/5 rounded-xl p-4">
+                            <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-2 flex items-center">
                               <History className="w-4 h-4 mr-2" />
                               Request History
                             </p>
                             <div className="space-y-1">
                               {request.history.map((entry, idx) => (
-                                <p key={idx} className="text-xs text-gray-600">
+                                <p key={idx} className="text-[11px] text-[#86868b]">
                                   <span className="font-medium capitalize">{entry.action}</span>
                                   {' by '}{entry.by}
                                   {' on '}{safeFormatDate(entry.timestamp, 'MMM dd, yyyy h:mm a')}
@@ -576,28 +570,26 @@ const MyTimeOff = () => {
                         {/* Cancel Button */}
                         {request.status === 'pending' && (
                           <div className="flex justify-end pt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleCancelRequest(request);
                               }}
                               disabled={cancelling === request.id}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50"
                             >
                               {cancelling === request.id ? (
-                                <span className="flex items-center">
-                                  <span className="animate-spin mr-2">⏳</span>
+                                <>
+                                  <span className="animate-spin">⏳</span>
                                   Cancelling...
-                                </span>
+                                </>
                               ) : (
-                                <span className="flex items-center">
-                                  <X className="w-4 h-4 mr-1" />
+                                <>
+                                  <X className="w-3.5 h-3.5" />
                                   Cancel Request
-                                </span>
+                                </>
                               )}
-                            </Button>
+                            </button>
                           </div>
                         )}
                       </div>
@@ -607,26 +599,29 @@ const MyTimeOff = () => {
               })
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Request Time Off Modal */}
       {showRequestModal && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 fixed inset-0">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4 z-10">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Request Time Off</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowRequestModal(false)}>
-                  <XCircle className="w-5 h-5" />
-                </Button>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Request Time Off</h2>
+                <button 
+                  onClick={() => setShowRequestModal(false)}
+                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  <XCircle className="w-5 h-5 text-[#86868b]" />
+                </button>
               </div>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Leave Type Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-3">
                   Type of Leave *
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -639,18 +634,18 @@ const MyTimeOff = () => {
                         key={key}
                         type="button"
                         onClick={() => handleFormChange('type', key)}
-                        className={`p-4 border-2 rounded-lg text-left transition-all ${
+                        className={`p-4 rounded-xl text-left transition-all ${
                           leaveForm.type === key 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200 hover:border-gray-300'
+                            ? 'bg-[#0071e3]/10 border-2 border-[#0071e3]' 
+                            : 'bg-black/[0.02] dark:bg-white/5 border-2 border-transparent hover:bg-black/5 dark:hover:bg-white/10'
                         }`}
                       >
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Icon className="w-5 h-5" />
-                          <span className="font-medium">{type.label}</span>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon className={`w-5 h-5 ${leaveForm.type === key ? 'text-[#0071e3]' : 'text-[#86868b]'}`} />
+                          <span className={`text-[13px] font-medium ${leaveForm.type === key ? 'text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white'}`}>{type.label}</span>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2">{type.description}</p>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-[11px] text-[#86868b] mb-2">{type.description}</p>
+                        <p className={`text-[12px] font-medium ${leaveForm.type === key ? 'text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white'}`}>
                           {balance.remaining} days available
                         </p>
                       </button>
@@ -660,22 +655,22 @@ const MyTimeOff = () => {
               </div>
 
               {/* Dates */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                     Start Date *
                   </label>
                   <input
                     type="date"
                     value={leaveForm.startDate}
                     onChange={(e) => handleFormChange('startDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                     End Date *
                   </label>
                   <input
@@ -683,7 +678,7 @@ const MyTimeOff = () => {
                     value={leaveForm.endDate}
                     onChange={(e) => handleFormChange('endDate', e.target.value)}
                     min={leaveForm.startDate}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                     required
                   />
                 </div>
@@ -691,22 +686,22 @@ const MyTimeOff = () => {
 
               {/* Calculated Days */}
               {calculateDays() > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-[#0071e3]/5 rounded-xl p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-900">Total Business Days Requested:</span>
-                    <span className="text-2xl font-bold text-blue-900">{calculateDays()}</span>
+                    <span className="text-[13px] font-medium text-[#0071e3]">Total Business Days Requested:</span>
+                    <span className="text-[24px] font-semibold text-[#0071e3]">{calculateDays()}</span>
                   </div>
                 </div>
               )}
 
               {/* Validation Errors */}
               {validationErrors.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-red-900 mb-2 flex items-center">
+                <div className="bg-[#ff3b30]/5 rounded-xl p-4">
+                  <p className="text-[12px] font-medium text-[#ff3b30] mb-2 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-2" />
                     Please fix the following errors:
                   </p>
-                  <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                  <ul className="list-disc list-inside text-[12px] text-[#ff3b30]/80 space-y-1">
                     {validationErrors.map((error, idx) => (
                       <li key={idx}>{error}</li>
                     ))}
@@ -716,12 +711,12 @@ const MyTimeOff = () => {
 
               {/* Validation Warnings */}
               {validationWarnings.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-yellow-900 mb-2 flex items-center">
+                <div className="bg-[#ff9500]/5 rounded-xl p-4">
+                  <p className="text-[12px] font-medium text-[#ff9500] mb-2 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-2" />
                     Warnings:
                   </p>
-                  <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                  <ul className="list-disc list-inside text-[12px] text-[#ff9500]/80 space-y-1">
                     {validationWarnings.map((warning, idx) => (
                       <li key={idx}>{warning}</li>
                     ))}
@@ -730,63 +725,63 @@ const MyTimeOff = () => {
               )}
 
               {/* Travel Toggle */}
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3 p-4 bg-black/[0.02] dark:bg-white/5 rounded-xl">
                 <input
                   type="checkbox"
                   id="isTravel"
                   checked={leaveForm.isTravel}
                   onChange={(e) => handleFormChange('isTravel', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-[#0071e3] rounded focus:ring-[#0071e3]"
                 />
-                <label htmlFor="isTravel" className="flex items-center text-sm font-medium text-gray-700">
-                  <Plane className="w-4 h-4 mr-2 text-orange-500" />
+                <label htmlFor="isTravel" className="flex items-center text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                  <Plane className="w-4 h-4 mr-2 text-[#ff9500]" />
                   This is a business travel request
                 </label>
               </div>
 
               {/* Travel Fields */}
               {leaveForm.isTravel && (
-                <div className="space-y-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <p className="text-sm font-medium text-orange-900">Travel Details</p>
+                <div className="space-y-4 p-4 bg-[#ff9500]/5 rounded-xl">
+                  <p className="text-[13px] font-medium text-[#ff9500]">Travel Details</p>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                       Destination
                     </label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#86868b]" />
                       <input
                         type="text"
                         value={leaveForm.destination}
                         onChange={(e) => handleFormChange('destination', e.target.value)}
                         placeholder="City, Country"
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="w-full h-11 pl-10 pr-4 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff9500]"
                       />
                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                       Business Purpose
                     </label>
                     <div className="relative">
-                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#86868b]" />
                       <input
                         type="text"
                         value={leaveForm.travelPurpose}
                         onChange={(e) => handleFormChange('travelPurpose', e.target.value)}
                         placeholder="e.g., Client meeting, Conference"
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="w-full h-11 pl-10 pr-4 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff9500]"
                       />
                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                       Estimated Expenses ($)
                     </label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#86868b]" />
                       <input
                         type="number"
                         value={leaveForm.estimatedExpenses}
@@ -794,7 +789,7 @@ const MyTimeOff = () => {
                         placeholder="0.00"
                         min="0"
                         step="0.01"
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="w-full h-11 pl-10 pr-4 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff9500]"
                       />
                     </div>
                   </div>
@@ -803,7 +798,7 @@ const MyTimeOff = () => {
 
               {/* Reason */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   Reason *
                 </label>
                 <input
@@ -811,14 +806,14 @@ const MyTimeOff = () => {
                   value={leaveForm.reason}
                   onChange={(e) => handleFormChange('reason', e.target.value)}
                   placeholder="Brief reason for your time off"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                   required
                 />
               </div>
 
               {/* Additional Notes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   Additional Notes (Optional)
                 </label>
                 <textarea
@@ -826,27 +821,27 @@ const MyTimeOff = () => {
                   onChange={(e) => handleFormChange('notes', e.target.value)}
                   rows={3}
                   placeholder="Any additional information for your manager..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
                 />
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                <Button
+              <div className="flex justify-end gap-3 pt-6 border-t border-black/5 dark:border-white/10">
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setShowRequestModal(false)}
                   disabled={submitting}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
                 >
                   Cancel
-                </Button>
-                <Button 
+                </button>
+                <button 
                   type="submit" 
-                  className="bg-blue-600 hover:bg-blue-700"
                   disabled={submitting}
+                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
                 >
                   {submitting ? 'Submitting...' : 'Submit Request'}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
@@ -855,60 +850,63 @@ const MyTimeOff = () => {
 
       {/* Request Details Modal */}
       {selectedRequest && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 fixed inset-0">
-          <div className="bg-white rounded-lg max-w-xl w-full">
-            <div className="border-b border-gray-200 px-6 py-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-xl w-full border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Request Details</h2>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedRequest(null)}>
-                  <XCircle className="w-5 h-5" />
-                </Button>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Request Details</h2>
+                <button 
+                  onClick={() => setSelectedRequest(null)}
+                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  <XCircle className="w-5 h-5 text-[#86868b]" />
+                </button>
               </div>
             </div>
             
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-3 rounded-lg ${leaveTypes[selectedRequest.type].color}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 rounded-xl ${leaveTypes[selectedRequest.type].color}`}>
                     {React.createElement(leaveTypes[selectedRequest.type].icon, { className: "w-6 h-6" })}
                   </div>
                   <div>
-                    <p className="font-semibold text-lg">{leaveTypes[selectedRequest.type].label}</p>
-                    <p className="text-sm text-gray-600">{selectedRequest.days} days</p>
+                    <p className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{leaveTypes[selectedRequest.type].label}</p>
+                    <p className="text-[12px] text-[#86868b]">{selectedRequest.days} days</p>
                   </div>
                 </div>
-                <Badge className={`${getStatusColor(selectedRequest.status)} flex items-center space-x-1`}>
+                <span className={`text-[11px] px-2 py-1 rounded-md font-medium flex items-center gap-1 ${getStatusColor(selectedRequest.status)}`}>
                   {getStatusIcon(selectedRequest.status)}
                   <span className="capitalize">{selectedRequest.status}</span>
-                </Badge>
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-black/5 dark:border-white/10">
                 <div>
-                  <p className="text-sm text-gray-600">Start Date</p>
-                  <p className="font-medium">{safeFormatDate(selectedRequest.startDate, 'MMM dd, yyyy')}</p>
+                  <p className="text-[11px] text-[#86868b]">Start Date</p>
+                  <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{safeFormatDate(selectedRequest.startDate, 'MMM dd, yyyy')}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">End Date</p>
-                  <p className="font-medium">{safeFormatDate(selectedRequest.endDate, 'MMM dd, yyyy')}</p>
+                  <p className="text-[11px] text-[#86868b]">End Date</p>
+                  <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{safeFormatDate(selectedRequest.endDate, 'MMM dd, yyyy')}</p>
                 </div>
               </div>
 
-              <div className="pt-4 border-t">
-                <p className="text-sm text-gray-600 mb-1">Reason</p>
-                <p className="text-gray-900">{selectedRequest.reason}</p>
+              <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                <p className="text-[11px] text-[#86868b] mb-1">Reason</p>
+                <p className="text-[13px] text-[#1d1d1f] dark:text-white">{selectedRequest.reason}</p>
               </div>
 
-              <div className="pt-4 border-t">
-                <p className="text-sm text-gray-600 mb-1">Submitted</p>
-                <p className="text-gray-900">{safeFormatDate(selectedRequest.submittedDate, 'MMMM dd, yyyy')}</p>
+              <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                <p className="text-[11px] text-[#86868b] mb-1">Submitted</p>
+                <p className="text-[13px] text-[#1d1d1f] dark:text-white">{safeFormatDate(selectedRequest.submittedDate, 'MMMM dd, yyyy')}</p>
               </div>
 
               {selectedRequest.reviewedBy && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-600 mb-1">Reviewed By</p>
-                  <p className="text-gray-900">{selectedRequest.reviewedBy}</p>
-                  <p className="text-sm text-gray-600 mt-1">
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <p className="text-[11px] text-[#86868b] mb-1">Reviewed By</p>
+                  <p className="text-[13px] text-[#1d1d1f] dark:text-white">{selectedRequest.reviewedBy}</p>
+                  <p className="text-[11px] text-[#86868b] mt-1">
                     on {safeFormatDate(selectedRequest.reviewedDate, 'MMMM dd, yyyy')}
                   </p>
                 </div>
