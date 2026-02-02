@@ -245,8 +245,11 @@ const V3Layout = () => {
     navigate(path);
   }, [navigate]);
 
+  // Check if current user is Michelle for special theme
+  const isMichelle = currentUser?.email?.toLowerCase() === 'michelle@luxury-listings.com';
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen ${darkMode ? 'dark' : ''} ${isMichelle ? 'michelle-theme' : ''}`}>
       {/* Background */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#161617]" />
