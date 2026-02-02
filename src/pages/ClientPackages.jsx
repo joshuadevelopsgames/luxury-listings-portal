@@ -26,6 +26,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
+import PlatformIcons from '../components/PlatformIcons';
+import { Camera } from 'lucide-react';
 
 export default function ClientPackages() {
   const { hasPermission } = useAuth();
@@ -48,6 +50,9 @@ export default function ClientPackages() {
   const [addForm, setAddForm] = useState({
     clientName: '',
     clientEmail: '',
+    profilePhoto: '',
+    brokerage: '',
+    platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
     packageType: 'Standard',
     packageSize: 1,
     postsUsed: 0,
@@ -61,6 +66,7 @@ export default function ClientPackages() {
     customPrice: 0,
     overduePosts: 0
   });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastSync, setLastSync] = useState(null);
   const [scriptTestResult, setScriptTestResult] = useState(null);
@@ -1026,6 +1032,9 @@ export default function ClientPackages() {
     setEditingClient(client);
     setEditForm({
       clientEmail: client.clientEmail || '',
+      profilePhoto: client.profilePhoto || '',
+      brokerage: client.brokerage || '',
+      platforms: client.platforms || { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
       packageType: client.packageType,
       packageSize: client.packageSize,
       postsUsed: client.postsUsed,
@@ -1082,6 +1091,9 @@ export default function ClientPackages() {
           id: editingClient.id,
           clientName: editingClient.clientName,
           clientEmail: editForm.clientEmail,
+          profilePhoto: editForm.profilePhoto || '',
+          brokerage: editForm.brokerage || '',
+          platforms: editForm.platforms || {},
           packageType: editForm.packageType,
           packageSize: editForm.packageSize,
           postsUsed: editForm.postsUsed,
@@ -1368,6 +1380,9 @@ export default function ClientPackages() {
         clientData: JSON.stringify({
           clientName: addForm.clientName,
           clientEmail: addForm.clientEmail,
+          profilePhoto: addForm.profilePhoto,
+          brokerage: addForm.brokerage,
+          platforms: addForm.platforms,
           packageType: addForm.packageType,
           packageSize: addForm.packageSize,
           postsUsed: addForm.postsUsed,
@@ -1426,6 +1441,9 @@ export default function ClientPackages() {
               setAddForm({
                 clientName: '',
                 clientEmail: '',
+                profilePhoto: '',
+                brokerage: '',
+                platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
                 packageType: 'Standard',
                 packageSize: 1,
                 postsUsed: 0,
@@ -1464,6 +1482,9 @@ export default function ClientPackages() {
               setAddForm({
                 clientName: '',
                 clientEmail: '',
+                profilePhoto: '',
+                brokerage: '',
+                platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
                 packageType: 'Standard',
                 packageSize: 1,
                 postsUsed: 0,
@@ -1719,10 +1740,42 @@ export default function ClientPackages() {
     localStorage.setItem('lastAutoReset', today);
   };
 
+  // Upload photo to ImgBB
+  const handlePhotoUpload = async (file, formType) => {
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      await new Promise((resolve) => { reader.onload = resolve; });
+      const base64 = reader.result.split(',')[1];
+      const formData = new FormData();
+      formData.append('image', base64);
+      const resp = await fetch('https://api.imgbb.com/1/upload?key=1e52042b16f9d095084295e32d073030', { method: 'POST', body: formData });
+      const data = await resp.json();
+      if (data.success) {
+        const url = data.data.url;
+        if (formType === 'add') {
+          setAddForm(prev => ({ ...prev, profilePhoto: url }));
+        } else {
+          setEditForm(prev => ({ ...prev, profilePhoto: url }));
+        }
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleAddCancel = () => {
     setShowAddModal(false);
     setAddForm({
       clientName: '',
+      clientEmail: '',
+      profilePhoto: '',
+      brokerage: '',
+      platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
       packageType: 'Standard',
       packageSize: 1,
       postsUsed: 0,
@@ -2605,6 +2658,69 @@ export default function ClientPackages() {
                 />
               </div>
 
+              {/* Profile Photo */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Profile Photo
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 flex-shrink-0">
+                    {editForm.profilePhoto ? (
+                      <img src={editForm.profilePhoto} alt="Client" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <Camera className="w-6 h-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50 text-sm font-medium text-gray-700 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                      {uploadingPhoto ? 'Uploading...' : 'Choose Photo'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handlePhotoUpload(e.target.files[0], 'edit')}
+                      />
+                    </label>
+                    {editForm.profilePhoto && (
+                      <button
+                        onClick={() => setEditForm({...editForm, profilePhoto: ''})}
+                        className="ml-2 text-xs text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Brokerage */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Brokerage
+                </label>
+                <input
+                  type="text"
+                  value={editForm.brokerage || ''}
+                  onChange={(e) => setEditForm({...editForm, brokerage: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. RE/MAX, Sotheby's, Compass"
+                />
+              </div>
+
+              {/* Social Media Platforms */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Platforms Managed
+                </label>
+                <PlatformIcons
+                  platforms={editForm.platforms || {}}
+                  editable
+                  onChange={(platforms) => setEditForm({...editForm, platforms})}
+                />
+              </div>
+
               {/* Package Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2858,6 +2974,69 @@ export default function ClientPackages() {
                   onChange={(e) => setAddForm({...addForm, clientEmail: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter client email"
+                />
+              </div>
+
+              {/* Profile Photo */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Profile Photo
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 flex-shrink-0">
+                    {addForm.profilePhoto ? (
+                      <img src={addForm.profilePhoto} alt="Client" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <Camera className="w-6 h-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50 text-sm font-medium text-gray-700 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                      {uploadingPhoto ? 'Uploading...' : 'Choose Photo'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handlePhotoUpload(e.target.files[0], 'add')}
+                      />
+                    </label>
+                    {addForm.profilePhoto && (
+                      <button
+                        onClick={() => setAddForm({...addForm, profilePhoto: ''})}
+                        className="ml-2 text-xs text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Brokerage */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Brokerage
+                </label>
+                <input
+                  type="text"
+                  value={addForm.brokerage}
+                  onChange={(e) => setAddForm({...addForm, brokerage: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. RE/MAX, Sotheby's, Compass"
+                />
+              </div>
+
+              {/* Social Media Platforms */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Platforms Managed
+                </label>
+                <PlatformIcons
+                  platforms={addForm.platforms}
+                  editable
+                  onChange={(platforms) => setAddForm({...addForm, platforms})}
                 />
               </div>
 

@@ -44,7 +44,8 @@ class FirestoreService {
     PENDING_CLIENTS: 'pending_clients',
     CLIENT_CONTRACTS: 'client_contracts',
     INSTAGRAM_REPORTS: 'instagram_reports',
-    ERROR_REPORTS: 'error_reports'
+    ERROR_REPORTS: 'error_reports',
+    USER_DASHBOARD_PREFERENCES: 'user_dashboard_preferences'
   };
 
   // Test connection method
@@ -2172,8 +2173,13 @@ class FirestoreService {
   }
 
   // Create an Instagram report. Screenshots are never stored (OCR-only in the app); we always write screenshots: [].
+  // Reports are scoped per user via userId.
   async createInstagramReport(reportData) {
     try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        throw new Error('You must be signed in to create an Instagram report');
+      }
       // Use only these fields; never pass through reportData.screenshots (may contain File objects).
       const sanitized = JSON.parse(JSON.stringify({
         clientName: reportData.clientName ?? '',
@@ -2187,6 +2193,7 @@ class FirestoreService {
       const publicLinkId = this.generatePublicLinkId();
       const docRef = await addDoc(collection(db, this.collections.INSTAGRAM_REPORTS), {
         ...sanitized,
+        userId: uid,
         publicLinkId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -2199,19 +2206,22 @@ class FirestoreService {
     }
   }
 
-  // Get all Instagram reports
+  // Get Instagram reports for the current user only.
   async getInstagramReports() {
     try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return [];
       const q = query(
         collection(db, this.collections.INSTAGRAM_REPORTS),
+        where('userId', '==', uid),
         orderBy('createdAt', 'desc')
       );
       const snapshot = await getDocs(q);
       const reports = [];
-      snapshot.forEach((doc) => {
+      snapshot.forEach((docSnap) => {
         reports.push({
-          id: doc.id,
-          ...doc.data()
+          id: docSnap.id,
+          ...docSnap.data()
         });
       });
       console.log('✅ Fetched Instagram reports:', reports.length);
@@ -2222,15 +2232,19 @@ class FirestoreService {
     }
   }
 
-  // Get Instagram report by ID
+  // Get Instagram report by ID. Returns null if report does not exist or does not belong to current user.
   async getInstagramReportById(reportId) {
     try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return null;
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.userId !== uid) return null;
         return {
           id: docSnap.id,
-          ...docSnap.data()
+          ...data
         };
       }
       return null;
@@ -2264,10 +2278,16 @@ class FirestoreService {
     }
   }
 
-  // Update Instagram report
+  // Update Instagram report. Fails if report does not belong to current user.
   async updateInstagramReport(reportId, updates) {
     try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('You must be signed in to update a report');
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists() || docSnap.data().userId !== uid) {
+        throw new Error('Report not found or you do not have permission to update it');
+      }
       await updateDoc(docRef, {
         ...updates,
         updatedAt: serverTimestamp()
@@ -2280,10 +2300,16 @@ class FirestoreService {
     }
   }
 
-  // Delete Instagram report
+  // Delete Instagram report. Fails if report does not belong to current user.
   async deleteInstagramReport(reportId) {
     try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('You must be signed in to delete a report');
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists() || docSnap.data().userId !== uid) {
+        throw new Error('Report not found or you do not have permission to delete it');
+      }
       await deleteDoc(docRef);
       console.log('✅ Instagram report deleted:', reportId);
       return { success: true };
@@ -2310,6 +2336,31 @@ class FirestoreService {
       });
       callback(reports);
     });
+  }
+
+  // ===== DASHBOARD PREFERENCES (widget order, etc.) =====
+
+  async getDashboardPreferences(uid) {
+    if (!uid) return null;
+    try {
+      const ref = doc(db, this.collections.USER_DASHBOARD_PREFERENCES, uid);
+      const snap = await getDoc(ref);
+      return snap.exists() ? snap.data() : null;
+    } catch (error) {
+      console.error('Error getting dashboard preferences:', error);
+      return null;
+    }
+  }
+
+  async setDashboardPreferences(uid, prefs) {
+    if (!uid) return;
+    try {
+      const ref = doc(db, this.collections.USER_DASHBOARD_PREFERENCES, uid);
+      await setDoc(ref, { ...prefs, updatedAt: serverTimestamp() }, { merge: true });
+    } catch (error) {
+      console.error('Error setting dashboard preferences:', error);
+      throw error;
+    }
   }
 
   // ===== PAGE PERMISSIONS MANAGEMENT =====

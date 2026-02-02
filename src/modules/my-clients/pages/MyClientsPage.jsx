@@ -11,6 +11,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { firestoreService } from '../../../services/firestoreService';
+import PlatformIcons from '../../../components/PlatformIcons';
 import { 
   Users, 
   Package, 
@@ -236,14 +237,24 @@ const MyClientsPage = () => {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-[15px] font-semibold">
-                      {client.clientName?.charAt(0) || 'C'}
+                    <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0">
+                      {client.profilePhoto ? (
+                        <img src={client.profilePhoto} alt="" className="w-full h-full object-cover rounded-xl" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-[15px] font-semibold">
+                          {client.clientName?.charAt(0) || 'C'}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
                         {client.clientName || 'Unnamed Client'}
                       </h3>
-                      <p className="text-[12px] text-[#86868b]">{client.packageType || 'Standard'} Package</p>
+                      {client.brokerage ? (
+                        <p className="text-[12px] text-[#86868b]">{client.brokerage}</p>
+                      ) : (
+                        <p className="text-[12px] text-[#86868b]">{client.packageType || 'Standard'} Package</p>
+                      )}
                     </div>
                   </div>
                   <span className={`px-2 py-1 rounded-lg text-[11px] font-medium ${health.color} ${health.bgColor}`}>
@@ -268,6 +279,13 @@ const MyClientsPage = () => {
                     />
                   </div>
                 </div>
+
+                {/* Platforms */}
+                {client.platforms && Object.values(client.platforms).some(Boolean) && (
+                  <div className="mb-3">
+                    <PlatformIcons platforms={client.platforms} compact size={14} />
+                  </div>
+                )}
 
                 {/* Details */}
                 <div className="space-y-2 text-[12px]">

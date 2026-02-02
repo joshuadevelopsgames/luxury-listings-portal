@@ -39,6 +39,7 @@ The dashboard and sidebar both use this same notion of “enabled modules” so 
 
 | Element              | Condition                         | Notes                          |
 |----------------------|-----------------------------------|--------------------------------|
+| **Edit Dashboard**   | Not in “View as” mode             | Toggles edit mode; drag-and-drop main blocks and “Your Modules” widgets; **Done** saves, **Reset to default** restores stashed layout. |
 | “X Tasks” link       | `tasks` in `enabledModules`       | Links to `/tasks`.             |
 | “Request Time Off”   | `time-off` in `enabledModules`    | Links to `/my-time-off`.       |
 
@@ -60,6 +61,8 @@ Grid columns: 2 on small screens; if 3+ stats, use 4 columns on `md+`.
 ## 5. Main content blocks (unified grid, no empty cells)
 
 Main content is a **single grid** (`lg:grid-cols-3`). Only **visible** blocks are rendered; they fill left-to-right with **no empty cells**. Span method: `MAIN_CONTENT_SPANS` in `Dashboard.jsx` (priorities: 2, others: 1).
+
+**Layout rule (fill empty space):** Block order is chosen so that (1) the first row fills: a 2-span block (Today's Priorities) is followed by a 1-span block that sits in the same row (Upcoming Deadlines), so row 1 = 2+1 = 3 cols with no gap; (2) related blocks are adjacent (e.g. task-related: priorities + deadlines) so layout stays coherent and no “perfect slot” is left empty. Order: `priorities`, `deadlines`, `deliverables`, `quickLinks`, `overview`.
 
 | Block               | Condition                         | Span | Notes                                      |
 |---------------------|---------------------|------|-----------------------------------------------------------------------|
@@ -149,7 +152,7 @@ Use `hasClientAccess` for: showing Monthly Deliverables block, client stat, Over
 3. **Your Modules (widget grid)** – Dynamic widgets from enabled modules. Order: see 12.2.
 4. **Main content grid (3 columns on lg)**  
    - Left/center (lg:col-span-2): Today’s Priorities (if tasks enabled).  
-   - Order: priorities, deliverables, deadlines, quickLinks, overview (only visible blocks).  
+   - Order: priorities, deadlines, deliverables, quickLinks, overview (only visible blocks; deadlines next to priorities to fill row 1).  
    - Bottom: Quick Action tiles (if any).
 
 ### 12.2 Widget grid order (“Your Modules”)
@@ -173,7 +176,7 @@ So: time-off first, then my-clients, then instagram-reports, then tasks. Within 
 - Client metric only when `hasClientAccess`; task metrics only when `hasTasksModule`.
 - Grid: 2 columns on small screens; 4 columns on `md+` when 3+ stats.
 
-### 12.4 Main content column priority
+### 12.4 Main content layout (fill empty space)
 
 - **Column 1–2 (wide):** Today’s Priorities (tasks) has highest priority when tasks enabled.
 - **Column 3 (narrow):** Monthly Deliverables above Upcoming Deadlines above Quick Links, so “who/what needs me” is above generic links.
@@ -184,7 +187,18 @@ So: time-off first, then my-clients, then instagram-reports, then tasks. Within 
 
 ---
 
-## 13. Future improvements (suggestions)
+## 13. Edit Dashboard and stashed default layout
+
+- **Edit Dashboard** (header): When not in “View as” mode, users see an **Edit Dashboard** button. Clicking it enables **edit mode**: main content blocks and “Your Modules” widgets show drag handles (grip icon) and can be reordered via **drag-and-drop** (same idea as iPhone home screen widgets).
+- **Persistence**: Order is stored per user in Firestore `user_dashboard_preferences/{userId}`: `mainContentOrder` (block IDs), `widgetOrder` (widget IDs). Loaded on dashboard mount; saved on drag-end and when clicking **Done** or **Reset to default**.
+- **Stashed layout (revert)**: The default layout is kept in code so users can revert at any time:
+  - **Main content**: `DEFAULT_MAIN_CONTENT_BLOCK_ORDER` and `DEFAULT_MAIN_CONTENT_SPANS` in `Dashboard.jsx` (see section 5 for order and spans).
+  - **Widgets**: Default order comes from `getWidgetsForModules(enabledModules)` (registry order); `widgetOrder: null` means “use default”.
+- **Reset to default**: Restores main content order and widget order to the stashed defaults and clears saved preferences for that user so the dashboard matches the original layout.
+
+---
+
+## 14. Future improvements (suggestions)
 
 1. **Widgets for more modules**  
    Add optional widgets for `client-packages`, `content-calendar`, `crm`, `team`, `hr-analytics` (e.g. “Recent activity” or “Quick stats”) so “Your Modules” is fuller when only those are enabled.
@@ -193,7 +207,7 @@ So: time-off first, then my-clients, then instagram-reports, then tasks. Within 
    If no Quick Link is shown (no tasks, team, resources, clients), hide the Quick Links card or show a short “Enable modules to see quick links” message.
 
 3. **Order and grouping of widgets**  
-   In the registry, add optional `widgetOrder` or `widgetGroup` so “Your Modules” follows the semantic order in section 12.2 (Time off first, then Clients, then Instagram, then Tasks).
+   Custom widget order is already supported via Edit Dashboard (saved in `user_dashboard_preferences`). Registry order remains the default when `widgetOrder` is null.
 
 4. **Single source for “client” link**  
    Helper e.g. `getClientListPath(enabledModules)` used everywhere (Monthly Deliverables, Overview, Quick Links) so the choice of `/clients` vs `/my-clients` is in one place.
@@ -208,7 +222,8 @@ So: time-off first, then my-clients, then instagram-reports, then tasks. Within 
 | File | Role |
 |------|------|
 | `src/modules/registry.js` | Module definitions, `widgets`, `navItem`, `getWidgetsForModules`, `getNavItemsForModules`, `getBaseModuleIds` |
-| `src/components/dashboard/WidgetGrid.jsx` | Renders “Your Modules” from `enabledModules` and lazy-loads widget components |
-| `src/v3-app/components/Dashboard.jsx` | Builds `enabledModules`, `hasTasksModule`, `hasClientAccess`, `hasFullClientAccess`, `hasOnlyMyClients`; applies all display rules above |
+| `src/components/dashboard/WidgetGrid.jsx` | Renders “Your Modules” from `enabledModules`; supports `widgetOrder`, `isEditMode`, `onWidgetOrderChange` for drag-and-drop |
+| `src/v3-app/components/Dashboard.jsx` | Builds `enabledModules`, edit mode, main content order; `DEFAULT_MAIN_CONTENT_BLOCK_ORDER` / `DEFAULT_MAIN_CONTENT_SPANS` (stashed layout); applies all display rules |
 | `src/v3-app/components/Layout.jsx` | Sidebar nav from same base + permissions logic |
 | `src/contexts/PermissionsContext.js` | Provides `permissions` (page IDs) and `isSystemAdmin` |
+| `src/services/firestoreService.js` | `getDashboardPreferences(uid)`, `setDashboardPreferences(uid, prefs)` for `user_dashboard_preferences` |

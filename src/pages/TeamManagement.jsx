@@ -121,10 +121,10 @@ const TeamManagement = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'probation': return 'bg-yellow-100 text-yellow-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      case 'probation': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'inactive': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-gray-300';
     }
   };
 
@@ -138,9 +138,9 @@ const TeamManagement = () => {
   };
 
   const getPerformanceColor = (rating) => {
-    if (rating >= 4.5) return 'text-green-600';
-    if (rating >= 4.0) return 'text-yellow-600';
-    return 'text-red-600';
+    if (rating >= 4.5) return 'text-green-600 dark:text-green-400';
+    if (rating >= 4.0) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const openEmployeeModal = (employee) => {
@@ -153,8 +153,8 @@ const TeamManagement = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>
-          <p className="text-gray-600 mt-2">Manage your team, track performance, and oversee employee development</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Team Management</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your team, track performance, and oversee employee development</p>
         </div>
         <div className="flex space-x-3">
           <Button variant="outline" className="flex items-center space-x-2">
@@ -170,85 +170,85 @@ const TeamManagement = () => {
 
       {/* Team Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-        <Card>
+        <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Team</p>
-                <p className="text-2xl font-bold text-gray-900">{teamStats.totalMembers}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Team</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{teamStats.totalMembers}</p>
               </div>
-              <div className="p-3 rounded-full bg-blue-100">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Members</p>
-                <p className="text-2xl font-bold text-green-600">{teamStats.activeMembers}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Members</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{teamStats.activeMembers}</p>
               </div>
-              <div className="p-3 rounded-full bg-green-100">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Rating</p>
-                <p className="text-2xl font-bold text-yellow-600">{teamStats.averageRating}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Rating</p>
+                <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{teamStats.averageRating}</p>
               </div>
-              <div className="p-3 rounded-full bg-yellow-100">
-                <Star className="w-6 h-6 text-yellow-600" />
+              <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Tenure</p>
-                <p className="text-2xl font-bold text-purple-600">{teamStats.averageTenure} days</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Tenure</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{teamStats.averageTenure} days</p>
               </div>
-              <div className="p-3 rounded-full bg-purple-100">
-                <Calendar className="w-6 h-6 text-purple-600" />
+              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Salary</p>
-                <p className="text-2xl font-bold text-indigo-600">${(teamStats.totalSalary / 1000).toFixed(0)}k</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Salary</p>
+                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${(teamStats.totalSalary / 1000).toFixed(0)}k</p>
               </div>
-              <div className="p-3 rounded-full bg-indigo-100">
-                <TrendingUp className="w-6 h-6 text-indigo-600" />
+              <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+                <TrendingUp className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Probation</p>
-                <p className="text-2xl font-bold text-orange-600">{teamStats.probationMembers}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Probation</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{teamStats.probationMembers}</p>
               </div>
-              <div className="p-3 rounded-full bg-orange-100">
-                <AlertTriangle className="w-6 h-6 text-orange-600" />
+              <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                <AlertTriangle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
             </div>
           </CardContent>
@@ -256,9 +256,9 @@ const TeamManagement = () => {
       </div>
 
       {/* Department Breakdown */}
-      <Card>
+      <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
             <Building className="w-5 h-5" />
             <span>Department Breakdown</span>
           </CardTitle>
@@ -266,9 +266,9 @@ const TeamManagement = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {Object.entries(departmentBreakdown).map(([dept, count]) => (
-              <div key={dept} className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl font-bold text-gray-900">{count}</p>
-                <p className="text-sm text-gray-600">{dept}</p>
+              <div key={dept} className="text-center p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{count}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{dept}</p>
               </div>
             ))}
           </div>
@@ -276,18 +276,18 @@ const TeamManagement = () => {
       </Card>
 
       {/* Search and Filters */}
-      <Card>
+      <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search team members..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
             </div>
@@ -295,7 +295,7 @@ const TeamManagement = () => {
             <select
               value={filterDepartment}
               onChange={(e) => setFilterDepartment(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 dark:border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
             >
               {departments.map(dept => (
                 <option key={dept} value={dept}>
@@ -307,7 +307,7 @@ const TeamManagement = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 dark:border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
             >
               {statusOptions.map(status => (
                 <option key={status} value={status}>
@@ -320,9 +320,9 @@ const TeamManagement = () => {
       </Card>
 
       {/* Team Members Table */}
-      <Card>
+      <Card className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
             <Users className="w-5 h-5" />
             <span>Team Members ({filteredTeamMembers.length})</span>
           </CardTitle>
@@ -331,35 +331,35 @@ const TeamManagement = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Employee</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Department</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Performance</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Leave Balance</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                <tr className="border-b border-gray-200 dark:border-white/10">
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Employee</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Department</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Performance</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Leave Balance</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTeamMembers.map((member) => (
-                  <tr key={member.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={member.id} className="border-b border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5">
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+                        <div className="w-10 h-10 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
                           {member.avatar}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{member.name}</p>
-                          <p className="text-sm text-gray-600">{member.position}</p>
-                          <p className="text-xs text-gray-500">{member.email}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{member.name}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{member.position}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">{member.email}</p>
                         </div>
                       </div>
                     </td>
                     
                     <td className="py-4 px-4">
                       <div>
-                        <p className="text-gray-900">{member.department}</p>
-                        <p className="text-sm text-gray-600">Since {safeFormatDate(member.startDate, 'MMM yyyy')}</p>
+                        <p className="text-gray-900 dark:text-white">{member.department}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Since {safeFormatDate(member.startDate, 'MMM yyyy')}</p>
                       </div>
                     </td>
                     
@@ -371,22 +371,22 @@ const TeamManagement = () => {
                             {member.performance.rating}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600">{member.performance.projectsCompleted} projects</p>
-                        <p className="text-xs text-gray-500">{member.performance.onTimeDelivery}% on time</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{member.performance.projectsCompleted} projects</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500">{member.performance.onTimeDelivery}% on time</p>
                       </div>
                     </td>
                     
                     <td className="py-4 px-4">
                       <div className="space-y-2">
                         <div>
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
                             <span>Vacation</span>
                             <span>{member.leaveBalance.vacation.remaining}/{member.leaveBalance.vacation.total}</span>
                           </div>
                           <Progress value={(member.leaveBalance.vacation.remaining / member.leaveBalance.vacation.total) * 100} className="h-2" />
                         </div>
                         <div>
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
                             <span>Sick</span>
                             <span>{member.leaveBalance.sick.remaining}/{member.leaveBalance.sick.total}</span>
                           </div>
@@ -427,12 +427,12 @@ const TeamManagement = () => {
 
       {/* Employee Detail Modal */}
       {showEmployeeModal && selectedEmployee && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-white/10">
+            <div className="sticky top-0 bg-white dark:bg-[#1c1c1e] border-b border-gray-200 dark:border-white/10 px-6 py-4 z-10">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Employee Details</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowEmployeeModal(false)}>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Employee Details</h2>
+                <Button variant="ghost" size="sm" onClick={() => setShowEmployeeModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white">
                   <XCircle className="w-5 h-5" />
                 </Button>
               </div>
@@ -484,30 +484,30 @@ const TeamManagement = () => {
               />
 
               {/* Performance Metrics */}
-              <Card>
+              <Card className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10">
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
+                  <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
                     <BarChart3 className="w-5 h-5" />
                     <span>Performance Metrics</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{selectedEmployee.performance.rating}</p>
-                      <p className="text-sm text-blue-700">Overall Rating</p>
+                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{selectedEmployee.performance.rating}</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">Overall Rating</p>
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">{selectedEmployee.performance.projectsCompleted}</p>
-                      <p className="text-sm text-green-700">Projects Completed</p>
+                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">{selectedEmployee.performance.projectsCompleted}</p>
+                      <p className="text-sm text-green-700 dark:text-green-300">Projects Completed</p>
                     </div>
-                    <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                      <p className="text-2xl font-bold text-yellow-600">{selectedEmployee.performance.onTimeDelivery}%</p>
-                      <p className="text-sm text-yellow-700">On-Time Delivery</p>
+                    <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{selectedEmployee.performance.onTimeDelivery}%</p>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">On-Time Delivery</p>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600">{selectedEmployee.performance.clientSatisfaction}</p>
-                      <p className="text-sm text-purple-700">Client Satisfaction</p>
+                    <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{selectedEmployee.performance.clientSatisfaction}</p>
+                      <p className="text-sm text-purple-700 dark:text-purple-300">Client Satisfaction</p>
                     </div>
                   </div>
                 </CardContent>
@@ -515,9 +515,9 @@ const TeamManagement = () => {
 
               {/* Skills and Certifications */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
+                <Card className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
+                    <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
                       <GraduationCap className="w-5 h-5" />
                       <span>Skills</span>
                     </CardTitle>
@@ -525,15 +525,15 @@ const TeamManagement = () => {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {selectedEmployee.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary">{skill}</Badge>
+                        <Badge key={index} variant="secondary" className="dark:bg-white/10 dark:text-gray-200">{skill}</Badge>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
+                    <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
                       <Award className="w-5 h-5" />
                       <span>Certifications</span>
                     </CardTitle>
@@ -541,7 +541,7 @@ const TeamManagement = () => {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {selectedEmployee.certifications.map((cert, index) => (
-                        <Badge key={index} variant="outline">{cert}</Badge>
+                        <Badge key={index} variant="outline" className="dark:border-white/20 dark:text-gray-200">{cert}</Badge>
                       ))}
                     </div>
                   </CardContent>
@@ -549,29 +549,29 @@ const TeamManagement = () => {
               </div>
 
               {/* Leave Balance */}
-              <Card>
+              <Card className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10">
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
+                  <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
                     <Calendar className="w-5 h-5" />
                     <span>Leave Balance</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{selectedEmployee.leaveBalance.vacation.remaining}</p>
-                      <p className="text-sm text-blue-700">Vacation Days</p>
-                      <p className="text-xs text-gray-500">Used: {selectedEmployee.leaveBalance.vacation.used}</p>
+                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{selectedEmployee.leaveBalance.vacation.remaining}</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">Vacation Days</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Used: {selectedEmployee.leaveBalance.vacation.used}</p>
                     </div>
-                    <div className="text-center p-4 bg-red-50 rounded-lg">
-                      <p className="text-2xl font-bold text-red-600">{selectedEmployee.leaveBalance.sick.remaining}</p>
-                      <p className="text-sm text-red-700">Sick Days</p>
-                      <p className="text-xs text-gray-500">Used: {selectedEmployee.leaveBalance.sick.used}</p>
+                    <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-red-600 dark:text-red-400">{selectedEmployee.leaveBalance.sick.remaining}</p>
+                      <p className="text-sm text-red-700 dark:text-red-300">Sick Days</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Used: {selectedEmployee.leaveBalance.sick.used}</p>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600">{selectedEmployee.leaveBalance.personal.remaining}</p>
-                      <p className="text-sm text-purple-700">Personal Days</p>
-                      <p className="text-xs text-gray-500">Used: {selectedEmployee.leaveBalance.personal.used}</p>
+                    <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{selectedEmployee.leaveBalance.personal.remaining}</p>
+                      <p className="text-sm text-purple-700 dark:text-purple-300">Personal Days</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Used: {selectedEmployee.leaveBalance.personal.used}</p>
                     </div>
                   </div>
                 </CardContent>

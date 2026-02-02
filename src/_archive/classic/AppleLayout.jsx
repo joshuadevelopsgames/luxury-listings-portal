@@ -85,7 +85,7 @@ const AppleLayout = ({ children }) => {
     'clients': { name: 'Clients', icon: User, path: '/clients' },
     'client-packages': { name: 'Client Packages', icon: Briefcase, path: '/client-packages' },
     'pending-clients': { name: 'Pending Clients', icon: Clock, path: '/pending-clients' },
-    'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/instagram-reports' },
+    'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, path: '/instagram-reports' },
     'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
     'crm': { name: 'CRM', icon: Target, path: '/crm' },
     'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },

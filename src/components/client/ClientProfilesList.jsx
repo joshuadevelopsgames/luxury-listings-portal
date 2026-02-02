@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import ClientContractsSection from './ClientContractsSection';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import PlatformIcons from '../PlatformIcons';
 
 const ClientProfilesList = () => {
   const { currentUser } = useAuth();
@@ -417,30 +418,48 @@ const ClientProfilesList = () => {
                 <CardContent className="p-6 pt-8">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-semibold text-lg">
-                          {client.clientName ? client.clientName.charAt(0).toUpperCase() : 'C'}
-                        </span>
+                      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                        {client.profilePhoto ? (
+                          <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                            <span className="text-white font-semibold text-lg">
+                              {client.clientName ? client.clientName.charAt(0).toUpperCase() : 'C'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 truncate">
                           {client.clientName || 'Unnamed Client'}
                         </h3>
-                        <Badge className="mt-1 bg-blue-100 text-blue-800 border-blue-200">
-                          {client.packageType || 'Standard'}
-                        </Badge>
+                        {client.brokerage && (
+                          <p className="text-xs text-gray-500 truncate">{client.brokerage}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                            {client.packageType || 'Standard'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                 <div className="space-y-3 mb-4">
+                  {/* Platform icons */}
+                  {client.platforms && Object.values(client.platforms).some(Boolean) && (
+                    <div className="mb-1">
+                      <PlatformIcons platforms={client.platforms} compact size={16} />
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3 text-sm text-gray-600">
                     <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                       <Mail className="w-3 h-3 text-gray-600" />
                     </div>
                     <span className="truncate">{client.clientEmail || 'No email'}</span>
                   </div>
-                  
+
                   {client.phone && (
                     <div className="flex items-center gap-3 text-sm text-gray-600">
                       <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">

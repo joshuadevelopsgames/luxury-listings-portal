@@ -103,10 +103,10 @@ const PersonCard = ({
   };
 
   return (
-    <Card className={`${className}`}>
+    <Card className={`bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 ${className}`}>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-white">
             <User className="w-5 h-5" />
             <span>Personal Information</span>
           </CardTitle>
@@ -133,16 +133,16 @@ const PersonCard = ({
       <CardContent>
         {/* Avatar and Name Section */}
         {showAvatar && !compact && (
-          <div className="flex items-center space-x-4 mb-6 pb-6 border-b">
-            <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+          <div className="flex items-center space-x-4 mb-6 pb-6 border-b border-gray-200 dark:border-white/10">
+            <div className="w-20 h-20 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
               {person.firstName?.[0]}{person.lastName?.[0]}
             </div>
             <div>
-              <h3 className="text-2xl font-semibold text-gray-900">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">
                 {person.firstName} {person.lastName}
               </h3>
-              <p className="text-gray-600">{person.position}</p>
-              <Badge variant="secondary" className="mt-1">{person.department}</Badge>
+              <p className="text-gray-600 dark:text-gray-400">{person.position}</p>
+              <Badge variant="secondary" className="mt-1 dark:bg-white/10 dark:text-gray-200">{person.department}</Badge>
             </div>
           </div>
         )}
@@ -151,7 +151,7 @@ const PersonCard = ({
         <div className={`grid grid-cols-1 ${compact ? 'gap-4' : 'md:grid-cols-2 gap-6'}`}>
           {/* First Name */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <User className="w-3 h-3" />
               <span>First Name</span>
             </label>
@@ -160,19 +160,19 @@ const PersonCard = ({
                 type="text"
                 value={editedData.firstName || person.firstName}
                 onChange={(e) => setEditedData({...editedData, firstName: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
               <>
-                <p className="text-gray-900 mt-1 font-medium">{person.firstName}</p>
-                {!isHRView && isEditing && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
+                <p className="text-gray-900 dark:text-white mt-1 font-medium">{person.firstName}</p>
+                {!isHRView && isEditing && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Contact HR to change</p>}
               </>
             )}
           </div>
 
           {/* Last Name */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <User className="w-3 h-3" />
               <span>Last Name</span>
             </label>
@@ -181,19 +181,19 @@ const PersonCard = ({
                 type="text"
                 value={editedData.lastName || person.lastName}
                 onChange={(e) => setEditedData({...editedData, lastName: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
               <>
-                <p className="text-gray-900 mt-1 font-medium">{person.lastName}</p>
-                {!isHRView && isEditing && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
+                <p className="text-gray-900 dark:text-white mt-1 font-medium">{person.lastName}</p>
+                {!isHRView && isEditing && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Contact HR to change</p>}
               </>
             )}
           </div>
 
           {/* Email */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <Mail className="w-3 h-3" />
               <span>Email</span>
             </label>
@@ -202,19 +202,19 @@ const PersonCard = ({
                 type="email"
                 value={editedData.email || person.email}
                 onChange={(e) => setEditedData({...editedData, email: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
               <>
-                <p className="text-gray-900 mt-1">{person.email}</p>
-                {!isHRView && isEditing && <p className="text-xs text-gray-500 mt-1">Contact HR to change</p>}
+                <p className="text-gray-900 dark:text-white mt-1">{person.email}</p>
+                {!isHRView && isEditing && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Contact HR to change</p>}
               </>
             )}
           </div>
 
           {/* Phone */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <Phone className="w-3 h-3" />
               <span>Phone</span>
             </label>
@@ -223,16 +223,16 @@ const PersonCard = ({
                 type="tel"
                 value={editedData.phone || person.phone}
                 onChange={(e) => setEditedData({...editedData, phone: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
-              <p className="text-gray-900 mt-1">{person.phone}</p>
+              <p className="text-gray-900 dark:text-white mt-1">{person.phone}</p>
             )}
           </div>
 
           {/* Address */}
           <div className={compact ? '' : 'md:col-span-2'}>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <MapPin className="w-3 h-3" />
               <span>Address</span>
             </label>
@@ -241,16 +241,16 @@ const PersonCard = ({
                 type="text"
                 value={editedData.address || person.address}
                 onChange={(e) => setEditedData({...editedData, address: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
-              <p className="text-gray-900 mt-1">{person.address}</p>
+              <p className="text-gray-900 dark:text-white mt-1">{person.address}</p>
             )}
           </div>
 
           {/* Department */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <Building className="w-3 h-3" />
               <span>Department</span>
             </label>
@@ -259,16 +259,16 @@ const PersonCard = ({
                 type="text"
                 value={editedData.department || person.department}
                 onChange={(e) => setEditedData({...editedData, department: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
-              <p className="text-gray-900 mt-1">{person.department}</p>
+              <p className="text-gray-900 dark:text-white mt-1">{person.department}</p>
             )}
           </div>
 
           {/* Position */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <Briefcase className="w-3 h-3" />
               <span>Position</span>
             </label>
@@ -277,26 +277,26 @@ const PersonCard = ({
                 type="text"
                 value={editedData.position || person.position}
                 onChange={(e) => setEditedData({...editedData, position: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
-              <p className="text-gray-900 mt-1">{person.position}</p>
+              <p className="text-gray-900 dark:text-white mt-1">{person.position}</p>
             )}
           </div>
 
           {/* Employee ID */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <Shield className="w-3 h-3" />
               <span>Employee ID</span>
             </label>
-            <p className="text-gray-900 mt-1">{person.employeeId}</p>
-            {isEditing && isHRView && <p className="text-xs text-gray-500 mt-1">System-generated, cannot be changed</p>}
+            <p className="text-gray-900 dark:text-white mt-1">{person.employeeId}</p>
+            {isEditing && isHRView && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">System-generated, cannot be changed</p>}
           </div>
 
           {/* Start Date */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <Calendar className="w-3 h-3" />
               <span>Start Date</span>
             </label>
@@ -305,10 +305,10 @@ const PersonCard = ({
                 type="date"
                 value={editedData.startDate || person.startDate}
                 onChange={(e) => setEditedData({...editedData, startDate: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
-              <p className="text-gray-900 mt-1">
+              <p className="text-gray-900 dark:text-white mt-1">
                 {person.startDate ? format(new Date(person.startDate), 'MMMM dd, yyyy') : 'N/A'}
               </p>
             )}
@@ -316,7 +316,7 @@ const PersonCard = ({
 
           {/* Manager */}
           <div>
-            <label className="text-sm font-medium text-gray-600 flex items-center space-x-1">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
               <UserCheck className="w-3 h-3" />
               <span>Manager</span>
             </label>
@@ -325,18 +325,18 @@ const PersonCard = ({
                 type="text"
                 value={editedData.manager || person.manager}
                 onChange={(e) => setEditedData({...editedData, manager: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/5 text-gray-900 dark:text-white"
               />
             ) : (
-              <p className="text-gray-900 mt-1">{person.manager}</p>
+              <p className="text-gray-900 dark:text-white mt-1">{person.manager}</p>
             )}
           </div>
         </div>
 
         {/* Edit Mode Info */}
         {isEditing && (
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700">
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
               {isHRView ? (
                 <><strong>HR Manager:</strong> You can update all employee information fields except Employee ID.</>
               ) : (

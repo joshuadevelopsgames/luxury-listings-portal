@@ -6,7 +6,7 @@
  * it's included in the base package or requires upgrade.
  */
 
-import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase } from 'lucide-react';
+import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3 } from 'lucide-react';
 
 // ============================================================================
 // MODULE DEFINITIONS
@@ -47,7 +47,7 @@ export const modules = {
 
   'instagram-reports': {
     id: 'instagram-reports',
-    name: 'Instagram Reports',
+    name: 'Instagram Analytics',
     description: 'Create and share Instagram analytics reports',
     icon: Instagram,
     routes: ['/instagram-reports'],
@@ -199,6 +199,20 @@ export const modules = {
     navItem: {
       path: '/resources',
       section: 'Resources'
+    },
+    baseModule: false
+  },
+
+  'workload': {
+    id: 'workload',
+    name: 'Team Workload',
+    description: 'View team capacity and client distribution',
+    icon: BarChart3,
+    routes: ['/workload'],
+    widgets: [],
+    navItem: {
+      path: '/workload',
+      section: 'Team'
     },
     baseModule: false
   }

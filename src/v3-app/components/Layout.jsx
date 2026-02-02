@@ -34,7 +34,8 @@ import {
   UserCircle,
   Eye,
   X,
-  Instagram
+  Instagram,
+  BarChart3
 } from 'lucide-react';
 
 /**
@@ -125,12 +126,11 @@ const V3Layout = () => {
     // Base modules (always available)
     'time-off': { name: 'Time Off', icon: Calendar, path: '/my-time-off' },
     'my-clients': { name: 'My Clients', icon: Users, path: '/my-clients' },
-    'instagram-reports': { name: 'Instagram Reports', icon: Instagram, path: '/instagram-reports' },
+    'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, path: '/instagram-reports' },
     // Upgrade modules
     'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
     'clients': { name: 'Clients', icon: User, path: '/clients' },
     'client-packages': { name: 'Client Packages', icon: Briefcase, path: '/client-packages' },
-    'pending-clients': { name: 'Pending Clients', icon: Clock, path: '/pending-clients' },
     'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
     'crm': { name: 'CRM', icon: Target, path: '/crm' },
     'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
@@ -140,6 +140,7 @@ const V3Layout = () => {
     'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
+    'workload': { name: 'Team Workload', icon: BarChart3, path: '/workload' },
   };
 
   // Navigation sections based on role/permissions - properly categorized
@@ -201,14 +202,11 @@ const V3Layout = () => {
     
     // Add admin-only items for system admins
     if (isSystemAdmin && !isViewingAs) {
-      // Add clients and pending-clients to Clients section if not already there
+      // Add clients to Clients section if not already there (pending approvals are a tab on Clients)
       const clientsSection = sections.find(s => s.title === 'Clients');
       if (clientsSection) {
         if (!clientsSection.items.includes('clients')) {
           clientsSection.items.unshift('clients');
-        }
-        if (!clientsSection.items.includes('pending-clients')) {
-          clientsSection.items.push('pending-clients');
         }
       }
       
@@ -484,6 +482,12 @@ const V3Layout = () => {
                         <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation('/resources'); }}>
                           <FileText className="w-4 h-4" strokeWidth={1.5} />
                           Resources
+                        </button>
+                      </div>
+                      <div className="py-1 border-t border-black/5 dark:border-white/5">
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left text-red-600 dark:text-red-400" onClick={() => { setProfileMenuOpen(false); logout(); }}>
+                          <LogOut className="w-4 h-4" strokeWidth={1.5} />
+                          Sign out
                         </button>
                       </div>
                     </div>

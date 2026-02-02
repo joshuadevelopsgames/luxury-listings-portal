@@ -147,7 +147,7 @@ const TasksPage = () => {
   const [showCalendarView, setShowCalendarView] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list' - default to list
   const filterButtonRef = useRef(null);
-  const [toast, setToast] = useState(null);
+  const [completionToast, setCompletionToast] = useState(null);
   const [lastCompletedTask, setLastCompletedTask] = useState(null);
 
   // Toggle task selection
@@ -199,6 +199,7 @@ const TasksPage = () => {
       await Promise.all(
         selectedTasks.map(taskId => DailyTask.delete(taskId))
       );
+      await refreshTasks();
       toast.success(`✓ Deleted ${selectedTasks.length} tasks`);
       exitBulkMode();
     } catch (error) {
@@ -713,11 +714,11 @@ const TasksPage = () => {
       // Show custom toast notification when completing a task
       if (newStatus === 'completed') {
         setLastCompletedTask({ id: taskId, title: task.title });
-        setToast({ message: '1 task completed', taskId, taskTitle: task.title });
+        setCompletionToast({ message: '1 task completed', taskId, taskTitle: task.title });
         
         // Auto-hide toast after 5 seconds
         setTimeout(() => {
-          setToast(null);
+          setCompletionToast(null);
           setLastCompletedTask(null);
         }, 5000);
       }
@@ -756,7 +757,7 @@ const TasksPage = () => {
         completed_date: null
       });
       
-      setToast(null);
+      setCompletionToast(null);
       setLastCompletedTask(null);
       toast.success('Task restored');
       await refreshTasks();
@@ -1485,10 +1486,10 @@ const TasksPage = () => {
       )}
 
       {/* Toast Notification - Bottom Left */}
-      {toast && (
+      {completionToast && (
         <div className="fixed bottom-6 left-6 z-50 animate-in slide-in-from-bottom-5 duration-200">
           <div className="bg-gray-900 text-white rounded-lg shadow-2xl px-4 py-3 flex items-center gap-4 min-w-[300px]">
-            <span className="text-sm font-medium">{toast.message}</span>
+            <span className="text-sm font-medium">{completionToast.message}</span>
             <button
               onClick={undoTaskCompletion}
               className="text-red-400 hover:text-red-300 text-sm font-semibold transition-colors"
@@ -1496,7 +1497,7 @@ const TasksPage = () => {
               Undo
             </button>
             <button
-              onClick={() => setToast(null)}
+              onClick={() => setCompletionToast(null)}
               className="ml-auto text-white hover:text-gray-300 transition-colors"
             >
               <X className="w-4 h-4" />

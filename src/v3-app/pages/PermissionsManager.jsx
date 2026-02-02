@@ -23,7 +23,6 @@ import {
   BookOpen,
   FileText,
   Briefcase,
-  Clock,
   AlertCircle,
   Plus,
   Trash2,
@@ -41,13 +40,12 @@ const ALL_PAGES = {
   // Base modules (included in base package)
   'time-off': { name: 'Time Off', icon: Calendar, description: 'Request and manage time off', isBase: true },
   'my-clients': { name: 'My Clients', icon: Users, description: 'View your assigned clients', isBase: true },
-  'instagram-reports': { name: 'Instagram Reports', icon: Instagram, description: 'Instagram analytics reports', isBase: true },
+  'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, description: 'Instagram analytics reports', isBase: true },
   // Upgrade modules
   'dashboard': { name: 'Dashboard', icon: Home, description: 'Main dashboard overview' },
   'tasks': { name: 'Tasks', icon: CheckSquare, description: 'Task management' },
-  'clients': { name: 'Clients', icon: User, description: 'Client directory' },
+  'clients': { name: 'Clients', icon: User, description: 'Client directory and pending approvals' },
   'client-packages': { name: 'Client Packages', icon: Briefcase, description: 'Package management' },
-  'pending-clients': { name: 'Pending Clients', icon: Clock, description: 'New client approvals' },
   'content-calendar': { name: 'Content Calendar', icon: Calendar, description: 'Content scheduling' },
   'crm': { name: 'CRM', icon: Target, description: 'Customer relationship management' },
   'hr-calendar': { name: 'HR Calendar', icon: Calendar, description: 'Team calendar' },

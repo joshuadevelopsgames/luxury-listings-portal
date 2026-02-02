@@ -1,11 +1,29 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import ClientProfilesList from '../components/client/ClientProfilesList';
 import PendingClients from './PendingClients';
 import { Users, Clock } from 'lucide-react';
 
 const ClientsPage = () => {
-  const [activeTab, setActiveTab] = useState('profiles');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam === 'pending' ? 'pending' : 'profiles');
+
+  // Sync URL with tab (e.g. /clients?tab=pending)
+  useEffect(() => {
+    if (tabParam === 'pending' && activeTab !== 'pending') setActiveTab('pending');
+    if (tabParam !== 'pending' && activeTab === 'pending' && !tabParam) setActiveTab('profiles');
+  }, [tabParam]);
+
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    if (value === 'pending') {
+      setSearchParams({ tab: 'pending' });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   // Listen for tab switch events
   useEffect(() => {
@@ -19,7 +37,7 @@ const ClientsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           {/* Header Section */}
           <div className="mb-8">
             <div className="mb-6">

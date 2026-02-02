@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { firestoreService } from '../../services/firestoreService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';
 import { getBaseModuleIds, getAllModuleIds } from '../../modules/registry';
-import { 
-  CheckCircle2, 
-  Clock, 
+import {
+  CheckCircle2,
+  Clock,
   Calendar,
   ArrowRight,
   Users,
@@ -29,7 +32,8 @@ import {
   Target,
   Bell,
   MessageSquare,
-  Zap
+  Zap,
+  GripVertical,
 } from 'lucide-react';
 import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWithinInterval, startOfDay, endOfDay, addWeeks } from 'date-fns';
 
@@ -41,12 +45,52 @@ import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWit
  * - Clients (Client Status, Package utilization)
  * - Overview stats
  */
+// Default layout (stashed for revert) – used when user has no saved preferences
+const DEFAULT_MAIN_CONTENT_BLOCK_ORDER = ['priorities', 'deadlines', 'deliverables', 'quickLinks', 'overview'];
+const DEFAULT_MAIN_CONTENT_SPANS = { priorities: 2, deliverables: 1, deadlines: 1, quickLinks: 1, overview: 1 };
+
+function SortableMainBlock({ id, span, isEditMode, renderBlock }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${span === 2 ? 'lg:col-span-2' : ''} ${isDragging ? 'opacity-50 z-10' : ''}`}
+    >
+      <div className="relative">
+        {isEditMode && (
+          <div
+            className="absolute left-2 top-2 z-20 w-8 h-8 rounded-lg bg-black/10 dark:bg-white/10 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+            {...listeners}
+            {...attributes}
+          >
+            <GripVertical className="w-4 h-4 text-[#86868b]" />
+          </div>
+        )}
+        <div className={isEditMode ? 'pl-10' : ''}>
+          {renderBlock(id)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const V3Dashboard = () => {
   const { currentUser, currentRole } = useAuth();
   const { permissions, isSystemAdmin } = usePermissions();
   const { isViewingAs, viewingAsUser, viewAsPermissions } = useViewAs();
   const [loading, setLoading] = useState(true);
-  
+
+  // Edit Dashboard: drag-and-drop reorder; prefs loaded/saved by current user (not view-as)
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [mainContentOrder, setMainContentOrder] = useState(DEFAULT_MAIN_CONTENT_BLOCK_ORDER);
+  const [widgetOrder, setWidgetOrder] = useState(null); // null = use registry default order
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+
   // Get effective user - when viewing as, use that user's data
   const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
   const effectivePermissions = isViewingAs ? viewAsPermissions : permissions;
@@ -101,10 +145,7 @@ const V3Dashboard = () => {
   const clientCountForDisplay = displayClients.length;
   const clientLabelForDisplay = hasFullClientAccess ? 'Total Clients' : 'My Clients';
 
-  // Main content block order and span: which widgets are longer (span 2) vs single column (span 1).
-  // Only visible blocks are rendered; grid fills left-to-right with no empty cells.
-  const MAIN_CONTENT_BLOCK_ORDER = ['priorities', 'deliverables', 'deadlines', 'quickLinks', 'overview'];
-  const MAIN_CONTENT_SPANS = { priorities: 2, deliverables: 1, deadlines: 1, quickLinks: 1, overview: 1 };
+  // Main content: use saved order or default; span from DEFAULT_MAIN_CONTENT_SPANS (stashed for revert)
   const mainContentVisibility = {
     priorities: hasTasksModule,
     deliverables: hasClientAccess,
@@ -112,7 +153,61 @@ const V3Dashboard = () => {
     quickLinks: true,
     overview: true
   };
-  const visibleMainContentBlocks = MAIN_CONTENT_BLOCK_ORDER.filter((id) => mainContentVisibility[id]);
+  const visibleMainContentBlocks = mainContentOrder.filter((id) => mainContentVisibility[id]);
+
+  // Load dashboard preferences (current user only; skip when viewing as)
+  useEffect(() => {
+    if (!currentUser?.uid || isViewingAs) {
+      setPrefsLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    firestoreService.getDashboardPreferences(currentUser.uid).then((prefs) => {
+      if (cancelled || !prefs) {
+        setPrefsLoaded(true);
+        return;
+      }
+      if (prefs.mainContentOrder?.length) setMainContentOrder(prefs.mainContentOrder);
+      if (prefs.widgetOrder?.length) setWidgetOrder(prefs.widgetOrder);
+      setPrefsLoaded(true);
+    });
+    return () => { cancelled = true; };
+  }, [currentUser?.uid, isViewingAs]);
+
+  const saveDashboardPreferences = useCallback(async (updates) => {
+    if (!currentUser?.uid || isViewingAs) return;
+    const prefs = await firestoreService.getDashboardPreferences(currentUser.uid).catch(() => null) || {};
+    await firestoreService.setDashboardPreferences(currentUser.uid, { ...prefs, ...updates });
+  }, [currentUser?.uid, isViewingAs]);
+
+  const handleMainContentDragEnd = useCallback((event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setMainContentOrder((prev) => {
+      const visible = prev.filter((id) => mainContentVisibility[id]);
+      const oldIndex = visible.indexOf(active.id);
+      const newIndex = visible.indexOf(over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const newVisible = arrayMove(visible, oldIndex, newIndex);
+      let v = 0;
+      const next = prev.map((id) => (mainContentVisibility[id] ? newVisible[v++] : id));
+      if (currentUser?.uid && !isViewingAs) {
+        firestoreService.setDashboardPreferences(currentUser.uid, { mainContentOrder: next }).catch(console.error);
+      }
+      return next;
+    });
+  }, [mainContentVisibility, currentUser?.uid, isViewingAs]);
+
+  const handleResetToDefault = useCallback(() => {
+    setMainContentOrder(DEFAULT_MAIN_CONTENT_BLOCK_ORDER);
+    setWidgetOrder(null);
+    if (currentUser?.uid && !isViewingAs) {
+      firestoreService.setDashboardPreferences(currentUser.uid, {
+        mainContentOrder: DEFAULT_MAIN_CONTENT_BLOCK_ORDER,
+        widgetOrder: null
+      }).catch(console.error);
+    }
+  }, [currentUser?.uid, isViewingAs]);
 
   // Fetch real tasks from Firestore
   useEffect(() => {
@@ -513,6 +608,37 @@ const V3Dashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {!isViewingAs && (
+            <>
+              {!isEditMode ? (
+                <button
+                  type="button"
+                  onClick={() => setIsEditMode(true)}
+                  className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit Dashboard
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleResetToDefault}
+                    className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  >
+                    Reset to default
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditMode(false)}
+                    className="h-10 px-5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#30d158] transition-all"
+                  >
+                    Done
+                  </button>
+                </>
+              )}
+            </>
+          )}
           {hasTasksModule && (
             <Link 
               to="/tasks"
@@ -552,23 +678,51 @@ const V3Dashboard = () => {
         ))}
       </div>
 
-      {/* Module Widgets - Dynamic based on enabled modules */}
+      {/* Module Widgets - Dynamic based on enabled modules; drag-and-drop when Edit Dashboard is on */}
       <div>
         <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-4">Your Modules</h2>
-        <WidgetGrid enabledModules={enabledModules} />
+        <WidgetGrid
+          enabledModules={enabledModules}
+          widgetOrder={widgetOrder}
+          isEditMode={isEditMode}
+          onWidgetOrderChange={(nextOrder) => {
+            setWidgetOrder(nextOrder);
+            if (currentUser?.uid && !isViewingAs) {
+              firestoreService.setDashboardPreferences(currentUser.uid, { widgetOrder: nextOrder }).catch(console.error);
+            }
+          }}
+        />
       </div>
 
-      {/* Main content - single grid, no empty cells; span method in MAIN_CONTENT_SPANS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {visibleMainContentBlocks.map((blockId) => (
-          <div
-            key={blockId}
-            className={MAIN_CONTENT_SPANS[blockId] === 2 ? 'lg:col-span-2' : ''}
-          >
-            {renderMainContentBlock(blockId)}
-          </div>
-        ))}
-      </div>
+      {/* Main content - single grid; drag-and-drop when Edit Dashboard is on */}
+      {isEditMode ? (
+        <DndContext collisionDetection={closestCenter} onDragEnd={handleMainContentDragEnd}>
+          <SortableContext items={visibleMainContentBlocks} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {visibleMainContentBlocks.map((blockId) => (
+                <SortableMainBlock
+                  key={blockId}
+                  id={blockId}
+                  span={DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 2 : 1}
+                  isEditMode={isEditMode}
+                  renderBlock={renderMainContentBlock}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {visibleMainContentBlocks.map((blockId) => (
+            <div
+              key={blockId}
+              className={DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'lg:col-span-2' : ''}
+            >
+              {renderMainContentBlock(blockId)}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Quick Actions - only modules you have access to */}
       {(quickActionsDeduped.length > 0) && (

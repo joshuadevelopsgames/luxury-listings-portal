@@ -20,7 +20,6 @@ import './v3-app/styles/globals.css';
 import TasksPage from './pages/TasksPage';
 import ClientsPage from './pages/ClientsPage';
 import ClientPackages from './pages/ClientPackages';
-import PendingClients from './pages/PendingClients';
 import ContentCalendar from './pages/ContentCalendar';
 import CRMPage from './pages/CRMPage';
 import TeamManagement from './pages/TeamManagement';
@@ -43,6 +42,7 @@ import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
 import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
 import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
 import NotificationsPage from './pages/NotificationsPage';
+import WorkloadPage from './pages/WorkloadPage';
 
 // Module Pages
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
@@ -154,7 +154,7 @@ const router = createBrowserRouter([
           { path: 'my-clients', element: <PermissionRoute pageId="my-clients" pageName="My Clients"><MyClientsPage /></PermissionRoute> },
           { path: 'clients', element: <PermissionRoute pageId="clients" pageName="Clients"><ClientsPage /></PermissionRoute> },
           { path: 'client-packages', element: <PermissionRoute pageId="client-packages" pageName="Client Packages"><ClientPackages /></PermissionRoute> },
-          { path: 'pending-clients', element: <PermissionRoute pageId="pending-clients" pageName="Pending Clients"><PendingClients /></PermissionRoute> },
+          { path: 'pending-clients', element: <Navigate to="/clients?tab=pending" replace /> },
           { path: 'content-calendar', element: <PermissionRoute pageId="content-calendar" pageName="Content Calendar"><ContentCalendar /></PermissionRoute> },
           { path: 'crm', element: <PermissionRoute pageId="crm" pageName="CRM"><CRMPage /></PermissionRoute> },
           { path: 'team', element: <PermissionRoute pageId="team" pageName="Team Management"><TeamManagement /></PermissionRoute> },
@@ -163,6 +163,7 @@ const router = createBrowserRouter([
           { path: 'it-support', element: <PermissionRoute pageId="it-support" pageName="IT Support"><ITSupportPage /></PermissionRoute> },
           { path: 'tutorials', element: <PermissionRoute pageId="tutorials" pageName="Tutorials"><TutorialsPage /></PermissionRoute> },
           { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
+          { path: 'workload', element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },
 
           // Profile pages - always accessible when logged in
           { path: 'my-time-off', element: <MyTimeOff /> },

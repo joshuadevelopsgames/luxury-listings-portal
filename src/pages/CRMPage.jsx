@@ -30,10 +30,14 @@ import {
   Settings,
   Building,
   Save,
-  X
+  X,
+  List,
+  LayoutGrid,
+  UserCheck
 } from 'lucide-react';
 import CRMGoogleSheetsSetup from '../components/CRMGoogleSheetsSetup';
 import { CRMGoogleSheetsService } from '../services/crmGoogleSheetsService';
+import { firestoreService } from '../services/firestoreService';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { PERMISSIONS } from '../entities/Permissions';
@@ -51,7 +55,10 @@ const CRMPage = () => {
   const canViewLeads = hasPermission(PERMISSIONS.VIEW_LEADS);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('warm-leads');
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'card' - default list
   const [selectedClient, setSelectedClient] = useState(null);
+  const [existingClients, setExistingClients] = useState([]);
+  const [loadingExistingClients, setLoadingExistingClients] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
     contactName: '',
@@ -112,6 +119,20 @@ const CRMPage = () => {
   const [coldLeads, setColdLeads] = useState([]);
 
 
+  // Normalize Firestore client to CRM lead shape for display
+  const normalizeExistingClient = (c) => ({
+    ...c,
+    contactName: c.clientName || c.contactName || c.clientEmail?.split('@')[0] || '—',
+    email: c.clientEmail || c.email || '',
+    status: c.approvalStatus || c.status || 'client',
+    lastContact: c.lastContact || '—',
+    organization: c.organization || '',
+    phone: c.phone || '',
+    instagram: c.instagram || '',
+    website: c.website || '',
+    notes: c.notes || ''
+  });
+
   // Load stored data from Firebase
   const loadStoredData = async () => {
     if (!currentUser?.uid) return;
@@ -147,6 +168,30 @@ const CRMPage = () => {
       setColdLeads([]);
     }
   };
+
+  // Load existing clients from Firestore (clients collection)
+  const loadExistingClients = async () => {
+    setLoadingExistingClients(true);
+    try {
+      const clients = await firestoreService.getClients();
+      setExistingClients(clients.map(normalizeExistingClient));
+    } catch (error) {
+      console.error('Error loading existing clients:', error);
+      setExistingClients([]);
+    } finally {
+      setLoadingExistingClients(false);
+    }
+  };
+
+  // Subscribe to clients collection changes so new/approved clients show up
+  useEffect(() => {
+    setLoadingExistingClients(true);
+    const unsubscribe = firestoreService.onClientsChange((clients) => {
+      setExistingClients(clients.map(normalizeExistingClient));
+      setLoadingExistingClients(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Load service account credentials for write operations
   const loadServiceAccountCredentials = async () => {
@@ -605,12 +650,15 @@ const CRMPage = () => {
   };
 
   const getStatusColor = (status) => {
+    const s = (status || '').toLowerCase();
     const colors = {
-      warm: 'bg-red-100 text-red-800',
-      contacted: '!bg-purple-100 !text-purple-800',
-      cold: '!bg-blue-100 !text-blue-600'
+      warm: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      contacted: '!bg-purple-100 !text-purple-800 dark:!bg-purple-900/30 dark:!text-purple-300',
+      cold: '!bg-blue-100 !text-blue-600 dark:!bg-blue-900/30 dark:!text-blue-300',
+      client: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
     };
-    return colors[status] || colors.cold;
+    return colors[s] || colors.cold;
   };
 
   const getStatusIcon = (status) => {
@@ -650,9 +698,18 @@ const CRMPage = () => {
     (client.website && client.website.toLowerCase().includes((searchTerm || '').toLowerCase()))
   );
 
+  const filteredExistingClients = existingClients.filter(client => 
+    (client.contactName && client.contactName.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.email && client.email.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    ((client.clientName || '').toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    ((client.clientEmail || '').toLowerCase().includes((searchTerm || '').toLowerCase())) ||
+    (client.organization && client.organization.toLowerCase().includes((searchTerm || '').toLowerCase()))
+  );
+
   const totalWarmLeads = warmLeads.length;
   const totalContacted = contactedClients.length;
   const totalColdLeads = coldLeads.length;
+  const totalExistingClients = existingClients.length;
   const totalLeads = totalWarmLeads + totalContacted + totalColdLeads;
 
   const renderClientCard = (client) => (
@@ -745,6 +802,70 @@ const CRMPage = () => {
     </Card>
   );
 
+  const renderClientRow = (client, isExisting = false) => (
+    <tr
+      key={client.id}
+      className="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+    >
+      <td className="py-3 px-4">
+        <p className="font-medium text-gray-900 dark:text-white">{client.contactName}</p>
+        {client.organization && (
+          <p className="text-xs text-gray-500 dark:text-gray-400">{client.organization}</p>
+        )}
+      </td>
+      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.email}</td>
+      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.phone || '—'}</td>
+      <td className="py-3 px-4">
+        <Badge className={getStatusColor(client.status)}>
+          {client.status ? String(client.status).charAt(0).toUpperCase() + String(client.status).slice(1) : '—'}
+        </Badge>
+      </td>
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedClient(client)}
+            className="dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
+          >
+            <Eye className="w-4 h-4 mr-1" />
+            View
+          </Button>
+          {!isExisting && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openEditModal(client)}
+              className="dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20"
+            >
+              <Edit className="w-4 h-4 mr-1" />
+              Edit
+            </Button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+
+  const renderLeadList = (items, isExisting = false) => (
+    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-white/10">
+      <table className="w-full">
+        <thead>
+          <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Name</th>
+            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Email</th>
+            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Phone</th>
+            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Status</th>
+            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((client) => renderClientRow(client, isExisting))}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -808,7 +929,7 @@ const CRMPage = () => {
       )}
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-green-200 dark:border-green-700/50">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
@@ -864,19 +985,59 @@ const CRMPage = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/20 border-indigo-200 dark:border-indigo-700/50">
+          <CardContent className="p-6 pt-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-2">Existing Clients</p>
+                <p className="text-3xl font-bold text-indigo-900 dark:text-indigo-100">{totalExistingClients}</p>
+              </div>
+              <div className="p-3 rounded-full bg-indigo-200 dark:bg-indigo-700/50">
+                <UserCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
+      {/* Search and view toggle */}
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
+        <div className="flex-1 relative max-w-xl">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search leads by name, email, or Instagram..."
+            placeholder="Search leads and clients by name, email, or Instagram..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#0071e3] focus:border-transparent"
           />
+        </div>
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10">
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'list'
+                ? 'bg-white dark:bg-white/20 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <List className="w-4 h-4" />
+            List
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('card')}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'card'
+                ? 'bg-white dark:bg-white/20 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Card
+          </button>
         </div>
       </div>
 
@@ -913,6 +1074,16 @@ const CRMPage = () => {
           >
             Cold Leads ({totalColdLeads})
           </button>
+          <button
+            onClick={() => setActiveTab('existing-clients')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'existing-clients'
+                ? 'border-[#0071e3] text-[#0071e3]'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30'
+            }`}
+          >
+            Existing Clients ({totalExistingClients})
+          </button>
         </nav>
       </div>
 
@@ -923,9 +1094,11 @@ const CRMPage = () => {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Warm Leads</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">Leads showing interest and engagement</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredWarmLeads.map(renderClientCard)}
-          </div>
+          {viewMode === 'list' ? renderLeadList(filteredWarmLeads, false) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredWarmLeads.map(renderClientCard)}
+            </div>
+          )}
         </div>
       )}
 
@@ -935,9 +1108,11 @@ const CRMPage = () => {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Clients We've Contacted Before</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">Leads with previous communication history</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredContactedClients.map(renderClientCard)}
-          </div>
+          {viewMode === 'list' ? renderLeadList(filteredContactedClients, false) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredContactedClients.map(renderClientCard)}
+            </div>
+          )}
         </div>
       )}
 
@@ -947,9 +1122,32 @@ const CRMPage = () => {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Cold Leads</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">Leads requiring initial outreach or re-engagement</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredColdLeads.map(renderClientCard)}
+          {viewMode === 'list' ? renderLeadList(filteredColdLeads, false) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredColdLeads.map(renderClientCard)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'existing-clients' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Existing Clients</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Clients from your client directory (auto-synced)</p>
           </div>
+          {loadingExistingClients ? (
+            <p className="text-gray-500 dark:text-gray-400 py-8">Loading clients...</p>
+          ) : viewMode === 'list' ? (
+            renderLeadList(filteredExistingClients, true)
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredExistingClients.map(renderClientCard)}
+            </div>
+          )}
+          {!loadingExistingClients && filteredExistingClients.length === 0 && (
+            <p className="text-gray-500 dark:text-gray-400 py-8 text-center">No existing clients yet. Approved clients will appear here automatically.</p>
+          )}
         </div>
       )}
 

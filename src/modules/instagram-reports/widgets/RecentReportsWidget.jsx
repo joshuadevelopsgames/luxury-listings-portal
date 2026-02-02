@@ -66,7 +66,7 @@ const RecentReportsWidget = () => {
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#e1306c] to-[#f77737] flex items-center justify-center shadow-lg shadow-[#e1306c]/20">
             <Instagram className="w-4 h-4 text-white" strokeWidth={1.5} />
           </div>
-          <h3 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white">Instagram Reports</h3>
+          <h3 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white">Instagram Analytics</h3>
         </div>
         <button
           onClick={() => navigate('/instagram-reports')}

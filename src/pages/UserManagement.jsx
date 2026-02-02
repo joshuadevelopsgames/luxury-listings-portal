@@ -71,7 +71,7 @@ const UserManagement = () => {
     { id: 'tasks', name: 'Tasks', icon: '✅', category: 'Core' },
     { id: 'clients', name: 'Clients', icon: '👥', category: 'Client Management' },
     { id: 'client-packages', name: 'Client Packages', icon: '📦', category: 'Client Management' },
-    { id: 'instagram-reports', name: 'Instagram Reports', icon: '📸', category: 'Client Management' },
+    { id: 'instagram-reports', name: 'Instagram Analytics', icon: '📸', category: 'Client Management' },
     { id: 'content-calendar', name: 'Content Calendar', icon: '📅', category: 'Content' },
     { id: 'crm', name: 'CRM', icon: '💼', category: 'Sales' },
     { id: 'hr-calendar', name: 'HR Calendar', icon: '📆', category: 'HR' },

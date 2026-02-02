@@ -23,6 +23,11 @@ service cloud.firestore {
                             (request.auth.uid == userId || isAdmin());
     }
     
+    // Dashboard preferences - users can read/write their own (for Edit Dashboard / widget order)
+    match /user_dashboard_preferences/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
     // Pending users - authenticated users can read, admins can write
     match /pending_users/{document=**} {
       allow read: if isAuthenticated();
@@ -128,10 +133,11 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
-    // Instagram reports - public read (for client report links), any authenticated user can create/edit
+    // Instagram reports - public read (for shareable client links); list/edit/delete scoped by userId in app
     match /instagram_reports/{reportId} {
-      allow read: if true;  // Public access for client viewing via shareable links
-      allow write: if isAuthenticated();
+      allow read: if true;  // Public read so share links work without auth; app filters list by userId
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
     
     // Error reports - ANYONE can create (even unauthenticated), only admin can read/update
