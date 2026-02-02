@@ -197,9 +197,22 @@
   background-color: rgba(249, 15, 198, 0.2) !important;
 }
 
-/* Text colors */
-.michelle-theme.dark [class*="text-[#0071e3]"] {
+/* Text colors - but NOT inside info boxes with blue backgrounds */
+.michelle-theme.dark [class*="text-[#0071e3]"]:not([class*="bg-[#0071e3]"] *) {
   color: #f90fc6 !important;
+}
+
+/* Text inside pink background boxes should stay readable (white) */
+.michelle-theme.dark [class*="bg-[#0071e3]"] [class*="text-[#0071e3]"],
+.michelle-theme.dark [class*="bg-[#0071e3]/5"] [class*="text-[#0071e3]"],
+.michelle-theme.dark [class*="bg-[#0071e3]/10"] [class*="text-[#0071e3]"] {
+  color: #ffffff !important;
+}
+
+.michelle-theme.dark [class*="bg-[#0071e3]"] [class*="text-[#0071e3]/80"],
+.michelle-theme.dark [class*="bg-[#0071e3]/5"] [class*="text-[#0071e3]/80"],
+.michelle-theme.dark [class*="bg-[#0071e3]/10"] [class*="text-[#0071e3]/80"] {
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 /* Border colors */
