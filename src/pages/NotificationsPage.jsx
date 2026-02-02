@@ -14,7 +14,6 @@ import {
   ArrowLeft,
   Filter
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
 import { safeFormatDate } from '../utils/dateUtils';
 
 const NotificationsPage = () => {
@@ -149,26 +148,22 @@ const NotificationsPage = () => {
         
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={handleMarkAllRead}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
             >
               <Check className="w-4 h-4" />
               Mark all read
-            </Button>
+            </button>
           )}
           {notifications.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={handleClearAll}
-              className="flex items-center gap-2 text-[#ff3b30] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
               Clear all
-            </Button>
+            </button>
           )}
         </div>
       </div>

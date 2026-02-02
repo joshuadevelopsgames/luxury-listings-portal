@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import AppSetupPage from "./AppSetupPage";
 import { 
   FileText, 
@@ -130,14 +125,14 @@ const typeIcons = {
 };
 
 const categoryColors = {
-  employee: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  policy: "bg-slate-100 text-slate-800 dark:bg-slate-700/50 dark:text-slate-300",
-  support: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300", 
-  contacts: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-  training: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-  benefits: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-  safety: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  hr: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+  employee: "bg-[#0071e3]/10 text-[#0071e3]",
+  policy: "bg-black/5 dark:bg-white/10 text-[#86868b]",
+  support: "bg-[#34c759]/10 text-[#34c759]", 
+  contacts: "bg-[#af52de]/10 text-[#af52de]",
+  training: "bg-[#ff9500]/10 text-[#ff9500]",
+  benefits: "bg-[#ff9500]/10 text-[#ff9500]",
+  safety: "bg-[#ff3b30]/10 text-[#ff3b30]",
+  hr: "bg-[#5856d6]/10 text-[#5856d6]"
 };
 
 export default function ResourcesPage() {
@@ -167,154 +162,161 @@ export default function ResourcesPage() {
 
   return (
     <div className="w-full">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#1c1c1e] px-6 pt-4">
-          <TabsList className="bg-transparent">
-            <TabsTrigger 
-              value="resources" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30 dark:data-[state=active]:text-blue-300 dark:text-gray-400"
-            >
-              <BookOpen className="w-4 h-4" />
-              Resources
-            </TabsTrigger>
-            <TabsTrigger 
-              value="programs" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30 dark:data-[state=active]:text-blue-300 dark:text-gray-400"
-            >
-              <Settings className="w-4 h-4" />
-              Programs
-            </TabsTrigger>
-          </TabsList>
+      <div className="border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#1c1c1e] px-6 pt-4">
+        <div className="flex gap-1">
+          <button 
+            onClick={() => setActiveTab("resources")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-[14px] font-medium transition-colors ${
+              activeTab === "resources"
+                ? 'bg-[#0071e3]/10 text-[#0071e3]'
+                : 'text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            Resources
+          </button>
+          <button 
+            onClick={() => setActiveTab("programs")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-[14px] font-medium transition-colors ${
+              activeTab === "programs"
+                ? 'bg-[#0071e3]/10 text-[#0071e3]'
+                : 'text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Programs
+          </button>
         </div>
-
-        <TabsContent value="resources" className="mt-0">
-          <div className="p-6 space-y-8 max-w-6xl mx-auto">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Resources & Support</h1>
-              <p className="text-slate-600 dark:text-gray-400">Everything you need to know, all in one place</p>
-            </div>
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500 w-4 h-4" />
-        <Input
-          placeholder="Search resources..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-white/80 dark:bg-[#2d2d2d]/80 dark:border-white/10 dark:text-white backdrop-blur-sm"
-        />
       </div>
 
-      {/* Featured Resource - My Time Off */}
-      {featuredResource && (
-        <section>
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-xl">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                    <Calendar className="w-8 h-8" />
+      {activeTab === "resources" && (
+        <div className="p-6 space-y-8 max-w-6xl mx-auto">
+          <div>
+            <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">Resources & Support</h1>
+            <p className="text-[15px] text-[#86868b] mt-1">Everything you need to know, all in one place</p>
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4" />
+            <input
+              placeholder="Search resources..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-11 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+            />
+          </div>
+
+          {/* Featured Resource - My Time Off */}
+          {featuredResource && (
+            <section>
+              <div className="bg-gradient-to-br from-[#0071e3] to-[#5856d6] text-white rounded-2xl shadow-xl overflow-hidden">
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                      <Calendar className="w-8 h-8" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-[22px] font-semibold mb-2">
+                        {featuredResource.title}
+                      </h2>
+                      <p className="text-white/80 text-[15px]">
+                        {featuredResource.description}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-2xl font-bold mb-2">
-                      {featuredResource.title}
-                    </CardTitle>
-                    <p className="text-blue-100 text-base">
-                      {featuredResource.description}
-                    </p>
+                  <div className="mt-5">
+                    <button 
+                      onClick={() => navigate(featuredResource.internalPath)}
+                      className="flex items-center gap-2 px-5 py-3 bg-white text-[#0071e3] rounded-xl text-[15px] font-semibold hover:bg-white/90 transition-colors"
+                    >
+                      Go to My Time Off
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => navigate(featuredResource.internalPath)}
-                className="bg-white !text-blue-600 hover:bg-blue-50 hover:!text-blue-700 font-semibold"
-                size="lg"
-              >
-                <span className="text-blue-600">Go to My Time Off</span>
-                <ArrowRight className="w-4 h-4 ml-2 text-blue-600" />
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
-      )}
-
-      {/* Important Resources */}
-      {importantResources.length > 0 && (
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Essential Resources</h2>
-            <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Must Read</Badge>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {importantResources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} navigate={navigate} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Other Resources */}
-      <section>
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">All Resources</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {otherResources.length === 0 && importantResources.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <div className="w-16 h-16 bg-slate-100 dark:bg-[#2d2d2d] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Book className="w-8 h-8 text-slate-400 dark:text-gray-500" />
-              </div>
-              <p className="text-slate-500 dark:text-gray-400 font-medium">No resources found</p>
-              <p className="text-sm text-slate-400 dark:text-gray-500">Try a different search term</p>
-            </div>
-          ) : (
-            otherResources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} navigate={navigate} />
-            ))
+            </section>
           )}
+
+          {/* Important Resources */}
+          {importantResources.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Essential Resources</h2>
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#ff3b30]/10 text-[#ff3b30] font-medium">Must Read</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {importantResources.map((resource) => (
+                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Other Resources */}
+          <section>
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-4">All Resources</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {otherResources.length === 0 && importantResources.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <div className="w-16 h-16 bg-black/5 dark:bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Book className="w-8 h-8 text-[#86868b]" />
+                  </div>
+                  <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">No resources found</p>
+                  <p className="text-[13px] text-[#86868b]">Try a different search term</p>
+                </div>
+              ) : (
+                otherResources.map((resource) => (
+                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} />
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Quick Contact Section */}
+          <div className="bg-gradient-to-r from-[#0071e3] to-[#5856d6] text-white rounded-2xl overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Phone className="w-5 h-5" />
+                <h3 className="text-[17px] font-semibold">Need Help?</h3>
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-white/70">HR Support</p>
+                    <p className="text-[14px] font-medium">hr@company.com</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-white/70">IT Helpdesk</p>
+                    <p className="text-[14px] font-medium">+1 (555) 123-4567</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-white/70">Manager</p>
+                    <p className="text-[14px] font-medium">Ask your buddy!</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      )}
 
-      {/* Quick Contact Section */}
-      <Card className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white border-none">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Phone className="w-5 h-5" />
-            Need Help?
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              <div>
-                <p className="text-sm text-blue-100">HR Support</p>
-                <p className="font-medium">hr@company.com</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              <div>
-                <p className="text-sm text-blue-100">IT Helpdesk</p>
-                <p className="font-medium">+1 (555) 123-4567</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <div>
-                <p className="text-sm text-blue-100">Manager</p>
-                <p className="font-medium">Ask your buddy!</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="programs" className="mt-0">
-          <AppSetupPage />
-        </TabsContent>
-      </Tabs>
+      {activeTab === "programs" && (
+        <AppSetupPage />
+      )}
     </div>
   );
 }
@@ -323,70 +325,63 @@ function ResourceCard({ resource, navigate }) {
   const Icon = typeIcons[resource.type];
   
   return (
-    <Card className="bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-sm border-slate-200/60 dark:border-white/10 hover:shadow-lg transition-all duration-300">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-slate-100 dark:bg-white/10 rounded-lg">
-              <Icon className="w-5 h-5 text-slate-600 dark:text-gray-400" />
-            </div>
-            <div className="flex-1">
-              <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">
-                {resource.title}
-              </CardTitle>
-              <p className="text-sm text-slate-600 dark:text-gray-400 mt-1">
-                {resource.description}
-              </p>
-            </div>
-          </div>
+    <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all duration-300">
+      <div className="flex items-start gap-3 mb-4">
+        <div className="p-2.5 bg-black/5 dark:bg-white/10 rounded-xl">
+          <Icon className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
         </div>
-      </CardHeader>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+            {resource.title}
+          </h3>
+          <p className="text-[13px] text-[#86868b] mt-0.5 line-clamp-2">
+            {resource.description}
+          </p>
+        </div>
+      </div>
       
-      <CardContent className="space-y-3">
-        <Badge className={categoryColors[resource.category]} variant="secondary">
+      <div className="space-y-3">
+        <span className={`inline-flex text-[11px] px-2 py-1 rounded-md font-medium ${categoryColors[resource.category]}`}>
           {resource.category}
-        </Badge>
+        </span>
         
         {resource.internalPath && (
-          <Button 
+          <button 
             onClick={() => navigate(resource.internalPath)}
-            className="w-full" 
-            size="sm"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
           >
-            <ArrowRight className="w-4 h-4 mr-2" />
+            <ArrowRight className="w-4 h-4" />
             Open {resource.title}
-          </Button>
+          </button>
         )}
         
         {resource.url && (
-          <Button asChild className="w-full" size="sm">
-            <a
-              href={resource.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Open Resource
-            </a>
-          </Button>
+          <a
+            href={resource.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Open Resource
+          </a>
         )}
         
         {resource.contact && (
-          <div className="text-sm text-slate-600 dark:text-gray-400 flex items-center gap-1">
-            <Mail className="w-3 h-3" />
+          <div className="text-[12px] text-[#86868b] flex items-center gap-1.5">
+            <Mail className="w-3.5 h-3.5" />
             {resource.contact}
           </div>
         )}
         
         {resource.phone && (
-          <div className="text-sm text-slate-600 dark:text-gray-400 flex items-center gap-1">
-            <Phone className="w-3 h-3" />
+          <div className="text-[12px] text-[#86868b] flex items-center gap-1.5">
+            <Phone className="w-3.5 h-3.5" />
             {resource.phone}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
