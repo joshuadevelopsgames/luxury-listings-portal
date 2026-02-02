@@ -274,6 +274,17 @@
   background-color: #ff3fd8 !important;
 }
 
+/* Sidebar active item - specific override for Michelle */
+.michelle-theme.dark aside button[class*="bg-[#0071e3]"] {
+  background-color: #f90fc6 !important;
+  box-shadow: 0 1px 3px rgba(249, 15, 198, 0.3) !important;
+}
+
+/* Also handle the shadow class specifically */
+.michelle-theme.dark [class*="shadow-[#0071e3]"] {
+  box-shadow: 0 1px 3px rgba(249, 15, 198, 0.3) !important;
+}
+
 
 
 
