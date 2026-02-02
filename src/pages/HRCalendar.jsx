@@ -735,14 +735,14 @@ const HRCalendar = () => {
       </div>
 
       {/* Leave Requests - Moved to top for quick admin access */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-center justify-between dark:text-white">
             <div className="flex items-center space-x-2">
-              <Clock className="w-5 h-5" />
+              <Clock className="w-5 h-5 dark:text-gray-300" />
               <span>Leave Requests</span>
               {leaveRequests.filter(r => r.status === 'pending').length > 0 && (
-                <Badge className="bg-yellow-100 text-yellow-800 ml-2">
+                <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 ml-2">
                   {leaveRequests.filter(r => r.status === 'pending').length} Pending
                 </Badge>
               )}
@@ -750,11 +750,12 @@ const HRCalendar = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
             <Button 
               variant={filterType === 'all' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => setFilterType('all')}
+              className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               All ({leaveRequests.length})
             </Button>
@@ -762,6 +763,7 @@ const HRCalendar = () => {
               variant={filterType === 'pending' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => setFilterType('pending')}
+              className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               ⏳ Pending ({leaveRequests.filter(r => r.status === 'pending').length})
             </Button>
@@ -769,6 +771,7 @@ const HRCalendar = () => {
               variant={filterType === 'approved' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => setFilterType('approved')}
+              className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               ✅ Approved ({leaveRequests.filter(r => r.status === 'approved').length})
             </Button>
@@ -776,6 +779,7 @@ const HRCalendar = () => {
               variant={filterType === 'vacation' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => setFilterType('vacation')}
+              className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               🏖️ Vacation
             </Button>
@@ -783,30 +787,38 @@ const HRCalendar = () => {
               variant={filterType === 'sick' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => setFilterType('sick')}
+              className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               🏥 Sick
             </Button>
           </div>
 
           {filteredRequests.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
               <p>No leave requests found</p>
             </div>
           ) : (
             <div className="space-y-3">
               {filteredRequests.map((request) => (
-                <div key={request.id} className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 ${request.status === 'pending' ? 'border-yellow-200 bg-yellow-50/50' : 'border-gray-200'}`}>
+                <div 
+                  key={request.id} 
+                  className={`flex items-center justify-between p-4 border rounded-lg transition-colors
+                    ${request.status === 'pending' 
+                      ? 'border-yellow-200 bg-yellow-50/50 dark:border-yellow-700 dark:bg-yellow-900/20' 
+                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    }`}
+                >
                   <div className="flex items-center space-x-4">
                     <span className="text-2xl">
                       {request.type === 'vacation' ? '🏖️' : request.type === 'sick' ? '🏥' : '📅'}
                     </span>
                     <div>
-                      <p className="font-medium text-gray-900">{request.employeeName}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium text-gray-900 dark:text-white">{request.employeeName}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {request.startDate} - {request.endDate} ({request.days} days)
                       </p>
-                      {request.reason && <p className="text-sm text-gray-600">{request.reason}</p>}
+                      {request.reason && <p className="text-sm text-gray-600 dark:text-gray-400">{request.reason}</p>}
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -818,7 +830,7 @@ const HRCalendar = () => {
                       <div className="flex space-x-2">
                         <Button 
                           size="sm" 
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white"
                           onClick={() => openNotesModal(request.id, 'approve')}
                           disabled={processingRequest === request.id}
                         >
@@ -827,7 +839,7 @@ const HRCalendar = () => {
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/30 dark:border-red-800"
                           onClick={() => openNotesModal(request.id, 'reject')}
                           disabled={processingRequest === request.id}
                         >
@@ -839,7 +851,7 @@ const HRCalendar = () => {
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/30 dark:border-blue-800"
                         onClick={() => syncLeaveToCalendar(request)}
                       >
                         <CalendarIcon className="w-3 h-3 mr-1" />
