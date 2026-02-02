@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';
-import { getBaseModuleIds } from '../../modules/registry';
+import { getBaseModuleIds, getAllModuleIds } from '../../modules/registry';
 import { 
   CheckCircle2, 
   Clock, 
@@ -46,13 +46,13 @@ const V3Dashboard = () => {
   const [loading, setLoading] = useState(true);
   
   // Get enabled modules for widget rendering
-  // System admins see all base modules, others see their permissions or base modules
+  // System admins see ALL modules, others see their permissions or base modules
   const enabledModules = isSystemAdmin 
-    ? getBaseModuleIds() 
+    ? getAllModuleIds() 
     : (permissions.length > 0 ? permissions : getBaseModuleIds());
   
   // Check if tasks module is enabled (affects dashboard display)
-  const hasTasksModule = enabledModules.includes('tasks') || isSystemAdmin;
+  const hasTasksModule = enabledModules.includes('tasks');
   
   const [tasks, setTasks] = useState([]);
   const [todaysTasks, setTodaysTasks] = useState([]);
@@ -497,19 +497,23 @@ const V3Dashboard = () => {
             <Sparkles className="w-5 h-5" />
             <h2 className="text-[17px] font-semibold">Overview</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid ${hasTasksModule ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
             <div>
               <p className="text-[28px] font-semibold">{clients.length}</p>
               <p className="text-[13px] text-white/70">Total Clients</p>
             </div>
-            <div>
-              <p className="text-[28px] font-semibold">{tasks.length}</p>
-              <p className="text-[13px] text-white/70">Total Tasks</p>
-            </div>
-            <div>
-              <p className="text-[28px] font-semibold">{tasks.filter(t => t.status === 'completed').length}</p>
-              <p className="text-[13px] text-white/70">Completed</p>
-            </div>
+            {hasTasksModule && (
+              <>
+                <div>
+                  <p className="text-[28px] font-semibold">{tasks.length}</p>
+                  <p className="text-[13px] text-white/70">Total Tasks</p>
+                </div>
+                <div>
+                  <p className="text-[28px] font-semibold">{tasks.filter(t => t.status === 'completed').length}</p>
+                  <p className="text-[13px] text-white/70">Completed</p>
+                </div>
+              </>
+            )}
             <div>
               <p className="text-[28px] font-semibold">{clients.filter(c => c.packageType?.toLowerCase() === 'premium').length}</p>
               <p className="text-[13px] text-white/70">Premium Clients</p>

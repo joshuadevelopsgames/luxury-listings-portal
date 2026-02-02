@@ -223,6 +223,13 @@ export function getBaseModuleIds() {
 }
 
 /**
+ * Get ALL module IDs (for system admins)
+ */
+export function getAllModuleIds() {
+  return Object.keys(modules);
+}
+
+/**
  * Get module by ID
  */
 export function getModule(moduleId) {
