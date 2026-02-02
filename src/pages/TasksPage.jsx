@@ -130,6 +130,7 @@ const TasksPage = () => {
     taskDueDate: ''
   });
   const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [processingRequestId, setProcessingRequestId] = useState(null);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [showProductivityStats, setShowProductivityStats] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
@@ -857,25 +858,46 @@ const TasksPage = () => {
 
   // Accept task request
   const handleAcceptRequest = async (request) => {
+    if (processingRequestId) return; // Prevent double-clicks
+    
     try {
+      setProcessingRequestId(request.id);
       await firestoreService.acceptTaskRequest(request.id, request);
-      alert('✅ Task request accepted! Check your tasks.');
+      
+      // Remove from local state immediately
+      setTaskRequests(prev => prev.filter(r => r.id !== request.id));
+      
+      // Refresh tasks to show the new task
+      await refreshTasks();
+      
+      toast.success('Task request accepted! Check your tasks.');
     } catch (error) {
       console.error('❌ Error accepting task request:', error);
-      alert('Failed to accept task request. Please try again.');
+      toast.error('Failed to accept task request. Please try again.');
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
   // Reject task request
   const handleRejectRequest = async (request) => {
+    if (processingRequestId) return; // Prevent double-clicks
+    
     const reason = prompt('Why are you declining this task? (Optional)');
     
     try {
+      setProcessingRequestId(request.id);
       await firestoreService.rejectTaskRequest(request.id, request, reason || '');
-      alert('Task request declined.');
+      
+      // Remove from local state immediately
+      setTaskRequests(prev => prev.filter(r => r.id !== request.id));
+      
+      toast.success('Task request declined.');
     } catch (error) {
       console.error('❌ Error rejecting task request:', error);
-      alert('Failed to reject task request. Please try again.');
+      toast.error('Failed to reject task request. Please try again.');
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
@@ -1397,14 +1419,25 @@ const TasksPage = () => {
                         <div className="flex gap-3 pt-3 border-t border-[#0071e3]/20">
                           <button
                             onClick={() => handleAcceptRequest(request)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors"
+                            disabled={processingRequestId === request.id}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Check className="w-4 h-4" />
-                            Accept
+                            {processingRequestId === request.id ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Accepting...
+                              </>
+                            ) : (
+                              <>
+                                <Check className="w-4 h-4" />
+                                Accept
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={() => handleRejectRequest(request)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+                            disabled={processingRequestId === request.id}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <X className="w-4 h-4" />
                             Decline
