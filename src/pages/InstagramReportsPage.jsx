@@ -1345,14 +1345,14 @@ const ReportPreviewModal = ({ report, onClose }) => {
                     label: 'Total Views', 
                     value: report.metrics.views?.toLocaleString() || '—', 
                     color: 'from-purple-500 to-purple-600',
-                    subtext: report.metrics.viewsFollowerPercent ? `${report.metrics.viewsFollowerPercent}% from followers` : null
+                    subtext: (report.metrics.views != null && report.metrics.viewsFollowerPercent != null) ? `${report.metrics.viewsFollowerPercent}% from followers` : null
                   },
                   { 
                     icon: Users, 
                     label: 'Followers', 
                     value: report.metrics.followers?.toLocaleString() || '—', 
                     color: 'from-pink-500 to-pink-600',
-                    subtext: report.metrics.followerChange ? `${report.metrics.followerChange > 0 ? '+' : ''}${report.metrics.followerChange}` : null,
+                    subtext: report.metrics.followerChange != null ? `${report.metrics.followerChange > 0 ? '+' : ''}${report.metrics.followerChange}` : null,
                     subtextColor: report.metrics.followerChange > 0 ? 'text-green-600' : 'text-red-500'
                   },
                   { 
@@ -1360,14 +1360,14 @@ const ReportPreviewModal = ({ report, onClose }) => {
                     label: 'Interactions', 
                     value: report.metrics.interactions?.toLocaleString() || '—', 
                     color: 'from-orange-500 to-orange-600',
-                    subtext: report.metrics.interactionsFollowerPercent ? `${report.metrics.interactionsFollowerPercent}% from followers` : null
+                    subtext: (report.metrics.interactions != null && report.metrics.interactionsFollowerPercent != null) ? `${report.metrics.interactionsFollowerPercent}% from followers` : null
                   },
                   { 
                     icon: MousePointer, 
                     label: 'Profile Visits', 
                     value: report.metrics.profileVisits?.toLocaleString() || '—', 
                     color: 'from-blue-500 to-blue-600',
-                    subtext: report.metrics.profileVisitsChange ? `${report.metrics.profileVisitsChange}` : null,
+                    subtext: (report.metrics.profileVisits != null && report.metrics.profileVisitsChange) ? `${report.metrics.profileVisitsChange}` : null,
                     subtextColor: report.metrics.profileVisitsChange?.startsWith?.('+') ? 'text-green-600' : 'text-red-500'
                   },
                 ].map((stat, index) => (

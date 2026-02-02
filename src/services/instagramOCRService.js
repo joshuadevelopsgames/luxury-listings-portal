@@ -201,9 +201,18 @@ class InstagramOCRService {
                                 text.match(/([0-9,]+)\s*Interactions?/i);
       if (interactionsMatch) {
         const fallbackNum = this.parseNumber(interactionsMatch[1]);
-        // Don't use date fragments (Jan 1, Jan 30, Last 30 days)
         if (fallbackNum !== 1 && fallbackNum !== 30 && fallbackNum !== 31) {
           metrics.interactions = fallbackNum;
+        }
+      }
+    }
+    // Fallback: number on its own line after "Interactions" (centered big metric in app)
+    if (metrics.interactions === undefined) {
+      const standaloneLine = text.match(/Interactions?\s*[\s\S]*?\n\s*([0-9]{1,5})\s*(?:\n|$)/i);
+      if (standaloneLine) {
+        const n = this.parseNumber(standaloneLine[1]);
+        if (n >= 1 && n <= 99999 && n !== 1 && n !== 30 && n !== 31) {
+          metrics.interactions = n;
         }
       }
     }

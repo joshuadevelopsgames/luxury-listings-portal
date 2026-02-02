@@ -221,6 +221,15 @@ function parseInstagramMetrics(text) {
       }
     }
   }
+  if (metrics.interactions === undefined) {
+    const standaloneLine = text.match(/Interactions?\s*[\s\S]*?\n\s*([0-9]{1,5})\s*(?:\n|$)/i);
+    if (standaloneLine) {
+      const n = parseNumber(standaloneLine[1]);
+      if (n >= 1 && n <= 99999 && n !== 1 && n !== 30 && n !== 31) {
+        metrics.interactions = n;
+      }
+    }
+  }
 
   // === ACCOUNTS REACHED ===
   const accountsReachedMatch = text.match(/Accounts?\s*reached\s*[\n\s]*([0-9,]+)/i) ||
