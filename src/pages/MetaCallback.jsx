@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import metaService from '../services/metaService';
 import userMetaConnections from '../services/userMetaConnections';
@@ -110,33 +108,33 @@ const MetaCallback = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 shadow-xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-black/5 dark:border-white/10">
+          <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white text-center">
             {status === 'processing' && 'Connecting to Meta...'}
             {status === 'success' && 'Connection Successful!'}
             {status === 'error' && 'Connection Failed'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </h2>
+        </div>
+        <div className="p-6 space-y-4">
           <div className="flex justify-center">
             {status === 'processing' && (
-              <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+              <RefreshCw className="w-8 h-8 text-[#0071e3] animate-spin" />
             )}
             {status === 'success' && (
-              <CheckCircle className="w-8 h-8 text-green-500" />
+              <CheckCircle className="w-8 h-8 text-[#34c759]" />
             )}
             {status === 'error' && (
-              <AlertCircle className="w-8 h-8 text-red-500" />
+              <AlertCircle className="w-8 h-8 text-[#ff3b30]" />
             )}
           </div>
 
-          <p className="text-center text-gray-600">{message}</p>
+          <p className="text-center text-[15px] text-[#86868b]">{message}</p>
 
           {status === 'success' && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <p className="text-sm text-green-700 text-center">
+            <div className="bg-[#34c759]/10 border border-[#34c759]/20 rounded-xl p-3">
+              <p className="text-[13px] text-[#34c759] text-center">
                 You'll be redirected to the Content Calendar in a few seconds...
               </p>
             </div>
@@ -144,22 +142,31 @@ const MetaCallback = () => {
 
           {status === 'error' && (
             <div className="space-y-3">
-              <Button onClick={handleRetry} className="w-full">
+              <button 
+                onClick={handleRetry} 
+                className="w-full h-11 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors"
+              >
                 Try Again
-              </Button>
-              <Button onClick={handleGoBack} variant="outline" className="w-full">
+              </button>
+              <button 
+                onClick={handleGoBack} 
+                className="w-full h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[15px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+              >
                 Go Back to Content Calendar
-              </Button>
+              </button>
             </div>
           )}
 
           {status === 'success' && (
-            <Button onClick={handleGoBack} variant="outline" className="w-full">
+            <button 
+              onClick={handleGoBack} 
+              className="w-full h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[15px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            >
               Go to Content Calendar Now
-            </Button>
+            </button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
