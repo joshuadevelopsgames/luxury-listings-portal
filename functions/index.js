@@ -181,13 +181,15 @@ function parseInstagramMetrics(text) {
   }
 
   // === INTERACTIONS ===
-  // Block from "Interactions" to "By content type" only; exclude numbers that are part of percentages (94.5%, 5.5%).
+  // Block through "By content type" + 400 chars so we catch the main number when OCR reads it after section text.
+  // Exclude numbers that are part of percentages (next char is . , or %).
   const low = text.toLowerCase();
   const interactionsIdx = Math.max(low.indexOf('interactions'), low.indexOf('interacti0ns'));
   if (interactionsIdx >= 0) {
     const byContentIdx = low.indexOf('by content type', interactionsIdx + 1);
-    const blockEnd = byContentIdx > interactionsIdx ? byContentIdx : text.length;
-    const block = text.slice(interactionsIdx, blockEnd).slice(0, 600);
+    const endAfterByContent = byContentIdx > interactionsIdx ? byContentIdx + 400 : text.length;
+    const blockEnd = Math.min(endAfterByContent, text.length);
+    const block = text.slice(interactionsIdx, blockEnd).slice(0, 1000);
     const numbersInBlock = [];
     const numRe = /\b([0-9,]+)\b/g;
     let numMatch;

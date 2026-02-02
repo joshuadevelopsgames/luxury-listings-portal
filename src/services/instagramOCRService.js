@@ -165,14 +165,15 @@ class InstagramOCRService {
     }
 
     // === INTERACTIONS ===
-    // Extract block from "Interactions" to "By content type" (not "followers") so we include the main number when it appears after "Followers 94.5%".
-    // Exclude numbers that are part of percentages (e.g. 94 in "94.5%", 5 in "5.5%").
+    // Block from "Interactions" through "By content type" + extra so we catch "25" when OCR reads the center number after section text.
+    // Exclude numbers that are part of percentages (next char is . , or %).
     const lowForInteractions = text.toLowerCase();
     const interactionsBlockStart = Math.max(lowForInteractions.indexOf('interactions'), lowForInteractions.indexOf('interacti0ns'));
     if (interactionsBlockStart >= 0) {
       const byContentIdx = lowForInteractions.indexOf('by content type', interactionsBlockStart + 1);
-      const blockEnd = byContentIdx > interactionsBlockStart ? byContentIdx : text.length;
-      const block = text.slice(interactionsBlockStart, blockEnd).slice(0, 600);
+      const endAfterByContent = byContentIdx > interactionsBlockStart ? byContentIdx + 400 : text.length;
+      const blockEnd = Math.min(endAfterByContent, text.length);
+      const block = text.slice(interactionsBlockStart, blockEnd).slice(0, 1000);
       const numbersInBlock = [];
       const numRe = /\b([0-9,]+)\b/g;
       let m;
