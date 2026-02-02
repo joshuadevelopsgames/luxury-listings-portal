@@ -36,6 +36,7 @@ import {
   Activity
 } from 'lucide-react';
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
+import { safeFormatDate } from '../utils/dateUtils';
 
 const TeamManagement = () => {
   const { currentUser, currentRole } = useAuth();
@@ -358,7 +359,7 @@ const TeamManagement = () => {
                     <td className="py-4 px-4">
                       <div>
                         <p className="text-gray-900">{member.department}</p>
-                        <p className="text-sm text-gray-600">Since {format(new Date(member.startDate), 'MMM yyyy')}</p>
+                        <p className="text-sm text-gray-600">Since {safeFormatDate(member.startDate, 'MMM yyyy')}</p>
                       </div>
                     </td>
                     
