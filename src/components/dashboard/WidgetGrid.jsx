@@ -108,7 +108,7 @@ function SortableWidgetCell({ widgetId, moduleId, size, columnCount, isEditMode,
     <div
       ref={setNodeRef}
       style={style}
-      className={`${spanClass} min-h-0 ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+      className={`${spanClass} min-h-0 min-w-0 ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
       {...(isEditMode ? { ...attributes, ...listeners } : {})}
     >
       {children}
@@ -160,11 +160,12 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
   };
 
   const gridContent = (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`w-full space-y-6 ${className}`}>
       {rows.map((row, rowIndex) => (
         <div
           key={rowIndex}
-          className={`grid gap-6 ${row.columnCount === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}
+          className={`grid w-full gap-6 ${row.columnCount === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}
+          style={{ gridTemplateColumns: `repeat(${row.columnCount}, minmax(0, 1fr))` }}
         >
           {row.widgets.map(({ widgetId, moduleId, size }) => {
             const WidgetComponent = widgetComponents[widgetId];
@@ -190,7 +191,7 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
                 {cell}
               </SortableWidgetCell>
             ) : (
-              <div key={widgetId} className={`${spanClass} min-h-0`}>
+              <div key={widgetId} className={`${spanClass} min-h-0 min-w-0`}>
                 {cell}
               </div>
             );
