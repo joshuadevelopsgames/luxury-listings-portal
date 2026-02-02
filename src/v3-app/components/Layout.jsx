@@ -173,13 +173,13 @@ const V3Layout = () => {
     const sectionedModules = getNavItemsForModules(enabledModules);
     
     // Define section display order and titles
-    const sectionOrder = ['Main', 'SMM', 'Content Team', 'Sales Team', 'Team', 'Admin', 'Resources'];
+    const sectionOrder = ['Main', 'SMM', 'Content Team', 'Sales Team', 'HR', 'Admin', 'Resources'];
     const sectionTitles = {
       'Main': 'Main',
       'SMM': 'SMM',
       'Content Team': 'Content Team',
       'Sales Team': 'Sales Team',
-      'Team': 'Team',
+      'HR': 'HR',
       'Admin': 'Admin',
       'Resources': 'Resources'
     };

@@ -26,7 +26,7 @@ export const modules = {
     widgets: ['timeOffSummary'],
     navItem: {
       path: '/my-time-off',
-      section: 'Team'
+      section: 'Main'
     },
     baseModule: true
   },
@@ -142,7 +142,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/team',
-      section: 'Team'
+      section: 'HR'
     },
     baseModule: false
   },
@@ -156,7 +156,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/hr-calendar',
-      section: 'Team'
+      section: 'HR'
     },
     baseModule: false
   },
@@ -170,7 +170,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/hr-analytics',
-      section: 'Team'
+      section: 'HR'
     },
     baseModule: false
   },
@@ -226,7 +226,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/workload',
-      section: 'Team'
+      section: 'HR'
     },
     baseModule: false
   }
