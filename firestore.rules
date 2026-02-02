@@ -24,8 +24,10 @@ service cloud.firestore {
     }
     
     // Dashboard preferences - users can read/write their own (for Edit Dashboard / widget order)
+    // Admins can read any user's preferences (for "View As" feature)
     match /user_dashboard_preferences/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
     
     // Pending users - authenticated users can read, admins can write
