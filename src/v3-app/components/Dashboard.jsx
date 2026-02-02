@@ -101,27 +101,18 @@ const V3Dashboard = () => {
   const clientCountForDisplay = displayClients.length;
   const clientLabelForDisplay = hasFullClientAccess ? 'Total Clients' : 'My Clients';
 
-  // Get client health data from the list we're allowed to show
-  const getClientHealth = () => {
-    return displayClients.slice(0, 4).map(client => {
-      const postsUsed = client.postsUsed || 0;
-      const postsTotal = client.packageSize || client.postsTotal || 10;
-      const usagePercent = (postsUsed / postsTotal) * 100;
-      
-      let health = 'good';
-      if (usagePercent >= 100) health = 'critical';
-      else if (usagePercent >= 80) health = 'warning';
-      
-      return {
-        id: client.id,
-        name: client.clientName || 'Unknown Client',
-        package: client.packageType || 'Standard',
-        postsUsed,
-        postsTotal,
-        health
-      };
-    });
+  // Main content block order and span: which widgets are longer (span 2) vs single column (span 1).
+  // Only visible blocks are rendered; grid fills left-to-right with no empty cells.
+  const MAIN_CONTENT_BLOCK_ORDER = ['priorities', 'deliverables', 'deadlines', 'quickLinks', 'overview'];
+  const MAIN_CONTENT_SPANS = { priorities: 2, deliverables: 1, deadlines: 1, quickLinks: 1, overview: 1 };
+  const mainContentVisibility = {
+    priorities: hasTasksModule,
+    deliverables: hasClientAccess,
+    deadlines: hasTasksModule,
+    quickLinks: true,
+    overview: true
   };
+  const visibleMainContentBlocks = MAIN_CONTENT_BLOCK_ORDER.filter((id) => mainContentVisibility[id]);
 
   // Fetch real tasks from Firestore
   useEffect(() => {
@@ -205,15 +196,6 @@ const V3Dashboard = () => {
     return 'Good evening';
   };
 
-  const getHealthColor = (health) => {
-    switch (health) {
-      case 'good': return 'bg-[#34c759]';
-      case 'warning': return 'bg-[#ff9500]';
-      case 'critical': return 'bg-[#ff3b30]';
-      default: return 'bg-[#86868b]';
-    }
-  };
-
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
       case 'high': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
@@ -248,7 +230,7 @@ const V3Dashboard = () => {
   const quickActionsConfig = [
     { title: 'Create Post', icon: Plus, color: 'from-[#0071e3] to-[#5856d6]', path: '/content-calendar', moduleId: 'content-calendar' },
     { title: 'Schedule Content', icon: Calendar, color: 'from-[#ff9500] to-[#ff3b30]', path: '/content-calendar', moduleId: 'content-calendar' },
-    { title: 'Instagram Reports', icon: Instagram, color: 'from-[#34c759] to-[#30d158]', path: '/instagram-reports', moduleId: 'instagram-reports' },
+    { title: 'Instagram Analytics', icon: Instagram, color: 'from-[#34c759] to-[#30d158]', path: '/instagram-reports', moduleId: 'instagram-reports' },
     { title: 'Client Packages', icon: Users, color: 'from-[#5856d6] to-[#af52de]', path: '/client-packages', moduleId: 'client-packages' },
   ];
   const quickActions = quickActionsConfig.filter(
@@ -274,6 +256,249 @@ const V3Dashboard = () => {
       </div>
     );
   }
+
+  // Render a single main-content block by id; used by the unified grid (no empty cells).
+  const renderMainContentBlock = (blockId) => {
+    switch (blockId) {
+      case 'priorities':
+        return (
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
+              <div>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-[#ff9500]" />
+                  Today's Priorities
+                </h2>
+                <p className="text-[13px] text-[#86868b]">
+                  {todaysTasks.length > 0 ? `${todaysTasks.length} tasks due today` : 'No tasks due today'}
+                </p>
+              </div>
+              <Link to="/tasks" className="text-[13px] text-[#0071e3] font-medium hover:underline flex items-center gap-1">
+                View all tasks <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {todaysTasks.length > 0 ? (
+                todaysTasks.map((task) => {
+                  const TaskIcon = getTaskIcon(task.category);
+                  return (
+                    <div key={task.id} className="flex items-center gap-4 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getPriorityColor(task.priority)}`}>
+                        <TaskIcon className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white truncate">{task.title || task.name}</p>
+                          {task.priority?.toLowerCase() === 'high' && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#ff3b30]/10 text-[#ff3b30] uppercase">Urgent</span>
+                          )}
+                        </div>
+                        <p className="text-[13px] text-[#86868b]">
+                          {task.client_name || task.category || 'Task'}
+                          {task.due_time && ` • ${task.due_time}`}
+                        </p>
+                      </div>
+                      <Link to="/tasks" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                        <Play className="w-4 h-4 text-[#0071e3]" />
+                      </Link>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-8 text-center">
+                  <CheckCircle2 className="w-12 h-12 text-[#34c759] mx-auto mb-3" />
+                  <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">All caught up!</p>
+                  <p className="text-[13px] text-[#86868b]">No tasks due today</p>
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-black/5 dark:border-white/5">
+              <Link
+                to="/tasks"
+                className="w-full h-10 rounded-xl border-2 border-dashed border-black/10 dark:border-white/10 text-[13px] font-medium text-[#86868b] hover:border-[#0071e3] hover:text-[#0071e3] transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Task
+              </Link>
+            </div>
+          </div>
+        );
+      case 'deliverables':
+        return (
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
+              <div>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Monthly Deliverables</h2>
+                <p className="text-[13px] text-[#86868b]">Deliverables to meet this month</p>
+              </div>
+              <Link to={enabledModules.includes('clients') ? '/clients' : '/my-clients'} className="text-[13px] text-[#0071e3] font-medium hover:underline">
+                View all
+              </Link>
+            </div>
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {clientsLoading ? (
+                <div className="p-6 text-center">
+                  <div className="w-6 h-6 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto" />
+                </div>
+              ) : displayClients.length > 0 ? (
+                displayClients.slice(0, 4).map((client) => (
+                  <div key={client.id} className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">{client.clientName || 'Unknown Client'}</span>
+                      <span className="text-[12px] text-[#86868b]">—</span>
+                    </div>
+                    <p className="text-[12px] text-[#86868b] mt-0.5">From contracts (coming soon)</p>
+                  </div>
+                ))
+              ) : (
+                <div className="p-6 text-center">
+                  <Users className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
+                  <p className="text-[13px] text-[#86868b]">No clients yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      case 'deadlines':
+        return (
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+            <div className="p-5 border-b border-black/5 dark:border-white/5">
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                <Target className="w-5 h-5 text-[#ff3b30]" />
+                Upcoming Deadlines
+              </h2>
+            </div>
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {upcomingDeadlines.length > 0 ? (
+                upcomingDeadlines.map((task) => (
+                  <div key={task.id} className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
+                    <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white mb-1 truncate">{task.title || task.name}</p>
+                    <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{formatTaskDate(task.due_date)}</span>
+                      {task.client_name && (
+                        <>
+                          <span>•</span>
+                          <span>{task.client_name}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-6 text-center">
+                  <Calendar className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
+                  <p className="text-[13px] text-[#86868b]">No upcoming deadlines</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      case 'quickLinks':
+        return (
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Quick Links</h2>
+            </div>
+            <div className="divide-y divide-black/5 dark:divide-white/5">
+              {(enabledModules.includes('my-clients') || enabledModules.includes('clients')) && (
+                <Link to={enabledModules.includes('clients') ? '/clients' : '/my-clients'} className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-[#0071e3]/10 flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">View All Clients</p>
+                    <p className="text-[12px] text-[#86868b]">{hasFullClientAccess ? `${clientCountForDisplay} total clients` : `${clientCountForDisplay} assigned to you`}</p>
+                  </div>
+                </Link>
+              )}
+              {hasTasksModule && (
+                <Link to="/tasks" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-[#ff9500]/10 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4 text-[#ff9500]" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Task Management</p>
+                    <p className="text-[12px] text-[#86868b]">{tasks.filter(t => t.status !== 'completed').length} pending tasks</p>
+                  </div>
+                </Link>
+              )}
+              {enabledModules.includes('team') && (
+                <Link to="/team" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4 text-[#34c759]" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Team Directory</p>
+                    <p className="text-[12px] text-[#86868b]">View team members</p>
+                  </div>
+                </Link>
+              )}
+              {enabledModules.includes('resources') && (
+                <Link to="/resources" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-[#5856d6]/10 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4 text-[#5856d6]" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Resources & Docs</p>
+                    <p className="text-[12px] text-[#86868b]">Tutorials and guides</p>
+                  </div>
+                </Link>
+              )}
+            </div>
+          </div>
+        );
+      case 'overview':
+        return (
+          <div className="rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] p-6 text-white relative overflow-hidden">
+            <div className="flex items-center gap-2 mb-6">
+              <Sparkles className="w-5 h-5" />
+              <h2 className="text-[17px] font-semibold">Overview</h2>
+            </div>
+            <div className={`grid ${hasTasksModule && hasClientAccess ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+              {hasClientAccess && (
+                <>
+                  <div>
+                    <p className="text-[28px] font-semibold">{clientCountForDisplay}</p>
+                    <p className="text-[13px] text-white/70">{clientLabelForDisplay}</p>
+                  </div>
+                  <div>
+                    <p className="text-[28px] font-semibold">{displayClients.filter(c => c.packageType?.toLowerCase() === 'premium').length}</p>
+                    <p className="text-[13px] text-white/70">Premium Clients</p>
+                  </div>
+                </>
+              )}
+              {hasTasksModule && (
+                <>
+                  <div>
+                    <p className="text-[28px] font-semibold">{tasks.length}</p>
+                    <p className="text-[13px] text-white/70">Total Tasks</p>
+                  </div>
+                  <div>
+                    <p className="text-[28px] font-semibold">{tasks.filter(t => t.status === 'completed').length}</p>
+                    <p className="text-[13px] text-white/70">Completed</p>
+                  </div>
+                </>
+              )}
+              {!hasClientAccess && !hasTasksModule && (
+                <p className="text-[13px] text-white/70">Enable Clients or Tasks to see metrics here.</p>
+              )}
+            </div>
+            {hasClientAccess && (
+              <Link
+                to={enabledModules.includes('clients') ? '/clients' : '/my-clients'}
+                className="mt-6 w-full h-10 rounded-xl bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center gap-2 text-[13px] font-medium"
+              >
+                View Clients
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -333,254 +558,16 @@ const V3Dashboard = () => {
         <WidgetGrid enabledModules={enabledModules} />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Today's Priorities - Only show if tasks module enabled */}
-        {hasTasksModule && (
-        <div className="lg:col-span-2 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
-            <div>
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-[#ff9500]" />
-                Today's Priorities
-              </h2>
-              <p className="text-[13px] text-[#86868b]">
-                {todaysTasks.length > 0 ? `${todaysTasks.length} tasks due today` : 'No tasks due today'}
-              </p>
-            </div>
-            <Link to="/tasks" className="text-[13px] text-[#0071e3] font-medium hover:underline flex items-center gap-1">
-              View all tasks <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="divide-y divide-black/5 dark:divide-white/5">
-            {todaysTasks.length > 0 ? (
-              todaysTasks.map((task) => {
-                const TaskIcon = getTaskIcon(task.category);
-                return (
-                  <div key={task.id} className="flex items-center gap-4 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getPriorityColor(task.priority)}`}>
-                      <TaskIcon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white truncate">{task.title || task.name}</p>
-                        {task.priority?.toLowerCase() === 'high' && (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#ff3b30]/10 text-[#ff3b30] uppercase">Urgent</span>
-                        )}
-                      </div>
-                      <p className="text-[13px] text-[#86868b]">
-                        {task.client_name || task.category || 'Task'} 
-                        {task.due_time && ` • ${task.due_time}`}
-                      </p>
-                    </div>
-                    <Link to="/tasks" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                      <Play className="w-4 h-4 text-[#0071e3]" />
-                    </Link>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-8 text-center">
-                <CheckCircle2 className="w-12 h-12 text-[#34c759] mx-auto mb-3" />
-                <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">All caught up!</p>
-                <p className="text-[13px] text-[#86868b]">No tasks due today</p>
-              </div>
-            )}
-          </div>
-          <div className="p-4 border-t border-black/5 dark:border-white/5">
-            <Link 
-              to="/tasks"
-              className="w-full h-10 rounded-xl border-2 border-dashed border-black/10 dark:border-white/10 text-[13px] font-medium text-[#86868b] hover:border-[#0071e3] hover:text-[#0071e3] transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Task
-            </Link>
-          </div>
-        </div>
-        )}
-
-        {/* Client Status - only when user has client-related access */}
-        {hasClientAccess && (
-        <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
-            <div>
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Client Status</h2>
-              <p className="text-[13px] text-[#86868b]">Package utilization</p>
-            </div>
-            <Link to={enabledModules.includes('clients') ? '/clients' : '/my-clients'} className="text-[13px] text-[#0071e3] font-medium hover:underline">
-              View all
-            </Link>
-          </div>
-          <div className="divide-y divide-black/5 dark:divide-white/5">
-            {clientsLoading ? (
-              <div className="p-6 text-center">
-                <div className="w-6 h-6 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto" />
-              </div>
-            ) : getClientHealth().length > 0 ? (
-              getClientHealth().map((client) => (
-                <div key={client.id} className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${getHealthColor(client.health)}`} />
-                      <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">{client.name}</span>
-                    </div>
-                    <span className="text-[12px] text-[#86868b]">{client.postsUsed}/{client.postsTotal}</span>
-                  </div>
-                  <div className="h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all ${getHealthColor(client.health)}`}
-                      style={{ width: `${Math.min((client.postsUsed / client.postsTotal) * 100, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="p-6 text-center">
-                <Users className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
-                <p className="text-[13px] text-[#86868b]">No clients yet</p>
-              </div>
-            )}
-          </div>
-        </div>
-        )}
-      </div>
-
-      {/* Second Row */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Upcoming Deadlines - Only show if tasks module enabled */}
-        {hasTasksModule && (
-        <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
-          <div className="p-5 border-b border-black/5 dark:border-white/5">
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
-              <Target className="w-5 h-5 text-[#ff3b30]" />
-              Upcoming Deadlines
-            </h2>
-          </div>
-          <div className="divide-y divide-black/5 dark:divide-white/5">
-            {upcomingDeadlines.length > 0 ? (
-              upcomingDeadlines.map((task) => (
-                <div key={task.id} className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
-                  <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white mb-1 truncate">{task.title || task.name}</p>
-                  <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>{formatTaskDate(task.due_date)}</span>
-                    {task.client_name && (
-                      <>
-                        <span>•</span>
-                        <span>{task.client_name}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="p-6 text-center">
-                <Calendar className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
-                <p className="text-[13px] text-[#86868b]">No upcoming deadlines</p>
-              </div>
-            )}
-          </div>
-        </div>
-        )}
-
-        {/* Quick Links - only for enabled modules */}
-        <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Quick Links</h2>
-          </div>
-          <div className="divide-y divide-black/5 dark:divide-white/5">
-            {(enabledModules.includes('my-clients') || enabledModules.includes('clients')) && (
-            <Link to={enabledModules.includes('clients') ? '/clients' : '/my-clients'} className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-[#0071e3]/10 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">View All Clients</p>
-                <p className="text-[12px] text-[#86868b]">{hasFullClientAccess ? `${clientCountForDisplay} total clients` : `${clientCountForDisplay} assigned to you`}</p>
-              </div>
-            </Link>
-            )}
-            {hasTasksModule && (
-            <Link to="/tasks" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-[#ff9500]/10 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-4 h-4 text-[#ff9500]" strokeWidth={1.5} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Task Management</p>
-                <p className="text-[12px] text-[#86868b]">{tasks.filter(t => t.status !== 'completed').length} pending tasks</p>
-              </div>
-            </Link>
-            )}
-            {enabledModules.includes('team') && (
-            <Link to="/team" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4 text-[#34c759]" strokeWidth={1.5} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Team Directory</p>
-                <p className="text-[12px] text-[#86868b]">View team members</p>
-              </div>
-            </Link>
-            )}
-            {enabledModules.includes('resources') && (
-            <Link to="/resources" className="flex items-start gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-[#5856d6]/10 flex items-center justify-center shrink-0">
-                <FileText className="w-4 h-4 text-[#5856d6]" strokeWidth={1.5} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Resources & Docs</p>
-                <p className="text-[12px] text-[#86868b]">Tutorials and guides</p>
-              </div>
-            </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Summary Card - Overview (clients + optional tasks) */}
-        <div className="rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] p-6 text-white relative overflow-hidden">
-          <div className="flex items-center gap-2 mb-6">
-            <Sparkles className="w-5 h-5" />
-            <h2 className="text-[17px] font-semibold">Overview</h2>
-          </div>
-          <div className={`grid ${hasTasksModule && hasClientAccess ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
-            {hasClientAccess && (
-              <>
-                <div>
-                  <p className="text-[28px] font-semibold">{clientCountForDisplay}</p>
-                  <p className="text-[13px] text-white/70">{clientLabelForDisplay}</p>
-                </div>
-                <div>
-                  <p className="text-[28px] font-semibold">{displayClients.filter(c => c.packageType?.toLowerCase() === 'premium').length}</p>
-                  <p className="text-[13px] text-white/70">Premium Clients</p>
-                </div>
-              </>
-            )}
-            {hasTasksModule && (
-              <>
-                <div>
-                  <p className="text-[28px] font-semibold">{tasks.length}</p>
-                  <p className="text-[13px] text-white/70">Total Tasks</p>
-                </div>
-                <div>
-                  <p className="text-[28px] font-semibold">{tasks.filter(t => t.status === 'completed').length}</p>
-                  <p className="text-[13px] text-white/70">Completed</p>
-                </div>
-              </>
-            )}
-            {!hasClientAccess && !hasTasksModule && (
-              <p className="text-[13px] text-white/70">Enable Clients or Tasks to see metrics here.</p>
-            )}
-          </div>
-          {hasClientAccess && (
-          <Link 
-            to={enabledModules.includes('clients') ? '/clients' : '/my-clients'} 
-            className="mt-6 w-full h-10 rounded-xl bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center gap-2 text-[13px] font-medium"
+      {/* Main content - single grid, no empty cells; span method in MAIN_CONTENT_SPANS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {visibleMainContentBlocks.map((blockId) => (
+          <div
+            key={blockId}
+            className={MAIN_CONTENT_SPANS[blockId] === 2 ? 'lg:col-span-2' : ''}
           >
-            View Clients
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          )}
-        </div>
+            {renderMainContentBlock(blockId)}
+          </div>
+        ))}
       </div>
 
       {/* Quick Actions - only modules you have access to */}

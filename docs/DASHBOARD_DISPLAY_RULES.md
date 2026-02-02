@@ -57,15 +57,17 @@ Grid columns: 2 on small screens; if 3+ stats, use 4 columns on `md+`.
 
 ---
 
-## 5. Main content blocks
+## 5. Main content blocks (unified grid, no empty cells)
 
-| Block               | Condition                         | Notes                                      |
-|---------------------|-----------------------------------|--------------------------------------------|
-| Today’s Priorities  | `tasks` enabled                   | Task list + “Add Task”; links to `/tasks`. |
-| Client Status       | `hasClientAccess`                 | Package utilization; “View all” → `/clients` or `/my-clients` by access. |
-| Upcoming Deadlines  | `tasks` enabled                   | Next 2 weeks.                              |
-| Quick Links         | Per link (see below).             | Only links for enabled modules.           |
-| Overview (blue card) | Always shown                      | Content depends on access (see below).     |
+Main content is a **single grid** (`lg:grid-cols-3`). Only **visible** blocks are rendered; they fill left-to-right with **no empty cells**. Span method: `MAIN_CONTENT_SPANS` in `Dashboard.jsx` (priorities: 2, others: 1).
+
+| Block               | Condition                         | Span | Notes                                      |
+|---------------------|---------------------|------|-----------------------------------------------------------------------|
+| Today’s Priorities  | `tasks` enabled                   | 2 | Task list + “Add Task”; links to `/tasks`. |
+| Monthly Deliverables | `hasClientAccess`                 | 1 | Deliverables to meet this month per client; data from contracts (coming soon). “View all” → `/clients` or `/my-clients`. |
+| Upcoming Deadlines  | `tasks` enabled                   | 1 | Next 2 weeks.                              |
+| Quick Links         | Always shown                      | 1 | Only links for enabled modules.           |
+| Overview (blue card) | Always shown                      | 1 | Content depends on access (see below).     |
 
 ---
 
@@ -90,7 +92,7 @@ If none of these are enabled, the Quick Links card can still be visible with no 
 - **Config** (in `Dashboard.jsx`):
   - Create Post       → `content-calendar`
   - Schedule Content  → `content-calendar` (same module; deduped by path so one tile per path).
-  - Instagram Reports → `instagram-reports`
+  - Instagram Analytics → `instagram-reports`
   - Client Packages   → `client-packages`
 - **Deduplication**: If two actions point to the same path (e.g. content-calendar), only one tile is shown for that path.
 - **Layout**: Grid columns depend on number of tiles (1–4); section is hidden when there are no tiles.
@@ -115,10 +117,10 @@ If none of these are enabled, the Quick Links card can still be visible with no 
 - `clients`
 - `client-packages`
 
-- **Full client access** (`hasFullClientAccess`): `clients` or `client-packages` in `enabledModules`. User sees **all** clients (Total Clients stat, Client Status from full list, Overview total/premium).
-- **Only my-clients** (`hasOnlyMyClients`): `my-clients` enabled but **not** `clients`/`client-packages`. User sees only **assigned** clients (My Clients stat, Client Status from assigned list, Overview “My Clients” / premium from assigned list).
+- **Full client access** (`hasFullClientAccess`): `clients` or `client-packages` in `enabledModules`. User sees **all** clients (Total Clients stat, Monthly Deliverables from full list, Overview total/premium).
+- **Only my-clients** (`hasOnlyMyClients`): `my-clients` enabled but **not** `clients`/`client-packages`. User sees only **assigned** clients (My Clients stat, Monthly Deliverables from assigned list, Overview “My Clients” / premium from assigned list).
 
-Use `hasClientAccess` for: showing Client Status block, client stat, Overview client metrics, “View all” / “View Clients” links, and Quick Link “View All Clients”. Use `hasFullClientAccess` vs `hasOnlyMyClients` to choose label (“Total Clients” vs “My Clients”) and which client list to count/display.
+Use `hasClientAccess` for: showing Monthly Deliverables block, client stat, Overview client metrics, “View all” / “View Clients” links, and Quick Link “View All Clients”. Use `hasFullClientAccess` vs `hasOnlyMyClients` to choose label (“Total Clients” vs “My Clients”) and which client list to count/display.
 
 ---
 
@@ -147,8 +149,8 @@ Use `hasClientAccess` for: showing Client Status block, client stat, Overview cl
 3. **Your Modules (widget grid)** – Dynamic widgets from enabled modules. Order: see 12.2.
 4. **Main content grid (3 columns on lg)**  
    - Left/center (lg:col-span-2): Today’s Priorities (if tasks enabled).  
-   - Right column: Client Status (if client access), then Upcoming Deadlines (if tasks), then Quick Links.  
-   - Bottom: Quick Action tiles (if any), then Overview (blue gradient) card.
+   - Order: priorities, deliverables, deadlines, quickLinks, overview (only visible blocks).  
+   - Bottom: Quick Action tiles (if any).
 
 ### 12.2 Widget grid order (“Your Modules”)
 
@@ -158,7 +160,7 @@ Widgets are returned by `getWidgetsForModules(enabledModules)` in **registry ord
 
 1. **Time & availability** – Time off summary (`time-off`).
 2. **Client work** – Client overview, Deliverables due (`my-clients`).
-3. **Content / reporting** – Recent reports (`instagram-reports`).
+3. **Content / reporting** – Instagram Analytics / recent reports (`instagram-reports`).
 4. **Tasks** – Tasks summary (`tasks`).
 
 So: time-off first, then my-clients, then instagram-reports, then tasks. Within a module, keep the order defined in `registry.js` (e.g. `clientOverview` before `deliverablesDue`).
@@ -174,7 +176,7 @@ So: time-off first, then my-clients, then instagram-reports, then tasks. Within 
 ### 12.4 Main content column priority
 
 - **Column 1–2 (wide):** Today’s Priorities (tasks) has highest priority when tasks enabled.
-- **Column 3 (narrow):** Client Status above Upcoming Deadlines above Quick Links, so “who/what needs me” is above generic links.
+- **Column 3 (narrow):** Monthly Deliverables above Upcoming Deadlines above Quick Links, so “who/what needs me” is above generic links.
 
 ### 12.5 Overview card
 
@@ -194,7 +196,7 @@ So: time-off first, then my-clients, then instagram-reports, then tasks. Within 
    In the registry, add optional `widgetOrder` or `widgetGroup` so “Your Modules” follows the semantic order in section 12.2 (Time off first, then Clients, then Instagram, then Tasks).
 
 4. **Single source for “client” link**  
-   Helper e.g. `getClientListPath(enabledModules)` used everywhere (Client Status, Overview, Quick Links) so the choice of `/clients` vs `/my-clients` is in one place.
+   Helper e.g. `getClientListPath(enabledModules)` used everywhere (Monthly Deliverables, Overview, Quick Links) so the choice of `/clients` vs `/my-clients` is in one place.
 
 5. **Permission IDs vs module IDs**  
    Firestore stores page IDs (e.g. `clients`). The registry uses module IDs (e.g. `my-clients`). Layout’s `allPages` includes both. Keep a single mapping (e.g. in registry or a small constants file) from page ID → module ID where they differ, so dashboard and nav stay aligned.
