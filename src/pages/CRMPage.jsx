@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { 
   Users, 
   Target, 
@@ -867,56 +864,50 @@ const CRMPage = () => {
   );
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">CRM Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your leads and client relationships</p>
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">CRM Dashboard</h1>
+          <p className="text-[15px] text-[#86868b] mt-1">Manage your leads and client relationships</p>
           {isConnectedToGoogleSheets && (
             <div className="flex items-center gap-2 mt-2">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-green-600">Connected to Google Sheets</span>
+              <CheckCircle className="w-4 h-4 text-[#34c759]" />
+              <span className="text-[13px] text-[#34c759]">Connected to Google Sheets</span>
               {lastSyncTime && (
-                <span className="text-xs text-gray-500">
+                <span className="text-[11px] text-[#86868b]">
                   • Last synced: {lastSyncTime}
                 </span>
               )}
             </div>
           )}
         </div>
-        <div className="flex gap-3">
-          <Button
+        <div className="flex flex-wrap gap-2">
+          <button
             onClick={() => setShowGoogleSheetsSetup(!showGoogleSheetsSetup)}
-            variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
           >
             <Database className="w-4 h-4" />
-            {showGoogleSheetsSetup ? 'Hide Setup' : 'Google Sheets Setup'}
-          </Button>
-          <Button
+            {showGoogleSheetsSetup ? 'Hide Setup' : 'Setup'}
+          </button>
+          <button
             onClick={() => window.open('https://docs.google.com/spreadsheets/d/1wM8g4bPituJoJFVp_Ndlv7o4p3NZMNEM2-WwuUnGvyE/edit', '_blank')}
-            variant="outline"
-            className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
           >
-            📊 Open CRM Sheets
-          </Button>
-          <Button
+            📊 Open Sheets
+          </button>
+          <button
             onClick={handleManualSync}
             disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
           >
-            {isLoading ? (
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            {isLoading ? 'Syncing...' : 'Sync Data'}
-          </Button>
-          <Button onClick={() => setShowAddModal(true)} className="bg-green-600 hover:bg-green-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Lead
-          </Button>
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Syncing...' : 'Sync'}
+          </button>
+          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors">
+            <Plus className="w-4 h-4" />
+            Add Lead
+          </button>
         </div>
       </div>
 
@@ -929,98 +920,88 @@ const CRMPage = () => {
       )}
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-green-200 dark:border-green-700/50">
-          <CardContent className="p-6 pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">Warm Leads</p>
-                <p className="text-3xl font-bold text-green-900 dark:text-green-100">{totalWarmLeads}</p>
-              </div>
-              <div className="p-3 rounded-full bg-green-200 dark:bg-green-700/50">
-                <Star className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="rounded-2xl bg-[#34c759]/5 border border-[#34c759]/20 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12px] font-medium text-[#34c759] mb-1">Warm Leads</p>
+              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalWarmLeads}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="p-2.5 rounded-xl bg-[#34c759]/10">
+              <Star className="w-5 h-5 text-[#34c759]" />
+            </div>
+          </div>
+        </div>
 
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 border-blue-200 dark:border-blue-700/50">
-          <CardContent className="p-6 pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">Contacted</p>
-                <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{totalContacted}</p>
-              </div>
-              <div className="p-3 rounded-full bg-blue-200 dark:bg-blue-700/50">
-                <CheckCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
+        <div className="rounded-2xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12px] font-medium text-[#0071e3] mb-1">Contacted</p>
+              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalContacted}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="p-2.5 rounded-xl bg-[#0071e3]/10">
+              <CheckCircle className="w-5 h-5 text-[#0071e3]" />
+            </div>
+          </div>
+        </div>
 
-        <Card className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/30 border-gray-200 dark:border-gray-600/50">
-          <CardContent className="p-6 pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Cold Leads</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalColdLeads}</p>
-              </div>
-              <div className="p-3 rounded-full bg-gray-200 dark:bg-gray-600/50">
-                <Clock className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-              </div>
+        <div className="rounded-2xl bg-black/[0.02] dark:bg-white/5 border border-black/5 dark:border-white/10 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12px] font-medium text-[#86868b] mb-1">Cold Leads</p>
+              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalColdLeads}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10">
+              <Clock className="w-5 h-5 text-[#86868b]" />
+            </div>
+          </div>
+        </div>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/20 border-purple-200 dark:border-purple-700/50">
-          <CardContent className="p-6 pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-2">Total Leads</p>
-                <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{totalLeads}</p>
-              </div>
-              <div className="p-3 rounded-full bg-purple-200 dark:bg-purple-700/50">
-                <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
+        <div className="rounded-2xl bg-[#af52de]/5 border border-[#af52de]/20 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12px] font-medium text-[#af52de] mb-1">Total Leads</p>
+              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalLeads}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="p-2.5 rounded-xl bg-[#af52de]/10">
+              <Users className="w-5 h-5 text-[#af52de]" />
+            </div>
+          </div>
+        </div>
 
-        <Card className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/20 border-indigo-200 dark:border-indigo-700/50">
-          <CardContent className="p-6 pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-2">Existing Clients</p>
-                <p className="text-3xl font-bold text-indigo-900 dark:text-indigo-100">{totalExistingClients}</p>
-              </div>
-              <div className="p-3 rounded-full bg-indigo-200 dark:bg-indigo-700/50">
-                <UserCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
+        <div className="rounded-2xl bg-[#5856d6]/5 border border-[#5856d6]/20 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12px] font-medium text-[#5856d6] mb-1">Existing Clients</p>
+              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalExistingClients}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="p-2.5 rounded-xl bg-[#5856d6]/10">
+              <UserCheck className="w-5 h-5 text-[#5856d6]" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search and view toggle */}
       <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
         <div className="flex-1 relative max-w-xl">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4" />
           <input
             type="text"
-            placeholder="Search leads and clients by name, email, or Instagram..."
+            placeholder="Search leads and clients..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#0071e3] focus:border-transparent"
+            className="w-full h-11 pl-10 pr-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
           />
         </div>
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5">
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
               viewMode === 'list'
-                ? 'bg-white dark:bg-white/20 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
             <List className="w-4 h-4" />
@@ -1029,10 +1010,10 @@ const CRMPage = () => {
           <button
             type="button"
             onClick={() => setViewMode('card')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
               viewMode === 'card'
-                ? 'bg-white dark:bg-white/20 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
@@ -1042,57 +1023,55 @@ const CRMPage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-white/10">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('warm-leads')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'warm-leads'
-                ? 'border-[#0071e3] text-[#0071e3]'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30'
-            }`}
-          >
-            Warm Leads ({totalWarmLeads})
-          </button>
-          <button
-            onClick={() => setActiveTab('contacted')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'contacted'
-                ? 'border-[#0071e3] text-[#0071e3]'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30'
-            }`}
-          >
-            Contacted Before ({totalContacted})
-          </button>
-          <button
-            onClick={() => setActiveTab('cold-leads')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'cold-leads'
-                ? 'border-[#0071e3] text-[#0071e3]'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30'
-            }`}
-          >
-            Cold Leads ({totalColdLeads})
-          </button>
-          <button
-            onClick={() => setActiveTab('existing-clients')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'existing-clients'
-                ? 'border-[#0071e3] text-[#0071e3]'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30'
-            }`}
-          >
-            Existing Clients ({totalExistingClients})
-          </button>
-        </nav>
+      <div className="flex flex-wrap gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
+        <button
+          onClick={() => setActiveTab('warm-leads')}
+          className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+            activeTab === 'warm-leads'
+              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+          }`}
+        >
+          Warm Leads ({totalWarmLeads})
+        </button>
+        <button
+          onClick={() => setActiveTab('contacted')}
+          className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+            activeTab === 'contacted'
+              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+          }`}
+        >
+          Contacted ({totalContacted})
+        </button>
+        <button
+          onClick={() => setActiveTab('cold-leads')}
+          className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+            activeTab === 'cold-leads'
+              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+          }`}
+        >
+          Cold Leads ({totalColdLeads})
+        </button>
+        <button
+          onClick={() => setActiveTab('existing-clients')}
+          className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+            activeTab === 'existing-clients'
+              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+          }`}
+        >
+          Existing Clients ({totalExistingClients})
+        </button>
       </div>
 
       {/* Content based on active tab */}
       {activeTab === 'warm-leads' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Warm Leads</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Leads showing interest and engagement</p>
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Warm Leads</h2>
+            <p className="text-[13px] text-[#86868b]">Leads showing interest and engagement</p>
           </div>
           {viewMode === 'list' ? renderLeadList(filteredWarmLeads, false) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
