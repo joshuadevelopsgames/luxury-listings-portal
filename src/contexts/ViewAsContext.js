@@ -4,7 +4,23 @@ import { firestoreService } from '../services/firestoreService';
 const ViewAsContext = createContext();
 
 export function useViewAs() {
-  return useContext(ViewAsContext);
+  const context = useContext(ViewAsContext);
+  // Return safe defaults if context is not available (e.g., rendered outside provider)
+  if (!context) {
+    return {
+      viewingAsUser: null,
+      isViewingAs: false,
+      startViewingAs: () => {},
+      stopViewingAs: () => {},
+      viewAsPermissions: [],
+      viewAsRole: null,
+      getEffectiveUser: (user) => user,
+      effectiveHasPermission: (_, realHasPermission) => realHasPermission,
+      getEffectivePermissions: (perms) => perms,
+      getEffectiveRole: (role) => role
+    };
+  }
+  return context;
 }
 
 /**

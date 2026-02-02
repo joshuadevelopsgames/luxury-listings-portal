@@ -837,6 +837,16 @@ class FirestoreService {
 
   // Get user's leave balances from their user document
   async getUserLeaveBalances(userEmail) {
+    // Validate email before querying Firestore
+    if (!userEmail || typeof userEmail !== 'string') {
+      console.warn('⚠️ getUserLeaveBalances called with invalid email:', userEmail);
+      return {
+        vacation: { total: 15, used: 0, remaining: 15 },
+        sick: { total: 10, used: 0, remaining: 10 },
+        personal: { total: 3, used: 0, remaining: 3 }
+      };
+    }
+    
     try {
       const userDoc = await getDoc(doc(db, this.collections.APPROVED_USERS, userEmail));
       if (userDoc.exists()) {
@@ -865,6 +875,12 @@ class FirestoreService {
 
   // Update user's leave balances (admin function)
   async updateUserLeaveBalances(userEmail, balances) {
+    // Validate email before updating Firestore
+    if (!userEmail || typeof userEmail !== 'string') {
+      console.warn('⚠️ updateUserLeaveBalances called with invalid email:', userEmail);
+      return { success: false, error: 'Invalid user email' };
+    }
+    
     try {
       const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
       await updateDoc(userRef, {
@@ -1081,6 +1097,17 @@ class FirestoreService {
 
   // Deduct from user's leave balance after approval
   async deductLeaveBalance(userEmail, leaveType, days, requestId) {
+    // Validate inputs
+    if (!userEmail || typeof userEmail !== 'string') {
+      console.warn('⚠️ deductLeaveBalance called with invalid email:', userEmail);
+      return { success: false, error: 'Invalid user email' };
+    }
+    
+    if (!leaveType || !['vacation', 'sick', 'personal'].includes(leaveType)) {
+      console.warn('⚠️ deductLeaveBalance called with invalid leave type:', leaveType);
+      return { success: false, error: 'Invalid leave type' };
+    }
+    
     try {
       const balances = await this.getUserLeaveBalances(userEmail);
       if (balances[leaveType]) {
@@ -1393,9 +1420,23 @@ class FirestoreService {
 
   // Create notification
   async createNotification(notificationData) {
+    // Validate required fields
+    if (!notificationData?.userEmail || typeof notificationData.userEmail !== 'string') {
+      console.warn('⚠️ createNotification called with invalid userEmail:', notificationData?.userEmail);
+      return { success: false, error: 'Invalid user email for notification' };
+    }
+    
     try {
+      // Remove any undefined values from notificationData
+      const cleanedData = {};
+      for (const [key, value] of Object.entries(notificationData)) {
+        if (value !== undefined) {
+          cleanedData[key] = value;
+        }
+      }
+      
       const notification = {
-        ...notificationData,
+        ...cleanedData,
         createdAt: serverTimestamp()
       };
 

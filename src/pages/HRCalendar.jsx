@@ -239,7 +239,8 @@ const HRCalendar = () => {
           // Transform Firestore data to match expected format
           const formattedRequests = requests.map(req => ({
             id: req.id,
-            employeeId: req.employeeId || req.userEmail,
+            employeeId: req.employeeId || req.employeeEmail || req.userEmail,
+            employeeEmail: req.employeeEmail || req.userEmail || req.employeeId,
             employeeName: req.employeeName || req.userName || 'Unknown',
             type: req.type || 'vacation',
             startDate: req.startDate,
