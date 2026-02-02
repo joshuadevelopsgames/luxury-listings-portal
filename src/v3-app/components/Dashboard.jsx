@@ -58,11 +58,13 @@ function SortableMainBlock({ id, span, isEditMode, renderBlock }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`${span === 2 ? 'lg:col-span-2' : ''} ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+      className={`h-full min-h-0 ${span === 2 ? 'lg:col-span-2' : ''} ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
       {...(isEditMode ? { ...attributes, ...listeners } : {})}
       onClick={isEditMode ? (e) => e.preventDefault() : undefined}
     >
-      {renderBlock(id)}
+      <div className="widget-scroll h-full min-h-0 overflow-auto">
+        {renderBlock(id)}
+      </div>
     </div>
   );
 }
@@ -684,7 +686,7 @@ const V3Dashboard = () => {
       {isEditMode ? (
         <DndContext collisionDetection={pointerWithin} onDragEnd={handleMainContentDragEnd}>
           <SortableContext items={visibleMainContentBlocks} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch grid-auto-rows-[420px]">
               {visibleMainContentBlocks.map((blockId) => (
                 <SortableMainBlock
                   key={blockId}
@@ -698,13 +700,15 @@ const V3Dashboard = () => {
           </SortableContext>
         </DndContext>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch grid-auto-rows-[420px]">
           {visibleMainContentBlocks.map((blockId) => (
             <div
               key={blockId}
-              className={`${DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'lg:col-span-2' : ''} min-h-0`}
+              className={`h-full min-h-0 ${DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'lg:col-span-2' : ''}`}
             >
-              {renderMainContentBlock(blockId)}
+              <div className="widget-scroll h-full min-h-0 overflow-auto">
+                {renderMainContentBlock(blockId)}
+              </div>
             </div>
           ))}
         </div>
