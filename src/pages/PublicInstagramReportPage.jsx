@@ -266,13 +266,13 @@ const PublicInstagramReportPage = () => {
         </div>
       )}
 
-      {/* Instagram-style Insights (dark theme, graphs) */}
+      {/* Insights (light theme to match page) */}
       {report.metrics && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-          <div className="rounded-2xl overflow-hidden bg-[#1a1a1a] text-white shadow-2xl">
+          <div className="rounded-2xl overflow-hidden bg-white border border-gray-200 text-gray-900 shadow-lg">
             <div className="p-6 sm:p-8">
-              <h2 className="text-xl font-semibold text-white mb-2">Insights</h2>
-              <p className="text-sm text-gray-400 mb-6">{report.dateRange}</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Insights</h2>
+              <p className="text-sm text-gray-500 mb-6">{report.dateRange}</p>
 
               {/* Circular bars: Views & Interactions (Instagram-style) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12 mb-10">
@@ -281,7 +281,7 @@ const PublicInstagramReportPage = () => {
                   <div className="flex flex-col items-center">
                     <div className="relative flex-shrink-0 w-[200px] h-[200px]">
                       <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
-                        <circle cx="100" cy="100" r="78" fill="none" stroke="#2d2d2d" strokeWidth="28" />
+                        <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
                         <circle
                           cx="100" cy="100" r="78"
                           fill="none"
@@ -301,8 +301,8 @@ const PublicInstagramReportPage = () => {
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-gray-400 text-sm font-medium">Views</span>
-                        <span className="text-3xl font-bold text-white mt-0.5">
+                        <span className="text-gray-500 text-sm font-medium">Views</span>
+                        <span className="text-3xl font-bold text-gray-900 mt-0.5">
                           {report.metrics.views != null ? report.metrics.views.toLocaleString() : '—'}
                         </span>
                       </div>
@@ -310,13 +310,13 @@ const PublicInstagramReportPage = () => {
                     <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
                       <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full bg-[#9C27B0]" />
-                        <span className="text-sm text-gray-300">Followers</span>
-                        <span className="text-sm font-semibold text-white">{report.metrics.viewsFollowerPercent ?? '—'}%</span>
+                        <span className="text-sm text-gray-600">Followers</span>
+                        <span className="text-sm font-semibold text-gray-900">{report.metrics.viewsFollowerPercent ?? '—'}%</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full bg-[#E040FB]" />
-                        <span className="text-sm text-gray-300">Non-followers</span>
-                        <span className="text-sm font-semibold text-white">{report.metrics.nonFollowerPercent ?? (100 - (report.metrics.viewsFollowerPercent ?? 0)).toFixed(1)}%</span>
+                        <span className="text-sm text-gray-600">Non-followers</span>
+                        <span className="text-sm font-semibold text-gray-900">{report.metrics.nonFollowerPercent ?? (100 - (report.metrics.viewsFollowerPercent ?? 0)).toFixed(1)}%</span>
                       </div>
                     </div>
                   </div>
@@ -327,7 +327,7 @@ const PublicInstagramReportPage = () => {
                   <div className="flex flex-col items-center">
                     <div className="relative flex-shrink-0 w-[200px] h-[200px]">
                       <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
-                        <circle cx="100" cy="100" r="78" fill="none" stroke="#2d2d2d" strokeWidth="28" />
+                        <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
                         <circle
                           cx="100" cy="100" r="78"
                           fill="none"
@@ -347,20 +347,20 @@ const PublicInstagramReportPage = () => {
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-gray-400 text-sm font-medium">Interactions</span>
-                        <span className="text-3xl font-bold text-white mt-0.5">{report.metrics.interactions.toLocaleString()}</span>
+                        <span className="text-gray-500 text-sm font-medium">Interactions</span>
+                        <span className="text-3xl font-bold text-gray-900 mt-0.5">{report.metrics.interactions.toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
                       <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full bg-[#E040FB]" />
-                        <span className="text-sm text-gray-300">Followers</span>
-                        <span className="text-sm font-semibold text-white">{report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent ?? '—'}%</span>
+                        <span className="text-sm text-gray-600">Followers</span>
+                        <span className="text-sm font-semibold text-gray-900">{report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent ?? '—'}%</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full bg-[#7C4DFF]" />
-                        <span className="text-sm text-gray-300">Non-followers</span>
-                        <span className="text-sm font-semibold text-white">
+                        <span className="text-sm text-gray-600">Non-followers</span>
+                        <span className="text-sm font-semibold text-gray-900">
                           {report.metrics.interactionsFollowerPercent != null ? (100 - report.metrics.interactionsFollowerPercent).toFixed(1) : report.metrics.viewsFollowerPercent != null ? (100 - report.metrics.viewsFollowerPercent).toFixed(1) : '—'}%
                         </span>
                       </div>
@@ -372,8 +372,8 @@ const PublicInstagramReportPage = () => {
               {/* Top locations */}
               {report.metrics.topCities && report.metrics.topCities.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#E040FB]" />
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-purple-500" />
                     Top locations
                   </h3>
                   <div className="space-y-3">
@@ -382,14 +382,14 @@ const PublicInstagramReportPage = () => {
                       const barPct = Math.min(100, (city.percentage / maxPct) * 100);
                       return (
                         <div key={idx} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-200 w-28 flex-shrink-0">{city.name}</span>
-                          <div className="flex-1 h-3 bg-[#2d2d2d] rounded-full overflow-hidden">
+                          <span className="text-sm text-gray-700 w-28 flex-shrink-0">{city.name}</span>
+                          <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full bg-[#E040FB] transition-all duration-500"
                               style={{ width: `${barPct}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium text-white w-12 text-right">{city.percentage}%</span>
+                          <span className="text-sm font-medium text-gray-900 w-12 text-right">{city.percentage}%</span>
                         </div>
                       );
                     })}
@@ -400,8 +400,8 @@ const PublicInstagramReportPage = () => {
               {/* Age range */}
               {report.metrics.ageRanges && report.metrics.ageRanges.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#E040FB]" />
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-purple-500" />
                     Age range
                   </h3>
                   <div className="space-y-3">
@@ -410,14 +410,14 @@ const PublicInstagramReportPage = () => {
                       const barPct = Math.min(100, (range.percentage / maxPct) * 100);
                       return (
                         <div key={idx} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-200 w-16 flex-shrink-0">{range.range}</span>
-                          <div className="flex-1 h-3 bg-[#2d2d2d] rounded-full overflow-hidden">
+                          <span className="text-sm text-gray-700 w-16 flex-shrink-0">{range.range}</span>
+                          <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full bg-[#E040FB] transition-all duration-500"
                               style={{ width: `${barPct}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium text-white w-12 text-right">{range.percentage}%</span>
+                          <span className="text-sm font-medium text-gray-900 w-12 text-right">{range.percentage}%</span>
                         </div>
                       );
                     })}
@@ -428,8 +428,8 @@ const PublicInstagramReportPage = () => {
               {/* By content type */}
               {report.metrics.contentBreakdown && report.metrics.contentBreakdown.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-[#E040FB]" />
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-purple-500" />
                     By content type
                   </h3>
                   <div className="space-y-3">
@@ -438,14 +438,14 @@ const PublicInstagramReportPage = () => {
                       const barPct = Math.min(100, (item.percentage / maxPct) * 100);
                       return (
                         <div key={idx} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-200 w-20 flex-shrink-0">{item.type}</span>
-                          <div className="flex-1 h-3 bg-[#2d2d2d] rounded-full overflow-hidden">
+                          <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>
+                          <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full bg-[#E040FB] transition-all duration-500"
                               style={{ width: `${barPct}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium text-white w-12 text-right">{item.percentage}%</span>
+                          <span className="text-sm font-medium text-gray-900 w-12 text-right">{item.percentage}%</span>
                         </div>
                       );
                     })}
@@ -456,26 +456,26 @@ const PublicInstagramReportPage = () => {
               {/* Gender */}
               {report.metrics.gender && (report.metrics.gender.men != null || report.metrics.gender.women != null) && (
                 <div className="mt-8">
-                  <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-[#E040FB]" />
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-purple-500" />
                     Gender
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-gray-300">Men</span>
-                        <span className="font-medium text-white">{report.metrics.gender.men ?? 0}%</span>
+                        <span className="text-gray-600">Men</span>
+                        <span className="font-medium text-gray-900">{report.metrics.gender.men ?? 0}%</span>
                       </div>
-                      <div className="h-3 bg-[#2d2d2d] rounded-full overflow-hidden">
+                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-[#E040FB]" style={{ width: `${report.metrics.gender.men ?? 0}%` }} />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-gray-300">Women</span>
-                        <span className="font-medium text-white">{report.metrics.gender.women ?? 0}%</span>
+                        <span className="text-gray-600">Women</span>
+                        <span className="font-medium text-gray-900">{report.metrics.gender.women ?? 0}%</span>
                       </div>
-                      <div className="h-3 bg-[#2d2d2d] rounded-full overflow-hidden">
+                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-[#9C27B0]" style={{ width: `${report.metrics.gender.women ?? 0}%` }} />
                       </div>
                     </div>
@@ -486,8 +486,8 @@ const PublicInstagramReportPage = () => {
               {/* Growth */}
               {report.metrics.growth && (report.metrics.growth.follows != null || report.metrics.growth.unfollows != null || report.metrics.growth.overall !== undefined) && (
                 <div className="mt-8">
-                  <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-[#E040FB]" />
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-purple-500" />
                     Growth
                   </h3>
                   {(() => {
@@ -496,19 +496,19 @@ const PublicInstagramReportPage = () => {
                     const netChange = report.metrics.growth.overall !== undefined ? report.metrics.growth.overall : (follows - unfollows);
                     return (
                       <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-[#2d2d2d] rounded-xl p-4 text-center">
-                          <div className={`text-xl font-bold ${netChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <div className="bg-gray-100 rounded-xl p-4 text-center">
+                          <div className={`text-xl font-bold ${netChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                             {netChange >= 0 ? '+' : ''}{netChange.toLocaleString()}
                           </div>
-                          <p className="text-xs text-gray-400 mt-1">Overall</p>
+                          <p className="text-xs text-gray-500 mt-1">Overall</p>
                         </div>
-                        <div className="bg-[#2d2d2d] rounded-xl p-4 text-center">
-                          <div className="text-xl font-bold text-emerald-400">{follows.toLocaleString()}</div>
-                          <p className="text-xs text-gray-400 mt-1">Follows</p>
+                        <div className="bg-gray-100 rounded-xl p-4 text-center">
+                          <div className="text-xl font-bold text-emerald-600">{follows.toLocaleString()}</div>
+                          <p className="text-xs text-gray-500 mt-1">Follows</p>
                         </div>
-                        <div className="bg-[#2d2d2d] rounded-xl p-4 text-center">
-                          <div className="text-xl font-bold text-red-400">{unfollows.toLocaleString()}</div>
-                          <p className="text-xs text-gray-400 mt-1">Unfollows</p>
+                        <div className="bg-gray-100 rounded-xl p-4 text-center">
+                          <div className="text-xl font-bold text-red-600">{unfollows.toLocaleString()}</div>
+                          <p className="text-xs text-gray-500 mt-1">Unfollows</p>
                         </div>
                       </div>
                     );
@@ -519,8 +519,8 @@ const PublicInstagramReportPage = () => {
               {/* Most active times */}
               {report.metrics.activeTimes && report.metrics.activeTimes.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#E040FB]" />
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-purple-500" />
                     Most active times
                   </h3>
                   <div className="flex items-end justify-between gap-1 h-28">
@@ -530,7 +530,7 @@ const PublicInstagramReportPage = () => {
                           className="w-full max-w-[24px] mx-auto bg-[#E040FB] rounded-t transition-all duration-300"
                           style={{ height: `${Math.max(4, time.activity || 0)}%` }}
                         />
-                        <span className="text-[10px] text-gray-400 mt-2 truncate w-full text-center">{time.hour}</span>
+                        <span className="text-[10px] text-gray-500 mt-2 truncate w-full text-center">{time.hour}</span>
                       </div>
                     ))}
                   </div>
