@@ -61,8 +61,6 @@ class WidgetErrorBoundary extends React.Component {
 }
 
 const SLOTS_PER_ROW = 4;
-const CARD_HEIGHT_PX = 420;
-
 /**
  * Group widgets into rows (max 4 slots per row). When a row has a large widget, that row has 3 columns (large can shrink to 1/3).
  */
@@ -103,9 +101,6 @@ function SortableWidgetCell({ widgetId, moduleId, size, columnCount, isEditMode,
   const span = getColSpan(columnCount, size);
   const spanClass = span === 1 ? 'col-span-1' : 'col-span-2';
   const style = {
-    height: CARD_HEIGHT_PX,
-    minHeight: CARD_HEIGHT_PX,
-    maxHeight: CARD_HEIGHT_PX,
     transform: CSS.Transform.toString(transform),
     transition,
   };
@@ -113,12 +108,10 @@ function SortableWidgetCell({ widgetId, moduleId, size, columnCount, isEditMode,
     <div
       ref={setNodeRef}
       style={style}
-      className={`${spanClass} flex flex-col overflow-hidden ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+      className={`${spanClass} min-h-0 ${isDragging ? 'opacity-90 z-[100] scale-[0.98] shadow-lg' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
       {...(isEditMode ? { ...attributes, ...listeners } : {})}
     >
-      <div className="widget-scroll flex-1 min-h-0 overflow-auto">
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
@@ -197,11 +190,7 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
                 {cell}
               </SortableWidgetCell>
             ) : (
-              <div
-                key={widgetId}
-                style={{ height: CARD_HEIGHT_PX, minHeight: CARD_HEIGHT_PX, maxHeight: CARD_HEIGHT_PX }}
-                className={`widget-scroll ${spanClass} flex flex-col overflow-auto`}
-              >
+              <div key={widgetId} className={`${spanClass} min-h-0`}>
                 {cell}
               </div>
             );
