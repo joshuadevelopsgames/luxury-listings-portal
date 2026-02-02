@@ -62,7 +62,8 @@ class WidgetErrorBoundary extends React.Component {
 
 const SLOTS_PER_ROW = 4;
 /**
- * Group widgets into rows (max 4 slots per row). When a row has a large widget, that row has 3 columns (large can shrink to 1/3).
+ * Group widgets into rows (max 4 slots per row). 
+ * columnCount = actual slots used in the row, so widgets stretch to fill the full width.
  */
 function computeRows(widgets) {
   const rows = [];
@@ -76,24 +77,22 @@ function computeRows(widgets) {
       currentSlots += slots;
     } else {
       if (currentRow.length > 0) {
-        const hasLarge = currentRow.some((w) => w.size === 'large');
-        rows.push({ columnCount: hasLarge ? 3 : 4, widgets: currentRow });
+        // columnCount = total slots used, so grid columns match content
+        rows.push({ columnCount: currentSlots, widgets: currentRow });
       }
       currentRow = [widget];
       currentSlots = slots;
     }
   }
   if (currentRow.length > 0) {
-    const hasLarge = currentRow.some((w) => w.size === 'large');
-    rows.push({ columnCount: hasLarge ? 3 : 4, widgets: currentRow });
+    rows.push({ columnCount: currentSlots, widgets: currentRow });
   }
   return rows;
 }
 
-/** Span in row: 3-col row => all span 1 (large shrinks to 1/3); 4-col row => small=1, medium/large=2 */
+/** Span = widget's slot count (small=1, medium/large=2) */
 function getColSpan(columnCount, size) {
-  if (columnCount === 3) return 1;
-  return size === 'small' ? 1 : 2;
+  return getWidgetSlotCount(size);
 }
 
 function SortableWidgetCell({ widgetId, moduleId, size, columnCount, isEditMode, children }) {
@@ -164,7 +163,7 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
       {rows.map((row, rowIndex) => (
         <div
           key={rowIndex}
-          className={`grid w-full gap-6 ${row.columnCount === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}
+          className="grid w-full gap-6"
           style={{ gridTemplateColumns: `repeat(${row.columnCount}, minmax(0, 1fr))` }}
         >
           {row.widgets.map(({ widgetId, moduleId, size }) => {
