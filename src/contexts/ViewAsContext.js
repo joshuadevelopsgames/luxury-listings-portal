@@ -33,8 +33,8 @@ export function ViewAsProvider({ children }) {
 
     const loadViewAsData = async () => {
       try {
-        // Get the viewed user's permissions
-        const permissions = await firestoreService.getUserPermissions(viewingAsUser.email);
+        // Get the viewed user's permissions (page-level permissions)
+        const permissions = await firestoreService.getUserPagePermissions(viewingAsUser.email);
         setViewAsPermissions(permissions || []);
         
         // Get their role

@@ -151,8 +151,12 @@ const V3Layout = () => {
     let enabledModules = [];
     
     if (isViewingAs && viewAsPermissions.length > 0) {
-      enabledModules = viewAsPermissions;
-    } else if (isSystemAdmin && !isViewingAs) {
+      // When viewing as, combine base modules with viewed user's permissions
+      enabledModules = [...new Set([...baseModules, ...viewAsPermissions])];
+    } else if (isViewingAs) {
+      // Viewing as but no specific permissions - show base modules
+      enabledModules = baseModules;
+    } else if (isSystemAdmin) {
       // System admins see all modules
       enabledModules = Object.keys(modules);
     } else if (userPermissions.length > 0) {

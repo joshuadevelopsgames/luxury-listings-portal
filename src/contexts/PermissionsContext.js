@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { firestoreService } from '../services/firestoreService';
+import { getBaseModuleIds } from '../modules/registry';
 
 const PermissionsContext = createContext();
 
@@ -114,7 +115,11 @@ export function PermissionsProvider({ children }) {
     // Dashboard is always accessible
     if (pageId === 'dashboard') return true;
     
-    // Check cached permissions
+    // Base modules are always accessible
+    const baseModules = getBaseModuleIds();
+    if (baseModules.includes(pageId)) return true;
+    
+    // Check user's additional permissions
     return permissions.includes(pageId);
   };
 
