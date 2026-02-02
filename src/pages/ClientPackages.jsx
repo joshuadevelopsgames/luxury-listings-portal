@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -30,6 +31,7 @@ import PlatformIcons from '../components/PlatformIcons';
 import { Camera } from 'lucide-react';
 
 export default function ClientPackages() {
+  const [searchParams] = useSearchParams();
   const { hasPermission } = useAuth();
   
   // Check permissions
@@ -649,6 +651,24 @@ export default function ClientPackages() {
     fetchMonthlyClients(); // Fetch monthly clients on mount
   }, []);
 
+  // Auto-select client from URL query parameter
+  useEffect(() => {
+    const clientId = searchParams.get('client');
+    if (clientId && clients.length > 0) {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        setSelectedClient(client);
+        // Scroll to the client card if possible
+        setTimeout(() => {
+          const element = document.getElementById(`client-${clientId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      }
+    }
+  }, [searchParams, clients]);
+
   // Check for auto-reset when clients are loaded
   useEffect(() => {
     if (clients.length > 0 && !autoResetChecked) {
@@ -668,34 +688,34 @@ export default function ClientPackages() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-[#34c759]/10 text-[#34c759]';
+      case 'completed': return 'bg-[#0071e3]/10 text-[#0071e3]';
+      case 'pending': return 'bg-[#ff9500]/10 text-[#ff9500]';
+      case 'overdue': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
+      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
     }
   };
 
   const getPackageTypeColor = (type) => {
     switch (type) {
-      case 'Platinum': return 'bg-purple-100 text-purple-800';
-      case 'Gold': return 'bg-yellow-100 text-yellow-800';
-      case 'Silver': return 'bg-gray-100 text-gray-800';
-      case 'Standard': return 'bg-blue-100 text-blue-800';
-      case 'Seven': return 'bg-indigo-100 text-indigo-800';
-      case 'Custom': return 'bg-pink-100 text-pink-800';
-      case 'Monthly': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Platinum': return 'bg-[#af52de]/10 text-[#af52de]';
+      case 'Gold': return 'bg-[#ff9500]/10 text-[#ff9500]';
+      case 'Silver': return 'bg-[#8e8e93]/10 text-[#8e8e93]';
+      case 'Standard': return 'bg-[#0071e3]/10 text-[#0071e3]';
+      case 'Seven': return 'bg-[#5856d6]/10 text-[#5856d6]';
+      case 'Custom': return 'bg-[#ff2d55]/10 text-[#ff2d55]';
+      case 'Monthly': return 'bg-[#34c759]/10 text-[#34c759]';
+      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
     }
   };
 
   const getPaymentStatusColor = (status) => {
     switch (status) {
-      case 'Paid': return 'bg-green-100 text-green-800';
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Partial': return 'bg-blue-100 text-blue-800';
-      case 'Overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Paid': return 'bg-[#34c759]/10 text-[#34c759]';
+      case 'Pending': return 'bg-[#ff9500]/10 text-[#ff9500]';
+      case 'Partial': return 'bg-[#0071e3]/10 text-[#0071e3]';
+      case 'Overdue': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
+      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
     }
   };
 
@@ -1823,138 +1843,147 @@ export default function ClientPackages() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] dark:bg-[#1d1d1f]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading client packages...</p>
+          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#86868b] text-sm">Loading client packages...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Client Packages</h1>
-        <p className="text-slate-600">Manage luxury real estate client relationships and package delivery</p>
-        
-        {/* Google Apps Script Test Button */}
-        <div className="mt-4 flex gap-3 justify-center">
-          <Button
-            onClick={testGoogleAppsScriptDetailed}
-            variant="outline"
-            className="bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
-          >
-            🔧 Test Google Apps Script
-          </Button>
-          <Button
-            onClick={() => window.open(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`, '_blank')}
-            variant="outline"
-            className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
-          >
-            📊 Open Google Sheets
-          </Button>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
+            Client Packages
+          </h1>
+          <p className="text-[15px] sm:text-[17px] text-[#86868b]">
+            Manage luxury real estate client relationships and package delivery
+          </p>
         </div>
-        {scriptTestResult && (
-          <div className="mt-2 p-2 text-sm rounded">
-            {scriptTestResult.success ? (
-              <div className="text-green-700 bg-green-50 border border-green-200 rounded p-2">
-                ✅ Script working: {scriptTestResult.message || 'Connection successful'}
-              </div>
-            ) : (
-              <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2">
-                ❌ Script error: {scriptTestResult.error || 'Unknown error'}
-                {scriptTestResult.details && (
-                  <div className="mt-1 text-xs">{scriptTestResult.details}</div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={testGoogleAppsScriptDetailed}
+            className="h-9 px-3 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[13px] font-medium hover:bg-[#ff9500]/20 transition-colors flex items-center gap-1.5"
+          >
+            🔧 Test Script
+          </button>
+          <button
+            onClick={() => window.open(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`, '_blank')}
+            className="h-9 px-3 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5"
+          >
+            📊 Open Sheets
+          </button>
+        </div>
       </div>
+      
+      {scriptTestResult && (
+        <div className={`p-3 rounded-xl text-[13px] ${scriptTestResult.success 
+          ? 'bg-[#34c759]/10 text-[#34c759] border border-[#34c759]/20' 
+          : 'bg-[#ff3b30]/10 text-[#ff3b30] border border-[#ff3b30]/20'}`}>
+          {scriptTestResult.success 
+            ? `✅ Script working: ${scriptTestResult.message || 'Connection successful'}`
+            : `❌ Script error: ${scriptTestResult.error || 'Unknown error'}`}
+          {scriptTestResult.details && <div className="mt-1 text-[11px] opacity-80">{scriptTestResult.details}</div>}
+        </div>
+      )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total Clients</div>
-        </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-          <div className="text-sm text-gray-600">Active Packages</div>
-        </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-          <div className="text-sm text-gray-600">Pending Approval</div>
-        </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600">{stats.completed}</div>
-          <div className="text-sm text-gray-600">Completed</div>
-        </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-purple-600">${stats.revenue.toLocaleString()}</div>
-          <div className="text-sm text-gray-600">Total Revenue</div>
-        </Card>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all">
+          <Users className="w-5 h-5 text-[#0071e3] mb-2" strokeWidth={1.5} />
+          <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.total}</p>
+          <p className="text-[12px] sm:text-[13px] text-[#86868b]">Total Clients</p>
+        </div>
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all">
+          <CheckCircle className="w-5 h-5 text-[#34c759] mb-2" strokeWidth={1.5} />
+          <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.active}</p>
+          <p className="text-[12px] sm:text-[13px] text-[#86868b]">Active Packages</p>
+        </div>
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all">
+          <Clock className="w-5 h-5 text-[#ff9500] mb-2" strokeWidth={1.5} />
+          <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.pending}</p>
+          <p className="text-[12px] sm:text-[13px] text-[#86868b]">Pending Approval</p>
+        </div>
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all">
+          <Package className="w-5 h-5 text-[#5856d6] mb-2" strokeWidth={1.5} />
+          <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.completed}</p>
+          <p className="text-[12px] sm:text-[13px] text-[#86868b]">Completed</p>
+        </div>
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] col-span-2 sm:col-span-1 hover:shadow-lg transition-all">
+          <DollarSign className="w-5 h-5 text-white/80 mb-2" strokeWidth={1.5} />
+          <p className="text-[24px] sm:text-[28px] font-semibold text-white tracking-[-0.02em]">${stats.revenue.toLocaleString()}</p>
+          <p className="text-[12px] sm:text-[13px] text-white/70">Total Revenue</p>
+        </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+      <div className="flex gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl overflow-x-auto">
         <button
           onClick={() => handleTabChange('clients')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-2 ${
             activeTab === 'clients'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
           }`}
         >
-          <Package className="w-4 h-4 inline mr-2" />
-          Single Packages ({clients.length})
+          <Package className="w-4 h-4" />
+          <span className="hidden sm:inline">Single Packages</span>
+          <span className="sm:hidden">Single</span>
+          <span className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px]">{clients.length}</span>
         </button>
         <button
           onClick={() => handleTabChange('monthly')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-2 ${
             activeTab === 'monthly'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
           }`}
         >
-          <RefreshCw className="w-4 h-4 inline mr-2" />
-          Monthly Recurring ({monthlyClients.length})
+          <RefreshCw className="w-4 h-4" />
+          <span className="hidden sm:inline">Monthly Recurring</span>
+          <span className="sm:hidden">Monthly</span>
+          <span className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px]">{monthlyClients.length}</span>
         </button>
         <button
           onClick={() => handleTabChange('archives')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-2 ${
             activeTab === 'archives'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
           }`}
         >
-          <Archive className="w-4 h-4 inline mr-2" />
-          Archives ({archivedClients.length})
+          <Archive className="w-4 h-4" />
+          <span>Archives</span>
+          <span className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px]">{archivedClients.length}</span>
         </button>
       </div>
 
       {/* Filters and Search */}
       {activeTab === 'clients' && (
-        <Card className="p-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col md:flex-row gap-4 flex-1">
+        <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-5">
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search clients or packages..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 pl-10 pr-4 bg-black/5 dark:bg-white/5 border-0 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                 />
               </div>
               
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-10 px-3 bg-black/5 dark:bg-white/5 border-0 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active</option>
@@ -1966,9 +1995,9 @@ export default function ClientPackages() {
               <select
                 value={packageTypeFilter}
                 onChange={(e) => setPackageTypeFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-10 px-3 bg-black/5 dark:bg-white/5 border-0 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
               >
-                <option value="all">All Package Types</option>
+                <option value="all">All Packages</option>
                 <option value="Standard">Standard</option>
                 <option value="Silver">Silver</option>
                 <option value="Gold">Gold</option>
@@ -1980,442 +2009,425 @@ export default function ClientPackages() {
             </div>
             
             <div className="flex gap-2">
-              <Button 
+              <button 
                 onClick={() => fetchClients(false)}
                 disabled={refreshing}
-                variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? 'Syncing...' : 'Sync from Sheets'}
-              </Button>
-              <Button 
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{refreshing ? 'Syncing...' : 'Sync'}</span>
+              </button>
+              <button 
                 onClick={handleAddClient}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={!canManagePackages}
                 title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
+                className="h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Client
-              </Button>
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Client</span>
+              </button>
             </div>
           </div>
           
           {/* Sync Status */}
           {lastSync && (
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-500">
+            <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5 text-center">
+              <p className="text-[12px] text-[#86868b]">
                 Last synced: {lastSync.toLocaleString()}
               </p>
             </div>
           )}
-        </Card>
+        </div>
       )}
 
       {/* Client List */}
       {activeTab === 'clients' && (
         <div className="space-y-4">
           {filteredClients.map(client => (
-          <Card key={client.id} className="p-6">
-            <div className="flex flex-col lg:flex-row gap-6">
+          <div key={client.id} id={`client-${client.id}`} className={`rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-6 hover:shadow-lg transition-all ${selectedClient?.id === client.id ? 'ring-2 ring-[#0071e3]' : ''}`}>
+            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
               {/* Client Info */}
-              <div className="flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                  <div className="min-w-0">
+                    <h3 className="text-[17px] sm:text-[19px] font-semibold text-[#1d1d1f] dark:text-white mb-1 truncate">
                       {client.clientName}
                     </h3>
                     {client.clientEmail && (
-                      <p className="text-sm text-gray-600 mb-2">
+                      <p className="text-[13px] text-[#86868b] mb-2 truncate">
                         📧 {client.clientEmail}
                       </p>
                     )}
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <Badge className={getPackageTypeColor(client.packageType)}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getPackageTypeColor(client.packageType)}`}>
                         {client.packageType}
-                      </Badge>
-                      <Badge className={getStatusColor(client.status)}>
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getStatusColor(client.status)}`}>
                         {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
-                      </Badge>
-                      <Badge className={getPaymentStatusColor(client.paymentStatus)}>
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getPaymentStatusColor(client.paymentStatus)}`}>
                         {client.paymentStatus}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
                   
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500 mb-1">Package Progress</div>
-                    <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-left sm:text-right flex-shrink-0">
+                    <div className="text-[12px] text-[#86868b] mb-1">Package Progress</div>
+                    <div className="text-[24px] font-semibold text-[#0071e3]">
                       {client.postsUsed}/{client.packageSize}
                     </div>
-                    <Progress 
-                      value={(client.postsUsed / client.packageSize) * 100} 
-                      className="w-24 mt-2"
-                    />
+                    <div className="w-24 h-2 bg-black/5 dark:bg-white/10 rounded-full mt-2 overflow-hidden">
+                      <div 
+                        className="h-full bg-[#0071e3] rounded-full transition-all"
+                        style={{ width: `${Math.min((client.postsUsed / client.packageSize) * 100, 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <div className="text-sm text-gray-500">Posts Remaining</div>
-                    <div className="font-semibold">{client.postsRemaining}</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
+                  <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                    <div className="text-[11px] text-[#86868b] mb-0.5">Posts Remaining</div>
+                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.postsRemaining}</div>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Posted On</div>
-                    <div className="font-semibold">{client.postedOn}</div>
+                  <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                    <div className="text-[11px] text-[#86868b] mb-0.5">Posted On</div>
+                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">{client.postedOn}</div>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Start Date</div>
-                    <div className="font-semibold">{new Date(client.startDate).toLocaleDateString()}</div>
+                  <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                    <div className="text-[11px] text-[#86868b] mb-0.5">Start Date</div>
+                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{new Date(client.startDate).toLocaleDateString()}</div>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Last Contact</div>
-                    <div className="font-semibold">{new Date(client.lastContact).toLocaleDateString()}</div>
+                  <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                    <div className="text-[11px] text-[#86868b] mb-0.5">Last Contact</div>
+                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{new Date(client.lastContact).toLocaleDateString()}</div>
                   </div>
                 </div>
                 
                 {client.notes && (
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <div className="text-sm text-gray-600 mb-1">Notes:</div>
-                    <div className="text-sm">{client.notes}</div>
+                  <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                    <div className="text-[11px] text-[#86868b] mb-1">Notes:</div>
+                    <div className="text-[13px] text-[#1d1d1f] dark:text-white">{client.notes}</div>
                   </div>
                 )}
               </div>
               
               {/* Actions */}
-              <div className="flex flex-col gap-2 min-w-fit">
+              <div className="flex flex-row lg:flex-col gap-2 flex-wrap lg:flex-nowrap lg:min-w-[140px]">
                 {canManagePackages ? (
                   <>
                     {client.approvalStatus === 'Pending' && (
                       <>
-                        <Button 
-                          size="sm" 
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                        <button 
+                          className="h-9 px-3 rounded-xl bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#30d158] transition-colors flex items-center gap-1.5 disabled:opacity-50"
                           onClick={() => openApprovalModal(client, 'approve')}
                           disabled={approvalLoading[client.id]}
                         >
-                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <CheckCircle className="w-3.5 h-3.5" />
                           Approve
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="border-red-300 text-red-700 hover:bg-red-50"
+                        </button>
+                        <button 
+                          className="h-9 px-3 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                           onClick={() => openApprovalModal(client, 'reject')}
                           disabled={approvalLoading[client.id]}
                         >
-                          <XCircle className="w-4 h-4 mr-2" />
+                          <XCircle className="w-3.5 h-3.5" />
                           Reject
-                        </Button>
+                        </button>
                       </>
                     )}
                     
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    <button 
+                      className="h-9 px-3 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                       onClick={() => openEditModal(client)}
                       disabled={approvalLoading[client.id]}
                     >
-                      <Edit3 className="w-4 h-4 mr-2" />
-                      Edit Package
-                    </Button>
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
                     
-                    <Button 
-                      size="sm" 
-                      variant="outline"
+                    <button 
                       onClick={() => openFollowUpEmail(client)}
-                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
                     >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Follow Up
-                    </Button>
+                      <Mail className="w-3.5 h-3.5" />
+                      Email
+                    </button>
                     
-                    {/* Archive and Delete buttons for all clients */}
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                    <button 
+                      className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#86868b] text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                       onClick={() => archiveCompletedPackage(client)}
                       disabled={archiveLoading[client.id]}
                     >
-                      <Archive className="w-4 h-4 mr-2" />
+                      <Archive className="w-3.5 h-3.5" />
                       Archive
-                    </Button>
+                    </button>
                     
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="border-red-300 text-red-700 hover:bg-red-50"
+                    <button 
+                      className="h-9 px-3 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                       onClick={() => deleteClient(client)}
                       disabled={deleteLoading[client.id]}
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
+                      <Trash2 className="w-3.5 h-3.5" />
                       Delete
-                    </Button>
+                    </button>
                   </>
                 ) : (
-                  <div className="text-sm text-gray-500 text-center py-4">
+                  <div className="text-[13px] text-[#86868b] text-center py-4">
                     <p>View Only</p>
-                    <p className="text-xs mt-1">Contact admin for edit access</p>
+                    <p className="text-[11px] mt-1">Contact admin for edit access</p>
                   </div>
                 )}
               </div>
             </div>
-          </Card>
+          </div>
         ))}
         
         {filteredClients.length === 0 && (
-          <Card className="p-12 text-center">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No clients found</h3>
-            <p className="text-gray-600 mb-4">
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#0071e3]/10 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-[#0071e3]" />
+            </div>
+            <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">No clients found</h3>
+            <p className="text-[14px] text-[#86868b] mb-6 max-w-sm mx-auto">
               {searchTerm || statusFilter !== 'all' || packageTypeFilter !== 'all' 
                 ? 'Try adjusting your filters or search terms'
                 : 'Get started by adding your first client package'
               }
             </p>
-            <Button 
+            <button 
               onClick={handleAddClient}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={!canManagePackages}
               title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
+              className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4" />
               Add New Client
-            </Button>
-          </Card>
+            </button>
+          </div>
         )}
       </div>
       )}
 
       {/* Monthly Recurring Tab Content */}
       {activeTab === 'monthly' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Monthly Header */}
-          <Card className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Monthly Recurring Packages</h2>
-                <p className="text-gray-600">Manage ongoing monthly subscription packages</p>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Monthly Recurring Packages</h2>
+                <p className="text-[13px] text-[#86868b]">Manage ongoing monthly subscription packages</p>
                 {autoResetChecked && (
                   <div className="flex items-center gap-2 mt-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-green-600">Auto-reset checked for today</span>
+                    <div className="w-2 h-2 bg-[#34c759] rounded-full"></div>
+                    <span className="text-[12px] text-[#34c759]">Auto-reset checked for today</span>
                   </div>
                 )}
               </div>
               <div className="flex gap-2">
-                <Button 
+                <button 
                   onClick={fetchMonthlyClients}
                   disabled={monthlyLoading}
-                  variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${monthlyLoading ? 'animate-spin' : ''}`} />
-                  {monthlyLoading ? 'Refreshing...' : 'Refresh Monthly'}
-                </Button>
-                <Button 
+                  <RefreshCw className={`w-4 h-4 ${monthlyLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">{monthlyLoading ? 'Refreshing...' : 'Refresh'}</span>
+                </button>
+                <button 
                   onClick={handleAddClient}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={!canManagePackages}
                   title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
+                  className="h-9 px-3 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Monthly Client
-                </Button>
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Add Monthly</span>
+                </button>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Monthly List */}
           <div className="space-y-4">
             {monthlyLoading ? (
-              <Card className="p-12 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading monthly clients...</p>
-              </Card>
+              <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-12 text-center">
+                <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-[#86868b]">Loading monthly clients...</p>
+              </div>
             ) : monthlyClients.length === 0 ? (
-              <Card className="p-12 text-center">
-                <RefreshCw className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No monthly clients</h3>
-                <p className="text-gray-600 mb-4">
+              <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#5856d6]/10 flex items-center justify-center mx-auto mb-4">
+                  <RefreshCw className="w-8 h-8 text-[#5856d6]" />
+                </div>
+                <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">No monthly clients</h3>
+                <p className="text-[14px] text-[#86868b] mb-6 max-w-sm mx-auto">
                   Monthly recurring clients will appear here when you add them to the Monthly Recurring tab in Google Sheets.
                 </p>
-                <Button 
+                <button 
                   onClick={handleAddClient}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={!canManagePackages}
                   title={!canManagePackages ? 'You need MANAGE_CLIENT_PACKAGES permission' : ''}
+                  className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4" />
                   Add Monthly Client
-                </Button>
-              </Card>
+                </button>
+              </div>
             ) : (
               monthlyClients.map(client => (
-                <Card key={client.id} className="p-6 border-blue-200 bg-blue-50">
-                  <div className="flex flex-col lg:flex-row gap-6">
+                <div key={client.id} className="rounded-2xl bg-gradient-to-r from-[#5856d6]/5 to-transparent dark:from-[#5856d6]/10 border border-[#5856d6]/20 dark:border-[#5856d6]/30 p-4 sm:p-6 hover:shadow-lg transition-all">
+                  <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                     {/* Client Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-xl font-semibold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <h3 className="text-[17px] sm:text-[19px] font-semibold text-[#1d1d1f] dark:text-white truncate">
                               {client.clientName}
                             </h3>
-                            <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#5856d6]/10 text-[#5856d6]">
                               Monthly
-                            </Badge>
+                            </span>
                           </div>
                           {client.clientEmail && (
-                            <p className="text-sm text-gray-600 mb-2">
+                            <p className="text-[13px] text-[#86868b] mb-2 truncate">
                               📧 {client.clientEmail}
                             </p>
                           )}
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <Badge className={getPackageTypeColor(client.packageType)}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getPackageTypeColor(client.packageType)}`}>
                               {client.packageType}
-                            </Badge>
-                            <Badge className={getStatusColor(client.status)}>
+                            </span>
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getStatusColor(client.status)}`}>
                               {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
-                            </Badge>
-                            <Badge className={getPaymentStatusColor(client.paymentStatus)}>
+                            </span>
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getPaymentStatusColor(client.paymentStatus)}`}>
                               {client.paymentStatus}
-                            </Badge>
-                            <Badge className={client.autoRenew === 'TRUE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                            </span>
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${client.autoRenew === 'TRUE' ? 'bg-[#34c759]/10 text-[#34c759]' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'}`}>
                               {client.autoRenew === 'TRUE' ? 'Auto Renew' : 'Manual'}
-                            </Badge>
+                            </span>
                           </div>
                         </div>
                         
-                        <div className="text-right">
-                          <div className="text-sm text-gray-500 mb-1">Monthly Progress</div>
-                          <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <div className="text-[12px] text-[#86868b] mb-1">Monthly Progress</div>
+                          <div className="text-[24px] font-semibold text-[#5856d6]">
                             {client.postsUsed}/{client.packageSize}
                           </div>
-                          <Progress 
-                            value={(client.postsUsed / client.packageSize) * 100} 
-                            className="w-24 mt-2"
-                          />
+                          <div className="w-24 h-2 bg-black/5 dark:bg-white/10 rounded-full mt-2 overflow-hidden">
+                            <div 
+                              className="h-full bg-[#5856d6] rounded-full transition-all"
+                              style={{ width: `${Math.min((client.postsUsed / client.packageSize) * 100, 100)}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                        <div>
-                          <div className="text-sm text-gray-500">Posts Remaining</div>
-                          <div className="font-semibold">{client.postsRemaining}</div>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Posts Left</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.postsRemaining}</div>
                         </div>
-                        <div>
-                          <div className="text-sm text-gray-500">Overdue Posts</div>
-                          <div className={`font-semibold ${(client.overduePosts || 0) > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Overdue</div>
+                          <div className={`text-[15px] font-semibold ${(client.overduePosts || 0) > 0 ? 'text-[#ff3b30]' : 'text-[#1d1d1f] dark:text-white'}`}>
                             {client.overduePosts || 0}
                           </div>
                         </div>
-                        <div>
-                          <div className="text-sm text-gray-500">Monthly Price</div>
-                          <div className="font-semibold">${client.monthlyPrice || 'N/A'}</div>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Price</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">${client.monthlyPrice || 'N/A'}</div>
                         </div>
-                        <div>
-                          <div className="text-sm text-gray-500">Next Billing</div>
-                          <div className="font-semibold">
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Next Billing</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
                             {client.nextBillingDate ? new Date(client.nextBillingDate).toLocaleDateString() : 'N/A'}
                           </div>
                         </div>
-                        <div>
-                          <div className="text-sm text-gray-500">Billing Cycle</div>
-                          <div className="font-semibold">{client.billingCycle || 'Monthly'}</div>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Cycle</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.billingCycle || 'Monthly'}</div>
                         </div>
                       </div>
                       
                       {client.notes && (
-                        <div className="bg-white p-3 rounded-md border border-blue-200">
-                          <div className="text-sm text-gray-600 mb-1">Notes:</div>
-                          <div className="text-sm">{client.notes}</div>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10 border border-[#5856d6]/10">
+                          <div className="text-[11px] text-[#86868b] mb-1">Notes:</div>
+                          <div className="text-[13px] text-[#1d1d1f] dark:text-white">{client.notes}</div>
                         </div>
                       )}
                     </div>
                     
                     {/* Monthly Actions */}
-                    <div className="flex flex-col gap-2 min-w-fit">
+                    <div className="flex flex-row lg:flex-col gap-2 flex-wrap lg:flex-nowrap lg:min-w-[140px]">
                       {canManagePackages ? (
                         <>
                           {client.approvalStatus === 'Pending' && (
                             <>
-                              <Button 
-                                size="sm" 
-                                className="bg-green-600 hover:bg-green-700 text-white"
+                              <button 
+                                className="h-9 px-3 rounded-xl bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#30d158] transition-colors flex items-center gap-1.5 disabled:opacity-50"
                                 onClick={() => openApprovalModal(client, 'approve')}
                                 disabled={approvalLoading[client.id]}
                               >
-                                <CheckCircle className="w-4 h-4 mr-2" />
+                                <CheckCircle className="w-3.5 h-3.5" />
                                 Approve
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="border-red-300 text-red-700 hover:bg-red-50"
+                              </button>
+                              <button 
+                                className="h-9 px-3 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                                 onClick={() => openApprovalModal(client, 'reject')}
                                 disabled={approvalLoading[client.id]}
                               >
-                                <XCircle className="w-4 h-4 mr-2" />
+                                <XCircle className="w-3.5 h-3.5" />
                                 Reject
-                              </Button>
+                              </button>
                             </>
                           )}
                           
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                          <button 
+                            className="h-9 px-3 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[12px] font-medium hover:bg-[#5856d6]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                             onClick={() => openEditModal(client)}
                             disabled={approvalLoading[client.id]}
                           >
-                            <Edit3 className="w-4 h-4 mr-2" />
-                            Edit Package
-                          </Button>
+                            <Edit3 className="w-3.5 h-3.5" />
+                            Edit
+                          </button>
                           
-                          <Button 
-                            size="sm" 
-                            variant="outline"
+                          <button 
                             onClick={() => openFollowUpEmail(client)}
-                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                            className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
                           >
-                            <Mail className="w-4 h-4 mr-2" />
-                            Follow Up
-                          </Button>
+                            <Mail className="w-3.5 h-3.5" />
+                            Email
+                          </button>
                           
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                          <button 
+                            className="h-9 px-3 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[12px] font-medium hover:bg-[#ff9500]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                             onClick={() => handleMonthlyReset(client.id)}
                             disabled={approvalLoading[client.id]}
                           >
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                            Monthly Reset
-                          </Button>
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Reset
+                          </button>
                           
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                        onClick={() => archiveCompletedPackage(client)}
-                        disabled={archiveLoading[client.id]}
-                      >
-                        <Archive className="w-4 h-4 mr-2" />
-                        Archive
-                      </Button>
+                          <button 
+                            className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#86868b] text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                            onClick={() => archiveCompletedPackage(client)}
+                            disabled={archiveLoading[client.id]}
+                          >
+                            <Archive className="w-3.5 h-3.5" />
+                            Archive
+                          </button>
                         </>
                       ) : (
-                        <div className="text-sm text-gray-500 text-center py-4">
+                        <div className="text-[13px] text-[#86868b] text-center py-4">
                           <p>View Only</p>
-                          <p className="text-xs mt-1">Contact admin for edit access</p>
+                          <p className="text-[11px] mt-1">Contact admin for edit access</p>
                         </div>
                       )}
                     </div>
                   </div>
-                </Card>
+                </div>
               ))
             )}
           </div>
@@ -2424,147 +2436,141 @@ export default function ClientPackages() {
 
       {/* Archives Tab Content */}
       {activeTab === 'archives' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Archives Header */}
-          <Card className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Archived Client Packages</h2>
-                <p className="text-gray-600">View and manage archived client relationships</p>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Archived Client Packages</h2>
+                <p className="text-[13px] text-[#86868b]">View and manage archived client relationships</p>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={fetchArchivedClients}
-                  disabled={archivesLoading}
-                  variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${archivesLoading ? 'animate-spin' : ''}`} />
-                  {archivesLoading ? 'Refreshing...' : 'Refresh Archives'}
-                </Button>
-              </div>
+              <button 
+                onClick={fetchArchivedClients}
+                disabled={archivesLoading}
+                className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${archivesLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{archivesLoading ? 'Refreshing...' : 'Refresh'}</span>
+              </button>
             </div>
-          </Card>
+          </div>
 
           {/* Archives List */}
           <div className="space-y-4">
             {archivesLoading ? (
-              <Card className="p-12 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading archived clients...</p>
-              </Card>
+              <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-12 text-center">
+                <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-[#86868b]">Loading archived clients...</p>
+              </div>
             ) : archivedClients.length === 0 ? (
-              <Card className="p-12 text-center">
-                <Archive className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No archived clients</h3>
-                <p className="text-gray-600 mb-4">
+              <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#86868b]/10 flex items-center justify-center mx-auto mb-4">
+                  <Archive className="w-8 h-8 text-[#86868b]" />
+                </div>
+                <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">No archived clients</h3>
+                <p className="text-[14px] text-[#86868b] max-w-sm mx-auto">
                   Archived clients will appear here when you archive them from the main client list.
                 </p>
-              </Card>
+              </div>
             ) : (
               archivedClients.map(client => (
-                <Card key={client.id} className="p-6 bg-gray-50 border-gray-200">
-                  <div className="flex flex-col lg:flex-row gap-6">
+                <div key={client.id} className="rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-gray-200 dark:border-white/5 p-4 sm:p-6 hover:shadow-md transition-all">
+                  <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                     {/* Client Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-xl font-semibold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <h3 className="text-[17px] sm:text-[19px] font-semibold text-[#1d1d1f] dark:text-white truncate">
                               {client.clientName}
                             </h3>
-                            <Badge className="bg-gray-100 text-gray-700 border-gray-300">
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#86868b]/10 text-[#86868b]">
                               Archived
-                            </Badge>
+                            </span>
                           </div>
                           {client.clientEmail && (
-                            <p className="text-sm text-gray-600 mb-2">
+                            <p className="text-[13px] text-[#86868b] mb-2 truncate">
                               📧 {client.clientEmail}
                             </p>
                           )}
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <Badge className={getPackageTypeColor(client.packageType)}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getPackageTypeColor(client.packageType)}`}>
                               {client.packageType}
-                            </Badge>
-                            <Badge className={getPaymentStatusColor(client.paymentStatus)}>
+                            </span>
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getPaymentStatusColor(client.paymentStatus)}`}>
                               {client.paymentStatus}
-                            </Badge>
-                            <Badge className="bg-blue-100 text-blue-700">
+                            </span>
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#0071e3]/10 text-[#0071e3]">
                               {client.postsUsed}/{client.packageSize} Posts
-                            </Badge>
+                            </span>
                           </div>
                         </div>
                         
-                        <div className="text-right">
-                          <div className="text-sm text-gray-500 mb-1">Archive Date</div>
-                          <div className="text-sm font-semibold text-gray-700">
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <div className="text-[12px] text-[#86868b] mb-1">Archive Date</div>
+                          <div className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">
                             {client.statusChangeDate ? new Date(client.statusChangeDate).toLocaleDateString() : 'Unknown'}
                           </div>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                          <div className="text-sm text-gray-500">Posts Remaining</div>
-                          <div className="font-semibold">{client.postsRemaining}</div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Posts Left</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.postsRemaining}</div>
                         </div>
-                        <div>
-                          <div className="text-sm text-gray-500">Posted On</div>
-                          <div className="font-semibold">{client.postedOn}</div>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Posted On</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">{client.postedOn}</div>
                         </div>
-                        <div>
-                          <div className="text-sm text-gray-500">Start Date</div>
-                          <div className="font-semibold">{new Date(client.startDate).toLocaleDateString()}</div>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Start Date</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{new Date(client.startDate).toLocaleDateString()}</div>
                         </div>
-                        <div>
-                          <div className="text-sm text-gray-500">Last Contact</div>
-                          <div className="font-semibold">{client.statusChangeDate ? new Date(client.statusChangeDate).toLocaleDateString() : 'Unknown'}</div>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
+                          <div className="text-[11px] text-[#86868b] mb-0.5">Last Contact</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.statusChangeDate ? new Date(client.statusChangeDate).toLocaleDateString() : 'Unknown'}</div>
                         </div>
                       </div>
                       
                       {client.notes && (
-                        <div className="bg-white p-3 rounded-md border border-gray-200">
-                          <div className="text-sm text-gray-600 mb-1">Notes:</div>
-                          <div className="text-sm">{client.notes}</div>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10 border border-black/5 dark:border-white/5">
+                          <div className="text-[11px] text-[#86868b] mb-1">Notes:</div>
+                          <div className="text-[13px] text-[#1d1d1f] dark:text-white">{client.notes}</div>
                         </div>
                       )}
                     </div>
                     
                     {/* Archive Actions */}
-                    <div className="flex flex-col gap-2 min-w-fit">
-                      <Button 
-                        size="sm" 
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                    <div className="flex flex-row lg:flex-col gap-2 flex-wrap lg:flex-nowrap lg:min-w-[120px]">
+                      <button 
+                        className="h-9 px-3 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors flex items-center gap-1.5 disabled:opacity-50"
                         onClick={() => restoreClient(client)}
                         disabled={restoreLoading[client.id]}
                       >
-                        <RefreshCw className={`w-4 h-4 mr-2 ${restoreLoading[client.id] ? 'animate-spin' : ''}`} />
-                        {restoreLoading[client.id] ? 'Restoring...' : 'Restore'}
-                      </Button>
+                        <RefreshCw className={`w-3.5 h-3.5 ${restoreLoading[client.id] ? 'animate-spin' : ''}`} />
+                        {restoreLoading[client.id] ? 'Restoring' : 'Restore'}
+                      </button>
                       
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      <button 
+                        className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
                         onClick={() => openFollowUpEmail(client)}
                       >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Follow Up
-                      </Button>
+                        <Mail className="w-3.5 h-3.5" />
+                        Email
+                      </button>
                       
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="border-red-300 text-red-700 hover:bg-red-50"
+                      <button 
+                        className="h-9 px-3 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                         onClick={() => deleteArchivedClient(client)}
                         disabled={deleteArchivedLoading[client.id]}
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {deleteArchivedLoading[client.id] ? 'Deleting...' : 'Delete'}
-                      </Button>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        {deleteArchivedLoading[client.id] ? 'Deleting' : 'Delete'}
+                      </button>
                     </div>
                   </div>
-                </Card>
+                </div>
               ))
             )}
           </div>
@@ -2573,52 +2579,51 @@ export default function ClientPackages() {
 
       {/* Approval Modal */}
       {showApprovalModal && selectedClient && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-3">
               {selectedClient.approvalStatus === 'Pending' ? 'Approve' : 'Reject'} Package
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-[14px] text-[#86868b] mb-4">
               {selectedClient.approvalStatus === 'Pending' 
                 ? `Approve the ${selectedClient.packageType} package for ${selectedClient.clientName}?`
                 : `Reject the ${selectedClient.packageType} package for ${selectedClient.clientName}?`
               }
             </p>
             
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-5">
+              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                 Notes (optional)
               </label>
               <textarea
                 value={approvalNotes}
                 onChange={(e) => setApprovalNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-black/5 dark:bg-white/5 border-0 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
                 rows={3}
                 placeholder="Add any notes about this decision..."
               />
             </div>
             
             <div className="flex gap-3">
-              <Button
+              <button
                 onClick={() => handleApproval(selectedClient.approvalStatus === 'Pending')}
                 disabled={approvalLoading[selectedClient.id]}
-                className={`flex-1 ${
+                className={`flex-1 h-11 rounded-xl text-[14px] font-medium transition-all disabled:opacity-50 ${
                   selectedClient.approvalStatus === 'Pending' 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-red-600 hover:bg-red-700 text-white'
+                    ? 'bg-[#34c759] hover:bg-[#30d158] text-white' 
+                    : 'bg-[#ff3b30] hover:bg-[#ff453a] text-white'
                 }`}
               >
                 {approvalLoading[selectedClient.id] ? 'Processing...' : 
                   selectedClient.approvalStatus === 'Pending' ? 'Approve' : 'Reject'
                 }
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => setShowApprovalModal(false)}
-                variant="outline"
-                className="flex-1"
+                className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
-              </Button>
+              </button>
             </div>
           </div>
         </div>,
@@ -2627,303 +2632,333 @@ export default function ClientPackages() {
       
       {/* Edit Package Modal */}
       {showEditModal && editingClient && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Edit Package - {editingClient.clientName}
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
+        <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-shrink-0">
+              <div>
+                <h3 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white">
+                  Edit Client
+                </h3>
+                <p className="text-[13px] text-[#86868b] mt-0.5">{editingClient.clientName}</p>
+              </div>
+              <button
                 onClick={handleEditCancel}
-                className="text-gray-400 hover:text-gray-600"
+                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 ✕
-              </Button>
+              </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Client Email */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Client Email
-                </label>
-                <input
-                  type="email"
-                  value={editForm.clientEmail}
-                  onChange={(e) => setEditForm({...editForm, clientEmail: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter client email"
-                />
-              </div>
-
-              {/* Profile Photo */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Photo
-                </label>
-                <div className="flex items-center gap-4">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 flex-shrink-0">
-                    {editForm.profilePhoto ? (
-                      <img src={editForm.profilePhoto} alt="Client" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <Camera className="w-6 h-6" />
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              {/* CLIENT PROFILE SECTION */}
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[#0071e3]" />
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Client Profile</h4>
+                  </div>
+                  <p className="text-[11px] text-[#86868b] mt-0.5">Contact information and details</p>
+                </div>
+                
+                <div className="p-4 space-y-4">
+                  {/* Profile Photo */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex-shrink-0">
+                      {editForm.profilePhoto ? (
+                        <img src={editForm.profilePhoto} alt="Client" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#86868b]">
+                          <Camera className="w-6 h-6" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2 truncate">{editingClient.clientName}</p>
+                      <div className="flex items-center gap-2">
+                        <label className={`h-8 px-3 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium cursor-pointer hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                          <Camera className="w-3.5 h-3.5" />
+                          {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handlePhotoUpload(e.target.files[0], 'edit')}
+                          />
+                        </label>
+                        {editForm.profilePhoto && (
+                          <button
+                            onClick={() => setEditForm({...editForm, profilePhoto: ''})}
+                            className="h-8 px-3 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50 text-sm font-medium text-gray-700 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
-                      {uploadingPhoto ? 'Uploading...' : 'Choose Photo'}
+
+                  {/* Email & Brokerage Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Email Address
+                      </label>
                       <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handlePhotoUpload(e.target.files[0], 'edit')}
+                        type="email"
+                        value={editForm.clientEmail}
+                        onChange={(e) => setEditForm({...editForm, clientEmail: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        placeholder="client@email.com"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Brokerage
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.brokerage || ''}
+                        onChange={(e) => setEditForm({...editForm, brokerage: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        placeholder="e.g. RE/MAX, Sotheby's"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Platforms Managed */}
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      Platforms We Manage
                     </label>
-                    {editForm.profilePhoto && (
-                      <button
-                        onClick={() => setEditForm({...editForm, profilePhoto: ''})}
-                        className="ml-2 text-xs text-red-500 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
-                    )}
+                    <PlatformIcons
+                      platforms={editForm.platforms || {}}
+                      editable
+                      onChange={(platforms) => setEditForm({...editForm, platforms})}
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Brokerage */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Brokerage
-                </label>
-                <input
-                  type="text"
-                  value={editForm.brokerage || ''}
-                  onChange={(e) => setEditForm({...editForm, brokerage: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g. RE/MAX, Sotheby's, Compass"
-                />
-              </div>
-
-              {/* Social Media Platforms */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Platforms Managed
-                </label>
-                <PlatformIcons
-                  platforms={editForm.platforms || {}}
-                  editable
-                  onChange={(platforms) => setEditForm({...editForm, platforms})}
-                />
-              </div>
-
-              {/* Package Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Package Type *
-                </label>
-                <select
-                  value={editForm.packageType}
-                  onChange={(e) => setEditForm({...editForm, packageType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Standard">Standard</option>
-                  <option value="Silver">Silver</option>
-                  <option value="Gold">Gold</option>
-                  <option value="Platinum">Platinum</option>
-                  <option value="Seven">Seven</option>
-                  <option value="Custom">Custom</option>
-                  <option value="Monthly">Monthly</option>
-                </select>
-              </div>
-
-              {/* Package Size */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Package Size (Posts) *
-                </label>
-                <select
-                  value={editForm.packageSize}
-                  onChange={(e) => {
-                    const newSize = parseInt(e.target.value);
-                    const newRemaining = newSize - editForm.postsUsed;
-                    setEditForm({
-                      ...editForm, 
-                      packageSize: newSize,
-                      postsRemaining: Math.max(0, newRemaining)
-                    });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {[...Array(15)].map((_, i) => (
-                    <option key={i + 1} value={i + 1}>{i + 1} post{i + 1 !== 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Posts Used */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Posts Used *
-                </label>
-                <select
-                  value={editForm.postsUsed}
-                  onChange={(e) => {
-                    const newUsed = parseInt(e.target.value);
-                    const newRemaining = editForm.packageSize - newUsed;
-                    setEditForm({
-                      ...editForm, 
-                      postsUsed: newUsed,
-                      postsRemaining: Math.max(0, newRemaining)
-                    });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {[...Array(editForm.packageSize + 1)].map((_, i) => (
-                    <option key={i} value={i}>{i} post{i !== 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Posts Remaining */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Posts Remaining *
-                </label>
-                <input
-                  type="number"
-                  value={editForm.postsRemaining}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50 text-gray-600"
-                />
-                <p className="text-xs text-gray-500 mt-1">Auto-calculated</p>
-              </div>
-
-              {/* Posted On */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Posted On (Page)
-                </label>
-                <select
-                  value={editForm.postedOn}
-                  onChange={(e) => setEditForm({...editForm, postedOn: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Luxury Listings">Luxury Listings</option>
-                  <option value="Mansions">Mansions</option>
-                  <option value="Homes">Homes</option>
-                  <option value="All Pages">All Pages</option>
-                  <option value="4 Luxury Listings + 3 on Mansions">4 Luxury Listings + 3 on Mansions</option>
-                  <option value="Custom">Custom</option>
-                </select>
-              </div>
-
-              {/* Payment Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Status
-                </label>
-                <select
-                  value={editForm.paymentStatus}
-                  onChange={(e) => setEditForm({...editForm, paymentStatus: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Partial">Partial</option>
-                  <option value="Overdue">Overdue</option>
-                </select>
-              </div>
-
-              {/* Custom Price - Show for Custom and Monthly packages */}
-              {(editForm.packageType === 'Custom' || editForm.packageType === 'Monthly') && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {editForm.packageType === 'Monthly' ? 'Monthly Price (USD)' : 'Custom Price (USD)'} *
-                  </label>
-                  <input
-                    type="number"
-                    value={editForm.customPrice}
-                    onChange={(e) => setEditForm({...editForm, customPrice: parseFloat(e.target.value) || 0})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder={`Enter ${editForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`}
-                    min="0"
-                    step="0.01"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {editForm.packageType === 'Monthly' 
-                      ? 'Enter the monthly price for this package' 
-                      : 'Enter the custom price for this package'
-                    }
-                  </p>
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              {/* PACKAGE DETAILS SECTION */}
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-[#5856d6]" />
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Package Details</h4>
+                  </div>
+                  <p className="text-[11px] text-[#86868b] mt-0.5">Package type, progress, and payment</p>
                 </div>
-              )}
+                
+                <div className="p-4 space-y-4">
+                  {/* Package Type & Size Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Package Type
+                      </label>
+                      <select
+                        value={editForm.packageType}
+                        onChange={(e) => setEditForm({...editForm, packageType: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        <option value="Standard">Standard</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Platinum">Platinum</option>
+                        <option value="Seven">Seven</option>
+                        <option value="Custom">Custom</option>
+                        <option value="Monthly">Monthly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Package Size
+                      </label>
+                      <select
+                        value={editForm.packageSize}
+                        onChange={(e) => {
+                          const newSize = parseInt(e.target.value);
+                          const newRemaining = newSize - editForm.postsUsed;
+                          setEditForm({
+                            ...editForm, 
+                            packageSize: newSize,
+                            postsRemaining: Math.max(0, newRemaining)
+                          });
+                        }}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        {[...Array(15)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>{i + 1} post{i + 1 !== 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-              {/* Overdue Posts - Show for Monthly packages */}
-              {editForm.packageType === 'Monthly' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Overdue Posts
-                  </label>
-                  <input
-                    type="number"
-                    value={editForm.overduePosts || 0}
-                    onChange={(e) => setEditForm({...editForm, overduePosts: parseInt(e.target.value) || 0})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter overdue posts count"
-                    min="0"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Posts from previous months that weren't completed
+                  {/* Posts Progress */}
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[12px] font-medium text-[#86868b]">Package Progress</span>
+                      <span className="text-[14px] font-semibold text-[#0071e3]">{editForm.postsUsed}/{editForm.packageSize} posts</span>
+                    </div>
+                    <div className="w-full h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden mb-3">
+                      <div 
+                        className="h-full bg-[#0071e3] rounded-full transition-all"
+                        style={{ width: `${Math.min((editForm.postsUsed / editForm.packageSize) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] text-[#86868b] mb-1">Posts Used</label>
+                        <select
+                          value={editForm.postsUsed}
+                          onChange={(e) => {
+                            const newUsed = parseInt(e.target.value);
+                            const newRemaining = editForm.packageSize - newUsed;
+                            setEditForm({
+                              ...editForm, 
+                              postsUsed: newUsed,
+                              postsRemaining: Math.max(0, newRemaining)
+                            });
+                          }}
+                          className="w-full h-9 px-3 bg-black/5 dark:bg-white/5 border-0 rounded-lg text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        >
+                          {[...Array(editForm.packageSize + 1)].map((_, i) => (
+                            <option key={i} value={i}>{i}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-[#86868b] mb-1">Posts Remaining</label>
+                        <div className="h-9 px-3 bg-black/5 dark:bg-white/5 rounded-lg flex items-center text-[13px] text-[#1d1d1f] dark:text-white">
+                          {editForm.postsRemaining} <span className="text-[#86868b] ml-1">(auto)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Posted On & Payment Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Posted On
+                      </label>
+                      <select
+                        value={editForm.postedOn}
+                        onChange={(e) => setEditForm({...editForm, postedOn: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        <option value="Luxury Listings">Luxury Listings</option>
+                        <option value="Mansions">Mansions</option>
+                        <option value="Homes">Homes</option>
+                        <option value="All Pages">All Pages</option>
+                        <option value="4 Luxury Listings + 3 on Mansions">4 LL + 3 Mansions</option>
+                        <option value="Custom">Custom</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Payment Status
+                      </label>
+                      <select
+                        value={editForm.paymentStatus}
+                        onChange={(e) => setEditForm({...editForm, paymentStatus: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Partial">Partial</option>
+                        <option value="Overdue">Overdue</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Custom/Monthly Price */}
+                  {(editForm.packageType === 'Custom' || editForm.packageType === 'Monthly') && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                          {editForm.packageType === 'Monthly' ? 'Monthly Price' : 'Custom Price'}
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#86868b]">$</span>
+                          <input
+                            type="number"
+                            value={editForm.customPrice}
+                            onChange={(e) => setEditForm({...editForm, customPrice: parseFloat(e.target.value) || 0})}
+                            className="w-full h-10 pl-7 pr-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                      </div>
+                      {editForm.packageType === 'Monthly' && (
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                            Overdue Posts
+                          </label>
+                          <input
+                            type="number"
+                            value={editForm.overduePosts || 0}
+                            onChange={(e) => setEditForm({...editForm, overduePosts: parseInt(e.target.value) || 0})}
+                            className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      Package Notes
+                    </label>
+                    <textarea
+                      value={editForm.notes}
+                      onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent resize-none"
+                      rows={3}
+                      placeholder="Add notes about this package..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Validation Message */}
+              {editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize && (
+                <div className="p-3 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20">
+                  <p className="text-[13px] text-[#ff3b30]">
+                    ⚠️ Posts Used ({editForm.postsUsed}) + Posts Remaining ({editForm.postsRemaining}) must equal Package Size ({editForm.packageSize})
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Notes */}
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notes
-              </label>
-              <textarea
-                value={editForm.notes}
-                onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={4}
-                placeholder="Add or update notes about this client package..."
-              />
-            </div>
-
-            {/* Validation Message */}
-            {editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">
-                  ⚠️ Posts Used ({editForm.postsUsed}) + Posts Remaining ({editForm.postsRemaining}) must equal Package Size ({editForm.packageSize})
-                </p>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 mt-6">
-              <Button
-                onClick={handleEditSubmit}
-                disabled={approvalLoading[editingClient.id] || editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400"
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                {approvalLoading[editingClient.id] ? 'Updating...' : 'Update Package'}
-              </Button>
-              <Button
+            {/* Modal Footer */}
+            <div className="flex items-center gap-3 p-5 border-t border-black/5 dark:border-white/5 flex-shrink-0">
+              <button
                 onClick={handleEditCancel}
-                variant="outline"
-                className="flex-1"
+                className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
-              </Button>
+              </button>
+              <button
+                onClick={handleEditSubmit}
+                disabled={approvalLoading[editingClient.id] || editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize}
+                className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Edit3 className="w-4 h-4" />
+                {approvalLoading[editingClient.id] ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>,
@@ -2932,331 +2967,350 @@ export default function ClientPackages() {
       
       {/* Add New Client Modal */}
       {showAddModal && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Add New Client
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
+        <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-shrink-0">
+              <div>
+                <h3 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white">
+                  Add New Client
+                </h3>
+                <p className="text-[13px] text-[#86868b] mt-0.5">Create a new client and package</p>
+              </div>
+              <button
                 onClick={handleAddCancel}
-                className="text-gray-400 hover:text-gray-600"
+                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 ✕
-              </Button>
+              </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Client Name */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Client Name *
-                </label>
-                <input
-                  type="text"
-                  value={addForm.clientName}
-                  onChange={(e) => setAddForm({...addForm, clientName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter client name"
-                />
-              </div>
-
-              {/* Client Email */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Client Email *
-                </label>
-                <input
-                  type="email"
-                  value={addForm.clientEmail}
-                  onChange={(e) => setAddForm({...addForm, clientEmail: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter client email"
-                />
-              </div>
-
-              {/* Profile Photo */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Photo
-                </label>
-                <div className="flex items-center gap-4">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 flex-shrink-0">
-                    {addForm.profilePhoto ? (
-                      <img src={addForm.profilePhoto} alt="Client" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <Camera className="w-6 h-6" />
-                      </div>
-                    )}
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              {/* CLIENT PROFILE SECTION */}
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[#0071e3]" />
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Client Profile</h4>
                   </div>
-                  <div className="flex-1">
-                    <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50 text-sm font-medium text-gray-700 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
-                      {uploadingPhoto ? 'Uploading...' : 'Choose Photo'}
+                  <p className="text-[11px] text-[#86868b] mt-0.5">Basic client information</p>
+                </div>
+                
+                <div className="p-4 space-y-4">
+                  {/* Profile Photo & Name Row */}
+                  <div className="flex items-start gap-4">
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex-shrink-0">
+                      {addForm.profilePhoto ? (
+                        <img src={addForm.profilePhoto} alt="Client" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#86868b]">
+                          <Camera className="w-6 h-6" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2">
                       <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handlePhotoUpload(e.target.files[0], 'add')}
+                        type="text"
+                        value={addForm.clientName}
+                        onChange={(e) => setAddForm({...addForm, clientName: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        placeholder="Client name *"
                       />
+                      <div className="flex items-center gap-2">
+                        <label className={`h-8 px-3 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium cursor-pointer hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                          <Camera className="w-3.5 h-3.5" />
+                          {uploadingPhoto ? 'Uploading...' : 'Add Photo'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handlePhotoUpload(e.target.files[0], 'add')}
+                          />
+                        </label>
+                        {addForm.profilePhoto && (
+                          <button
+                            onClick={() => setAddForm({...addForm, profilePhoto: ''})}
+                            className="h-8 px-3 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Email & Brokerage Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        value={addForm.clientEmail}
+                        onChange={(e) => setAddForm({...addForm, clientEmail: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        placeholder="client@email.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Brokerage
+                      </label>
+                      <input
+                        type="text"
+                        value={addForm.brokerage}
+                        onChange={(e) => setAddForm({...addForm, brokerage: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        placeholder="e.g. RE/MAX, Sotheby's"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Platforms Managed */}
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      Platforms We Manage
                     </label>
-                    {addForm.profilePhoto && (
-                      <button
-                        onClick={() => setAddForm({...addForm, profilePhoto: ''})}
-                        className="ml-2 text-xs text-red-500 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
-                    )}
+                    <PlatformIcons
+                      platforms={addForm.platforms}
+                      editable
+                      onChange={(platforms) => setAddForm({...addForm, platforms})}
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Brokerage */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Brokerage
-                </label>
-                <input
-                  type="text"
-                  value={addForm.brokerage}
-                  onChange={(e) => setAddForm({...addForm, brokerage: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g. RE/MAX, Sotheby's, Compass"
-                />
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              {/* PACKAGE DETAILS SECTION */}
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-[#5856d6]" />
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Package Details</h4>
+                  </div>
+                  <p className="text-[11px] text-[#86868b] mt-0.5">Package type and configuration</p>
+                </div>
+                
+                <div className="p-4 space-y-4">
+                  {/* Package Type & Size Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Package Type
+                      </label>
+                      <select
+                        value={addForm.packageType}
+                        onChange={(e) => setAddForm({...addForm, packageType: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        <option value="Standard">Standard</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Platinum">Platinum</option>
+                        <option value="Seven">Seven</option>
+                        <option value="Custom">Custom</option>
+                        <option value="Monthly">Monthly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Package Size
+                      </label>
+                      <select
+                        value={addForm.packageSize}
+                        onChange={(e) => {
+                          const newSize = parseInt(e.target.value);
+                          setAddForm({
+                            ...addForm, 
+                            packageSize: newSize,
+                            postsRemaining: newSize - addForm.postsUsed
+                          });
+                        }}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        {[...Array(15)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>{i + 1} post{i + 1 !== 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Posts Progress */}
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[12px] font-medium text-[#86868b]">Initial Progress</span>
+                      <span className="text-[14px] font-semibold text-[#0071e3]">{addForm.postsUsed}/{addForm.packageSize} posts</span>
+                    </div>
+                    <div className="w-full h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden mb-3">
+                      <div 
+                        className="h-full bg-[#0071e3] rounded-full transition-all"
+                        style={{ width: `${Math.min((addForm.postsUsed / addForm.packageSize) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] text-[#86868b] mb-1">Posts Used</label>
+                        <select
+                          value={addForm.postsUsed}
+                          onChange={(e) => {
+                            const newUsed = parseInt(e.target.value);
+                            setAddForm({
+                              ...addForm, 
+                              postsUsed: newUsed,
+                              postsRemaining: addForm.packageSize - newUsed
+                            });
+                          }}
+                          className="w-full h-9 px-3 bg-black/5 dark:bg-white/5 border-0 rounded-lg text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        >
+                          {[...Array(addForm.packageSize + 1)].map((_, i) => (
+                            <option key={i} value={i}>{i}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-[#86868b] mb-1">Posts Remaining</label>
+                        <div className="h-9 px-3 bg-black/5 dark:bg-white/5 rounded-lg flex items-center text-[13px] text-[#1d1d1f] dark:text-white">
+                          {addForm.postsRemaining} <span className="text-[#86868b] ml-1">(auto)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Posted On & Payment Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Posted On
+                      </label>
+                      <select
+                        value={addForm.postedOn}
+                        onChange={(e) => setAddForm({...addForm, postedOn: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        <option value="Luxury Listings">Luxury Listings</option>
+                        <option value="Mansions">Mansions</option>
+                        <option value="Homes">Homes</option>
+                        <option value="All Pages">All Pages</option>
+                        <option value="4 Luxury Listings + 3 on Mansions">4 LL + 3 Mansions</option>
+                        <option value="Custom">Custom</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Payment Status
+                      </label>
+                      <select
+                        value={addForm.paymentStatus}
+                        onChange={(e) => setAddForm({...addForm, paymentStatus: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Partial">Partial</option>
+                        <option value="Overdue">Overdue</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Approval & Start Date Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Approval Status
+                      </label>
+                      <select
+                        value={addForm.approvalStatus}
+                        onChange={(e) => setAddForm({...addForm, approvalStatus: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={addForm.startDate}
+                        onChange={(e) => setAddForm({...addForm, startDate: e.target.value})}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Custom/Monthly Price */}
+                  {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        {addForm.packageType === 'Monthly' ? 'Monthly Price' : 'Custom Price'} *
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#86868b]">$</span>
+                        <input
+                          type="number"
+                          value={addForm.customPrice || ''}
+                          onChange={(e) => setAddForm({...addForm, customPrice: parseFloat(e.target.value) || 0})}
+                          className="w-full h-10 pl-7 pr-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      Notes
+                    </label>
+                    <textarea
+                      value={addForm.notes}
+                      onChange={(e) => setAddForm({...addForm, notes: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent resize-none"
+                      rows={3}
+                      placeholder="Add notes about this client..."
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Social Media Platforms */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Platforms Managed
-                </label>
-                <PlatformIcons
-                  platforms={addForm.platforms}
-                  editable
-                  onChange={(platforms) => setAddForm({...addForm, platforms})}
-                />
-              </div>
-
-              {/* Package Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Package Type *
-                </label>
-                <select
-                  value={addForm.packageType}
-                  onChange={(e) => setAddForm({...addForm, packageType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Standard">Standard</option>
-                  <option value="Silver">Silver</option>
-                  <option value="Gold">Gold</option>
-                  <option value="Platinum">Platinum</option>
-                  <option value="Seven">Seven</option>
-                  <option value="Custom">Custom</option>
-                  <option value="Monthly">Monthly</option>
-                </select>
-              </div>
-
-              {/* Package Size */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Package Size (Posts) *
-                </label>
-                <select
-                  value={addForm.packageSize}
-                  onChange={(e) => {
-                    const newSize = parseInt(e.target.value);
-                    setAddForm({
-                      ...addForm, 
-                      packageSize: newSize,
-                      postsRemaining: newSize - addForm.postsUsed
-                    });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {[...Array(15)].map((_, i) => (
-                    <option key={i + 1} value={i + 1}>{i + 1} post{i + 1 !== 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Posts Used */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Posts Used *
-                </label>
-                <select
-                  value={addForm.postsUsed}
-                  onChange={(e) => {
-                    const newUsed = parseInt(e.target.value);
-                    setAddForm({
-                      ...addForm, 
-                      postsUsed: newUsed,
-                      postsRemaining: addForm.packageSize - newUsed
-                    });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {[...Array(addForm.packageSize + 1)].map((_, i) => (
-                    <option key={i} value={i}>{i} post{i !== 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Posts Remaining */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Posts Remaining *
-                </label>
-                <input
-                  type="number"
-                  value={addForm.postsRemaining}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50 text-gray-600"
-                />
-                <p className="text-xs text-gray-500 mt-1">Auto-calculated</p>
-              </div>
-
-              {/* Posted On */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Posted On (Page)
-                </label>
-                <select
-                  value={addForm.postedOn}
-                  onChange={(e) => setAddForm({...addForm, postedOn: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Luxury Listings">Luxury Listings</option>
-                  <option value="Mansions">Mansions</option>
-                  <option value="Homes">Homes</option>
-                  <option value="All Pages">All Pages</option>
-                  <option value="4 Luxury Listings + 3 on Mansions">4 Luxury Listings + 3 on Mansions</option>
-                  <option value="Custom">Custom</option>
-                </select>
-              </div>
-
-              {/* Payment Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Status
-                </label>
-                <select
-                  value={addForm.paymentStatus}
-                  onChange={(e) => setAddForm({...addForm, paymentStatus: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Partial">Partial</option>
-                  <option value="Overdue">Overdue</option>
-                </select>
-              </div>
-
-              {/* Approval Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Approval Status
-                </label>
-                <select
-                  value={addForm.approvalStatus}
-                  onChange={(e) => setAddForm({...addForm, approvalStatus: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-              </div>
-
-              {/* Start Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={addForm.startDate}
-                  onChange={(e) => setAddForm({...addForm, startDate: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Last Contact */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Contact
-                </label>
-                <input
-                  type="date"
-                  value={addForm.lastContact}
-                  onChange={(e) => setAddForm({...addForm, lastContact: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              {/* Validation Messages */}
+              {addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize && (
+                <div className="p-3 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20">
+                  <p className="text-[13px] text-[#ff3b30]">
+                    ⚠️ Posts Used ({addForm.postsUsed}) + Posts Remaining ({addForm.postsRemaining}) must equal Package Size ({addForm.packageSize})
+                  </p>
+                </div>
+              )}
+              
+              {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0) && (
+                <div className="p-3 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20">
+                  <p className="text-[13px] text-[#ff3b30]">
+                    ⚠️ Please enter a valid {addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Custom Price - Show for Custom and Monthly packages */}
-            {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {addForm.packageType === 'Monthly' ? 'Monthly Price (USD)' : 'Custom Price (USD)'} *
-                </label>
-                <input
-                  type="number"
-                  value={addForm.customPrice || ''}
-                  onChange={(e) => setAddForm({...addForm, customPrice: parseFloat(e.target.value) || 0})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={`Enter ${addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`}
-                  min="0"
-                  step="0.01"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {addForm.packageType === 'Monthly' 
-                    ? 'Enter the monthly price for this package' 
-                    : 'Enter the custom price for this package'
-                  }
-                </p>
-              </div>
-            )}
-
-            {/* Notes */}
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notes
-              </label>
-              <textarea
-                value={addForm.notes}
-                onChange={(e) => setAddForm({...addForm, notes: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={4}
-                placeholder="Add notes about this client..."
-              />
-            </div>
-
-            {/* Validation Messages */}
-            {addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">
-                  ⚠️ Posts Used ({addForm.postsUsed}) + Posts Remaining ({addForm.postsRemaining}) must equal Package Size ({addForm.packageSize})
-                </p>
-              </div>
-            )}
-            
-            {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0) && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">
-                  ⚠️ Please enter a valid {addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price
-                </p>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 mt-6">
-              <Button
+            {/* Modal Footer */}
+            <div className="flex items-center gap-3 p-5 border-t border-black/5 dark:border-white/5 flex-shrink-0">
+              <button
+                onClick={handleAddCancel}
+                className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
                 onClick={handleAddSubmit}
                 disabled={
                   approvalLoading['new'] || 
@@ -3264,18 +3318,11 @@ export default function ClientPackages() {
                   !addForm.clientName.trim() ||
                   ((addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0))
                 }
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400"
+                className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" />
                 {approvalLoading['new'] ? 'Adding...' : 'Add Client'}
-              </Button>
-              <Button
-                onClick={handleAddCancel}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
+              </button>
             </div>
           </div>
         </div>,
@@ -3284,16 +3331,16 @@ export default function ClientPackages() {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 backdrop-blur-xl ${
           toast.type === 'success' 
-            ? 'bg-green-500 text-white' 
+            ? 'bg-[#34c759] text-white' 
             : toast.type === 'error' 
-            ? 'bg-red-500 text-white' 
-            : 'bg-blue-500 text-white'
+            ? 'bg-[#ff3b30] text-white' 
+            : 'bg-[#0071e3] text-white'
         }`}>
           <div className="flex items-center gap-2">
-            <span className="text-lg">{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
-            <span className="font-medium">{toast.message}</span>
+            <span className="text-base">{toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}</span>
+            <span className="text-[14px] font-medium">{toast.message}</span>
           </div>
         </div>
       )}
