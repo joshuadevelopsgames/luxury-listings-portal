@@ -359,7 +359,14 @@ const HRCalendar = () => {
         } catch (calError) {
           console.warn('⚠️ Failed to sync to Google Calendar:', calError);
           toast.dismiss('approve-request');
-          toast.success('Leave approved (calendar sync failed)');
+          
+          // Check if it's an auth issue
+          if (calError.message?.includes('expired') || calError.message?.includes('reconnect')) {
+            setIsGoogleConnected(false);
+            toast.success('Leave approved! (Calendar session expired - please reconnect)');
+          } else {
+            toast.success('Leave approved (calendar sync failed)');
+          }
         }
       } else {
         toast.dismiss('approve-request');
@@ -502,16 +509,28 @@ const HRCalendar = () => {
       
       setIsLoadingGoogle(true);
       
-      // Try to initialize with existing token
+      // Check if already connected
       const status = googleCalendarService.getConnectionStatus();
+      if (status.isConnected) {
+        setIsGoogleConnected(true);
+        await loadGoogleCalendarEvents();
+        return;
+      }
       
-      if (status.hasStoredToken) {
-        const isConnected = await googleCalendarService.initialize(currentUser.email);
-        setIsGoogleConnected(isConnected);
+      // Try to auto-reconnect with stored token (no popup)
+      if (status.hasStoredToken || googleCalendarService.hasStoredSession(currentUser.email)) {
+        console.log('🔄 Attempting auto-reconnect to Google Calendar...');
+        const reconnected = await googleCalendarService.tryAutoReconnect(currentUser.email);
+        setIsGoogleConnected(reconnected);
         
-        if (isConnected) {
+        if (reconnected) {
+          console.log('✅ Auto-reconnected to Google Calendar');
           await loadGoogleCalendarEvents();
+        } else {
+          console.log('⚠️ Auto-reconnect failed, user needs to re-authorize');
         }
+      } else {
+        setIsGoogleConnected(false);
       }
     } catch (error) {
       console.error('Error checking Google Calendar connection:', error);

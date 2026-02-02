@@ -508,8 +508,33 @@ class GoogleCalendarService {
 
   // Create leave request event in Google Calendar
   async createLeaveEvent(leaveRequest) {
+    // Try to ensure we have a valid connection
     if (!this.isInitialized || !this.accessToken) {
-      throw new Error('Google Calendar not connected. Please authorize first.');
+      // Try to initialize with stored token
+      if (this.currentUserEmail) {
+        const storedToken = this.getStoredToken(this.currentUserEmail);
+        if (storedToken) {
+          console.log('🔄 Attempting to restore calendar connection...');
+          try {
+            await this.initialize(this.currentUserEmail);
+          } catch (initError) {
+            console.error('❌ Failed to restore connection:', initError);
+            throw new Error('Google Calendar session expired. Please reconnect your calendar.');
+          }
+        } else {
+          throw new Error('Google Calendar not connected. Please connect your calendar first.');
+        }
+      } else {
+        throw new Error('Google Calendar not connected. Please authorize first.');
+      }
+    }
+    
+    // Verify token is still valid
+    const storedToken = this.getStoredToken(this.currentUserEmail);
+    if (!storedToken) {
+      this.isInitialized = false;
+      this.accessToken = null;
+      throw new Error('Google Calendar session expired. Please reconnect your calendar.');
     }
 
     const startDate = new Date(leaveRequest.startDate);
@@ -536,6 +561,13 @@ class GoogleCalendarService {
     };
 
     try {
+      // Ensure gapi client has the token set
+      if (window.gapi?.client) {
+        window.gapi.client.setToken({
+          access_token: this.accessToken
+        });
+      }
+      
       const response = await window.gapi.client.calendar.events.insert({
         calendarId: 'primary',
         resource: event,
@@ -545,6 +577,15 @@ class GoogleCalendarService {
       return response.result;
     } catch (error) {
       console.error('❌ Failed to create leave event:', error);
+      
+      // Check if it's an auth error
+      if (error.status === 401 || error.status === 403) {
+        this.isInitialized = false;
+        this.accessToken = null;
+        this.clearStoredToken(this.currentUserEmail);
+        throw new Error('Google Calendar authorization expired. Please reconnect your calendar.');
+      }
+      
       throw error;
     }
   }
@@ -568,6 +609,67 @@ class GoogleCalendarService {
       userEmail: this.currentUserEmail,
       hasStoredToken: !!this.getStoredToken(this.currentUserEmail),
     };
+  }
+
+  // Try to silently reconnect using stored token (no popup)
+  async tryAutoReconnect(userEmail) {
+    if (!userEmail) {
+      console.log('🔍 No user email for auto-reconnect');
+      return false;
+    }
+
+    const storedToken = this.getStoredToken(userEmail);
+    if (!storedToken) {
+      console.log('🔍 No stored token for auto-reconnect');
+      return false;
+    }
+
+    console.log('🔄 Attempting auto-reconnect for:', userEmail);
+    
+    try {
+      this.currentUserEmail = userEmail;
+      this.accessToken = storedToken;
+      
+      // Load Google API libraries
+      await Promise.all([
+        this.loadGoogleIdentityServices(),
+        this.loadGoogleAPI()
+      ]);
+      
+      // Initialize gapi client
+      await window.gapi.client.init({
+        apiKey: this.apiKey,
+        discoveryDocs: this.discoveryDocs,
+      });
+      
+      // Set the token
+      window.gapi.client.setToken({
+        access_token: storedToken
+      });
+      
+      // Test the connection by making a simple API call
+      try {
+        await window.gapi.client.calendar.calendarList.list({ maxResults: 1 });
+        this.isInitialized = true;
+        console.log('✅ Auto-reconnect successful!');
+        return true;
+      } catch (testError) {
+        // Token is invalid/expired
+        console.log('⚠️ Stored token is invalid, clearing...');
+        this.clearStoredToken(userEmail);
+        this.accessToken = null;
+        this.isInitialized = false;
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Auto-reconnect failed:', error);
+      return false;
+    }
+  }
+
+  // Check if we have a potentially valid stored session
+  hasStoredSession(userEmail) {
+    return !!this.getStoredToken(userEmail);
   }
 
   // Store token in localStorage with expiry
