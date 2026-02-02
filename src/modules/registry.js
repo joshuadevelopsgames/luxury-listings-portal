@@ -219,6 +219,22 @@ export const modules = {
 };
 
 // ============================================================================
+// WIDGET SIZES (Apple-style: small 1x1, medium 2x1, large 2x2)
+// ============================================================================
+
+export const WIDGET_DEFAULT_SIZES = {
+  timeOffSummary: 'medium',   // 2x1
+  clientOverview: 'small',    // 1x1
+  deliverablesDue: 'small',   // 1x1
+  recentReports: 'medium',   // 2x1
+  tasksSummary: 'small',     // 1x1
+};
+
+export function getWidgetDefaultSize(widgetId) {
+  return WIDGET_DEFAULT_SIZES[widgetId] || 'small';
+}
+
+// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
@@ -251,7 +267,7 @@ export function getModule(moduleId) {
 }
 
 /**
- * Get all widgets for enabled modules
+ * Get all widgets for enabled modules (with default size: small | medium | large)
  */
 export function getWidgetsForModules(enabledModuleIds) {
   const widgets = [];
@@ -261,7 +277,8 @@ export function getWidgetsForModules(enabledModuleIds) {
       widgets.push(...module.widgets.map(widgetId => ({
         widgetId,
         moduleId,
-        moduleName: module.name
+        moduleName: module.name,
+        size: getWidgetDefaultSize(widgetId)
       })));
     }
   }

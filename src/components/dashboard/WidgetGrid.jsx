@@ -9,7 +9,6 @@ import React, { Suspense, lazy, useMemo } from 'react';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
 import { getWidgetsForModules } from '../../modules/registry';
 
 // Lazy load widget components
@@ -61,27 +60,33 @@ class WidgetErrorBoundary extends React.Component {
   }
 }
 
-function SortableWidgetCell({ widgetId, moduleId, isEditMode, children }) {
+// Apple-style grid spans: small 1x1, medium 2x1, large 2x2
+function getGridSpanClasses(size) {
+  switch (size) {
+    case 'large':
+      return 'col-span-2 row-span-2';
+    case 'medium':
+      return 'col-span-2 row-span-1';
+    default:
+      return 'col-span-1 row-span-1';
+  }
+}
+
+function SortableWidgetCell({ widgetId, moduleId, size, isEditMode, children }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: widgetId });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
   return (
-    <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-50 z-10' : ''}>
-      <div className="relative">
-        {isEditMode && (
-          <div
-            className="absolute left-2 top-2 z-20 w-8 h-8 rounded-lg bg-black/10 dark:bg-white/10 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
-            {...listeners}
-            {...attributes}
-          >
-            <GripVertical className="w-4 h-4 text-[#86868b]" />
-          </div>
-        )}
-        <div className={isEditMode ? 'pl-10' : ''}>
-          {children}
-        </div>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${getGridSpanClasses(size)} min-h-[200px] ${isDragging ? 'opacity-60 z-10 scale-[0.98]' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+      {...(isEditMode ? { ...attributes, ...listeners } : {})}
+    >
+      <div className="h-full min-h-[200px]">
+        {children}
       </div>
     </div>
   );
@@ -129,8 +134,8 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
   };
 
   const gridContent = (
-    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${className}`}>
-      {widgets.map(({ widgetId, moduleId }) => {
+    <div className={`grid grid-cols-2 md:grid-cols-4 grid-auto-rows-[minmax(200px,auto)] gap-6 ${className}`}>
+      {widgets.map(({ widgetId, moduleId, size }) => {
         const WidgetComponent = widgetComponents[widgetId];
         if (!WidgetComponent) return null;
         const cell = (
@@ -140,12 +145,13 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
             </Suspense>
           </WidgetErrorBoundary>
         );
+        const spanClasses = getGridSpanClasses(size);
         return isEditMode ? (
-          <SortableWidgetCell key={widgetId} widgetId={widgetId} moduleId={moduleId} isEditMode={isEditMode}>
+          <SortableWidgetCell key={widgetId} widgetId={widgetId} moduleId={moduleId} size={size} isEditMode={isEditMode}>
             {cell}
           </SortableWidgetCell>
         ) : (
-          <div key={widgetId}>{cell}</div>
+          <div key={widgetId} className={`${spanClasses} min-h-[200px]`}>{cell}</div>
         );
       })}
     </div>

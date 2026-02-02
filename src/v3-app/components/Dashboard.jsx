@@ -33,7 +33,6 @@ import {
   Bell,
   MessageSquare,
   Zap,
-  GripVertical,
 } from 'lucide-react';
 import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWithinInterval, startOfDay, endOfDay, addWeeks } from 'date-fns';
 
@@ -59,22 +58,10 @@ function SortableMainBlock({ id, span, isEditMode, renderBlock }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`${span === 2 ? 'lg:col-span-2' : ''} ${isDragging ? 'opacity-50 z-10' : ''}`}
+      className={`${span === 2 ? 'lg:col-span-2' : ''} ${isDragging ? 'opacity-60 z-10 scale-[0.98]' : ''} ${isEditMode ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+      {...(isEditMode ? { ...attributes, ...listeners } : {})}
     >
-      <div className="relative">
-        {isEditMode && (
-          <div
-            className="absolute left-2 top-2 z-20 w-8 h-8 rounded-lg bg-black/10 dark:bg-white/10 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
-            {...listeners}
-            {...attributes}
-          >
-            <GripVertical className="w-4 h-4 text-[#86868b]" />
-          </div>
-        )}
-        <div className={isEditMode ? 'pl-10' : ''}>
-          {renderBlock(id)}
-        </div>
-      </div>
+      {renderBlock(id)}
     </div>
   );
 }
@@ -163,13 +150,11 @@ const V3Dashboard = () => {
     }
     let cancelled = false;
     firestoreService.getDashboardPreferences(currentUser.uid).then((prefs) => {
-      if (cancelled || !prefs) {
-        setPrefsLoaded(true);
-        return;
-      }
+      if (cancelled) return;
+      setPrefsLoaded(true);
+      if (!prefs) return;
       if (prefs.mainContentOrder?.length) setMainContentOrder(prefs.mainContentOrder);
       if (prefs.widgetOrder?.length) setWidgetOrder(prefs.widgetOrder);
-      setPrefsLoaded(true);
     });
     return () => { cancelled = true; };
   }, [currentUser?.uid, isViewingAs]);
@@ -203,7 +188,7 @@ const V3Dashboard = () => {
     setWidgetOrder(null);
     if (currentUser?.uid && !isViewingAs) {
       firestoreService.setDashboardPreferences(currentUser.uid, {
-        mainContentOrder: DEFAULT_MAIN_CONTENT_BLOCK_ORDER,
+        mainContentOrder: null,
         widgetOrder: null
       }).catch(console.error);
     }
