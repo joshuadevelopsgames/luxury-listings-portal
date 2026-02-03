@@ -3398,6 +3398,19 @@ class FirestoreService {
         createdAt: serverTimestamp()
       };
 
+      // Add bug-specific fields
+      if (feedbackData.type === 'bug') {
+        if (feedbackData.consoleLogs) {
+          feedback.consoleLogs = feedbackData.consoleLogs;
+        }
+        if (feedbackData.selectedElement) {
+          feedback.selectedElement = feedbackData.selectedElement;
+        }
+        if (feedbackData.userInfo) {
+          feedback.userInfo = feedbackData.userInfo;
+        }
+      }
+
       const docRef = await addDoc(collection(db, this.collections.FEEDBACK), feedback);
       console.log('✅ Feedback created:', docRef.id);
 
