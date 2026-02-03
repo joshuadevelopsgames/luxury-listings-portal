@@ -363,10 +363,10 @@ const GraphicProjectTracker = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-[28px] sm:text-[34px] font-bold text-[#1d1d1f] dark:text-white tracking-tight">
-              Project Tracker
+              Team Projects
             </h1>
             <p className="text-[15px] text-[#86868b] mt-1">
-              Graphic Design Team
+              Design Team
             </p>
           </div>
           {/* Admin Import Button */}

@@ -233,14 +233,14 @@ export const modules = {
 
   'graphic-projects': {
     id: 'graphic-projects',
-    name: 'Project Tracker',
+    name: 'Team Projects',
     description: 'Track graphic design projects and hours',
     icon: Palette,
     routes: ['/graphic-projects'],
     widgets: [],
     navItem: {
       path: '/graphic-projects',
-      section: 'Content Team'
+      section: 'Design Team'
     },
     baseModule: false
   }
