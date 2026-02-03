@@ -4,6 +4,7 @@ export const USER_ROLES = {
   DIRECTOR: 'director',
   CONTENT_DIRECTOR: 'content_director',
   SOCIAL_MEDIA_MANAGER: 'social_media_manager',
+  GRAPHIC_DESIGNER: 'graphic_designer',
   HR_MANAGER: 'hr_manager',
   SALES_MANAGER: 'sales_manager',
   PENDING: 'pending'
@@ -162,6 +163,41 @@ export const ROLE_PERMISSIONS = {
     icon: '📱'
   },
   
+  [USER_ROLES.GRAPHIC_DESIGNER]: {
+    name: 'Graphic Designer',
+    displayName: 'Graphic Designer',
+    description: 'Creates visual content and graphics for social media and marketing',
+    permissions: {
+      canViewDashboard: true,
+      canManageTutorials: false,
+      canCreateTutorials: false,
+      canEditTutorials: false,
+      canDeleteTutorials: false,
+      canViewTasks: true,
+      canCreateTasks: false,
+      canAssignTasks: false,
+      canViewAllTasks: false,
+      canManageClientPackages: false,
+      canViewResources: true,
+      canUploadResources: true,
+      canViewAnalytics: false,
+      canManageTeam: false,
+      canViewHRData: false,
+      canManageHRData: false,
+      canViewSocialMetrics: true,
+      canManageSocialContent: true
+    },
+    features: [
+      'Graphic Design',
+      'Visual Content Creation',
+      'Resource Library',
+      'Social Media Assets',
+      'Brand Assets'
+    ],
+    color: 'pink',
+    icon: '🎨'
+  },
+  
   [USER_ROLES.HR_MANAGER]: {
     name: 'HR Manager',
     displayName: 'HR Manager',
@@ -311,6 +347,13 @@ export const DEFAULT_USER_BY_ROLE = {
   [USER_ROLES.SOCIAL_MEDIA_MANAGER]: {
     role: USER_ROLES.SOCIAL_MEDIA_MANAGER,
     department: 'Social Media',
+    bio: '',
+    skills: [],
+    stats: {}
+  },
+  [USER_ROLES.GRAPHIC_DESIGNER]: {
+    role: USER_ROLES.GRAPHIC_DESIGNER,
+    department: 'Design',
     bio: '',
     skills: [],
     stats: {}

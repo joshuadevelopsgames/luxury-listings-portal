@@ -302,6 +302,7 @@ const PermissionsManager = () => {
       'director': 'Director',
       'content_director': 'Content Director',
       'social_media_manager': 'Social Media Manager',
+      'graphic_designer': 'Graphic Designer',
       'hr_manager': 'HR Manager',
       'sales_manager': 'Sales Manager'
     };
@@ -583,6 +584,7 @@ const PermissionsManager = () => {
                                 <option value="director">Director</option>
                                 <option value="content_director">Content Director</option>
                                 <option value="social_media_manager">Social Media Manager</option>
+                                <option value="graphic_designer">Graphic Designer</option>
                                 <option value="hr_manager">HR Manager</option>
                                 <option value="sales_manager">Sales Manager</option>
                               </select>
@@ -854,6 +856,7 @@ const PermissionsManager = () => {
                     <option value="director">Director</option>
                     <option value="content_director">Content Director</option>
                     <option value="social_media_manager">Social Media Manager</option>
+                    <option value="graphic_designer">Graphic Designer</option>
                     <option value="hr_manager">HR Manager</option>
                     <option value="sales_manager">Sales Manager</option>
                   </select>
