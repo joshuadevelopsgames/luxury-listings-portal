@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useViewAs } from '../../../contexts/ViewAsContext';
@@ -28,7 +29,15 @@ import {
   Mail,
   Phone,
   Calendar,
-  FileText
+  FileText,
+  X,
+  ExternalLink,
+  Building2,
+  CreditCard,
+  Instagram,
+  Globe,
+  MapPin,
+  DollarSign
 } from 'lucide-react';
 
 const MyClientsPage = () => {
@@ -40,6 +49,7 @@ const MyClientsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedClient, setSelectedClient] = useState(null);
+  const [detailClient, setDetailClient] = useState(null); // For detail modal
 
   // Get the effective user (viewed-as user or current user)
   const effectiveUser = getEffectiveUser(currentUser);
@@ -326,7 +336,7 @@ const MyClientsPage = () => {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/clients?client=${client.id}`);
+                          setDetailClient(client);
                         }}
                         className="flex-1 px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
                       >
@@ -345,6 +355,181 @@ const MyClientsPage = () => {
             );
           })}
         </div>
+      )}
+
+      {/* Client Detail Modal */}
+      {detailClient && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setDetailClient(null)}
+        >
+          <div 
+            className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between bg-gradient-to-r from-[#0071e3] to-[#5856d6]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center">
+                  {detailClient.logo ? (
+                    <img src={detailClient.logo} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Building2 className="w-5 h-5 text-white" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    {detailClient.clientName || 'Unnamed Client'}
+                  </h2>
+                  <p className="text-sm text-white/70">Client Details</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDetailClient(null)}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)] space-y-6">
+              {/* Contact Info */}
+              <div>
+                <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3">Contact Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {detailClient.clientEmail && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5">
+                      <Mail className="w-4 h-4 text-[#0071e3]" />
+                      <div>
+                        <p className="text-[11px] text-[#86868b]">Email</p>
+                        <a href={`mailto:${detailClient.clientEmail}`} className="text-[13px] text-[#1d1d1f] dark:text-white hover:text-[#0071e3]">
+                          {detailClient.clientEmail}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  {detailClient.phone && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5">
+                      <Phone className="w-4 h-4 text-[#34c759]" />
+                      <div>
+                        <p className="text-[11px] text-[#86868b]">Phone</p>
+                        <a href={`tel:${detailClient.phone}`} className="text-[13px] text-[#1d1d1f] dark:text-white hover:text-[#0071e3]">
+                          {detailClient.phone}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  {detailClient.website && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5">
+                      <Globe className="w-4 h-4 text-[#5856d6]" />
+                      <div>
+                        <p className="text-[11px] text-[#86868b]">Website</p>
+                        <a href={detailClient.website} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#0071e3] hover:underline flex items-center gap-1">
+                          {detailClient.website.replace(/^https?:\/\//, '')}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  {detailClient.instagramHandle && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5">
+                      <Instagram className="w-4 h-4 text-[#E1306C]" />
+                      <div>
+                        <p className="text-[11px] text-[#86868b]">Instagram</p>
+                        <a href={`https://instagram.com/${detailClient.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#E1306C] hover:underline flex items-center gap-1">
+                          @{detailClient.instagramHandle}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Package Info */}
+              <div>
+                <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3">Package Information</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-xl bg-[#0071e3]/5">
+                    <p className="text-[11px] text-[#86868b] mb-1">Package Type</p>
+                    <p className="text-[15px] font-semibold text-[#0071e3]">{detailClient.packageType || '—'}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#34c759]/5">
+                    <p className="text-[11px] text-[#86868b] mb-1">Package Size</p>
+                    <p className="text-[15px] font-semibold text-[#34c759]">{detailClient.packageSize || 0} posts</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#ff9500]/5">
+                    <p className="text-[11px] text-[#86868b] mb-1">Posts Remaining</p>
+                    <p className="text-[15px] font-semibold text-[#ff9500]">{detailClient.postsRemaining ?? detailClient.packageSize ?? 0}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#5856d6]/5">
+                    <p className="text-[11px] text-[#86868b] mb-1">Payment Status</p>
+                    <p className={`text-[15px] font-semibold ${
+                      detailClient.paymentStatus === 'Paid' ? 'text-[#34c759]' : 
+                      detailClient.paymentStatus === 'Pending' ? 'text-[#ff9500]' : 'text-[#86868b]'
+                    }`}>
+                      {detailClient.paymentStatus || '—'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Platforms */}
+              {detailClient.platforms && Object.values(detailClient.platforms).some(v => v) && (
+                <div>
+                  <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3">Active Platforms</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <PlatformIcons platforms={detailClient.platforms} size="md" showLabels />
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {detailClient.notes && (
+                <div>
+                  <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3">Notes</h3>
+                  <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/5">
+                    <p className="text-[13px] text-[#1d1d1f] dark:text-white whitespace-pre-wrap">{detailClient.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                {detailClient.clientEmail && (
+                  <a
+                    href={`mailto:${detailClient.clientEmail}`}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Send Email
+                  </a>
+                )}
+                {detailClient.phone && (
+                  <a
+                    href={`tel:${detailClient.phone}`}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#30d158] transition-colors"
+                  >
+                    <Phone className="w-4 h-4" />
+                    Call
+                  </a>
+                )}
+                <button
+                  onClick={() => {
+                    navigate(`/instagram-reports`);
+                    setDetailClient(null);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#833AB4] to-[#E1306C] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+                >
+                  <Instagram className="w-4 h-4" />
+                  View Analytics
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
