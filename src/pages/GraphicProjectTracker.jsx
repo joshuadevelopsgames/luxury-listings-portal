@@ -370,14 +370,14 @@ const GraphicProjectTracker = () => {
             </p>
           </div>
           {/* Admin Import Button */}
-          {isSystemAdmin && projects.length === 0 && (
+          {isSystemAdmin && (
             <button
               onClick={handleImportFromExcel}
               disabled={importing}
               className="h-11 px-5 rounded-xl bg-[#ff9500] text-white text-[14px] font-medium shadow-lg shadow-[#ff9500]/25 hover:bg-[#ff9f0a] transition-all flex items-center gap-2 disabled:opacity-50"
             >
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              {importing ? 'Importing...' : 'Import Excel'}
+              {importing ? 'Importing...' : `Import ${importData.length} Projects`}
             </button>
           )}
           <button
