@@ -103,11 +103,14 @@ const ClientProfilesList = () => {
       ]);
       
       setClients(clientsData || []);
-      // Filter to only social media managers
-      const smManagers = (employeesData || []).filter(emp => 
-        emp.role === 'social_media_manager' || emp.roles?.includes('social_media_manager')
-      );
-      setEmployees(smManagers);
+      // Filter to social media managers + specific allowed users (Michelle, Matthew)
+      const allowedManagers = (employeesData || []).filter(emp => {
+        const name = (emp.displayName || emp.firstName || '').toLowerCase();
+        const isSMM = emp.role === 'social_media_manager' || emp.roles?.includes('social_media_manager');
+        const isAllowedUser = name.includes('michelle') || name.includes('matthew');
+        return isSMM || isAllowedUser;
+      });
+      setEmployees(allowedManagers);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
