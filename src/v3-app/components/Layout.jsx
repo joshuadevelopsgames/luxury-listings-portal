@@ -175,27 +175,25 @@ const V3Layout = () => {
 
   // Navigation sections based on role/permissions - properly categorized
   const getNavSections = () => {
-    // Get base module IDs that all users should have access to
-    const baseModules = getBaseModuleIds();
-    
     // Determine which modules the user has access to
+    // Base modules can now be disabled per-user, so we rely on explicit permissions
     let enabledModules = [];
     
     if (isViewingAs && viewAsPermissions.length > 0) {
-      // When viewing as, combine base modules with viewed user's permissions
-      enabledModules = [...new Set([...baseModules, ...viewAsPermissions])];
+      // When viewing as, use viewed user's explicit permissions
+      enabledModules = [...viewAsPermissions];
     } else if (isViewingAs) {
-      // Viewing as but no specific permissions - show base modules
-      enabledModules = baseModules;
+      // Viewing as but no specific permissions - show nothing extra
+      enabledModules = [];
     } else if (isSystemAdmin) {
       // System admins see all modules
       enabledModules = Object.keys(modules);
     } else if (userPermissions.length > 0) {
-      // Combine base modules with user's additional permissions
-      enabledModules = [...new Set([...baseModules, ...userPermissions])];
+      // Use user's explicit permissions (includes base modules if enabled)
+      enabledModules = [...userPermissions];
     } else {
-      // Default: base modules only
-      enabledModules = baseModules;
+      // No permissions - show nothing
+      enabledModules = [];
     }
 
     // Get navigation items grouped by section from the registry

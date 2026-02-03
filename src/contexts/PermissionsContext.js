@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { firestoreService } from '../services/firestoreService';
-import { getBaseModuleIds } from '../modules/registry';
+// getBaseModuleIds import removed - base modules now check explicit permissions
 
 const PermissionsContext = createContext();
 
@@ -116,11 +116,8 @@ export function PermissionsProvider({ children }) {
     // Dashboard is always accessible
     if (pageId === 'dashboard') return true;
     
-    // Base modules are always accessible
-    const baseModules = getBaseModuleIds();
-    if (baseModules.includes(pageId)) return true;
-    
-    // Check user's additional permissions
+    // Check user's explicit permissions (including base modules)
+    // Base modules can now be disabled per-user, so check explicit permissions
     return permissions.includes(pageId);
   };
 

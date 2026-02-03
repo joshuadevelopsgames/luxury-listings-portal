@@ -427,8 +427,8 @@ const PermissionsManager = () => {
 
       await firestoreService.addApprovedUser(userData);
       
-      // Set default permissions (dashboard + role-appropriate pages)
-      const defaultPages = ['dashboard', 'tasks', 'resources', 'tutorials'];
+      // Set default permissions (dashboard + base modules + role-appropriate pages)
+      const defaultPages = ['dashboard', 'tasks', 'resources', 'tutorials', ...BASE_MODULE_IDS];
       await firestoreService.setUserPagePermissions(userData.email, defaultPages);
       
       // Update local state
@@ -734,27 +734,41 @@ const PermissionsManager = () => {
                         <div className="mb-4">
                           <div className="flex items-center gap-2 mb-2">
                             <Star className="w-4 h-4 text-[#ff9500]" />
-                            <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Base Modules (Included)</span>
+                            <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Base Modules</span>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {Object.entries(ALL_PAGES).filter(([_, page]) => page.isBase).map(([pageId, page]) => {
+                              const hasAccess = perms.includes(pageId);
                               const Icon = page.icon;
                               return (
-                                <div
+                                <button
                                   key={pageId}
-                                  className="flex items-center gap-3 p-3 rounded-xl border bg-[#ff9500]/10 border-[#ff9500]/30"
+                                  onClick={() => togglePermission(user.email, pageId)}
+                                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                                    hasAccess
+                                      ? 'bg-[#ff9500]/10 border-[#ff9500]/30 text-[#ff9500]'
+                                      : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
+                                  }`}
                                 >
-                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#ff9500]/20">
-                                    <Icon className="w-4 h-4 text-[#ff9500]" />
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                    hasAccess 
+                                      ? 'bg-[#ff9500]/20' 
+                                      : 'bg-black/5 dark:bg-white/5'
+                                  }`}>
+                                    <Icon className={`w-4 h-4 ${hasAccess ? 'text-[#ff9500]' : ''}`} />
                                   </div>
                                   <div className="flex-1 text-left min-w-0">
-                                    <p className="text-[13px] font-medium truncate text-[#1d1d1f] dark:text-white">
+                                    <p className={`text-[13px] font-medium truncate ${
+                                      hasAccess ? 'text-[#ff9500]' : 'text-[#1d1d1f] dark:text-white'
+                                    }`}>
                                       {page.name}
                                     </p>
-                                    <p className="text-[10px] text-[#ff9500]">Base package</p>
+                                    <p className="text-[10px] text-[#86868b]">Base module</p>
                                   </div>
-                                  <Check className="w-4 h-4 flex-shrink-0 text-[#ff9500]" />
-                                </div>
+                                  {hasAccess && (
+                                    <Check className="w-4 h-4 flex-shrink-0 text-[#ff9500]" />
+                                  )}
+                                </button>
                               );
                             })}
                           </div>
