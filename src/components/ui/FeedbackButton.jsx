@@ -19,7 +19,9 @@ import {
   Clock,
   CheckCircle2,
   MessageSquare,
-  MousePointer2
+  MousePointer2,
+  Minus,
+  Maximize2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -41,6 +43,9 @@ export default function FeedbackButton() {
   const [myChats, setMyChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [loadingChats, setLoadingChats] = useState(false);
+  const [activeChat, setActiveChat] = useState(null); // Currently active chat for quick access
+  const [isMinimized, setIsMinimized] = useState(false); // Chat is active but panel minimized
+  const chatPollRef = useRef(null);
 
   // Element inspection states
   const [isInspecting, setIsInspecting] = useState(false);
@@ -260,27 +265,118 @@ export default function FeedbackButton() {
     try {
       const chat = await firestoreService.getFeedbackChatById(chatId);
       setSelectedChat(chat);
+      setActiveChat(chat);
+      return chat;
     } catch (error) {
       console.error('Error loading chat:', error);
       toast.error('Failed to load chat');
+      return null;
     }
   };
+
+  // Open chat directly - find existing open chat or create new one
+  const openChatDirect = async () => {
+    setLoadingChats(true);
+    try {
+      // Check for existing open chat
+      const chats = await firestoreService.getFeedbackChats(currentUser.email);
+      const openChat = chats?.find(c => c.status === 'open');
+      
+      if (openChat) {
+        // Open existing chat
+        const chat = await loadChatDetail(openChat.id);
+        setView('chat-detail');
+        startChatPolling(openChat.id);
+      } else {
+        // Go to new chat form
+        setView('chat');
+      }
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      setView('chat');
+    } finally {
+      setLoadingChats(false);
+    }
+  };
+
+  // Start polling for chat updates
+  const startChatPolling = (chatId) => {
+    if (chatPollRef.current) clearInterval(chatPollRef.current);
+    
+    chatPollRef.current = setInterval(async () => {
+      try {
+        const chat = await firestoreService.getFeedbackChatById(chatId);
+        if (chat) {
+          setSelectedChat(chat);
+          setActiveChat(chat);
+          // Check if chat was closed by developer
+          if (chat.status === 'closed' || chat.status === 'archived') {
+            stopChatPolling();
+          }
+        }
+      } catch (error) {
+        console.error('Error polling chat:', error);
+      }
+    }, 5000); // Poll every 5 seconds
+  };
+
+  // Stop polling
+  const stopChatPolling = () => {
+    if (chatPollRef.current) {
+      clearInterval(chatPollRef.current);
+      chatPollRef.current = null;
+    }
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => stopChatPolling();
+  }, []);
 
   // Handle opening the panel
   const handleOpen = () => {
     setIsOpen(true);
-    setView('menu');
+    setIsMinimized(false);
+    // If there's an active chat, restore it
+    if (activeChat && activeChat.status === 'open') {
+      setSelectedChat(activeChat);
+      setView('chat-detail');
+      startChatPolling(activeChat.id);
+    } else {
+      setView('menu');
+    }
   };
 
-  // Handle closing
+  // Handle closing/minimizing
   const handleClose = () => {
+    // If in chat view with active chat, minimize instead of fully closing
+    if (view === 'chat-detail' && selectedChat && selectedChat.status === 'open') {
+      setIsOpen(false);
+      setIsMinimized(true);
+      // Keep polling in background
+    } else {
+      setIsOpen(false);
+      setIsMinimized(false);
+      setView('menu');
+      setBugForm({ title: '', description: '', priority: 'medium' });
+      setFeatureForm({ title: '', description: '' });
+      setChatMessage('');
+      setSelectedChat(null);
+      setSelectedElement(null);
+      stopChatPolling();
+      setActiveChat(null);
+    }
+  };
+
+  // Fully close chat (end session)
+  const handleEndChat = () => {
     setIsOpen(false);
+    setIsMinimized(false);
     setView('menu');
-    setBugForm({ title: '', description: '', priority: 'medium' });
-    setFeatureForm({ title: '', description: '' });
     setChatMessage('');
     setSelectedChat(null);
-    setSelectedElement(null);
+    setActiveChat(null);
+    stopChatPolling();
   };
 
   // Start element inspection
@@ -375,7 +471,7 @@ export default function FeedbackButton() {
 
     setIsSubmitting(true);
     try {
-      await firestoreService.createFeedbackChat({
+      const chatId = await firestoreService.createFeedbackChat({
         userEmail: currentUser?.email,
         userName: currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
         initialMessage: chatMessage
@@ -383,8 +479,13 @@ export default function FeedbackButton() {
 
       toast.success('Chat started! Joshua will be notified.');
       setChatMessage('');
-      await loadMyChats();
-      setView('chat-list');
+      
+      // Load the new chat and enter chatroom
+      const chat = await loadChatDetail(chatId);
+      if (chat) {
+        setView('chat-detail');
+        startChatPolling(chatId);
+      }
     } catch (error) {
       console.error('Error starting chat:', error);
       toast.error('Failed to start chat');
@@ -448,10 +549,23 @@ export default function FeedbackButton() {
       {/* Floating Button */}
       <button
         onClick={handleOpen}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] text-white shadow-lg shadow-[#0071e3]/30 hover:shadow-xl hover:shadow-[#0071e3]/40 transition-all hover:scale-105 flex items-center justify-center z-40"
-        title="Feedback & Support"
+        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center z-40 ${
+          isMinimized && activeChat?.status === 'open'
+            ? 'bg-[#34c759] shadow-[#34c759]/30 hover:shadow-[#34c759]/40 animate-pulse'
+            : 'bg-gradient-to-br from-[#0071e3] to-[#5856d6] shadow-[#0071e3]/30 hover:shadow-[#0071e3]/40'
+        }`}
+        title={isMinimized ? 'Return to chat' : 'Feedback & Support'}
       >
-        <MessageCircle className="w-6 h-6" />
+        {isMinimized && activeChat?.status === 'open' ? (
+          <MessageSquare className="w-6 h-6" />
+        ) : (
+          <MessageCircle className="w-6 h-6" />
+        )}
+        {isMinimized && activeChat?.status === 'open' && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+            <span className="w-2 h-2 bg-[#34c759] rounded-full animate-ping" />
+          </span>
+        )}
       </button>
 
       {/* Inspection Mode Indicator */}
@@ -477,18 +591,27 @@ export default function FeedbackButton() {
       {isOpen && (
         <div className="feedback-panel fixed bottom-24 right-6 w-[360px] bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-[600px]">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10 bg-gradient-to-r from-[#0071e3]/5 to-[#5856d6]/5 flex-shrink-0">
+          <div className={`flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10 flex-shrink-0 ${
+            view === 'chat-detail' && selectedChat?.status === 'open'
+              ? 'bg-gradient-to-r from-[#34c759]/5 to-[#0071e3]/5'
+              : 'bg-gradient-to-r from-[#0071e3]/5 to-[#5856d6]/5'
+          }`}>
             <div className="flex items-center gap-3">
-              {view !== 'menu' && view !== 'chat-list' && (
+              {view !== 'menu' && view !== 'chat-list' && view !== 'chat-detail' && (
                 <button
                   onClick={() => {
-                    if (view === 'chat-detail') {
-                      setView('chat-list');
-                      setSelectedChat(null);
-                    } else {
-                      setView('menu');
-                      setSelectedElement(null);
-                    }
+                    setView('menu');
+                    setSelectedElement(null);
+                  }}
+                  className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                >
+                  <ArrowLeft className="w-4 h-4 text-[#86868b]" />
+                </button>
+              )}
+              {(view === 'chat-list' || view === 'chat') && (
+                <button
+                  onClick={() => {
+                    setView('menu');
                   }}
                   className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
                 >
@@ -501,15 +624,34 @@ export default function FeedbackButton() {
                 {view === 'feature' && 'Feature Request'}
                 {view === 'chat' && 'New Chat'}
                 {view === 'chat-list' && 'My Chats'}
-                {view === 'chat-detail' && 'Chat'}
+                {view === 'chat-detail' && (
+                  <div className="flex items-center gap-2">
+                    <span>Chat with Joshua</span>
+                    {selectedChat?.status === 'open' && (
+                      <span className="w-2 h-2 bg-[#34c759] rounded-full" />
+                    )}
+                  </div>
+                )}
               </h3>
             </div>
-            <button
-              onClick={handleClose}
-              className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
-            >
-              <X className="w-5 h-5 text-[#86868b]" />
-            </button>
+            <div className="flex items-center gap-1">
+              {view === 'chat-detail' && selectedChat?.status === 'open' && (
+                <button
+                  onClick={handleClose}
+                  className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                  title="Minimize chat"
+                >
+                  <Minus className="w-5 h-5 text-[#86868b]" />
+                </button>
+              )}
+              <button
+                onClick={view === 'chat-detail' ? handleEndChat : handleClose}
+                className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                title={view === 'chat-detail' ? 'End chat session' : 'Close'}
+              >
+                <X className="w-5 h-5 text-[#86868b]" />
+              </button>
+            </div>
           </div>
 
           {/* Content */}
@@ -524,8 +666,7 @@ export default function FeedbackButton() {
                       key={option.id}
                       onClick={() => {
                         if (option.id === 'chat') {
-                          loadMyChats();
-                          setView('chat-list');
+                          openChatDirect();
                         } else {
                           setView(option.id);
                         }
@@ -751,32 +892,47 @@ export default function FeedbackButton() {
               </div>
             )}
 
+            {/* Chat Detail View - Loading */}
+            {view === 'chat-detail' && loadingChats && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#0071e3] mb-3" />
+                <p className="text-[13px] text-[#86868b]">Loading chat...</p>
+              </div>
+            )}
+
             {/* Chat Detail View */}
-            {view === 'chat-detail' && selectedChat && (
-              <div className="space-y-4">
+            {view === 'chat-detail' && selectedChat && !loadingChats && (
+              <div className="flex flex-col h-full">
                 {/* Messages */}
-                <div className="space-y-3 max-h-[250px] overflow-y-auto">
-                  {selectedChat.messages?.map((msg, idx) => {
-                    const isMe = msg.senderEmail === currentUser?.email;
-                    return (
-                      <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] px-3 py-2 rounded-xl ${
-                          isMe 
-                            ? 'bg-[#0071e3] text-white' 
-                            : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white'
-                        }`}>
-                          <p className="text-[13px]">{msg.message}</p>
-                          <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70' : 'text-[#86868b]'}`}>
-                            {msg.senderName}
-                          </p>
+                <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] mb-4">
+                  {selectedChat.messages?.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MessageSquare className="w-10 h-10 text-[#86868b] mx-auto mb-2 opacity-50" />
+                      <p className="text-[13px] text-[#86868b]">No messages yet</p>
+                    </div>
+                  ) : (
+                    selectedChat.messages?.map((msg, idx) => {
+                      const isMe = msg.senderEmail === currentUser?.email;
+                      return (
+                        <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] px-3 py-2 rounded-xl ${
+                            isMe 
+                              ? 'bg-[#0071e3] text-white' 
+                              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white'
+                          }`}>
+                            <p className="text-[13px]">{msg.message}</p>
+                            <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70' : 'text-[#86868b]'}`}>
+                              {msg.senderName}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
 
                 {/* Reply Input */}
-                {selectedChat.status !== 'closed' ? (
+                {selectedChat.status === 'open' ? (
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -795,9 +951,20 @@ export default function FeedbackButton() {
                     </button>
                   </div>
                 ) : (
-                  <div className="text-center py-3 rounded-xl bg-[#86868b]/10">
-                    <CheckCircle2 className="w-5 h-5 text-[#86868b] mx-auto mb-1" />
-                    <p className="text-[12px] text-[#86868b]">This chat has been closed</p>
+                  <div className="text-center py-4 rounded-xl bg-[#86868b]/10">
+                    <CheckCircle2 className="w-6 h-6 text-[#86868b] mx-auto mb-2" />
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Chat Ended</p>
+                    <p className="text-[12px] text-[#86868b] mt-1">This conversation has been closed by the developer.</p>
+                    <button
+                      onClick={() => {
+                        setActiveChat(null);
+                        setSelectedChat(null);
+                        setView('menu');
+                      }}
+                      className="mt-3 px-4 py-2 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
+                    >
+                      Start New Chat
+                    </button>
                   </div>
                 )}
               </div>
