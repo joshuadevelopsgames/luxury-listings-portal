@@ -3,12 +3,6 @@
  * 
  * Use this component everywhere a client name is displayed to provide
  * consistent, interactive client information across the app.
- * 
- * @param {Object} client - Client data object (must have at least id and clientName)
- * @param {string} className - Additional CSS classes for the link
- * @param {boolean} showId - Whether to show the client ID badge
- * @param {function} onViewDetails - Optional callback for "View Details" action
- * @param {function} onClientUpdate - Callback when client is updated (for refreshing parent data)
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -24,10 +18,11 @@ import {
   ExternalLink,
   Copy,
   Check,
-  ChevronRight,
   Pencil,
   Save,
-  Loader2
+  Loader2,
+  User,
+  FileText
 } from 'lucide-react';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
@@ -55,31 +50,25 @@ const ClientLink = ({
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
 
-  // Update local client when prop changes
   useEffect(() => {
     setLocalClient(client);
   }, [client]);
 
-  // Calculate popover position
   useEffect(() => {
     if (isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const popoverWidth = 320;
-      const popoverHeight = isEditing ? 500 : 400;
+      const popoverWidth = 340;
+      const popoverHeight = isEditing ? 520 : 420;
       
-      // Position below and centered, but adjust if near edges
       let left = rect.left + (rect.width / 2) - (popoverWidth / 2);
       let top = rect.bottom + 8;
       
-      // Adjust for right edge
       if (left + popoverWidth > window.innerWidth - 16) {
         left = window.innerWidth - popoverWidth - 16;
       }
-      // Adjust for left edge
       if (left < 16) {
         left = 16;
       }
-      // Adjust for bottom edge - show above if needed
       if (top + popoverHeight > window.innerHeight - 16) {
         top = rect.top - popoverHeight - 8;
       }
@@ -88,7 +77,6 @@ const ClientLink = ({
     }
   }, [isOpen, isEditing]);
 
-  // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
     
@@ -108,7 +96,6 @@ const ClientLink = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Close on escape
   useEffect(() => {
     if (!isOpen) return;
     
@@ -156,11 +143,9 @@ const ClientLink = ({
     try {
       await firestoreService.updateClient(localClient.id, editForm);
       
-      // Update local state
       const updatedClient = { ...localClient, ...editForm };
       setLocalClient(updatedClient);
       
-      // Notify parent if callback provided
       if (onClientUpdate) {
         onClientUpdate(updatedClient);
       }
@@ -194,7 +179,7 @@ const ClientLink = ({
       >
         {children || displayName}
         {showId && clientNumber && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#0071e3]/10 text-[#0071e3] font-mono">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-mono">
             {clientNumber}
           </span>
         )}
@@ -202,16 +187,24 @@ const ClientLink = ({
 
       {/* Popover */}
       {isOpen && createPortal(
-        <div 
-          ref={popoverRef}
-          className="fixed z-[100] w-80 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
-          style={{ top: position.top, left: position.left }}
-        >
-          {/* Header */}
-          <div className="p-4 bg-gradient-to-r from-[#0071e3] to-[#5856d6] text-white">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-[99] bg-black/20 dark:bg-black/40 backdrop-blur-sm"
+            onClick={() => { setIsOpen(false); setIsEditing(false); }}
+          />
+          
+          {/* Card */}
+          <div 
+            ref={popoverRef}
+            className="fixed z-[100] w-[340px] rounded-2xl bg-white/95 dark:bg-[#1d1d1f]/95 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-xl overflow-hidden"
+            style={{ top: position.top, left: position.left }}
+          >
+            {/* Header */}
+            <div className="px-5 pt-5 pb-4 border-b border-black/5 dark:border-white/5">
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center flex-shrink-0 shadow-lg">
                   {localClient.logo || localClient.profilePic || localClient.image ? (
                     <img 
                       src={localClient.logo || localClient.profilePic || localClient.image} 
@@ -219,289 +212,297 @@ const ClientLink = ({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Building2 className="w-5 h-5 text-white" />
+                    <span className="text-white font-semibold text-xl">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
                   )}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-[15px] truncate">{displayName}</h3>
+                
+                {/* Name & ID */}
+                <div className="flex-1 min-w-0 pt-1">
+                  <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white truncate">
+                    {displayName}
+                  </h3>
                   {clientNumber && (
-                    <span className="text-[11px] text-white/70 font-mono">{clientNumber}</span>
+                    <span className="inline-flex items-center gap-1 text-[12px] text-[#86868b] font-mono mt-0.5">
+                      <User className="w-3 h-3" />
+                      {clientNumber}
+                    </span>
                   )}
                 </div>
-              </div>
-              <div className="flex items-center gap-1 -mr-1 -mt-1">
-                {canEdit && !isEditing && (
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 -mr-1 -mt-1">
+                  {canEdit && !isEditing && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); startEditing(); }}
+                      className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-colors"
+                      title="Edit client"
+                    >
+                      <Pencil className="w-4 h-4 text-[#86868b]" />
+                    </button>
+                  )}
                   <button
-                    onClick={(e) => { e.stopPropagation(); startEditing(); }}
-                    className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                    title="Edit client"
+                    onClick={() => { setIsOpen(false); setIsEditing(false); }}
+                    className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-colors"
                   >
-                    <Pencil className="w-4 h-4" />
+                    <X className="w-4 h-4 text-[#86868b]" />
                   </button>
-                )}
-                <button
-                  onClick={() => { setIsOpen(false); setIsEditing(false); }}
-                  className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Content */}
-          <div className="p-4 space-y-3 max-h-[350px] overflow-y-auto">
-            {isEditing ? (
-              /* Edit Mode */
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1 block">Name *</label>
-                  <input
-                    type="text"
-                    value={editForm.clientName}
-                    onChange={(e) => setEditForm({ ...editForm, clientName: e.target.value })}
-                    className="w-full px-3 py-2 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    placeholder="Client name"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1 block">Email</label>
-                  <input
-                    type="email"
-                    value={editForm.clientEmail}
-                    onChange={(e) => setEditForm({ ...editForm, clientEmail: e.target.value })}
-                    className="w-full px-3 py-2 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    placeholder="client@example.com"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1 block">Phone</label>
-                  <input
-                    type="tel"
-                    value={editForm.phone}
-                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    placeholder="(555) 123-4567"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1 block">Website</label>
-                  <input
-                    type="url"
-                    value={editForm.website}
-                    onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
-                    className="w-full px-3 py-2 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    placeholder="https://example.com"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1 block">Instagram</label>
-                  <input
-                    type="text"
-                    value={editForm.instagramHandle}
-                    onChange={(e) => setEditForm({ ...editForm, instagramHandle: e.target.value.replace('@', '') })}
-                    className="w-full px-3 py-2 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    placeholder="username"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
+            {/* Content */}
+            <div className="px-5 py-4 max-h-[320px] overflow-y-auto">
+              {isEditing ? (
+                /* Edit Mode */
+                <div className="space-y-4">
                   <div>
-                    <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1 block">Package</label>
-                    <select
-                      value={editForm.packageType}
-                      onChange={(e) => setEditForm({ ...editForm, packageType: e.target.value })}
-                      className="w-full px-3 py-2 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    >
-                      <option value="Standard">Standard</option>
-                      <option value="Silver">Silver</option>
-                      <option value="Gold">Gold</option>
-                      <option value="Platinum">Platinum</option>
-                      <option value="Seven">Seven</option>
-                      <option value="Custom">Custom</option>
-                      <option value="Monthly">Monthly</option>
-                    </select>
+                    <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Name *</label>
+                    <input
+                      type="text"
+                      value={editForm.clientName}
+                      onChange={(e) => setEditForm({ ...editForm, clientName: e.target.value })}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                      placeholder="Client name"
+                    />
                   </div>
                   <div>
-                    <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1 block">Posts Left</label>
+                    <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Email</label>
                     <input
-                      type="number"
-                      min="0"
-                      value={editForm.postsRemaining}
-                      onChange={(e) => setEditForm({ ...editForm, postsRemaining: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      type="email"
+                      value={editForm.clientEmail}
+                      onChange={(e) => setEditForm({ ...editForm, clientEmail: e.target.value })}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                      placeholder="client@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Phone</label>
+                    <input
+                      type="tel"
+                      value={editForm.phone}
+                      onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Package</label>
+                      <select
+                        value={editForm.packageType}
+                        onChange={(e) => setEditForm({ ...editForm, packageType: e.target.value })}
+                        className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                      >
+                        <option value="Standard">Standard</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Platinum">Platinum</option>
+                        <option value="Seven">Seven</option>
+                        <option value="Custom">Custom</option>
+                        <option value="Monthly">Monthly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Posts Left</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editForm.postsRemaining}
+                        onChange={(e) => setEditForm({ ...editForm, postsRemaining: parseInt(e.target.value) || 0 })}
+                        className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Notes</label>
+                    <textarea
+                      value={editForm.notes}
+                      onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                      rows={2}
+                      className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] resize-none"
+                      placeholder="Internal notes..."
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1 block">Notes</label>
-                  <textarea
-                    value={editForm.notes}
-                    onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                    rows={2}
-                    className="w-full px-3 py-2 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
-                    placeholder="Internal notes..."
-                  />
-                </div>
-              </div>
-            ) : (
-              /* View Mode */
-              <>
-                {/* Contact Info */}
-                {localClient.clientEmail && (
-                  <div className="flex items-center gap-2 text-[13px]">
-                    <Mail className="w-4 h-4 text-[#86868b] flex-shrink-0" />
-                    <a 
-                      href={`mailto:${localClient.clientEmail}`}
-                      className="text-[#1d1d1f] dark:text-white hover:text-[#0071e3] truncate flex-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {localClient.clientEmail}
-                    </a>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleCopyEmail(); }}
-                      className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors"
-                      title="Copy email"
-                    >
-                      {copied ? (
-                        <Check className="w-3.5 h-3.5 text-[#34c759]" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-[#86868b]" />
+              ) : (
+                /* View Mode */
+                <div className="space-y-4">
+                  {/* Contact Section */}
+                  {(localClient.clientEmail || localClient.phone) && (
+                    <div className="space-y-2.5">
+                      {localClient.clientEmail && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                          <div className="w-8 h-8 rounded-lg bg-[#0071e3]/10 flex items-center justify-center flex-shrink-0">
+                            <Mail className="w-4 h-4 text-[#0071e3]" />
+                          </div>
+                          <a 
+                            href={`mailto:${localClient.clientEmail}`}
+                            className="flex-1 text-[14px] text-[#1d1d1f] dark:text-white hover:text-[#0071e3] truncate"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {localClient.clientEmail}
+                          </a>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleCopyEmail(); }}
+                            className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+                            title="Copy email"
+                          >
+                            {copied ? (
+                              <Check className="w-4 h-4 text-[#34c759]" />
+                            ) : (
+                              <Copy className="w-4 h-4 text-[#86868b]" />
+                            )}
+                          </button>
+                        </div>
                       )}
-                    </button>
-                  </div>
-                )}
 
-                {localClient.phone && (
-                  <div className="flex items-center gap-2 text-[13px]">
-                    <Phone className="w-4 h-4 text-[#86868b] flex-shrink-0" />
-                    <a 
-                      href={`tel:${localClient.phone}`}
-                      className="text-[#1d1d1f] dark:text-white hover:text-[#0071e3]"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {localClient.phone}
-                    </a>
-                  </div>
-                )}
-
-                {localClient.website && (
-                  <div className="flex items-center gap-2 text-[13px]">
-                    <Globe className="w-4 h-4 text-[#86868b] flex-shrink-0" />
-                    <a 
-                      href={localClient.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#0071e3] hover:underline truncate flex items-center gap-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {localClient.website.replace(/^https?:\/\//, '')}
-                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                    </a>
-                  </div>
-                )}
-
-                {localClient.instagramHandle && (
-                  <div className="flex items-center gap-2 text-[13px]">
-                    <Instagram className="w-4 h-4 text-[#E1306C] flex-shrink-0" />
-                    <a 
-                      href={`https://instagram.com/${localClient.instagramHandle}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#E1306C] hover:underline flex items-center gap-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      @{localClient.instagramHandle}
-                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                    </a>
-                  </div>
-                )}
-
-                {/* Package Info */}
-                {(localClient.packageType || localClient.packageSize) && (
-                  <div className="pt-2 mt-2 border-t border-black/5 dark:border-white/10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Package className="w-4 h-4 text-[#86868b]" />
-                      <span className="text-[12px] text-[#86868b] uppercase tracking-wide font-medium">Package</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {localClient.packageType && (
-                        <span className="text-[12px] px-2 py-1 rounded-lg bg-[#0071e3]/10 text-[#0071e3] font-medium">
-                          {localClient.packageType}
-                        </span>
-                      )}
-                      {localClient.packageSize && (
-                        <span className="text-[12px] px-2 py-1 rounded-lg bg-[#34c759]/10 text-[#34c759] font-medium">
-                          {localClient.packageSize} posts
-                        </span>
-                      )}
-                      {(localClient.postsRemaining !== undefined && localClient.postsRemaining !== null) && (
-                        <span className="text-[12px] px-2 py-1 rounded-lg bg-[#ff9500]/10 text-[#ff9500] font-medium">
-                          {localClient.postsRemaining} remaining
-                        </span>
+                      {localClient.phone && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                          <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center flex-shrink-0">
+                            <Phone className="w-4 h-4 text-[#34c759]" />
+                          </div>
+                          <a 
+                            href={`tel:${localClient.phone}`}
+                            className="flex-1 text-[14px] text-[#1d1d1f] dark:text-white hover:text-[#0071e3]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {localClient.phone}
+                          </a>
+                        </div>
                       )}
                     </div>
-                  </div>
-                )}
-
-                {/* Platforms */}
-                {localClient.platforms && Object.values(localClient.platforms).some(v => v) && (
-                  <div className="pt-2 mt-2 border-t border-black/5 dark:border-white/10">
-                    <div className="text-[12px] text-[#86868b] uppercase tracking-wide font-medium mb-2">Platforms</div>
-                    <PlatformIcons platforms={localClient.platforms} size="sm" />
-                  </div>
-                )}
-
-                {/* Notes (for admins) */}
-                {canEdit && localClient.notes && (
-                  <div className="pt-2 mt-2 border-t border-black/5 dark:border-white/10">
-                    <div className="text-[12px] text-[#86868b] uppercase tracking-wide font-medium mb-1">Notes</div>
-                    <p className="text-[12px] text-[#1d1d1f] dark:text-white/80 line-clamp-3">{localClient.notes}</p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="p-3 border-t border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]">
-            {isEditing ? (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="flex-1 px-4 py-2 rounded-xl border border-black/10 dark:border-white/10 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db24b] transition-colors disabled:opacity-50"
-                >
-                  {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save
-                    </>
                   )}
+
+                  {/* Links Section */}
+                  {(localClient.website || localClient.instagramHandle) && (
+                    <div className="flex flex-wrap gap-2">
+                      {localClient.website && (
+                        <a 
+                          href={localClient.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/[0.02] dark:bg-white/[0.02] text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Globe className="w-3.5 h-3.5 text-[#86868b]" />
+                          Website
+                          <ExternalLink className="w-3 h-3 text-[#86868b]" />
+                        </a>
+                      )}
+                      {localClient.instagramHandle && (
+                        <a 
+                          href={`https://instagram.com/${localClient.instagramHandle}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E1306C]/5 text-[13px] text-[#E1306C] hover:bg-[#E1306C]/10 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Instagram className="w-3.5 h-3.5" />
+                          @{localClient.instagramHandle}
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Package Info */}
+                  {(localClient.packageType || localClient.packageSize) && (
+                    <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <Package className="w-4 h-4 text-[#86868b]" />
+                        <span className="text-[12px] text-[#86868b] uppercase tracking-wide font-medium">Package</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {localClient.packageType && (
+                          <span className="text-[13px] px-2.5 py-1 rounded-lg bg-[#0071e3]/10 text-[#0071e3] font-medium">
+                            {localClient.packageType}
+                          </span>
+                        )}
+                        {localClient.packageSize && (
+                          <span className="text-[13px] px-2.5 py-1 rounded-lg bg-[#34c759]/10 text-[#34c759] font-medium">
+                            {localClient.packageSize} posts
+                          </span>
+                        )}
+                        {(localClient.postsRemaining !== undefined && localClient.postsRemaining !== null) && (
+                          <span className="text-[13px] px-2.5 py-1 rounded-lg bg-[#ff9500]/10 text-[#ff9500] font-medium">
+                            {localClient.postsRemaining} remaining
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Platforms */}
+                  {localClient.platforms && Object.values(localClient.platforms).some(v => v) && (
+                    <div>
+                      <div className="text-[12px] text-[#86868b] uppercase tracking-wide font-medium mb-2">Platforms</div>
+                      <PlatformIcons platforms={localClient.platforms} size="sm" />
+                    </div>
+                  )}
+
+                  {/* Notes (for admins) */}
+                  {canEdit && localClient.notes && (
+                    <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="w-4 h-4 text-[#86868b]" />
+                        <span className="text-[12px] text-[#86868b] uppercase tracking-wide font-medium">Notes</span>
+                      </div>
+                      <p className="text-[13px] text-[#1d1d1f] dark:text-white/80 line-clamp-3">{localClient.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01]">
+              {isEditing ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 h-10 rounded-xl border border-black/10 dark:border-white/10 text-[14px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex-1 h-10 flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : onViewDetails ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(false);
+                    onViewDetails(localClient);
+                  }}
+                  className="w-full h-10 flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+                >
+                  View Full Profile
                 </button>
-              </div>
-            ) : onViewDetails ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(false);
-                  onViewDetails(localClient);
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
-              >
-                View Full Profile
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            ) : null}
+              ) : canEdit ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); startEditing(); }}
+                  className="w-full h-10 flex items-center justify-center gap-2 rounded-xl border border-black/10 dark:border-white/10 text-[14px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit Client
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>,
+        </>,
         document.body
       )}
     </>
