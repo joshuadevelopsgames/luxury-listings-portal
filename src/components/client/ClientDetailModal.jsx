@@ -279,6 +279,22 @@ const ClientDetailModal = ({
                 </div>
               </div>
               <div>
+                <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Profile Photo URL</label>
+                <input
+                  type="text"
+                  value={editForm.profilePhoto}
+                  onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.value })}
+                  className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                  placeholder="/avatars/client-name.png"
+                />
+                {editForm.profilePhoto && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <img src={editForm.profilePhoto} alt="Preview" className="w-10 h-10 rounded-lg object-cover" onError={(e) => e.target.style.display = 'none'} />
+                    <span className="text-[11px] text-[#86868b]">Preview</span>
+                  </div>
+                )}
+              </div>
+              <div>
                 <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Notes</label>
                 <textarea
                   value={editForm.notes}
