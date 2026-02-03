@@ -40,27 +40,32 @@ const PersonCard = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
   const [saving, setSaving] = useState(false);
+  // Local state for display after save
+  const [localPerson, setLocalPerson] = useState(null);
+  
+  // Use localPerson if available (after save), otherwise use person prop
+  const displayPerson = localPerson || person;
 
   const handleEdit = () => {
     setIsEditing(true);
     if (isHRView) {
       // HR can edit all fields
       setEditedData({
-        firstName: person.firstName,
-        lastName: person.lastName,
-        email: person.email,
-        phone: person.phone,
-        address: person.address,
-        department: person.department,
-        position: person.position,
-        manager: person.manager,
-        startDate: person.startDate
+        firstName: displayPerson.firstName,
+        lastName: displayPerson.lastName,
+        email: displayPerson.email,
+        phone: displayPerson.phone,
+        address: displayPerson.address,
+        department: displayPerson.department,
+        position: displayPerson.position,
+        manager: displayPerson.manager,
+        startDate: displayPerson.startDate
       });
     } else {
       // Regular users can only edit phone and address
       setEditedData({
-        phone: person.phone,
-        address: person.address
+        phone: displayPerson.phone,
+        address: displayPerson.address
       });
     }
   };
@@ -79,8 +84,12 @@ const PersonCard = ({
         await onSave(editedData);
       }
       
-      alert('Personal information updated successfully! ✅\n\nChanges have been saved to Firestore.');
+      // Update local state to reflect changes immediately
+      setLocalPerson({ ...displayPerson, ...editedData });
+      
+      alert('Personal information updated successfully! ✅\n\nChanges have been saved.');
       setIsEditing(false);
+      setEditedData({});
     } catch (error) {
       console.error('❌ Error saving employee data:', error);
       alert(`Failed to save changes: ${error.message}\n\nPlease try again.`);
@@ -100,9 +109,13 @@ const PersonCard = ({
     return field === 'phone' || field === 'address'; // Regular users can only edit these
   };
 
-  // Input field component for consistent styling
-  const InputField = ({ label, icon: Icon, field, type = 'text', value, colSpan = false }) => (
-    <div className={colSpan ? 'md:col-span-2' : ''}>
+  const handleFieldChange = (field, value) => {
+    setEditedData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Render an input or display field
+  const renderField = (label, Icon, field, type = 'text', value, colSpan = false) => (
+    <div className={colSpan ? 'md:col-span-2' : ''} key={field}>
       <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
         <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
         <span>{label}</span>
@@ -110,8 +123,8 @@ const PersonCard = ({
       {canEditField(field) ? (
         <input
           type={type}
-          value={editedData[field] ?? value}
-          onChange={(e) => setEditedData({...editedData, [field]: e.target.value})}
+          value={editedData[field] ?? value ?? ''}
+          onChange={(e) => handleFieldChange(field, e.target.value)}
           className="w-full px-4 py-2.5 bg-white/60 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] transition-all"
         />
       ) : (
@@ -173,15 +186,15 @@ const PersonCard = ({
         {showAvatar && !compact && (
           <div className="flex items-center gap-5 mb-6 pb-6 border-b border-black/5 dark:border-white/10">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-2xl font-semibold shadow-lg shadow-[#0071e3]/30">
-              {person.firstName?.[0]}{person.lastName?.[0]}
+              {displayPerson.firstName?.[0]}{displayPerson.lastName?.[0]}
             </div>
             <div>
               <h3 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
-                {person.firstName} {person.lastName}
+                {displayPerson.firstName} {displayPerson.lastName}
               </h3>
-              <p className="text-[15px] text-[#86868b] mt-0.5">{person.position}</p>
+              <p className="text-[15px] text-[#86868b] mt-0.5">{displayPerson.position}</p>
               <span className="inline-flex items-center px-3 py-1 mt-2 text-[12px] font-medium text-[#0071e3] bg-[#0071e3]/10 rounded-full">
-                {person.department}
+                {displayPerson.department}
               </span>
             </div>
           </div>
@@ -189,13 +202,13 @@ const PersonCard = ({
 
         {/* Personal Information Grid */}
         <div className={`grid grid-cols-1 ${compact ? 'gap-4' : 'md:grid-cols-2 gap-5'}`}>
-          <InputField label="First Name" icon={User} field="firstName" value={person.firstName} />
-          <InputField label="Last Name" icon={User} field="lastName" value={person.lastName} />
-          <InputField label="Email" icon={Mail} field="email" type="email" value={person.email} />
-          <InputField label="Phone" icon={Phone} field="phone" type="tel" value={person.phone} />
-          <InputField label="Address" icon={MapPin} field="address" value={person.address} colSpan={!compact} />
-          <InputField label="Department" icon={Building} field="department" value={person.department} />
-          <InputField label="Position" icon={Briefcase} field="position" value={person.position} />
+          {renderField("First Name", User, "firstName", "text", displayPerson.firstName)}
+          {renderField("Last Name", User, "lastName", "text", displayPerson.lastName)}
+          {renderField("Email", Mail, "email", "email", displayPerson.email)}
+          {renderField("Phone", Phone, "phone", "tel", displayPerson.phone)}
+          {renderField("Address", MapPin, "address", "text", displayPerson.address, !compact)}
+          {renderField("Department", Building, "department", "text", displayPerson.department)}
+          {renderField("Position", Briefcase, "position", "text", displayPerson.position)}
           
           {/* Employee ID - Read only */}
           <div>
@@ -204,7 +217,7 @@ const PersonCard = ({
               <span>Employee ID</span>
             </label>
             <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
-              <p className="text-[15px] text-[#1d1d1f] dark:text-white">{person.employeeId || 'Not assigned'}</p>
+              <p className="text-[15px] text-[#1d1d1f] dark:text-white">{displayPerson.employeeId || 'Not assigned'}</p>
               {isEditing && isHRView && (
                 <p className="text-[11px] text-[#86868b] mt-1">System-generated, cannot be changed</p>
               )}
@@ -220,20 +233,20 @@ const PersonCard = ({
             {canEditField('startDate') ? (
               <input
                 type="date"
-                value={editedData.startDate ?? person.startDate}
-                onChange={(e) => setEditedData({...editedData, startDate: e.target.value})}
+                value={editedData.startDate ?? displayPerson.startDate ?? ''}
+                onChange={(e) => handleFieldChange('startDate', e.target.value)}
                 className="w-full px-4 py-2.5 bg-white/60 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] transition-all"
               />
             ) : (
               <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
                 <p className="text-[15px] text-[#1d1d1f] dark:text-white">
-                  {person.startDate ? format(new Date(person.startDate), 'MMMM dd, yyyy') : 'Not provided'}
+                  {displayPerson.startDate ? format(new Date(displayPerson.startDate), 'MMMM dd, yyyy') : 'Not provided'}
                 </p>
               </div>
             )}
           </div>
 
-          <InputField label="Manager" icon={UserCheck} field="manager" value={person.manager} />
+          {renderField("Manager", UserCheck, "manager", "text", displayPerson.manager)}
         </div>
 
         {/* Edit Mode Info */}
@@ -254,4 +267,3 @@ const PersonCard = ({
 };
 
 export default PersonCard;
-
