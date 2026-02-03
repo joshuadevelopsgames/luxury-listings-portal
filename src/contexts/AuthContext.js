@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
 import { firestoreService } from '../services/firestoreService';
@@ -108,6 +108,29 @@ export function AuthProvider({ children }) {
       return result;
     } catch (error) {
       console.error('Sign-in error:', error);
+      throw error;
+    }
+  }
+
+  async function signInWithEmail(email, password) {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log('✅ Email sign-in successful for:', email);
+      return result;
+    } catch (error) {
+      console.error('Email sign-in error:', error);
+      // Provide user-friendly error messages
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email address.');
+      } else if (error.code === 'auth/wrong-password') {
+        throw new Error('Incorrect password. Please try again.');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address.');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many failed attempts. Please try again later.');
+      } else if (error.code === 'auth/invalid-credential') {
+        throw new Error('Invalid email or password. Please check your credentials.');
+      }
       throw error;
     }
   }
@@ -401,6 +424,7 @@ export function AuthProvider({ children }) {
     getCurrentRolePermissions,
     hasPermission,
     signInWithGoogle,
+    signInWithEmail,
     logout,
     chatbotResetTrigger,
     // For View As feature - real user is always available
