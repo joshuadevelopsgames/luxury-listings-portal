@@ -821,8 +821,14 @@ const ClientProfilesList = () => {
                       <img src={selectedClient.profilePhoto} alt="" className="w-full h-full object-cover" />
                     ) : selectedClient.clientName?.toLowerCase().includes('agency') ? (
                       <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
-                    ) : selectedClient.clientName?.toLowerCase().includes('paul mcclean') ? (
+                    ) : (selectedClient.clientName?.toLowerCase().includes('paul mcclean') || selectedClient.clientName?.toLowerCase().includes('mcclean design')) ? (
                       <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
+                    ) : selectedClient.clientName?.toLowerCase().includes('resop') ? (
+                      <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
+                    ) : selectedClient.clientName?.toLowerCase().includes('kodiak') ? (
+                      <div className="w-full h-full bg-[#1a1a1a] p-1 flex items-center justify-center">
+                        <img src="/kodiak-club-logo.png" alt="Kodiak Club" className="w-full h-full object-contain" />
+                      </div>
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                         <span className="text-white font-semibold text-xl">
@@ -854,7 +860,8 @@ const ClientProfilesList = () => {
                           postsUsed: selectedClient.postsUsed || 0,
                           postsRemaining: selectedClient.postsRemaining || 0,
                           paymentStatus: selectedClient.paymentStatus || 'Pending',
-                          platforms: selectedClient.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+                          platforms: selectedClient.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
+                          profilePhoto: selectedClient.profilePhoto || ''
                         });
                         setShowEditModal(true);
                       }}
@@ -1097,9 +1104,33 @@ const ClientProfilesList = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
             <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between z-10">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
-                {canManageClients && canEditPackages ? 'Edit Client' : canEditPackages ? 'Edit Package Details' : 'Edit Client Information'}
-              </h2>
+              <div className="flex items-center gap-3">
+                {/* Profile Photo */}
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                  {selectedClient.profilePhoto ? (
+                    <img src={selectedClient.profilePhoto} alt="" className="w-full h-full object-cover" />
+                  ) : selectedClient.clientName?.toLowerCase().includes('agency') ? (
+                    <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
+                  ) : (selectedClient.clientName?.toLowerCase().includes('paul mcclean') || selectedClient.clientName?.toLowerCase().includes('mcclean design')) ? (
+                    <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
+                  ) : selectedClient.clientName?.toLowerCase().includes('resop') ? (
+                    <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
+                  ) : selectedClient.clientName?.toLowerCase().includes('kodiak') ? (
+                    <div className="w-full h-full bg-[#1a1a1a] p-1 flex items-center justify-center">
+                      <img src="/kodiak-club-logo.png" alt="Kodiak Club" className="w-full h-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm">
+                        {selectedClient.clientName ? selectedClient.clientName.charAt(0).toUpperCase() : 'C'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+                  {canManageClients && canEditPackages ? 'Edit Client' : canEditPackages ? 'Edit Package Details' : 'Edit Client Information'}
+                </h2>
+              </div>
               <button
                 onClick={() => {
                   setShowEditModal(false);
