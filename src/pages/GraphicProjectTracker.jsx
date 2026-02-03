@@ -330,6 +330,12 @@ const GraphicProjectTracker = () => {
   // One-time import from Excel data (admin only)
   const handleImportFromExcel = async () => {
     console.log('Import button clicked, importData length:', importData?.length);
+    console.log('Current user:', currentUser?.email);
+    
+    if (!currentUser) {
+      toast.error('You must be logged in to import');
+      return;
+    }
     
     if (!confirm(`Import ${importData.length} projects from Excel? This will add new records.`)) {
       console.log('User cancelled import');
@@ -338,12 +344,40 @@ const GraphicProjectTracker = () => {
     
     console.log('Starting import...');
     setImporting(true);
-    toast.loading('Importing projects...', { id: 'import-toast' });
+    
+    // Import in smaller batches with progress updates
+    const batchSize = 25;
+    const totalBatches = Math.ceil(importData.length / batchSize);
+    let imported = 0;
+    let failed = 0;
+    
+    toast.loading(`Importing... 0/${importData.length}`, { id: 'import-toast' });
     
     try {
-      const results = await firestoreService.bulkImportGraphicProjects(importData);
-      console.log('Import results:', results);
-      toast.success(`Imported ${results.length} projects!`, { id: 'import-toast' });
+      for (let i = 0; i < importData.length; i += batchSize) {
+        const batch = importData.slice(i, i + batchSize);
+        
+        for (const project of batch) {
+          try {
+            await firestoreService.addGraphicProject({
+              ...project,
+              importedAt: new Date().toISOString()
+            });
+            imported++;
+          } catch (err) {
+            console.error('Failed to import project:', project.client, err.message);
+            failed++;
+          }
+        }
+        
+        toast.loading(`Importing... ${imported}/${importData.length}`, { id: 'import-toast' });
+      }
+      
+      if (failed > 0) {
+        toast.success(`Imported ${imported} projects (${failed} failed)`, { id: 'import-toast' });
+      } else {
+        toast.success(`Imported ${imported} projects!`, { id: 'import-toast' });
+      }
       loadProjects();
     } catch (error) {
       console.error('Error importing projects:', error);
