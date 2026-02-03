@@ -12,7 +12,11 @@ import {
   FileText,
   Send,
   X,
-  ExternalLink
+  ExternalLink,
+  Bug,
+  Lightbulb,
+  MessageSquare,
+  ChevronRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { firestoreService } from '../services/firestoreService';
@@ -34,6 +38,15 @@ const ITSupportPage = () => {
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [ticketToClose, setTicketToClose] = useState(null);
   const [closingReason, setClosingReason] = useState('');
+  
+  // Admin tabs and feedback/chat state
+  const [activeAdminTab, setActiveAdminTab] = useState('tickets');
+  const [feedbackItems, setFeedbackItems] = useState([]);
+  const [feedbackChats, setFeedbackChats] = useState([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [chatReply, setChatReply] = useState('');
 
   // Google Apps Script URL for email notifications
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4ugw4vME8hCeaE3Bieu7gsrNJqbGHxkNwZR97vKi0wVbaQNMgGFnG3W-lKrkwXzFkdQ/exec';
@@ -50,6 +63,29 @@ const ITSupportPage = () => {
 
   // IT Support can see all tickets - admin or if email is jrsschroeder@gmail.com
   const isITSupport = currentRole === 'admin' || currentUser?.email === 'jrsschroeder@gmail.com';
+
+  // Load feedback and chats for IT Support
+  useEffect(() => {
+    if (!isITSupport) return;
+    
+    const loadFeedbackData = async () => {
+      setLoadingFeedback(true);
+      try {
+        const [feedback, chats] = await Promise.all([
+          firestoreService.getAllFeedback(),
+          firestoreService.getAllFeedbackChats()
+        ]);
+        setFeedbackItems(feedback || []);
+        setFeedbackChats(chats || []);
+      } catch (error) {
+        console.error('Error loading feedback data:', error);
+      } finally {
+        setLoadingFeedback(false);
+      }
+    };
+    
+    loadFeedbackData();
+  }, [isITSupport]);
 
   // Load comments when a ticket is selected
   useEffect(() => {
@@ -448,6 +484,70 @@ const ITSupportPage = () => {
     urgent: myTickets.filter(t => t.priority === 'urgent').length,
   };
 
+  // Feedback stats
+  const feedbackStats = {
+    bugs: feedbackItems.filter(f => f.type === 'bug').length,
+    features: feedbackItems.filter(f => f.type === 'feature').length,
+    openBugs: feedbackItems.filter(f => f.type === 'bug' && f.status === 'open').length,
+    openChats: feedbackChats.filter(c => c.status === 'open').length,
+  };
+
+  // Update feedback status
+  const handleFeedbackStatusUpdate = async (feedbackId, newStatus) => {
+    try {
+      await firestoreService.updateFeedbackStatus(feedbackId, newStatus);
+      setFeedbackItems(prev => prev.map(f => 
+        f.id === feedbackId ? { ...f, status: newStatus } : f
+      ));
+      if (selectedFeedback?.id === feedbackId) {
+        setSelectedFeedback(prev => ({ ...prev, status: newStatus }));
+      }
+    } catch (error) {
+      console.error('Error updating feedback status:', error);
+      alert('Failed to update status');
+    }
+  };
+
+  // Send chat reply
+  const handleChatReply = async () => {
+    if (!chatReply.trim() || !selectedChat) return;
+    
+    try {
+      await firestoreService.addFeedbackChatMessage(selectedChat.id, {
+        message: chatReply.trim(),
+        senderEmail: currentUser?.email,
+        senderName: `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'IT Support'
+      });
+      
+      // Reload chat
+      const updatedChat = await firestoreService.getFeedbackChatById(selectedChat.id);
+      setSelectedChat(updatedChat);
+      setFeedbackChats(prev => prev.map(c => 
+        c.id === selectedChat.id ? updatedChat : c
+      ));
+      setChatReply('');
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      alert('Failed to send reply');
+    }
+  };
+
+  // Close chat
+  const handleCloseChat = async (chatId) => {
+    try {
+      await firestoreService.closeFeedbackChat(chatId);
+      setFeedbackChats(prev => prev.map(c => 
+        c.id === chatId ? { ...c, status: 'closed' } : c
+      ));
+      if (selectedChat?.id === chatId) {
+        setSelectedChat(prev => ({ ...prev, status: 'closed' }));
+      }
+    } catch (error) {
+      console.error('Error closing chat:', error);
+      alert('Failed to close chat');
+    }
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
@@ -497,6 +597,66 @@ const ITSupportPage = () => {
         </div>
       )}
 
+      {/* Admin Tabs */}
+      {isITSupport && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          <button
+            onClick={() => setActiveAdminTab('tickets')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
+              activeAdminTab === 'tickets'
+                ? 'bg-[#0071e3] text-white'
+                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            Support Tickets
+            {ticketStats.pending > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[11px]">{ticketStats.pending}</span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveAdminTab('bugs')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
+              activeAdminTab === 'bugs'
+                ? 'bg-[#ff3b30] text-white'
+                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+            }`}
+          >
+            <Bug className="w-4 h-4" />
+            Bug Reports
+            {feedbackStats.openBugs > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[11px]">{feedbackStats.openBugs}</span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveAdminTab('features')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
+              activeAdminTab === 'features'
+                ? 'bg-[#ff9500] text-white'
+                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+            }`}
+          >
+            <Lightbulb className="w-4 h-4" />
+            Feature Requests
+            <span className="px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10 text-[11px]">{feedbackStats.features}</span>
+          </button>
+          <button
+            onClick={() => setActiveAdminTab('chats')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
+              activeAdminTab === 'chats'
+                ? 'bg-[#5856d6] text-white'
+                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            User Chats
+            {feedbackStats.openChats > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[11px]">{feedbackStats.openChats}</span>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Support Info Banner (for regular users only) */}
       {!isITSupport && (
         <div className="rounded-2xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-5">
@@ -515,7 +675,8 @@ const ITSupportPage = () => {
         </div>
       )}
 
-      {/* My Tickets */}
+      {/* My Tickets - Show for non-admins or when tickets tab is active */}
+      {(!isITSupport || activeAdminTab === 'tickets') && (
       <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
         <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2">
@@ -654,6 +815,202 @@ const ITSupportPage = () => {
           )}
         </div>
       </div>
+      )}
+
+      {/* Bug Reports Section */}
+      {isITSupport && activeAdminTab === 'bugs' && (
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+          <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2">
+              <Bug className="w-5 h-5 text-[#ff3b30]" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Bug Reports</span>
+            </div>
+          </div>
+          <div className="p-5">
+            {loadingFeedback ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 border-2 border-[#ff3b30] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-[#86868b]">Loading bug reports...</p>
+              </div>
+            ) : feedbackItems.filter(f => f.type === 'bug').length === 0 ? (
+              <div className="text-center py-8">
+                <Bug className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
+                <p className="text-[14px] text-[#86868b]">No bug reports yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {feedbackItems.filter(f => f.type === 'bug').map((bug) => (
+                  <div 
+                    key={bug.id}
+                    onClick={() => setSelectedFeedback(bug)}
+                    className={`p-4 rounded-xl cursor-pointer transition-all ${
+                      bug.status === 'open' ? 'bg-[#ff3b30]/5 border border-[#ff3b30]/20' :
+                      bug.status === 'in_progress' ? 'bg-[#0071e3]/5 border border-[#0071e3]/20' :
+                      'bg-black/[0.02] dark:bg-white/5 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{bug.title}</p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
+                            bug.priority === 'critical' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
+                            bug.priority === 'high' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
+                            'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                          }`}>
+                            {bug.priority}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
+                            bug.status === 'open' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
+                            bug.status === 'in_progress' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
+                            'bg-[#34c759]/10 text-[#34c759]'
+                          }`}>
+                            {bug.status}
+                          </span>
+                        </div>
+                        <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
+                          👤 {bug.userName} ({bug.userEmail})
+                        </p>
+                        <p className="text-[12px] text-[#86868b] line-clamp-2">{bug.description}</p>
+                        <p className="text-[11px] text-[#86868b] mt-2">
+                          {bug.createdAt?.toDate ? format(bug.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-[#86868b] flex-shrink-0" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Feature Requests Section */}
+      {isITSupport && activeAdminTab === 'features' && (
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+          <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-[#ff9500]" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Feature Requests</span>
+            </div>
+          </div>
+          <div className="p-5">
+            {loadingFeedback ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 border-2 border-[#ff9500] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-[#86868b]">Loading feature requests...</p>
+              </div>
+            ) : feedbackItems.filter(f => f.type === 'feature').length === 0 ? (
+              <div className="text-center py-8">
+                <Lightbulb className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
+                <p className="text-[14px] text-[#86868b]">No feature requests yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {feedbackItems.filter(f => f.type === 'feature').map((feature) => (
+                  <div 
+                    key={feature.id}
+                    onClick={() => setSelectedFeedback(feature)}
+                    className={`p-4 rounded-xl cursor-pointer transition-all ${
+                      feature.status === 'open' ? 'bg-[#ff9500]/5 border border-[#ff9500]/20' :
+                      'bg-black/[0.02] dark:bg-white/5 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{feature.title}</p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
+                            feature.status === 'open' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
+                            feature.status === 'planned' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
+                            'bg-[#34c759]/10 text-[#34c759]'
+                          }`}>
+                            {feature.status}
+                          </span>
+                        </div>
+                        <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
+                          👤 {feature.userName} ({feature.userEmail})
+                        </p>
+                        <p className="text-[12px] text-[#86868b] line-clamp-2">{feature.description}</p>
+                        <p className="text-[11px] text-[#86868b] mt-2">
+                          {feature.createdAt?.toDate ? format(feature.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-[#86868b] flex-shrink-0" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* User Chats Section */}
+      {isITSupport && activeAdminTab === 'chats' && (
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+          <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-[#5856d6]" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">User Chats</span>
+            </div>
+          </div>
+          <div className="p-5">
+            {loadingFeedback ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 border-2 border-[#5856d6] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-[#86868b]">Loading chats...</p>
+              </div>
+            ) : feedbackChats.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageSquare className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
+                <p className="text-[14px] text-[#86868b]">No user chats yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {feedbackChats.map((chat) => (
+                  <div 
+                    key={chat.id}
+                    onClick={async () => {
+                      const fullChat = await firestoreService.getFeedbackChatById(chat.id);
+                      setSelectedChat(fullChat);
+                    }}
+                    className={`p-4 rounded-xl cursor-pointer transition-all ${
+                      chat.status === 'open' ? 'bg-[#5856d6]/5 border border-[#5856d6]/20' :
+                      'bg-black/[0.02] dark:bg-white/5 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">
+                            {chat.userName || chat.userEmail}
+                          </p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
+                            chat.status === 'open' ? 'bg-[#5856d6]/10 text-[#5856d6]' :
+                            'bg-[#86868b]/10 text-[#86868b]'
+                          }`}>
+                            {chat.status}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b]">
+                            {chat.messageCount || 0} messages
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-[#86868b] line-clamp-2">{chat.lastMessage}</p>
+                        <p className="text-[11px] text-[#86868b] mt-2">
+                          {chat.createdAt?.toDate ? format(chat.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-[#86868b] flex-shrink-0" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Submit Support Request Modal */}
       {showRequestModal && createPortal(
@@ -1143,6 +1500,236 @@ const ITSupportPage = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Feedback Detail Modal */}
+      {selectedFeedback && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {selectedFeedback.type === 'bug' ? (
+                    <Bug className="w-5 h-5 text-[#ff3b30]" />
+                  ) : (
+                    <Lightbulb className="w-5 h-5 text-[#ff9500]" />
+                  )}
+                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+                    {selectedFeedback.type === 'bug' ? 'Bug Report' : 'Feature Request'}
+                  </h2>
+                </div>
+                <button onClick={() => setSelectedFeedback(null)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                  <X className="w-5 h-5 text-[#86868b]" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{selectedFeedback.title}</h3>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${
+                    selectedFeedback.status === 'open' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
+                    selectedFeedback.status === 'in_progress' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
+                    'bg-[#34c759]/10 text-[#34c759]'
+                  }`}>
+                    {selectedFeedback.status}
+                  </span>
+                  {selectedFeedback.priority && (
+                    <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${
+                      selectedFeedback.priority === 'critical' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
+                      selectedFeedback.priority === 'high' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
+                      'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                    }`}>
+                      {selectedFeedback.priority}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                <label className="text-[12px] font-medium text-[#86868b]">Submitted By</label>
+                <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1">
+                  {selectedFeedback.userName} ({selectedFeedback.userEmail})
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                <label className="text-[12px] font-medium text-[#86868b]">Description</label>
+                <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1 whitespace-pre-wrap">{selectedFeedback.description}</p>
+              </div>
+
+              {selectedFeedback.url && (
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[12px] font-medium text-[#86868b]">Page URL</label>
+                  <a 
+                    href={selectedFeedback.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[13px] text-[#0071e3] hover:underline mt-1 flex items-center gap-1"
+                  >
+                    <span className="break-all">{selectedFeedback.url}</span>
+                    <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                  </a>
+                </div>
+              )}
+
+              {selectedFeedback.selectedElement && (
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[12px] font-medium text-[#86868b]">Selected Element</label>
+                  <div className="mt-1 p-3 bg-black/5 dark:bg-white/5 rounded-xl">
+                    <p className="text-[12px] font-mono text-[#1d1d1f] dark:text-white">
+                      &lt;{selectedFeedback.selectedElement.tagName?.toLowerCase()}&gt;
+                      {selectedFeedback.selectedElement.id && ` #${selectedFeedback.selectedElement.id}`}
+                      {selectedFeedback.selectedElement.className && ` .${selectedFeedback.selectedElement.className.split(' ')[0]}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {selectedFeedback.consoleLogs && selectedFeedback.consoleLogs.length > 0 && (
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[12px] font-medium text-[#86868b]">Console Logs ({selectedFeedback.consoleLogs.length})</label>
+                  <div className="mt-2 p-3 bg-[#1d1d1f] rounded-xl max-h-48 overflow-y-auto">
+                    {selectedFeedback.consoleLogs.slice(-50).map((log, idx) => (
+                      <p key={idx} className={`text-[10px] font-mono ${
+                        log.type === 'error' ? 'text-[#ff3b30]' :
+                        log.type === 'warn' ? 'text-[#ff9500]' :
+                        'text-[#86868b]'
+                      }`}>
+                        [{log.type}] {log.message}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedFeedback.userInfo && (
+                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[12px] font-medium text-[#86868b]">Browser Info</label>
+                  <div className="mt-1 text-[12px] text-[#86868b]">
+                    <p>Viewport: {selectedFeedback.userInfo.viewport?.width}x{selectedFeedback.userInfo.viewport?.height}</p>
+                    <p className="truncate">User Agent: {selectedFeedback.userInfo.userAgent}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Status Actions */}
+              <div className="pt-4 border-t border-black/5 dark:border-white/10 flex flex-wrap gap-2">
+                {selectedFeedback.status === 'open' && (
+                  <button
+                    onClick={() => handleFeedbackStatusUpdate(selectedFeedback.id, 'in_progress')}
+                    className="px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+                  >
+                    Mark In Progress
+                  </button>
+                )}
+                {selectedFeedback.status !== 'resolved' && (
+                  <button
+                    onClick={() => handleFeedbackStatusUpdate(selectedFeedback.id, 'resolved')}
+                    className="px-4 py-2 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors"
+                  >
+                    Mark Resolved
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedFeedback(null)}
+                  className="px-4 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Chat Detail Modal */}
+      {selectedChat && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl flex flex-col">
+            <div className="flex-shrink-0 border-b border-black/5 dark:border-white/10 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5856d6] to-[#0071e3] flex items-center justify-center text-white font-semibold">
+                    {(selectedChat.userName || selectedChat.userEmail || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+                      {selectedChat.userName || selectedChat.userEmail}
+                    </h2>
+                    <p className="text-[12px] text-[#86868b]">{selectedChat.userEmail}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectedChat.status === 'open' && (
+                    <button
+                      onClick={() => handleCloseChat(selectedChat.id)}
+                      className="px-3 py-1.5 rounded-lg bg-[#86868b] text-white text-[12px] font-medium hover:bg-[#6e6e73] transition-colors"
+                    >
+                      Close Chat
+                    </button>
+                  )}
+                  <button onClick={() => setSelectedChat(null)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                    <X className="w-5 h-5 text-[#86868b]" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-3">
+              {selectedChat.messages?.map((msg, idx) => {
+                const isAdmin = msg.senderEmail === currentUser?.email || msg.senderEmail === 'jrsschroeder@gmail.com';
+                return (
+                  <div key={idx} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                      isAdmin 
+                        ? 'bg-[#0071e3] text-white' 
+                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white'
+                    }`}>
+                      <p className="text-[13px]">{msg.message}</p>
+                      <p className={`text-[10px] mt-1 ${isAdmin ? 'text-white/70' : 'text-[#86868b]'}`}>
+                        {msg.senderName} • {msg.timestamp ? format(new Date(msg.timestamp), 'MMM dd, h:mm a') : ''}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Reply Input */}
+            {selectedChat.status === 'open' && (
+              <div className="flex-shrink-0 border-t border-black/5 dark:border-white/10 p-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chatReply}
+                    onChange={(e) => setChatReply(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleChatReply()}
+                    placeholder="Type your reply..."
+                    className="flex-1 h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                  <button
+                    onClick={handleChatReply}
+                    disabled={!chatReply.trim()}
+                    className="px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedChat.status === 'closed' && (
+              <div className="flex-shrink-0 border-t border-black/5 dark:border-white/10 p-4 text-center">
+                <p className="text-[13px] text-[#86868b]">This chat has been closed</p>
+              </div>
+            )}
           </div>
         </div>,
         document.body
