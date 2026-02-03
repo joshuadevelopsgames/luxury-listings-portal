@@ -28,7 +28,6 @@ import SmartFilters from '../components/tasks/SmartFilters';
 import FilterDropdown from '../components/tasks/FilterDropdown';
 import CalendarView from '../components/tasks/CalendarView';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
 import { reminderService } from '../services/reminderService';
@@ -106,18 +105,12 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 };
 
 const TasksPage = () => {
-  const { currentUser, hasPermission } = useAuth();
-  const { hasFeaturePermission } = usePermissions();
-  
-  // Get role-based permissions
-  const { getCurrentRolePermissions } = useAuth();
+  const { currentUser, hasPermission, getCurrentRolePermissions } = useAuth();
   const rolePerms = getCurrentRolePermissions?.()?.permissions || {};
   
-  // Check permissions - support role-based permissions AND permission system
-  const canCreateTasks = 
-    rolePerms.canCreateTasks === true || 
-    hasPermission(PERMISSIONS.CREATE_TASKS) || 
-    hasFeaturePermission(FEATURE_PERMISSIONS.CREATE_TASKS);
+  // If user can access the Tasks page (module enabled), they can create tasks
+  // No separate feature permission needed - module access = full access
+  const canCreateTasks = true;
   const canAssignTasks = rolePerms.canAssignTasks === true || hasPermission(PERMISSIONS.ASSIGN_TASKS);
   const canViewAllTasks = rolePerms.canViewAllTasks === true || hasPermission(PERMISSIONS.VIEW_ALL_TASKS);
   const canDeleteAnyTask = hasPermission(PERMISSIONS.DELETE_ANY_TASK);
