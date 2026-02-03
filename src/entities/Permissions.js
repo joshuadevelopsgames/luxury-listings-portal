@@ -39,7 +39,7 @@ export const PERMISSIONS = {
   VIEW_HR_DATA: 'view_hr_data',
   MANAGE_TEAM: 'manage_team',
   
-  // Client Management
+  // Clients List
   VIEW_ALL_CLIENTS: 'view_all_clients',
   MANAGE_CLIENTS: 'manage_clients',
   DELETE_CLIENTS: 'delete_clients',
@@ -131,7 +131,7 @@ export const PERMISSION_CATEGORIES = {
     ]
   },
   CLIENT_MANAGEMENT: {
-    name: 'Client Management',
+    name: 'Clients List',
     description: 'Manage SMM client profiles and assignments',
     permissions: [
       PERMISSIONS.VIEW_ALL_CLIENTS,

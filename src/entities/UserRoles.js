@@ -85,7 +85,7 @@ export const ROLE_PERMISSIONS = {
       'Team Oversight',
       'Content Strategy',
       'Performance Analytics',
-      'Client Management',
+      'Clients List',
       'Team Leadership'
     ],
     color: 'indigo',

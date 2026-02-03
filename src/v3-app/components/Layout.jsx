@@ -130,7 +130,7 @@ const V3Layout = () => {
     'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, path: '/instagram-reports' },
     // Upgrade modules
     'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-    'clients': { name: 'Client Management', icon: User, path: '/clients' },
+    'clients': { name: 'Clients List', icon: User, path: '/clients' },
     'posting-packages': { name: 'Posting Packages', icon: Briefcase, path: '/posting-packages' },
     'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
     'crm': { name: 'CRM', icon: Target, path: '/crm' },

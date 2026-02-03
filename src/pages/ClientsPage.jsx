@@ -41,7 +41,7 @@ const ClientsPage = () => {
       {/* Header */}
       <div>
         <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
-          Client Management
+          Clients List
         </h1>
         <p className="text-[15px] sm:text-[17px] text-[#86868b]">
           Manage SMM client profiles and pending approvals
