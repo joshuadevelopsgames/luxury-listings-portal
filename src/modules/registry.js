@@ -6,7 +6,7 @@
  * it's included in the base package or requires upgrade.
  */
 
-import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3, User, Palette } from 'lucide-react';
+import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3, User, Palette, Bug, MessageSquare } from 'lucide-react';
 
 // ============================================================================
 // MODULE DEFINITIONS
@@ -243,6 +243,40 @@ export const modules = {
       section: 'Design Team'
     },
     baseModule: false
+  },
+
+  // -------------------------------------------------------------------------
+  // ADMIN MODULES (system admin only)
+  // -------------------------------------------------------------------------
+
+  'admin-feedback': {
+    id: 'admin-feedback',
+    name: 'Feedback & Reports',
+    description: 'View bug reports and feature requests',
+    icon: Bug,
+    routes: ['/admin/feedback'],
+    widgets: [],
+    navItem: {
+      path: '/admin/feedback',
+      section: 'Admin'
+    },
+    baseModule: false,
+    adminOnly: true
+  },
+
+  'admin-chats': {
+    id: 'admin-chats',
+    name: 'Support Chats',
+    description: 'Respond to user support chats',
+    icon: MessageSquare,
+    routes: ['/admin/chats'],
+    widgets: [],
+    navItem: {
+      path: '/admin/chats',
+      section: 'Admin'
+    },
+    baseModule: false,
+    adminOnly: true
   }
 };
 
