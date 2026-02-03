@@ -549,6 +549,10 @@ const ClientProfilesList = () => {
                         <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
                       ) : client.clientName?.toLowerCase().includes('resop') ? (
                         <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
+                      ) : client.clientName?.toLowerCase().includes('kodiak') ? (
+                        <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center p-1">
+                          <img src="/kodiak-club-logo.png" alt="Kodiak Club" className="w-full h-full object-contain" />
+                        </div>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                           <span className="text-white font-medium text-sm">
@@ -682,6 +686,10 @@ const ClientProfilesList = () => {
                         <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
                       ) : client.clientName?.toLowerCase().includes('resop') ? (
                         <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
+                      ) : client.clientName?.toLowerCase().includes('kodiak') ? (
+                        <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center p-1">
+                          <img src="/kodiak-club-logo.png" alt="Kodiak Club" className="w-full h-full object-contain" />
+                        </div>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                           <span className="text-white font-semibold text-lg">
