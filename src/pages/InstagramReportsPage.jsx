@@ -531,14 +531,16 @@ const InstagramReportsPage = () => {
                 >
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-gradient-to-br from-[#833AB4] to-[#E1306C] flex items-center justify-center flex-shrink-0">
-                      {client.logo || client.profilePic || client.image ? (
+                      {client.profilePhoto || client.logo || client.profilePic || client.image ? (
                         <img 
-                          src={client.logo || client.profilePic || client.image} 
+                          src={client.profilePhoto || client.logo || client.profilePic || client.image} 
                           alt={client.clientName || client.name} 
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        <span className="text-white font-semibold text-lg">
+                          {(client.clientName || client.name || '?').charAt(0).toUpperCase()}
+                        </span>
                       )}
                     </div>
                     <div className="min-w-0">
