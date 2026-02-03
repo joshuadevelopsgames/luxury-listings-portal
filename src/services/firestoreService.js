@@ -1156,16 +1156,101 @@ class FirestoreService {
     }
   }
 
-  // Add new client
+  // Get a single client by ID
+  async getClientById(clientId) {
+    try {
+      const docRef = doc(db, this.collections.CLIENTS, clientId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error fetching client:', error);
+      throw error;
+    }
+  }
+
+  // Generate next client number (CLT-001, CLT-002, etc.)
+  async generateClientNumber() {
+    try {
+      const clients = await this.getClients();
+      // Find highest existing client number
+      let maxNum = 0;
+      clients.forEach(client => {
+        const num = client.clientNumber;
+        if (num && typeof num === 'string') {
+          const match = num.match(/CLT-(\d+)/);
+          if (match) {
+            const n = parseInt(match[1], 10);
+            if (n > maxNum) maxNum = n;
+          }
+        }
+      });
+      const nextNum = (maxNum + 1).toString().padStart(3, '0');
+      return `CLT-${nextNum}`;
+    } catch (error) {
+      console.error('❌ Error generating client number:', error);
+      // Fallback to timestamp-based ID
+      return `CLT-${Date.now().toString(36).toUpperCase()}`;
+    }
+  }
+
+  // Assign client numbers to all clients that don't have one
+  async assignMissingClientNumbers() {
+    try {
+      const clients = await this.getClients();
+      const clientsWithoutNumber = clients.filter(c => !c.clientNumber);
+      
+      if (clientsWithoutNumber.length === 0) {
+        console.log('✅ All clients already have client numbers');
+        return { updated: 0 };
+      }
+
+      // Find highest existing number
+      let maxNum = 0;
+      clients.forEach(client => {
+        const num = client.clientNumber;
+        if (num && typeof num === 'string') {
+          const match = num.match(/CLT-(\d+)/);
+          if (match) {
+            const n = parseInt(match[1], 10);
+            if (n > maxNum) maxNum = n;
+          }
+        }
+      });
+
+      // Assign numbers to clients without one
+      let nextNum = maxNum + 1;
+      for (const client of clientsWithoutNumber) {
+        const clientNumber = `CLT-${nextNum.toString().padStart(3, '0')}`;
+        await this.updateClient(client.id, { clientNumber });
+        console.log(`✅ Assigned ${clientNumber} to ${client.clientName || client.id}`);
+        nextNum++;
+      }
+
+      console.log(`✅ Assigned client numbers to ${clientsWithoutNumber.length} clients`);
+      return { updated: clientsWithoutNumber.length };
+    } catch (error) {
+      console.error('❌ Error assigning client numbers:', error);
+      throw error;
+    }
+  }
+
+  // Add new client (auto-generates clientNumber)
   async addClient(clientData) {
     try {
+      // Generate client number if not provided
+      const clientNumber = clientData.clientNumber || await this.generateClientNumber();
+      
       const docRef = await addDoc(collection(db, this.collections.CLIENTS), {
         ...clientData,
+        clientNumber,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-      console.log('✅ Client added:', docRef.id);
-      return { success: true, id: docRef.id };
+      console.log('✅ Client added:', docRef.id, 'with number:', clientNumber);
+      return { success: true, id: docRef.id, clientNumber };
     } catch (error) {
       console.error('❌ Error adding client:', error);
       throw error;

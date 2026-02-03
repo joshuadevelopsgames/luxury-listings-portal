@@ -8,6 +8,7 @@ import { usePermissions } from '../../contexts/PermissionsContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { firestoreService } from '../../services/firestoreService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';
+import ClientLink from '../../components/ui/ClientLink';
 import { getBaseModuleIds, getAllModuleIds } from '../../modules/registry';
 import {
   CheckCircle2,
@@ -425,9 +426,9 @@ const V3Dashboard = () => {
                 </div>
               ) : displayClients.length > 0 ? (
                 displayClients.slice(0, 4).map((client) => (
-                  <div key={client.id} className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <div key={client.id} className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">{client.clientName || 'Unknown Client'}</span>
+                      <ClientLink client={client} className="text-[14px] font-medium truncate" />
                       <span className="text-[12px] text-[#86868b]">—</span>
                     </div>
                     <p className="text-[12px] text-[#86868b] mt-0.5">From contracts (coming soon)</p>
