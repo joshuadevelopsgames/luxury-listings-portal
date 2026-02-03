@@ -644,9 +644,9 @@ const GraphicProjectTracker = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000]">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f]">
       {/* Header with backdrop blur */}
-      <div className="sticky top-0 z-10 bg-[#f5f5f7]/80 dark:bg-[#000000]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
+      <div className="sticky top-0 z-10 bg-[#f5f5f7]/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -709,7 +709,7 @@ const GraphicProjectTracker = () => {
               onClick={() => setSelectedYear(year)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-medium transition-all whitespace-nowrap ${
                 selectedYear === year
-                  ? 'bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] shadow-lg'
+                  ? 'bg-[#0071e3] text-white'
                   : 'bg-white dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 border border-black/5 dark:border-white/10'
               }`}
             >
