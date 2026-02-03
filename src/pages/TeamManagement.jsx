@@ -98,8 +98,8 @@ const TeamManagement = () => {
     loadTeamMembers();
   }, []);
 
-  // Departments for filtering
-  const departments = ['all', 'Marketing', 'Sales', 'Design', 'Engineering', 'HR'];
+  // Departments for filtering - keep in sync with PermissionsManager.jsx
+  const departments = ['all', 'Executive', 'Content Team', 'Design Team', 'Sales', 'Marketing', 'Operations', 'HR', 'IT', 'Finance', 'General'];
 
   // Status options
   const statusOptions = ['all', 'active', 'probation', 'inactive'];

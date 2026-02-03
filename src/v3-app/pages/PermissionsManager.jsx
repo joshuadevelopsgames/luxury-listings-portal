@@ -106,6 +106,20 @@ const ALL_PAGES = {
 // Get list of base module IDs
 const BASE_MODULE_IDS = getBaseModuleIds();
 
+// Department options
+const DEPARTMENTS = [
+  'Executive',
+  'Content Team',
+  'Design Team',
+  'Sales',
+  'Marketing',
+  'Operations',
+  'HR',
+  'IT',
+  'Finance',
+  'General'
+];
+
 // System admins (for full access display)
 const SYSTEM_ADMINS = [
   'jrsschroeder@gmail.com'
@@ -1073,13 +1087,16 @@ const PermissionsManager = () => {
                   <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
                     Department
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={editProfileForm.department}
                     onChange={(e) => setEditProfileForm(prev => ({ ...prev, department: e.target.value }))}
-                    placeholder="e.g., Marketing, Design, Sales"
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
-                  />
+                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                  >
+                    <option value="">Select department...</option>
+                    {DEPARTMENTS.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

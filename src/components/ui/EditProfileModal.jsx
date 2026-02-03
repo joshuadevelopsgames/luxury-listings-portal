@@ -5,6 +5,20 @@ import { X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PERMISSIONS } from '../../entities/Permissions';
 
+// Department options - keep in sync with PermissionsManager.jsx
+const DEPARTMENTS = [
+  'Executive',
+  'Content Team',
+  'Design Team',
+  'Sales',
+  'Marketing',
+  'Operations',
+  'HR',
+  'IT',
+  'Finance',
+  'General'
+];
+
 export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSave }) {
   const { hasPermission, currentUser } = useAuth();
   const [saving, setSaving] = useState(false);
@@ -147,7 +161,18 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Department {isAdmin ? '' : '(admin managed)'}</label>
-                <input name="department" value={form.department} onChange={handleChange} className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100" disabled={!isAdmin} />
+                <select 
+                  name="department" 
+                  value={form.department} 
+                  onChange={handleChange} 
+                  className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100" 
+                  disabled={!isAdmin}
+                >
+                  <option value="">Select department...</option>
+                  {DEPARTMENTS.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Start Date {isAdmin ? '' : '(admin managed)'}</label>
