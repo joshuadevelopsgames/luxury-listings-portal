@@ -168,6 +168,21 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();  // Only admin can view/manage reports
     }
     
+    // Client templates - synced from Canva, authenticated users can read, admins can write
+    // Cloud Functions write via Admin SDK (bypasses rules)
+    match /client_templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Generated designs - created by render engine, users can read/create
+    match /generated_designs/{designId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && 
+        resource.data.created_by == request.auth.token.email;
+    }
+    
     // Note: The catch-all rule below is commented out to maintain current functionality
     // Uncomment it once you've verified all collections are explicitly listed above
     // match /{document=**} {
