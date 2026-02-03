@@ -39,6 +39,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
+import ClientLink from '../components/ui/ClientLink';
 
 const CRMPage = () => {
   const { currentUser, currentRole, hasPermission } = useAuth();
@@ -712,12 +713,18 @@ const CRMPage = () => {
   const totalExistingClients = existingClients.length;
   const totalLeads = totalWarmLeads + totalContacted + totalColdLeads;
 
-  const renderClientCard = (client) => (
+  const renderClientCard = (client, isExisting = false) => (
     <div key={client.id} className="p-5 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/10 hover:shadow-lg transition-shadow">
       <div>
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h4 className="font-medium text-gray-900 dark:text-white">{client.contactName}</h4>
+            {isExisting ? (
+              <h4 className="font-medium">
+                <ClientLink client={client} showId />
+              </h4>
+            ) : (
+              <h4 className="font-medium text-gray-900 dark:text-white">{client.contactName}</h4>
+            )}
             
             {/* Organization - New prominent field */}
             {client.organization && (
@@ -804,7 +811,13 @@ const CRMPage = () => {
       className="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
     >
       <td className="py-3 px-4">
-        <p className="font-medium text-gray-900 dark:text-white">{client.contactName}</p>
+        {isExisting ? (
+          <div className="font-medium">
+            <ClientLink client={client} showId />
+          </div>
+        ) : (
+          <p className="font-medium text-gray-900 dark:text-white">{client.contactName}</p>
+        )}
         {client.organization && (
           <p className="text-xs text-gray-500 dark:text-gray-400">{client.organization}</p>
         )}
@@ -1116,7 +1129,7 @@ const CRMPage = () => {
             renderLeadList(filteredExistingClients, true)
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredExistingClients.map(renderClientCard)}
+              {filteredExistingClients.map(client => renderClientCard(client, true))}
             </div>
           )}
           {!loadingExistingClients && filteredExistingClients.length === 0 && (
