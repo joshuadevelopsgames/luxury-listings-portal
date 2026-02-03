@@ -130,21 +130,29 @@ const V3Layout = () => {
 
   // Sync theme-color meta tag with dark mode for Safari status bar
   useEffect(() => {
-    const themeColor = darkMode ? '#000000' : '#f5f5f7';
+    // Use the exact app background colors
+    const themeColor = darkMode ? '#161617' : '#f5f5f7';
     
-    // Update all theme-color meta tags
+    // Update the fallback theme-color meta tag (the one without media query)
+    const fallbackMeta = document.getElementById('theme-color-meta');
+    if (fallbackMeta) {
+      fallbackMeta.setAttribute('content', themeColor);
+    }
+    
+    // Also update any theme-color meta tags
     const metaTags = document.querySelectorAll('meta[name="theme-color"]');
-    if (metaTags.length > 0) {
-      // If we have media-query based tags, update both
-      metaTags.forEach(tag => {
+    metaTags.forEach(tag => {
+      // Only update tags without media attribute (fallback tag)
+      if (!tag.getAttribute('media')) {
         tag.setAttribute('content', themeColor);
-      });
+      }
+    });
+    
+    // Also set the html class for dark mode (needed for CSS selectors)
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
     } else {
-      // Create a theme-color tag if none exists
-      const meta = document.createElement('meta');
-      meta.name = 'theme-color';
-      meta.content = themeColor;
-      document.head.appendChild(meta);
+      document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
 

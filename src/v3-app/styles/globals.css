@@ -54,6 +54,31 @@
 }
 
 /* ==========================================================================
+   iOS Safari Dark Mode Fix - Prevent White Status Bar
+   ========================================================================== */
+
+/* Ensure html/body have the correct background extending to edges */
+html, body {
+  background-color: var(--color-background);
+}
+
+/* Full viewport height using dvh for iOS Safari */
+.min-h-screen {
+  min-height: 100dvh;
+}
+
+/* Extend background behind iOS status bar */
+@supports (padding-top: env(safe-area-inset-top)) {
+  html {
+    background-color: var(--color-background);
+  }
+  
+  .dark html {
+    background-color: #161617;
+  }
+}
+
+/* ==========================================================================
    V3 Content Wrapper - Dark Mode Overrides for V1 Pages ONLY
    These styles only apply to v1 pages that don't have their own dark: classes
    ========================================================================== */

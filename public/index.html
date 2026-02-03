@@ -3,10 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="/Luxury-listings-logo-CLR.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Theme colors for light/dark mode - Safari status bar will match -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Theme colors for light/dark mode - Safari status bar will match app background -->
     <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1d1d1f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#161617" media="(prefers-color-scheme: dark)" />
+    <!-- Fallback theme-color for browsers that don't support media queries -->
+    <meta name="theme-color" content="#f5f5f7" id="theme-color-meta" />
     <meta
       name="description"
       content="Luxury Listings Portal - Content Leadership Platform"
@@ -19,7 +21,8 @@
     
     <!-- iOS PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- black-translucent allows the app background to show through the status bar -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Luxury Listings" />
     <meta name="mobile-web-app-capable" content="yes" />
     
