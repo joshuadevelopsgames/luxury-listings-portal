@@ -61,9 +61,9 @@ const UserLink = ({
         className={`inline-flex items-center gap-1.5 text-[#5856d6] hover:text-[#6e6ce8] hover:underline font-medium transition-colors cursor-pointer ${className}`}
       >
         {children || displayName}
-        {showId && (localUser.uid || localUser.id) && (
+        {showId && (localUser.uid || localUser.id || localUser.email) && (
           <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#5856d6]/10 text-[#5856d6] font-mono">
-            {(localUser.uid || localUser.id).slice(0, 8)}
+            USR-{String(localUser.uid || localUser.id || localUser.email).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0).toString().slice(-4).padStart(4, '0')}
           </span>
         )}
         {showRole && localUser.role && (
