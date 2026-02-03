@@ -32,6 +32,7 @@ const EmployeeSelfService = () => {
   const [employeeFirestoreId, setEmployeeFirestoreId] = useState(null);
   const [employeeNumber, setEmployeeNumber] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [personalInfo, setPersonalInfo] = useState(null); // Real data from Firestore
   
   const isHRManager = currentRole === 'hr_manager';
   const canEditAllFields = isHRManager || isSystemAdmin;
@@ -51,6 +52,7 @@ const EmployeeSelfService = () => {
       setLoading(true);
       setEmployeeFirestoreId(null);
       setEmployeeNumber(null);
+      setPersonalInfo(null);
       setActiveTab('overview');
       
       try {
@@ -58,6 +60,19 @@ const EmployeeSelfService = () => {
         const employee = await firestoreService.getEmployeeByEmail(currentUser.email);
         if (employee) {
           setEmployeeFirestoreId(employee.id);
+          // Store the actual employee data from Firestore
+          setPersonalInfo({
+            firstName: employee.firstName || currentUser?.firstName || '',
+            lastName: employee.lastName || currentUser?.lastName || '',
+            email: employee.email || currentUser?.email || '',
+            phone: employee.phone || '',
+            address: employee.address || '',
+            department: employee.department || currentUser?.department || '',
+            position: employee.position || employee.role || '',
+            startDate: employee.startDate || currentUser?.startDate || '',
+            employeeId: employee.employeeId || null,
+            manager: employee.manager || ''
+          });
           // Use existing employeeId if available
           if (employee.employeeId) {
             setEmployeeNumber(employee.employeeId);
@@ -91,20 +106,28 @@ const EmployeeSelfService = () => {
     loadEmployeeData();
   }, [currentUser?.email]);
 
-  // Mock data
+  // Default personal info (used when Firestore data not loaded yet)
+  const defaultPersonalInfo = {
+    firstName: currentUser?.firstName || currentUser?.displayName?.split(' ')[0] || '',
+    lastName: currentUser?.lastName || currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
+    email: currentUser?.email || '',
+    phone: '',
+    address: '',
+    department: currentUser?.department || '',
+    position: '',
+    startDate: currentUser?.startDate || '',
+    employeeId: employeeNumber || 'Loading...',
+    manager: ''
+  };
+  
+  // Use Firestore data if available, otherwise defaults
+  const currentPersonalInfo = personalInfo || defaultPersonalInfo;
+  // Make sure employeeId is always current
+  currentPersonalInfo.employeeId = employeeNumber || currentPersonalInfo.employeeId || 'Loading...';
+  
+  // Employee data structure (personalInfo is now dynamic)
   const employeeData = {
-    personalInfo: {
-      firstName: currentUser?.firstName || 'John',
-      lastName: currentUser?.lastName || 'Doe',
-      email: currentUser?.email || 'john.doe@luxuryrealestate.com',
-      phone: '(555) 123-4567',
-      address: '123 Main Street, Los Angeles, CA 90001',
-      department: currentUser?.department || 'Marketing',
-      position: 'Marketing Specialist',
-      startDate: currentUser?.startDate || '2023-01-15',
-      employeeId: employeeNumber || 'Loading...',
-      manager: 'Sarah Johnson'
-    },
+    personalInfo: currentPersonalInfo,
     timeOff: {
       vacation: { total: 20, used: 8, remaining: 12 },
       sick: { total: 10, used: 2, remaining: 8 },
@@ -151,6 +174,12 @@ const EmployeeSelfService = () => {
         await firestoreService.updateEmployee(employeeFirestoreId, updatedData);
         console.log('✅ Employee updated in Firestore');
       }
+      
+      // Update local state immediately so UI reflects changes
+      setPersonalInfo(prev => ({
+        ...(prev || defaultPersonalInfo),
+        ...updatedData
+      }));
       
       // Note: PersonCard already shows success message
     } catch (error) {
