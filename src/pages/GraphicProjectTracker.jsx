@@ -538,30 +538,52 @@ const GraphicProjectTracker = () => {
             
             {/* User Filter */}
             <div className="flex items-center gap-1 overflow-x-auto">
-              <button
-                onClick={() => setUserFilter('mine')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
-                  userFilter === 'mine'
-                    ? 'bg-[#0071e3] text-white'
-                    : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                Mine
-              </button>
-              {otherTeamMembers.map(member => (
+              {/* Show "My Projects" only if current user is a team member */}
+              {currentTeamMember && (
                 <button
-                  key={member.email}
-                  onClick={() => setUserFilter(member.email)}
+                  onClick={() => setUserFilter('mine')}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
-                    userFilter === member.email
+                    userFilter === 'mine'
                       ? 'bg-[#0071e3] text-white'
                       : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
                   }`}
                 >
-                  {member.name}
+                  <User className="w-3.5 h-3.5" />
+                  My Projects
                 </button>
-              ))}
+              )}
+              {/* If current user is a team member, show other members; otherwise show all team members */}
+              {currentTeamMember ? (
+                // Show other team members (not the current user)
+                otherTeamMembers.map(member => (
+                  <button
+                    key={member.email}
+                    onClick={() => setUserFilter(member.email)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
+                      userFilter === member.email
+                        ? 'bg-[#0071e3] text-white'
+                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                    }`}
+                  >
+                    {member.name}'s
+                  </button>
+                ))
+              ) : (
+                // Show all team members for non-team viewers
+                GRAPHIC_TEAM.map(member => (
+                  <button
+                    key={member.email}
+                    onClick={() => setUserFilter(member.email)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
+                      userFilter === member.email
+                        ? 'bg-[#0071e3] text-white'
+                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                    }`}
+                  >
+                    {member.name}'s
+                  </button>
+                ))
+              )}
               <button
                 onClick={() => setUserFilter('all')}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
