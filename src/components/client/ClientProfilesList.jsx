@@ -31,6 +31,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import PlatformIcons from '../PlatformIcons';
+import ClientLink from '../ui/ClientLink';
 
 // Custom icons for platforms not in lucide-react
 const TikTokIcon = ({ className }) => (
@@ -568,8 +569,8 @@ const ClientProfilesList = () => {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
-                        {client.clientName || 'Unnamed Client'}
+                      <h3 className="text-[13px] font-medium truncate">
+                        <ClientLink client={client} showId />
                       </h3>
                       <p className="text-[11px] text-[#86868b] truncate">{client.clientEmail || 'No email'}</p>
                     </div>
@@ -705,8 +706,8 @@ const ClientProfilesList = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">
-                        {client.clientName || 'Unnamed Client'}
+                      <h3 className="text-[14px] font-medium truncate">
+                        <ClientLink client={client} showId />
                       </h3>
                       {client.brokerage && (
                         <p className="text-[11px] text-[#86868b] truncate">{client.brokerage}</p>
@@ -841,8 +842,8 @@ const ClientProfilesList = () => {
                     )}
                   </div>
                   <div>
-                    <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white mb-1">
-                      {selectedClient.clientName || 'Unnamed Client'}
+                    <h2 className="text-[20px] font-semibold mb-1">
+                      <ClientLink client={selectedClient} showId />
                     </h2>
                     <span className="text-[12px] px-2 py-1 rounded-md bg-[#0071e3]/10 text-[#0071e3] font-medium">
                       {selectedClient.packageType || 'Standard'} Package

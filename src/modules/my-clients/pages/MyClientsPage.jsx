@@ -15,6 +15,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useViewAs } from '../../../contexts/ViewAsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import PlatformIcons from '../../../components/PlatformIcons';
+import ClientLink from '../../../components/ui/ClientLink';
 import { 
   Users, 
   Package, 
@@ -265,8 +266,8 @@ const MyClientsPage = () => {
                       )}
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
-                        {client.clientName || 'Unnamed Client'}
+                      <h3 className="text-[15px] font-semibold">
+                        <ClientLink client={client} showId />
                       </h3>
                       {client.brokerage ? (
                         <p className="text-[12px] text-[#86868b]">{client.brokerage}</p>

@@ -3,6 +3,7 @@ import { TrendingUp, Users, CheckCircle2, Clock, ArrowUpRight, Briefcase, ListTo
 import { useAuth } from '../../contexts/AuthContext';
 import { firestoreService } from '../../services/firestoreService';
 import { DailyTask } from '../../entities/DailyTask';
+import ClientLink from '../../components/ui/ClientLink';
 
 /**
  * V3 Analytics - Real Data from Firestore
@@ -279,7 +280,7 @@ const V3Analytics = () => {
             <tbody>
               {recentClients.length > 0 ? recentClients.map((client, idx) => (
                 <tr key={idx} className="border-b border-black/5 dark:border-white/5 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-                  <td className="p-4 text-[14px] font-medium text-[#1d1d1f] dark:text-white">{client.clientName || 'Unknown'}</td>
+                  <td className="p-4 text-[14px] font-medium"><ClientLink client={client} /></td>
                   <td className="p-4">
                     <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white">
                       {client.packageType || 'Standard'}

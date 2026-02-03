@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, parseISO, isWithinInterval } from 'date-fns';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
+import ClientLink from '../components/ui/ClientLink';
 
 // Normalize percentage for display (OCR sometimes loses decimal or misreads)
 const formatPercent = (value) => {
@@ -541,8 +542,8 @@ const InstagramReportsPage = () => {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-[15px] sm:text-[17px] font-semibold text-[#1d1d1f] dark:text-white truncate">
-                        {client.clientName || client.name || 'Unnamed Client'}
+                      <h3 className="text-[15px] sm:text-[17px] font-semibold truncate">
+                        <ClientLink client={client} showId className="text-[#1d1d1f] dark:text-white" />
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-0.5">
                         <span className="text-[11px] sm:text-[12px] text-[#86868b] flex items-center gap-1">

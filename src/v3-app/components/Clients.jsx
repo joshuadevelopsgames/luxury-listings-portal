@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Mail, Phone, MapPin, MoreHorizontal, Eye, Edit, RefreshCw } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
+import ClientLink from '../../components/ui/ClientLink';
 
 /**
  * V3 Clients - Real Data from Firestore
@@ -193,7 +194,9 @@ const V3Clients = () => {
                       {getInitials(client.clientName)}
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.clientName || 'Unnamed Client'}</h3>
+                      <h3 className="text-[15px] font-semibold">
+                        <ClientLink client={client} showId />
+                      </h3>
                       <span className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-semibold ${
                         status === 'Active' ? 'bg-[#34c759]/10 text-[#34c759]' : 
                         status === 'Pending' ? 'bg-[#ff9500]/10 text-[#ff9500]' :

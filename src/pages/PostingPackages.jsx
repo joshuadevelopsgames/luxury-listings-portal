@@ -24,6 +24,7 @@ import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
 import PlatformIcons from '../components/PlatformIcons';
+import ClientLink from '../components/ui/ClientLink';
 import { Camera } from 'lucide-react';
 
 export default function PostingPackages() {
@@ -2046,8 +2047,8 @@ export default function PostingPackages() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
                   <div className="min-w-0">
-                    <h3 className="text-[17px] sm:text-[19px] font-semibold text-[#1d1d1f] dark:text-white mb-1 truncate">
-                      {client.clientName}
+                    <h3 className="text-[17px] sm:text-[19px] font-semibold mb-1 truncate">
+                      <ClientLink client={client} showId />
                     </h3>
                     {client.clientEmail && (
                       <p className="text-[13px] text-[#86868b] mb-2 truncate">
@@ -2278,8 +2279,8 @@ export default function PostingPackages() {
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h3 className="text-[17px] sm:text-[19px] font-semibold text-[#1d1d1f] dark:text-white truncate">
-                              {client.clientName}
+                            <h3 className="text-[17px] sm:text-[19px] font-semibold truncate">
+                              <ClientLink client={client} showId />
                             </h3>
                             <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#5856d6]/10 text-[#5856d6]">
                               Monthly
@@ -2477,8 +2478,8 @@ export default function PostingPackages() {
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h3 className="text-[17px] sm:text-[19px] font-semibold text-[#1d1d1f] dark:text-white truncate">
-                              {client.clientName}
+                            <h3 className="text-[17px] sm:text-[19px] font-semibold truncate">
+                              <ClientLink client={client} showId />
                             </h3>
                             <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#86868b]/10 text-[#86868b]">
                               Archived

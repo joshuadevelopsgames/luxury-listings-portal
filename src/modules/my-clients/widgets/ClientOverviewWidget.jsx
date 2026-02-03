@@ -8,6 +8,7 @@ import { Users, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useViewAs } from '../../../contexts/ViewAsContext';
 import { firestoreService } from '../../../services/firestoreService';
+import ClientLink from '../../../components/ui/ClientLink';
 
 const ClientOverviewWidget = () => {
   const navigate = useNavigate();
@@ -105,8 +106,8 @@ const ClientOverviewWidget = () => {
                 onClick={() => navigate('/my-clients')}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
-                    {client.clientName || 'Unnamed Client'}
+                  <span className="text-[13px] font-medium truncate">
+                    <ClientLink client={client} />
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-[#86868b]">{client.packageType || 'Standard'}</span>

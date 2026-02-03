@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
 import { BarChart3, ChevronDown, ChevronUp, Users, ArrowRight, Camera } from 'lucide-react';
 import PlatformIcons, { PLATFORMS } from '../components/PlatformIcons';
+import ClientLink from '../components/ui/ClientLink';
 
 // Capacity thresholds
 const CAPACITY = { LOW: 5, MED: 9 }; // green <=5, yellow 6-9, red 10+
@@ -358,7 +359,9 @@ function ClientCard({ client, isAdmin, managers, onReassign, reassigning, setRea
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white truncate">{client.clientName}</h4>
+          <h4 className="text-[14px] font-semibold truncate">
+            <ClientLink client={client} showId />
+          </h4>
           {client.brokerage && (
             <p className="text-[11px] text-[#86868b] truncate">{client.brokerage}</p>
           )}

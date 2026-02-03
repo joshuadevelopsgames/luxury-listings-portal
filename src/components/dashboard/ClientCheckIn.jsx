@@ -27,6 +27,7 @@ import {
   Archive
 } from 'lucide-react';
 import { GOOGLE_SHEETS_CONFIG, GOOGLE_SHEETS_API } from '../../config/googleSheets';
+import ClientLink from '../ui/ClientLink';
 
 const ClientCheckIn = () => {
   const [clients, setClients] = useState([]);
@@ -414,7 +415,7 @@ Joshua@luxury-listings.com`);
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-1">{client.clientName}</h4>
+                      <h4 className="font-medium mb-1"><ClientLink client={client} /></h4>
                       <p className="text-sm text-gray-600 mb-2">{client.email}</p>
                       
                       <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
