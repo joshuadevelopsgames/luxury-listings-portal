@@ -62,7 +62,10 @@ const ClientProfilesList = () => {
   const [editForm, setEditForm] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'card'
+  // Default to card view on mobile, list on desktop
+  const [viewMode, setViewMode] = useState(() => 
+    typeof window !== 'undefined' && window.innerWidth < 640 ? 'card' : 'list'
+  );
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
     clientName: '',

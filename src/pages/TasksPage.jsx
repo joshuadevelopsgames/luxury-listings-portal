@@ -143,7 +143,10 @@ const TasksPage = () => {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [bulkActionMode, setBulkActionMode] = useState(false);
   const [showCalendarView, setShowCalendarView] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list' - default to list
+  // Default to grid (card) view on mobile, list on desktop
+  const [viewMode, setViewMode] = useState(() => 
+    typeof window !== 'undefined' && window.innerWidth < 640 ? 'grid' : 'list'
+  );
   const filterButtonRef = useRef(null);
   const [completionToast, setCompletionToast] = useState(null);
   const [lastCompletedTask, setLastCompletedTask] = useState(null);

@@ -52,7 +52,10 @@ const CRMPage = () => {
   const canViewLeads = hasPermission(PERMISSIONS.VIEW_LEADS);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('warm-leads');
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'card' - default list
+  // Default to card view on mobile, list on desktop
+  const [viewMode, setViewMode] = useState(() => 
+    typeof window !== 'undefined' && window.innerWidth < 640 ? 'card' : 'list'
+  );
   const [selectedClient, setSelectedClient] = useState(null);
   const [existingClients, setExistingClients] = useState([]);
   const [loadingExistingClients, setLoadingExistingClients] = useState(false);
