@@ -171,7 +171,6 @@ const HRCalendar = () => {
   const leaveTypes = {
     vacation: { label: 'Vacation', color: 'bg-blue-100 text-blue-800', dotColor: 'bg-blue-500' },
     sick: { label: 'Sick Leave', color: 'bg-red-100 text-red-800', dotColor: 'bg-red-500' },
-    personal: { label: 'Personal Time', color: 'bg-purple-100 text-purple-800', dotColor: 'bg-purple-500' },
     bereavement: { label: 'Bereavement', color: 'bg-gray-100 text-gray-800', dotColor: 'bg-gray-500' },
     other: { label: 'Other', color: 'bg-indigo-100 text-indigo-800', dotColor: 'bg-indigo-500' }
   };

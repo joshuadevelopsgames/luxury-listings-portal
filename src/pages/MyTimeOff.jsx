@@ -21,7 +21,6 @@ import {
   CalendarDays,
   Plane,
   Heart,
-  Home,
   Info,
   X,
   ChevronDown,
@@ -81,12 +80,6 @@ const MyTimeOff = () => {
       used: 0,
       remaining: 0,
       pending: 0
-    },
-    personal: {
-      total: 0,
-      used: 0,
-      remaining: 0,
-      pending: 0
     }
   });
 
@@ -140,7 +133,7 @@ const MyTimeOff = () => {
         const storedBalances = await firestoreService.getUserLeaveBalances(currentUser.email);
         
         // Calculate pending from current requests
-        const pendingCounts = { vacation: 0, sick: 0, personal: 0 };
+        const pendingCounts = { vacation: 0, sick: 0 };
         myRequests.forEach(request => {
           if (request.status === 'pending' && pendingCounts[request.type] !== undefined) {
             pendingCounts[request.type] += request.days || 1;
@@ -158,11 +151,6 @@ const MyTimeOff = () => {
             ...storedBalances.sick,
             remaining: storedBalances.sick.total - storedBalances.sick.used,
             pending: pendingCounts.sick 
-          },
-          personal: { 
-            ...storedBalances.personal,
-            remaining: storedBalances.personal.total - storedBalances.personal.used,
-            pending: pendingCounts.personal 
           }
         };
         
@@ -189,13 +177,6 @@ const MyTimeOff = () => {
       icon: Heart,
       dotColor: 'bg-[#ff3b30]',
       description: 'For illness, injury, or medical appointments'
-    },
-    personal: { 
-      label: 'Personal Time', 
-      color: 'bg-[#af52de]/10 text-[#af52de]', 
-      icon: Home,
-      dotColor: 'bg-[#af52de]',
-      description: 'For personal matters and emergencies'
     }
   };
 
