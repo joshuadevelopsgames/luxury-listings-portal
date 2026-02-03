@@ -41,6 +41,8 @@ import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import ClientLink from '../components/ui/ClientLink';
 import LeadLink from '../components/crm/LeadLink';
+import ClientDetailModal from '../components/client/ClientDetailModal';
+import LeadDetailModal from '../components/crm/LeadDetailModal';
 
 const CRMPage = () => {
   const { currentUser, currentRole, hasPermission } = useAuth();
@@ -59,6 +61,7 @@ const CRMPage = () => {
     typeof window !== 'undefined' && window.innerWidth < 640 ? 'card' : 'list'
   );
   const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedItemType, setSelectedItemType] = useState(null); // 'client' or 'lead'
   const [existingClients, setExistingClients] = useState([]);
   const [loadingExistingClients, setLoadingExistingClients] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -839,19 +842,24 @@ const CRMPage = () => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setSelectedClient(client)}
+            onClick={() => {
+              setSelectedClient(client);
+              setSelectedItemType(isExisting ? 'client' : 'lead');
+            }}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
             View Details
           </button>
-          <button 
-            onClick={() => openEditModal(client)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-          >
-            <Edit className="w-3.5 h-3.5" />
-            Edit
-          </button>
+          {!isExisting && (
+            <button 
+              onClick={() => openEditModal(client)}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            >
+              <Edit className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -890,7 +898,10 @@ const CRMPage = () => {
       <td className="py-3 px-4">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setSelectedClient(client)}
+            onClick={() => {
+              setSelectedClient(client);
+              setSelectedItemType(isExisting ? 'client' : 'lead');
+            }}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -1348,216 +1359,35 @@ const CRMPage = () => {
         document.body
       )}
 
-      {/* Client Detail Modal */}
-      {selectedClient && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Lead Details</h3>
-              <button
-                onClick={() => setSelectedClient(null)}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#86868b] transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
-                  <p className="text-gray-900">{selectedClient.contactName}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(selectedClient.status)}`}>
-                    {selectedClient.status ? selectedClient.status.charAt(0).toUpperCase() + selectedClient.status.slice(1) : 'Unknown'}
-                  </span>
-                </div>
-                
-                {/* Organization - New prominent field */}
-                {selectedClient.organization && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
-                    <p className="text-gray-900">{selectedClient.organization}</p>
-                  </div>
-                )}
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <p className="text-gray-900">{selectedClient.email}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <p className="text-gray-900">{selectedClient.phone}</p>
-                </div>
-                {selectedClient.instagram && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
-                    <p className="text-gray-900">@{selectedClient.instagram}</p>
-                  </div>
-                )}
-                
-                {/* Website - New prominent field */}
-                {selectedClient.website && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                    <p className="text-gray-900">{selectedClient.website}</p>
-                  </div>
-                )}
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Contact</label>
-                  <p className="text-gray-900">{selectedClient.lastContact}</p>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <p className="text-gray-900">{selectedClient.notes}</p>
-              </div>
+      {/* Client Detail Modal - for existing clients */}
+      {selectedClient && selectedItemType === 'client' && (
+        <ClientDetailModal
+          client={selectedClient}
+          onClose={() => {
+            setSelectedClient(null);
+            setSelectedItemType(null);
+          }}
+          onClientUpdate={(updatedClient) => {
+            setExistingClients(prev => 
+              prev.map(c => c.id === updatedClient.id ? updatedClient : c)
+            );
+          }}
+          showManagerAssignment={false}
+        />
+      )}
 
-              {selectedClient.followUpDate && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Follow Up Date</label>
-                  <p className="text-gray-900">{selectedClient.followUpDate}</p>
-                </div>
-              )}
-
-              {selectedClient.nextOutreach && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Next Outreach</label>
-                  <p className="text-gray-900">{selectedClient.nextOutreach}</p>
-                </div>
-              )}
-              
-              <div className="flex flex-wrap items-center gap-2 pt-4">
-                <button 
-                  onClick={() => {
-                    if (selectedClient.phone) {
-                      window.open(`tel:${selectedClient.phone.replace(/\D/g, '')}`, '_self');
-                    } else {
-                      alert('No phone number available for this lead');
-                    }
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  Call Lead
-                </button>
-                <button 
-                  onClick={() => {
-                    if (selectedClient.email) {
-                      const subject = encodeURIComponent(`Follow up - ${selectedClient.contactName}`);
-                      const body = encodeURIComponent(`Hi ${selectedClient.contactName},\n\nI hope this email finds you well. I wanted to follow up regarding our previous conversation.\n\nBest regards,\n[Your Name]`);
-                      
-                      const gmailUrls = [
-                        `https://mail.google.com/mail/u/0/#compose?to=${encodeURIComponent(selectedClient.email)}&subject=${subject}&body=${body}`,
-                        `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(selectedClient.email)}&su=${subject}&body=${body}`,
-                        `https://mail.google.com/mail/u/0/#compose?to=${encodeURIComponent(selectedClient.email)}&su=${subject}&body=${body}`
-                      ];
-                      
-                      const gmailWindow = window.open(gmailUrls[0], '_blank');
-                      
-                      setTimeout(() => {
-                        if (!gmailWindow || gmailWindow.closed) {
-                          const mailtoUrl = `mailto:${selectedClient.email}?subject=${subject}&body=${body}`;
-                          window.open(mailtoUrl, '_self');
-                        }
-                      }, 1000);
-                    } else {
-                      alert('No email address available for this lead');
-                    }
-                  }}
-                  title="Opens Gmail compose with pre-filled details (fallback to default email client)"
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                  Send Email
-                </button>
-                <button 
-                  onClick={() => {
-                    const eventTitle = encodeURIComponent(`Meeting with ${selectedClient.contactName}`);
-                    const eventDetails = encodeURIComponent(`Follow up meeting with ${selectedClient.contactName}\n\nNotes: ${selectedClient.notes || 'No additional notes'}`);
-                    const startDate = new Date();
-                    startDate.setDate(startDate.getDate() + 1);
-                    startDate.setHours(10, 0, 0, 0);
-                    
-                    const endDate = new Date(startDate);
-                    endDate.setHours(11, 0, 0, 0);
-                    
-                    const attendees = selectedClient.email ? `&add=${encodeURIComponent(selectedClient.email)}` : '';
-                    
-                    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&details=${eventDetails}&dates=${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}${attendees}`;
-                    
-                    window.open(googleCalendarUrl, '_blank');
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  <Calendar className="w-3.5 h-3.5" />
-                  Schedule Meeting
-                </button>
-                {selectedClient.instagram && (
-                  <button 
-                    onClick={() => {
-                      const instagramUrl = `https://www.instagram.com/${selectedClient.instagram.replace('@', '')}`;
-                      window.open(instagramUrl, '_blank');
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    <Instagram className="w-3.5 h-3.5" />
-                    View Instagram
-                  </button>
-                )}
-              </div>
-
-              {/* Quick Actions Section */}
-              <div className="border-t pt-4 mt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Quick Actions</h4>
-                <div className="flex flex-wrap gap-2">
-                  <button 
-                    onClick={() => {
-                      if (selectedClient.website) {
-                        window.open(selectedClient.website.startsWith('http') ? selectedClient.website : `https://${selectedClient.website}`, '_blank');
-                      } else {
-                        alert('No website available for this lead');
-                      }
-                    }}
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[11px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    Visit Website
-                  </button>
-                  <button 
-                    onClick={() => {
-                      const notes = `Follow up with ${selectedClient.contactName} - ${new Date().toLocaleDateString()}`;
-                      navigator.clipboard.writeText(notes).then(() => {
-                        alert('Notes copied to clipboard!');
-                      });
-                    }}
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[11px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    <Edit className="w-3 h-3" />
-                    Copy Notes
-                  </button>
-                  <button 
-                    onClick={() => {
-                      const contactInfo = `Name: ${selectedClient.contactName}\nEmail: ${selectedClient.email}\nPhone: ${selectedClient.phone}\nInstagram: ${selectedClient.instagram || 'N/A'}\nWebsite: ${selectedClient.website || 'N/A'}`;
-                      navigator.clipboard.writeText(contactInfo).then(() => {
-                        alert('Contact info copied to clipboard!');
-                      });
-                    }}
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[11px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    <Users className="w-3 h-3" />
-                    Copy Contact Info
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
+      {/* Lead Detail Modal - for CRM leads */}
+      {selectedClient && selectedItemType === 'lead' && (
+        <LeadDetailModal
+          lead={selectedClient}
+          onClose={() => {
+            setSelectedClient(null);
+            setSelectedItemType(null);
+          }}
+          onEdit={handleEditLead}
+          onDelete={deleteLead}
+          canEdit={true}
+        />
       )}
 
       {/* Edit Modal */}
