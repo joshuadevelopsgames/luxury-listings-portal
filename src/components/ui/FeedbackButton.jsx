@@ -305,8 +305,8 @@ export default function FeedbackButton() {
 
     setIsSubmitting(true);
     try {
-      // Get console logs (limit to recent 200)
-      const consoleLogs = consoleLogRef.current.slice(-200);
+      // Get console logs (limit to recent 300)
+      const consoleLogs = consoleLogRef.current.slice(-300);
 
       await firestoreService.createFeedback({
         type: 'bug',
