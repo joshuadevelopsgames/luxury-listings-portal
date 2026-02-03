@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
+import { USER_ROLES } from '../../entities/UserRoles';
 
 // Feature permissions with descriptions
 const ALL_FEATURES = {
@@ -137,6 +138,10 @@ const PermissionsManager = () => {
   
   // Remove user state
   const [userToRemove, setUserToRemove] = useState(null);
+  
+  // User roles state
+  const [userRoles, setUserRoles] = useState({});
+  const [savingRole, setSavingRole] = useState(null);
   const [removingUser, setRemovingUser] = useState(false);
 
   // Check if current user is system admin
@@ -153,6 +158,7 @@ const PermissionsManager = () => {
         // Load permissions for each user (pages + features)
         const permissionsMap = {};
         const featurePermissionsMap = {};
+        const rolesMap = {};
         for (const user of approvedUsers) {
           try {
             const result = await firestoreService.getUserPermissions(user.email);
@@ -162,7 +168,10 @@ const PermissionsManager = () => {
             permissionsMap[user.email] = [];
             featurePermissionsMap[user.email] = [];
           }
+          // Initialize role from user data
+          rolesMap[user.email] = user.primaryRole || user.role || user.roles?.[0] || 'social_media_manager';
         }
+        setUserRoles(rolesMap);
         setUserPermissions(permissionsMap);
         setUserFeaturePermissions(featurePermissionsMap);
       } catch (error) {
@@ -254,6 +263,49 @@ const PermissionsManager = () => {
     } finally {
       setSaving(null);
     }
+  };
+
+  // Handle role change for a user
+  const handleRoleChange = async (userEmail, newRole) => {
+    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase())) {
+      toast.error("Cannot modify system admin role");
+      return;
+    }
+
+    try {
+      setSavingRole(userEmail);
+      await firestoreService.updateApprovedUser(userEmail, {
+        role: newRole,
+        primaryRole: newRole,
+        roles: [newRole]
+      });
+      setUserRoles(prev => ({ ...prev, [userEmail]: newRole }));
+      // Update local users state too
+      setUsers(prev => prev.map(u => 
+        u.email === userEmail 
+          ? { ...u, role: newRole, primaryRole: newRole, roles: [newRole] }
+          : u
+      ));
+      toast.success(`Role updated to ${getRoleDisplayName(newRole)}`);
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast.error('Failed to update role');
+    } finally {
+      setSavingRole(null);
+    }
+  };
+
+  // Get display name for role
+  const getRoleDisplayName = (role) => {
+    const displayNames = {
+      'admin': 'Admin',
+      'director': 'Director',
+      'content_director': 'Content Director',
+      'social_media_manager': 'Social Media Manager',
+      'hr_manager': 'HR Manager',
+      'sales_manager': 'Sales Manager'
+    };
+    return displayNames[role] || role;
   };
 
   // Add a new user
@@ -513,6 +565,37 @@ const PermissionsManager = () => {
                       </div>
                     ) : (
                       <>
+                        {/* Role Selection */}
+                        <div className="py-4 border-b border-gray-200 dark:border-white/5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                <UserCog className="w-4 h-4 text-[#0071e3]" />
+                                <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Role</span>
+                              </div>
+                              <select
+                                value={userRoles[user.email] || 'social_media_manager'}
+                                onChange={(e) => handleRoleChange(user.email, e.target.value)}
+                                disabled={savingRole === user.email}
+                                className="h-9 px-3 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50"
+                              >
+                                <option value="admin">Admin</option>
+                                <option value="director">Director</option>
+                                <option value="content_director">Content Director</option>
+                                <option value="social_media_manager">Social Media Manager</option>
+                                <option value="hr_manager">HR Manager</option>
+                                <option value="sales_manager">Sales Manager</option>
+                              </select>
+                              {savingRole === user.email && (
+                                <RefreshCw className="w-4 h-4 text-[#0071e3] animate-spin" />
+                              )}
+                            </div>
+                            <span className="text-[11px] text-[#86868b]">
+                              Controls dashboard view and default permissions
+                            </span>
+                          </div>
+                        </div>
+
                         {/* Quick Actions */}
                         <div className="flex items-center justify-between py-4">
                           <div className="flex items-center gap-2">
