@@ -444,7 +444,7 @@ const GraphicProjectTracker = () => {
   return (
     <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000]">
       {/* Header with backdrop blur */}
-      <div className="sticky top-0 z-30 bg-[#f5f5f7]/80 dark:bg-[#000000]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
+      <div className="sticky top-0 z-10 bg-[#f5f5f7]/80 dark:bg-[#000000]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
