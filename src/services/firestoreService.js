@@ -49,6 +49,7 @@ class FirestoreService {
     ERROR_REPORTS: 'error_reports',
     USER_DASHBOARD_PREFERENCES: 'user_dashboard_preferences',
     GRAPHIC_PROJECTS: 'graphic_projects',
+    PROJECT_REQUESTS: 'project_requests',
     CUSTOM_ROLES: 'custom_roles'
   };
 
@@ -3108,6 +3109,150 @@ class FirestoreService {
       return results;
     } catch (error) {
       console.error('❌ Error bulk importing graphic projects:', error);
+      throw error;
+    }
+  }
+
+  // ============ PROJECT REQUESTS ============
+
+  /**
+   * Create a project request (from any user to Jasmine/Jone)
+   */
+  async createProjectRequest(requestData) {
+    try {
+      const projectRequest = {
+        fromUserEmail: requestData.fromUserEmail,
+        fromUserName: requestData.fromUserName,
+        toUserEmail: requestData.toUserEmail,
+        toUserName: requestData.toUserName,
+        client: requestData.client,
+        task: requestData.task,
+        priority: requestData.priority || 'medium',
+        deadline: requestData.deadline, // Required
+        notes: requestData.notes || '',
+        status: 'pending', // pending, accepted, rejected
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, this.collections.PROJECT_REQUESTS), projectRequest);
+      console.log('✅ Project request created:', docRef.id);
+
+      // Create notification for recipient
+      await this.createNotification({
+        userEmail: requestData.toUserEmail,
+        title: 'New Project Request',
+        message: `${requestData.fromUserName} requested a project: "${requestData.task}" for ${requestData.client}`,
+        type: 'project_request',
+        link: '/graphic-projects',
+        metadata: { requestId: docRef.id }
+      });
+
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Error creating project request:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get project requests for user (designer)
+   */
+  async getProjectRequests(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.PROJECT_REQUESTS),
+        where('toUserEmail', '==', userEmail)
+      );
+      
+      const snapshot = await getDocs(q);
+      const requests = [];
+      snapshot.forEach((doc) => {
+        requests.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      // Sort by createdAt descending (newest first)
+      return requests.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+    } catch (error) {
+      console.error('❌ Error getting project requests:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Accept project request - creates actual project
+   */
+  async acceptProjectRequest(requestId, requestData) {
+    try {
+      // Update request status
+      await updateDoc(doc(db, this.collections.PROJECT_REQUESTS, requestId), {
+        status: 'accepted',
+        acceptedAt: serverTimestamp()
+      });
+
+      // Create the actual graphic project
+      const newProject = {
+        client: requestData.client,
+        task: requestData.task,
+        priority: requestData.priority || 'medium',
+        status: 'not_started',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: requestData.deadline,
+        hours: 0,
+        notes: requestData.notes || '',
+        assignedTo: requestData.toUserEmail,
+        requestedBy: requestData.fromUserEmail,
+        createdAt: serverTimestamp()
+      };
+
+      const projectRef = await addDoc(collection(db, this.collections.GRAPHIC_PROJECTS), newProject);
+
+      // Notify requester
+      await this.createNotification({
+        userEmail: requestData.fromUserEmail,
+        title: 'Project Request Accepted',
+        message: `${requestData.toUserName} accepted your project request: "${requestData.task}"`,
+        type: 'project_accepted',
+        link: '/graphic-projects'
+      });
+
+      console.log('✅ Project request accepted, project created:', projectRef.id);
+      return projectRef.id;
+    } catch (error) {
+      console.error('❌ Error accepting project request:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reject project request
+   */
+  async rejectProjectRequest(requestId, requestData, reason = '') {
+    try {
+      await updateDoc(doc(db, this.collections.PROJECT_REQUESTS, requestId), {
+        status: 'rejected',
+        rejectedAt: serverTimestamp(),
+        rejectionReason: reason
+      });
+
+      // Notify requester
+      await this.createNotification({
+        userEmail: requestData.fromUserEmail,
+        title: 'Project Request Declined',
+        message: `${requestData.toUserName} declined your project request: "${requestData.task}"${reason ? `. Reason: ${reason}` : ''}`,
+        type: 'project_rejected',
+        link: '/graphic-projects'
+      });
+
+      console.log('✅ Project request rejected:', requestId);
+    } catch (error) {
+      console.error('❌ Error rejecting project request:', error);
       throw error;
     }
   }

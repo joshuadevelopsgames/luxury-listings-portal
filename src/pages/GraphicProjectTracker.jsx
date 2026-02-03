@@ -132,9 +132,15 @@ const GraphicProjectTracker = () => {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [saving, setSaving] = useState(false);
   const [expandedProject, setExpandedProject] = useState(null);
+  
+  // Project requests state
+  const [projectRequests, setProjectRequests] = useState([]);
+  const [processingRequestId, setProcessingRequestId] = useState(null);
+  const [submittingRequest, setSubmittingRequest] = useState(false);
   
   // Form state
   const [form, setForm] = useState({
@@ -147,6 +153,16 @@ const GraphicProjectTracker = () => {
     hours: '',
     notes: '',
     assignedTo: ''
+  });
+  
+  // Request form state
+  const [requestForm, setRequestForm] = useState({
+    toUserEmail: '',
+    client: '',
+    task: '',
+    priority: 'medium',
+    deadline: '',
+    notes: ''
   });
 
   // Determine current user's team info
@@ -166,6 +182,23 @@ const GraphicProjectTracker = () => {
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // Load project requests for designers
+  useEffect(() => {
+    if (!currentTeamMember) return;
+    
+    const loadRequests = async () => {
+      try {
+        const requests = await firestoreService.getProjectRequests(currentUser.email);
+        const pendingRequests = (requests || []).filter(r => r.status === 'pending');
+        setProjectRequests(pendingRequests);
+      } catch (error) {
+        console.error('Error loading project requests:', error);
+      }
+    };
+    
+    loadRequests();
+  }, [currentUser?.email, currentTeamMember]);
 
   // Save sort preference
   useEffect(() => {
@@ -483,6 +516,93 @@ const GraphicProjectTracker = () => {
     }
   };
 
+  // Submit project request
+  const handleSubmitRequest = async (e) => {
+    e.preventDefault();
+    
+    if (!requestForm.deadline) {
+      toast.error('Deadline is required');
+      return;
+    }
+    
+    if (!requestForm.toUserEmail) {
+      toast.error('Please select a designer');
+      return;
+    }
+    
+    setSubmittingRequest(true);
+    try {
+      const designer = GRAPHIC_TEAM.find(m => m.email === requestForm.toUserEmail);
+      
+      await firestoreService.createProjectRequest({
+        fromUserEmail: currentUser.email,
+        fromUserName: currentUser.displayName || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email,
+        toUserEmail: requestForm.toUserEmail,
+        toUserName: designer?.name || requestForm.toUserEmail,
+        client: requestForm.client,
+        task: requestForm.task,
+        priority: requestForm.priority,
+        deadline: requestForm.deadline,
+        notes: requestForm.notes
+      });
+      
+      toast.success(`Project request sent to ${designer?.name || 'designer'}!`);
+      setShowRequestModal(false);
+      setRequestForm({
+        toUserEmail: '',
+        client: '',
+        task: '',
+        priority: 'medium',
+        deadline: '',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error sending project request:', error);
+      toast.error('Failed to send request');
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
+
+  // Accept project request
+  const handleAcceptRequest = async (request) => {
+    if (processingRequestId) return;
+    
+    try {
+      setProcessingRequestId(request.id);
+      await firestoreService.acceptProjectRequest(request.id, request);
+      
+      setProjectRequests(prev => prev.filter(r => r.id !== request.id));
+      toast.success('Project request accepted!');
+      loadProjects();
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      toast.error('Failed to accept request');
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  // Reject project request
+  const handleRejectRequest = async (request) => {
+    if (processingRequestId) return;
+    
+    const reason = prompt('Why are you declining this request? (Optional)');
+    
+    try {
+      setProcessingRequestId(request.id);
+      await firestoreService.rejectProjectRequest(request.id, request, reason || '');
+      
+      setProjectRequests(prev => prev.filter(r => r.id !== request.id));
+      toast.success('Project request declined');
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      toast.error('Failed to reject request');
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
   const openEditModal = (project) => {
     setEditingProject(project);
     setForm({
@@ -543,16 +663,38 @@ const GraphicProjectTracker = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  resetForm();
-                  setShowAddModal(true);
-                }}
-                className="h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Project</span>
-              </button>
+              {/* Show pending requests count for designers */}
+              {currentTeamMember && projectRequests.length > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#ff9500]/10 text-[#ff9500]">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-[13px] font-medium">{projectRequests.length} pending</span>
+                </div>
+              )}
+              
+              {/* Request Project button for non-designers */}
+              {!currentTeamMember && (
+                <button
+                  onClick={() => setShowRequestModal(true)}
+                  className="h-10 px-4 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[13px] font-medium hover:bg-[#5856d6]/20 transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Request Project</span>
+                </button>
+              )}
+              
+              {/* Add Project button for designers and admins */}
+              {(currentTeamMember || isSystemAdmin) && (
+                <button
+                  onClick={() => {
+                    resetForm();
+                    setShowAddModal(true);
+                  }}
+                  className="h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Add Project</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -634,6 +776,73 @@ const GraphicProjectTracker = () => {
             <p className="text-[28px] font-bold text-[#af52de]">{stats.totalHours.toFixed(0)}</p>
           </div>
         </div>
+
+        {/* Pending Project Requests - Only show to designers */}
+        {currentTeamMember && projectRequests.length > 0 && (
+          <div className="bg-gradient-to-r from-[#ff9500]/10 to-[#ff3b30]/10 backdrop-blur-xl rounded-2xl p-5 border border-[#ff9500]/20">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertCircle className="w-5 h-5 text-[#ff9500]" />
+              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+                Pending Project Requests ({projectRequests.length})
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {projectRequests.map(request => (
+                <div key={request.id} className="bg-white/80 dark:bg-white/10 rounded-xl p-4 border border-black/5 dark:border-white/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{request.task}</h4>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${
+                          request.priority === 'high' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
+                          request.priority === 'medium' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
+                          'bg-[#34c759]/10 text-[#34c759]'
+                        }`}>
+                          {request.priority}
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-[#86868b] mb-1">
+                        <span className="font-medium text-[#1d1d1f] dark:text-white">{request.client}</span>
+                        {' • '}Requested by {request.fromUserName}
+                      </p>
+                      <div className="flex items-center gap-3 text-[11px] text-[#86868b]">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Deadline: {request.deadline ? format(parseISO(request.deadline), 'MMM d, yyyy') : 'Not set'}
+                        </span>
+                      </div>
+                      {request.notes && (
+                        <p className="text-[12px] text-[#86868b] mt-2 italic">"{request.notes}"</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleAcceptRequest(request)}
+                        disabled={processingRequestId === request.id}
+                        className="h-9 px-4 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-all disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {processingRequestId === request.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        )}
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleRejectRequest(request)}
+                        disabled={processingRequestId === request.id}
+                        className="h-9 px-4 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Filters Bar */}
         <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
@@ -1060,6 +1269,140 @@ const GraphicProjectTracker = () => {
                 {showEditModal ? 'Save Changes' : 'Add Project'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request Project Modal */}
+      {showRequestModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl w-full max-w-lg overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+                Request a Project
+              </h3>
+              <button
+                onClick={() => setShowRequestModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5 text-[#86868b]" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitRequest} className="p-6 space-y-4">
+              {/* Designer Selection */}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Request From <span className="text-[#ff3b30]">*</span>
+                </label>
+                <select
+                  value={requestForm.toUserEmail}
+                  onChange={(e) => setRequestForm(prev => ({ ...prev, toUserEmail: e.target.value }))}
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                >
+                  <option value="">Select a designer...</option>
+                  {GRAPHIC_TEAM.map(member => (
+                    <option key={member.email} value={member.email}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Client */}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Client <span className="text-[#ff3b30]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={requestForm.client}
+                  onChange={(e) => setRequestForm(prev => ({ ...prev, client: e.target.value }))}
+                  placeholder="e.g., Agency Cayman Island"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                />
+              </div>
+              
+              {/* Task Description */}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Project Description <span className="text-[#ff3b30]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={requestForm.task}
+                  onChange={(e) => setRequestForm(prev => ({ ...prev, task: e.target.value }))}
+                  placeholder="e.g., Social Media Graphics Package"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                />
+              </div>
+              
+              {/* Priority & Deadline */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Priority
+                  </label>
+                  <select
+                    value={requestForm.priority}
+                    onChange={(e) => setRequestForm(prev => ({ ...prev, priority: e.target.value }))}
+                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Deadline <span className="text-[#ff3b30]">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={requestForm.deadline}
+                    onChange={(e) => setRequestForm(prev => ({ ...prev, deadline: e.target.value }))}
+                    required
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+              </div>
+              
+              {/* Notes */}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Additional Notes
+                </label>
+                <textarea
+                  value={requestForm.notes}
+                  onChange={(e) => setRequestForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Any additional details or requirements..."
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRequestModal(false)}
+                  className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRequest}
+                  className="flex-1 h-11 rounded-xl bg-[#5856d6] text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submittingRequest && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Send Request
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

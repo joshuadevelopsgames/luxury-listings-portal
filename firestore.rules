@@ -140,6 +140,11 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
+    // Project requests - authenticated users can create, designers can read their requests
+    match /project_requests/{requestId} {
+      allow read, write: if isAuthenticated();
+    }
+    
     // Instagram reports - public read (for shareable client links); list/edit/delete scoped by userId in app
     match /instagram_reports/{reportId} {
       allow read: if true;  // Public read so share links work without auth; app filters list by userId
