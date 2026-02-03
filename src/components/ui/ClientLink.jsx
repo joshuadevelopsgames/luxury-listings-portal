@@ -205,9 +205,9 @@ const ClientLink = ({
               <div className="flex items-start gap-4">
                 {/* Avatar */}
                 <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center flex-shrink-0 shadow-lg">
-                  {localClient.logo || localClient.profilePic || localClient.image ? (
+                  {localClient.profilePhoto || localClient.logo || localClient.profilePic || localClient.image ? (
                     <img 
-                      src={localClient.logo || localClient.profilePic || localClient.image} 
+                      src={localClient.profilePhoto || localClient.logo || localClient.profilePic || localClient.image} 
                       alt={displayName}
                       className="w-full h-full object-cover"
                     />

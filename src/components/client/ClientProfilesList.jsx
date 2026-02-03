@@ -550,16 +550,6 @@ const ClientProfilesList = () => {
                     <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
                       {client.profilePhoto ? (
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
-                      ) : client.clientName?.toLowerCase().includes('agency') ? (
-                        <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
-                      ) : (client.clientName?.toLowerCase().includes('paul mcclean') || client.clientName?.toLowerCase().includes('mcclean design')) ? (
-                        <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
-                      ) : client.clientName?.toLowerCase().includes('resop') ? (
-                        <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
-                      ) : client.clientName?.toLowerCase().includes('kodiak') ? (
-                        <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center p-1">
-                          <img src="/kodiak-club-logo.png" alt="Kodiak Club" className="w-full h-full object-contain" />
-                        </div>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                           <span className="text-white font-medium text-sm">
@@ -687,16 +677,6 @@ const ClientProfilesList = () => {
                     <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
                       {client.profilePhoto ? (
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
-                      ) : client.clientName?.toLowerCase().includes('agency') ? (
-                        <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
-                      ) : (client.clientName?.toLowerCase().includes('paul mcclean') || client.clientName?.toLowerCase().includes('mcclean design')) ? (
-                        <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
-                      ) : client.clientName?.toLowerCase().includes('resop') ? (
-                        <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
-                      ) : client.clientName?.toLowerCase().includes('kodiak') ? (
-                        <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center p-1">
-                          <img src="/kodiak-club-logo.png" alt="Kodiak Club" className="w-full h-full object-contain" />
-                        </div>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                           <span className="text-white font-semibold text-lg">
@@ -823,16 +803,6 @@ const ClientProfilesList = () => {
                   <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
                     {selectedClient.profilePhoto ? (
                       <img src={selectedClient.profilePhoto} alt="" className="w-full h-full object-cover" />
-                    ) : selectedClient.clientName?.toLowerCase().includes('agency') ? (
-                      <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
-                    ) : (selectedClient.clientName?.toLowerCase().includes('paul mcclean') || selectedClient.clientName?.toLowerCase().includes('mcclean design')) ? (
-                      <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
-                    ) : selectedClient.clientName?.toLowerCase().includes('resop') ? (
-                      <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
-                    ) : selectedClient.clientName?.toLowerCase().includes('kodiak') ? (
-                      <div className="w-full h-full bg-[#1a1a1a] p-1 flex items-center justify-center">
-                        <img src="/kodiak-club-logo.png" alt="Kodiak Club" className="w-full h-full object-contain" />
-                      </div>
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                         <span className="text-white font-semibold text-xl">
@@ -1113,16 +1083,6 @@ const ClientProfilesList = () => {
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                   {selectedClient.profilePhoto ? (
                     <img src={selectedClient.profilePhoto} alt="" className="w-full h-full object-cover" />
-                  ) : selectedClient.clientName?.toLowerCase().includes('agency') ? (
-                    <img src="/agency-logo.png" alt="The Agency" className="w-full h-full object-cover" />
-                  ) : (selectedClient.clientName?.toLowerCase().includes('paul mcclean') || selectedClient.clientName?.toLowerCase().includes('mcclean design')) ? (
-                    <img src="/mcclean-design-logo.png" alt="McClean Design" className="w-full h-full object-cover" />
-                  ) : selectedClient.clientName?.toLowerCase().includes('resop') ? (
-                    <img src="/resop-team-photo.png" alt="Resop Team" className="w-full h-full object-cover" />
-                  ) : selectedClient.clientName?.toLowerCase().includes('kodiak') ? (
-                    <div className="w-full h-full bg-[#1a1a1a] p-1 flex items-center justify-center">
-                      <img src="/kodiak-club-logo.png" alt="Kodiak Club" className="w-full h-full object-contain" />
-                    </div>
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
                       <span className="text-white font-semibold text-sm">

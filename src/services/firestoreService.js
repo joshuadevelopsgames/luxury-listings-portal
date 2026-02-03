@@ -1237,6 +1237,41 @@ class FirestoreService {
     }
   }
 
+  // Assign profile photos to known clients based on their names
+  // This migrates hardcoded logos to stored profilePhoto field
+  async assignKnownClientPhotos() {
+    try {
+      const clients = await this.getClients();
+      const photoMappings = [
+        { match: (name) => name?.toLowerCase().includes('agency'), photo: '/agency-logo.png' },
+        { match: (name) => name?.toLowerCase().includes('paul mcclean') || name?.toLowerCase().includes('mcclean design'), photo: '/mcclean-design-logo.png' },
+        { match: (name) => name?.toLowerCase().includes('resop'), photo: '/resop-team-photo.png' },
+        { match: (name) => name?.toLowerCase().includes('kodiak'), photo: '/kodiak-club-logo.png' },
+      ];
+
+      let updated = 0;
+      for (const client of clients) {
+        // Skip if already has a profile photo
+        if (client.profilePhoto) continue;
+
+        const clientName = client.clientName || client.name;
+        const mapping = photoMappings.find(m => m.match(clientName));
+        
+        if (mapping) {
+          await this.updateClient(client.id, { profilePhoto: mapping.photo });
+          console.log(`✅ Assigned profile photo to ${clientName}: ${mapping.photo}`);
+          updated++;
+        }
+      }
+
+      console.log(`✅ Assigned profile photos to ${updated} clients`);
+      return { updated };
+    } catch (error) {
+      console.error('❌ Error assigning client photos:', error);
+      throw error;
+    }
+  }
+
   // Add new client (auto-generates clientNumber)
   async addClient(clientData) {
     try {
