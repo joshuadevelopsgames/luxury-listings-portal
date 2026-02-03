@@ -28,12 +28,14 @@ import {
   Upload,
   Palette,
   MoreHorizontal,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 // Import data for one-time Excel import
 import importData from '../data/graphic-projects-import.json';
+import joneProjectsData from '../data/jone-projects.json';
 import { firestoreService } from '../services/firestoreService';
 import { toast } from 'react-hot-toast';
 import { format, parseISO, getYear } from 'date-fns';
@@ -405,6 +407,57 @@ const GraphicProjectTracker = () => {
     loadProjects();
   };
 
+  // One-time reassign Jone's projects (admin only)
+  const handleReassignJone = async () => {
+    if (!currentUser || !isSystemAdmin) {
+      toast.error('Admin access required');
+      return;
+    }
+    
+    // Build a set of client+task combinations that belong to Jone
+    const joneSet = new Set(
+      joneProjectsData.map(p => `${p.client.toLowerCase()}|${p.task.toLowerCase()}`)
+    );
+    
+    // Find matching projects in our loaded data
+    const toReassign = projects.filter(p => {
+      const key = `${(p.client || '').toLowerCase()}|${(p.task || '').toLowerCase()}`;
+      return joneSet.has(key) && p.assignedTo !== 'jone@smmluxurylistings.com';
+    });
+    
+    if (toReassign.length === 0) {
+      toast.success('All projects already assigned correctly!');
+      return;
+    }
+    
+    if (!confirm(`Reassign ${toReassign.length} projects to Jone?`)) {
+      return;
+    }
+    
+    setImporting(true);
+    toast.loading(`Reassigning... 0/${toReassign.length}`, { id: 'reassign-toast' });
+    
+    let updated = 0;
+    for (const project of toReassign) {
+      try {
+        await firestoreService.updateGraphicProject(project.id, {
+          assignedTo: 'jone@smmluxurylistings.com',
+          updatedAt: new Date().toISOString()
+        });
+        updated++;
+        if (updated % 10 === 0) {
+          toast.loading(`Reassigning... ${updated}/${toReassign.length}`, { id: 'reassign-toast' });
+        }
+      } catch (err) {
+        console.error('Failed to reassign:', project.id, err);
+      }
+    }
+    
+    setImporting(false);
+    toast.success(`Reassigned ${updated} projects to Jone!`, { id: 'reassign-toast' });
+    loadProjects();
+  };
+
   const handleStatusChange = async (project, newStatus) => {
     try {
       await firestoreService.updateGraphicProject(project.id, { 
@@ -483,14 +536,24 @@ const GraphicProjectTracker = () => {
             <div className="flex items-center gap-2">
               {/* Admin Import Button */}
               {isSystemAdmin && (
-                <button
-                  onClick={handleImportFromExcel}
-                  disabled={importing}
-                  className="h-10 px-4 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[13px] font-medium hover:bg-[#ff9500]/20 transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  <span className="hidden sm:inline">{importing ? 'Importing...' : 'Import'}</span>
-                </button>
+                <>
+                  <button
+                    onClick={handleReassignJone}
+                    disabled={importing}
+                    className="h-10 px-4 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[13px] font-medium hover:bg-[#5856d6]/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    <span className="hidden sm:inline">Assign Jone's</span>
+                  </button>
+                  <button
+                    onClick={handleImportFromExcel}
+                    disabled={importing}
+                    className="h-10 px-4 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[13px] font-medium hover:bg-[#ff9500]/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    <span className="hidden sm:inline">{importing ? 'Importing...' : 'Import'}</span>
+                  </button>
+                </>
               )}
               <button
                 onClick={() => {
