@@ -850,6 +850,8 @@ const PermissionsManager = () => {
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, role: e.target.value }))}
                     className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
                   >
+                    <option value="admin">Admin</option>
+                    <option value="director">Director</option>
                     <option value="content_director">Content Director</option>
                     <option value="social_media_manager">Social Media Manager</option>
                     <option value="hr_manager">HR Manager</option>
