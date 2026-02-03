@@ -584,11 +584,11 @@ const V3Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1 flex items-center gap-3">
+          <h1 className="text-[24px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1 flex items-center gap-2 sm:gap-3">
             {greeting()}, {effectiveUser?.displayName?.split(' ')[0] || effectiveUser?.firstName || 'there'}
             {/* Michelle's special cat icon - different for light/dark mode */}
             {effectiveUser?.email?.toLowerCase() === 'michelle@luxury-listings.com' && (
@@ -596,45 +596,47 @@ const V3Dashboard = () => {
                 <img 
                   src="/michelle-cat.png" 
                   alt="🐱" 
-                  className="w-8 h-8 inline-block dark:hidden"
+                  className="w-6 h-6 sm:w-8 sm:h-8 inline-block dark:hidden"
                 />
                 <img 
                   src="/michelle-cat-dark.png" 
                   alt="🐱" 
-                  className="w-8 h-8 hidden dark:inline-block"
+                  className="w-6 h-6 sm:w-8 sm:h-8 hidden dark:inline-block"
                 />
               </>
             )}
           </h1>
-          <p className="text-[17px] text-[#86868b]">
-            {format(new Date(), 'EEEE, MMMM d')} • Here's your workflow overview
+          <p className="text-[14px] sm:text-[17px] text-[#86868b]">
+            {format(new Date(), 'EEEE, MMMM d')}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        {/* Mobile: Horizontal scroll buttons, Desktop: Flex row */}
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0 scrollbar-hide">
           {!isViewingAs && (
             <>
               {!isEditMode ? (
                 <button
                   type="button"
                   onClick={() => setIsEditMode(true)}
-                  className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
+                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[12px] sm:text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0"
                 >
-                  <Edit className="w-4 h-4" />
-                  Edit Dashboard
+                  <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Edit Dashboard</span>
+                  <span className="sm:hidden">Edit</span>
                 </button>
               ) : (
                 <>
                   <button
                     type="button"
                     onClick={handleResetToDefault}
-                    className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                    className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[12px] sm:text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors whitespace-nowrap flex-shrink-0"
                   >
-                    Reset to default
+                    Reset
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsEditMode(false)}
-                    className="h-10 px-5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#30d158] transition-all"
+                    className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl bg-[#34c759] text-white text-[12px] sm:text-[13px] font-medium hover:bg-[#30d158] transition-all whitespace-nowrap flex-shrink-0"
                   >
                     Done
                   </button>
@@ -645,45 +647,46 @@ const V3Dashboard = () => {
           {hasTasksModule && (
             <Link 
               to="/tasks"
-              className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[12px] sm:text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0"
             >
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {tasks.filter(t => t.status !== 'completed').length} Tasks
             </Link>
           )}
           {enabledModules.includes('time-off') && (
           <Link 
             to="/my-time-off"
-            className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2"
+            className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl bg-[#0071e3] text-white text-[12px] sm:text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0"
           >
-            <Plus className="w-4 h-4" />
-            Request Time Off
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Request Time Off</span>
+            <span className="sm:hidden">Time Off</span>
           </Link>
           )}
         </div>
       </div>
 
       {/* Quick Stats - Real Data (only show stats for enabled modules) */}
-      <div className={`grid grid-cols-2 ${(hasTasksModule ? 2 : 0) + (hasClientAccess ? 1 : 0) > 2 ? 'md:grid-cols-4' : 'md:grid-cols-2'} gap-4`}>
+      <div className={`grid grid-cols-2 ${(hasTasksModule ? 2 : 0) + (hasClientAccess ? 1 : 0) > 2 ? 'sm:grid-cols-4' : 'sm:grid-cols-2'} gap-3 sm:gap-4`}>
         {[
           { label: clientLabelForDisplay, value: clientCountForDisplay, icon: Users, color: 'text-[#0071e3]', show: hasClientAccess },
           { label: 'Pending Tasks', value: tasks.filter(t => t.status !== 'completed').length, icon: Clock, color: 'text-[#ff9500]', show: hasTasksModule },
           { label: 'Due Today', value: todaysTasks.length, icon: Calendar, color: 'text-[#ff3b30]', show: hasTasksModule },
           { label: 'Completed', value: tasks.filter(t => t.status === 'completed').length, icon: CheckCircle2, color: 'text-[#34c759]', show: hasTasksModule },
         ].filter(item => item.show).map((item, idx) => (
-          <div key={idx} className="p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all cursor-pointer group">
-            <div className="flex items-center justify-between mb-3">
-              <item.icon className={`w-5 h-5 ${item.color}`} strokeWidth={1.5} />
+          <div key={idx} className="p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all cursor-pointer group">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${item.color}`} strokeWidth={1.5} />
             </div>
-            <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{item.value}</p>
-            <p className="text-[13px] text-[#86868b]">{item.label}</p>
+            <p className="text-[22px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{item.value}</p>
+            <p className="text-[11px] sm:text-[13px] text-[#86868b]">{item.label}</p>
           </div>
         ))}
       </div>
 
       {/* Module Widgets - Dynamic based on enabled modules; drag-and-drop when Edit Dashboard is on */}
       <div>
-        <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-4">Your Modules</h2>
+        <h2 className="text-[15px] sm:text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-3 sm:mb-4">Your Modules</h2>
         <WidgetGrid
           enabledModules={enabledModules}
           widgetOrder={widgetOrder}
@@ -701,7 +704,7 @@ const V3Dashboard = () => {
       {isEditMode ? (
         <DndContext collisionDetection={pointerWithin} onDragEnd={handleMainContentDragEnd}>
           <SortableContext items={visibleMainContentBlocks} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch grid-auto-rows-[327px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch auto-rows-auto lg:grid-auto-rows-[327px]">
               {visibleMainContentBlocks.map((blockId) => (
                 <SortableMainBlock
                   key={blockId}
@@ -715,13 +718,13 @@ const V3Dashboard = () => {
           </SortableContext>
         </DndContext>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch grid-auto-rows-[327px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch auto-rows-auto lg:grid-auto-rows-[327px]">
           {visibleMainContentBlocks.map((blockId) => (
             <div
               key={blockId}
-              className={`h-full min-h-0 ${DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'lg:col-span-2' : ''}`}
+              className={`min-h-0 ${DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'md:col-span-2 lg:col-span-2' : ''}`}
             >
-              <div className="widget-scroll h-full min-h-0 overflow-auto">
+              <div className="widget-scroll min-h-0 overflow-auto">
                 {renderMainContentBlock(blockId)}
               </div>
             </div>
@@ -731,17 +734,17 @@ const V3Dashboard = () => {
 
       {/* Quick Actions - only modules you have access to */}
       {(quickActionsDeduped.length > 0) && (
-      <div className={`grid gap-4 ${quickActionsDeduped.length === 1 ? 'grid-cols-1' : quickActionsDeduped.length === 2 ? 'grid-cols-2' : quickActionsDeduped.length === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+      <div className={`grid gap-3 sm:gap-4 grid-cols-2 ${quickActionsDeduped.length > 2 ? 'sm:grid-cols-4' : 'sm:grid-cols-2'}`}>
         {quickActionsDeduped.map((action, idx) => (
           <Link
             key={idx}
             to={action.path}
-            className="p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all group"
+            className="p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all group"
           >
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center mb-3 shadow-lg group-hover:scale-110 transition-transform`}>
-              <action.icon className="w-5 h-5 text-white" strokeWidth={1.5} />
+            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 transition-transform`}>
+              <action.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" strokeWidth={1.5} />
             </div>
-            <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">{action.title}</p>
+            <p className="text-[13px] sm:text-[15px] font-medium text-[#1d1d1f] dark:text-white">{action.title}</p>
           </Link>
         ))}
       </div>

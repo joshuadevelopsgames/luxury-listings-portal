@@ -128,6 +128,26 @@ const V3Layout = () => {
     return () => clearInterval(interval);
   }, [manualOverrideUntil]);
 
+  // Sync theme-color meta tag with dark mode for Safari status bar
+  useEffect(() => {
+    const themeColor = darkMode ? '#000000' : '#f5f5f7';
+    
+    // Update all theme-color meta tags
+    const metaTags = document.querySelectorAll('meta[name="theme-color"]');
+    if (metaTags.length > 0) {
+      // If we have media-query based tags, update both
+      metaTags.forEach(tag => {
+        tag.setAttribute('content', themeColor);
+      });
+    } else {
+      // Create a theme-color tag if none exists
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      meta.content = themeColor;
+      document.head.appendChild(meta);
+    }
+  }, [darkMode]);
+
   // Load permissions for the user being viewed as
   useEffect(() => {
     if (!isViewingAs || !viewingAsUser?.email) {
