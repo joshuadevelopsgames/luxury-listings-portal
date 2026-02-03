@@ -329,16 +329,25 @@ const GraphicProjectTracker = () => {
 
   // One-time import from Excel data (admin only)
   const handleImportFromExcel = async () => {
-    if (!confirm(`Import ${importData.length} projects from Excel? This will add new records.`)) return;
+    console.log('Import button clicked, importData length:', importData?.length);
     
+    if (!confirm(`Import ${importData.length} projects from Excel? This will add new records.`)) {
+      console.log('User cancelled import');
+      return;
+    }
+    
+    console.log('Starting import...');
     setImporting(true);
+    toast.loading('Importing projects...', { id: 'import-toast' });
+    
     try {
-      await firestoreService.bulkImportGraphicProjects(importData);
-      toast.success(`Imported ${importData.length} projects!`);
+      const results = await firestoreService.bulkImportGraphicProjects(importData);
+      console.log('Import results:', results);
+      toast.success(`Imported ${results.length} projects!`, { id: 'import-toast' });
       loadProjects();
     } catch (error) {
       console.error('Error importing projects:', error);
-      toast.error('Failed to import projects');
+      toast.error(`Failed to import: ${error.message}`, { id: 'import-toast' });
     } finally {
       setImporting(false);
     }
