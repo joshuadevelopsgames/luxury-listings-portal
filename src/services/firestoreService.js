@@ -2648,19 +2648,25 @@ class FirestoreService {
     }
   }
 
-  // Listen to Instagram reports changes for current user only
-  onInstagramReportsChange(callback) {
+  // Listen to Instagram reports changes. If loadAll=true (for admins), loads all reports.
+  onInstagramReportsChange(callback, { loadAll = false } = {}) {
     const uid = auth.currentUser?.uid;
     if (!uid) {
       callback([]);
       return () => {}; // Return empty unsubscribe function
     }
     
-    const q = query(
-      collection(db, this.collections.INSTAGRAM_REPORTS),
-      where('userId', '==', uid),
-      orderBy('createdAt', 'desc')
-    );
+    // If loadAll is true, fetch all reports (for admins); otherwise filter by userId
+    const q = loadAll
+      ? query(
+          collection(db, this.collections.INSTAGRAM_REPORTS),
+          orderBy('createdAt', 'desc')
+        )
+      : query(
+          collection(db, this.collections.INSTAGRAM_REPORTS),
+          where('userId', '==', uid),
+          orderBy('createdAt', 'desc')
+        );
     
     return onSnapshot(q, (snapshot) => {
       const reports = [];

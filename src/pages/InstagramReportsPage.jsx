@@ -92,14 +92,14 @@ const InstagramReportsPage = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedQuarter, setSelectedQuarter] = useState(getQuarter(new Date()));
 
-  // Load reports
+  // Load reports - admins see all reports, others see only their own
   useEffect(() => {
     const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
       setReports(data);
       setLoading(false);
-    });
+    }, { loadAll: effectiveIsAdmin });
     return () => unsubscribe();
-  }, []);
+  }, [effectiveIsAdmin]);
 
   // Load clients
   useEffect(() => {
@@ -144,8 +144,17 @@ const InstagramReportsPage = () => {
     
     // Add reports to their respective clients
     reports.forEach(report => {
-      if (report.clientId && clientMap.has(report.clientId)) {
-        clientMap.get(report.clientId).reports.push(report);
+      if (report.clientId) {
+        if (clientMap.has(report.clientId)) {
+          // Client exists in our list
+          clientMap.get(report.clientId).reports.push(report);
+        } else if (effectiveIsAdmin) {
+          // Admin: create placeholder for reports with unknown/deleted clientId
+          clientMap.set(report.clientId, {
+            client: { id: report.clientId, clientName: report.clientName || 'Unknown Client' },
+            reports: [report]
+          });
+        }
       }
     });
     
@@ -161,7 +170,7 @@ const InstagramReportsPage = () => {
     // Convert to array and sort by client name
     return Array.from(clientMap.values())
       .sort((a, b) => (a.client.clientName || '').localeCompare(b.client.clientName || ''));
-  }, [myClients, reports]);
+  }, [myClients, reports, effectiveIsAdmin]);
 
   // Unlinked reports (reports without clientId) - only visible to admins
   const unlinkedReports = useMemo(() => {
