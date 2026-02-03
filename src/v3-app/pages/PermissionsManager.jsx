@@ -35,7 +35,8 @@ import {
   DollarSign,
   UserCog,
   Clock,
-  BarChart3
+  BarChart3,
+  Palette
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
@@ -99,6 +100,7 @@ const ALL_PAGES = {
   'it-support': { name: 'IT Support', icon: Wrench, description: 'Technical support' },
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },
+  'graphic-projects': { name: 'Team Projects', icon: Palette, description: 'Graphic design project tracker' },
 };
 
 // Get list of base module IDs
