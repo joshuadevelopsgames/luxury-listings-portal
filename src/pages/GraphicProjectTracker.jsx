@@ -232,8 +232,22 @@ const GraphicProjectTracker = () => {
       );
     }
     
-    // Sort
+    // Sort: incomplete first, then by priority, then by date
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const statusOrder = { not_started: 0, pending: 1, in_progress: 2, completed: 3 };
+    
     filtered.sort((a, b) => {
+      // 1. Incomplete projects first (completed goes to bottom)
+      const statusA = statusOrder[a.status] ?? 1;
+      const statusB = statusOrder[b.status] ?? 1;
+      if (statusA !== statusB) return statusA - statusB;
+      
+      // 2. Higher priority first
+      const priorityA = priorityOrder[a.priority] ?? 1;
+      const priorityB = priorityOrder[b.priority] ?? 1;
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      // 3. Then by date
       const dateA = a.startDate ? new Date(typeof a.startDate === 'string' ? a.startDate : a.startDate.toDate?.() || a.startDate) : new Date(0);
       const dateB = b.startDate ? new Date(typeof b.startDate === 'string' ? b.startDate : b.startDate.toDate?.() || b.startDate) : new Date(0);
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
