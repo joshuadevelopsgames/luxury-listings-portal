@@ -472,9 +472,9 @@ export default function FeedbackButton() {
 
       {/* Panel */}
       {isOpen && (
-        <div className="feedback-panel fixed bottom-24 right-6 w-[360px] bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 z-50 overflow-hidden">
+        <div className="feedback-panel fixed bottom-24 right-6 w-[360px] bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-[600px]">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10 bg-gradient-to-r from-[#0071e3]/5 to-[#5856d6]/5">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10 bg-gradient-to-r from-[#0071e3]/5 to-[#5856d6]/5 flex-shrink-0">
             <div className="flex items-center gap-3">
               {view !== 'menu' && view !== 'chat-list' && (
                 <button
@@ -510,7 +510,7 @@ export default function FeedbackButton() {
           </div>
 
           {/* Content */}
-          <div className="p-4 max-h-[450px] overflow-y-auto">
+          <div className="p-4 overflow-y-auto flex-1">
             {/* Menu View */}
             {view === 'menu' && (
               <div className="space-y-2">
@@ -622,14 +622,6 @@ export default function FeedbackButton() {
                 <p className="text-[11px] text-[#86868b]">
                   Console logs and browser info will be automatically included.
                 </p>
-                <button
-                  onClick={handleSubmitBug}
-                  disabled={isSubmitting}
-                  className="w-full h-11 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#ff3b30]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bug className="w-4 h-4" />}
-                  {isSubmitting ? 'Submitting...' : 'Submit Bug Report'}
-                </button>
               </div>
             )}
 
@@ -656,14 +648,6 @@ export default function FeedbackButton() {
                     className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
                   />
                 </div>
-                <button
-                  onClick={handleSubmitFeature}
-                  disabled={isSubmitting}
-                  className="w-full h-11 rounded-xl bg-[#ff9500] text-white text-[14px] font-medium hover:bg-[#ff9500]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
-                  {isSubmitting ? 'Submitting...' : 'Submit Feature Request'}
-                </button>
               </div>
             )}
 
@@ -816,6 +800,33 @@ export default function FeedbackButton() {
               </div>
             )}
           </div>
+
+          {/* Sticky Footer for Submit Buttons */}
+          {view === 'bug' && (
+            <div className="flex-shrink-0 p-4 border-t border-black/5 dark:border-white/10 bg-white dark:bg-[#1c1c1e]">
+              <button
+                onClick={handleSubmitBug}
+                disabled={isSubmitting}
+                className="w-full h-11 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#ff3b30]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bug className="w-4 h-4" />}
+                {isSubmitting ? 'Submitting...' : 'Submit Bug Report'}
+              </button>
+            </div>
+          )}
+
+          {view === 'feature' && (
+            <div className="flex-shrink-0 p-4 border-t border-black/5 dark:border-white/10 bg-white dark:bg-[#1c1c1e]">
+              <button
+                onClick={handleSubmitFeature}
+                disabled={isSubmitting}
+                className="w-full h-11 rounded-xl bg-[#ff9500] text-white text-[14px] font-medium hover:bg-[#ff9500]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
+                {isSubmitting ? 'Submitting...' : 'Submit Feature Request'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </>

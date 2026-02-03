@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical, Palette, Loader2 } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -35,6 +35,12 @@ import { format } from 'date-fns';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { parseNaturalLanguageDate } from '../utils/dateParser';
+
+// Graphic team members for project requests
+const GRAPHIC_TEAM = [
+  { email: 'jasmine@smmluxurylistings.com', name: 'Jasmine' },
+  { email: 'jone@smmluxurylistings.com', name: 'Jone' }
+];
 
 // Sortable Task Card Wrapper
 const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props }) => {
@@ -132,6 +138,18 @@ const TasksPage = () => {
     taskDueDate: ''
   });
   const [submittingRequest, setSubmittingRequest] = useState(false);
+  
+  // Project request state (for graphic design requests)
+  const [showProjectRequestModal, setShowProjectRequestModal] = useState(false);
+  const [projectRequestForm, setProjectRequestForm] = useState({
+    toUserEmail: '',
+    client: '',
+    task: '',
+    priority: 'medium',
+    deadline: '',
+    notes: ''
+  });
+  const [submittingProjectRequest, setSubmittingProjectRequest] = useState(false);
   const [processingRequestId, setProcessingRequestId] = useState(null);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [showProductivityStats, setShowProductivityStats] = useState(false);
@@ -271,6 +289,7 @@ const TasksPage = () => {
         setShowEditModal(false);
         setShowRequestModal(false);
         setShowRequestsPanel(false);
+        setShowProjectRequestModal(false);
       }
     };
 
@@ -906,6 +925,54 @@ const TasksPage = () => {
     }
   };
 
+  // Submit graphic project request
+  const handleSubmitProjectRequest = async (e) => {
+    e.preventDefault();
+    
+    if (!projectRequestForm.deadline) {
+      toast.error('Deadline is required');
+      return;
+    }
+    
+    if (!projectRequestForm.toUserEmail) {
+      toast.error('Please select a designer');
+      return;
+    }
+    
+    setSubmittingProjectRequest(true);
+    try {
+      const designer = GRAPHIC_TEAM.find(m => m.email === projectRequestForm.toUserEmail);
+      
+      await firestoreService.createProjectRequest({
+        fromUserEmail: currentUser.email,
+        fromUserName: currentUser.displayName || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email,
+        toUserEmail: projectRequestForm.toUserEmail,
+        toUserName: designer?.name || projectRequestForm.toUserEmail,
+        client: projectRequestForm.client,
+        task: projectRequestForm.task,
+        priority: projectRequestForm.priority,
+        deadline: projectRequestForm.deadline,
+        notes: projectRequestForm.notes
+      });
+      
+      toast.success(`Project request sent to ${designer?.name || 'designer'}!`);
+      setShowProjectRequestModal(false);
+      setProjectRequestForm({
+        toUserEmail: '',
+        client: '',
+        task: '',
+        priority: 'medium',
+        deadline: '',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error sending project request:', error);
+      toast.error('Failed to send request');
+    } finally {
+      setSubmittingProjectRequest(false);
+    }
+  };
+
   const getTaskCounts = () => {
     const overdueTasks = tasks.filter(task => 
       task.status !== 'completed' && isOverdue(task) && !isDueToday(task)
@@ -1020,6 +1087,14 @@ const TasksPage = () => {
               <span className="px-1.5 py-0.5 bg-[#ff3b30] text-white text-[11px] rounded-md">{taskRequests.length}</span>
             </button>
           )}
+          <button 
+            onClick={() => setShowProjectRequestModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[13px] font-medium hover:bg-[#5856d6]/20 transition-colors"
+          >
+            <Palette className="w-4 h-4" />
+            <span className="hidden sm:inline">Request Project</span>
+            <span className="sm:hidden">Project</span>
+          </button>
           <button 
             onClick={() => setShowRequestModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
@@ -1454,6 +1529,145 @@ const TasksPage = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Project Request Modal */}
+      {showProjectRequestModal && createPortal(
+        <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#5856d6]/10 flex items-center justify-center">
+                    <Palette className="w-5 h-5 text-[#5856d6]" />
+                  </div>
+                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Request a Project</h2>
+                </div>
+                <button onClick={() => setShowProjectRequestModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                  <X className="w-5 h-5 text-[#86868b]" />
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={handleSubmitProjectRequest} className="p-6 space-y-4">
+              {/* Designer Selection */}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Request From <span className="text-[#ff3b30]">*</span>
+                </label>
+                <select
+                  value={projectRequestForm.toUserEmail}
+                  onChange={(e) => setProjectRequestForm(prev => ({ ...prev, toUserEmail: e.target.value }))}
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                >
+                  <option value="">Select a designer...</option>
+                  {GRAPHIC_TEAM.map(member => (
+                    <option key={member.email} value={member.email}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Client */}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Client <span className="text-[#ff3b30]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={projectRequestForm.client}
+                  onChange={(e) => setProjectRequestForm(prev => ({ ...prev, client: e.target.value }))}
+                  placeholder="e.g., Agency Cayman Island"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                />
+              </div>
+              
+              {/* Project Description */}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Project Description <span className="text-[#ff3b30]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={projectRequestForm.task}
+                  onChange={(e) => setProjectRequestForm(prev => ({ ...prev, task: e.target.value }))}
+                  placeholder="e.g., Social Media Graphics Package"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                />
+              </div>
+              
+              {/* Priority & Deadline */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Priority
+                  </label>
+                  <select
+                    value={projectRequestForm.priority}
+                    onChange={(e) => setProjectRequestForm(prev => ({ ...prev, priority: e.target.value }))}
+                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Deadline <span className="text-[#ff3b30]">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={projectRequestForm.deadline}
+                    onChange={(e) => setProjectRequestForm(prev => ({ ...prev, deadline: e.target.value }))}
+                    required
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                  />
+                </div>
+              </div>
+              
+              {/* Notes */}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Additional Notes
+                </label>
+                <textarea
+                  value={projectRequestForm.notes}
+                  onChange={(e) => setProjectRequestForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Any additional details or requirements..."
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#5856d6] resize-none"
+                />
+              </div>
+              
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowProjectRequestModal(false)}
+                  disabled={submittingProjectRequest}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={submittingProjectRequest}
+                  className="px-4 py-2.5 rounded-xl bg-[#5856d6] text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {submittingProjectRequest && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Send Request
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body
