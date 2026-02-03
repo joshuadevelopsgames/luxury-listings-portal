@@ -424,11 +424,10 @@ const InstagramReportsPage = () => {
     </div>
   );
 
-  // Stats summary
-  const totalReports = myClients.reduce((sum, c) => {
-    const entry = clientsWithReports.find(e => e.client.id === c.id);
-    return sum + (entry?.reports.length || 0);
-  }, 0);
+  // Stats summary - only count reports for MY clients
+  const myClientIds = new Set(myClients.map(c => c.id));
+  const myReports = reports.filter(r => r.clientId && myClientIds.has(r.clientId));
+  const totalReports = myReports.length;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -474,7 +473,7 @@ const InstagramReportsPage = () => {
             <span className="text-[11px] sm:text-[12px] text-[#86868b]">This Quarter</span>
           </div>
           <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
-            {reports.filter(r => {
+            {myReports.filter(r => {
               const d = r.startDate?.toDate?.();
               return d && isWithinInterval(d, { 
                 start: startOfQuarter(new Date()), 
@@ -489,7 +488,7 @@ const InstagramReportsPage = () => {
             <span className="text-[11px] sm:text-[12px] text-[#86868b]">This Year</span>
           </div>
           <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
-            {reports.filter(r => {
+            {myReports.filter(r => {
               const d = r.startDate?.toDate?.();
               return d && getYear(d) === new Date().getFullYear();
             }).length}
