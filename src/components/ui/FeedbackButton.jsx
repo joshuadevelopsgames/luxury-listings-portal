@@ -205,7 +205,10 @@ export default function FeedbackButton() {
             acc[attr.name] = attr.value;
             return acc;
           }, {}),
-          boundingRect: element.getBoundingClientRect(),
+          boundingRect: (() => {
+            const rect = element.getBoundingClientRect();
+            return { top: rect.top, left: rect.left, width: rect.width, height: rect.height, bottom: rect.bottom, right: rect.right };
+          })(),
           xpath: getXPath(element),
         };
 
