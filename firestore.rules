@@ -9,7 +9,8 @@ service cloud.firestore {
     // Helper function to check if user is admin
     function isAdmin() {
       return isAuthenticated() && 
-             request.auth.token.email == 'jrsschroeder@gmail.com';
+             (request.auth.token.email == 'jrsschroeder@gmail.com' ||
+              request.auth.token.email == 'demo@luxurylistings.app');
     }
     
     // Helper function to get user email

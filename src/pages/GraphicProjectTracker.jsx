@@ -35,8 +35,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 
 // Import data for one-time Excel import
-import importData from '../data/graphic-projects-import.json';
-import joneProjectsData from '../data/jone-projects.json';
+import jasmineProjectsData from '../data/graphic-projects-import.json';
+import joneProjectsData from '../data/jone-projects-full.json';
 import { firestoreService } from '../services/firestoreService';
 import { toast } from 'react-hot-toast';
 import { format, parseISO, getYear } from 'date-fns';
@@ -381,9 +381,90 @@ const GraphicProjectTracker = () => {
   };
 
   // One-time import from Excel data (admin only)
+  // Clear all projects and reimport from both Excel files
+  const handleClearAndReimport = async () => {
+    if (!currentUser || !isSystemAdmin) {
+      toast.error('Admin access required');
+      return;
+    }
+
+    const allProjects = [...jasmineProjectsData, ...joneProjectsData];
+    const jasmineCount = jasmineProjectsData.length;
+    const joneCount = joneProjectsData.length;
+
+    const importConfirmed = await confirm({
+      title: 'Clear & Reimport All Projects',
+      message: `This will DELETE all ${projects.length} existing projects and reimport ${allProjects.length} projects (${jasmineCount} Jasmine, ${joneCount} Jone). This cannot be undone.`,
+      confirmText: 'Clear & Reimport',
+      variant: 'danger'
+    });
+    if (!importConfirmed) return;
+
+    setImporting(true);
+    
+    // Step 1: Delete all existing projects
+    toast.loading('Deleting existing projects...', { id: 'import-toast' });
+    let deleted = 0;
+    for (const project of projects) {
+      try {
+        await firestoreService.deleteGraphicProject(project.id);
+        deleted++;
+        if (deleted % 20 === 0) {
+          toast.loading(`Deleting... ${deleted}/${projects.length}`, { id: 'import-toast' });
+        }
+      } catch (err) {
+        console.error('Error deleting project:', err);
+      }
+    }
+    
+    // Step 2: Import all projects
+    toast.loading(`Importing... 0/${allProjects.length}`, { id: 'import-toast' });
+    let imported = 0;
+    let failed = 0;
+    
+    for (const project of allProjects) {
+      try {
+        const projectData = {
+          client: project.client || '',
+          task: project.task || '',
+          priority: project.priority || 'medium',
+          status: project.status || 'not_started',
+          startDate: project.startDate || null,
+          endDate: project.endDate || null,
+          hours: project.hours || 0,
+          notes: project.notes || '',
+          assignedTo: project.assignedTo,
+          importedFromExcel: true,
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email
+        };
+        
+        await firestoreService.addGraphicProject(projectData);
+        imported++;
+        
+        if (imported % 20 === 0) {
+          toast.loading(`Importing... ${imported}/${allProjects.length}`, { id: 'import-toast' });
+        }
+      } catch (err) {
+        console.error('Failed to import:', project.client, '-', err.message);
+        failed++;
+        if (failed >= 5 && imported === 0) {
+          toast.error('Permission denied. Check Firestore rules.', { id: 'import-toast' });
+          setImporting(false);
+          return;
+        }
+      }
+    }
+    
+    setImporting(false);
+    toast.success(`Imported ${imported} projects (${failed} failed)`, { id: 'import-toast' });
+    loadProjects();
+  };
+
   const handleImportFromExcel = async () => {
     console.log('=== IMPORT V2 ===');
-    console.log('Import button clicked, importData length:', importData?.length);
+    const allProjects = [...jasmineProjectsData, ...joneProjectsData];
+    console.log('Import button clicked, total projects:', allProjects.length);
     console.log('Current user:', currentUser?.email, currentUser?.uid);
     
     if (!currentUser) {
@@ -393,7 +474,7 @@ const GraphicProjectTracker = () => {
     
     const importConfirmed = await confirm({
       title: 'Import Projects',
-      message: `Import ${importData.length} projects from Excel? This will add new records.`,
+      message: `Import ${allProjects.length} projects (${jasmineProjectsData.length} Jasmine, ${joneProjectsData.length} Jone)? This will add new records.`,
       confirmText: 'Import',
       variant: 'default'
     });
@@ -409,11 +490,11 @@ const GraphicProjectTracker = () => {
     let failed = 0;
     const errors = [];
     
-    toast.loading(`Importing... 0/${importData.length}`, { id: 'import-toast' });
+    toast.loading(`Importing... 0/${allProjects.length}`, { id: 'import-toast' });
     
     // Import one at a time with detailed error logging
-    for (let i = 0; i < importData.length; i++) {
-      const project = importData[i];
+    for (let i = 0; i < allProjects.length; i++) {
+      const project = allProjects[i];
       try {
         const projectData = {
           client: project.client || '',
@@ -424,7 +505,7 @@ const GraphicProjectTracker = () => {
           endDate: project.endDate || null,
           hours: project.hours || 0,
           notes: project.notes || '',
-          assignedTo: project.assignedTo || 'jasmine@smmluxurylistings.com',
+          assignedTo: project.assignedTo,
           importedFromExcel: true,
           createdAt: new Date().toISOString(),
           createdBy: currentUser.email
@@ -435,7 +516,7 @@ const GraphicProjectTracker = () => {
         
         // Update progress every 10 items
         if (imported % 10 === 0) {
-          toast.loading(`Importing... ${imported}/${importData.length}`, { id: 'import-toast' });
+          toast.loading(`Importing... ${imported}/${allProjects.length}`, { id: 'import-toast' });
         }
       } catch (err) {
         console.error(`Failed to import project ${i}:`, project.client, '-', err.message);
@@ -713,6 +794,18 @@ const GraphicProjectTracker = () => {
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Project</span>
+                </button>
+              )}
+              
+              {/* Admin: Clear & Reimport */}
+              {isSystemAdmin && (
+                <button
+                  onClick={handleClearAndReimport}
+                  disabled={importing}
+                  className="h-10 px-4 rounded-xl bg-[#ff3b30] text-white text-[13px] font-medium hover:bg-[#ff453a] transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${importing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">{importing ? 'Importing...' : 'Clear & Reimport'}</span>
                 </button>
               )}
             </div>
