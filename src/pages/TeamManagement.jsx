@@ -402,7 +402,14 @@ const TeamManagement = () => {
                         {member.avatar}
                       </div>
                       <div>
-                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{member.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{member.name}</p>
+                          {(member.uid || member.id) && (
+                            <span className="text-[9px] px-1 py-0.5 rounded bg-[#5856d6]/10 text-[#5856d6] font-mono">
+                              {String(member.uid || member.id).slice(0, 8)}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-[#86868b]">{member.position}</p>
                         <p className="text-[10px] text-[#86868b]">{member.email}</p>
                       </div>

@@ -12,6 +12,7 @@ const UserLink = ({
   user, 
   className = '',
   showRole = false,
+  showId = false,
   onUserUpdate = null,
   children
 }) => {
@@ -60,6 +61,11 @@ const UserLink = ({
         className={`inline-flex items-center gap-1.5 text-[#5856d6] hover:text-[#6e6ce8] hover:underline font-medium transition-colors cursor-pointer ${className}`}
       >
         {children || displayName}
+        {showId && (localUser.uid || localUser.id) && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#5856d6]/10 text-[#5856d6] font-mono">
+            {(localUser.uid || localUser.id).slice(0, 8)}
+          </span>
+        )}
         {showRole && localUser.role && (
           <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-normal">
             {roleDisplay}

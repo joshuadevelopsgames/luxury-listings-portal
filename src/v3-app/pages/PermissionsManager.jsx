@@ -610,6 +610,11 @@ const PermissionsManager = () => {
                         <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
                           {user.displayName || 'Unknown User'}
                         </h3>
+                        {(user.uid || user.id) && (
+                          <span className="px-1.5 py-0.5 rounded bg-[#5856d6]/10 text-[#5856d6] text-[10px] font-mono">
+                            {(user.uid || user.id).slice(0, 8)}
+                          </span>
+                        )}
                         {isAdmin && (
                           <span className="px-2 py-0.5 rounded-full bg-[#ff9500]/10 text-[#ff9500] text-[11px] font-semibold">
                             System Admin

@@ -1329,7 +1329,14 @@ const UserManagement = () => {
                 <Card key={user.id} className="border-orange-200">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
+                      <div>
+                        <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
+                        {(user.uid || user.id) && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">
+                            ID: {(user.uid || user.id).slice(0, 8)}
+                          </span>
+                        )}
+                      </div>
                       <Badge variant="outline" className="border-orange-300 text-orange-700">
                         Pending
                       </Badge>
@@ -1421,7 +1428,14 @@ const UserManagement = () => {
                 <Card key={user.email} className="border-green-200">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
+                      <div>
+                        <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
+                        {(user.uid || user.id) && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">
+                            ID: {(user.uid || user.id).slice(0, 8)}
+                          </span>
+                        )}
+                      </div>
                       <Badge variant="outline" className="border-green-300 text-green-700">
                         Approved
                       </Badge>

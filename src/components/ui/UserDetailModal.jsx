@@ -192,7 +192,14 @@ const UserDetailModal = ({
                 <h2 className="text-xl font-semibold text-[#1d1d1f] dark:text-white">
                   {displayName}
                 </h2>
-                <p className="text-[13px] text-[#86868b]">{roleDisplay}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] text-[#86868b]">{roleDisplay}</p>
+                  {(localUser.uid || localUser.id) && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#5856d6]/10 text-[#5856d6] font-mono">
+                      ID: {(localUser.uid || localUser.id).slice(0, 8)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">

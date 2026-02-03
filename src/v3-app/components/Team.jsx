@@ -156,7 +156,14 @@ const V3Team = () => {
                     <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
                       {member.displayName || member.email?.split('@')[0] || 'Team Member'}
                     </h3>
-                    <p className="text-[13px] text-[#86868b]">{getRoleDisplay(member.role)}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[13px] text-[#86868b]">{getRoleDisplay(member.role)}</p>
+                      {(member.uid || member.id) && (
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-[#5856d6]/10 text-[#5856d6] font-mono">
+                          {(member.uid || member.id).slice(0, 8)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <button className="w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
