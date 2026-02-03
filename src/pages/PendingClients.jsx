@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 
 const PendingClients = () => {
+  const { confirm } = useConfirm();
   const [pendingClients, setPendingClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState({});
@@ -34,7 +36,13 @@ const PendingClients = () => {
   };
 
   const handleApprove = async (pendingClient) => {
-    if (!window.confirm(`Approve ${pendingClient.email} and add them as a client?`)) {
+    const confirmed = await confirm({
+      title: 'Approve Client',
+      message: `Approve ${pendingClient.email} and add them as a client?`,
+      confirmText: 'Approve',
+      variant: 'default'
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -72,7 +80,13 @@ const PendingClients = () => {
   };
 
   const handleReject = async (pendingClient) => {
-    if (!window.confirm(`Reject ${pendingClient.email}? They will need to contact support to sign up again.`)) {
+    const confirmed = await confirm({
+      title: 'Reject Client',
+      message: `Reject ${pendingClient.email}? They will need to contact support to sign up again.`,
+      confirmText: 'Reject',
+      variant: 'danger'
+    });
+    if (!confirmed) {
       return;
     }
 

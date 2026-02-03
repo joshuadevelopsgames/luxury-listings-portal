@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfirm } from '../contexts/ConfirmContext';
+import { toast } from 'react-hot-toast';
 import { 
   Users, 
   Target, 
@@ -38,7 +40,6 @@ import { firestoreService } from '../services/firestoreService';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { PERMISSIONS } from '../entities/Permissions';
-import { toast } from 'react-hot-toast';
 import ClientLink from '../components/ui/ClientLink';
 import LeadLink from '../components/crm/LeadLink';
 import ClientDetailModal from '../components/client/ClientDetailModal';
@@ -46,6 +47,7 @@ import LeadDetailModal from '../components/crm/LeadDetailModal';
 
 const CRMPage = () => {
   const { currentUser, currentRole, hasPermission } = useAuth();
+  const { confirm } = useConfirm();
   
   // Initialize CRM service instance
   const crmService = new CRMGoogleSheetsService();
@@ -350,12 +352,12 @@ const CRMPage = () => {
   // Add new lead to Google Sheets
   const handleAddNewLead = async () => {
     if (!newLead.contactName || !newLead.email) {
-      alert('Please fill in at least Contact Name and Email');
+      toast.error('Please fill in at least Contact Name and Email');
       return;
     }
 
     if (Object.values(selectedTabs).filter(Boolean).length === 0) {
-      alert('Please select at least one tab to add the lead to');
+      toast.error('Please select at least one tab to add the lead to');
       return;
     }
 
@@ -649,9 +651,13 @@ const CRMPage = () => {
   const deleteLead = async (client) => {
     if (!client) return;
 
-    if (!window.confirm(`Are you sure you want to permanently delete "${client.contactName}"? This action cannot be undone.`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Lead',
+      message: `Are you sure you want to permanently delete "${client.contactName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
 
     try {
       // Delete from Google Sheets via Google Apps Script

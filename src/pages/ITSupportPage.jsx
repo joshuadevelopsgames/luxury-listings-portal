@@ -23,9 +23,12 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { firestoreService } from '../services/firestoreService';
+import { useConfirm } from '../contexts/ConfirmContext';
+import { toast } from 'react-hot-toast';
 
 const ITSupportPage = () => {
   const { currentUser, currentRole } = useAuth();
+  const { confirm } = useConfirm();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [myTickets, setMyTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -290,13 +293,13 @@ const ITSupportPage = () => {
           // Don't block user flow if email fails
         }
         
-        alert('Support request submitted successfully! ✅\n\nYour ticket has been sent to IT Support. We\'ll get back to you soon.');
+        toast.success('Support request submitted! We\'ll get back to you soon.');
         setShowRequestModal(false);
         resetForm();
       }
     } catch (error) {
       console.error('❌ Error submitting support ticket:', error);
-      alert(`Failed to submit request: ${error.message}\n\nPlease try again.`);
+      toast.error(`Failed to submit request: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -349,13 +352,13 @@ const ITSupportPage = () => {
   const handleFilePreview = async (file) => {
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file (PNG, JPG, GIF, etc.)');
+      toast.error('Please select an image file (PNG, JPG, GIF, etc.)');
       return;
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image size must be less than 10MB');
+      toast.error('Image size must be less than 10MB');
       return;
     }
 
@@ -465,7 +468,7 @@ const ITSupportPage = () => {
       console.error('❌ Error updating ticket status:', error);
       console.error('❌ Error code:', error.code);
       console.error('❌ Error message:', error.message);
-      alert(`Failed to update ticket status: ${error.message}\nPlease try again.`);
+      toast.error(`Failed to update ticket status: ${error.message}`);
     }
   };
 
@@ -512,7 +515,7 @@ const ITSupportPage = () => {
     } catch (error) {
       console.error('❌ Error adding comment:', error);
       console.error('❌ Error details:', error.message, error.code);
-      alert(`Failed to add comment: ${error.message}\nPlease try again.`);
+      toast.error(`Failed to add comment: ${error.message}`);
     }
   };
 
@@ -545,7 +548,7 @@ const ITSupportPage = () => {
       }
     } catch (error) {
       console.error('Error updating feedback status:', error);
-      alert('Failed to update status');
+      toast.error('Failed to update status');
     }
   };
 
@@ -569,7 +572,7 @@ const ITSupportPage = () => {
       setChatReply('');
     } catch (error) {
       console.error('Error sending reply:', error);
-      alert('Failed to send reply');
+      toast.error('Failed to send reply');
     }
   };
 
@@ -585,22 +588,29 @@ const ITSupportPage = () => {
       }
     } catch (error) {
       console.error('Error closing chat:', error);
-      alert('Failed to close chat');
+      toast.error('Failed to close chat');
     }
   };
 
   // Delete feedback (bug report or feature request)
   const handleDeleteFeedback = async (feedbackId) => {
-    if (!window.confirm('Are you sure you want to delete this? This cannot be undone.')) return;
+    const confirmed = await confirm({
+      title: 'Delete Feedback',
+      message: 'Are you sure you want to delete this? This cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
     
     setDeletingFeedbackId(feedbackId);
     try {
       await firestoreService.deleteFeedback(feedbackId);
       setFeedbackItems(prev => prev.filter(f => f.id !== feedbackId));
       setSelectedFeedback(null);
+      toast.success('Feedback deleted');
     } catch (error) {
       console.error('Error deleting feedback:', error);
-      alert('Failed to delete');
+      toast.error('Failed to delete');
     } finally {
       setDeletingFeedbackId(null);
     }
@@ -618,22 +628,29 @@ const ITSupportPage = () => {
       }
     } catch (error) {
       console.error('Error archiving chat:', error);
-      alert('Failed to archive chat');
+      toast.error('Failed to archive chat');
     }
   };
 
   // Delete chat
   const handleDeleteChat = async (chatId) => {
-    if (!window.confirm('Are you sure you want to delete this chat? This cannot be undone.')) return;
+    const confirmed = await confirm({
+      title: 'Delete Chat',
+      message: 'Are you sure you want to delete this chat? This cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
     
     setDeletingChatId(chatId);
     try {
       await firestoreService.deleteFeedbackChat(chatId);
       setFeedbackChats(prev => prev.filter(c => c.id !== chatId));
       setSelectedChat(null);
+      toast.success('Chat deleted');
     } catch (error) {
       console.error('Error deleting chat:', error);
-      alert('Failed to delete chat');
+      toast.error('Failed to delete chat');
     } finally {
       setDeletingChatId(null);
     }

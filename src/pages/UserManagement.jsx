@@ -24,6 +24,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { firestoreService } from '../services/firestoreService';
@@ -34,6 +35,7 @@ import UserLink from '../components/ui/UserLink';
 
 const UserManagement = () => {
   const { currentUser, hasPermission, isSystemAdmin } = useAuth();
+  const { confirm } = useConfirm();
   const { pendingUsers, removePendingUser, approveUser, updatePendingUserRole, refreshPendingUsers } = usePendingUsers();
   const [approvedUsers, setApprovedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -258,7 +260,7 @@ const UserManagement = () => {
         code: error.code,
         stack: error.stack
       });
-      alert('Failed to approve user as admin. Please try again.');
+      toast.error('Failed to approve user as admin. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -314,7 +316,7 @@ const UserManagement = () => {
       console.log('✅ User approved successfully');
     } catch (error) {
       console.error('❌ Error approving user:', error);
-      alert('Failed to approve user. Please try again.');
+      toast.error('Failed to approve user. Please try again.');
     }
   };
 
@@ -362,7 +364,7 @@ const UserManagement = () => {
         code: error.code,
         stack: error.stack
       });
-      alert('Failed to reject user. Please try again.');
+      toast.error('Failed to reject user. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -375,7 +377,7 @@ const UserManagement = () => {
       console.log('✅ User role updated successfully');
     } catch (error) {
       console.error('❌ Error updating user role:', error);
-      alert('Failed to update user role. Please try again.');
+      toast.error('Failed to update user role. Please try again.');
     }
   };
 
@@ -427,7 +429,13 @@ const UserManagement = () => {
   };
 
   const handleDeleteApprovedUser = async (userEmail) => {
-    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    const confirmed = await confirm({
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -437,7 +445,7 @@ const UserManagement = () => {
       console.log('✅ Approved user deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting approved user:', error);
-      alert('Failed to delete user. Please try again.');
+      toast.error('Failed to delete user. Please try again.');
     }
   };
 
@@ -467,10 +475,10 @@ const UserManagement = () => {
       }
       
       console.log('✅ User roles fixed successfully');
-      alert('User roles have been fixed!');
+      toast.success('User roles have been fixed!');
     } catch (error) {
       console.error('❌ Error fixing user roles:', error);
-      alert('Failed to fix user roles. Please try again.');
+      toast.error('Failed to fix user roles. Please try again.');
     }
   };
 
@@ -512,13 +520,13 @@ const UserManagement = () => {
       }
       
       console.log(`✅ Cleaned up ${removedCount} duplicate users`);
-      alert(`Cleaned up ${removedCount} duplicate users`);
+      toast.success(`Cleaned up ${removedCount} duplicate users`);
       
       // Don't call handleRefreshUsers here - let the real-time listener handle it
       
     } catch (error) {
       console.error('❌ Error cleaning duplicates:', error);
-      alert('Failed to clean duplicates. Please try again.');
+      toast.error('Failed to clean duplicates. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -568,7 +576,7 @@ const UserManagement = () => {
       console.error('❌ Error refreshing users:', error);
       console.error('🔍 DEBUG: Error stack:', error.stack);
       setFirestoreStatus('error');
-      alert('Failed to refresh users. Please try again.');
+      toast.error('Failed to refresh users. Please try again.');
       setLoading(false);
       
       // Auto-clear error status after 5 seconds

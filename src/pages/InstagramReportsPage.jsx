@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useViewAs } from '../contexts/ViewAsContext';
+import { useConfirm } from '../contexts/ConfirmContext';
+import { toast } from 'react-hot-toast';
 import { firestoreService } from '../services/firestoreService';
 import { openaiService } from '../services/openaiService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
@@ -73,6 +75,7 @@ const InstagramReportsPage = () => {
   const { currentUser } = useAuth();
   const { isSystemAdmin } = usePermissions();
   const { isViewingAs, viewingAsUser } = useViewAs();
+  const { confirm } = useConfirm();
   
   // Get effective user (View As support)
   const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
@@ -229,7 +232,7 @@ const InstagramReportsPage = () => {
     const periodReports = getReportsForPeriod(clientId, qStart, qEnd);
     
     if (!periodReports.length) {
-      alert(`No monthly reports found for Q${quarter} ${year}. Create monthly reports first.`);
+      toast.error(`No monthly reports found for Q${quarter} ${year}. Create monthly reports first.`);
       return;
     }
     
@@ -252,7 +255,7 @@ const InstagramReportsPage = () => {
       setGeneratingReport(null);
     } catch (error) {
       console.error('Error creating quarterly report:', error);
-      alert('Failed to create quarterly report.');
+      toast.error('Failed to create quarterly report.');
     }
   };
 
@@ -266,7 +269,7 @@ const InstagramReportsPage = () => {
     const periodReports = getReportsForPeriod(clientId, yStart, yEnd);
     
     if (!periodReports.length) {
-      alert(`No reports found for ${year}. Create monthly reports first.`);
+      toast.error(`No reports found for ${year}. Create monthly reports first.`);
       return;
     }
     
@@ -324,7 +327,7 @@ const InstagramReportsPage = () => {
       setGeneratingReport(null);
     } catch (error) {
       console.error('Error creating yearly report:', error);
-      alert('Failed to create yearly report.');
+      toast.error('Failed to create yearly report.');
     }
   };
 
@@ -336,9 +339,14 @@ const InstagramReportsPage = () => {
   };
 
   const handleDeleteReport = async (report) => {
-    if (!window.confirm(`Are you sure you want to delete "${report.title}"? This action cannot be undone.`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Report',
+      message: `Are you sure you want to delete "${report.title}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
+    
     try {
       const storage = getStorage();
       for (const screenshot of report.screenshots || []) {
@@ -351,9 +359,10 @@ const InstagramReportsPage = () => {
         }
       }
       await firestoreService.deleteInstagramReport(report.id);
+      toast.success('Report deleted');
     } catch (error) {
       console.error('Error deleting report:', error);
-      alert('Failed to delete report. Please try again.');
+      toast.error('Failed to delete report. Please try again.');
     }
   };
 
@@ -1059,7 +1068,7 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
       }));
     } catch (error) {
       console.error('Error adding screenshots:', error);
-      alert('Failed to add some files. Please try again.');
+      toast.error('Failed to add some files. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -1156,7 +1165,7 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
 
   const handleSave = async () => {
     if (!formData.title || !formData.startDate || !formData.endDate) {
-      alert('Please fill in Report Title and Date Range (start and end dates)');
+      toast.error('Please fill in Report Title and Date Range (start and end dates)');
       return;
     }
 
@@ -1182,7 +1191,7 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
       onSave();
     } catch (error) {
       console.error('Error saving report:', error);
-      alert('Failed to save report. Please try again.');
+      toast.error('Failed to save report. Please try again.');
     } finally {
       setSaving(false);
     }

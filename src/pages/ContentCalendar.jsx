@@ -13,11 +13,13 @@ import XLogo from '../assets/Twitter-X-logo.png';
 import XLogoSelected from '../assets/x-logo-selected.png';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { googleSheetsService } from '../services/googleSheetsService';
 import { openaiService } from '../services/openaiService';
 
 const ContentCalendar = () => {
   const { currentUser, hasPermission } = useAuth();
+  const { confirm } = useConfirm();
   
   // Check permissions
   const canCreateContent = hasPermission(PERMISSIONS.CREATE_CONTENT);
@@ -314,7 +316,7 @@ const ContentCalendar = () => {
     setEditingCalendarName('');
   };
 
-  const handleDeleteCalendar = (calendarId, calendarName) => {
+  const handleDeleteCalendar = async (calendarId, calendarName) => {
     // Prevent deleting default calendars
     if (calendarId === 'default' || calendarId === 'client-ll') {
       toast.error('Cannot delete default calendars');
@@ -322,9 +324,13 @@ const ContentCalendar = () => {
     }
 
     // Show confirmation
-    if (!window.confirm(`Delete "${calendarName}"?\n\nAll content in this calendar will also be deleted. This cannot be undone.`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Calendar',
+      message: `Delete "${calendarName}"? All content in this calendar will also be deleted. This cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
 
     // Delete calendar
     setCalendars(prev => {

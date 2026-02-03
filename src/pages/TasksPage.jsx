@@ -28,12 +28,13 @@ import SmartFilters from '../components/tasks/SmartFilters';
 import FilterDropdown from '../components/tasks/FilterDropdown';
 import CalendarView from '../components/tasks/CalendarView';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfirm } from '../contexts/ConfirmContext';
+import { toast } from 'react-hot-toast';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
 import { reminderService } from '../services/reminderService';
 import { format } from 'date-fns';
 import { PERMISSIONS } from '../entities/Permissions';
-import { toast } from 'react-hot-toast';
 import { parseNaturalLanguageDate } from '../utils/dateParser';
 
 // Graphic team members for project requests
@@ -112,6 +113,7 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 
 const TasksPage = () => {
   const { currentUser, hasPermission, getCurrentRolePermissions } = useAuth();
+  const { confirm } = useConfirm();
   const rolePerms = getCurrentRolePermissions?.()?.permissions || {};
   
   // If user can access the Tasks page (module enabled), they can create tasks
@@ -212,14 +214,20 @@ const TasksPage = () => {
 
   // Bulk delete tasks
   const bulkDeleteTasks = async () => {
-    if (!window.confirm(`Delete ${selectedTasks.length} tasks?`)) return;
+    const confirmed = await confirm({
+      title: 'Delete Tasks',
+      message: `Delete ${selectedTasks.length} tasks? This cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
 
     try {
       await Promise.all(
         selectedTasks.map(taskId => DailyTask.delete(taskId))
       );
       await refreshTasks();
-      toast.success(`✓ Deleted ${selectedTasks.length} tasks`);
+      toast.success(`Deleted ${selectedTasks.length} tasks`);
       exitBulkMode();
     } catch (error) {
       console.error('Error bulk deleting tasks:', error);
@@ -716,7 +724,7 @@ const TasksPage = () => {
       setShowForm(false);
     } catch (error) {
       console.error("Error creating task:", error);
-      alert('Failed to create task. Please try again.');
+      toast.error('Failed to create task. Please try again.');
     }
   };
 
@@ -825,7 +833,7 @@ const TasksPage = () => {
       setEditingTask(null);
     } catch (error) {
       console.error("Error updating task:", error);
-      alert('Failed to update task. Please try again.');
+      toast.error('Failed to update task. Please try again.');
     }
   };
 
@@ -840,7 +848,7 @@ const TasksPage = () => {
       setEditingTask(null);
     } catch (error) {
       console.error("Error deleting task:", error);
-      alert('Failed to delete task. Please try again.');
+      toast.error('Failed to delete task. Please try again.');
     }
   };
 
@@ -863,7 +871,7 @@ const TasksPage = () => {
         taskDueDate: requestForm.taskDueDate
       });
 
-      alert('✅ Task request sent successfully!');
+      toast.success('Task request sent successfully!');
       setShowRequestModal(false);
       setRequestForm({
         toUserEmail: '',
@@ -874,7 +882,7 @@ const TasksPage = () => {
       });
     } catch (error) {
       console.error('❌ Error sending task request:', error);
-      alert('Failed to send task request. Please try again.');
+      toast.error('Failed to send task request. Please try again.');
     } finally {
       setSubmittingRequest(false);
     }

@@ -20,6 +20,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
@@ -30,6 +31,7 @@ import { Camera } from 'lucide-react';
 export default function PostingPackages() {
   const [searchParams] = useSearchParams();
   const { hasPermission } = useAuth();
+  const { confirm } = useConfirm();
   
   // Check permissions
   const canManagePackages = hasPermission(PERMISSIONS.MANAGE_POSTING_PACKAGES);
@@ -183,9 +185,9 @@ export default function PostingPackages() {
       console.log('📊 GET test response:', result);
       
       if (result.success) {
-        alert(`✅ GET Test Successful: ${result.message}`);
+        toast.success(`GET Test Successful: ${result.message}`);
       } else {
-        alert(`❌ GET Test Failed: ${result.error}`);
+        toast.error(`GET Test Failed: ${result.error}`);
       }
     } catch (error) {
       console.error('❌ GET test failed:', error);
@@ -194,7 +196,7 @@ export default function PostingPackages() {
         message: error.message,
         stack: error.stack
       });
-      alert(`GET Test Failed: ${error.message}`);
+      toast.error(`GET Test Failed: ${error.message}`);
     }
   };
 
@@ -238,13 +240,13 @@ export default function PostingPackages() {
       console.log('📊 Update test response:', result);
       
       if (result.success) {
-        alert(`✅ Update Test Successful: ${result.message}`);
+        toast.success(`Update Test Successful: ${result.message}`);
       } else {
-        alert(`❌ Update Test Failed: ${result.error}`);
+        toast.error(`Update Test Failed: ${result.error}`);
       }
     } catch (error) {
       console.error('❌ Update test failed:', error);
-      alert(`Update Test Failed: ${error.message}`);
+      toast.error(`Update Test Failed: ${error.message}`);
     }
   };
 
@@ -426,7 +428,7 @@ export default function PostingPackages() {
       ];
       
       setClients(fallbackClients);
-      alert(`Could not fetch from Google Sheets: ${error.message}\n\nUsing fallback data. Check console for detailed error information.`);
+      toast.error(`Could not fetch from Google Sheets. Using fallback data.`);
       
     } finally {
       if (showLoading) setLoading(false);
@@ -803,7 +805,7 @@ export default function PostingPackages() {
       
     } catch (error) {
       console.error('Error updating approval status in Google Sheets:', error);
-      alert(`❌ Error updating Google Sheets: ${error.message}\n\nPlease try again or check your internet connection.`);
+      toast.error(`Error updating Google Sheets: ${error.message}`);
     } finally {
       setApprovalLoading({ ...approvalLoading, [selectedClient.id]: false });
     }
@@ -812,9 +814,13 @@ export default function PostingPackages() {
   const archiveCompletedPackage = async (client) => {
     if (!client) return;
     
-    if (!window.confirm(`Are you sure you want to archive ${client.clientName}? This will move them to the Archive tab.`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Archive Client',
+      message: `Are you sure you want to archive ${client.clientName}? This will move them to the Archive tab.`,
+      confirmText: 'Archive',
+      variant: 'warning'
+    });
+    if (!confirmed) return;
     
     setArchiveLoading({ ...archiveLoading, [client.id]: true });
     
@@ -856,7 +862,7 @@ export default function PostingPackages() {
       
     } catch (error) {
       console.error('Error archiving package:', error);
-      alert(`❌ Error archiving package: ${error.message}`);
+      toast.error(`Error archiving package: ${error.message}`);
     } finally {
       setArchiveLoading({ ...archiveLoading, [client.id]: false });
     }
@@ -865,9 +871,13 @@ export default function PostingPackages() {
   const deleteClient = async (client) => {
     if (!client) return;
     
-    if (!window.confirm(`Are you sure you want to permanently delete ${client.clientName}? This action cannot be undone.`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Client',
+      message: `Are you sure you want to permanently delete ${client.clientName}? This action cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
     
     setDeleteLoading({ ...deleteLoading, [client.id]: true });
     
@@ -910,7 +920,7 @@ export default function PostingPackages() {
         if (result.error && result.error.includes('not found')) {
           // Client not found in sheet, remove from local state anyway
           setClients(prevClients => prevClients.filter(c => c.id !== client.id));
-          window.alert(`⚠️ ${client.clientName} was not found in Google Sheets but has been removed from the local list. The sheet may have been modified externally.`);
+          toast(`${client.clientName} was not found in Google Sheets but has been removed from the local list.`, { icon: '⚠️' });
         } else {
           throw new Error(result.error || 'Delete failed');
         }
@@ -918,7 +928,7 @@ export default function PostingPackages() {
       
     } catch (error) {
       console.error('Error deleting client:', error);
-              window.alert(`❌ Error deleting client: ${error.message}`);
+      toast.error(`Error deleting client: ${error.message}`);
     } finally {
       setDeleteLoading({ ...deleteLoading, [client.id]: false });
     }
@@ -927,9 +937,13 @@ export default function PostingPackages() {
   const restoreClient = async (archivedClient) => {
     if (!archivedClient) return;
     
-    if (!window.confirm(`Are you sure you want to restore ${archivedClient.clientName}? This will bring them back to the active client list.`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Restore Client',
+      message: `Are you sure you want to restore ${archivedClient.clientName}? This will bring them back to the active client list.`,
+      confirmText: 'Restore',
+      variant: 'default'
+    });
+    if (!confirmed) return;
     
     setRestoreLoading({ ...restoreLoading, [archivedClient.id]: true });
     
@@ -986,7 +1000,7 @@ export default function PostingPackages() {
       
     } catch (error) {
       console.error('Error restoring client:', error);
-              window.alert(`❌ Error restoring client: ${error.message}`);
+      toast.error(`Error restoring client: ${error.message}`);
     } finally {
       setRestoreLoading({ ...restoreLoading, [archivedClient.id]: false });
     }
@@ -995,9 +1009,13 @@ export default function PostingPackages() {
   const deleteArchivedClient = async (archivedClient) => {
     if (!archivedClient) return;
     
-    if (!window.confirm(`Are you sure you want to permanently delete ${archivedClient.clientName} from the archive? This action cannot be undone.`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Archived Client',
+      message: `Are you sure you want to permanently delete ${archivedClient.clientName} from the archive? This action cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
     
     setDeleteArchivedLoading({ ...deleteArchivedLoading, [archivedClient.id]: true });
     
@@ -1039,7 +1057,7 @@ export default function PostingPackages() {
       
     } catch (error) {
       console.error('Error deleting archived client:', error);
-              window.alert(`❌ Error deleting archived client: ${error.message}`);
+      toast.error(`Error deleting archived client: ${error.message}`);
     } finally {
       setDeleteArchivedLoading({ ...deleteArchivedLoading, [archivedClient.id]: false });
     }
@@ -1073,13 +1091,13 @@ export default function PostingPackages() {
     try {
       // Validate form data
       if (editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize) {
-        alert('Posts Used + Posts Remaining must equal Package Size');
+        toast.error('Posts Used + Posts Remaining must equal Package Size');
         return;
       }
 
       // Validate custom price for Custom and Monthly packages
       if ((editForm.packageType === 'Custom' || editForm.packageType === 'Monthly') && (!editForm.customPrice || editForm.customPrice <= 0)) {
-        alert(`Please enter a valid ${editForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`);
+        toast.error(`Please enter a valid ${editForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`);
         return;
       }
       
@@ -1288,7 +1306,7 @@ export default function PostingPackages() {
       
       // Still close the modal but show error
       setTimeout(() => {
-        alert(`❌ Error updating package for ${editingClient.clientName}\n\nError: ${error.message}\n\nThe changes were not saved to Google Sheets. Please try again or check the browser console for details.`);
+        toast.error(`Error updating package for ${editingClient.clientName}: ${error.message}`);
       }, 100);
     } finally {
       setApprovalLoading({ ...approvalLoading, [editingClient.id]: false });
@@ -1358,18 +1376,18 @@ export default function PostingPackages() {
 
   const handleAddSubmit = async () => {
     if (!addForm.clientName.trim()) {
-      alert('Please enter a client name');
+      toast.error('Please enter a client name');
       return;
     }
 
     if (addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize) {
-      alert('Posts Used + Posts Remaining must equal Package Size');
+      toast.error('Posts Used + Posts Remaining must equal Package Size');
       return;
     }
 
     // Validate custom price for Custom and Monthly packages
     if ((addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0)) {
-      alert(`Please enter a valid ${addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`);
+      toast.error(`Please enter a valid ${addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price`);
       return;
     }
 
@@ -1566,7 +1584,7 @@ export default function PostingPackages() {
 
     } catch (error) {
       console.error('Error adding client to Google Sheets:', error);
-      alert(`❌ Error adding to Google Sheets: ${error.message}\n\nPlease try again or check your internet connection.`);
+      toast.error(`Error adding to Google Sheets: ${error.message}`);
     } finally {
       setApprovalLoading({ ...approvalLoading, 'new': false });
     }
@@ -1575,13 +1593,17 @@ export default function PostingPackages() {
   const handleMonthlyReset = async (clientId) => {
     const client = clients.find(c => c.id === clientId);
     if (!client || client.packageType !== 'Monthly') {
-      alert('This function is only available for Monthly packages');
+      toast.error('This function is only available for Monthly packages');
       return;
     }
 
-    if (!window.confirm(`Reset monthly posts for ${client.clientName}? This will:\n- Reset posts used to 0\n- Add ${client.postsRemaining} posts to overdue\n- Reset posts remaining to ${client.packageSize}`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Reset Monthly Posts',
+      message: `Reset monthly posts for ${client.clientName}? This will reset posts used to 0, add ${client.postsRemaining} posts to overdue, and reset posts remaining to ${client.packageSize}.`,
+      confirmText: 'Reset',
+      variant: 'warning'
+    });
+    if (!confirmed) return;
 
     setApprovalLoading({ ...approvalLoading, [clientId]: true });
 
@@ -1632,13 +1654,13 @@ export default function PostingPackages() {
       if (result.success) {
         // Refresh the clients list
         await fetchClients(false);
-        alert(`Monthly reset successful for ${client.clientName}!\n- Posts used: 0\n- Overdue posts: ${newOverduePosts}\n- Posts remaining: ${newPostsRemaining}`);
+        toast.success(`Monthly reset successful for ${client.clientName}`);
       } else {
-        alert(`Failed to reset monthly posts: ${result.error}`);
+        toast.error(`Failed to reset monthly posts: ${result.error}`);
       }
     } catch (error) {
       console.error('❌ Error resetting monthly posts:', error);
-      alert('Failed to reset monthly posts. Please try again.');
+      toast.error('Failed to reset monthly posts. Please try again.');
     } finally {
       setApprovalLoading({ ...approvalLoading, [clientId]: false });
     }
@@ -1674,9 +1696,12 @@ export default function PostingPackages() {
     }
 
     // Show notification about auto-reset
-    const confirmed = window.confirm(
-      `🔄 Monthly Reset Detected!\n\nIt's the first day of the month and ${monthlyPackages.length} Monthly package(s) need to be reset:\n\n${monthlyPackages.map(p => `• ${p.clientName} (${p.postsRemaining} posts remaining)`).join('\n')}\n\nWould you like to automatically reset all Monthly packages now?`
-    );
+    const confirmed = await confirm({
+      title: 'Monthly Reset Detected',
+      message: `It's the first day of the month and ${monthlyPackages.length} Monthly package(s) need to be reset. Would you like to automatically reset all Monthly packages now?`,
+      confirmText: 'Reset All',
+      variant: 'info'
+    });
 
     if (!confirmed) {
       setAutoResetChecked(true);

@@ -32,6 +32,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfirm } from '../contexts/ConfirmContext';
 
 // Import data for one-time Excel import
 import importData from '../data/graphic-projects-import.json';
@@ -102,6 +103,7 @@ const GRAPHIC_TEAM = [
 
 const GraphicProjectTracker = () => {
   const { currentUser, isSystemAdmin } = useAuth();
+  const { confirm } = useConfirm();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
@@ -360,7 +362,13 @@ const GraphicProjectTracker = () => {
   };
 
   const handleDeleteProject = async (project) => {
-    if (!confirm(`Delete project "${project.task}" for ${project.client}?`)) return;
+    const confirmed = await confirm({
+      title: 'Delete Project',
+      message: `Delete project "${project.task}" for ${project.client}?`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
     
     try {
       await firestoreService.deleteGraphicProject(project.id);
@@ -383,7 +391,13 @@ const GraphicProjectTracker = () => {
       return;
     }
     
-    if (!confirm(`Import ${importData.length} projects from Excel? This will add new records.`)) {
+    const importConfirmed = await confirm({
+      title: 'Import Projects',
+      message: `Import ${importData.length} projects from Excel? This will add new records.`,
+      confirmText: 'Import',
+      variant: 'default'
+    });
+    if (!importConfirmed) {
       console.log('User cancelled import');
       return;
     }
@@ -472,7 +486,13 @@ const GraphicProjectTracker = () => {
       return;
     }
     
-    if (!confirm(`Reassign ${toReassign.length} projects to Jone?`)) {
+    const reassignConfirmed = await confirm({
+      title: 'Reassign Projects',
+      message: `Reassign ${toReassign.length} projects to Jone?`,
+      confirmText: 'Reassign',
+      variant: 'default'
+    });
+    if (!reassignConfirmed) {
       return;
     }
     

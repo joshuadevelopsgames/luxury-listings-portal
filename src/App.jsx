@@ -5,6 +5,8 @@ import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
 import { PermissionsProvider } from './contexts/PermissionsContext';
 import { ClientsProvider } from './contexts/ClientsContext';
+import { ConfirmProvider } from './contexts/ConfirmContext';
+import { Toaster } from 'react-hot-toast';
 import { setNavigate } from './utils/navigation';
 import MobileInstallPrompt from './components/MobileInstallPrompt';
 
@@ -219,8 +221,27 @@ function App() {
         <PermissionsProvider>
           <ClientsProvider>
             <ViewAsProvider>
-              <RouterProvider router={router} />
-              <MobileInstallPrompt />
+              <ConfirmProvider>
+                <RouterProvider router={router} />
+                <MobileInstallPrompt />
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 3000,
+                    style: {
+                      background: '#333',
+                      color: '#fff',
+                      borderRadius: '8px',
+                    },
+                    success: {
+                      iconTheme: { primary: '#22c55e', secondary: '#fff' },
+                    },
+                    error: {
+                      iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                    },
+                  }}
+                />
+              </ConfirmProvider>
             </ViewAsProvider>
           </ClientsProvider>
         </PermissionsProvider>
