@@ -3470,6 +3470,48 @@ class FirestoreService {
   }
 
   /**
+   * Delete feedback (bug report or feature request)
+   */
+  async deleteFeedback(feedbackId) {
+    try {
+      await deleteDoc(doc(db, this.collections.FEEDBACK, feedbackId));
+      console.log('✅ Feedback deleted:', feedbackId);
+    } catch (error) {
+      console.error('❌ Error deleting feedback:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Archive a feedback chat
+   */
+  async archiveFeedbackChat(chatId) {
+    try {
+      await updateDoc(doc(db, this.collections.FEEDBACK_CHATS, chatId), {
+        status: 'archived',
+        archivedAt: serverTimestamp()
+      });
+      console.log('✅ Chat archived:', chatId);
+    } catch (error) {
+      console.error('❌ Error archiving chat:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a feedback chat
+   */
+  async deleteFeedbackChat(chatId) {
+    try {
+      await deleteDoc(doc(db, this.collections.FEEDBACK_CHATS, chatId));
+      console.log('✅ Chat deleted:', chatId);
+    } catch (error) {
+      console.error('❌ Error deleting chat:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a feedback chat (chat with developer)
    */
   async createFeedbackChat(chatData) {

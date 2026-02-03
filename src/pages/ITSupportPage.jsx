@@ -16,7 +16,10 @@ import {
   Bug,
   Lightbulb,
   MessageSquare,
-  ChevronRight
+  ChevronRight,
+  Trash2,
+  Archive,
+  Bell
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { firestoreService } from '../services/firestoreService';
@@ -47,6 +50,15 @@ const ITSupportPage = () => {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [selectedChat, setSelectedChat] = useState(null);
   const [chatReply, setChatReply] = useState('');
+  const [deletingFeedbackId, setDeletingFeedbackId] = useState(null);
+  const [deletingChatId, setDeletingChatId] = useState(null);
+  
+  // Notification counts for new items
+  const [prevFeedbackCount, setPrevFeedbackCount] = useState(0);
+  const [prevChatCount, setPrevChatCount] = useState(0);
+  const [newBugCount, setNewBugCount] = useState(0);
+  const [newFeatureCount, setNewFeatureCount] = useState(0);
+  const [newChatCount, setNewChatCount] = useState(0);
 
   // Google Apps Script URL for email notifications
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4ugw4vME8hCeaE3Bieu7gsrNJqbGHxkNwZR97vKi0wVbaQNMgGFnG3W-lKrkwXzFkdQ/exec';
@@ -64,27 +76,56 @@ const ITSupportPage = () => {
   // IT Support can see all tickets - admin or if email is jrsschroeder@gmail.com
   const isITSupport = currentRole === 'admin' || currentUser?.email === 'jrsschroeder@gmail.com';
 
-  // Load feedback and chats for IT Support
+  // Load feedback and chats for IT Support with polling for new items
   useEffect(() => {
     if (!isITSupport) return;
     
-    const loadFeedbackData = async () => {
-      setLoadingFeedback(true);
+    const loadFeedbackData = async (isPolling = false) => {
+      if (!isPolling) setLoadingFeedback(true);
       try {
         const [feedback, chats] = await Promise.all([
           firestoreService.getAllFeedback(),
           firestoreService.getAllFeedbackChats()
         ]);
+        
+        // Check for new items (only after initial load)
+        if (prevFeedbackCount > 0 || prevChatCount > 0) {
+          const currentBugs = (feedback || []).filter(f => f.type === 'bug' && f.status === 'open').length;
+          const currentFeatures = (feedback || []).filter(f => f.type === 'feature' && f.status === 'open').length;
+          const currentChats = (chats || []).filter(c => c.status === 'open').length;
+          
+          const prevBugs = feedbackItems.filter(f => f.type === 'bug' && f.status === 'open').length;
+          const prevFeatures = feedbackItems.filter(f => f.type === 'feature' && f.status === 'open').length;
+          const prevChatsOpen = feedbackChats.filter(c => c.status === 'open').length;
+          
+          if (currentBugs > prevBugs) {
+            setNewBugCount(prev => prev + (currentBugs - prevBugs));
+          }
+          if (currentFeatures > prevFeatures) {
+            setNewFeatureCount(prev => prev + (currentFeatures - prevFeatures));
+          }
+          if (currentChats > prevChatsOpen) {
+            setNewChatCount(prev => prev + (currentChats - prevChatsOpen));
+          }
+        }
+        
+        setPrevFeedbackCount((feedback || []).length);
+        setPrevChatCount((chats || []).length);
         setFeedbackItems(feedback || []);
         setFeedbackChats(chats || []);
       } catch (error) {
         console.error('Error loading feedback data:', error);
       } finally {
-        setLoadingFeedback(false);
+        if (!isPolling) setLoadingFeedback(false);
       }
     };
     
     loadFeedbackData();
+    
+    // Poll every 30 seconds for new items
+    const pollInterval = setInterval(() => loadFeedbackData(true), 30000);
+    
+    return () => clearInterval(pollInterval);
   }, [isITSupport]);
 
   // Load comments when a ticket is selected
@@ -548,6 +589,56 @@ const ITSupportPage = () => {
     }
   };
 
+  // Delete feedback (bug report or feature request)
+  const handleDeleteFeedback = async (feedbackId) => {
+    if (!window.confirm('Are you sure you want to delete this? This cannot be undone.')) return;
+    
+    setDeletingFeedbackId(feedbackId);
+    try {
+      await firestoreService.deleteFeedback(feedbackId);
+      setFeedbackItems(prev => prev.filter(f => f.id !== feedbackId));
+      setSelectedFeedback(null);
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+      alert('Failed to delete');
+    } finally {
+      setDeletingFeedbackId(null);
+    }
+  };
+
+  // Archive chat
+  const handleArchiveChat = async (chatId) => {
+    try {
+      await firestoreService.archiveFeedbackChat(chatId);
+      setFeedbackChats(prev => prev.map(c => 
+        c.id === chatId ? { ...c, status: 'archived' } : c
+      ));
+      if (selectedChat?.id === chatId) {
+        setSelectedChat(prev => ({ ...prev, status: 'archived' }));
+      }
+    } catch (error) {
+      console.error('Error archiving chat:', error);
+      alert('Failed to archive chat');
+    }
+  };
+
+  // Delete chat
+  const handleDeleteChat = async (chatId) => {
+    if (!window.confirm('Are you sure you want to delete this chat? This cannot be undone.')) return;
+    
+    setDeletingChatId(chatId);
+    try {
+      await firestoreService.deleteFeedbackChat(chatId);
+      setFeedbackChats(prev => prev.filter(c => c.id !== chatId));
+      setSelectedChat(null);
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      alert('Failed to delete chat');
+    } finally {
+      setDeletingChatId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
@@ -615,13 +706,21 @@ const ITSupportPage = () => {
             )}
           </button>
           <button
-            onClick={() => setActiveAdminTab('bugs')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
+            onClick={() => {
+              setActiveAdminTab('bugs');
+              setNewBugCount(0);
+            }}
+            className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
               activeAdminTab === 'bugs'
                 ? 'bg-[#ff3b30] text-white'
                 : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
             }`}
           >
+            {newBugCount > 0 && activeAdminTab !== 'bugs' && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#ff3b30] text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+                {newBugCount}
+              </span>
+            )}
             <Bug className="w-4 h-4" />
             Bug Reports
             {feedbackStats.openBugs > 0 && (
@@ -629,25 +728,41 @@ const ITSupportPage = () => {
             )}
           </button>
           <button
-            onClick={() => setActiveAdminTab('features')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
+            onClick={() => {
+              setActiveAdminTab('features');
+              setNewFeatureCount(0);
+            }}
+            className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
               activeAdminTab === 'features'
                 ? 'bg-[#ff9500] text-white'
                 : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
             }`}
           >
+            {newFeatureCount > 0 && activeAdminTab !== 'features' && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#ff9500] text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+                {newFeatureCount}
+              </span>
+            )}
             <Lightbulb className="w-4 h-4" />
             Feature Requests
             <span className="px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10 text-[11px]">{feedbackStats.features}</span>
           </button>
           <button
-            onClick={() => setActiveAdminTab('chats')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
+            onClick={() => {
+              setActiveAdminTab('chats');
+              setNewChatCount(0);
+            }}
+            className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
               activeAdminTab === 'chats'
                 ? 'bg-[#5856d6] text-white'
                 : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
             }`}
           >
+            {newChatCount > 0 && activeAdminTab !== 'chats' && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#5856d6] text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+                {newChatCount}
+              </span>
+            )}
             <MessageSquare className="w-4 h-4" />
             User Chats
             {feedbackStats.openChats > 0 && (
@@ -1641,6 +1756,14 @@ const ITSupportPage = () => {
                 >
                   Close
                 </button>
+                <button
+                  onClick={() => handleDeleteFeedback(selectedFeedback.id)}
+                  disabled={deletingFeedbackId === selectedFeedback.id}
+                  className="px-4 py-2 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 flex items-center gap-2 ml-auto"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {deletingFeedbackId === selectedFeedback.id ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
             </div>
           </div>
@@ -1674,6 +1797,23 @@ const ITSupportPage = () => {
                       Close Chat
                     </button>
                   )}
+                  {selectedChat.status === 'closed' && (
+                    <button
+                      onClick={() => handleArchiveChat(selectedChat.id)}
+                      className="px-3 py-1.5 rounded-lg bg-[#ff9500]/10 text-[#ff9500] text-[12px] font-medium hover:bg-[#ff9500]/20 transition-colors flex items-center gap-1"
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                      Archive
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteChat(selectedChat.id)}
+                    disabled={deletingChatId === selectedChat.id}
+                    className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {deletingChatId === selectedChat.id ? '...' : 'Delete'}
+                  </button>
                   <button onClick={() => setSelectedChat(null)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
                     <X className="w-5 h-5 text-[#86868b]" />
                   </button>
