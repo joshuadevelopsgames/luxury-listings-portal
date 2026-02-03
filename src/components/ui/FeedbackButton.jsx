@@ -44,8 +44,12 @@ export default function FeedbackButton() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [loadingChats, setLoadingChats] = useState(false);
   const [activeChat, setActiveChat] = useState(null); // Currently active chat for quick access
-  const [isMinimized, setIsMinimized] = useState(false); // Chat is active but panel minimized
+  const [isMinimized, setIsMinimized] = useState(() => {
+    // Check if there was an active chat on page load
+    return localStorage.getItem('feedbackActiveChatId') !== null;
+  });
   const chatPollRef = useRef(null);
+  const hasRestoredChat = useRef(false);
 
   // Element inspection states
   const [isInspecting, setIsInspecting] = useState(false);
@@ -312,6 +316,8 @@ export default function FeedbackButton() {
           // Check if chat was closed by developer
           if (chat.status === 'closed' || chat.status === 'archived') {
             stopChatPolling();
+            localStorage.removeItem('feedbackActiveChatId');
+            setIsMinimized(false);
           }
         }
       } catch (error) {
@@ -332,6 +338,43 @@ export default function FeedbackButton() {
   useEffect(() => {
     return () => stopChatPolling();
   }, []);
+
+  // Persist active chat ID to localStorage
+  useEffect(() => {
+    if (activeChat?.id && activeChat.status === 'open') {
+      localStorage.setItem('feedbackActiveChatId', activeChat.id);
+    }
+  }, [activeChat]);
+
+  // Restore active chat from localStorage on mount
+  useEffect(() => {
+    if (hasRestoredChat.current || !currentUser?.email) return;
+    
+    const savedChatId = localStorage.getItem('feedbackActiveChatId');
+    if (savedChatId) {
+      hasRestoredChat.current = true;
+      // Load the saved chat in background
+      (async () => {
+        try {
+          const chat = await firestoreService.getFeedbackChatById(savedChatId);
+          if (chat && chat.status === 'open') {
+            setActiveChat(chat);
+            setSelectedChat(chat);
+            // Start polling in background
+            startChatPolling(savedChatId);
+          } else {
+            // Chat was closed, clear localStorage
+            localStorage.removeItem('feedbackActiveChatId');
+            setIsMinimized(false);
+          }
+        } catch (error) {
+          console.error('Error restoring chat:', error);
+          localStorage.removeItem('feedbackActiveChatId');
+          setIsMinimized(false);
+        }
+      })();
+    }
+  }, [currentUser?.email]);
 
   // Handle opening the panel
   const handleOpen = () => {
@@ -377,6 +420,7 @@ export default function FeedbackButton() {
     setSelectedChat(null);
     setActiveChat(null);
     stopChatPolling();
+    localStorage.removeItem('feedbackActiveChatId');
   };
 
   // Start element inspection
@@ -960,6 +1004,7 @@ export default function FeedbackButton() {
                         setActiveChat(null);
                         setSelectedChat(null);
                         setView('menu');
+                        localStorage.removeItem('feedbackActiveChatId');
                       }}
                       className="mt-3 px-4 py-2 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
                     >
