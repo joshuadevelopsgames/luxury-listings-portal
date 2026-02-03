@@ -72,16 +72,42 @@ const V3Layout = () => {
     return hoursUntil * 60 * 60 * 1000;
   };
 
-  const [darkMode, setDarkMode] = useState(() => isAfter5PMVancouver());
-  const [manualOverrideUntil, setManualOverrideUntil] = useState(null);
+  // Initialize dark mode from localStorage or time-based default
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem('darkModeOverride');
+    if (stored) {
+      const { darkMode: savedMode, expiresAt } = JSON.parse(stored);
+      if (Date.now() < expiresAt) {
+        return savedMode;
+      }
+      // Expired - clear it
+      localStorage.removeItem('darkModeOverride');
+    }
+    return isAfter5PMVancouver();
+  });
+  
+  const [manualOverrideUntil, setManualOverrideUntil] = useState(() => {
+    const stored = localStorage.getItem('darkModeOverride');
+    if (stored) {
+      const { expiresAt } = JSON.parse(stored);
+      if (Date.now() < expiresAt) {
+        return expiresAt;
+      }
+    }
+    return null;
+  });
+  
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [viewAsPermissions, setViewAsPermissions] = useState([]);
 
   const handleDarkModeToggle = () => {
     const next = !darkMode;
+    const expiresAt = Date.now() + getMsUntilNextTimeOfDaySwitch();
     setDarkMode(next);
-    setManualOverrideUntil(Date.now() + getMsUntilNextTimeOfDaySwitch());
+    setManualOverrideUntil(expiresAt);
+    // Save to localStorage so it persists across refresh
+    localStorage.setItem('darkModeOverride', JSON.stringify({ darkMode: next, expiresAt }));
   };
 
   // Auto-switch dark mode at 6 AM / 5 PM Vancouver; manual toggle overrides until next switch
@@ -91,6 +117,7 @@ const V3Layout = () => {
       if (manualOverrideUntil != null && now >= manualOverrideUntil) {
         setManualOverrideUntil(null);
         setDarkMode(isAfter5PMVancouver());
+        localStorage.removeItem('darkModeOverride');
       } else if (manualOverrideUntil == null) {
         setDarkMode(isAfter5PMVancouver());
       }
