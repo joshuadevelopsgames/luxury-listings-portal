@@ -271,6 +271,56 @@ export default function AdminFeedback() {
                             </a>
                           </div>
                         )}
+
+                        {/* Selected Element Info */}
+                        {item.selectedElement && (
+                          <div>
+                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Selected Element</p>
+                            <div className="p-3 rounded-lg bg-black/5 dark:bg-white/5 text-[13px] font-mono">
+                              <p className="text-[#1d1d1f] dark:text-white">
+                                &lt;{item.selectedElement.tagName?.toLowerCase()}&gt;
+                                {item.selectedElement.id && <span className="text-[#0071e3]"> #{item.selectedElement.id}</span>}
+                                {item.selectedElement.className && <span className="text-[#ff9500]"> .{item.selectedElement.className.split(' ')[0]}</span>}
+                              </p>
+                              {item.selectedElement.textContent && (
+                                <p className="text-[#86868b] mt-1 truncate">Text: "{item.selectedElement.textContent.substring(0, 100)}"</p>
+                              )}
+                              {item.selectedElement.xpath && (
+                                <p className="text-[#86868b] mt-1 text-[11px]">XPath: {item.selectedElement.xpath}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* User Info */}
+                        {item.userInfo && (
+                          <div>
+                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Browser Info</p>
+                            <div className="p-3 rounded-lg bg-black/5 dark:bg-white/5 text-[12px] text-[#86868b]">
+                              <p>Viewport: {item.userInfo.viewport?.width}x{item.userInfo.viewport?.height}</p>
+                              <p className="truncate">UA: {item.userInfo.userAgent?.substring(0, 80)}...</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Console Logs */}
+                        {item.consoleLogs && item.consoleLogs.length > 0 && (
+                          <div>
+                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Console Logs ({item.consoleLogs.length})</p>
+                            <div className="max-h-[200px] overflow-y-auto p-3 rounded-lg bg-[#1d1d1f] text-[11px] font-mono">
+                              {item.consoleLogs.slice(-50).map((log, idx) => (
+                                <div key={idx} className={`py-0.5 ${
+                                  log.type === 'error' ? 'text-[#ff3b30]' :
+                                  log.type === 'warn' ? 'text-[#ff9500]' :
+                                  'text-[#86868b]'
+                                }`}>
+                                  <span className="opacity-50">[{log.type}]</span> {log.message?.substring(0, 200)}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex gap-6">
                           <div>
                             <p className="text-[12px] font-medium text-[#86868b] mb-1">Email</p>

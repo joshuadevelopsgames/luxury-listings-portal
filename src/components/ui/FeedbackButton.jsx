@@ -1,9 +1,10 @@
 /**
  * FeedbackButton - Floating feedback button with Bug Report, Feature Request, and Chat options
  * Based on LECRM's BugReportButton implementation
+ * Includes console capture and element selection for bug reports
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { firestoreService } from '../../services/firestoreService';
 import { 
@@ -17,7 +18,8 @@ import {
   ArrowLeft,
   Clock,
   CheckCircle2,
-  MessageSquare
+  MessageSquare,
+  MousePointer2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -39,6 +41,202 @@ export default function FeedbackButton() {
   const [myChats, setMyChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [loadingChats, setLoadingChats] = useState(false);
+
+  // Element inspection states
+  const [isInspecting, setIsInspecting] = useState(false);
+  const [selectedElement, setSelectedElement] = useState(null);
+
+  // Console capture
+  const consoleLogRef = useRef([]);
+  const originalConsoleRef = useRef(null);
+  const consoleCaptureStartedRef = useRef(false);
+
+  // Capture console logs on mount
+  useEffect(() => {
+    if (consoleCaptureStartedRef.current) return;
+    consoleCaptureStartedRef.current = true;
+
+    originalConsoleRef.current = {
+      log: console.log,
+      error: console.error,
+      warn: console.warn,
+      info: console.info,
+    };
+
+    const formatArgs = (args) => {
+      try {
+        return args.map(arg => {
+          if (arg === null) return 'null';
+          if (arg === undefined) return 'undefined';
+          if (arg && typeof arg === 'object' && (arg.nodeType !== undefined || arg instanceof Element)) {
+            return `[${arg.tagName || arg.nodeName || 'DOMNode'}]`;
+          }
+          if (typeof arg === 'object') {
+            try {
+              const seen = new WeakSet();
+              return JSON.stringify(arg, (key, value) => {
+                if (typeof value === 'object' && value !== null) {
+                  if (seen.has(value)) return '[Circular]';
+                  if (value.nodeType !== undefined) return `[${value.tagName || 'DOMNode'}]`;
+                  seen.add(value);
+                }
+                return value;
+              }, 2);
+            } catch {
+              return '[Object]';
+            }
+          }
+          return String(arg);
+        }).join(' ');
+      } catch {
+        return '[Error formatting]';
+      }
+    };
+
+    const safeCaptureLog = (type, args) => {
+      setTimeout(() => {
+        try {
+          const message = formatArgs(args);
+          const MAX_LOGS = 500;
+          if (consoleLogRef.current.length >= MAX_LOGS) {
+            consoleLogRef.current.shift();
+          }
+          consoleLogRef.current.push({
+            type,
+            message,
+            timestamp: new Date().toISOString()
+          });
+        } catch {}
+      }, 0);
+    };
+
+    console.log = (...args) => {
+      originalConsoleRef.current.log(...args);
+      safeCaptureLog('log', args);
+    };
+    console.error = (...args) => {
+      originalConsoleRef.current.error(...args);
+      safeCaptureLog('error', args);
+    };
+    console.warn = (...args) => {
+      originalConsoleRef.current.warn(...args);
+      safeCaptureLog('warn', args);
+    };
+    console.info = (...args) => {
+      originalConsoleRef.current.info(...args);
+      safeCaptureLog('info', args);
+    };
+  }, []);
+
+  // Element inspection mode
+  useEffect(() => {
+    if (!isInspecting) return;
+
+    const removeAllOutlines = () => {
+      requestAnimationFrame(() => {
+        document.querySelectorAll('*').forEach(el => {
+          try {
+            if (el.isConnected && el.style.outline) {
+              el.style.outline = '';
+              el.style.outlineOffset = '';
+            }
+          } catch {}
+        });
+      });
+    };
+
+    const handleMouseOver = (e) => {
+      e.stopPropagation();
+      const element = e.target;
+      if (element && element !== document.body && !element.closest('.feedback-panel')) {
+        if (document.body.contains(element)) {
+          element.style.outline = '2px solid #0071e3';
+          element.style.outlineOffset = '2px';
+        }
+      }
+    };
+
+    const handleMouseOut = (e) => {
+      const element = e.target;
+      if (element && document.body.contains(element)) {
+        element.style.outline = '';
+        element.style.outlineOffset = '';
+      }
+    };
+
+    const getXPath = (element) => {
+      if (element.id) return `//*[@id="${element.id}"]`;
+      if (element === document.body) return '/html/body';
+      let ix = 0;
+      const siblings = element.parentNode?.childNodes || [];
+      for (let i = 0; i < siblings.length; i++) {
+        const sibling = siblings[i];
+        if (sibling === element) {
+          return `${getXPath(element.parentNode)}/${element.tagName.toLowerCase()}[${ix + 1}]`;
+        }
+        if (sibling.nodeType === 1 && sibling.tagName === element.tagName) {
+          ix++;
+        }
+      }
+      return '';
+    };
+
+    const handleClick = (e) => {
+      if (e.target.closest('.feedback-panel') || e.target.closest('.inspection-indicator')) {
+        return;
+      }
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const element = e.target;
+      if (element && element !== document.body) {
+        const classNameValue = element.className;
+        const classNameString = typeof classNameValue === 'string' 
+          ? classNameValue 
+          : (classNameValue?.baseVal || '');
+        
+        const elementInfo = {
+          tagName: element.tagName,
+          id: element.id || '',
+          className: classNameString,
+          textContent: element.textContent?.substring(0, 200) || '',
+          attributes: Array.from(element.attributes || []).reduce((acc, attr) => {
+            acc[attr.name] = attr.value;
+            return acc;
+          }, {}),
+          boundingRect: element.getBoundingClientRect(),
+          xpath: getXPath(element),
+        };
+
+        setSelectedElement(elementInfo);
+        setIsInspecting(false);
+        setIsOpen(true);
+        removeAllOutlines();
+      }
+    };
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setIsInspecting(false);
+        setIsOpen(true);
+        removeAllOutlines();
+      }
+    };
+
+    document.addEventListener('mouseover', handleMouseOver);
+    document.addEventListener('mouseout', handleMouseOut);
+    document.addEventListener('click', handleClick, true);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mouseover', handleMouseOver);
+      document.removeEventListener('mouseout', handleMouseOut);
+      document.removeEventListener('click', handleClick, true);
+      document.removeEventListener('keydown', handleEscape);
+      removeAllOutlines();
+    };
+  }, [isInspecting]);
 
   // Load user's chats
   const loadMyChats = async () => {
@@ -79,6 +277,20 @@ export default function FeedbackButton() {
     setFeatureForm({ title: '', description: '' });
     setChatMessage('');
     setSelectedChat(null);
+    setSelectedElement(null);
+  };
+
+  // Start element inspection
+  const handleStartInspection = () => {
+    setIsInspecting(true);
+    setSelectedElement(null);
+    setIsOpen(false);
+  };
+
+  // Cancel inspection
+  const handleCancelInspection = () => {
+    setIsInspecting(false);
+    setIsOpen(true);
   };
 
   // Submit bug report
@@ -90,6 +302,9 @@ export default function FeedbackButton() {
 
     setIsSubmitting(true);
     try {
+      // Get console logs (limit to recent 200)
+      const consoleLogs = consoleLogRef.current.slice(-200);
+
       await firestoreService.createFeedback({
         type: 'bug',
         title: bugForm.title,
@@ -98,7 +313,14 @@ export default function FeedbackButton() {
         userEmail: currentUser?.email,
         userName: currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
         status: 'open',
-        url: window.location.href
+        url: window.location.href,
+        selectedElement: selectedElement,
+        consoleLogs: consoleLogs,
+        userInfo: {
+          userAgent: navigator.userAgent,
+          viewport: { width: window.innerWidth, height: window.innerHeight },
+          timestamp: new Date().toISOString()
+        }
       });
 
       toast.success('Bug report submitted! Thank you for your feedback.');
@@ -150,7 +372,7 @@ export default function FeedbackButton() {
 
     setIsSubmitting(true);
     try {
-      const chatId = await firestoreService.createFeedbackChat({
+      await firestoreService.createFeedbackChat({
         userEmail: currentUser?.email,
         userName: currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
         initialMessage: chatMessage
@@ -229,9 +451,28 @@ export default function FeedbackButton() {
         <MessageCircle className="w-6 h-6" />
       </button>
 
+      {/* Inspection Mode Indicator */}
+      {isInspecting && (
+        <div className="inspection-indicator fixed top-4 left-1/2 -translate-x-1/2 z-[9999] bg-[#0071e3] text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <MousePointer2 className="w-5 h-5" />
+            <div>
+              <p className="text-[14px] font-medium">Inspection Mode</p>
+              <p className="text-[12px] opacity-80">Click on the problematic element, or press ESC to cancel</p>
+            </div>
+          </div>
+          <button
+            onClick={handleCancelInspection}
+            className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-[360px] bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 z-50 overflow-hidden">
+        <div className="feedback-panel fixed bottom-24 right-6 w-[360px] bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 z-50 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10 bg-gradient-to-r from-[#0071e3]/5 to-[#5856d6]/5">
             <div className="flex items-center gap-3">
@@ -243,6 +484,7 @@ export default function FeedbackButton() {
                       setSelectedChat(null);
                     } else {
                       setView('menu');
+                      setSelectedElement(null);
                     }
                   }}
                   className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
@@ -268,7 +510,7 @@ export default function FeedbackButton() {
           </div>
 
           {/* Content */}
-          <div className="p-4 max-h-[400px] overflow-y-auto">
+          <div className="p-4 max-h-[450px] overflow-y-auto">
             {/* Menu View */}
             {view === 'menu' && (
               <div className="space-y-2">
@@ -308,8 +550,44 @@ export default function FeedbackButton() {
             {/* Bug Report Form */}
             {view === 'bug' && (
               <div className="space-y-4">
+                {/* Element Selection */}
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Title</label>
+                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Problem Area (Optional)</label>
+                  {!selectedElement ? (
+                    <button
+                      onClick={handleStartInspection}
+                      className="w-full h-10 px-3 rounded-lg bg-[#0071e3]/10 border border-[#0071e3]/20 text-[14px] text-[#0071e3] font-medium hover:bg-[#0071e3]/20 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <MousePointer2 className="w-4 h-4" />
+                      Click to Select Element
+                    </button>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-[#34c759]/10 border border-[#34c759]/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[12px] font-medium text-[#34c759]">Element Selected</span>
+                        <button
+                          onClick={() => setSelectedElement(null)}
+                          className="text-[#86868b] hover:text-[#1d1d1f]"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-[12px] text-[#1d1d1f] dark:text-white">
+                        &lt;{selectedElement.tagName.toLowerCase()}&gt;
+                        {selectedElement.id && ` #${selectedElement.id}`}
+                        {selectedElement.className && ` .${selectedElement.className.split(' ')[0]}`}
+                      </p>
+                      {selectedElement.textContent && (
+                        <p className="text-[11px] text-[#86868b] mt-1 truncate">
+                          "{selectedElement.textContent.substring(0, 50)}..."
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Title *</label>
                   <input
                     type="text"
                     value={bugForm.title}
@@ -332,7 +610,7 @@ export default function FeedbackButton() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Description</label>
+                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Description *</label>
                   <textarea
                     value={bugForm.description}
                     onChange={(e) => setBugForm(prev => ({ ...prev, description: e.target.value }))}
@@ -341,6 +619,9 @@ export default function FeedbackButton() {
                     className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
                   />
                 </div>
+                <p className="text-[11px] text-[#86868b]">
+                  Console logs and browser info will be automatically included.
+                </p>
                 <button
                   onClick={handleSubmitBug}
                   disabled={isSubmitting}
