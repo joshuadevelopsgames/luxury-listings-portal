@@ -20,6 +20,8 @@ export const FEATURE_PERMISSIONS = {
   MANAGE_CLIENTS: 'manage_clients',        // Edit client info, remove clients
   ASSIGN_CLIENT_MANAGERS: 'assign_client_managers', // Assign managers to clients
   EDIT_CLIENT_PACKAGES: 'edit_client_packages',     // Edit package details
+  // Tasks
+  CREATE_TASKS: 'create_tasks',            // Create new tasks
 };
 
 export function usePermissions() {

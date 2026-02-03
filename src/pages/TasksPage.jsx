@@ -28,6 +28,7 @@ import SmartFilters from '../components/tasks/SmartFilters';
 import FilterDropdown from '../components/tasks/FilterDropdown';
 import CalendarView from '../components/tasks/CalendarView';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
 import { reminderService } from '../services/reminderService';
@@ -106,9 +107,10 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 
 const TasksPage = () => {
   const { currentUser, hasPermission } = useAuth();
+  const { hasFeaturePermission } = usePermissions();
   
-  // Check permissions
-  const canCreateTasks = hasPermission(PERMISSIONS.CREATE_TASKS);
+  // Check permissions - support both old role-based and new feature permission system
+  const canCreateTasks = hasPermission(PERMISSIONS.CREATE_TASKS) || hasFeaturePermission(FEATURE_PERMISSIONS.CREATE_TASKS);
   const canAssignTasks = hasPermission(PERMISSIONS.ASSIGN_TASKS);
   const canViewAllTasks = hasPermission(PERMISSIONS.VIEW_ALL_TASKS);
   const canDeleteAnyTask = hasPermission(PERMISSIONS.DELETE_ANY_TASK);

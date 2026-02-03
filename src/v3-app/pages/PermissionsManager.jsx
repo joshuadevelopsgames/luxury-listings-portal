@@ -78,6 +78,11 @@ const ALL_FEATURES = {
     icon: Briefcase, 
     description: 'Edit package type, posts remaining, and payment status' 
   },
+  [FEATURE_PERMISSIONS.CREATE_TASKS]: { 
+    name: 'Create Tasks', 
+    icon: CheckSquare, 
+    description: 'Create new tasks and assign them to team members' 
+  },
 };
 
 // Build ALL_PAGES from module registry + additional pages
