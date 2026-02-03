@@ -4,13 +4,16 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
 import { PermissionsProvider } from './contexts/PermissionsContext';
+import { ClientsProvider } from './contexts/ClientsContext';
 import { setNavigate } from './utils/navigation';
 import MobileInstallPrompt from './components/MobileInstallPrompt';
 
 // Admin utilities - expose to console for easy access
 import { importClients } from './utils/importClientsFromSheet';
+import { firestoreService } from './services/firestoreService';
 if (typeof window !== 'undefined') {
   window.importClients = importClients;
+  window.firestoreService = firestoreService; // For running migrations like assignMissingClientNumbers()
 }
 
 // V3 Components (Apple-styled design)
@@ -214,10 +217,12 @@ function App() {
     <PendingUsersProvider>
       <AuthProvider>
         <PermissionsProvider>
-          <ViewAsProvider>
-            <RouterProvider router={router} />
-            <MobileInstallPrompt />
-          </ViewAsProvider>
+          <ClientsProvider>
+            <ViewAsProvider>
+              <RouterProvider router={router} />
+              <MobileInstallPrompt />
+            </ViewAsProvider>
+          </ClientsProvider>
         </PermissionsProvider>
       </AuthProvider>
     </PendingUsersProvider>
