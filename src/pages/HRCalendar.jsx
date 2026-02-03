@@ -25,7 +25,11 @@ import {
   MessageSquare,
   Bell,
   Repeat,
-  Tag
+  Tag,
+  Plane,
+  Heart,
+  ListFilter,
+  Check
 } from 'lucide-react';
 import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 
@@ -814,53 +818,58 @@ const HRCalendar = () => {
           <div className="flex flex-wrap gap-2 mb-4">
             <button 
               onClick={() => setFilterType('all')}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'all' 
                   ? 'bg-[#0071e3] text-white' 
                   : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
               }`}
             >
+              <ListFilter className="w-3.5 h-3.5" />
               All ({leaveRequests.length})
             </button>
             <button 
               onClick={() => setFilterType('pending')}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'pending' 
-                  ? 'bg-[#0071e3] text-white' 
+                  ? 'bg-[#ff9500] text-white' 
                   : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
               }`}
             >
-              ⏳ Pending ({leaveRequests.filter(r => r.status === 'pending').length})
+              <Clock className="w-3.5 h-3.5" />
+              Pending ({leaveRequests.filter(r => r.status === 'pending').length})
             </button>
             <button 
               onClick={() => setFilterType('approved')}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'approved' 
-                  ? 'bg-[#0071e3] text-white' 
+                  ? 'bg-[#34c759] text-white' 
                   : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
               }`}
             >
-              ✅ Approved ({leaveRequests.filter(r => r.status === 'approved').length})
+              <Check className="w-3.5 h-3.5" />
+              Approved ({leaveRequests.filter(r => r.status === 'approved').length})
             </button>
             <button 
               onClick={() => setFilterType('vacation')}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'vacation' 
                   ? 'bg-[#0071e3] text-white' 
                   : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
               }`}
             >
-              🏖️ Vacation
+              <Plane className="w-3.5 h-3.5" />
+              Vacation
             </button>
             <button 
               onClick={() => setFilterType('sick')}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'sick' 
-                  ? 'bg-[#0071e3] text-white' 
+                  ? 'bg-[#ff3b30] text-white' 
                   : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
               }`}
             >
-              🏥 Sick
+              <Heart className="w-3.5 h-3.5" />
+              Sick
             </button>
           </div>
 
@@ -881,9 +890,20 @@ const HRCalendar = () => {
                     }`}
                 >
                   <div className="flex items-center gap-4">
-                    <span className="text-2xl">
-                      {request.type === 'vacation' ? '🏖️' : request.type === 'sick' ? '🏥' : '📅'}
-                    </span>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      request.type === 'vacation' 
+                        ? 'bg-[#0071e3]/10' 
+                        : request.type === 'sick' 
+                          ? 'bg-[#ff3b30]/10' 
+                          : 'bg-[#86868b]/10'
+                    }`}>
+                      {request.type === 'vacation' 
+                        ? <Plane className="w-5 h-5 text-[#0071e3]" /> 
+                        : request.type === 'sick' 
+                          ? <Heart className="w-5 h-5 text-[#ff3b30]" /> 
+                          : <CalendarIcon className="w-5 h-5 text-[#86868b]" />
+                      }
+                    </div>
                     <div>
                       <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{request.employeeName}</p>
                       <p className="text-[12px] text-[#86868b]">
@@ -902,9 +922,9 @@ const HRCalendar = () => {
                         <button 
                           onClick={() => openNotesModal(request.id, 'approve')}
                           disabled={processingRequest === request.id}
-                          className="px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-colors disabled:opacity-50"
                         >
-                          {processingRequest === request.id ? 'Processing...' : '✓ Approve'}
+                          {processingRequest === request.id ? 'Processing...' : <><Check className="w-3.5 h-3.5" /> Approve</>}
                         </button>
                         <button 
                           onClick={() => openNotesModal(request.id, 'reject')}
