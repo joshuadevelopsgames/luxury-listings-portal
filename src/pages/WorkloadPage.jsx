@@ -193,7 +193,7 @@ export default function WorkloadPage() {
           const pct = getCapacityPercent(count);
           const platformCounts = aggregatePlatforms(managerClients);
           const packageCounts = aggregatePackages(managerClients);
-          const totalPostsRemaining = managerClients.reduce((sum, c) => sum + (c.postsRemaining || 0), 0);
+          const totalPostsPerMonth = managerClients.reduce((sum, c) => sum + (c.packageSize || 0), 0);
           const isExpanded = expandedManager === manager.email;
 
           return (
@@ -240,9 +240,9 @@ export default function WorkloadPage() {
                     ))}
                   </div>
 
-                  {/* Posts remaining */}
-                  {totalPostsRemaining > 0 && (
-                    <span className="text-[11px] text-[#86868b]">{totalPostsRemaining} posts remaining</span>
+                  {/* Posts per month */}
+                  {totalPostsPerMonth > 0 && (
+                    <span className="text-[11px] text-[#86868b]">{totalPostsPerMonth} posts/mo</span>
                   )}
 
                   {/* Package breakdown */}
@@ -378,7 +378,7 @@ function ClientCard({ client, isAdmin, managers, onReassign, reassigning, setRea
           {client.packageType || 'Standard'}
         </span>
         <span className="text-[11px] text-[#86868b]">
-          {client.postsRemaining ?? 0} posts left
+          {client.packageSize || 0} posts/mo
         </span>
       </div>
 
