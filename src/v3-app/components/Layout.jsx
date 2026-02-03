@@ -36,7 +36,8 @@ import {
   Eye,
   X,
   Instagram,
-  BarChart3
+  BarChart3,
+  Palette
 } from 'lucide-react';
 
 /**
@@ -169,6 +170,7 @@ const V3Layout = () => {
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
     'workload': { name: 'Team Workload', icon: BarChart3, path: '/workload' },
+    'graphic-projects': { name: 'Team Projects', icon: Palette, path: '/graphic-projects' },
   };
 
   // Navigation sections based on role/permissions - properly categorized
@@ -200,11 +202,12 @@ const V3Layout = () => {
     const sectionedModules = getNavItemsForModules(enabledModules);
     
     // Define section display order and titles
-    const sectionOrder = ['Main', 'SMM', 'Content Team', 'Sales Team', 'HR', 'Admin', 'Resources'];
+    const sectionOrder = ['Main', 'SMM', 'Content Team', 'Design Team', 'Sales Team', 'HR', 'Admin', 'Resources'];
     const sectionTitles = {
       'Main': 'Main',
       'SMM': 'SMM',
       'Content Team': 'Content Team',
+      'Design Team': 'Design Team',
       'Sales Team': 'Sales Team',
       'HR': 'HR',
       'Admin': 'Admin',
