@@ -243,21 +243,16 @@ const GraphicProjectTracker = () => {
   }, [projects, selectedYear, userFilter, statusFilter, searchQuery, sortOrder, currentTeamMember, currentYear]);
 
   // Stats
+  // Stats based on filtered projects (reflects current view)
   const stats = useMemo(() => {
-    const yearProjects = projects.filter(p => {
-      if (!p.startDate) return selectedYear === currentYear;
-      const projectYear = getYear(typeof p.startDate === 'string' ? parseISO(p.startDate) : p.startDate.toDate?.() || new Date(p.startDate));
-      return projectYear === selectedYear;
-    });
-    
     return {
-      total: yearProjects.length,
-      completed: yearProjects.filter(p => p.status === 'completed').length,
-      inProgress: yearProjects.filter(p => p.status === 'in_progress').length,
-      pending: yearProjects.filter(p => p.status === 'pending').length,
-      totalHours: yearProjects.reduce((sum, p) => sum + (parseFloat(p.hours) || 0), 0)
+      total: filteredProjects.length,
+      completed: filteredProjects.filter(p => p.status === 'completed').length,
+      inProgress: filteredProjects.filter(p => p.status === 'in_progress').length,
+      pending: filteredProjects.filter(p => p.status === 'pending' || p.status === 'not_started').length,
+      totalHours: filteredProjects.reduce((sum, p) => sum + (parseFloat(p.hours) || 0), 0)
     };
-  }, [projects, selectedYear, currentYear]);
+  }, [filteredProjects]);
 
   const handleAddProject = async () => {
     if (!form.client || !form.task) {
@@ -534,27 +529,6 @@ const GraphicProjectTracker = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {/* Admin Import Button */}
-              {isSystemAdmin && (
-                <>
-                  <button
-                    onClick={handleReassignJone}
-                    disabled={importing}
-                    className="h-10 px-4 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[13px] font-medium hover:bg-[#5856d6]/20 transition-all flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    <span className="hidden sm:inline">Assign Jone's</span>
-                  </button>
-                  <button
-                    onClick={handleImportFromExcel}
-                    disabled={importing}
-                    className="h-10 px-4 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[13px] font-medium hover:bg-[#ff9500]/20 transition-all flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    <span className="hidden sm:inline">{importing ? 'Importing...' : 'Import'}</span>
-                  </button>
-                </>
-              )}
               <button
                 onClick={() => {
                   resetForm();
