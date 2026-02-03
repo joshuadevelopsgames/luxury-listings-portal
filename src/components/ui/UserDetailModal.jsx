@@ -163,6 +163,7 @@ const UserDetailModal = ({
   const displayName = localUser.displayName || `${localUser.firstName || ''} ${localUser.lastName || ''}`.trim() || localUser.email;
   const initials = (localUser.firstName?.charAt(0) || '') + (localUser.lastName?.charAt(0) || '') || localUser.email?.charAt(0).toUpperCase();
   const roleDisplay = ROLE_DISPLAY_NAMES[localUser.role] || localUser.role || 'User';
+  const userPhoto = localUser.avatar || localUser.photoURL || localUser.profilePhoto;
 
   return createPortal(
     <div 
@@ -178,8 +179,8 @@ const UserDetailModal = ({
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg">
-                {localUser.avatar ? (
-                  <img src={localUser.avatar} alt="" className="w-full h-full object-cover" />
+                {userPhoto ? (
+                  <img src={userPhoto} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#5856d6] to-[#af52de] flex items-center justify-center">
                     <span className="text-white font-semibold text-xl">
