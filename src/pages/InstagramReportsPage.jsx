@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../contexts/PermissionsContext';
+import { useViewAs } from '../contexts/ViewAsContext';
 import { firestoreService } from '../services/firestoreService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 // Fallback to browser-based OCR if Cloud Vision fails
@@ -38,9 +40,13 @@ import {
   Activity,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Building2,
+  FolderOpen,
+  CalendarDays,
+  FileBarChart
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, parseISO, isWithinInterval } from 'date-fns';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
 
 // Normalize percentage for display (OCR sometimes loses decimal or misreads)
@@ -63,17 +69,27 @@ const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
 
 const InstagramReportsPage = () => {
   const { currentUser } = useAuth();
+  const { isSystemAdmin } = usePermissions();
+  const { isViewingAs, viewingAsUser } = useViewAs();
+  
+  // Get effective user (View As support)
+  const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
+  const effectiveIsAdmin = isViewingAs ? false : isSystemAdmin;
+  
   const [reports, setReports] = useState([]);
+  const [allClients, setAllClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
   const [copiedLink, setCopiedLink] = useState(null);
+  const [expandedClient, setExpandedClient] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
+  const [preSelectedClientId, setPreSelectedClientId] = useState(null);
   
-  // Filter and sort state
-  const [clients, setClients] = useState([]);
-  const [filterClientId, setFilterClientId] = useState('all');
-  const [sortBy, setSortBy] = useState('date'); // 'date' or 'client'
+  // Aggregated report generation state
+  const [generatingReport, setGeneratingReport] = useState(null); // { clientId, type: 'quarterly' | 'yearly' }
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedQuarter, setSelectedQuarter] = useState(getQuarter(new Date()));
 
   // Load reports
   useEffect(() => {
@@ -81,16 +97,15 @@ const InstagramReportsPage = () => {
       setReports(data);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // Load clients for filter dropdown
+  // Load clients
   useEffect(() => {
     const loadClients = async () => {
       try {
         const clientsList = await firestoreService.getClients();
-        setClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
+        setAllClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
       } catch (error) {
         console.error('Error loading clients:', error);
       }
@@ -98,49 +113,209 @@ const InstagramReportsPage = () => {
     loadClients();
   }, []);
 
-  // Filter and sort reports
-  const filteredAndSortedReports = React.useMemo(() => {
-    let result = [...reports];
-    
-    // Filter by client
-    if (filterClientId === 'unlinked') {
-      result = result.filter(r => !r.clientId);
-    } else if (filterClientId && filterClientId !== 'all') {
-      result = result.filter(r => r.clientId === filterClientId);
+  // Filter clients: admins see all, others see only assigned clients
+  const isAssignedToMe = (client) => {
+    const am = (client.assignedManager || '').trim().toLowerCase();
+    if (!am) return false;
+    const email = (effectiveUser?.email || '').trim().toLowerCase();
+    const uid = (effectiveUser?.uid || '').trim().toLowerCase();
+    return am === email || (uid && am === uid);
+  };
+
+  const myClients = useMemo(() => {
+    if (effectiveIsAdmin) {
+      return allClients;
     }
+    return allClients.filter(isAssignedToMe);
+  }, [allClients, effectiveUser?.email, effectiveUser?.uid, effectiveIsAdmin]);
+
+  // Group reports by client
+  const clientsWithReports = useMemo(() => {
+    const clientMap = new Map();
     
-    // Sort
-    if (sortBy === 'client') {
-      result.sort((a, b) => {
-        const nameA = (a.clientName || 'zzz').toLowerCase();
-        const nameB = (b.clientName || 'zzz').toLowerCase();
-        if (nameA !== nameB) return nameA.localeCompare(nameB);
-        // Secondary sort by date
+    // Initialize with my clients (even if they have no reports)
+    myClients.forEach(client => {
+      clientMap.set(client.id, {
+        client,
+        reports: []
+      });
+    });
+    
+    // Add reports to their respective clients
+    reports.forEach(report => {
+      if (report.clientId && clientMap.has(report.clientId)) {
+        clientMap.get(report.clientId).reports.push(report);
+      }
+    });
+    
+    // Sort reports within each client by date (newest first)
+    clientMap.forEach(entry => {
+      entry.reports.sort((a, b) => {
         const dateA = a.startDate?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
         const dateB = b.startDate?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
         return dateB - dateA;
       });
-    } else {
-      // Sort by date (default)
-      result.sort((a, b) => {
-        const dateA = a.startDate?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
-        const dateB = b.startDate?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
-        return dateB - dateA;
-      });
+    });
+    
+    // Convert to array and sort by client name
+    return Array.from(clientMap.values())
+      .sort((a, b) => (a.client.clientName || '').localeCompare(b.client.clientName || ''));
+  }, [myClients, reports]);
+
+  // Unlinked reports (reports without clientId) - only visible to admins
+  const unlinkedReports = useMemo(() => {
+    if (!effectiveIsAdmin) return [];
+    return reports.filter(r => !r.clientId).sort((a, b) => {
+      const dateA = a.startDate?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
+      const dateB = b.startDate?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
+      return dateB - dateA;
+    });
+  }, [reports, effectiveIsAdmin]);
+
+  // Get reports for a specific time period
+  const getReportsForPeriod = (clientId, startDate, endDate) => {
+    return reports.filter(r => {
+      if (r.clientId !== clientId) return false;
+      const reportStart = r.startDate?.toDate?.() || r.createdAt?.toDate?.();
+      if (!reportStart) return false;
+      return isWithinInterval(reportStart, { start: startDate, end: endDate });
+    });
+  };
+
+  // Aggregate metrics from multiple reports
+  const aggregateMetrics = (reportsToAggregate) => {
+    if (!reportsToAggregate.length) return null;
+    
+    const aggregated = {
+      views: 0,
+      interactions: 0,
+      profileVisits: 0,
+      followers: null,
+      followerChange: 0,
+      reportCount: reportsToAggregate.length
+    };
+    
+    reportsToAggregate.forEach(r => {
+      const m = r.metrics || {};
+      if (m.views) aggregated.views += Number(m.views) || 0;
+      if (m.interactions) aggregated.interactions += Number(m.interactions) || 0;
+      if (m.profileVisits) aggregated.profileVisits += Number(m.profileVisits) || 0;
+      if (m.followerChange) aggregated.followerChange += Number(m.followerChange) || 0;
+      // Take latest followers count
+      if (m.followers) aggregated.followers = Number(m.followers);
+    });
+    
+    return aggregated;
+  };
+
+  // Generate quarterly report
+  const handleGenerateQuarterlyReport = async (clientId, year, quarter) => {
+    const client = allClients.find(c => c.id === clientId);
+    if (!client) return;
+    
+    const qStart = startOfQuarter(new Date(year, (quarter - 1) * 3, 1));
+    const qEnd = endOfQuarter(qStart);
+    const periodReports = getReportsForPeriod(clientId, qStart, qEnd);
+    
+    if (!periodReports.length) {
+      alert(`No monthly reports found for Q${quarter} ${year}. Create monthly reports first.`);
+      return;
     }
     
-    return result;
-  }, [reports, filterClientId, sortBy]);
+    const metrics = aggregateMetrics(periodReports);
+    const reportData = {
+      clientId,
+      clientName: client.clientName || client.name,
+      title: `Q${quarter} ${year} Instagram Report`,
+      dateRange: `Q${quarter} ${year} (${format(qStart, 'MMM d')} - ${format(qEnd, 'MMM d, yyyy')})`,
+      startDate: qStart,
+      endDate: qEnd,
+      reportType: 'quarterly',
+      metrics,
+      notes: `Aggregated from ${periodReports.length} monthly report(s).\n\nTotal Views: ${metrics.views.toLocaleString()}\nTotal Interactions: ${metrics.interactions.toLocaleString()}\nProfile Visits: ${metrics.profileVisits.toLocaleString()}\nNet Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}`,
+      sourceReportIds: periodReports.map(r => r.id)
+    };
+    
+    try {
+      await firestoreService.createInstagramReport(reportData);
+      setGeneratingReport(null);
+    } catch (error) {
+      console.error('Error creating quarterly report:', error);
+      alert('Failed to create quarterly report.');
+    }
+  };
 
-  // Get unique clients that have reports (for filter dropdown)
-  const clientsWithReports = React.useMemo(() => {
-    const clientIds = new Set(reports.filter(r => r.clientId).map(r => r.clientId));
-    return clients.filter(c => clientIds.has(c.id));
-  }, [reports, clients]);
-
-  const hasUnlinkedReports = React.useMemo(() => {
-    return reports.some(r => !r.clientId);
-  }, [reports]);
+  // Generate yearly report
+  const handleGenerateYearlyReport = async (clientId, year) => {
+    const client = allClients.find(c => c.id === clientId);
+    if (!client) return;
+    
+    const yStart = startOfYear(new Date(year, 0, 1));
+    const yEnd = endOfYear(yStart);
+    const periodReports = getReportsForPeriod(clientId, yStart, yEnd);
+    
+    if (!periodReports.length) {
+      alert(`No reports found for ${year}. Create monthly reports first.`);
+      return;
+    }
+    
+    const metrics = aggregateMetrics(periodReports);
+    
+    // Calculate quarterly breakdowns
+    const quarterlyBreakdown = [1, 2, 3, 4].map(q => {
+      const qStart = startOfQuarter(new Date(year, (q - 1) * 3, 1));
+      const qEnd = endOfQuarter(qStart);
+      const qReports = periodReports.filter(r => {
+        const d = r.startDate?.toDate?.() || r.createdAt?.toDate?.();
+        return d && isWithinInterval(d, { start: qStart, end: qEnd });
+      });
+      return {
+        quarter: q,
+        metrics: aggregateMetrics(qReports),
+        reportCount: qReports.length
+      };
+    });
+    
+    let notes = `Yearly Summary for ${year}\nAggregated from ${periodReports.length} report(s).\n\n`;
+    notes += `YEARLY TOTALS:\n`;
+    notes += `• Total Views: ${metrics.views.toLocaleString()}\n`;
+    notes += `• Total Interactions: ${metrics.interactions.toLocaleString()}\n`;
+    notes += `• Profile Visits: ${metrics.profileVisits.toLocaleString()}\n`;
+    notes += `• Net Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}\n\n`;
+    notes += `QUARTERLY BREAKDOWN:\n`;
+    quarterlyBreakdown.forEach(q => {
+      if (q.metrics) {
+        notes += `\nQ${q.quarter} (${q.reportCount} reports):\n`;
+        notes += `  Views: ${q.metrics.views.toLocaleString()}\n`;
+        notes += `  Interactions: ${q.metrics.interactions.toLocaleString()}\n`;
+        notes += `  Profile Visits: ${q.metrics.profileVisits.toLocaleString()}\n`;
+      } else {
+        notes += `\nQ${q.quarter}: No data\n`;
+      }
+    });
+    
+    const reportData = {
+      clientId,
+      clientName: client.clientName || client.name,
+      title: `${year} Annual Instagram Report`,
+      dateRange: `${year} (Jan 1 - Dec 31)`,
+      startDate: yStart,
+      endDate: yEnd,
+      reportType: 'yearly',
+      metrics,
+      quarterlyBreakdown,
+      notes,
+      sourceReportIds: periodReports.map(r => r.id)
+    };
+    
+    try {
+      await firestoreService.createInstagramReport(reportData);
+      setGeneratingReport(null);
+    } catch (error) {
+      console.error('Error creating yearly report:', error);
+      alert('Failed to create yearly report.');
+    }
+  };
 
   const handleCopyLink = (publicLinkId) => {
     const link = `${window.location.origin}/report/${publicLinkId}`;
@@ -153,9 +328,7 @@ const InstagramReportsPage = () => {
     if (!window.confirm(`Are you sure you want to delete "${report.title}"? This action cannot be undone.`)) {
       return;
     }
-
     try {
-      // Delete legacy screenshots from storage (only if they were ever uploaded)
       const storage = getStorage();
       for (const screenshot of report.screenshots || []) {
         if (!screenshot.path) continue;
@@ -166,8 +339,6 @@ const InstagramReportsPage = () => {
           console.warn('Error deleting screenshot:', e);
         }
       }
-
-      // Delete the report document
       await firestoreService.deleteInstagramReport(report.id);
     } catch (error) {
       console.error('Error deleting report:', error);
@@ -175,259 +346,364 @@ const InstagramReportsPage = () => {
     }
   };
 
+  // Create report for specific client
+  const handleCreateForClient = (clientId) => {
+    setPreSelectedClientId(clientId);
+    setShowCreateModal(true);
+  };
+
+  // Report card component
+  const ReportCard = ({ report, compact = false }) => (
+    <div className={`rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10 overflow-hidden ${compact ? '' : 'hover:shadow-md'} transition-all`}>
+      <div className={`${compact ? 'p-3' : 'p-4'} flex items-center justify-between gap-3`}>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg bg-gradient-to-br from-[#833AB4] to-[#E1306C] flex items-center justify-center flex-shrink-0`}>
+            {report.reportType === 'quarterly' ? (
+              <CalendarDays className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} />
+            ) : report.reportType === 'yearly' ? (
+              <FileBarChart className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} />
+            ) : (
+              <BarChart3 className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h4 className={`${compact ? 'text-[13px]' : 'text-[14px]'} font-medium text-[#1d1d1f] dark:text-white truncate`}>
+                {report.title}
+              </h4>
+              {report.reportType && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  report.reportType === 'yearly' 
+                    ? 'bg-[#5856d6]/10 text-[#5856d6]' 
+                    : 'bg-[#34c759]/10 text-[#34c759]'
+                }`}>
+                  {report.reportType === 'yearly' ? 'Annual' : 'Quarterly'}
+                </span>
+              )}
+            </div>
+            <p className={`${compact ? 'text-[11px]' : 'text-[12px]'} text-[#86868b] truncate`}>
+              {report.dateRange}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button
+            onClick={() => handleCopyLink(report.publicLinkId)}
+            className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
+            title="Copy link"
+          >
+            {copiedLink === report.publicLinkId ? (
+              <Check className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-[#34c759]`} />
+            ) : (
+              <Copy className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+            )}
+          </button>
+          <button
+            onClick={() => window.open(`/report/${report.publicLinkId}`, '_blank')}
+            className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
+            title="Preview"
+          >
+            <ExternalLink className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+          </button>
+          <button
+            onClick={() => setEditingReport(report)}
+            className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
+            title="Edit"
+          >
+            <Edit className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+          </button>
+          <button
+            onClick={() => handleDeleteReport(report)}
+            className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors`}
+            title="Delete"
+          >
+            <Trash2 className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Stats summary
+  const totalReports = myClients.reduce((sum, c) => {
+    const entry = clientsWithReports.find(e => e.client.id === c.id);
+    return sum + (entry?.reports.length || 0);
+  }, 0);
+
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] flex items-center gap-3">
-            <Instagram className="w-8 h-8 text-[#E1306C]" />
+          <h1 className="text-[24px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] flex items-center gap-2 sm:gap-3">
+            <Instagram className="w-7 h-7 sm:w-8 sm:h-8 text-[#E1306C]" />
             Instagram Analytics
           </h1>
-          <p className="text-[15px] text-[#86868b] mt-1">
-            Create beautiful analytics reports from Instagram screenshots for your clients
+          <p className="text-[13px] sm:text-[15px] text-[#86868b] mt-1">
+            {effectiveIsAdmin ? 'Manage analytics reports for all clients' : `Analytics reports for your ${myClients.length} assigned client${myClients.length !== 1 ? 's' : ''}`}
           </p>
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[13px] sm:text-[14px] font-medium hover:opacity-90 transition-opacity"
         >
           <Plus className="w-4 h-4" />
           New Report
         </button>
       </div>
 
-      {/* Filter and Sort Controls */}
-      {!loading && reports.length > 0 && (
-        <div className="flex flex-wrap items-center gap-4 p-4 bg-black/5 dark:bg-white/5 rounded-2xl">
-          <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-[#86868b]" />
-            <select
-              value={filterClientId}
-              onChange={(e) => setFilterClientId(e.target.value)}
-              className="h-10 px-3 rounded-xl bg-white dark:bg-[#2c2c2e] border-0 text-[#1d1d1f] dark:text-white text-[13px] focus:outline-none focus:ring-2 focus:ring-[#E1306C]"
-            >
-              <option value="all">All Clients</option>
-              {clientsWithReports.map(client => (
-                <option key={client.id} value={client.id}>
-                  {client.clientName || client.name || 'Unnamed Client'}
-                </option>
-              ))}
-              {hasUnlinkedReports && (
-                <option value="unlinked">⚠️ Unlinked Reports</option>
-              )}
-            </select>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2 mb-1">
+            <Building2 className="w-4 h-4 text-[#0071e3]" />
+            <span className="text-[11px] sm:text-[12px] text-[#86868b]">Clients</span>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] text-[#86868b]">Sort by:</span>
-            <div className="flex rounded-xl bg-black/5 dark:bg-white/10 overflow-hidden">
-              <button
-                onClick={() => setSortBy('date')}
-                className={`px-3 py-2 text-[13px] font-medium transition-colors ${
-                  sortBy === 'date'
-                    ? 'bg-[#E1306C] text-white'
-                    : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
-                }`}
-              >
-                <Calendar className="w-4 h-4 inline mr-1" />
-                Date
-              </button>
-              <button
-                onClick={() => setSortBy('client')}
-                className={`px-3 py-2 text-[13px] font-medium transition-colors ${
-                  sortBy === 'client'
-                    ? 'bg-[#E1306C] text-white'
-                    : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
-                }`}
-              >
-                <User className="w-4 h-4 inline mr-1" />
-                Client
-              </button>
-            </div>
-          </div>
-          
-          <div className="ml-auto text-[13px] text-[#86868b]">
-            Showing {filteredAndSortedReports.length} of {reports.length} reports
-          </div>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{myClients.length}</p>
         </div>
-      )}
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2 mb-1">
+            <FileText className="w-4 h-4 text-[#E1306C]" />
+            <span className="text-[11px] sm:text-[12px] text-[#86868b]">Reports</span>
+          </div>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{totalReports}</p>
+        </div>
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2 mb-1">
+            <CalendarDays className="w-4 h-4 text-[#34c759]" />
+            <span className="text-[11px] sm:text-[12px] text-[#86868b]">This Quarter</span>
+          </div>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
+            {reports.filter(r => {
+              const d = r.startDate?.toDate?.();
+              return d && isWithinInterval(d, { 
+                start: startOfQuarter(new Date()), 
+                end: endOfQuarter(new Date()) 
+              });
+            }).length}
+          </p>
+        </div>
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="w-4 h-4 text-[#ff9500]" />
+            <span className="text-[11px] sm:text-[12px] text-[#86868b]">This Year</span>
+          </div>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
+            {reports.filter(r => {
+              const d = r.startDate?.toDate?.();
+              return d && getYear(d) === new Date().getFullYear();
+            }).length}
+          </p>
+        </div>
+      </div>
 
-      {/* Reports List */}
+      {/* Client-centric Reports */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="w-8 h-8 border-2 border-[#E1306C] border-t-transparent rounded-full animate-spin" />
-          <span className="ml-3 text-[14px] text-[#86868b]">Loading reports...</span>
+          <span className="ml-3 text-[14px] text-[#86868b]">Loading...</span>
         </div>
-      ) : reports.length === 0 ? (
+      ) : myClients.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
-          <Instagram className="w-16 h-16 mx-auto text-[#86868b] opacity-50 mb-4" />
-          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No reports yet</h3>
-          <p className="text-[14px] text-[#86868b] mt-2 mb-6">
-            Create your first Instagram analytics report to share with clients
-          </p>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            Create First Report
-          </button>
-        </div>
-      ) : filteredAndSortedReports.length === 0 ? (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-8 text-center">
-          <User className="w-12 h-12 mx-auto text-[#86868b] opacity-50 mb-4" />
-          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No reports match filter</h3>
+          <Users className="w-16 h-16 mx-auto text-[#86868b] opacity-50 mb-4" />
+          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No clients assigned</h3>
           <p className="text-[14px] text-[#86868b] mt-2">
-            Try selecting a different client or "All Clients"
+            {effectiveIsAdmin ? 'No clients exist in the system yet.' : 'Contact your admin to get clients assigned to you.'}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredAndSortedReports.map((report) => (
-            <div key={report.id} className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden hover:shadow-lg transition-all">
-              {/* Report Header */}
-              <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] to-[#E1306C] flex items-center justify-center flex-shrink-0">
-                    <BarChart3 className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
-                        {report.title}
+        <div className="space-y-3">
+          {clientsWithReports.map(({ client, reports: clientReports }) => {
+            const isExpanded = expandedClient === client.id;
+            const monthlyReports = clientReports.filter(r => !r.reportType || r.reportType === 'monthly');
+            const quarterlyReports = clientReports.filter(r => r.reportType === 'quarterly');
+            const yearlyReports = clientReports.filter(r => r.reportType === 'yearly');
+            
+            return (
+              <div 
+                key={client.id}
+                className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden"
+              >
+                {/* Client Header */}
+                <button
+                  onClick={() => setExpandedClient(isExpanded ? null : client.id)}
+                  className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#833AB4] to-[#E1306C] flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-[15px] sm:text-[17px] font-semibold text-[#1d1d1f] dark:text-white truncate">
+                        {client.clientName || client.name || 'Unnamed Client'}
                       </h3>
-                      {!report.clientId && (
-                        <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-md font-medium bg-[#ff9500]/10 text-[#ff9500]">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          Unlinked
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-0.5">
+                        <span className="text-[11px] sm:text-[12px] text-[#86868b] flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          {clientReports.length} report{clientReports.length !== 1 ? 's' : ''}
                         </span>
+                        {client.instagramHandle && (
+                          <span className="text-[11px] sm:text-[12px] text-[#E1306C] flex items-center gap-1">
+                            <Instagram className="w-3 h-3" />
+                            @{client.instagramHandle}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[12px] px-2 py-1 rounded-lg font-medium ${
+                      clientReports.length > 0 
+                        ? 'bg-[#34c759]/10 text-[#34c759]' 
+                        : 'bg-[#86868b]/10 text-[#86868b]'
+                    }`}>
+                      {clientReports.length > 0 ? `${clientReports.length} reports` : 'No reports'}
+                    </span>
+                    {isExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-[#86868b]" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-[#86868b]" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Expanded Content */}
+                {isExpanded && (
+                  <div className="border-t border-black/5 dark:border-white/10">
+                    {/* Action Buttons */}
+                    <div className="p-4 bg-black/[0.02] dark:bg-white/[0.03] flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleCreateForClient(client.id); }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-[#833AB4] to-[#E1306C] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        New Monthly Report
+                      </button>
+                      <button
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setGeneratingReport({ clientId: client.id, type: 'quarterly' });
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                      >
+                        <CalendarDays className="w-3.5 h-3.5" />
+                        Generate Quarterly
+                      </button>
+                      <button
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setGeneratingReport({ clientId: client.id, type: 'yearly' });
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#5856d6] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                      >
+                        <FileBarChart className="w-3.5 h-3.5" />
+                        Generate Yearly
+                      </button>
+                    </div>
+
+                    {/* Reports List */}
+                    <div className="p-4 space-y-4">
+                      {clientReports.length === 0 ? (
+                        <div className="text-center py-6">
+                          <FolderOpen className="w-10 h-10 mx-auto text-[#86868b] opacity-50 mb-2" />
+                          <p className="text-[13px] text-[#86868b]">No reports yet for this client</p>
+                          <button
+                            onClick={() => handleCreateForClient(client.id)}
+                            className="mt-3 text-[13px] text-[#E1306C] font-medium hover:underline"
+                          >
+                            Create first report →
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Yearly Reports */}
+                          {yearlyReports.length > 0 && (
+                            <div>
+                              <h4 className="text-[12px] font-semibold text-[#5856d6] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                <FileBarChart className="w-3.5 h-3.5" />
+                                Annual Reports ({yearlyReports.length})
+                              </h4>
+                              <div className="space-y-2">
+                                {yearlyReports.map(report => (
+                                  <ReportCard key={report.id} report={report} compact />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Quarterly Reports */}
+                          {quarterlyReports.length > 0 && (
+                            <div>
+                              <h4 className="text-[12px] font-semibold text-[#34c759] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                <CalendarDays className="w-3.5 h-3.5" />
+                                Quarterly Reports ({quarterlyReports.length})
+                              </h4>
+                              <div className="space-y-2">
+                                {quarterlyReports.map(report => (
+                                  <ReportCard key={report.id} report={report} compact />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Monthly Reports */}
+                          {monthlyReports.length > 0 && (
+                            <div>
+                              <h4 className="text-[12px] font-semibold text-[#E1306C] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                <BarChart3 className="w-3.5 h-3.5" />
+                                Monthly Reports ({monthlyReports.length})
+                              </h4>
+                              <div className="space-y-2">
+                                {monthlyReports.map(report => (
+                                  <ReportCard key={report.id} report={report} compact />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 mt-1 text-[12px] text-[#86868b]">
-                      <span className="flex items-center gap-1">
-                        <User className="w-3.5 h-3.5" />
-                        {report.clientName || 'No client'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {report.dateRange}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <LinkIcon className="w-3.5 h-3.5" />
-                        {report.postLinks?.length || 0} posts
-                      </span>
-                    </div>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => handleCopyLink(report.publicLinkId)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    {copiedLink === report.publicLinkId ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-[#34c759]" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        Copy Link
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => window.open(`/report/${report.publicLinkId}`, '_blank')}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Preview
-                  </button>
-                  <button
-                    onClick={() => setEditingReport(report)}
-                    className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteReport(report)}
-                    className="p-2 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setExpandedReport(expandedReport === report.id ? null : report.id)}
-                    className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[#86868b]"
-                  >
-                    {expandedReport === report.id ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
+                )}
               </div>
+            );
+          })}
 
-              {/* Expanded: Post links & legacy screenshots */}
-              {expandedReport === report.id && (
-                <div className="border-t border-black/5 dark:border-white/10 p-5 bg-black/[0.02] dark:bg-white/5">
-                    {(report.postLinks?.length > 0) && (
-                      <>
-                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Post previews</h4>
-                        <div className="space-y-2 mb-4">
-                          {report.postLinks.map((link, index) => (
-                            <div key={index} className="p-3 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20">
-                              <a
-                                href={link.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:underline"
-                              >
-                                <LinkIcon className="w-4 h-4" />
-                                {link.label || link.url || 'Link'}
-                              </a>
-                              {link.comment && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{link.comment}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                    {(report.screenshots?.length > 0) && (
-                      <>
-                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Screenshots (legacy)</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          {report.screenshots.map((screenshot, index) => (
-                            <div key={index} className="relative group">
-                              <img
-                                src={screenshot.url}
-                                alt={screenshot.caption || `Screenshot ${index + 1}`}
-                                className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-white/10"
-                              />
-                              {screenshot.caption && (
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center p-2">
-                                  <p className="text-xs text-white text-center">{screenshot.caption}</p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                    {report.notes && (
-                      <div className="mt-4 p-4 bg-white dark:bg-white/10 rounded-lg">
-                      <h5 className="text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Notes</h5>
-                      <p className="text-[12px] text-[#86868b] whitespace-pre-wrap">{report.notes}</p>
-                    </div>
-                  )}
-                  <div className="mt-4 text-[11px] text-[#86868b]">
-                    Created: {report.createdAt?.toDate ? format(report.createdAt.toDate(), 'PPpp') : 'Unknown'}
+          {/* Unlinked Reports (Admin only) */}
+          {effectiveIsAdmin && unlinkedReports.length > 0 && (
+            <div className="rounded-2xl bg-[#ff9500]/5 dark:bg-[#ff9500]/10 border border-[#ff9500]/20 overflow-hidden">
+              <button
+                onClick={() => setExpandedClient(expandedClient === 'unlinked' ? null : 'unlinked')}
+                className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-[#ff9500]/5 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#ff9500] flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
+                  <div>
+                    <h3 className="text-[15px] sm:text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+                      Unlinked Reports
+                    </h3>
+                    <p className="text-[11px] sm:text-[12px] text-[#ff9500]">
+                      {unlinkedReports.length} report{unlinkedReports.length !== 1 ? 's' : ''} not linked to any client
+                    </p>
+                  </div>
+                </div>
+                {expandedClient === 'unlinked' ? (
+                  <ChevronUp className="w-5 h-5 text-[#86868b]" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-[#86868b]" />
+                )}
+              </button>
+              {expandedClient === 'unlinked' && (
+                <div className="border-t border-[#ff9500]/20 p-4 space-y-2">
+                  {unlinkedReports.map(report => (
+                    <ReportCard key={report.id} report={report} compact />
+                  ))}
                 </div>
               )}
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -435,22 +711,122 @@ const InstagramReportsPage = () => {
       {(showCreateModal || editingReport) && (
         <ReportModal
           report={editingReport}
+          preSelectedClientId={preSelectedClientId}
           onClose={() => {
             setShowCreateModal(false);
             setEditingReport(null);
+            setPreSelectedClientId(null);
           }}
           onSave={() => {
             setShowCreateModal(false);
             setEditingReport(null);
+            setPreSelectedClientId(null);
           }}
         />
+      )}
+
+      {/* Generate Report Modal */}
+      {generatingReport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                {generatingReport.type === 'quarterly' ? (
+                  <>
+                    <CalendarDays className="w-5 h-5 text-[#34c759]" />
+                    Generate Quarterly Report
+                  </>
+                ) : (
+                  <>
+                    <FileBarChart className="w-5 h-5 text-[#5856d6]" />
+                    Generate Yearly Report
+                  </>
+                )}
+              </h2>
+              <button
+                onClick={() => setGeneratingReport(null)}
+                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-[#86868b]" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-[13px] text-[#86868b]">
+                This will aggregate data from existing monthly reports to create a {generatingReport.type} summary report.
+              </p>
+
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  Year
+                </label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#E1306C]"
+                >
+                  {[...Array(5)].map((_, i) => {
+                    const year = new Date().getFullYear() - i;
+                    return <option key={year} value={year}>{year}</option>;
+                  })}
+                </select>
+              </div>
+
+              {generatingReport.type === 'quarterly' && (
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Quarter
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[1, 2, 3, 4].map(q => (
+                      <button
+                        key={q}
+                        onClick={() => setSelectedQuarter(q)}
+                        className={`h-11 rounded-xl text-[14px] font-medium transition-colors ${
+                          selectedQuarter === q
+                            ? 'bg-[#34c759] text-white'
+                            : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                        }`}
+                      >
+                        Q{q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setGeneratingReport(null)}
+                  className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (generatingReport.type === 'quarterly') {
+                      handleGenerateQuarterlyReport(generatingReport.clientId, selectedYear, selectedQuarter);
+                    } else {
+                      handleGenerateYearlyReport(generatingReport.clientId, selectedYear);
+                    }
+                  }}
+                  className={`flex-1 h-11 rounded-xl text-white text-[14px] font-medium hover:opacity-90 transition-opacity ${
+                    generatingReport.type === 'quarterly' ? 'bg-[#34c759]' : 'bg-[#5856d6]'
+                  }`}
+                >
+                  Generate Report
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
 // Report Create/Edit Modal Component
-const ReportModal = ({ report, onClose, onSave }) => {
+const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
   // Parse existing dates if editing
   const parseExistingDate = (dateField) => {
     if (!dateField) return '';
@@ -467,7 +843,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
   };
 
   const [formData, setFormData] = useState({
-    clientId: report?.clientId || '',
+    clientId: report?.clientId || preSelectedClientId || '',
     clientName: report?.clientName || '',
     title: report?.title || '',
     startDate: parseExistingDate(report?.startDate),
@@ -495,7 +871,19 @@ const ReportModal = ({ report, onClose, onSave }) => {
     const loadClients = async () => {
       try {
         const clientsList = await firestoreService.getClients();
-        setClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
+        const sortedClients = clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
+        setClients(sortedClients);
+        
+        // If preSelectedClientId is set, update clientName
+        if (preSelectedClientId && !formData.clientName) {
+          const selectedClient = sortedClients.find(c => c.id === preSelectedClientId);
+          if (selectedClient) {
+            setFormData(prev => ({
+              ...prev,
+              clientName: selectedClient.clientName || selectedClient.name || ''
+            }));
+          }
+        }
       } catch (error) {
         console.error('Error loading clients:', error);
       } finally {
@@ -503,7 +891,7 @@ const ReportModal = ({ report, onClose, onSave }) => {
       }
     };
     loadClients();
-  }, []);
+  }, [preSelectedClientId]);
 
   // Auto-generate dateRange string when dates change
   useEffect(() => {
