@@ -240,6 +240,161 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
 
     return { mappings, confidence, suggestions };
   }
+
+  /**
+   * Extract Instagram metrics from screenshot images using GPT-4o Vision
+   * @param {Array} images - Array of image Files, Blobs, or base64 strings
+   * @param {Function} onProgress - Optional progress callback
+   * @returns {Promise<Object>} - Extracted metrics
+   */
+  async extractInstagramMetrics(images, onProgress = null) {
+    console.log(`🤖 Extracting Instagram metrics with GPT-4o Vision (${images.length} images)...`);
+
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured. Add REACT_APP_OPENAI_API_KEY to .env.local');
+    }
+
+    if (onProgress) onProgress(0, images.length, 'Preparing images...');
+
+    // Convert images to base64 data URLs
+    const imageContents = await Promise.all(
+      images.map(async (img) => {
+        const base64 = await this.imageToBase64(img);
+        return {
+          type: 'image_url',
+          image_url: { url: base64, detail: 'high' }
+        };
+      })
+    );
+
+    if (onProgress) onProgress(0, images.length, 'Analyzing with GPT-4o Vision...');
+
+    const prompt = `Extract ALL metrics from these Instagram Insights screenshots. Return ONLY valid JSON.
+
+IMPORTANT: Look carefully at the visual layout. Numbers belong to the label they're visually associated with (inside donut charts, next to labels, etc.).
+
+Extract these fields (use null if not visible):
+{
+  "dateRange": "Jan 1 - Jan 31" or similar,
+  "views": number (the big number in/near "Views" donut),
+  "viewsFromAdsPercent": number,
+  "viewsFollowerPercent": number,
+  "viewsNonFollowerPercent": number,
+  "interactions": number (the big number in/near "Interactions" donut),
+  "interactionsFollowerPercent": number,
+  "interactionsNonFollowerPercent": number,
+  "accountsReached": number,
+  "accountsReachedChange": "+X%" or "-X%",
+  "profileVisits": number,
+  "profileVisitsChange": "+X%" or "-X%",
+  "externalLinkTaps": number,
+  "followers": number (total follower count),
+  "topCities": [{"name": "City", "percentage": number}],
+  "ageRanges": [{"range": "25-34", "percentage": number}],
+  "gender": {"men": number, "women": number},
+  "contentBreakdown": [{"type": "Posts/Reels/Stories", "percentage": number}],
+  "growth": {"overall": number, "follows": number, "unfollows": number},
+  "likes": number,
+  "comments": number,
+  "shares": number,
+  "saves": number,
+  "reposts": number
+}
+
+Return ONLY the JSON object, no markdown or explanation.`;
+
+    try {
+      const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                ...imageContents
+              ]
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.1
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ GPT-4o Vision error:', errorData);
+        throw new Error(`GPT-4o Vision error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      let content = data.choices[0].message.content;
+      
+      // Strip markdown code fences if present
+      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      const metrics = JSON.parse(content);
+      
+      // Clean up null values
+      const cleaned = {};
+      for (const [key, value] of Object.entries(metrics)) {
+        if (value !== null && value !== undefined) {
+          cleaned[key] = value;
+        }
+      }
+
+      if (onProgress) onProgress(images.length, images.length, 'Complete!');
+      
+      console.log('✅ GPT-4o Vision extracted metrics:', Object.keys(cleaned).length, 'fields');
+      return cleaned;
+
+    } catch (error) {
+      console.error('❌ GPT-4o Vision extraction failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Convert image File/Blob to base64 data URL
+   */
+  async imageToBase64(image) {
+    // Already a data URL
+    if (typeof image === 'string' && image.startsWith('data:')) {
+      return image;
+    }
+    
+    // URL - fetch and convert
+    if (typeof image === 'string') {
+      const response = await fetch(image);
+      const blob = await response.blob();
+      return this.blobToBase64(blob);
+    }
+    
+    // Handle { localFile } wrapper
+    if (image.localFile) {
+      return this.blobToBase64(image.localFile);
+    }
+    
+    // File or Blob
+    return this.blobToBase64(image);
+  }
+
+  /**
+   * Convert Blob to base64 data URL
+   */
+  blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
 }
 
 export const openaiService = new OpenAIService();

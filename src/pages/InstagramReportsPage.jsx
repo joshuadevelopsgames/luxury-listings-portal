@@ -3,8 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useViewAs } from '../contexts/ViewAsContext';
 import { firestoreService } from '../services/firestoreService';
+import { openaiService } from '../services/openaiService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
-// Fallback to browser-based OCR if Cloud Vision fails
+// Fallback to browser-based OCR if Cloud Vision and GPT-4o fail
 import { instagramOCRService } from '../services/instagramOCRService';
 import { getStorage, ref, deleteObject } from 'firebase/storage';
 import { 
@@ -959,28 +960,46 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
   const runExtraction = async () => {
     if (formData.screenshots.length === 0) return;
     setExtracting(true);
-    setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Reading screenshots...' });
+    setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Analyzing screenshots...' });
     try {
       const images = formData.screenshots.map(s => ({ localFile: s.localFile, url: s.previewUrl }));
+      const imageFiles = formData.screenshots.map(s => s.localFile || s.previewUrl);
       let metrics;
+      
+      // Try GPT-4o Vision first (most accurate for visual layout understanding)
       try {
-        metrics = await cloudVisionOCRService.processScreenshots(
-          images,
-          (current, total, status) => {
-            setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
-          }
-        );
-      } catch (cloudError) {
-        console.warn('Cloud Vision failed, falling back to browser OCR:', cloudError);
-        setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Reading screenshots…' });
-        const imageFiles = formData.screenshots.map(s => s.localFile || s.previewUrl);
-        metrics = await instagramOCRService.processScreenshots(
+        metrics = await openaiService.extractInstagramMetrics(
           imageFiles,
           (current, total, status) => {
-            setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
+            setExtractionProgress({ current, total, status: status || 'Analyzing with AI Vision...' });
           }
         );
-        await instagramOCRService.terminate();
+        console.log('✅ GPT-4o Vision extraction successful');
+      } catch (gptError) {
+        console.warn('GPT-4o Vision failed, trying Cloud Vision:', gptError);
+        
+        // Fallback to Cloud Vision OCR
+        try {
+          setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Trying Cloud Vision...' });
+          metrics = await cloudVisionOCRService.processScreenshots(
+            images,
+            (current, total, status) => {
+              setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
+            }
+          );
+        } catch (cloudError) {
+          console.warn('Cloud Vision failed, falling back to browser OCR:', cloudError);
+          
+          // Final fallback to browser-based Tesseract OCR
+          setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Reading screenshots…' });
+          metrics = await instagramOCRService.processScreenshots(
+            imageFiles,
+            (current, total, status) => {
+              setExtractionProgress({ current, total, status: status || `Processing screenshot ${current} of ${total}...` });
+            }
+          );
+          await instagramOCRService.terminate();
+        }
       }
       setFormData(prev => {
         // Revoke object URLs so we don't leak memory, then dump screenshots (OCR-only)
