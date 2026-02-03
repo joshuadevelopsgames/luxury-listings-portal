@@ -467,7 +467,15 @@ export default function FeedbackButton() {
       });
 
       toast.success('Bug report submitted! Thank you for your feedback.');
-      handleClose();
+      setBugForm({ title: '', description: '', priority: 'medium' });
+      setSelectedElement(null);
+      // Return to active chat if exists, otherwise close
+      if (activeChat && activeChat.status === 'open') {
+        setSelectedChat(activeChat);
+        setView('chat-detail');
+      } else {
+        handleClose();
+      }
     } catch (error) {
       console.error('Error submitting bug:', error);
       toast.error('Failed to submit bug report');
@@ -497,7 +505,14 @@ export default function FeedbackButton() {
       });
 
       toast.success('Feature request submitted! Thank you for your suggestion.');
-      handleClose();
+      setFeatureForm({ title: '', description: '' });
+      // Return to active chat if exists, otherwise close
+      if (activeChat && activeChat.status === 'open') {
+        setSelectedChat(activeChat);
+        setView('chat-detail');
+      } else {
+        handleClose();
+      }
     } catch (error) {
       console.error('Error submitting feature:', error);
       toast.error('Failed to submit feature request');
@@ -644,7 +659,13 @@ export default function FeedbackButton() {
               {view !== 'menu' && view !== 'chat-list' && view !== 'chat-detail' && (
                 <button
                   onClick={() => {
-                    setView('menu');
+                    // Return to active chat if exists, otherwise menu
+                    if (activeChat && activeChat.status === 'open') {
+                      setSelectedChat(activeChat);
+                      setView('chat-detail');
+                    } else {
+                      setView('menu');
+                    }
                     setSelectedElement(null);
                   }}
                   className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
@@ -679,14 +700,32 @@ export default function FeedbackButton() {
               </h3>
             </div>
             <div className="flex items-center gap-1">
+              {/* Quick actions while in chat */}
               {view === 'chat-detail' && selectedChat?.status === 'open' && (
-                <button
-                  onClick={handleClose}
-                  className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
-                  title="Minimize chat"
-                >
-                  <Minus className="w-5 h-5 text-[#86868b]" />
-                </button>
+                <>
+                  <button
+                    onClick={() => setView('bug')}
+                    className="w-8 h-8 rounded-lg hover:bg-[#ff3b30]/10 flex items-center justify-center transition-colors"
+                    title="Report a bug"
+                  >
+                    <Bug className="w-4 h-4 text-[#ff3b30]" />
+                  </button>
+                  <button
+                    onClick={() => setView('feature')}
+                    className="w-8 h-8 rounded-lg hover:bg-[#ff9500]/10 flex items-center justify-center transition-colors"
+                    title="Request a feature"
+                  >
+                    <Lightbulb className="w-4 h-4 text-[#ff9500]" />
+                  </button>
+                  <div className="w-px h-5 bg-black/10 dark:bg-white/10 mx-1" />
+                  <button
+                    onClick={handleClose}
+                    className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                    title="Minimize chat"
+                  >
+                    <Minus className="w-5 h-5 text-[#86868b]" />
+                  </button>
+                </>
               )}
               <button
                 onClick={view === 'chat-detail' ? handleEndChat : handleClose}
