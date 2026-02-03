@@ -1280,7 +1280,7 @@ const TasksPage = () => {
                   <option value="">Select a team member...</option>
                   {availableUsers.map((user) => (
                     <option key={user.email} value={user.email}>
-                      {user.firstName} {user.lastName} - {user.position || user.department}
+                      {user.firstName} {user.lastName}{user.department ? ` - ${user.department}` : ''}
                     </option>
                   ))}
                 </select>
