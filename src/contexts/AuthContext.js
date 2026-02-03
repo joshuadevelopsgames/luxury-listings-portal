@@ -11,7 +11,7 @@ import { googleCalendarService } from '../services/googleCalendarService';
 // ============================================================================
 // SYSTEM ADMINS - Full access to everything
 // ============================================================================
-const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
 const isSystemAdmin = (email) => SYSTEM_ADMINS.includes(email?.toLowerCase());
 
 // ============================================================================

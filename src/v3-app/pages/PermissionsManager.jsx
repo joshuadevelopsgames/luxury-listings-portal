@@ -123,7 +123,8 @@ const DEPARTMENTS = [
 
 // System admins (for full access display)
 const SYSTEM_ADMINS = [
-  'jrsschroeder@gmail.com'
+  'jrsschroeder@gmail.com',
+  'demo@luxurylistings.app'
 ];
 
 // Protected admins that cannot be removed

@@ -7,7 +7,8 @@ const PermissionsContext = createContext();
 
 // System admins always have full access
 const SYSTEM_ADMINS = [
-  'jrsschroeder@gmail.com'
+  'jrsschroeder@gmail.com',
+  'demo@luxurylistings.app'
 ];
 
 // Feature permissions - granular access within pages

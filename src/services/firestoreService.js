@@ -2547,7 +2547,7 @@ class FirestoreService {
       if (!uid) throw new Error('You must be signed in to update a report');
       
       // System admins can edit any report
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
       const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
       
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
@@ -2621,7 +2621,7 @@ class FirestoreService {
       if (!uid) throw new Error('You must be signed in to delete a report');
       
       // System admins can delete any report
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
       const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
       
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
@@ -3004,7 +3004,7 @@ class FirestoreService {
   async createCustomRole(roleData) {
     try {
       const email = auth.currentUser?.email;
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
       if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
         throw new Error('Only system administrators can create custom roles');
       }
@@ -3035,7 +3035,7 @@ class FirestoreService {
   async updateCustomRole(roleId, updates) {
     try {
       const email = auth.currentUser?.email;
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
       if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
         throw new Error('Only system administrators can update custom roles');
       }
@@ -3061,7 +3061,7 @@ class FirestoreService {
   async deleteCustomRole(roleId) {
     try {
       const email = auth.currentUser?.email;
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
       if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
         throw new Error('Only system administrators can delete custom roles');
       }
