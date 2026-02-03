@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
 import { safeFormatDate } from '../utils/dateUtils';
+import { toast } from 'react-hot-toast';
 
 const TeamManagement = () => {
   const { currentUser, currentRole } = useAuth();
@@ -44,6 +45,14 @@ const TeamManagement = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  const [editLeaveForm, setEditLeaveForm] = useState({
+    vacation: { total: 15, used: 0 },
+    sick: { total: 10, used: 0 },
+    personal: { total: 3, used: 0 }
+  });
+  const [savingLeave, setSavingLeave] = useState(false);
   const [loading, setLoading] = useState(true);
   
   const isHRManager = currentRole === 'hr_manager';
@@ -158,6 +167,51 @@ const TeamManagement = () => {
   const openEmployeeModal = (employee) => {
     setSelectedEmployee(employee);
     setShowEmployeeModal(true);
+  };
+
+  // Open edit modal for leave balances
+  const openEditModal = (employee) => {
+    setEditingEmployee(employee);
+    setEditLeaveForm({
+      vacation: { 
+        total: employee.leaveBalance?.vacation?.total || 15, 
+        used: employee.leaveBalance?.vacation?.used || 0 
+      },
+      sick: { 
+        total: employee.leaveBalance?.sick?.total || 10, 
+        used: employee.leaveBalance?.sick?.used || 0 
+      },
+      personal: { 
+        total: employee.leaveBalance?.personal?.total || 3, 
+        used: employee.leaveBalance?.personal?.used || 0 
+      }
+    });
+    setShowEditModal(true);
+  };
+
+  // Save leave balance changes
+  const saveLeaveBalances = async () => {
+    if (!editingEmployee) return;
+    setSavingLeave(true);
+    try {
+      await firestoreService.updateUserLeaveBalances(editingEmployee.email, editLeaveForm);
+      
+      // Update local state
+      setTeamMembers(prev => prev.map(m => 
+        m.email === editingEmployee.email 
+          ? { ...m, leaveBalance: editLeaveForm }
+          : m
+      ));
+      
+      toast.success(`Updated leave balances for ${editingEmployee.name}`);
+      setShowEditModal(false);
+      setEditingEmployee(null);
+    } catch (error) {
+      console.error('Error saving leave balances:', error);
+      toast.error('Failed to save leave balances');
+    } finally {
+      setSavingLeave(false);
+    }
   };
 
   return (
@@ -419,7 +473,11 @@ const TeamManagement = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                      <button 
+                        onClick={() => openEditModal(member)}
+                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                        title="Edit Leave Balances"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
@@ -625,6 +683,189 @@ const TeamManagement = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Leave Balances Modal */}
+      {showEditModal && editingEmployee && createPortal(
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#f5f5f7] dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-black/5 dark:border-white/10">
+            {/* Modal Header */}
+            <div className="bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                    <Calendar className="w-5 h-5 text-white" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Edit Leave Balances</h2>
+                    <p className="text-[13px] text-[#86868b]">{editingEmployee.name}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingEmployee(null);
+                  }} 
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  <XCircle className="w-5 h-5 text-[#86868b]" strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Vacation Days */}
+              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
+                  <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Vacation Days</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Allotted</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editLeaveForm.vacation.total}
+                      onChange={(e) => setEditLeaveForm(prev => ({
+                        ...prev,
+                        vacation: { ...prev.vacation, total: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1">Days Used</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={editLeaveForm.vacation.total}
+                      value={editLeaveForm.vacation.used}
+                      onChange={(e) => setEditLeaveForm(prev => ({
+                        ...prev,
+                        vacation: { ...prev.vacation, used: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-[#86868b] mt-2">
+                  Remaining: {editLeaveForm.vacation.total - editLeaveForm.vacation.used} days
+                </p>
+              </div>
+
+              {/* Sick Days */}
+              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-3 h-3 rounded-full bg-[#ff3b30]" />
+                  <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Sick Days</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Allotted</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editLeaveForm.sick.total}
+                      onChange={(e) => setEditLeaveForm(prev => ({
+                        ...prev,
+                        sick: { ...prev.sick, total: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1">Days Used</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={editLeaveForm.sick.total}
+                      value={editLeaveForm.sick.used}
+                      onChange={(e) => setEditLeaveForm(prev => ({
+                        ...prev,
+                        sick: { ...prev.sick, used: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-[#86868b] mt-2">
+                  Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days
+                </p>
+              </div>
+
+              {/* Personal Days */}
+              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-3 h-3 rounded-full bg-[#af52de]" />
+                  <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Personal Days</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Allotted</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editLeaveForm.personal.total}
+                      onChange={(e) => setEditLeaveForm(prev => ({
+                        ...prev,
+                        personal: { ...prev.personal, total: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1">Days Used</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={editLeaveForm.personal.total}
+                      value={editLeaveForm.personal.used}
+                      onChange={(e) => setEditLeaveForm(prev => ({
+                        ...prev,
+                        personal: { ...prev.personal, used: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-[#86868b] mt-2">
+                  Remaining: {editLeaveForm.personal.total - editLeaveForm.personal.used} days
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingEmployee(null);
+                  }}
+                  disabled={savingLeave}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveLeaveBalances}
+                  disabled={savingLeave}
+                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {savingLeave ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
               </div>
             </div>
           </div>

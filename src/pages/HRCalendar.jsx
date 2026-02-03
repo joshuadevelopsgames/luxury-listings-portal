@@ -29,7 +29,8 @@ import {
   Plane,
   Heart,
   ListFilter,
-  Check
+  Check,
+  Edit
 } from 'lucide-react';
 import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 
@@ -1058,9 +1059,32 @@ const HRCalendar = () => {
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <button className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
-                      View Details
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          // Find matching user in allUsers or use member data
+                          const user = allUsers.find(u => u.email === member.email) || {
+                            email: member.email,
+                            displayName: member.name,
+                            leaveBalances: {
+                              vacation: { total: member.totalVacationDays, used: member.usedVacationDays },
+                              sick: { total: member.totalSickDays, used: member.usedSickDays }
+                            }
+                          };
+                          startEditingUser(user);
+                          setShowBalanceEditor(true);
+                          if (allUsers.length === 0) {
+                            loadUsersWithBalances();
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                        View Details
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
