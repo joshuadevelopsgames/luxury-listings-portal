@@ -23,7 +23,7 @@ const widgetComponents = {
 
 // Widget loading skeleton
 const WidgetSkeleton = () => (
-  <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-black/5 dark:border-white/10 animate-pulse">
+  <div className="min-h-[280px] sm:min-h-[327px] bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
     <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
     <div className="space-y-3">
       <div className="h-4 w-full bg-black/5 dark:bg-white/5 rounded" />
@@ -153,12 +153,11 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
   };
 
   const gridContent = (
-    <div className={`w-full space-y-6 ${className}`}>
+    <div className={`w-full space-y-4 sm:space-y-6 ${className}`}>
       {rows.map((row, rowIndex) => (
         <div
           key={rowIndex}
-          className="grid w-full gap-6"
-          style={{ gridTemplateColumns: `repeat(${row.columnCount}, minmax(0, 1fr))` }}
+          className={`grid w-full gap-4 sm:gap-6 grid-cols-1 ${row.columnCount === 2 ? 'md:grid-cols-2' : row.columnCount === 3 ? 'md:grid-cols-2 lg:grid-cols-3' : row.columnCount >= 4 ? 'md:grid-cols-2 lg:grid-cols-4' : ''}`}
         >
           {row.widgets.map(({ widgetId, moduleId }) => {
             const WidgetComponent = widgetComponents[widgetId];
