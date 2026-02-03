@@ -109,10 +109,17 @@ const TasksPage = () => {
   const { currentUser, hasPermission } = useAuth();
   const { hasFeaturePermission } = usePermissions();
   
-  // Check permissions - support both old role-based and new feature permission system
-  const canCreateTasks = hasPermission(PERMISSIONS.CREATE_TASKS) || hasFeaturePermission(FEATURE_PERMISSIONS.CREATE_TASKS);
-  const canAssignTasks = hasPermission(PERMISSIONS.ASSIGN_TASKS);
-  const canViewAllTasks = hasPermission(PERMISSIONS.VIEW_ALL_TASKS);
+  // Get role-based permissions
+  const { getCurrentRolePermissions } = useAuth();
+  const rolePerms = getCurrentRolePermissions?.()?.permissions || {};
+  
+  // Check permissions - support role-based permissions AND permission system
+  const canCreateTasks = 
+    rolePerms.canCreateTasks === true || 
+    hasPermission(PERMISSIONS.CREATE_TASKS) || 
+    hasFeaturePermission(FEATURE_PERMISSIONS.CREATE_TASKS);
+  const canAssignTasks = rolePerms.canAssignTasks === true || hasPermission(PERMISSIONS.ASSIGN_TASKS);
+  const canViewAllTasks = rolePerms.canViewAllTasks === true || hasPermission(PERMISSIONS.VIEW_ALL_TASKS);
   const canDeleteAnyTask = hasPermission(PERMISSIONS.DELETE_ANY_TASK);
   const [showForm, setShowForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
