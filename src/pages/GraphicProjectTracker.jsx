@@ -25,7 +25,10 @@ import {
   Users,
   User,
   History,
-  Upload
+  Upload,
+  Palette,
+  MoreHorizontal,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -35,19 +38,58 @@ import { firestoreService } from '../services/firestoreService';
 import { toast } from 'react-hot-toast';
 import { format, parseISO, getYear } from 'date-fns';
 
-// Priority colors
+// Priority configuration with Apple-style colors
 const priorityConfig = {
-  high: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', label: 'High' },
-  medium: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400', label: 'Medium' },
-  low: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', label: 'Low' }
+  high: { 
+    bg: 'bg-[#ff3b30]/10 dark:bg-[#ff453a]/20', 
+    text: 'text-[#ff3b30] dark:text-[#ff453a]', 
+    label: 'High',
+    dot: 'bg-[#ff3b30]'
+  },
+  medium: { 
+    bg: 'bg-[#ff9500]/10 dark:bg-[#ff9f0a]/20', 
+    text: 'text-[#ff9500] dark:text-[#ff9f0a]', 
+    label: 'Medium',
+    dot: 'bg-[#ff9500]'
+  },
+  low: { 
+    bg: 'bg-[#34c759]/10 dark:bg-[#30d158]/20', 
+    text: 'text-[#34c759] dark:text-[#30d158]', 
+    label: 'Low',
+    dot: 'bg-[#34c759]'
+  }
 };
 
-// Status colors
+// Status configuration
 const statusConfig = {
-  not_started: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', label: 'Not Started', icon: Circle },
-  in_progress: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-400', label: 'In Progress', icon: Loader2 },
-  pending: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400', label: 'Pending', icon: Clock },
-  completed: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', label: 'Completed', icon: CheckCircle2 }
+  not_started: { 
+    bg: 'bg-[#8e8e93]/10 dark:bg-[#8e8e93]/20', 
+    text: 'text-[#8e8e93]', 
+    label: 'Not Started', 
+    icon: Circle,
+    color: '#8e8e93'
+  },
+  in_progress: { 
+    bg: 'bg-[#007aff]/10 dark:bg-[#0a84ff]/20', 
+    text: 'text-[#007aff] dark:text-[#0a84ff]', 
+    label: 'In Progress', 
+    icon: Loader2,
+    color: '#007aff'
+  },
+  pending: { 
+    bg: 'bg-[#ff9500]/10 dark:bg-[#ff9f0a]/20', 
+    text: 'text-[#ff9500] dark:text-[#ff9f0a]', 
+    label: 'Pending', 
+    icon: Clock,
+    color: '#ff9500'
+  },
+  completed: { 
+    bg: 'bg-[#34c759]/10 dark:bg-[#30d158]/20', 
+    text: 'text-[#34c759] dark:text-[#30d158]', 
+    label: 'Completed', 
+    icon: CheckCircle2,
+    color: '#34c759'
+  }
 };
 
 // Graphic team members (can be expanded)
@@ -69,7 +111,7 @@ const GraphicProjectTracker = () => {
   const [availableYears, setAvailableYears] = useState([currentYear]);
   
   // User filter - whose projects to show
-  const [userFilter, setUserFilter] = useState('mine'); // 'mine', 'all', or specific email
+  const [userFilter, setUserFilter] = useState('all'); // 'mine', 'all', or specific email
   
   // Sort preference - stored in localStorage
   const [sortOrder, setSortOrder] = useState(() => {
@@ -90,6 +132,7 @@ const GraphicProjectTracker = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [expandedProject, setExpandedProject] = useState(null);
   
   // Form state
   const [form, setForm] = useState({
@@ -346,68 +389,78 @@ const GraphicProjectTracker = () => {
   };
 
   const formatDate = (date) => {
-    if (!date) return '-';
+    if (!date) return null;
     try {
       const d = typeof date === 'string' ? parseISO(date) : date.toDate?.() || new Date(date);
-      return format(d, 'MMM d, yyyy');
+      return format(d, 'MMM d');
     } catch {
-      return '-';
+      return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-[28px] sm:text-[34px] font-bold text-[#1d1d1f] dark:text-white tracking-tight">
-              Team Projects
-            </h1>
-            <p className="text-[15px] text-[#86868b] mt-1">
-              Design Team
-            </p>
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000]">
+      {/* Header with backdrop blur */}
+      <div className="sticky top-0 z-30 bg-[#f5f5f7]/80 dark:bg-[#000000]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#af52de] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#af52de]/25">
+                <Palette className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1d1d1f] dark:text-white tracking-tight">
+                  Team Projects
+                </h1>
+                <p className="text-[13px] text-[#86868b]">
+                  Design Team • {stats.total} projects
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Admin Import Button */}
+              {isSystemAdmin && (
+                <button
+                  onClick={handleImportFromExcel}
+                  disabled={importing}
+                  className="h-10 px-4 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[13px] font-medium hover:bg-[#ff9500]/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  <span className="hidden sm:inline">{importing ? 'Importing...' : 'Import'}</span>
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowAddModal(true);
+                }}
+                className="h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Project</span>
+              </button>
+            </div>
           </div>
-          {/* Admin Import Button */}
-          {isSystemAdmin && (
-            <button
-              onClick={handleImportFromExcel}
-              disabled={importing}
-              className="h-11 px-5 rounded-xl bg-[#ff9500] text-white text-[14px] font-medium shadow-lg shadow-[#ff9500]/25 hover:bg-[#ff9f0a] transition-all flex items-center gap-2 disabled:opacity-50"
-            >
-              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              {importing ? 'Importing...' : `Import ${importData.length} Projects`}
-            </button>
-          )}
-          <button
-            onClick={() => {
-              resetForm();
-              setShowAddModal(true);
-            }}
-            className="h-11 px-5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Project
-          </button>
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Year Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {availableYears.map(year => (
             <button
               key={year}
               onClick={() => setSelectedYear(year)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-medium transition-all whitespace-nowrap ${
                 selectedYear === year
-                  ? 'bg-[#0071e3] text-white shadow-lg shadow-[#0071e3]/25'
-                  : 'bg-white dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/15'
+                  ? 'bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] shadow-lg'
+                  : 'bg-white dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 border border-black/5 dark:border-white/10'
               }`}
             >
               {year === currentYear ? (
                 <>
                   <Calendar className="w-4 h-4" />
-                  {year} (Current)
+                  {year}
                 </>
               ) : (
                 <>
@@ -421,31 +474,56 @@ const GraphicProjectTracker = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[11px] uppercase tracking-wider text-[#86868b] mb-1">Total</p>
-            <p className="text-[24px] font-bold text-[#1d1d1f] dark:text-white">{stats.total}</p>
+          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-[#1d1d1f]/10 dark:bg-white/10 flex items-center justify-center">
+                <Palette className="w-3.5 h-3.5 text-[#1d1d1f] dark:text-white" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Total</p>
+            </div>
+            <p className="text-[28px] font-bold text-[#1d1d1f] dark:text-white">{stats.total}</p>
           </div>
-          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[11px] uppercase tracking-wider text-[#86868b] mb-1">Completed</p>
-            <p className="text-[24px] font-bold text-[#34c759]">{stats.completed}</p>
+          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-[#34c759]/10 flex items-center justify-center">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#34c759]" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Done</p>
+            </div>
+            <p className="text-[28px] font-bold text-[#34c759]">{stats.completed}</p>
           </div>
-          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[11px] uppercase tracking-wider text-[#86868b] mb-1">In Progress</p>
-            <p className="text-[24px] font-bold text-[#007aff]">{stats.inProgress}</p>
+          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-[#007aff]/10 flex items-center justify-center">
+                <Loader2 className="w-3.5 h-3.5 text-[#007aff]" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Active</p>
+            </div>
+            <p className="text-[28px] font-bold text-[#007aff]">{stats.inProgress}</p>
           </div>
-          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[11px] uppercase tracking-wider text-[#86868b] mb-1">Pending</p>
-            <p className="text-[24px] font-bold text-[#ff9500]">{stats.pending}</p>
+          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-[#ff9500]/10 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-[#ff9500]" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Pending</p>
+            </div>
+            <p className="text-[28px] font-bold text-[#ff9500]">{stats.pending}</p>
           </div>
-          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[11px] uppercase tracking-wider text-[#86868b] mb-1">Total Hours</p>
-            <p className="text-[24px] font-bold text-[#af52de]">{stats.totalHours.toFixed(1)}</p>
+          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-[#af52de]/10 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-[#af52de]" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Hours</p>
+            </div>
+            <p className="text-[28px] font-bold text-[#af52de]">{stats.totalHours.toFixed(0)}</p>
           </div>
         </div>
 
         {/* Filters Bar */}
-        <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-black/5 dark:border-white/10">
-          <div className="flex flex-col lg:flex-row gap-4">
+        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+          <div className="flex flex-col lg:flex-row gap-3">
             {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
@@ -459,52 +537,49 @@ const GraphicProjectTracker = () => {
             </div>
             
             {/* User Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] text-[#86868b] whitespace-nowrap">View:</span>
-              <div className="flex gap-1">
+            <div className="flex items-center gap-1 overflow-x-auto">
+              <button
+                onClick={() => setUserFilter('mine')}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
+                  userFilter === 'mine'
+                    ? 'bg-[#0071e3] text-white'
+                    : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                Mine
+              </button>
+              {otherTeamMembers.map(member => (
                 <button
-                  onClick={() => setUserFilter('mine')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
-                    userFilter === 'mine'
+                  key={member.email}
+                  onClick={() => setUserFilter(member.email)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
+                    userFilter === member.email
                       ? 'bg-[#0071e3] text-white'
                       : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
                   }`}
                 >
-                  <User className="w-3.5 h-3.5" />
-                  My Projects
+                  {member.name}
                 </button>
-                {otherTeamMembers.map(member => (
-                  <button
-                    key={member.email}
-                    onClick={() => setUserFilter(member.email)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
-                      userFilter === member.email
-                        ? 'bg-[#0071e3] text-white'
-                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                    }`}
-                  >
-                    {member.name}'s
-                  </button>
-                ))}
-                <button
-                  onClick={() => setUserFilter('all')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
-                    userFilter === 'all'
-                      ? 'bg-[#0071e3] text-white'
-                      : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                  }`}
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  All
-                </button>
-              </div>
+              ))}
+              <button
+                onClick={() => setUserFilter('all')}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
+                  userFilter === 'all'
+                    ? 'bg-[#0071e3] text-white'
+                    : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                All
+              </button>
             </div>
             
             {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+              className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] cursor-pointer"
             >
               <option value="all">All Status</option>
               <option value="not_started">Not Started</option>
@@ -516,93 +591,84 @@ const GraphicProjectTracker = () => {
             {/* Sort Toggle */}
             <button
               onClick={() => setSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest')}
-              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-black/5 dark:bg-white/10 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-all"
+              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-black/5 dark:bg-white/10 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-all whitespace-nowrap"
             >
               {sortOrder === 'newest' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
-              {sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}
+              {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
             </button>
           </div>
         </div>
 
         {/* Projects List */}
-        <div className="bg-white dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center">
-              <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-[#0071e3]" />
-              <p className="text-[14px] text-[#86868b]">Loading projects...</p>
+        {loading ? (
+          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-12 text-center">
+            <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-[#0071e3]" />
+            <p className="text-[14px] text-[#86868b]">Loading projects...</p>
+          </div>
+        ) : filteredProjects.length === 0 ? (
+          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#86868b]/10 flex items-center justify-center">
+              <Palette className="w-8 h-8 text-[#86868b]" />
             </div>
-          ) : filteredProjects.length === 0 ? (
-            <div className="p-12 text-center">
-              <Calendar className="w-12 h-12 mx-auto mb-3 text-[#86868b] opacity-50" />
-              <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mb-1">No projects found</p>
-              <p className="text-[13px] text-[#86868b]">
-                {searchQuery ? 'Try adjusting your search' : 'Add a new project to get started'}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-black/5 dark:border-white/10">
-                    <th className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Client</th>
-                    <th className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Task</th>
-                    <th className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Priority</th>
-                    <th className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Status</th>
-                    <th className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Start</th>
-                    <th className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-[#86868b] font-medium">End</th>
-                    <th className="text-left px-4 py-3 text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Hours</th>
-                    <th className="text-right px-4 py-3 text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProjects.map((project) => {
-                    const status = statusConfig[project.status] || statusConfig.not_started;
-                    const priority = priorityConfig[project.priority] || priorityConfig.medium;
-                    const StatusIcon = status.icon;
-                    
-                    return (
-                      <tr 
-                        key={project.id}
-                        className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+            <p className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">No projects found</p>
+            <p className="text-[14px] text-[#86868b] mb-4">
+              {searchQuery ? 'Try adjusting your search' : 'Add a new project to get started'}
+            </p>
+            {!searchQuery && (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowAddModal(true);
+                }}
+                className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Add Project
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredProjects.map((project) => {
+              const status = statusConfig[project.status] || statusConfig.not_started;
+              const priority = priorityConfig[project.priority] || priorityConfig.medium;
+              const StatusIcon = status.icon;
+              const isExpanded = expandedProject === project.id;
+              
+              return (
+                <div 
+                  key={project.id}
+                  className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-white/5 transition-all"
+                >
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-start gap-4">
+                      {/* Status Icon */}
+                      <div 
+                        className={`w-10 h-10 rounded-xl ${status.bg} flex items-center justify-center flex-shrink-0`}
                       >
-                        <td className="px-4 py-3">
-                          <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{project.client || '-'}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-[14px] text-[#1d1d1f] dark:text-white max-w-[300px] truncate">{project.task || '-'}</p>
-                          {project.notes && (
-                            <p className="text-[12px] text-[#86868b] mt-0.5 max-w-[300px] truncate">{project.notes}</p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[12px] font-medium ${priority.bg} ${priority.text}`}>
-                            {priority.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <select
-                            value={project.status}
-                            onChange={(e) => handleStatusChange(project, e.target.value)}
-                            className={`appearance-none cursor-pointer px-3 py-1.5 pr-8 rounded-lg text-[12px] font-medium border-0 focus:outline-none focus:ring-2 focus:ring-[#0071e3] ${status.bg} ${status.text}`}
-                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2386868b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '14px' }}
-                          >
-                            <option value="not_started">Not Started</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="pending">Pending</option>
-                            <option value="completed">Completed</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-[13px] text-[#86868b]">{formatDate(project.startDate)}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-[13px] text-[#86868b]">{formatDate(project.endDate)}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-[13px] text-[#1d1d1f] dark:text-white font-medium">{project.hours || '-'}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1">
+                        <StatusIcon className={`w-5 h-5 ${status.text}`} />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">
+                                {project.client || 'No Client'}
+                              </h3>
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium ${priority.bg} ${priority.text}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${priority.dot}`}></span>
+                                {priority.label}
+                              </span>
+                            </div>
+                            <p className="text-[14px] text-[#1d1d1f] dark:text-white/90 line-clamp-1">
+                              {project.task || 'No task description'}
+                            </p>
+                          </div>
+                          
+                          {/* Actions */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             <button
                               onClick={() => openEditModal(project)}
                               className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
@@ -613,18 +679,72 @@ const GraphicProjectTracker = () => {
                               onClick={() => handleDeleteProject(project)}
                               className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             >
-                              <Trash2 className="w-4 h-4 text-red-500" />
+                              <Trash2 className="w-4 h-4 text-[#ff3b30]" />
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                        </div>
+                        
+                        {/* Meta Info */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
+                          {/* Status Dropdown */}
+                          <select
+                            value={project.status}
+                            onChange={(e) => handleStatusChange(project, e.target.value)}
+                            className={`appearance-none cursor-pointer px-2.5 py-1 pr-7 rounded-lg text-[12px] font-medium border-0 focus:outline-none focus:ring-2 focus:ring-[#0071e3] ${status.bg} ${status.text}`}
+                            style={{ 
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2386868b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, 
+                              backgroundRepeat: 'no-repeat', 
+                              backgroundPosition: 'right 6px center', 
+                              backgroundSize: '12px' 
+                            }}
+                          >
+                            <option value="not_started">Not Started</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                          
+                          {formatDate(project.startDate) && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-[#86868b]">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>{formatDate(project.startDate)}</span>
+                              {formatDate(project.endDate) && (
+                                <span>→ {formatDate(project.endDate)}</span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {project.hours > 0 && (
+                            <div className="flex items-center gap-1.5 text-[12px] text-[#86868b]">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{project.hours}h</span>
+                            </div>
+                          )}
+                          
+                          {project.notes && (
+                            <button
+                              onClick={() => setExpandedProject(isExpanded ? null : project.id)}
+                              className="flex items-center gap-1 text-[12px] text-[#0071e3] hover:underline"
+                            >
+                              {isExpanded ? 'Hide notes' : 'Show notes'}
+                            </button>
+                          )}
+                        </div>
+                        
+                        {/* Expanded Notes */}
+                        {isExpanded && project.notes && (
+                          <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/10">
+                            <p className="text-[13px] text-[#86868b]">{project.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}
