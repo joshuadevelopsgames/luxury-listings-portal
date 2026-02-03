@@ -40,6 +40,7 @@ import { db } from '../firebase';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import ClientLink from '../components/ui/ClientLink';
+import LeadLink from '../components/crm/LeadLink';
 
 const CRMPage = () => {
   const { currentUser, currentRole, hasPermission } = useAuth();
@@ -596,6 +597,51 @@ const CRMPage = () => {
     });
   };
 
+  // Handle edit from LeadDetailModal
+  const handleEditLead = async (updatedLead) => {
+    if (!updatedLead?.id) return;
+
+    try {
+      // Update the client data in Google Sheets via Google Apps Script
+      const params = new URLSearchParams({
+        action: 'updateLead',
+        leadData: JSON.stringify({
+          id: updatedLead.id,
+          contactName: updatedLead.contactName,
+          email: updatedLead.email,
+          phone: updatedLead.phone,
+          instagram: updatedLead.instagram,
+          organization: updatedLead.organization,
+          website: updatedLead.website,
+          notes: updatedLead.notes,
+          status: updatedLead.status
+        })
+      });
+
+      if (crmService.config?.scriptUrl) {
+        await fetch(`${crmService.config.scriptUrl}?${params.toString()}`);
+      }
+
+      // Update in local arrays
+      const updateClientInArray = (arr, setArr) => {
+        setArr(prev => prev.map(c => c.id === updatedLead.id ? { ...c, ...updatedLead } : c));
+      };
+
+      updateClientInArray(warmLeads, setWarmLeads);
+      updateClientInArray(contactedClients, setContactedClients);
+      updateClientInArray(coldLeads, setColdLeads);
+
+      // Save to Firebase
+      await saveCRMDataToFirebase();
+
+      showToast(`✅ Lead "${updatedLead.contactName}" updated successfully!`);
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      showToast(`❌ Error updating lead: ${error.message}`, 'error');
+      throw error;
+    }
+  };
+
   // Delete lead
   const deleteLead = async (client) => {
     if (!client) return;
@@ -723,7 +769,13 @@ const CRMPage = () => {
                 <ClientLink client={client} showId />
               </h4>
             ) : (
-              <h4 className="font-medium text-gray-900 dark:text-white">{client.contactName}</h4>
+              <h4 className="font-medium">
+                <LeadLink 
+                  lead={client} 
+                  onEdit={handleEditLead}
+                  onDelete={deleteLead}
+                />
+              </h4>
             )}
             
             {/* Organization - New prominent field */}
@@ -816,7 +868,13 @@ const CRMPage = () => {
             <ClientLink client={client} showId />
           </div>
         ) : (
-          <p className="font-medium text-gray-900 dark:text-white">{client.contactName}</p>
+          <div className="font-medium">
+            <LeadLink 
+              lead={client} 
+              onEdit={handleEditLead}
+              onDelete={deleteLead}
+            />
+          </div>
         )}
         {client.organization && (
           <p className="text-xs text-gray-500 dark:text-gray-400">{client.organization}</p>
