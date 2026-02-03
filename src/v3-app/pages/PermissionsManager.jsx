@@ -177,19 +177,35 @@ const PermissionsManager = () => {
   // Check if current user is system admin
   const isSystemAdmin = SYSTEM_ADMINS.includes(currentUser?.email?.toLowerCase());
 
-  // Load all approved users
+  // Load all approved users (including system admins who may not be in approved_users)
   useEffect(() => {
     const loadUsers = async () => {
       try {
         setLoading(true);
         const approvedUsers = await firestoreService.getApprovedUsers();
-        setUsers(approvedUsers);
+        
+        // Ensure system admins are included even if not in approved_users
+        const existingEmails = new Set(approvedUsers.map(u => u.email?.toLowerCase()));
+        const systemAdminUsers = SYSTEM_ADMINS
+          .filter(email => !existingEmails.has(email.toLowerCase()))
+          .map(email => ({
+            email,
+            displayName: email === 'demo@luxurylistings.app' ? 'Demo Admin' : 'System Admin',
+            role: 'admin',
+            primaryRole: 'admin',
+            roles: ['admin'],
+            isApproved: true,
+            department: 'Administration'
+          }));
+        
+        const allUsers = [...approvedUsers, ...systemAdminUsers];
+        setUsers(allUsers);
 
         // Load permissions for each user (pages + features)
         const permissionsMap = {};
         const featurePermissionsMap = {};
         const rolesMap = {};
-        for (const user of approvedUsers) {
+        for (const user of allUsers) {
           try {
             const result = await firestoreService.getUserPermissions(user.email);
             permissionsMap[user.email] = result?.pages || [];
@@ -501,6 +517,11 @@ const PermissionsManager = () => {
     user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Count non-admin users
+  const regularUserCount = users.filter(user => 
+    !SYSTEM_ADMINS.includes(user.email?.toLowerCase())
+  ).length;
+
   if (!isSystemAdmin) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -522,9 +543,16 @@ const PermissionsManager = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
-            Permissions Manager
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
+              Permissions Manager
+            </h1>
+            {!loading && (
+              <span className="px-3 py-1 rounded-full bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-semibold">
+                {regularUserCount} {regularUserCount === 1 ? 'user' : 'users'}
+              </span>
+            )}
+          </div>
           <p className="text-[15px] text-[#86868b]">
             Manage users and control which pages they can access
           </p>
