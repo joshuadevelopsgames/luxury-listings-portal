@@ -3469,28 +3469,6 @@ class FirestoreService {
         updatedAt: serverTimestamp()
       });
 
-      // Notify the other party
-      const isFromDeveloper = messageData.senderEmail === 'joshua@smmluxurylistings.com';
-      if (isFromDeveloper) {
-        // Notify user
-        await this.createNotification({
-          userEmail: chat.userEmail,
-          title: '💬 New Message from Joshua',
-          message: `"${messageData.message.substring(0, 50)}..."`,
-          type: 'chat_message',
-          link: '/feedback'
-        });
-      } else {
-        // Notify developer
-        await this.createNotification({
-          userEmail: 'joshua@smmluxurylistings.com',
-          title: '💬 New Chat Message',
-          message: `${messageData.senderName}: "${messageData.message.substring(0, 50)}..."`,
-          type: 'chat_message',
-          link: '/admin/chats'
-        });
-      }
-
       console.log('✅ Message added to chat:', chatId);
     } catch (error) {
       console.error('❌ Error adding message to chat:', error);
