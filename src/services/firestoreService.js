@@ -299,6 +299,27 @@ class FirestoreService {
     }
   }
 
+  // Listen for changes to a specific approved user's profile
+  onApprovedUserChange(email, callback) {
+    if (!email) {
+      return () => {}; // Return empty unsubscribe
+    }
+    
+    const normalizedEmail = email.toLowerCase().trim();
+    const userDocRef = doc(db, this.collections.APPROVED_USERS, normalizedEmail);
+    
+    return onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        callback({
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      }
+    }, (error) => {
+      console.error('❌ Error listening to user profile:', error);
+    });
+  }
+
   // Delete approved user
   async deleteApprovedUser(email) {
     try {

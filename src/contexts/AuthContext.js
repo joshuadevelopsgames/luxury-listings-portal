@@ -399,6 +399,44 @@ export function AuthProvider({ children }) {
     loadCurrentRole();
   }, [currentUser]);
 
+  // Listen for profile changes from Firestore (when admin updates user profile)
+  useEffect(() => {
+    if (!currentUser?.email || isSystemAdmin(currentUser.email)) return;
+
+    const unsubscribe = firestoreService.onApprovedUserChange(currentUser.email, (approvedUser) => {
+      if (!approvedUser) return;
+      
+      // Update current user with new profile data
+      setCurrentUser(prev => {
+        if (!prev) return prev;
+        
+        const updated = {
+          ...prev,
+          displayName: approvedUser.displayName || prev.displayName,
+          firstName: approvedUser.firstName || prev.firstName,
+          lastName: approvedUser.lastName || prev.lastName,
+          department: approvedUser.department || prev.department,
+          avatar: approvedUser.avatar || prev.avatar,
+          phone: approvedUser.phone || prev.phone,
+          location: approvedUser.location || prev.location,
+          bio: approvedUser.bio || prev.bio,
+          role: approvedUser.role || prev.role,
+          primaryRole: approvedUser.primaryRole || prev.primaryRole,
+          roles: approvedUser.roles || prev.roles,
+          customPermissions: approvedUser.customPermissions || prev.customPermissions || []
+        };
+        
+        // Also update localStorage cache
+        saveAuthToStorage(updated);
+        return updated;
+      });
+      
+      setUserData(prev => prev ? { ...prev, ...approvedUser } : approvedUser);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser?.email]);
+
   // Safety timeout - show app after 10s even if auth is stuck
   useEffect(() => {
     const timeout = setTimeout(() => {
