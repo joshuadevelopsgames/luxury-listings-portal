@@ -6,7 +6,7 @@
  * it's included in the base package or requires upgrade.
  */
 
-import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3, User } from 'lucide-react';
+import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3, User, Palette } from 'lucide-react';
 
 // ============================================================================
 // MODULE DEFINITIONS
@@ -97,7 +97,7 @@ export const modules = {
     description: 'Manage posting packages for @luxury_listings features',
     icon: Briefcase,
     routes: ['/posting-packages'],
-    widgets: [],
+    widgets: ['postsLogged'],
     navItem: {
       path: '/posting-packages',
       section: 'Content Team'
@@ -227,6 +227,20 @@ export const modules = {
     navItem: {
       path: '/workload',
       section: 'HR'
+    },
+    baseModule: false
+  },
+
+  'graphic-projects': {
+    id: 'graphic-projects',
+    name: 'Project Tracker',
+    description: 'Track graphic design projects and hours',
+    icon: Palette,
+    routes: ['/graphic-projects'],
+    widgets: [],
+    navItem: {
+      path: '/graphic-projects',
+      section: 'Content Team'
     },
     baseModule: false
   }

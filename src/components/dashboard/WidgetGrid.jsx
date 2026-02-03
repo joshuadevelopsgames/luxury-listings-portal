@@ -18,6 +18,7 @@ const widgetComponents = {
   deliverablesDue: lazy(() => import('../../modules/my-clients/widgets/DeliverablesDueWidget')),
   recentReports: lazy(() => import('../../modules/instagram-reports/widgets/RecentReportsWidget')),
   tasksSummary: lazy(() => import('./TasksSummaryWidget')),
+  postsLogged: lazy(() => import('../../modules/posts/widgets/PostsLoggedWidget')),
 };
 
 // Widget loading skeleton

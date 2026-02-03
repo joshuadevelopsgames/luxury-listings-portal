@@ -48,6 +48,7 @@ class FirestoreService {
     INSTAGRAM_REPORTS: 'instagram_reports',
     ERROR_REPORTS: 'error_reports',
     USER_DASHBOARD_PREFERENCES: 'user_dashboard_preferences',
+    GRAPHIC_PROJECTS: 'graphic_projects',
     CUSTOM_ROLES: 'custom_roles'
   };
 
@@ -3012,6 +3013,101 @@ class FirestoreService {
       return { success: true };
     } catch (error) {
       console.error('❌ Error removing Slack connection:', error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // GRAPHIC PROJECTS
+  // ============================================================================
+
+  /**
+   * Get all graphic projects
+   */
+  async getGraphicProjects() {
+    try {
+      const q = query(
+        collection(db, this.collections.GRAPHIC_PROJECTS),
+        orderBy('startDate', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error('❌ Error getting graphic projects:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add a graphic project
+   */
+  async addGraphicProject(projectData) {
+    try {
+      const docRef = await addDoc(collection(db, this.collections.GRAPHIC_PROJECTS), {
+        ...projectData,
+        createdAt: serverTimestamp()
+      });
+      console.log('✅ Graphic project added with ID:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Error adding graphic project:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a graphic project
+   */
+  async updateGraphicProject(projectId, projectData) {
+    try {
+      const docRef = doc(db, this.collections.GRAPHIC_PROJECTS, projectId);
+      await updateDoc(docRef, {
+        ...projectData,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Graphic project updated:', projectId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating graphic project:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a graphic project
+   */
+  async deleteGraphicProject(projectId) {
+    try {
+      await deleteDoc(doc(db, this.collections.GRAPHIC_PROJECTS, projectId));
+      console.log('✅ Graphic project deleted:', projectId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting graphic project:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk import graphic projects (for Excel import)
+   */
+  async bulkImportGraphicProjects(projects) {
+    try {
+      const results = [];
+      for (const project of projects) {
+        const docRef = await addDoc(collection(db, this.collections.GRAPHIC_PROJECTS), {
+          ...project,
+          createdAt: serverTimestamp(),
+          importedAt: serverTimestamp()
+        });
+        results.push(docRef.id);
+      }
+      console.log(`✅ Bulk imported ${results.length} graphic projects`);
+      return results;
+    } catch (error) {
+      console.error('❌ Error bulk importing graphic projects:', error);
       throw error;
     }
   }
