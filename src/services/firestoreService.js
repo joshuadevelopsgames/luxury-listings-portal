@@ -3414,14 +3414,17 @@ class FirestoreService {
       const docRef = await addDoc(collection(db, this.collections.FEEDBACK), feedback);
       console.log('✅ Feedback created:', docRef.id);
 
-      // Create notification for developer
-      await this.createNotification({
-        userEmail: 'joshua@smmluxurylistings.com',
-        title: feedbackData.type === 'bug' ? '🐛 New Bug Report' : '💡 New Feature Request',
-        message: `${feedbackData.userName || feedbackData.userEmail} submitted: "${feedbackData.title}"`,
-        type: feedbackData.type === 'bug' ? 'bug_report' : 'feature_request',
-        link: '/admin/feedback'
-      });
+      // Create notifications for IT support users
+      const itSupportEmails = ['joshua@smmluxurylistings.com', 'jrsschroeder@gmail.com'];
+      for (const email of itSupportEmails) {
+        await this.createNotification({
+          userEmail: email,
+          title: feedbackData.type === 'bug' ? '🐛 New Bug Report' : '💡 New Feature Request',
+          message: `${feedbackData.userName || feedbackData.userEmail} submitted: "${feedbackData.title}"`,
+          type: feedbackData.type === 'bug' ? 'bug_report' : 'feature_request',
+          link: '/it-support'
+        });
+      }
 
       return docRef.id;
     } catch (error) {
@@ -3535,14 +3538,17 @@ class FirestoreService {
       const docRef = await addDoc(collection(db, this.collections.FEEDBACK_CHATS), chat);
       console.log('✅ Feedback chat created:', docRef.id);
 
-      // Create notification for developer
-      await this.createNotification({
-        userEmail: 'joshua@smmluxurylistings.com',
-        title: '💬 New Chat Started',
-        message: `${chatData.userName || chatData.userEmail} wants to chat: "${chatData.initialMessage.substring(0, 50)}..."`,
-        type: 'chat_started',
-        link: '/admin/chats'
-      });
+      // Create notifications for IT support users
+      const itSupportEmails = ['joshua@smmluxurylistings.com', 'jrsschroeder@gmail.com'];
+      for (const email of itSupportEmails) {
+        await this.createNotification({
+          userEmail: email,
+          title: '💬 New Chat Started',
+          message: `${chatData.userName || chatData.userEmail} wants to chat: "${chatData.initialMessage.substring(0, 50)}..."`,
+          type: 'chat_started',
+          link: '/it-support'
+        });
+      }
 
       return docRef.id;
     } catch (error) {

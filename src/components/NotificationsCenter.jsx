@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
-import { Bell, Check, X, MessageSquare, Calendar, CheckCircle, AlertCircle, Instagram } from 'lucide-react';
+import { Bell, Check, X, MessageSquare, Calendar, CheckCircle, AlertCircle, Instagram, Bug, Lightbulb } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useNavigate } from 'react-router-dom';
@@ -95,6 +95,13 @@ const NotificationsCenter = () => {
       // Instagram reports
       case 'instagram_report_reminder':
         return <Instagram className="w-4 h-4 text-pink-500" />;
+      // Feedback & Support
+      case 'bug_report':
+        return <Bug className="w-4 h-4 text-[#ff3b30]" />;
+      case 'feature_request':
+        return <Lightbulb className="w-4 h-4 text-[#ff9500]" />;
+      case 'chat_started':
+        return <MessageSquare className="w-4 h-4 text-[#5856d6]" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-600" />;
     }
