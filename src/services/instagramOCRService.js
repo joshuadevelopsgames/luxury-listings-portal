@@ -310,6 +310,57 @@ class InstagramOCRService {
       metrics.shares = this.parseNumber(sharesMatch[1]);
     }
 
+    // === LIKES ===
+    const likesMatch = text.match(/Likes?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Likes?/i);
+    if (likesMatch) {
+      metrics.likes = this.parseNumber(likesMatch[1]);
+    }
+
+    // === COMMENTS ===
+    const commentsMatch = text.match(/Comments?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Comments?/i);
+    if (commentsMatch) {
+      metrics.comments = this.parseNumber(commentsMatch[1]);
+    }
+
+    // === REPOSTS ===
+    const repostsMatch = text.match(/Reposts?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Reposts?/i);
+    if (repostsMatch) {
+      metrics.reposts = this.parseNumber(repostsMatch[1]);
+    }
+
+    // === PROFILE ACTIVITY (total, separate from profile visits) ===
+    const profileActivityMatch = text.match(/Profile\s*activity[^0-9]*([0-9,]+)/i) ||
+                                 text.match(/([0-9,]+)\s*[\n\s]*Profile\s*activity/i);
+    if (profileActivityMatch) {
+      metrics.profileActivity = this.parseNumber(profileActivityMatch[1]);
+    }
+
+    // === EXTERNAL LINK TAPS CHANGE % ===
+    const linkTapsChangeMatch = text.match(/External\s*link\s*taps?[^0-9]*([+-]?[0-9.]+%)/i) ||
+                                text.match(/link\s*taps?[^0-9]*\d+[^0-9]*([+-][0-9.]+%)/i);
+    if (linkTapsChangeMatch) {
+      metrics.externalLinkTapsChange = linkTapsChangeMatch[1];
+    }
+
+    // === % FROM ADS (context-aware: Views vs Interactions) ===
+    const low = text.toLowerCase();
+    const viewsIdx = low.indexOf('views');
+    if (viewsIdx >= 0 && interactionsIdx >= 0) {
+      // Views section: from "views" to "interactions"
+      const viewsSection = text.slice(viewsIdx, interactionsIdx);
+      const viewsAdsMatch = viewsSection.match(/([0-9.]+)\s*%\s*from\s*ads/i);
+      if (viewsAdsMatch) metrics.viewsFromAdsPercent = parseFloat(viewsAdsMatch[1]);
+      
+      // Interactions section: from "interactions" onwards
+      const interactionsSection = text.slice(interactionsIdx);
+      const interactionsAdsMatch = interactionsSection.match(/([0-9.]+)\s*%\s*from\s*ads/i);
+      if (interactionsAdsMatch) metrics.interactionsFromAdsPercent = parseFloat(interactionsAdsMatch[1]);
+    } else {
+      // Fallback: just grab any "% from ads"
+      const adsMatch = text.match(/([0-9.]+)\s*%\s*from\s*ads/i);
+      if (adsMatch) metrics.fromAdsPercent = parseFloat(adsMatch[1]);
+    }
+
     // === IMPRESSIONS (total times content was seen) ===
     const impressionsMatch = text.match(/Impressions?\s*[\n\s]*([0-9,]+)/i) || text.match(/([0-9,]+)\s*Impressions?/i);
     if (impressionsMatch) {
