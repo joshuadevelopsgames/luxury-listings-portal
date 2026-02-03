@@ -524,9 +524,9 @@ const ClientProfilesList = () => {
           <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-black/[0.02] dark:bg-white/[0.02] border-b border-black/5 dark:border-white/5 text-[11px] font-semibold text-[#86868b] uppercase tracking-wide">
             <div className="col-span-4">Client</div>
             <div className="col-span-2">Package</div>
-            <div className="col-span-3">Manager</div>
+            <div className="col-span-2">Manager</div>
             <div className="col-span-2">Posts</div>
-            <div className="col-span-1">Actions</div>
+            <div className="col-span-2">Socials</div>
           </div>
           {/* List Items */}
           <div className="divide-y divide-black/5 dark:divide-white/5">
@@ -573,7 +573,7 @@ const ClientProfilesList = () => {
                   </div>
 
                   {/* Manager */}
-                  <div className="col-span-3 flex items-center">
+                  <div className="col-span-2 flex items-center">
                     {manager ? (
                       <span className="text-[12px] text-[#34c759] font-medium truncate">
                         {manager.displayName || manager.email}
@@ -590,33 +590,17 @@ const ClientProfilesList = () => {
                     </span>
                   </div>
 
-                  {/* Actions */}
-                  <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {(canManageClients || canEditPackages) && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedClient(client);
-                          setEditForm({
-                            clientName: client.clientName || '',
-                            clientEmail: client.clientEmail || '',
-                            phone: client.phone || '',
-                            notes: client.notes || '',
-                            packageType: client.packageType || 'Standard',
-                            packageSize: client.packageSize || 10,
-                            postsUsed: client.postsUsed || 0,
-                            postsRemaining: client.postsRemaining || 0,
-                            paymentStatus: client.paymentStatus || 'Pending',
-                            platforms: client.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
-                          });
-                          setShowEditModal(true);
-                        }}
-                        className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                        title="Edit client"
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-[#0071e3]" />
-                      </button>
-                    )}
+                  {/* Social Accounts */}
+                  <div className="col-span-2 flex items-center gap-1.5">
+                    {client.platforms?.instagram && <Instagram className="w-4 h-4 text-[#E4405F]" />}
+                    {client.platforms?.facebook && <Facebook className="w-4 h-4 text-[#1877F2]" />}
+                    {client.platforms?.linkedin && <Linkedin className="w-4 h-4 text-[#0A66C2]" />}
+                    {client.platforms?.youtube && <Youtube className="w-4 h-4 text-[#FF0000]" />}
+                    {client.platforms?.tiktok && <TikTokIcon className="w-4 h-4 text-[#000000] dark:text-white" />}
+                    {client.platforms?.x && <XIcon className="w-4 h-4 text-[#000000] dark:text-white" />}
+                    {!client.platforms || !Object.values(client.platforms).some(v => v) ? (
+                      <span className="text-[11px] text-[#86868b]">—</span>
+                    ) : null}
                     {canManageClients && (
                       <button
                         onClick={(e) => {
