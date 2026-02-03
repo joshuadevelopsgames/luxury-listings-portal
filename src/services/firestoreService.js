@@ -50,6 +50,8 @@ class FirestoreService {
     USER_DASHBOARD_PREFERENCES: 'user_dashboard_preferences',
     GRAPHIC_PROJECTS: 'graphic_projects',
     PROJECT_REQUESTS: 'project_requests',
+    FEEDBACK: 'feedback',
+    FEEDBACK_CHATS: 'feedback_chats',
     CUSTOM_ROLES: 'custom_roles'
   };
 
@@ -3253,6 +3255,262 @@ class FirestoreService {
       console.log('✅ Project request rejected:', requestId);
     } catch (error) {
       console.error('❌ Error rejecting project request:', error);
+      throw error;
+    }
+  }
+
+  // ============ FEEDBACK & SUPPORT ============
+
+  /**
+   * Create feedback (bug report or feature request)
+   */
+  async createFeedback(feedbackData) {
+    try {
+      const feedback = {
+        type: feedbackData.type, // 'bug' or 'feature'
+        title: feedbackData.title,
+        description: feedbackData.description,
+        priority: feedbackData.priority || 'medium',
+        userEmail: feedbackData.userEmail,
+        userName: feedbackData.userName,
+        status: 'open', // open, in_progress, resolved, closed
+        url: feedbackData.url || '',
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, this.collections.FEEDBACK), feedback);
+      console.log('✅ Feedback created:', docRef.id);
+
+      // Create notification for developer
+      await this.createNotification({
+        userEmail: 'joshua@smmluxurylistings.com',
+        title: feedbackData.type === 'bug' ? '🐛 New Bug Report' : '💡 New Feature Request',
+        message: `${feedbackData.userName || feedbackData.userEmail} submitted: "${feedbackData.title}"`,
+        type: feedbackData.type === 'bug' ? 'bug_report' : 'feature_request',
+        link: '/admin/feedback'
+      });
+
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Error creating feedback:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all feedback (for admin)
+   */
+  async getAllFeedback() {
+    try {
+      const q = query(
+        collection(db, this.collections.FEEDBACK),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(q);
+      const feedback = [];
+      snapshot.forEach(doc => {
+        feedback.push({ id: doc.id, ...doc.data() });
+      });
+      
+      return feedback;
+    } catch (error) {
+      console.error('❌ Error getting feedback:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update feedback status
+   */
+  async updateFeedbackStatus(feedbackId, status) {
+    try {
+      await updateDoc(doc(db, this.collections.FEEDBACK, feedbackId), {
+        status,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Feedback status updated:', feedbackId, status);
+    } catch (error) {
+      console.error('❌ Error updating feedback:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a feedback chat (chat with developer)
+   */
+  async createFeedbackChat(chatData) {
+    try {
+      const chat = {
+        userEmail: chatData.userEmail,
+        userName: chatData.userName,
+        status: 'open', // open, closed
+        messages: [{
+          message: chatData.initialMessage,
+          senderEmail: chatData.userEmail,
+          senderName: chatData.userName,
+          timestamp: new Date().toISOString()
+        }],
+        lastMessage: chatData.initialMessage,
+        messageCount: 1,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, this.collections.FEEDBACK_CHATS), chat);
+      console.log('✅ Feedback chat created:', docRef.id);
+
+      // Create notification for developer
+      await this.createNotification({
+        userEmail: 'joshua@smmluxurylistings.com',
+        title: '💬 New Chat Started',
+        message: `${chatData.userName || chatData.userEmail} wants to chat: "${chatData.initialMessage.substring(0, 50)}..."`,
+        type: 'chat_started',
+        link: '/admin/chats'
+      });
+
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Error creating feedback chat:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get feedback chats for a user
+   */
+  async getFeedbackChats(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.FEEDBACK_CHATS),
+        where('userEmail', '==', userEmail),
+        orderBy('updatedAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(q);
+      const chats = [];
+      snapshot.forEach(doc => {
+        chats.push({ id: doc.id, ...doc.data() });
+      });
+      
+      return chats;
+    } catch (error) {
+      console.error('❌ Error getting feedback chats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all feedback chats (for admin/developer)
+   */
+  async getAllFeedbackChats() {
+    try {
+      const q = query(
+        collection(db, this.collections.FEEDBACK_CHATS),
+        orderBy('updatedAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(q);
+      const chats = [];
+      snapshot.forEach(doc => {
+        chats.push({ id: doc.id, ...doc.data() });
+      });
+      
+      return chats;
+    } catch (error) {
+      console.error('❌ Error getting all feedback chats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific feedback chat by ID
+   */
+  async getFeedbackChatById(chatId) {
+    try {
+      const docRef = doc(db, this.collections.FEEDBACK_CHATS, chatId);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+        throw new Error('Chat not found');
+      }
+      
+      return { id: docSnap.id, ...docSnap.data() };
+    } catch (error) {
+      console.error('❌ Error getting feedback chat:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add message to feedback chat
+   */
+  async addFeedbackChatMessage(chatId, messageData) {
+    try {
+      const chatRef = doc(db, this.collections.FEEDBACK_CHATS, chatId);
+      const chatSnap = await getDoc(chatRef);
+      
+      if (!chatSnap.exists()) {
+        throw new Error('Chat not found');
+      }
+      
+      const chat = chatSnap.data();
+      const newMessage = {
+        message: messageData.message,
+        senderEmail: messageData.senderEmail,
+        senderName: messageData.senderName,
+        timestamp: new Date().toISOString()
+      };
+      
+      await updateDoc(chatRef, {
+        messages: [...(chat.messages || []), newMessage],
+        lastMessage: messageData.message,
+        messageCount: (chat.messageCount || 0) + 1,
+        updatedAt: serverTimestamp()
+      });
+
+      // Notify the other party
+      const isFromDeveloper = messageData.senderEmail === 'joshua@smmluxurylistings.com';
+      if (isFromDeveloper) {
+        // Notify user
+        await this.createNotification({
+          userEmail: chat.userEmail,
+          title: '💬 New Message from Joshua',
+          message: `"${messageData.message.substring(0, 50)}..."`,
+          type: 'chat_message',
+          link: '/feedback'
+        });
+      } else {
+        // Notify developer
+        await this.createNotification({
+          userEmail: 'joshua@smmluxurylistings.com',
+          title: '💬 New Chat Message',
+          message: `${messageData.senderName}: "${messageData.message.substring(0, 50)}..."`,
+          type: 'chat_message',
+          link: '/admin/chats'
+        });
+      }
+
+      console.log('✅ Message added to chat:', chatId);
+    } catch (error) {
+      console.error('❌ Error adding message to chat:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Close a feedback chat
+   */
+  async closeFeedbackChat(chatId) {
+    try {
+      await updateDoc(doc(db, this.collections.FEEDBACK_CHATS, chatId), {
+        status: 'closed',
+        closedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Feedback chat closed:', chatId);
+    } catch (error) {
+      console.error('❌ Error closing feedback chat:', error);
       throw error;
     }
   }

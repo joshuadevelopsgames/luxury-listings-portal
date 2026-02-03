@@ -145,6 +145,16 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
+    // Feedback - authenticated users can create, admin can read all
+    match /feedback/{feedbackId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Feedback chats - users can read/write their own chats, admin can read all
+    match /feedback_chats/{chatId} {
+      allow read, write: if isAuthenticated();
+    }
+    
     // Instagram reports - public read (for shareable client links); list/edit/delete scoped by userId in app
     match /instagram_reports/{reportId} {
       allow read: if true;  // Public read so share links work without auth; app filters list by userId
