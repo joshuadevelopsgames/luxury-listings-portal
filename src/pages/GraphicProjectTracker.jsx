@@ -143,7 +143,8 @@ const GraphicProjectTracker = () => {
     startDate: format(new Date(), 'yyyy-MM-dd'),
     endDate: '',
     hours: '',
-    notes: ''
+    notes: '',
+    assignedTo: ''
   });
 
   // Determine current user's team info
@@ -267,7 +268,7 @@ const GraphicProjectTracker = () => {
       const projectData = {
         ...form,
         hours: parseFloat(form.hours) || 0,
-        assignedTo: currentUser?.email || '',
+        assignedTo: form.assignedTo || currentUser?.email || '',
         createdBy: currentUser?.email || '',
         createdAt: new Date().toISOString()
       };
@@ -430,7 +431,8 @@ const GraphicProjectTracker = () => {
       startDate: project.startDate ? format(typeof project.startDate === 'string' ? parseISO(project.startDate) : project.startDate.toDate?.() || new Date(project.startDate), 'yyyy-MM-dd') : '',
       endDate: project.endDate ? format(typeof project.endDate === 'string' ? parseISO(project.endDate) : project.endDate.toDate?.() || new Date(project.endDate), 'yyyy-MM-dd') : '',
       hours: project.hours?.toString() || '',
-      notes: project.notes || ''
+      notes: project.notes || '',
+      assignedTo: project.assignedTo || ''
     });
     setShowEditModal(true);
   };
@@ -444,7 +446,8 @@ const GraphicProjectTracker = () => {
       startDate: format(new Date(), 'yyyy-MM-dd'),
       endDate: '',
       hours: '',
-      notes: ''
+      notes: '',
+      assignedTo: currentUser?.email || GRAPHIC_TEAM[0]?.email || ''
     });
   };
 
@@ -879,8 +882,8 @@ const GraphicProjectTracker = () => {
                 />
               </div>
               
-              {/* Priority & Status */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Priority, Status & Assigned To */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                     Priority
@@ -908,6 +911,22 @@ const GraphicProjectTracker = () => {
                     <option value="in_progress">In Progress</option>
                     <option value="pending">Pending</option>
                     <option value="completed">Completed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Assigned To
+                  </label>
+                  <select
+                    value={form.assignedTo}
+                    onChange={(e) => setForm(prev => ({ ...prev, assignedTo: e.target.value }))}
+                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  >
+                    {GRAPHIC_TEAM.map(member => (
+                      <option key={member.email} value={member.email}>
+                        {member.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
