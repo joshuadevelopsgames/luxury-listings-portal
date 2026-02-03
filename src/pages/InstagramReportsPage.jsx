@@ -529,8 +529,16 @@ const InstagramReportsPage = () => {
                   className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors text-left"
                 >
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#833AB4] to-[#E1306C] flex items-center justify-center flex-shrink-0">
-                      <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-gradient-to-br from-[#833AB4] to-[#E1306C] flex items-center justify-center flex-shrink-0">
+                      {client.logo || client.profilePic || client.image ? (
+                        <img 
+                          src={client.logo || client.profilePic || client.image} 
+                          alt={client.clientName || client.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-[15px] sm:text-[17px] font-semibold text-[#1d1d1f] dark:text-white truncate">
