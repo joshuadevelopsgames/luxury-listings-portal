@@ -50,8 +50,7 @@ const HRCalendar = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [editBalances, setEditBalances] = useState({
     vacation: { total: 15, used: 0 },
-    sick: { total: 10, used: 0 },
-    personal: { total: 3, used: 0 }
+    sick: { total: 10, used: 0 }
   });
   const [savingBalances, setSavingBalances] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -108,8 +107,7 @@ const HRCalendar = () => {
     setEditingUser(user);
     setEditBalances(user.leaveBalances || {
       vacation: { total: 15, used: 0 },
-      sick: { total: 10, used: 0 },
-      personal: { total: 3, used: 0 }
+      sick: { total: 10, used: 0 }
     });
   };
 
@@ -1180,40 +1178,6 @@ const HRCalendar = () => {
                               </div>
                             </div>
                             
-                            {/* Personal */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
-                                  Personal Days Total
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={editBalances.personal?.total || 0}
-                                  onChange={(e) => setEditBalances(prev => ({
-                                    ...prev,
-                                    personal: { ...prev.personal, total: parseInt(e.target.value) || 0 }
-                                  }))}
-                                  className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
-                                  Personal Days Used
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={editBalances.personal?.used || 0}
-                                  onChange={(e) => setEditBalances(prev => ({
-                                    ...prev,
-                                    personal: { ...prev.personal, used: parseInt(e.target.value) || 0 }
-                                  }))}
-                                  className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                                />
-                              </div>
-                            </div>
-                            
                             <div className="flex justify-end gap-2 pt-2">
                               <button
                                 onClick={() => setEditingUser(null)}
@@ -1232,7 +1196,7 @@ const HRCalendar = () => {
                             </div>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-2 gap-4">
                             <div>
                               <p className="text-[11px] text-[#86868b]">Vacation</p>
                               <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
@@ -1243,12 +1207,6 @@ const HRCalendar = () => {
                               <p className="text-[11px] text-[#86868b]">Sick</p>
                               <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
                                 {(balances.sick?.total || 10) - (balances.sick?.used || 0)} / {balances.sick?.total || 10} days
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] text-[#86868b]">Personal</p>
-                              <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
-                                {(balances.personal?.total || 3) - (balances.personal?.used || 0)} / {balances.personal?.total || 3} days
                               </p>
                             </div>
                           </div>
