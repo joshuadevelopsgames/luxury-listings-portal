@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import PersonCard from '../components/PersonCard';
 import { firestoreService } from '../services/firestoreService';
+import UserLink from '../components/ui/UserLink';
 import { 
   Users, 
   Plus, 
@@ -80,6 +81,8 @@ const TeamManagement = () => {
           return dateA - dateB;
         });
         const formattedMembers = sortedUsers.map((user, index) => ({
+          // Preserve original user data for UserLink
+          ...user,
           id: user.id || index + 1,
           name: user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
           email: user.email,
@@ -402,14 +405,9 @@ const TeamManagement = () => {
                         {member.avatar}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{member.name}</p>
-                          {(member.uid || member.id) && (
-                            <span className="text-[9px] px-1 py-0.5 rounded bg-[#5856d6]/10 text-[#5856d6] font-mono">
-                              {String(member.uid || member.id).slice(0, 8)}
-                            </span>
-                          )}
-                        </div>
+                        <UserLink user={member} showId className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                          {member.name}
+                        </UserLink>
                         <p className="text-[11px] text-[#86868b]">{member.position}</p>
                         <p className="text-[10px] text-[#86868b]">{member.email}</p>
                       </div>

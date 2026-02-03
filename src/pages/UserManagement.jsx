@@ -30,6 +30,7 @@ import { firestoreService } from '../services/firestoreService';
 import { USER_ROLES } from '../entities/UserRoles';
 import { auth } from '../firebase';
 import { PERMISSIONS, PERMISSION_CATEGORIES, PERMISSION_LABELS } from '../entities/Permissions';
+import UserLink from '../components/ui/UserLink';
 
 const UserManagement = () => {
   const { currentUser, hasPermission, isSystemAdmin } = useAuth();
@@ -1330,12 +1331,11 @@ const UserManagement = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
-                        {(user.uid || user.id) && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">
-                            ID: {(user.uid || user.id).slice(0, 8)}
-                          </span>
-                        )}
+                        <CardTitle className="text-lg">
+                          <UserLink user={user} showId className="text-[#1d1d1f] dark:text-white">
+                            {user.firstName} {user.lastName}
+                          </UserLink>
+                        </CardTitle>
                       </div>
                       <Badge variant="outline" className="border-orange-300 text-orange-700">
                         Pending
@@ -1429,12 +1429,11 @@ const UserManagement = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg">{user.firstName} {user.lastName}</CardTitle>
-                        {(user.uid || user.id) && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">
-                            ID: {(user.uid || user.id).slice(0, 8)}
-                          </span>
-                        )}
+                        <CardTitle className="text-lg">
+                          <UserLink user={user} showId className="text-[#1d1d1f] dark:text-white">
+                            {user.firstName} {user.lastName}
+                          </UserLink>
+                        </CardTitle>
                       </div>
                       <Badge variant="outline" className="border-green-300 text-green-700">
                         Approved

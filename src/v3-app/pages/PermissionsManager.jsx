@@ -41,6 +41,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
 import { USER_ROLES } from '../../entities/UserRoles';
+import UserLink from '../../components/ui/UserLink';
 
 // Feature permissions with descriptions
 const ALL_FEATURES = {
@@ -607,14 +608,9 @@ const PermissionsManager = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+                        <UserLink user={user} showId className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
                           {user.displayName || 'Unknown User'}
-                        </h3>
-                        {(user.uid || user.id) && (
-                          <span className="px-1.5 py-0.5 rounded bg-[#5856d6]/10 text-[#5856d6] text-[10px] font-mono">
-                            {(user.uid || user.id).slice(0, 8)}
-                          </span>
-                        )}
+                        </UserLink>
                         {isAdmin && (
                           <span className="px-2 py-0.5 rounded-full bg-[#ff9500]/10 text-[#ff9500] text-[11px] font-semibold">
                             System Admin
