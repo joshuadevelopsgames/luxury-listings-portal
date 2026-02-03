@@ -659,6 +659,199 @@ ${consoleLogs.substring(0, 5000)}
 );
 
 // ============================================================================
+// FEEDBACK (BUG REPORTS & FEATURE REQUESTS) EMAIL NOTIFICATION
+// ============================================================================
+
+/**
+ * Send email notification when feedback (bug report or feature request) is created
+ * Triggers automatically when a new document is added to feedback collection
+ */
+exports.sendFeedbackEmail = onDocumentCreated(
+  {
+    document: 'feedback/{feedbackId}',
+    region: 'us-central1',
+    secrets: ['EMAIL_PASS'],
+  },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      console.log('No data in feedback');
+      return;
+    }
+
+    const feedback = snapshot.data();
+    const feedbackId = event.params.feedbackId;
+
+    console.log(`📧 Sending ${feedback.type} email for:`, feedbackId);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER || 'jrsschroeder@gmail.com',
+        pass: process.env.EMAIL_PASS || '',
+      },
+    });
+
+    const isBug = feedback.type === 'bug';
+    const headerColor = isBug ? '#ff3b30' : '#ff9500';
+    const emoji = isBug ? '🐛' : '💡';
+    const typeLabel = isBug ? 'Bug Report' : 'Feature Request';
+
+    // Format console logs if available (bug reports only)
+    const consoleLogs = feedback.consoleLogs 
+      ? feedback.consoleLogs.slice(-50).map(log => `[${log.type}] ${log.message}`).join('\n')
+      : 'N/A';
+
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: ${headerColor}; padding: 20px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">${emoji} ${typeLabel}</h1>
+          <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0;">Luxury Listings Portal</p>
+        </div>
+        
+        <div style="background: #f5f5f7; padding: 20px; border-radius: 0 0 12px 12px;">
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: ${headerColor}; margin: 0 0 10px 0;">${feedback.title || 'No title'}</h3>
+            <p style="color: #1d1d1f; margin: 0; white-space: pre-wrap;">${feedback.description || 'No description'}</p>
+          </div>
+          
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #1d1d1f; margin: 0 0 10px 0;">Submitted By</h3>
+            <p style="margin: 5px 0;"><strong>Name:</strong> ${feedback.userName || 'Unknown'}</p>
+            <p style="margin: 5px 0;"><strong>Email:</strong> ${feedback.userEmail || 'Unknown'}</p>
+            ${isBug ? `<p style="margin: 5px 0;"><strong>Priority:</strong> ${feedback.priority || 'medium'}</p>` : ''}
+          </div>
+          
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #1d1d1f; margin: 0 0 10px 0;">Context</h3>
+            <p style="margin: 5px 0;"><strong>URL:</strong> ${feedback.url || 'Unknown'}</p>
+            ${feedback.selectedElement ? `<p style="margin: 5px 0;"><strong>Selected Element:</strong> &lt;${feedback.selectedElement.tagName?.toLowerCase()}&gt;</p>` : ''}
+          </div>
+          
+          ${isBug && feedback.consoleLogs ? `
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #1d1d1f; margin: 0 0 10px 0;">Console Logs (Last 50)</h3>
+            <pre style="color: #86868b; margin: 0; font-size: 10px; background: #1d1d1f; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto;">${consoleLogs}</pre>
+          </div>
+          ` : ''}
+          
+          <p style="color: #86868b; font-size: 12px; text-align: center; margin-top: 20px;">
+            ID: ${feedbackId} • <a href="https://smmluxurylistings.com/admin/feedback" style="color: #0071e3;">View in Admin</a>
+          </p>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: '"Luxury Listings Portal" <jrsschroeder@gmail.com>',
+      to: 'jrsschroeder@gmail.com',
+      subject: `${emoji} ${typeLabel}: ${(feedback.title || 'No title').substring(0, 50)}`,
+      html: emailHtml,
+    };
+
+    try {
+      if (process.env.EMAIL_PASS) {
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ ${typeLabel} email sent successfully`);
+      } else {
+        console.log('⚠️ Email not sent - EMAIL_PASS not configured');
+      }
+    } catch (error) {
+      console.error(`❌ Failed to send ${typeLabel} email:`, error);
+    }
+  }
+);
+
+// ============================================================================
+// FEEDBACK CHAT EMAIL NOTIFICATION
+// ============================================================================
+
+/**
+ * Send email notification when a new chat is started
+ * Triggers automatically when a new document is added to feedback_chats collection
+ */
+exports.sendFeedbackChatEmail = onDocumentCreated(
+  {
+    document: 'feedback_chats/{chatId}',
+    region: 'us-central1',
+    secrets: ['EMAIL_PASS'],
+  },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      console.log('No data in chat');
+      return;
+    }
+
+    const chat = snapshot.data();
+    const chatId = event.params.chatId;
+
+    console.log('📧 Sending new chat email for:', chatId);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER || 'jrsschroeder@gmail.com',
+        pass: process.env.EMAIL_PASS || '',
+      },
+    });
+
+    const firstMessage = chat.messages?.[0]?.message || chat.lastMessage || 'No message';
+
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #0071e3, #5856d6); padding: 20px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">💬 New Chat Started</h1>
+          <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0;">Luxury Listings Portal</p>
+        </div>
+        
+        <div style="background: #f5f5f7; padding: 20px; border-radius: 0 0 12px 12px;">
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #0071e3; margin: 0 0 10px 0;">Message</h3>
+            <p style="color: #1d1d1f; margin: 0; white-space: pre-wrap; font-size: 14px;">${firstMessage}</p>
+          </div>
+          
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: #1d1d1f; margin: 0 0 10px 0;">From</h3>
+            <p style="margin: 5px 0;"><strong>Name:</strong> ${chat.userName || 'Unknown'}</p>
+            <p style="margin: 5px 0;"><strong>Email:</strong> ${chat.userEmail || 'Unknown'}</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px;">
+            <a href="https://smmluxurylistings.com/admin/chats" 
+               style="display: inline-block; background: #0071e3; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500;">
+              Reply to Chat
+            </a>
+          </div>
+          
+          <p style="color: #86868b; font-size: 12px; text-align: center; margin-top: 20px;">
+            Chat ID: ${chatId}
+          </p>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: '"Luxury Listings Portal" <jrsschroeder@gmail.com>',
+      to: 'jrsschroeder@gmail.com',
+      subject: `💬 New Chat from ${chat.userName || chat.userEmail || 'User'}`,
+      html: emailHtml,
+    };
+
+    try {
+      if (process.env.EMAIL_PASS) {
+        await transporter.sendMail(mailOptions);
+        console.log('✅ Chat notification email sent successfully');
+      } else {
+        console.log('⚠️ Email not sent - EMAIL_PASS not configured');
+      }
+    } catch (error) {
+      console.error('❌ Failed to send chat notification email:', error);
+    }
+  }
+);
+
+// ============================================================================
 // SLACK API PROXY
 // ============================================================================
 
