@@ -26,7 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const EmployeeSelfService = () => {
-  const { currentUser, currentRole } = useAuth();
+  const { currentUser, currentRole, isSystemAdmin } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [employeeFirestoreId, setEmployeeFirestoreId] = useState(null);
@@ -34,6 +34,7 @@ const EmployeeSelfService = () => {
   const [loading, setLoading] = useState(true);
   
   const isHRManager = currentRole === 'hr_manager';
+  const canEditAllFields = isHRManager || isSystemAdmin;
 
   // Generate numerical employee ID (EMP-001, EMP-002, etc.)
   const generateEmployeeId = (index) => {
@@ -359,7 +360,7 @@ const EmployeeSelfService = () => {
             <PersonCard 
               person={employeeData.personalInfo}
               editable={true}
-              isHRView={isHRManager}
+              isHRView={canEditAllFields}
               onSave={handleSavePersonal}
               showAvatar={false}
               employeeId={employeeFirestoreId}
