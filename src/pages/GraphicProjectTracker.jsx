@@ -329,8 +329,9 @@ const GraphicProjectTracker = () => {
 
   // One-time import from Excel data (admin only)
   const handleImportFromExcel = async () => {
+    console.log('=== IMPORT V2 ===');
     console.log('Import button clicked, importData length:', importData?.length);
-    console.log('Current user:', currentUser?.email);
+    console.log('Current user:', currentUser?.email, currentUser?.uid);
     
     if (!currentUser) {
       toast.error('You must be logged in to import');
@@ -342,49 +343,65 @@ const GraphicProjectTracker = () => {
       return;
     }
     
-    console.log('Starting import...');
+    console.log('Starting import v2...');
     setImporting(true);
     
-    // Import in smaller batches with progress updates
-    const batchSize = 25;
-    const totalBatches = Math.ceil(importData.length / batchSize);
     let imported = 0;
     let failed = 0;
+    const errors = [];
     
     toast.loading(`Importing... 0/${importData.length}`, { id: 'import-toast' });
     
-    try {
-      for (let i = 0; i < importData.length; i += batchSize) {
-        const batch = importData.slice(i, i + batchSize);
+    // Import one at a time with detailed error logging
+    for (let i = 0; i < importData.length; i++) {
+      const project = importData[i];
+      try {
+        const projectData = {
+          client: project.client || '',
+          task: project.task || '',
+          priority: project.priority || 'medium',
+          status: project.status || 'not_started',
+          startDate: project.startDate || null,
+          endDate: project.endDate || null,
+          hours: project.hours || 0,
+          notes: project.notes || '',
+          assignedTo: project.assignedTo || 'jasmine@smmluxurylistings.com',
+          importedFromExcel: true,
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email
+        };
         
-        for (const project of batch) {
-          try {
-            await firestoreService.addGraphicProject({
-              ...project,
-              importedAt: new Date().toISOString()
-            });
-            imported++;
-          } catch (err) {
-            console.error('Failed to import project:', project.client, err.message);
-            failed++;
-          }
+        await firestoreService.addGraphicProject(projectData);
+        imported++;
+        
+        // Update progress every 10 items
+        if (imported % 10 === 0) {
+          toast.loading(`Importing... ${imported}/${importData.length}`, { id: 'import-toast' });
         }
+      } catch (err) {
+        console.error(`Failed to import project ${i}:`, project.client, '-', err.message);
+        errors.push({ index: i, client: project.client, error: err.message });
+        failed++;
         
-        toast.loading(`Importing... ${imported}/${importData.length}`, { id: 'import-toast' });
+        // Stop after 3 consecutive errors (likely a permissions issue)
+        if (failed >= 3 && imported === 0) {
+          toast.error('Permission denied. Please check Firestore rules are deployed.', { id: 'import-toast' });
+          setImporting(false);
+          return;
+        }
       }
-      
-      if (failed > 0) {
-        toast.success(`Imported ${imported} projects (${failed} failed)`, { id: 'import-toast' });
-      } else {
-        toast.success(`Imported ${imported} projects!`, { id: 'import-toast' });
-      }
-      loadProjects();
-    } catch (error) {
-      console.error('Error importing projects:', error);
-      toast.error(`Failed to import: ${error.message}`, { id: 'import-toast' });
-    } finally {
-      setImporting(false);
     }
+    
+    setImporting(false);
+    
+    if (failed > 0) {
+      console.log('Import errors:', errors);
+      toast.success(`Imported ${imported} projects (${failed} failed)`, { id: 'import-toast' });
+    } else {
+      toast.success(`Successfully imported ${imported} projects!`, { id: 'import-toast' });
+    }
+    
+    loadProjects();
   };
 
   const handleStatusChange = async (project, newStatus) => {
