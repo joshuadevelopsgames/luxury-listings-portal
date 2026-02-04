@@ -311,7 +311,7 @@ Return ONLY the JSON object, no markdown or explanation.`;
           'Authorization': `Bearer ${OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4o-mini', // Using mini for cost-effectiveness (~10x cheaper than gpt-4o)
           messages: [
             {
               role: 'user',
