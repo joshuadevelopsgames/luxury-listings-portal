@@ -149,7 +149,7 @@ const categoryColors = {
 
 export default function ResourcesPage() {
   const navigate = useNavigate();
-  const { currentRole } = useAuth();
+  const { currentRole, isSystemAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("resources");
   
@@ -259,7 +259,7 @@ export default function ResourcesPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {importantResources.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} />
+                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} isSystemAdmin={isSystemAdmin} />
                 ))}
               </div>
             </section>
@@ -279,7 +279,7 @@ export default function ResourcesPage() {
                 </div>
               ) : (
                 otherResources.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} />
+                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} isSystemAdmin={isSystemAdmin} />
                 ))
               )}
             </div>
@@ -333,12 +333,16 @@ export default function ResourcesPage() {
   );
 }
 
-function ResourceCard({ resource, navigate, currentRole }) {
+function ResourceCard({ resource, navigate, currentRole, isSystemAdmin }) {
   const Icon = typeIcons[resource.type];
   
   // Handle dynamic role-based routing for Manager Messages
   const getInternalPath = () => {
     if (resource.internalPath === 'dynamic-role-message') {
+      // System admins always see the admin message
+      if (isSystemAdmin) {
+        return '/admin-message';
+      }
       return roleMessagePages[currentRole] || '/content-manager-message';
     }
     return resource.internalPath;
