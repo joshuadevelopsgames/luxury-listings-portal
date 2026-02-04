@@ -39,7 +39,7 @@ import { toast } from 'react-hot-toast';
 
 const TeamManagement = () => {
   const { currentUser, currentRole } = useAuth();
-  const { hasFeaturePermission } = usePermissions();
+  const { hasFeaturePermission, isSystemAdmin } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -58,6 +58,7 @@ const TeamManagement = () => {
   const [migrationDone, setMigrationDone] = useState(false);
   
   const isHRManager = currentRole === 'hr_manager';
+  const canRunLeaveMigration = isHRManager || isSystemAdmin;
   const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
 
   // Team members loaded from Firestore
@@ -265,21 +266,22 @@ const TeamManagement = () => {
           <p className="text-[15px] sm:text-[17px] text-[#86868b] mt-1">Manage your team, track performance, and oversee employee development</p>
         </div>
         <div className="flex gap-2">
-          {isHRManager && !migrationDone && (
+          {canRunLeaveMigration && !migrationDone && (
             <button 
               onClick={handleMigrateLeavBalances}
               disabled={migratingLeave}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[14px] font-medium hover:bg-[#ff9500]/20 transition-colors disabled:opacity-50"
+              title="Set all users' sick days to 3 and remove personal days"
             >
               {migratingLeave ? (
                 <>
-                  <Activity className="w-4 h-4 animate-spin" />
+                  <Activity className="w-4 h-4 animate-spin shrink-0" />
                   <span className="hidden sm:inline">Migrating...</span>
                 </>
               ) : (
                 <>
-                  <Activity className="w-4 h-4" />
-                  <span className="hidden sm:inline">Set Sick Days to 3</span>
+                  <Activity className="w-4 h-4 shrink-0" />
+                  <span>Set Sick Days to 3</span>
                 </>
               )}
             </button>
