@@ -136,11 +136,16 @@ const visionClient = new vision.ImageAnnotatorClient();
  * 
  * This prevents API key exposure and adds abuse protection
  */
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_VISION_MODEL = 'openai/gpt-4o-mini';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_VISION_MODEL = 'gpt-4o-mini';
+
 exports.extractInstagramMetricsAI = onCall({
   cors: true,
   maxInstances: 10,
   timeoutSeconds: 120,
-  secrets: ['OPENAI_API_KEY'],
+  secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
 }, async (request) => {
   // 1. Verify user is authenticated
   if (!request.auth) {
@@ -150,7 +155,7 @@ exports.extractInstagramMetricsAI = onCall({
   const userId = request.auth.uid;
   const userEmail = request.auth.token.email || 'unknown';
   
-  console.log(`🤖 OpenAI request from user: ${userEmail}`);
+  console.log(`🤖 Vision extraction request from user: ${userEmail}`);
 
   // 2. Check rate limit
   const rateLimit = await checkRateLimit(userId, 'openai');
@@ -181,28 +186,28 @@ exports.extractInstagramMetricsAI = onCall({
     );
   }
 
-  // 4. Get OpenAI API key from secrets
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    console.error('❌ OPENAI_API_KEY secret not configured');
-    throw new HttpsError('internal', 'OpenAI API key not configured');
+  // 4. Get API keys (OpenRouter primary, OpenAI fallback)
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const openAIKey = process.env.OPENAI_API_KEY;
+  if (!openRouterKey && !openAIKey) {
+    console.error('❌ No API key: set OPENROUTER_API_KEY or OPENAI_API_KEY secret');
+    throw new HttpsError('internal', 'No AI provider key configured (OpenRouter or OpenAI)');
   }
 
   console.log(`📸 Processing ${images.length} images for ${userEmail}`);
   const startTime = Date.now();
 
-  try {
-    // 5. Prepare image content for GPT-4o Vision
-    const imageContents = images.map(img => ({
-      type: 'image_url',
-      image_url: { 
-        url: img.base64 ? `data:image/jpeg;base64,${img.base64}` : img.url,
-        detail: 'high' 
-      }
-    }));
+  // 5. Prepare image content for vision
+  const imageContents = images.map(img => ({
+    type: 'image_url',
+    image_url: {
+      url: img.base64 ? `data:image/jpeg;base64,${img.base64}` : img.url,
+      detail: 'high'
+    }
+  }));
 
-    // 6. Build the extraction prompt
-    const prompt = `Extract ALL metrics from these Instagram Insights screenshots. Return ONLY valid JSON.
+  // 6. Build the extraction prompt
+  const prompt = `Extract ALL metrics from these Instagram Insights screenshots. Return ONLY valid JSON.
 
 IMPORTANT: Look carefully at the visual layout. Numbers belong to the label they're visually associated with (inside donut charts, next to labels, etc.).
 
@@ -256,44 +261,91 @@ Extract these fields (use null if not visible):
 
 Return ONLY the JSON object, no markdown or explanation.`;
 
-    // 7. Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const body = {
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          ...imageContents
+        ]
+      }
+    ],
+    max_tokens: 2000,
+    temperature: 0.1
+  };
+
+  let data;
+  let provider;
+
+  // 7. Try OpenRouter first, then OpenAI fallback
+  if (openRouterKey) {
+    try {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openRouterKey}`
+        },
+        body: JSON.stringify({ ...body, model: OPENROUTER_VISION_MODEL })
+      });
+      if (response.ok) {
+        data = await response.json();
+        provider = 'openrouter';
+      } else {
+        const err = await response.json().catch(() => ({}));
+        console.warn('⚠️ OpenRouter request failed:', err.error?.message || response.statusText);
+        throw new Error(err.error?.message || response.statusText);
+      }
+    } catch (openRouterErr) {
+      console.warn('⚠️ OpenRouter failed, trying OpenAI fallback:', openRouterErr.message);
+      if (!openAIKey) {
+        await logApiUsage(userId, userEmail, 'openai_instagram_metrics', {
+          imageCount: images.length,
+          error: openRouterErr.message,
+          processingTimeMs: Date.now() - startTime
+        });
+        throw new HttpsError('internal', `AI extraction failed: ${openRouterErr.message}`);
+      }
+      const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openAIKey}`
+        },
+        body: JSON.stringify({ ...body, model: OPENAI_VISION_MODEL })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        console.error('❌ OpenAI fallback error:', err);
+        throw new HttpsError('internal', `AI extraction failed: ${err.error?.message || response.statusText}`);
+      }
+      data = await response.json();
+      provider = 'openai';
+    }
+  } else {
+    const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${openAIKey}`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini', // Cost-effective vision model
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              ...imageContents
-            ]
-          }
-        ],
-        max_tokens: 2000,
-        temperature: 0.1
-      })
+      body: JSON.stringify({ ...body, model: OPENAI_VISION_MODEL })
     });
-
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      const err = await response.json().catch(() => ({}));
+      console.error('❌ OpenAI API error:', err);
+      throw new HttpsError('internal', `AI extraction failed: ${err.error?.message || response.statusText}`);
     }
+    data = await response.json();
+    provider = 'openai';
+  }
 
-    const data = await response.json();
+  try {
     let content = data.choices[0].message.content;
-    
-    // Strip markdown code fences if present
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    
     const metrics = JSON.parse(content);
-    
-    // Clean up null values
+
     const cleaned = {};
     for (const [key, value] of Object.entries(metrics)) {
       if (value !== null && value !== undefined) {
@@ -302,14 +354,14 @@ Return ONLY the JSON object, no markdown or explanation.`;
     }
 
     const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`✅ GPT-4o extracted ${Object.keys(cleaned).length} fields in ${processingTime}s`);
+    console.log(`✅ ${provider} extracted ${Object.keys(cleaned).length} fields in ${processingTime}s`);
 
-    // 8. Log usage for monitoring
     await logApiUsage(userId, userEmail, 'openai_instagram_metrics', {
       imageCount: images.length,
       fieldsExtracted: Object.keys(cleaned).length,
       processingTimeMs: Date.now() - startTime,
-      model: 'gpt-4o-mini',
+      provider,
+      model: provider === 'openrouter' ? OPENROUTER_VISION_MODEL : OPENAI_VISION_MODEL,
       tokensUsed: data.usage?.total_tokens || 0
     });
 
@@ -319,17 +371,13 @@ Return ONLY the JSON object, no markdown or explanation.`;
       processingTime: parseFloat(processingTime),
       rateLimitRemaining: rateLimit.remaining
     };
-
   } catch (error) {
-    console.error('❌ OpenAI extraction failed:', error);
-    
-    // Log failed attempt
+    console.error(`❌ ${provider} extraction failed:`, error);
     await logApiUsage(userId, userEmail, 'openai_instagram_metrics', {
       imageCount: images.length,
       error: error.message,
       processingTimeMs: Date.now() - startTime
     });
-    
     throw new HttpsError('internal', `AI extraction failed: ${error.message}`);
   }
 });

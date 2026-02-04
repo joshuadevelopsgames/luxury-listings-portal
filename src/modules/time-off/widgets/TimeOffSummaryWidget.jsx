@@ -21,8 +21,7 @@ const TimeOffSummaryWidget = () => {
   // Leave balances from Firestore
   const [balances, setBalances] = useState({
     vacation: { used: 0, total: 15 },
-    sick: { used: 0, total: 10 },
-    personal: { used: 0, total: 3 }
+    sick: { used: 0, total: 3 }
   });
 
   useEffect(() => {

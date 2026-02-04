@@ -298,10 +298,15 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
           throw new Error(`Rate limit exceeded: ${error.message}`);
         }
         
-        // For other errors, log and fall back to direct API if available
+        // In production, never fall back to direct API (key would be exposed, CORS blocks anyway)
+        const isProduction = typeof window !== 'undefined' &&
+          /smmluxurylistings\.info$/i.test(window.location?.hostname || '');
+        if (isProduction) {
+          console.warn('⚠️ Cloud Function failed (production):', error.message);
+          throw error;
+        }
+        // Development only: fall back to direct API if configured
         console.warn('⚠️ Cloud Function failed, checking for fallback:', error.message);
-        
-        // Only fall back if we have a direct API key configured (development mode)
         if (!OPENAI_API_KEY) {
           throw error;
         }
@@ -309,10 +314,11 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
       }
     }
 
-    // Fallback to direct API call (only for development/testing)
-    // In production, the Cloud Function should always be used
-    if (!OPENAI_API_KEY) {
-      throw new Error('AI extraction not available. Please contact support.');
+    // Fallback to direct API call (development only; never in production)
+    const isProduction = typeof window !== 'undefined' &&
+      /smmluxurylistings\.info$/i.test(window.location?.hostname || '');
+    if (isProduction || !OPENAI_API_KEY) {
+      throw new Error('AI extraction is not available right now. Please try again or enter metrics manually. If this persists, contact support.');
     }
 
     console.warn('⚠️ Using direct OpenAI API call - this should only happen in development');

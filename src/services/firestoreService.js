@@ -870,8 +870,7 @@ class FirestoreService {
       console.warn('⚠️ getUserLeaveBalances called with invalid email:', userEmail);
       return {
         vacation: { total: 15, used: 0, remaining: 15 },
-        sick: { total: 10, used: 0, remaining: 10 },
-        personal: { total: 3, used: 0, remaining: 3 }
+        sick: { total: 3, used: 0, remaining: 3 }
       };
     }
     
@@ -881,22 +880,19 @@ class FirestoreService {
         const data = userDoc.data();
         return data.leaveBalances || {
           vacation: { total: 15, used: 0, remaining: 15 },
-          sick: { total: 10, used: 0, remaining: 10 },
-          personal: { total: 3, used: 0, remaining: 3 }
+          sick: { total: 3, used: 0, remaining: 3 }
         };
       }
       // Return defaults if user not found
       return {
         vacation: { total: 15, used: 0, remaining: 15 },
-        sick: { total: 10, used: 0, remaining: 10 },
-        personal: { total: 3, used: 0, remaining: 3 }
+        sick: { total: 3, used: 0, remaining: 3 }
       };
     } catch (error) {
       console.error('❌ Error getting leave balances:', error);
       return {
         vacation: { total: 15, used: 0, remaining: 15 },
-        sick: { total: 10, used: 0, remaining: 10 },
-        personal: { total: 3, used: 0, remaining: 3 }
+        sick: { total: 3, used: 0, remaining: 3 }
       };
     }
   }
@@ -1196,7 +1192,7 @@ class FirestoreService {
       return { success: false, error: 'Invalid user email' };
     }
     
-    if (!leaveType || !['vacation', 'sick', 'personal'].includes(leaveType)) {
+    if (!leaveType || !['vacation', 'sick'].includes(leaveType)) {
       console.warn('⚠️ deductLeaveBalance called with invalid leave type:', leaveType);
       return { success: false, error: 'Invalid leave type' };
     }

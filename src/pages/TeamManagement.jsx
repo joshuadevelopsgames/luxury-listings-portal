@@ -50,8 +50,7 @@ const TeamManagement = () => {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [editLeaveForm, setEditLeaveForm] = useState({
     vacation: { total: 15, used: 0 },
-    sick: { total: 10, used: 0 },
-    personal: { total: 3, used: 0 }
+    sick: { total: 3, used: 0 }
   });
   const [savingLeave, setSavingLeave] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -95,7 +94,7 @@ const TeamManagement = () => {
           performance: user.performance || { rating: 0, projectsCompleted: 0, onTimeDelivery: 0, clientSatisfaction: 0, lastReview: null },
           skills: user.skills || [],
           certifications: user.certifications || [],
-          leaveBalance: user.leaveBalances || { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 10, used: 0, remaining: 10 }, personal: { total: 3, used: 0, remaining: 3 } },
+          leaveBalance: user.leaveBalances || { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } },
           salary: user.salary || 0,
           manager: user.manager || '',
           employeeId: user.employeeId || generateEmployeeId(index)
