@@ -772,17 +772,6 @@ const GraphicProjectTracker = () => {
                 </div>
               )}
               
-              {/* Request Project button for non-designers */}
-              {!currentTeamMember && (
-                <button
-                  onClick={() => setShowRequestModal(true)}
-                  className="h-10 px-4 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[13px] font-medium hover:bg-[#5856d6]/20 transition-all flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Request Project</span>
-                </button>
-              )}
-              
               {/* Add Project button for designers and admins */}
               {(currentTeamMember || isSystemAdmin) && (
                 <button
@@ -797,17 +786,6 @@ const GraphicProjectTracker = () => {
                 </button>
               )}
               
-              {/* Admin: Clear & Reimport */}
-              {isSystemAdmin && (
-                <button
-                  onClick={handleClearAndReimport}
-                  disabled={importing}
-                  className="h-10 px-4 rounded-xl bg-[#ff3b30] text-white text-[13px] font-medium hover:bg-[#ff453a] transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-4 h-4 ${importing ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">{importing ? 'Importing...' : 'Clear & Reimport'}</span>
-                </button>
-              )}
             </div>
           </div>
         </div>

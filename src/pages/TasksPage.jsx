@@ -1096,14 +1096,6 @@ const TasksPage = () => {
             </button>
           )}
           <button 
-            onClick={() => setShowProjectRequestModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[13px] font-medium hover:bg-[#5856d6]/20 transition-colors"
-          >
-            <Palette className="w-4 h-4" />
-            <span className="hidden sm:inline">Request Project</span>
-            <span className="sm:hidden">Project</span>
-          </button>
-          <button 
             onClick={() => setShowRequestModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
           >
