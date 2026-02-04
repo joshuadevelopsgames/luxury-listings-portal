@@ -863,52 +863,54 @@ class FirestoreService {
 
   // ===== LEAVE REQUEST - ENHANCED METHODS =====
 
-  // Get user's leave balances from their user document
+  // Normalize leave balance so it always has total, used, remaining (single source of truth shape)
+  _normalizeLeaveBalances(raw) {
+    const def = (val, fallback) => (val !== undefined && val !== null && val !== '') ? Number(val) : fallback;
+    const vac = raw?.vacation || {};
+    const sick = raw?.sick || {};
+    const vTotal = def(vac.total, 15);
+    const vUsed = def(vac.used, 0);
+    const sTotal = def(sick.total, 3);
+    const sUsed = def(sick.used, 0);
+    return {
+      vacation: { total: vTotal, used: vUsed, remaining: Math.max(0, vTotal - vUsed) },
+      sick: { total: sTotal, used: sUsed, remaining: Math.max(0, sTotal - sUsed) }
+    };
+  }
+
+  // Get user's leave balances from their user document (APPROVED_USERS). Single source of truth.
   async getUserLeaveBalances(userEmail) {
-    // Validate email before querying Firestore
     if (!userEmail || typeof userEmail !== 'string') {
       console.warn('⚠️ getUserLeaveBalances called with invalid email:', userEmail);
-      return {
-        vacation: { total: 15, used: 0, remaining: 15 },
-        sick: { total: 3, used: 0, remaining: 3 }
-      };
+      return this._normalizeLeaveBalances(null);
     }
-    
     try {
       const userDoc = await getDoc(doc(db, this.collections.APPROVED_USERS, userEmail));
       if (userDoc.exists()) {
         const data = userDoc.data();
-        return data.leaveBalances || {
-          vacation: { total: 15, used: 0, remaining: 15 },
-          sick: { total: 3, used: 0, remaining: 3 }
-        };
+        return this._normalizeLeaveBalances(data.leaveBalances);
       }
-      // Return defaults if user not found
-      return {
-        vacation: { total: 15, used: 0, remaining: 15 },
-        sick: { total: 3, used: 0, remaining: 3 }
-      };
+      return this._normalizeLeaveBalances(null);
     } catch (error) {
       console.error('❌ Error getting leave balances:', error);
-      return {
-        vacation: { total: 15, used: 0, remaining: 15 },
-        sick: { total: 3, used: 0, remaining: 3 }
-      };
+      return this._normalizeLeaveBalances(null);
     }
   }
 
-  // Update user's leave balances (admin function)
+  // Update user's leave balances (admin function). Writes to APPROVED_USERS so My Time Off and Team Management stay in sync.
   async updateUserLeaveBalances(userEmail, balances) {
-    // Validate email before updating Firestore
     if (!userEmail || typeof userEmail !== 'string') {
       console.warn('⚠️ updateUserLeaveBalances called with invalid email:', userEmail);
       return { success: false, error: 'Invalid user email' };
     }
-    
+    const toStore = {
+      vacation: { total: Number(balances.vacation?.total) ?? 0, used: Number(balances.vacation?.used) ?? 0 },
+      sick: { total: Number(balances.sick?.total) ?? 0, used: Number(balances.sick?.used) ?? 0 }
+    };
     try {
       const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
       await updateDoc(userRef, {
-        leaveBalances: balances,
+        leaveBalances: toStore,
         leaveBalancesUpdatedAt: serverTimestamp()
       });
       console.log('✅ Leave balances updated for:', userEmail);
@@ -3765,6 +3767,59 @@ class FirestoreService {
       console.log('✅ Feedback chat closed:', chatId);
     } catch (error) {
       console.error('❌ Error closing feedback chat:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Migrate all users' leave balances:
+   * - Set sick days total to 3
+   * - Remove personal days if present
+   * This is a one-time migration function.
+   */
+  async migrateLeaveBalances() {
+    try {
+      console.log('🔄 Starting leave balance migration...');
+      
+      // Get all employees
+      const employeesSnapshot = await getDocs(collection(db, this.collections.EMPLOYEES));
+      let updatedCount = 0;
+      let skippedCount = 0;
+      
+      for (const docSnap of employeesSnapshot.docs) {
+        const employee = docSnap.data();
+        const currentBalances = employee.leaveBalances || {};
+        
+        // Build new leave balances
+        const newBalances = {
+          vacation: currentBalances.vacation || { total: 15, used: 0, remaining: 15 },
+          sick: {
+            total: 3,
+            used: currentBalances.sick?.used || 0,
+            remaining: Math.max(0, 3 - (currentBalances.sick?.used || 0))
+          }
+        };
+        
+        // Check if update is needed (personal exists or sick total != 3)
+        const hasPersonal = currentBalances.personal !== undefined;
+        const sickNeedsUpdate = currentBalances.sick?.total !== 3;
+        
+        if (hasPersonal || sickNeedsUpdate) {
+          await updateDoc(doc(db, this.collections.EMPLOYEES, docSnap.id), {
+            leaveBalances: newBalances,
+            updatedAt: serverTimestamp()
+          });
+          updatedCount++;
+          console.log(`✅ Updated leave balances for: ${employee.email || docSnap.id}`);
+        } else {
+          skippedCount++;
+        }
+      }
+      
+      console.log(`✅ Leave balance migration complete. Updated: ${updatedCount}, Skipped: ${skippedCount}`);
+      return { success: true, updated: updatedCount, skipped: skippedCount };
+    } catch (error) {
+      console.error('❌ Error migrating leave balances:', error);
       throw error;
     }
   }

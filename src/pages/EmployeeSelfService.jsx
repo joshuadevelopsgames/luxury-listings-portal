@@ -129,9 +129,8 @@ const EmployeeSelfService = () => {
   const employeeData = {
     personalInfo: currentPersonalInfo,
     timeOff: {
-      vacation: { total: 20, used: 8, remaining: 12 },
-      sick: { total: 10, used: 2, remaining: 8 },
-      personal: { total: 5, used: 1, remaining: 4 }
+      vacation: { total: 15, used: 8, remaining: 7 },
+      sick: { total: 3, used: 2, remaining: 1 }
     },
     compensation: {
       salary: '$72,000',
@@ -340,13 +339,6 @@ const EmployeeSelfService = () => {
                     <span className="text-[13px] font-medium text-[#ff3b30]">Sick Leave</span>
                   </div>
                   <span className="text-[17px] font-semibold text-[#ff3b30]">{employeeData.timeOff.sick.remaining} days</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-[#af52de]/5 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <Home className="w-5 h-5 text-[#af52de]" />
-                    <span className="text-[13px] font-medium text-[#af52de]">Personal</span>
-                  </div>
-                  <span className="text-[17px] font-semibold text-[#af52de]">{employeeData.timeOff.personal.remaining} days</span>
                 </div>
               </div>
             </div>

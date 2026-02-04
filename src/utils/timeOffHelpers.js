@@ -102,7 +102,6 @@ export const getDaysUntil = (targetDate) => {
  */
 const MIN_NOTICE_DAYS = {
   vacation: 14,    // 2 weeks notice for vacation
-  personal: 3,     // 3 days notice for personal
   sick: 0,         // Same day OK for sick
   travel: 14       // 2 weeks for travel
 };
@@ -262,7 +261,6 @@ export const getLeaveTypeInfo = (type) => {
   const types = {
     vacation: { label: 'Vacation', icon: '🏖️', color: 'text-[#0071e3]' },
     sick: { label: 'Sick Leave', icon: '🏥', color: 'text-[#ff3b30]' },
-    personal: { label: 'Personal', icon: '👤', color: 'text-[#5856d6]' },
     travel: { label: 'Business Travel', icon: '✈️', color: 'text-[#ff9500]' }
   };
   return types[type] || { label: type, icon: '📅', color: 'text-[#86868b]' };

@@ -255,7 +255,7 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
   }
 
   /**
-   * Extract Instagram metrics from screenshot images using GPT-4o Vision
+   * Extract Instagram metrics from screenshot images (OpenRouter or OpenAI Vision)
    * Now uses secure Cloud Function with rate limiting to prevent abuse
    * 
    * @param {Array} images - Array of image Files, Blobs, or base64 strings
@@ -263,7 +263,7 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
    * @returns {Promise<Object>} - Extracted metrics
    */
   async extractInstagramMetrics(images, onProgress = null) {
-    console.log(`🤖 Extracting Instagram metrics with GPT-4o Vision (${images.length} images)...`);
+    console.log(`🤖 Extracting Instagram metrics with AI (OpenRouter/OpenAI) (${images.length} images)...`);
 
     if (onProgress) onProgress(0, images.length, 'Preparing images...');
 
@@ -287,7 +287,8 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
         
         if (result.data.success) {
           if (onProgress) onProgress(images.length, images.length, 'Complete!');
-          console.log('✅ Secure AI extraction:', Object.keys(result.data.metrics).length, 'fields');
+          const provider = result.data.provider || 'openrouter';
+          console.log(`✅ AI extraction (${provider}):`, Object.keys(result.data.metrics).length, 'fields');
           console.log(`📊 Rate limit remaining: ${result.data.rateLimitRemaining}`);
           return result.data.metrics;
         }
@@ -413,8 +414,8 @@ Return ONLY the JSON object, no markdown or explanation.`;
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('❌ GPT-4o Vision error:', errorData);
-        throw new Error(`GPT-4o Vision error: ${errorData.error?.message || 'Unknown error'}`);
+        console.error('❌ OpenAI API error:', errorData);
+        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
       }
 
       const data = await response.json();
@@ -435,11 +436,11 @@ Return ONLY the JSON object, no markdown or explanation.`;
 
       if (onProgress) onProgress(images.length, images.length, 'Complete!');
       
-      console.log('✅ GPT-4o Vision extracted metrics:', Object.keys(cleaned).length, 'fields');
+      console.log('✅ Direct OpenAI extraction:', Object.keys(cleaned).length, 'fields');
       return cleaned;
 
     } catch (error) {
-      console.error('❌ GPT-4o Vision extraction failed:', error);
+      console.error('❌ Direct OpenAI extraction failed:', error);
       throw error;
     }
   }

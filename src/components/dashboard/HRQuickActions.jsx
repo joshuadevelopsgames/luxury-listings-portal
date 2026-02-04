@@ -54,7 +54,6 @@ const HRQuickActions = () => {
     switch (type) {
       case 'vacation': return '🏖️';
       case 'sick': return '🏥';
-      case 'personal': return '🏠';
       default: return '📅';
     }
   };

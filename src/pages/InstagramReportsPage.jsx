@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { firestoreService } from '../services/firestoreService';
 import { openaiService } from '../services/openaiService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
-// Fallback to browser-based OCR if Cloud Vision and GPT-4o fail
+// Fallback to browser-based OCR if Cloud Vision and AI extraction fail
 import { instagramOCRService } from '../services/instagramOCRService';
 import { getStorage, ref, deleteObject } from 'firebase/storage';
 import { 
@@ -984,17 +984,17 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
       const imageFiles = formData.screenshots.map(s => s.localFile || s.previewUrl);
       let metrics;
       
-      // Try GPT-4o Vision first (most accurate for visual layout understanding)
+      // Try AI extraction first (OpenRouter → OpenAI fallback, then Cloud Vision)
       try {
         metrics = await openaiService.extractInstagramMetrics(
           imageFiles,
           (current, total, status) => {
-            setExtractionProgress({ current, total, status: status || 'Analyzing with AI Vision...' });
+            setExtractionProgress({ current, total, status: status || 'Analyzing with AI...' });
           }
         );
-        console.log('✅ GPT-4o Vision extraction successful');
+        console.log('✅ AI extraction successful');
       } catch (gptError) {
-        console.warn('GPT-4o Vision failed, trying Cloud Vision:', gptError);
+        console.warn('AI extraction failed, trying Cloud Vision:', gptError);
         
         // Fallback to Cloud Vision OCR
         try {

@@ -12,7 +12,7 @@ class AIService {
         tasks: "Task management system with role-based assignments and progress tracking",
         tutorials: "Step-by-step guides organized by role and difficulty level",
         resources: "Document library with templates, guides, and quick access to My Time Off, Manager Messages, IT Support, and HR Analytics (for HR). Everything is nested here for easy access.",
-        myTimeOff: "Employee time-off management where users can request vacation, sick leave, personal time, view balances, and track request status (pending/approved/rejected). Updates automatically in real-time.",
+        myTimeOff: "Employee time-off management where users can request vacation or sick leave, view balances, and track request status (pending/approved/rejected). Updates automatically in real-time.",
         myProfile: "My Profile portal with tabs for Overview, Personal Info (editable), Time Off, Compensation, and Documents. HR managers can edit all employee fields.",
         itSupport: "IT Support intake form where employees can submit technical issues with page URLs, screenshots, and descriptions. Sends email to jrsschroeder@gmail.com and updates automatically.",
         calendar: "HR calendar for leave management, team scheduling, and Google Calendar sync (HR Managers only)",
@@ -352,7 +352,7 @@ You can access Tasks from the main navigation menu.`;
 • 📊 View team member vacation/sick day balances
 • 📅 Visual calendar with all leave marked
 • 🔄 Sync with Google Calendar
-• 🏖️ Track vacation, sick leave, and personal time
+• 🏖️ Track vacation and sick leave
 
 **HR Dashboard Focus:**
 The HR dashboard is operational, not training-focused! You'll see:
@@ -437,10 +437,10 @@ If you need performance insights, you can:
 
   // Time Off response
   getTimeOffResponse(userRole) {
-    return `📅 **My Time Off** is where you can manage all your vacation, sick leave, and personal time!
+    return `📅 **My Time Off** is where you can manage all your vacation and sick leave!
 
 Features:
-• Request time off (vacation, sick leave, personal time)
+• Request time off (vacation or sick leave)
 • View your leave balances and remaining days
 • Track request status (pending/approved/rejected)
 • See your request history

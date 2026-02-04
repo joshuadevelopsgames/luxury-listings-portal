@@ -54,6 +54,8 @@ const TeamManagement = () => {
   });
   const [savingLeave, setSavingLeave] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [migratingLeave, setMigratingLeave] = useState(false);
+  const [migrationDone, setMigrationDone] = useState(false);
   
   const isHRManager = currentRole === 'hr_manager';
   const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
@@ -67,37 +69,39 @@ const TeamManagement = () => {
     return `EMP-${num}`;
   };
 
-  // Load team members from Firestore
+  // Load team members from Firestore; leave balances from user profiles (same source as My Time Off)
   useEffect(() => {
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
         const users = await firestoreService.getApprovedUsers();
-        // Sort by createdAt to ensure consistent ordering for employee IDs
         const sortedUsers = [...users].sort((a, b) => {
           const dateA = a.createdAt?.toDate?.() || new Date(0);
           const dateB = b.createdAt?.toDate?.() || new Date(0);
           return dateA - dateB;
         });
-        const formattedMembers = sortedUsers.map((user, index) => ({
-          // Preserve original user data for UserLink
-          ...user,
-          id: user.id || index + 1,
-          name: user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
-          email: user.email,
-          phone: user.phone || '',
-          department: user.department || 'General',
-          position: user.role || user.position || 'Team Member',
-          startDate: user.createdAt?.toDate?.()?.toISOString?.()?.split('T')[0] || '',
-          status: user.status || 'active',
-          avatar: (user.displayName || user.email || '').substring(0, 2).toUpperCase(),
-          performance: user.performance || { rating: 0, projectsCompleted: 0, onTimeDelivery: 0, clientSatisfaction: 0, lastReview: null },
-          skills: user.skills || [],
-          certifications: user.certifications || [],
-          leaveBalance: user.leaveBalances || { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } },
-          salary: user.salary || 0,
-          manager: user.manager || '',
-          employeeId: user.employeeId || generateEmployeeId(index)
+        const formattedMembers = await Promise.all(sortedUsers.map(async (user, index) => {
+          const email = user.email || user.id;
+          const leaveBalance = await firestoreService.getUserLeaveBalances(email);
+          return {
+            ...user,
+            id: user.id || index + 1,
+            name: user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+            email: user.email || user.id,
+            phone: user.phone || '',
+            department: user.department || 'General',
+            position: user.role || user.position || 'Team Member',
+            startDate: user.createdAt?.toDate?.()?.toISOString?.()?.split('T')[0] || '',
+            status: user.status || 'active',
+            avatar: (user.displayName || user.email || '').substring(0, 2).toUpperCase(),
+            performance: user.performance || { rating: 0, projectsCompleted: 0, onTimeDelivery: 0, clientSatisfaction: 0, lastReview: null },
+            skills: user.skills || [],
+            certifications: user.certifications || [],
+            leaveBalance,
+            salary: user.salary || 0,
+            manager: user.manager || '',
+            employeeId: user.employeeId || generateEmployeeId(index)
+          };
         }));
         setTeamMembers(formattedMembers);
       } catch (error) {
@@ -180,12 +184,8 @@ const TeamManagement = () => {
         used: employee.leaveBalance?.vacation?.used || 0 
       },
       sick: { 
-        total: employee.leaveBalance?.sick?.total || 10, 
+        total: employee.leaveBalance?.sick?.total || 3, 
         used: employee.leaveBalance?.sick?.used || 0 
-      },
-      personal: { 
-        total: employee.leaveBalance?.personal?.total || 3, 
-        used: employee.leaveBalance?.personal?.used || 0 
       }
     });
     setShowEditModal(true);
@@ -216,6 +216,46 @@ const TeamManagement = () => {
     }
   };
 
+  // Migrate all users' leave balances to new structure (sick=3, remove personal)
+  const handleMigrateLeavBalances = async () => {
+    if (!window.confirm('This will set all users\' sick days to 3 and remove personal days. Continue?')) {
+      return;
+    }
+    setMigratingLeave(true);
+    try {
+      const result = await firestoreService.migrateLeaveBalances();
+      toast.success(`Migration complete! Updated ${result.updated} users, skipped ${result.skipped}.`);
+      setMigrationDone(true);
+      // Reload team members to reflect changes
+      const users = await firestoreService.getApprovedUsers();
+      const sortedUsers = [...users].sort((a, b) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(0);
+        const dateB = b.createdAt?.toDate?.() || new Date(0);
+        return dateA - dateB;
+      });
+      const formattedMembers = sortedUsers.map((user, index) => ({
+        id: user.id,
+        name: user.displayName || user.firstName + ' ' + user.lastName || 'Team Member',
+        email: user.email,
+        role: user.role || 'employee',
+        department: user.department || 'General',
+        position: user.position || user.role || 'Team Member',
+        status: user.status || 'active',
+        startDate: user.startDate || user.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        employeeId: generateEmployeeId(index),
+        leaveBalance: user.leaveBalances || { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } },
+        performance: user.performance || 4.0,
+        skills: user.skills || []
+      }));
+      setTeamMembers(formattedMembers);
+    } catch (error) {
+      console.error('Error migrating leave balances:', error);
+      toast.error('Failed to migrate leave balances');
+    } finally {
+      setMigratingLeave(false);
+    }
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
@@ -225,6 +265,25 @@ const TeamManagement = () => {
           <p className="text-[15px] sm:text-[17px] text-[#86868b] mt-1">Manage your team, track performance, and oversee employee development</p>
         </div>
         <div className="flex gap-2">
+          {isHRManager && !migrationDone && (
+            <button 
+              onClick={handleMigrateLeavBalances}
+              disabled={migratingLeave}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[14px] font-medium hover:bg-[#ff9500]/20 transition-colors disabled:opacity-50"
+            >
+              {migratingLeave ? (
+                <>
+                  <Activity className="w-4 h-4 animate-spin" />
+                  <span className="hidden sm:inline">Migrating...</span>
+                </>
+              ) : (
+                <>
+                  <Activity className="w-4 h-4" />
+                  <span className="hidden sm:inline">Set Sick Days to 3</span>
+                </>
+              )}
+            </button>
+          )}
           <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export Team Data</span>
@@ -674,17 +733,6 @@ const TeamManagement = () => {
                         />
                       </div>
                     </div>
-                    <div className="text-center p-5 bg-[#af52de]/5 dark:bg-[#af52de]/10 rounded-xl">
-                      <p className="text-[32px] font-semibold text-[#af52de]">{selectedEmployee.leaveBalance.personal.remaining}</p>
-                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Personal Days</p>
-                      <p className="text-[13px] text-[#86868b] mt-1">Used: {selectedEmployee.leaveBalance.personal.used} of {selectedEmployee.leaveBalance.personal.total}</p>
-                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-[#af52de] rounded-full transition-all"
-                          style={{ width: `${(selectedEmployee.leaveBalance.personal.remaining / selectedEmployee.leaveBalance.personal.total) * 100}%` }}
-                        />
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -801,46 +849,6 @@ const TeamManagement = () => {
                 </div>
                 <p className="text-[11px] text-[#86868b] mt-2">
                   Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days
-                </p>
-              </div>
-
-              {/* Personal Days */}
-              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-black/5 dark:border-white/10">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-3 h-3 rounded-full bg-[#af52de]" />
-                  <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Personal Days</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Allotted</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={editLeaveForm.personal.total}
-                      onChange={(e) => setEditLeaveForm(prev => ({
-                        ...prev,
-                        personal: { ...prev.personal, total: parseInt(e.target.value) || 0 }
-                      }))}
-                      className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1">Days Used</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={editLeaveForm.personal.total}
-                      value={editLeaveForm.personal.used}
-                      onChange={(e) => setEditLeaveForm(prev => ({
-                        ...prev,
-                        personal: { ...prev.personal, used: parseInt(e.target.value) || 0 }
-                      }))}
-                      className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    />
-                  </div>
-                </div>
-                <p className="text-[11px] text-[#86868b] mt-2">
-                  Remaining: {editLeaveForm.personal.total - editLeaveForm.personal.used} days
                 </p>
               </div>
 

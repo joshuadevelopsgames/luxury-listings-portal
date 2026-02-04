@@ -18,10 +18,16 @@ admin.initializeApp();
 // ============================================================================
 const RATE_LIMITS = {
   openai: {
-    maxRequestsPerHour: 50,      // Max requests per user per hour
-    maxRequestsPerDay: 200,      // Max requests per user per day
+    maxRequestsPerHour: 50,      // Max requests per user per hour (OpenRouter/OpenAI)
+    maxRequestsPerDay: 200,       // Max requests per user per day
     maxImagesPerRequest: 10,     // Max images per single request
     cooldownMinutes: 5,          // Cooldown after hitting limit
+  },
+  vision: {
+    maxRequestsPerHour: 30,      // Max Cloud Vision requests per user per hour
+    maxRequestsPerDay: 100,       // Max per user per day
+    maxImagesPerRequest: 15,     // Max images per processInstagramScreenshots call
+    cooldownMinutes: 5,
   }
 };
 
@@ -369,7 +375,8 @@ Return ONLY the JSON object, no markdown or explanation.`;
       success: true,
       metrics: cleaned,
       processingTime: parseFloat(processingTime),
-      rateLimitRemaining: rateLimit.remaining
+      rateLimitRemaining: rateLimit.remaining,
+      provider
     };
   } catch (error) {
     console.error(`❌ ${provider} extraction failed:`, error);
@@ -432,9 +439,22 @@ exports.extractTextFromImage = onCall({
   cors: true,
   maxInstances: 10,
 }, async (request) => {
-  // Verify user is authenticated
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const userId = request.auth.uid;
+  const rateLimit = await checkRateLimit(userId, 'vision');
+  if (!rateLimit.allowed) {
+    const visionLimit = RATE_LIMITS.vision;
+    throw new HttpsError(
+      'resource-exhausted',
+      rateLimit.reason === 'cooldown'
+        ? `Please wait ${visionLimit.cooldownMinutes} minutes before trying again.`
+        : rateLimit.reason === 'hourly_limit'
+          ? `Maximum ${visionLimit.maxRequestsPerHour} image requests per hour.`
+          : `Maximum ${visionLimit.maxRequestsPerDay} image requests per day.`
+    );
   }
 
   const { imageUrl, imageBase64 } = request.data;
@@ -482,18 +502,38 @@ exports.processInstagramScreenshots = onCall({
   maxInstances: 10,
   timeoutSeconds: 120,
 }, async (request) => {
-  // Verify user is authenticated
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated');
   }
 
+  const userId = request.auth.uid;
   const { images } = request.data;
 
   if (!images || !Array.isArray(images) || images.length === 0) {
     throw new HttpsError('invalid-argument', 'images array is required');
   }
 
-  console.log(`Processing ${images.length} screenshots for user ${request.auth.uid}`);
+  const visionLimit = RATE_LIMITS.vision;
+  if (images.length > visionLimit.maxImagesPerRequest) {
+    throw new HttpsError(
+      'invalid-argument',
+      `Maximum ${visionLimit.maxImagesPerRequest} images per request`
+    );
+  }
+
+  const rateLimit = await checkRateLimit(userId, 'vision');
+  if (!rateLimit.allowed) {
+    throw new HttpsError(
+      'resource-exhausted',
+      rateLimit.reason === 'cooldown'
+        ? `Please wait ${visionLimit.cooldownMinutes} minutes before trying again.`
+        : rateLimit.reason === 'hourly_limit'
+          ? `Maximum ${visionLimit.maxRequestsPerHour} Vision requests per hour.`
+          : `Maximum ${visionLimit.maxRequestsPerDay} Vision requests per day.`
+    );
+  }
+
+  console.log(`Processing ${images.length} screenshots for user ${userId}`);
   const startTime = Date.now();
 
   try {
