@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import AppSetupPage from "./AppSetupPage";
+import { USER_ROLES } from "../entities/UserRoles";
 import { 
   FileText, 
   ExternalLink, 
@@ -19,6 +20,17 @@ import {
   BookOpen,
   Settings
 } from "lucide-react";
+
+// Role to message page mapping
+const roleMessagePages = {
+  [USER_ROLES.ADMIN]: '/admin-message',
+  [USER_ROLES.DIRECTOR]: '/director-message',
+  [USER_ROLES.CONTENT_DIRECTOR]: '/content-manager-message',
+  [USER_ROLES.SOCIAL_MEDIA_MANAGER]: '/social-media-manager-message',
+  [USER_ROLES.GRAPHIC_DESIGNER]: '/graphic-designer-message',
+  [USER_ROLES.HR_MANAGER]: '/hr-manager-message',
+  [USER_ROLES.SALES_MANAGER]: '/sales-manager-message',
+};
 
 const resources = [
   {
@@ -44,10 +56,10 @@ const resources = [
   {
     id: 99,
     title: "Manager Messages",
-    description: "Important updates and messages from your content manager",
+    description: "Role-specific guidelines, responsibilities, and important updates for your position",
     type: "message",
     category: "employee",
-    internalPath: "/content-manager-message",
+    internalPath: "dynamic-role-message", // Special marker for role-based routing
     important: true
   },
   {
@@ -247,7 +259,7 @@ export default function ResourcesPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {importantResources.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} />
+                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} />
                 ))}
               </div>
             </section>
@@ -267,7 +279,7 @@ export default function ResourcesPage() {
                 </div>
               ) : (
                 otherResources.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} />
+                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} />
                 ))
               )}
             </div>
@@ -321,8 +333,16 @@ export default function ResourcesPage() {
   );
 }
 
-function ResourceCard({ resource, navigate }) {
+function ResourceCard({ resource, navigate, currentRole }) {
   const Icon = typeIcons[resource.type];
+  
+  // Handle dynamic role-based routing for Manager Messages
+  const getInternalPath = () => {
+    if (resource.internalPath === 'dynamic-role-message') {
+      return roleMessagePages[currentRole] || '/content-manager-message';
+    }
+    return resource.internalPath;
+  };
   
   return (
     <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all duration-300">
@@ -347,7 +367,7 @@ function ResourceCard({ resource, navigate }) {
         
         {resource.internalPath && (
           <button 
-            onClick={() => navigate(resource.internalPath)}
+            onClick={() => navigate(getInternalPath())}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
           >
             <ArrowRight className="w-4 h-4" />
