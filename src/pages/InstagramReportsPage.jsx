@@ -79,7 +79,8 @@ const InstagramReportsPage = () => {
   
   // Get effective user (View As support)
   const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
-  const effectiveIsAdmin = isViewingAs ? false : isSystemAdmin;
+  // System admins always see all reports, even in View As mode
+  const effectiveIsAdmin = isSystemAdmin;
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
