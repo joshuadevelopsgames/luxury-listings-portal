@@ -44,6 +44,12 @@ import MyTimeOff from './pages/MyTimeOff';
 import EmployeeSelfService from './pages/EmployeeSelfService';
 import OnboardingPage from './pages/OnboardingPage';
 import ContentManagerMessage from './pages/ContentManagerMessage';
+import AdminMessage from './pages/AdminMessage';
+import DirectorMessage from './pages/DirectorMessage';
+import SocialMediaManagerMessage from './pages/SocialMediaManagerMessage';
+import GraphicDesignerMessage from './pages/GraphicDesignerMessage';
+import HRManagerMessage from './pages/HRManagerMessage';
+import SalesManagerMessage from './pages/SalesManagerMessage';
 import InstagramReportsPage from './pages/InstagramReportsPage';
 import MetaCallback from './pages/MetaCallback';
 import WaitingForApproval from './pages/WaitingForApproval';
@@ -194,6 +200,12 @@ const router = createBrowserRouter([
           { path: 'self-service', element: <EmployeeSelfService /> },
           { path: 'onboarding', element: <OnboardingPage /> },
           { path: 'content-manager-message', element: <ContentManagerMessage /> },
+          { path: 'admin-message', element: <AdminMessage /> },
+          { path: 'director-message', element: <DirectorMessage /> },
+          { path: 'social-media-manager-message', element: <SocialMediaManagerMessage /> },
+          { path: 'graphic-designer-message', element: <GraphicDesignerMessage /> },
+          { path: 'hr-manager-message', element: <HRManagerMessage /> },
+          { path: 'sales-manager-message', element: <SalesManagerMessage /> },
           { path: 'notifications', element: <NotificationsPage /> },
 
           // Admin pages
