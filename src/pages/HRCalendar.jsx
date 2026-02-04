@@ -56,6 +56,7 @@ const HRCalendar = () => {
   const [archiving, setArchiving] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [viewingMember, setViewingMember] = useState(null);
   
   // Admin balance editor state
   const [showBalanceEditor, setShowBalanceEditor] = useState(false);
@@ -1127,6 +1128,180 @@ const HRCalendar = () => {
         document.body
       )}
 
+      {/* View Member Details Modal */}
+      {viewingMember && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4 z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center text-white text-[15px] font-medium">
+                    {viewingMember.avatar}
+                  </div>
+                  <div>
+                    <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">{viewingMember.name}</h2>
+                    <p className="text-[13px] text-[#86868b]">{viewingMember.position} • {viewingMember.department}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setViewingMember(null)}
+                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  <XCircle className="w-5 h-5 text-[#86868b]" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              {/* Leave Balance Summary */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="rounded-xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Plane className="w-4 h-4 text-[#0071e3]" />
+                    <span className="text-[13px] font-medium text-[#0071e3]">Vacation Days</span>
+                  </div>
+                  <p className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
+                    {viewingMember.totalVacationDays - viewingMember.usedVacationDays}
+                    <span className="text-[14px] text-[#86868b] font-normal ml-1">remaining</span>
+                  </p>
+                  <p className="text-[12px] text-[#86868b] mt-1">
+                    {viewingMember.usedVacationDays} used of {viewingMember.totalVacationDays} total
+                  </p>
+                  <div className="mt-2 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#0071e3] rounded-full" 
+                      style={{ width: `${(viewingMember.usedVacationDays / viewingMember.totalVacationDays) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-xl bg-[#ff3b30]/5 border border-[#ff3b30]/20 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Heart className="w-4 h-4 text-[#ff3b30]" />
+                    <span className="text-[13px] font-medium text-[#ff3b30]">Sick Days</span>
+                  </div>
+                  <p className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
+                    {viewingMember.totalSickDays - viewingMember.usedSickDays}
+                    <span className="text-[14px] text-[#86868b] font-normal ml-1">remaining</span>
+                  </p>
+                  <p className="text-[12px] text-[#86868b] mt-1">
+                    {viewingMember.usedSickDays} used of {viewingMember.totalSickDays} total
+                  </p>
+                  <div className="mt-2 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#ff3b30] rounded-full" 
+                      style={{ width: `${(viewingMember.usedSickDays / viewingMember.totalSickDays) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Leave Request History */}
+              <div>
+                <h3 className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mb-3">Leave Request History</h3>
+                {(() => {
+                  const memberRequests = leaveRequests.filter(
+                    r => r.employeeEmail === viewingMember.email || r.employeeId === viewingMember.email
+                  );
+                  
+                  if (memberRequests.length === 0) {
+                    return (
+                      <div className="text-center py-8 bg-black/[0.02] dark:bg-white/5 rounded-xl">
+                        <CalendarIcon className="w-10 h-10 text-[#86868b] mx-auto mb-2 opacity-50" />
+                        <p className="text-[14px] text-[#86868b]">No leave requests found</p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="space-y-2">
+                      {memberRequests.map(request => (
+                        <div 
+                          key={request.id}
+                          className={`flex items-center justify-between p-3 rounded-xl border ${
+                            request.status === 'pending' 
+                              ? 'bg-[#ff9500]/5 border-[#ff9500]/20' 
+                              : request.status === 'approved'
+                                ? 'bg-[#34c759]/5 border-[#34c759]/20'
+                                : request.status === 'rejected'
+                                  ? 'bg-[#ff3b30]/5 border-[#ff3b30]/20'
+                                  : 'bg-black/[0.02] dark:bg-white/5 border-black/5 dark:border-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${
+                              request.type === 'vacation' 
+                                ? 'bg-[#0071e3]/10' 
+                                : 'bg-[#ff3b30]/10'
+                            }`}>
+                              {request.type === 'vacation' 
+                                ? <Plane className="w-4 h-4 text-[#0071e3]" />
+                                : <Heart className="w-4 h-4 text-[#ff3b30]" />
+                              }
+                            </div>
+                            <div>
+                              <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white capitalize">{request.type}</p>
+                              <p className="text-[12px] text-[#86868b]">
+                                {request.startDate} - {request.endDate} ({request.days} days)
+                              </p>
+                              {request.reason && (
+                                <p className="text-[11px] text-[#86868b] mt-0.5">{request.reason}</p>
+                              )}
+                            </div>
+                          </div>
+                          <span className={`text-[11px] px-2 py-1 rounded-md font-medium capitalize ${
+                            request.status === 'approved' 
+                              ? 'bg-[#34c759]/10 text-[#34c759]'
+                              : request.status === 'pending'
+                                ? 'bg-[#ff9500]/10 text-[#ff9500]'
+                                : request.status === 'rejected'
+                                  ? 'bg-[#ff3b30]/10 text-[#ff3b30]'
+                                  : 'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                          }`}>
+                            {request.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+              
+              {/* Actions */}
+              <div className="mt-6 pt-4 border-t border-black/5 dark:border-white/10 flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    const user = allUsers.find(u => u.email === viewingMember.email) || {
+                      email: viewingMember.email,
+                      displayName: viewingMember.name,
+                      leaveBalances: {
+                        vacation: { total: viewingMember.totalVacationDays, used: viewingMember.usedVacationDays },
+                        sick: { total: viewingMember.totalSickDays, used: viewingMember.usedSickDays }
+                      }
+                    };
+                    startEditingUser(user);
+                    setShowBalanceEditor(true);
+                    setViewingMember(null);
+                    if (allUsers.length === 0) {
+                      loadUsersWithBalances();
+                    }
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+                >
+                  Edit Balances
+                </button>
+                <button
+                  onClick={() => setViewingMember(null)}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Calendar View */}
       <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
         <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
@@ -1245,7 +1420,10 @@ const HRCalendar = () => {
                       >
                         Edit
                       </button>
-                      <button className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                      <button 
+                        onClick={() => setViewingMember(member)}
+                        className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                      >
                         View Details
                       </button>
                     </div>
