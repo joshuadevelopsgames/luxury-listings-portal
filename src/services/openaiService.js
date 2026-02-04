@@ -276,29 +276,49 @@ IMPORTANT: Look carefully at the visual layout. Numbers belong to the label they
 Extract these fields (use null if not visible):
 {
   "dateRange": "Jan 1 - Jan 31" or similar,
+  
+  // VIEWS
   "views": number (the big number in/near "Views" donut),
-  "viewsFromAdsPercent": number,
+  "viewsFromAdsPercent": number (e.g. "72.2% from ads"),
   "viewsFollowerPercent": number,
   "viewsNonFollowerPercent": number,
+  "viewsContentBreakdown": [{"type": "Posts/Reels/Stories", "percentage": number}],
+  
+  // INTERACTIONS
   "interactions": number (the big number in/near "Interactions" donut),
+  "interactionsFromAdsPercent": number (e.g. "22.8% from ads"),
   "interactionsFollowerPercent": number,
   "interactionsNonFollowerPercent": number,
-  "accountsReached": number,
-  "accountsReachedChange": "+X%" or "-X%",
-  "profileVisits": number,
-  "profileVisitsChange": "+X%" or "-X%",
-  "externalLinkTaps": number,
-  "followers": number (total follower count),
-  "topCities": [{"name": "City", "percentage": number}],
-  "ageRanges": [{"range": "25-34", "percentage": number}],
-  "gender": {"men": number, "women": number},
-  "contentBreakdown": [{"type": "Posts/Reels/Stories", "percentage": number}],
-  "growth": {"overall": number, "follows": number, "unfollows": number},
+  "interactionsContentBreakdown": [{"type": "Reels/Posts/Stories", "percentage": number}],
   "likes": number,
   "comments": number,
   "shares": number,
   "saves": number,
-  "reposts": number
+  "reposts": number,
+  
+  // REACH & PROFILE
+  "accountsReached": number,
+  "accountsReachedChange": "+X%" or "-X%",
+  "profileActivity": number (total profile activity),
+  "profileActivityChange": "+X%" or "-X%",
+  "profileVisits": number,
+  "profileVisitsChange": "+X%" or "-X%",
+  "externalLinkTaps": number,
+  "externalLinkTapsChange": "+X%" or "-X%",
+  
+  // FOLLOWERS
+  "followers": number (total follower count),
+  "followerChange": "+X%" or "-X%" (vs previous period),
+  "growth": {"overall": number, "follows": number, "unfollows": number},
+  
+  // DEMOGRAPHICS (if visible)
+  "topCities": [{"name": "City", "percentage": number}],
+  "ageRanges": [{"range": "25-34", "percentage": number}],
+  "gender": {"men": number, "women": number},
+  
+  // TOP CONTENT (if visible)
+  "topContent": [{"views": "83K", "date": "Jan 5"}],
+  "topReels": [{"likes": 271, "date": "Jan 9"}]
 }
 
 Return ONLY the JSON object, no markdown or explanation.`;
