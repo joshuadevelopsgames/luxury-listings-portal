@@ -29,6 +29,7 @@ import FilterDropdown from '../components/tasks/FilterDropdown';
 import CalendarView from '../components/tasks/CalendarView';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
+import { useViewAs } from '../contexts/ViewAsContext';
 import { toast } from 'react-hot-toast';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
@@ -114,7 +115,11 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 const TasksPage = () => {
   const { currentUser, hasPermission, getCurrentRolePermissions } = useAuth();
   const { confirm } = useConfirm();
+  const { isViewingAs, viewingAsUser } = useViewAs();
   const rolePerms = getCurrentRolePermissions?.()?.permissions || {};
+  
+  // Get effective user - when viewing as another user, show their tasks
+  const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
   
   // If user can access the Tasks page (module enabled), they can create tasks
   // No separate feature permission needed - module access = full access
@@ -473,7 +478,7 @@ const TasksPage = () => {
   // Refresh tasks function - call after create/edit/delete actions
   const refreshTasks = async () => {
     try {
-      const tasksData = await DailyTask.filter({ assigned_to: currentUser.email }, '-due_date');
+      const tasksData = await DailyTask.filter({ assigned_to: effectiveUser.email }, '-due_date');
       setTasks(tasksData);
     } catch (error) {
       console.error('Error refreshing tasks:', error);
@@ -485,7 +490,7 @@ const TasksPage = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const tasksData = await DailyTask.filter({ assigned_to: currentUser.email }, '-due_date');
+        const tasksData = await DailyTask.filter({ assigned_to: effectiveUser.email }, '-due_date');
         setTasks(tasksData);
       } catch (error) {
         console.error('Error loading tasks:', error);
@@ -495,7 +500,7 @@ const TasksPage = () => {
     };
 
     loadData();
-  }, [currentUser.email]);
+  }, [effectiveUser?.email]);
 
   // Force re-filter every minute to auto-hide tasks that pass 24-hour mark
   const [timeTick, setTimeTick] = useState(0);
