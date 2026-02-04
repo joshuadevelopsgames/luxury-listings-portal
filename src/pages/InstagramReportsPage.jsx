@@ -71,6 +71,9 @@ const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
   return formatPercent(stored);
 };
 
+// Admins see all Instagram reports (must match PermissionsContext + Firestore rules)
+const INSTAGRAM_ADMIN_EMAILS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+
 const InstagramReportsPage = () => {
   const { currentUser } = useAuth();
   const { isSystemAdmin } = usePermissions();
@@ -79,8 +82,8 @@ const InstagramReportsPage = () => {
   
   // Get effective user (View As support)
   const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
-  // System admins always see all reports, even in View As mode
-  const effectiveIsAdmin = isSystemAdmin;
+  // System admins always see all reports. Use email check so demo sees all even if PermissionsContext is slow.
+  const effectiveIsAdmin = isSystemAdmin || INSTAGRAM_ADMIN_EMAILS.includes((currentUser?.email || '').toLowerCase());
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
@@ -97,14 +100,19 @@ const InstagramReportsPage = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedQuarter, setSelectedQuarter] = useState(getQuarter(new Date()));
 
-  // Load reports - admins see all reports, others see only their own
+  // Load reports - admins see all reports, others see only their own. Re-subscribe when auth is ready.
   useEffect(() => {
+    if (!currentUser?.uid) {
+      setReports([]);
+      setLoading(false);
+      return () => {};
+    }
     const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
       setReports(data);
       setLoading(false);
     }, { loadAll: effectiveIsAdmin });
     return () => unsubscribe();
-  }, [effectiveIsAdmin]);
+  }, [currentUser?.uid, effectiveIsAdmin]);
 
   // Load clients
   useEffect(() => {
