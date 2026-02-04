@@ -2697,7 +2697,11 @@ class FirestoreService {
           ...doc.data()
         });
       });
+      console.log(`📊 Instagram reports loaded: ${reports.length} reports (loadAll=${loadAll})`);
       callback(reports);
+    }, (error) => {
+      console.error('❌ Error loading Instagram reports:', error);
+      callback([]);
     });
   }
 
