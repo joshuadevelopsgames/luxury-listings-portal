@@ -1503,6 +1503,36 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
                         />
                       </div>
                       <div>
+                        <label className="text-xs text-gray-500">Likes</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.likes || ''}
+                          onChange={(e) => updateMetric('likes', parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="764"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Comments</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.comments || ''}
+                          onChange={(e) => updateMetric('comments', parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="37"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Reposts</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.reposts || ''}
+                          onChange={(e) => updateMetric('reposts', parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="20"
+                        />
+                      </div>
+                      <div>
                         <label className="text-xs text-gray-500">Reach</label>
                         <input
                           type="number"
@@ -1964,15 +1994,26 @@ const ReportPreviewModal = ({ report, onClose }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxImage, lightboxIndex]);
 
+  const isQuarterly = report.reportType === 'quarterly';
+  const isYearly = report.reportType === 'yearly';
+  const isAggregated = isQuarterly || isYearly;
+  const sourceCount = report.sourceReportIds?.length;
+
   return (
     <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
-        {/* Preview Header */}
-        <div className="px-6 py-3 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-          <div className="flex items-center gap-2">
-            <Eye className="w-5 h-5" />
+        {/* Preview Header — type-specific colors */}
+        <div className={`px-6 py-3 border-b border-gray-200 flex items-center justify-between text-white ${
+          isYearly ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600' :
+          isQuarterly ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500' :
+          'bg-gradient-to-r from-purple-600 to-pink-600'
+        }`}>
+          <div className="flex items-center gap-3">
+            {isYearly ? <FileBarChart className="w-5 h-5" /> : isQuarterly ? <CalendarDays className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             <span className="font-medium">Report Preview</span>
-            <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-xs">Live</span>
+            {isYearly && <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs">Annual</span>}
+            {isQuarterly && <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs">Quarterly</span>}
+            {!isAggregated && <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs">Live</span>}
           </div>
           <button
             onClick={onClose}
@@ -1983,26 +2024,43 @@ const ReportPreviewModal = ({ report, onClose }) => {
         </div>
 
         {/* Preview Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-          {/* Hero Section */}
+        <div className={`flex-1 overflow-y-auto ${
+          isYearly ? 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50' :
+          isQuarterly ? 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50' :
+          'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50'
+        }`}>
+          {/* Hero Section — type-specific gradient */}
           <div className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500" />
+            <div className={`absolute inset-0 ${
+              isYearly ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500' :
+              isQuarterly ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500' :
+              'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500'
+            }`} />
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjLTItNC00LTItNC0ycy0yIDItMiA0YzAgMiAyIDQgMiA0czIgMiA0IDJjMiA0IDQgMiA0IDJzMi0yIDItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10" />
             
             <div className="relative max-w-4xl mx-auto px-6 py-12 sm:py-16 pb-20 sm:pb-24">
               <div className="text-center text-white">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm mb-4">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm font-medium">{report.dateRange || 'Date Range'}</span>
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-sm font-medium">{report.dateRange || 'Date Range'}</span>
+                  </div>
+                  {isYearly && <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">Annual Report</span>}
+                  {isQuarterly && <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">Quarterly Report</span>}
                 </div>
                 
                 <h1 className="text-3xl sm:text-4xl font-bold mb-3">
                   {report.title || 'Report Title'}
                 </h1>
                 
-                <div className="flex items-center justify-center gap-2 text-white/90 mb-6">
-                  <User className="w-5 h-5" />
-                  <span className="text-lg">{report.clientName || 'Client Name'}</span>
+                <div className="flex flex-col items-center gap-1 text-white/90 mb-6">
+                  <div className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    <span className="text-lg">{report.clientName || 'Client Name'}</span>
+                  </div>
+                  {isAggregated && sourceCount != null && sourceCount > 0 && (
+                    <p className="text-sm text-white/80">Aggregated from {sourceCount} monthly report{sourceCount !== 1 ? 's' : ''}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -2010,7 +2068,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
             {/* Wave Decoration */}
             <div className="absolute bottom-0 left-0 right-0">
               <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 80L60 70C120 60 240 40 360 30C480 20 600 20 720 25C840 30 960 40 1080 45C1200 50 1320 50 1380 50L1440 50V80H1380C1320 80 1200 80 1080 80C960 80 840 80 720 80C600 80 480 80 360 80C240 80 120 80 60 80H0Z" fill="rgb(250, 245, 255)" />
+                <path d="M0 80L60 70C120 60 240 40 360 30C480 20 600 20 720 25C840 30 960 40 1080 45C1200 50 1320 50 1380 50L1440 50V80H1380C1320 80 1200 80 1080 80C960 80 840 80 720 80C600 80 480 80 360 80C240 80 120 80 60 80H0Z" fill={isYearly ? 'rgb(238, 242, 255)' : isQuarterly ? 'rgb(236, 253, 245)' : 'rgb(250, 245, 255)'} />
               </svg>
             </div>
           </div>
@@ -2065,6 +2123,49 @@ const ReportPreviewModal = ({ report, onClose }) => {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quarterly breakdown — yearly reports only */}
+          {isYearly && report.quarterlyBreakdown && report.quarterlyBreakdown.length > 0 && (
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-indigo-500" />
+                    Quarterly breakdown
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Performance by quarter</p>
+                </div>
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {report.quarterlyBreakdown.map((q) => {
+                    const m = q.metrics;
+                    const hasData = m && (m.views != null || m.interactions != null || m.profileVisits != null);
+                    return (
+                      <div
+                        key={q.quarter}
+                        className={`rounded-xl border-2 p-4 ${
+                          hasData ? 'bg-gray-50/80 border-indigo-100' : 'bg-gray-50/50 border-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-bold text-indigo-600">Q{q.quarter}</span>
+                          {q.reportCount != null && <span className="text-xs text-gray-500">{q.reportCount} report{q.reportCount !== 1 ? 's' : ''}</span>}
+                        </div>
+                        {hasData ? (
+                          <div className="space-y-2 text-sm">
+                            {m.views != null && <div className="flex justify-between"><span className="text-gray-500">Views</span><span className="font-medium">{m.views.toLocaleString()}</span></div>}
+                            {m.interactions != null && <div className="flex justify-between"><span className="text-gray-500">Interactions</span><span className="font-medium">{m.interactions.toLocaleString()}</span></div>}
+                            {m.profileVisits != null && <div className="flex justify-between"><span className="text-gray-500">Profile visits</span><span className="font-medium">{m.profileVisits.toLocaleString()}</span></div>}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400">No data</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
@@ -2316,6 +2417,48 @@ const ReportPreviewModal = ({ report, onClose }) => {
                           </div>
                         );
                       })()}
+                    </div>
+                  )}
+
+                  {/* Engagement: likes, comments, shares, saves, reposts */}
+                  {(report.metrics.likes != null || report.metrics.comments != null || report.metrics.shares != null || report.metrics.saves != null || report.metrics.reposts != null) && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <Heart className="w-3.5 h-3.5 text-purple-500" />
+                        By interaction
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        {report.metrics.likes != null && (
+                          <div className="bg-gray-100 rounded-lg p-3 text-center">
+                            <div className="text-lg font-bold text-gray-900">{report.metrics.likes.toLocaleString()}</div>
+                            <p className="text-[10px] text-gray-500 mt-0.5">Likes</p>
+                          </div>
+                        )}
+                        {report.metrics.comments != null && (
+                          <div className="bg-gray-100 rounded-lg p-3 text-center">
+                            <div className="text-lg font-bold text-gray-900">{report.metrics.comments.toLocaleString()}</div>
+                            <p className="text-[10px] text-gray-500 mt-0.5">Comments</p>
+                          </div>
+                        )}
+                        {report.metrics.shares != null && (
+                          <div className="bg-gray-100 rounded-lg p-3 text-center">
+                            <div className="text-lg font-bold text-gray-900">{report.metrics.shares.toLocaleString()}</div>
+                            <p className="text-[10px] text-gray-500 mt-0.5">Shares</p>
+                          </div>
+                        )}
+                        {report.metrics.saves != null && (
+                          <div className="bg-gray-100 rounded-lg p-3 text-center">
+                            <div className="text-lg font-bold text-gray-900">{report.metrics.saves.toLocaleString()}</div>
+                            <p className="text-[10px] text-gray-500 mt-0.5">Saves</p>
+                          </div>
+                        )}
+                        {report.metrics.reposts != null && (
+                          <div className="bg-gray-100 rounded-lg p-3 text-center">
+                            <div className="text-lg font-bold text-gray-900">{report.metrics.reposts.toLocaleString()}</div>
+                            <p className="text-[10px] text-gray-500 mt-0.5">Reposts</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 

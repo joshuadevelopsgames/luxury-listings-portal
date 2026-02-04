@@ -2401,7 +2401,10 @@ class FirestoreService {
         notes: reportData.notes ?? '',
         postLinks: Array.isArray(reportData.postLinks) ? reportData.postLinks.map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') })) : [],
         metrics: reportData.metrics ?? null,
-        screenshots: [] // always empty; screenshots are used for OCR only, not attached to report
+        screenshots: [], // always empty; screenshots are used for OCR only, not attached to report
+        reportType: reportData.reportType ?? null,           // 'monthly' | 'quarterly' | 'yearly'
+        sourceReportIds: Array.isArray(reportData.sourceReportIds) ? reportData.sourceReportIds : null,
+        quarterlyBreakdown: Array.isArray(reportData.quarterlyBreakdown) ? reportData.quarterlyBreakdown : null
       }));
       
       const publicLinkId = this.generatePublicLinkId();

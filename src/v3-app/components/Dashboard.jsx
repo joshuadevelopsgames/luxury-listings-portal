@@ -346,7 +346,7 @@ const V3Dashboard = () => {
     switch (blockId) {
       case 'priorities':
         return (
-          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 overflow-hidden isolate">
             <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
               <div>
                 <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
@@ -409,7 +409,7 @@ const V3Dashboard = () => {
         );
       case 'deliverables':
         return (
-          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 overflow-hidden isolate">
             <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
               <div>
                 <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Monthly Deliverables</h2>
@@ -445,7 +445,7 @@ const V3Dashboard = () => {
         );
       case 'deadlines':
         return (
-          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 overflow-hidden isolate">
             <div className="p-5 border-b border-black/5 dark:border-white/5">
               <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
                 <Target className="w-5 h-5 text-[#ff3b30]" />
@@ -480,7 +480,7 @@ const V3Dashboard = () => {
         );
       case 'quickLinks':
         return (
-          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 overflow-hidden isolate">
             <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5">
               <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Quick Links</h2>
             </div>
@@ -675,7 +675,7 @@ const V3Dashboard = () => {
           { label: 'Due Today', value: todaysTasks.length, icon: Calendar, color: 'text-[#ff3b30]', show: hasTasksModule },
           { label: 'Completed', value: tasks.filter(t => t.status === 'completed').length, icon: CheckCircle2, color: 'text-[#34c759]', show: hasTasksModule },
         ].filter(item => item.show).map((item, idx) => (
-          <div key={idx} className="p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all cursor-pointer group">
+          <div key={idx} className="p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-md hover:shadow-black/10 dark:hover:shadow-black/30 transition-all cursor-pointer group isolate">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
               <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${item.color}`} strokeWidth={1.5} />
             </div>
@@ -740,7 +740,7 @@ const V3Dashboard = () => {
           <Link
             key={idx}
             to={action.path}
-            className="p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] dark:backdrop-blur-xl border border-gray-200 dark:border-white/5 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all group"
+            className="p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-md hover:shadow-black/10 dark:hover:shadow-black/30 hover:scale-[1.02] active:scale-[0.98] transition-all group isolate"
           >
             <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 transition-transform`}>
               <action.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" strokeWidth={1.5} />

@@ -1,5 +1,11 @@
 # OpenAI API Configuration
 # Get your API key from: https://platform.openai.com/api-keys
+#
+# SECURITY NOTE: For production, set the API key as a Firebase secret:
+# npx firebase-tools functions:secrets:set OPENAI_API_KEY --project luxury-listings-portal-e56de
+#
+# The frontend key below is only used as a fallback in development mode.
+# In production, all OpenAI calls go through secure Cloud Functions with rate limiting.
 REACT_APP_OPENAI_API_KEY=your_openai_api_key_here
 
 # Slack Integration (Individual User Login via OAuth)

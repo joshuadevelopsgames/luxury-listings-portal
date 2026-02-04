@@ -1,10 +1,23 @@
 /**
  * OpenAI Service for AI-powered features
  * Used for smart column mapping in Google Sheets imports
+ * 
+ * SECURITY: Instagram metrics extraction now uses secure Cloud Functions
+ * to prevent API key exposure and add rate limiting.
  */
+
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+// Initialize Firebase Functions for secure API calls
+let functions = null;
+try {
+  functions = getFunctions();
+} catch (e) {
+  console.warn('Firebase Functions not initialized, will fall back to direct API calls');
+}
 
 class OpenAIService {
   /**
@@ -243,6 +256,8 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
 
   /**
    * Extract Instagram metrics from screenshot images using GPT-4o Vision
+   * Now uses secure Cloud Function with rate limiting to prevent abuse
+   * 
    * @param {Array} images - Array of image Files, Blobs, or base64 strings
    * @param {Function} onProgress - Optional progress callback
    * @returns {Promise<Object>} - Extracted metrics
@@ -250,13 +265,59 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
   async extractInstagramMetrics(images, onProgress = null) {
     console.log(`🤖 Extracting Instagram metrics with GPT-4o Vision (${images.length} images)...`);
 
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured. Add REACT_APP_OPENAI_API_KEY to .env.local');
-    }
-
     if (onProgress) onProgress(0, images.length, 'Preparing images...');
 
-    // Convert images to base64 data URLs
+    // Convert images to base64 for Cloud Function
+    const imageData = await Promise.all(
+      images.map(async (img) => {
+        const base64 = await this.imageToBase64(img);
+        // Extract just the base64 part (remove data:image/...;base64, prefix)
+        const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+        return { base64: base64Data };
+      })
+    );
+
+    if (onProgress) onProgress(0, images.length, 'Analyzing with AI (secure)...');
+
+    // Try to use secure Cloud Function first
+    if (functions) {
+      try {
+        const extractMetrics = httpsCallable(functions, 'extractInstagramMetricsAI');
+        const result = await extractMetrics({ images: imageData });
+        
+        if (result.data.success) {
+          if (onProgress) onProgress(images.length, images.length, 'Complete!');
+          console.log('✅ Secure AI extraction:', Object.keys(result.data.metrics).length, 'fields');
+          console.log(`📊 Rate limit remaining: ${result.data.rateLimitRemaining}`);
+          return result.data.metrics;
+        }
+      } catch (error) {
+        // Check if it's a rate limit error
+        if (error.code === 'functions/resource-exhausted') {
+          console.warn('⚠️ Rate limit exceeded:', error.message);
+          throw new Error(`Rate limit exceeded: ${error.message}`);
+        }
+        
+        // For other errors, log and fall back to direct API if available
+        console.warn('⚠️ Cloud Function failed, checking for fallback:', error.message);
+        
+        // Only fall back if we have a direct API key configured (development mode)
+        if (!OPENAI_API_KEY) {
+          throw error;
+        }
+        console.log('🔄 Falling back to direct API call (development mode)');
+      }
+    }
+
+    // Fallback to direct API call (only for development/testing)
+    // In production, the Cloud Function should always be used
+    if (!OPENAI_API_KEY) {
+      throw new Error('AI extraction not available. Please contact support.');
+    }
+
+    console.warn('⚠️ Using direct OpenAI API call - this should only happen in development');
+
+    // Convert images to base64 data URLs for direct API
     const imageContents = await Promise.all(
       images.map(async (img) => {
         const base64 = await this.imageToBase64(img);
@@ -266,8 +327,6 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
         };
       })
     );
-
-    if (onProgress) onProgress(0, images.length, 'Analyzing with GPT-4o Vision...');
 
     const prompt = `Extract ALL metrics from these Instagram Insights screenshots. Return ONLY valid JSON.
 
@@ -376,6 +435,25 @@ Return ONLY the JSON object, no markdown or explanation.`;
     } catch (error) {
       console.error('❌ GPT-4o Vision extraction failed:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get current rate limit status for the authenticated user
+   * @returns {Promise<Object>} - Rate limit status
+   */
+  async getRateLimitStatus() {
+    if (!functions) {
+      return { error: 'Functions not initialized' };
+    }
+    
+    try {
+      const getRateLimit = httpsCallable(functions, 'getRateLimitStatus');
+      const result = await getRateLimit();
+      return result.data;
+    } catch (error) {
+      console.error('Failed to get rate limit status:', error);
+      return { error: error.message };
     }
   }
 

@@ -24,7 +24,9 @@ import {
   Clock,
   UserPlus,
   UserMinus,
-  Activity
+  Activity,
+  CalendarDays,
+  FileBarChart
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
@@ -134,7 +136,11 @@ const PublicInstagramReportPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+    <div className={`min-h-screen ${
+      report.reportType === 'yearly' ? 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50' :
+      report.reportType === 'quarterly' ? 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50' :
+      'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50'
+    }`}>
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -160,25 +166,44 @@ const PublicInstagramReportPage = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section — type-specific for quarterly/yearly */}
+      {(() => {
+        const isQuarterly = report.reportType === 'quarterly';
+        const isYearly = report.reportType === 'yearly';
+        const isAggregated = isQuarterly || isYearly;
+        const sourceCount = report.sourceReportIds?.length;
+        return (
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500" />
+        <div className={`absolute inset-0 ${
+          isYearly ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500' :
+          isQuarterly ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500' :
+          'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500'
+        }`} />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjLTItNC00LTItNC0ycy0yIDItMiA0YzAgMiAyIDQgMiA0czIgMiA0IDJjMiA0IDQgMiA0IDJzMi0yIDItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10" />
         
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 pb-24 sm:pb-32">
           <div className="text-center text-white">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm mb-6">
-              <Calendar className="w-4 h-4" />
-              <span className="text-sm font-medium">{report.dateRange}</span>
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm">
+                <Calendar className="w-4 h-4" />
+                <span className="text-sm font-medium">{report.dateRange}</span>
+              </div>
+              {isYearly && <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">Annual Report</span>}
+              {isQuarterly && <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">Quarterly Report</span>}
             </div>
             
             <h1 className="text-4xl sm:text-5xl font-bold mb-4">
               {report.title}
             </h1>
             
-            <div className="flex items-center justify-center gap-2 text-white/90 mb-8">
-              <User className="w-5 h-5" />
-              <span className="text-lg">{report.clientName}</span>
+            <div className="flex flex-col items-center gap-1 text-white/90 mb-8">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                <span className="text-lg">{report.clientName}</span>
+              </div>
+              {isAggregated && sourceCount != null && sourceCount > 0 && (
+                <p className="text-sm text-white/80">Aggregated from {sourceCount} monthly report{sourceCount !== 1 ? 's' : ''}</p>
+              )}
             </div>
           </div>
         </div>
@@ -186,10 +211,12 @@ const PublicInstagramReportPage = () => {
         {/* Wave Decoration */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="rgb(250, 245, 255)" />
+            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill={isYearly ? 'rgb(238, 242, 255)' : isQuarterly ? 'rgb(236, 253, 245)' : 'rgb(250, 245, 255)'} />
           </svg>
         </div>
       </div>
+        );
+      })()}
 
       {/* Key Metrics Overview */}
       {report.metrics && (
@@ -241,6 +268,47 @@ const PublicInstagramReportPage = () => {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quarterly breakdown — yearly reports only */}
+      {report.reportType === 'yearly' && report.quarterlyBreakdown && report.quarterlyBreakdown.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-indigo-500" />
+                Quarterly breakdown
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">Performance by quarter</p>
+            </div>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {report.quarterlyBreakdown.map((q) => {
+                const m = q.metrics;
+                const hasData = m && (m.views != null || m.interactions != null || m.profileVisits != null);
+                return (
+                  <div
+                    key={q.quarter}
+                    className={`rounded-xl border-2 p-4 ${hasData ? 'bg-gray-50/80 border-indigo-100' : 'bg-gray-50/50 border-gray-100'}`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-bold text-indigo-600">Q{q.quarter}</span>
+                      {q.reportCount != null && <span className="text-xs text-gray-500">{q.reportCount} report{q.reportCount !== 1 ? 's' : ''}</span>}
+                    </div>
+                    {hasData ? (
+                      <div className="space-y-2 text-sm">
+                        {m.views != null && <div className="flex justify-between"><span className="text-gray-500">Views</span><span className="font-medium">{m.views.toLocaleString()}</span></div>}
+                        {m.interactions != null && <div className="flex justify-between"><span className="text-gray-500">Interactions</span><span className="font-medium">{m.interactions.toLocaleString()}</span></div>}
+                        {m.profileVisits != null && <div className="flex justify-between"><span className="text-gray-500">Profile visits</span><span className="font-medium">{m.profileVisits.toLocaleString()}</span></div>}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400">No data</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -525,6 +593,48 @@ const PublicInstagramReportPage = () => {
                       </div>
                     );
                   })()}
+                </div>
+              )}
+
+              {/* By interaction: likes, comments, shares, saves, reposts */}
+              {(report.metrics.likes != null || report.metrics.comments != null || report.metrics.shares != null || report.metrics.saves != null || report.metrics.reposts != null) && (
+                <div className="mt-8">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-purple-500" />
+                    By interaction
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    {report.metrics.likes != null && (
+                      <div className="bg-gray-100 rounded-xl p-4 text-center">
+                        <div className="text-xl font-bold text-gray-900">{report.metrics.likes.toLocaleString()}</div>
+                        <p className="text-xs text-gray-500 mt-1">Likes</p>
+                      </div>
+                    )}
+                    {report.metrics.comments != null && (
+                      <div className="bg-gray-100 rounded-xl p-4 text-center">
+                        <div className="text-xl font-bold text-gray-900">{report.metrics.comments.toLocaleString()}</div>
+                        <p className="text-xs text-gray-500 mt-1">Comments</p>
+                      </div>
+                    )}
+                    {report.metrics.shares != null && (
+                      <div className="bg-gray-100 rounded-xl p-4 text-center">
+                        <div className="text-xl font-bold text-gray-900">{report.metrics.shares.toLocaleString()}</div>
+                        <p className="text-xs text-gray-500 mt-1">Shares</p>
+                      </div>
+                    )}
+                    {report.metrics.saves != null && (
+                      <div className="bg-gray-100 rounded-xl p-4 text-center">
+                        <div className="text-xl font-bold text-gray-900">{report.metrics.saves.toLocaleString()}</div>
+                        <p className="text-xs text-gray-500 mt-1">Saves</p>
+                      </div>
+                    )}
+                    {report.metrics.reposts != null && (
+                      <div className="bg-gray-100 rounded-xl p-4 text-center">
+                        <div className="text-xl font-bold text-gray-900">{report.metrics.reposts.toLocaleString()}</div>
+                        <p className="text-xs text-gray-500 mt-1">Reposts</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

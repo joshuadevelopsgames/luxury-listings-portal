@@ -1,6 +1,7 @@
 /**
  * Firebase Cloud Functions for Instagram OCR and Slack Integration
  * Uses Google Cloud Vision API for fast, accurate text extraction
+ * Includes secure OpenAI proxy with rate limiting
  */
 
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
@@ -12,8 +13,368 @@ const nodemailer = require('nodemailer');
 // Initialize Firebase Admin
 admin.initializeApp();
 
+// ============================================================================
+// RATE LIMITING CONFIGURATION
+// ============================================================================
+const RATE_LIMITS = {
+  openai: {
+    maxRequestsPerHour: 50,      // Max requests per user per hour
+    maxRequestsPerDay: 200,      // Max requests per user per day
+    maxImagesPerRequest: 10,     // Max images per single request
+    cooldownMinutes: 5,          // Cooldown after hitting limit
+  }
+};
+
+/**
+ * Check and update rate limit for a user
+ * @param {string} userId - Firebase user ID
+ * @param {string} feature - Feature being rate limited (e.g., 'openai')
+ * @returns {Promise<{allowed: boolean, remaining: number, resetAt: Date}>}
+ */
+async function checkRateLimit(userId, feature = 'openai') {
+  const db = admin.firestore();
+  const limits = RATE_LIMITS[feature];
+  const now = new Date();
+  const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  
+  const rateLimitRef = db.collection('rate_limits').doc(`${userId}_${feature}`);
+  
+  return db.runTransaction(async (transaction) => {
+    const doc = await transaction.get(rateLimitRef);
+    const data = doc.exists ? doc.data() : { requests: [] };
+    
+    // Filter to only keep requests from the last 24 hours
+    const recentRequests = (data.requests || []).filter(
+      ts => new Date(ts) > dayAgo
+    );
+    
+    // Count requests in the last hour and day
+    const requestsLastHour = recentRequests.filter(ts => new Date(ts) > hourAgo).length;
+    const requestsLastDay = recentRequests.length;
+    
+    // Check if user is in cooldown
+    if (data.cooldownUntil && new Date(data.cooldownUntil) > now) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt: new Date(data.cooldownUntil),
+        reason: 'cooldown'
+      };
+    }
+    
+    // Check hourly limit
+    if (requestsLastHour >= limits.maxRequestsPerHour) {
+      const cooldownUntil = new Date(now.getTime() + limits.cooldownMinutes * 60 * 1000);
+      transaction.set(rateLimitRef, {
+        requests: recentRequests,
+        cooldownUntil: cooldownUntil.toISOString(),
+        lastUpdated: now.toISOString()
+      });
+      
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt: cooldownUntil,
+        reason: 'hourly_limit'
+      };
+    }
+    
+    // Check daily limit
+    if (requestsLastDay >= limits.maxRequestsPerDay) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt: new Date(recentRequests[0]).getTime() + 24 * 60 * 60 * 1000,
+        reason: 'daily_limit'
+      };
+    }
+    
+    // Allow request and record it
+    recentRequests.push(now.toISOString());
+    transaction.set(rateLimitRef, {
+      requests: recentRequests,
+      cooldownUntil: null,
+      lastUpdated: now.toISOString()
+    });
+    
+    return {
+      allowed: true,
+      remaining: Math.min(
+        limits.maxRequestsPerHour - requestsLastHour - 1,
+        limits.maxRequestsPerDay - requestsLastDay - 1
+      ),
+      resetAt: null
+    };
+  });
+}
+
+/**
+ * Log API usage for monitoring and billing
+ */
+async function logApiUsage(userId, userEmail, feature, details) {
+  const db = admin.firestore();
+  await db.collection('api_usage_logs').add({
+    userId,
+    userEmail,
+    feature,
+    ...details,
+    timestamp: admin.firestore.FieldValue.serverTimestamp()
+  });
+}
+
 // Initialize Vision client
 const visionClient = new vision.ImageAnnotatorClient();
+
+// ============================================================================
+// SECURE OPENAI PROXY WITH RATE LIMITING
+// ============================================================================
+
+/**
+ * Extract Instagram metrics from screenshots using GPT-4o Vision
+ * Secure server-side implementation with rate limiting
+ * 
+ * This prevents API key exposure and adds abuse protection
+ */
+exports.extractInstagramMetricsAI = onCall({
+  cors: true,
+  maxInstances: 10,
+  timeoutSeconds: 120,
+  secrets: ['OPENAI_API_KEY'],
+}, async (request) => {
+  // 1. Verify user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated to use this feature');
+  }
+
+  const userId = request.auth.uid;
+  const userEmail = request.auth.token.email || 'unknown';
+  
+  console.log(`🤖 OpenAI request from user: ${userEmail}`);
+
+  // 2. Check rate limit
+  const rateLimit = await checkRateLimit(userId, 'openai');
+  
+  if (!rateLimit.allowed) {
+    console.log(`⚠️ Rate limit exceeded for ${userEmail}: ${rateLimit.reason}`);
+    throw new HttpsError(
+      'resource-exhausted',
+      `Rate limit exceeded. ${rateLimit.reason === 'cooldown' 
+        ? `Please wait ${RATE_LIMITS.openai.cooldownMinutes} minutes.` 
+        : rateLimit.reason === 'hourly_limit'
+        ? `Maximum ${RATE_LIMITS.openai.maxRequestsPerHour} requests per hour.`
+        : `Maximum ${RATE_LIMITS.openai.maxRequestsPerDay} requests per day.`}`
+    );
+  }
+
+  // 3. Validate request data
+  const { images } = request.data;
+
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    throw new HttpsError('invalid-argument', 'images array is required');
+  }
+
+  if (images.length > RATE_LIMITS.openai.maxImagesPerRequest) {
+    throw new HttpsError(
+      'invalid-argument', 
+      `Maximum ${RATE_LIMITS.openai.maxImagesPerRequest} images per request`
+    );
+  }
+
+  // 4. Get OpenAI API key from secrets
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.error('❌ OPENAI_API_KEY secret not configured');
+    throw new HttpsError('internal', 'OpenAI API key not configured');
+  }
+
+  console.log(`📸 Processing ${images.length} images for ${userEmail}`);
+  const startTime = Date.now();
+
+  try {
+    // 5. Prepare image content for GPT-4o Vision
+    const imageContents = images.map(img => ({
+      type: 'image_url',
+      image_url: { 
+        url: img.base64 ? `data:image/jpeg;base64,${img.base64}` : img.url,
+        detail: 'high' 
+      }
+    }));
+
+    // 6. Build the extraction prompt
+    const prompt = `Extract ALL metrics from these Instagram Insights screenshots. Return ONLY valid JSON.
+
+IMPORTANT: Look carefully at the visual layout. Numbers belong to the label they're visually associated with (inside donut charts, next to labels, etc.).
+
+Extract these fields (use null if not visible):
+{
+  "dateRange": "Jan 1 - Jan 31" or similar,
+  
+  // VIEWS
+  "views": number (the big number in/near "Views" donut),
+  "viewsFromAdsPercent": number (e.g. "72.2% from ads"),
+  "viewsFollowerPercent": number,
+  "viewsNonFollowerPercent": number,
+  "viewsContentBreakdown": [{"type": "Posts/Reels/Stories", "percentage": number}],
+  
+  // INTERACTIONS
+  "interactions": number (the big number in/near "Interactions" donut),
+  "interactionsFromAdsPercent": number (e.g. "22.8% from ads"),
+  "interactionsFollowerPercent": number,
+  "interactionsNonFollowerPercent": number,
+  "interactionsContentBreakdown": [{"type": "Reels/Posts/Stories", "percentage": number}],
+  "likes": number,
+  "comments": number,
+  "shares": number,
+  "saves": number,
+  "reposts": number,
+  
+  // REACH & PROFILE
+  "accountsReached": number,
+  "accountsReachedChange": "+X%" or "-X%",
+  "profileActivity": number (total profile activity),
+  "profileActivityChange": "+X%" or "-X%",
+  "profileVisits": number,
+  "profileVisitsChange": "+X%" or "-X%",
+  "externalLinkTaps": number,
+  "externalLinkTapsChange": "+X%" or "-X%",
+  
+  // FOLLOWERS
+  "followers": number (total follower count),
+  "followerChange": "+X%" or "-X%" (vs previous period),
+  "growth": {"overall": number, "follows": number, "unfollows": number},
+  
+  // DEMOGRAPHICS (if visible)
+  "topCities": [{"name": "City", "percentage": number}],
+  "ageRanges": [{"range": "25-34", "percentage": number}],
+  "gender": {"men": number, "women": number},
+  
+  // TOP CONTENT (if visible)
+  "topContent": [{"views": "83K", "date": "Jan 5"}],
+  "topReels": [{"likes": 271, "date": "Jan 9"}]
+}
+
+Return ONLY the JSON object, no markdown or explanation.`;
+
+    // 7. Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini', // Cost-effective vision model
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              ...imageContents
+            ]
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.1
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    let content = data.choices[0].message.content;
+    
+    // Strip markdown code fences if present
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    const metrics = JSON.parse(content);
+    
+    // Clean up null values
+    const cleaned = {};
+    for (const [key, value] of Object.entries(metrics)) {
+      if (value !== null && value !== undefined) {
+        cleaned[key] = value;
+      }
+    }
+
+    const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`✅ GPT-4o extracted ${Object.keys(cleaned).length} fields in ${processingTime}s`);
+
+    // 8. Log usage for monitoring
+    await logApiUsage(userId, userEmail, 'openai_instagram_metrics', {
+      imageCount: images.length,
+      fieldsExtracted: Object.keys(cleaned).length,
+      processingTimeMs: Date.now() - startTime,
+      model: 'gpt-4o-mini',
+      tokensUsed: data.usage?.total_tokens || 0
+    });
+
+    return {
+      success: true,
+      metrics: cleaned,
+      processingTime: parseFloat(processingTime),
+      rateLimitRemaining: rateLimit.remaining
+    };
+
+  } catch (error) {
+    console.error('❌ OpenAI extraction failed:', error);
+    
+    // Log failed attempt
+    await logApiUsage(userId, userEmail, 'openai_instagram_metrics', {
+      imageCount: images.length,
+      error: error.message,
+      processingTimeMs: Date.now() - startTime
+    });
+    
+    throw new HttpsError('internal', `AI extraction failed: ${error.message}`);
+  }
+});
+
+/**
+ * Get current rate limit status for a user
+ */
+exports.getRateLimitStatus = onCall({
+  cors: true,
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const userId = request.auth.uid;
+  const db = admin.firestore();
+  const now = new Date();
+  const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  
+  const rateLimitRef = db.collection('rate_limits').doc(`${userId}_openai`);
+  const doc = await rateLimitRef.get();
+  const data = doc.exists ? doc.data() : { requests: [] };
+  
+  const recentRequests = (data.requests || []).filter(
+    ts => new Date(ts) > dayAgo
+  );
+  const requestsLastHour = recentRequests.filter(ts => new Date(ts) > hourAgo).length;
+  const requestsLastDay = recentRequests.length;
+  
+  return {
+    hourly: {
+      used: requestsLastHour,
+      limit: RATE_LIMITS.openai.maxRequestsPerHour,
+      remaining: Math.max(0, RATE_LIMITS.openai.maxRequestsPerHour - requestsLastHour)
+    },
+    daily: {
+      used: requestsLastDay,
+      limit: RATE_LIMITS.openai.maxRequestsPerDay,
+      remaining: Math.max(0, RATE_LIMITS.openai.maxRequestsPerDay - requestsLastDay)
+    },
+    cooldownUntil: data.cooldownUntil || null,
+    inCooldown: data.cooldownUntil && new Date(data.cooldownUntil) > now
+  };
+});
 
 /**
  * Extract text from an image using Google Cloud Vision
