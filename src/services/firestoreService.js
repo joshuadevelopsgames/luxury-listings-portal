@@ -1017,6 +1017,71 @@ class FirestoreService {
     }
   }
 
+  // Archive leave request (soft delete - keeps record but hides from active list)
+  async archiveLeaveRequest(requestId, archivedBy) {
+    try {
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      const historyEntry = {
+        action: 'archived',
+        by: archivedBy,
+        timestamp: new Date().toISOString(),
+        notes: null
+      };
+      
+      await updateDoc(docRef, {
+        archived: true,
+        archivedBy,
+        archivedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        history: arrayUnion(historyEntry)
+      });
+      console.log('✅ Leave request archived:', requestId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error archiving leave request:', error);
+      throw error;
+    }
+  }
+
+  // Unarchive leave request
+  async unarchiveLeaveRequest(requestId, unarchivedBy) {
+    try {
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      const historyEntry = {
+        action: 'unarchived',
+        by: unarchivedBy,
+        timestamp: new Date().toISOString(),
+        notes: null
+      };
+      
+      await updateDoc(docRef, {
+        archived: false,
+        archivedBy: null,
+        archivedAt: null,
+        updatedAt: serverTimestamp(),
+        history: arrayUnion(historyEntry)
+      });
+      console.log('✅ Leave request unarchived:', requestId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error unarchiving leave request:', error);
+      throw error;
+    }
+  }
+
+  // Permanently delete leave request (admin only)
+  async deleteLeaveRequest(requestId) {
+    try {
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      await deleteDoc(docRef);
+      console.log('✅ Leave request permanently deleted:', requestId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting leave request:', error);
+      throw error;
+    }
+  }
+
   // Check for overlapping leave requests
   async hasOverlappingRequest(userEmail, startDate, endDate, excludeRequestId = null) {
     try {

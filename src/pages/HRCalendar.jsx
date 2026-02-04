@@ -30,7 +30,12 @@ import {
   Heart,
   ListFilter,
   Check,
-  Edit
+  Edit,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 
@@ -47,6 +52,10 @@ const HRCalendar = () => {
   const [processingRequest, setProcessingRequest] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiving, setArchiving] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   
   // Admin balance editor state
   const [showBalanceEditor, setShowBalanceEditor] = useState(false);
@@ -445,6 +454,61 @@ const HRCalendar = () => {
     setApprovalNotes('');
   };
 
+  // Archive a leave request
+  const handleArchiveRequest = async (requestId) => {
+    setArchiving(requestId);
+    try {
+      await firestoreService.archiveLeaveRequest(requestId, currentUser.email);
+      setLeaveRequests(prev => 
+        prev.map(req => req.id === requestId ? { ...req, archived: true } : req)
+      );
+      toast.success('Request archived');
+    } catch (error) {
+      console.error('Error archiving request:', error);
+      toast.error('Failed to archive request');
+    } finally {
+      setArchiving(null);
+    }
+  };
+
+  // Unarchive a leave request
+  const handleUnarchiveRequest = async (requestId) => {
+    setArchiving(requestId);
+    try {
+      await firestoreService.unarchiveLeaveRequest(requestId, currentUser.email);
+      setLeaveRequests(prev => 
+        prev.map(req => req.id === requestId ? { ...req, archived: false } : req)
+      );
+      toast.success('Request restored');
+    } catch (error) {
+      console.error('Error restoring request:', error);
+      toast.error('Failed to restore request');
+    } finally {
+      setArchiving(null);
+    }
+  };
+
+  // Permanently delete a leave request
+  const handleDeleteRequest = async (requestId) => {
+    setDeleting(requestId);
+    try {
+      await firestoreService.deleteLeaveRequest(requestId);
+      setLeaveRequests(prev => prev.filter(req => req.id !== requestId));
+      toast.success('Request permanently deleted');
+      setShowDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      toast.error('Failed to delete request');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // Filter requests based on archive status
+  const activeRequests = leaveRequests.filter(r => !r.archived);
+  const archivedRequests = leaveRequests.filter(r => r.archived);
+  const displayRequests = showArchived ? archivedRequests : activeRequests;
+
   // Form handling functions
   const handleFormChange = (field, value) => {
     setLeaveForm(prev => ({ ...prev, [field]: value }));
@@ -663,11 +727,13 @@ const HRCalendar = () => {
     ];
   };
 
+  // Apply archive filter first, then status/type filter
+  const baseRequests = showArchived ? archivedRequests : activeRequests;
   const filteredRequests = filterType === 'all' 
-    ? leaveRequests 
+    ? baseRequests 
     : filterType === 'pending' || filterType === 'approved' || filterType === 'rejected'
-      ? leaveRequests.filter(req => req.status === filterType)
-      : leaveRequests.filter(req => req.type === filterType);
+      ? baseRequests.filter(req => req.status === filterType)
+      : baseRequests.filter(req => req.type === filterType);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -805,13 +871,35 @@ const HRCalendar = () => {
       {/* Leave Requests - Moved to top for quick admin access */}
       <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
         <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Leave Requests</span>
-            {leaveRequests.filter(r => r.status === 'pending').length > 0 && (
-              <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#ff9500]/10 text-[#ff9500] font-medium">
-                {leaveRequests.filter(r => r.status === 'pending').length} Pending
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
+                {showArchived ? 'Archived Requests' : 'Leave Requests'}
               </span>
+              {!showArchived && activeRequests.filter(r => r.status === 'pending').length > 0 && (
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#ff9500]/10 text-[#ff9500] font-medium">
+                  {activeRequests.filter(r => r.status === 'pending').length} Pending
+                </span>
+              )}
+            </div>
+            {archivedRequests.length > 0 && (
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15"
+              >
+                {showArchived ? (
+                  <>
+                    <Eye className="w-3.5 h-3.5" />
+                    Show Active ({activeRequests.length})
+                  </>
+                ) : (
+                  <>
+                    <Archive className="w-3.5 h-3.5" />
+                    Show Archived ({archivedRequests.length})
+                  </>
+                )}
+              </button>
             )}
           </div>
         </div>
@@ -955,6 +1043,47 @@ const HRCalendar = () => {
                         )}
                       </button>
                     )}
+                    
+                    {/* Archive/Unarchive Button */}
+                    {request.status !== 'pending' && (
+                      <button 
+                        onClick={() => request.archived 
+                          ? handleUnarchiveRequest(request.id) 
+                          : handleArchiveRequest(request.id)
+                        }
+                        disabled={archiving === request.id}
+                        className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 ${
+                          request.archived 
+                            ? 'bg-[#34c759]/10 text-[#34c759] hover:bg-[#34c759]/20'
+                            : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15'
+                        }`}
+                        title={request.archived ? 'Restore' : 'Archive'}
+                      >
+                        {archiving === request.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : request.archived ? (
+                          <ArchiveRestore className="w-3.5 h-3.5" />
+                        ) : (
+                          <Archive className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+                    
+                    {/* Delete Button (only for archived requests) */}
+                    {request.archived && (
+                      <button 
+                        onClick={() => setShowDeleteConfirm(request.id)}
+                        disabled={deleting === request.id}
+                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50"
+                        title="Delete permanently"
+                      >
+                        {deleting === request.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-[#ff3b30] border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -962,6 +1091,41 @@ const HRCalendar = () => {
           )}
         </div>
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-md border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#ff3b30]/10 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-[#ff3b30]" />
+              </div>
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+                Delete Request Permanently?
+              </h3>
+              <p className="text-[14px] text-[#86868b] mb-6">
+                This action cannot be undone. The leave request will be permanently removed from the system.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteRequest(showDeleteConfirm)}
+                  disabled={deleting}
+                  className="px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#ff453a] transition-colors disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting...' : 'Delete Permanently'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Calendar View */}
       <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">

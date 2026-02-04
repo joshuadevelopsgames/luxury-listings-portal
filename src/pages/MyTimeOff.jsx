@@ -29,7 +29,11 @@ import {
   Briefcase,
   DollarSign,
   History,
-  RefreshCw
+  RefreshCw,
+  Archive,
+  ArchiveRestore,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { safeFormatDate } from '../utils/dateUtils';
@@ -64,8 +68,10 @@ const MyTimeOff = () => {
   const [validationErrors, setValidationErrors] = useState([]);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [cancelling, setCancelling] = useState(null);
+  const [archiving, setArchiving] = useState(null);
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   // Leave balances - loaded from Firestore
   const [leaveBalances, setLeaveBalances] = useState({
@@ -284,6 +290,43 @@ const MyTimeOff = () => {
     }
   };
 
+  // Archive a completed/rejected request
+  const handleArchiveRequest = async (request) => {
+    setArchiving(request.id);
+    
+    try {
+      await firestoreService.archiveLeaveRequest(request.id, currentUser.email);
+      toast.success('Request archived');
+    } catch (error) {
+      console.error('❌ Error archiving request:', error);
+      toast.error('Failed to archive request');
+    } finally {
+      setArchiving(null);
+    }
+  };
+
+  // Unarchive a request
+  const handleUnarchiveRequest = async (request) => {
+    setArchiving(request.id);
+    
+    try {
+      await firestoreService.unarchiveLeaveRequest(request.id, currentUser.email);
+      toast.success('Request restored');
+    } catch (error) {
+      console.error('❌ Error restoring request:', error);
+      toast.error('Failed to restore request');
+    } finally {
+      setArchiving(null);
+    }
+  };
+
+  // Filter requests based on archive status
+  const filteredRequests = showArchived 
+    ? myRequests.filter(r => r.archived)
+    : myRequests.filter(r => !r.archived);
+
+  const archivedCount = myRequests.filter(r => r.archived).length;
+
   const resetForm = () => {
     setLeaveForm({
       type: 'vacation',
@@ -420,26 +463,68 @@ const MyTimeOff = () => {
       {/* My Requests */}
       <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
         <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">My Requests</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
+                {showArchived ? 'Archived Requests' : 'My Requests'}
+              </span>
+              {!showArchived && filteredRequests.length > 0 && (
+                <span className="text-[12px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b]">
+                  {filteredRequests.length}
+                </span>
+              )}
+            </div>
+            {archivedCount > 0 && (
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15"
+              >
+                {showArchived ? (
+                  <>
+                    <Eye className="w-3.5 h-3.5" />
+                    Show Active ({myRequests.filter(r => !r.archived).length})
+                  </>
+                ) : (
+                  <>
+                    <Archive className="w-3.5 h-3.5" />
+                    Show Archived ({archivedCount})
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
         <div className="p-5">
           <div className="space-y-3">
-            {myRequests.length === 0 ? (
+            {filteredRequests.length === 0 ? (
               <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
-                <p className="text-[14px] text-[#86868b]">No time-off requests yet</p>
-                <button 
-                  onClick={() => setShowRequestModal(true)}
-                  className="mt-4 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  Submit Your First Request
-                </button>
+                {showArchived ? (
+                  <>
+                    <Archive className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
+                    <p className="text-[14px] text-[#86868b]">No archived requests</p>
+                    <button 
+                      onClick={() => setShowArchived(false)}
+                      className="mt-4 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                    >
+                      View Active Requests
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
+                    <p className="text-[14px] text-[#86868b]">No time-off requests yet</p>
+                    <button 
+                      onClick={() => setShowRequestModal(true)}
+                      className="mt-4 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                    >
+                      Submit Your First Request
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
-              myRequests.map((request) => {
+              filteredRequests.map((request) => {
                 const type = leaveTypes[request.type] || leaveTypes.vacation;
                 const Icon = type?.icon || Calendar;
                 const isExpanded = expandedRequest === request.id;
@@ -548,9 +633,10 @@ const MyTimeOff = () => {
                           </div>
                         )}
                         
-                        {/* Cancel Button */}
-                        {request.status === 'pending' && (
-                          <div className="flex justify-end pt-2">
+                        {/* Action Buttons */}
+                        <div className="flex justify-end gap-2 pt-2">
+                          {/* Cancel Button - only for pending */}
+                          {request.status === 'pending' && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -571,8 +657,43 @@ const MyTimeOff = () => {
                                 </>
                               )}
                             </button>
-                          </div>
-                        )}
+                          )}
+                          
+                          {/* Archive/Unarchive Button - for non-pending requests */}
+                          {request.status !== 'pending' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                request.archived 
+                                  ? handleUnarchiveRequest(request) 
+                                  : handleArchiveRequest(request);
+                              }}
+                              disabled={archiving === request.id}
+                              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors disabled:opacity-50 ${
+                                request.archived 
+                                  ? 'bg-[#34c759]/10 text-[#34c759] hover:bg-[#34c759]/20'
+                                  : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15'
+                              }`}
+                            >
+                              {archiving === request.id ? (
+                                <>
+                                  <span className="animate-spin">⏳</span>
+                                  {request.archived ? 'Restoring...' : 'Archiving...'}
+                                </>
+                              ) : request.archived ? (
+                                <>
+                                  <ArchiveRestore className="w-3.5 h-3.5" />
+                                  Restore
+                                </>
+                              ) : (
+                                <>
+                                  <Archive className="w-3.5 h-3.5" />
+                                  Archive
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
