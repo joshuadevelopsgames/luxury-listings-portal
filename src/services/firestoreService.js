@@ -216,9 +216,12 @@ class FirestoreService {
       const querySnapshot = await getDocs(collection(db, this.collections.APPROVED_USERS));
       const approvedUsers = [];
       querySnapshot.forEach((doc) => {
+        const data = doc.data();
         approvedUsers.push({
           id: doc.id,
-          ...doc.data()
+          ...data,
+          // Ensure email is always set (doc id is email); prevents users disappearing in UI when field is missing
+          email: data.email ?? doc.id
         });
       });
       

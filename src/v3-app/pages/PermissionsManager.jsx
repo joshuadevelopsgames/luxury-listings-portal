@@ -42,7 +42,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
 import { USER_ROLES } from '../../entities/UserRoles';
-import UserLink from '../../components/ui/UserLink';
+import EmployeeLink from '../../components/ui/EmployeeLink';
 
 // Feature permissions with descriptions
 const ALL_FEATURES = {
@@ -203,21 +203,21 @@ const PermissionsManager = () => {
         const allUsers = [...approvedUsers, ...systemAdminUsers];
         setUsers(allUsers);
 
-        // Load permissions for each user (pages + features)
+        // Load permissions for each user (pages + features); use normalized email for keys
         const permissionsMap = {};
         const featurePermissionsMap = {};
         const rolesMap = {};
         for (const user of allUsers) {
+          const uEmail = user.email || user.id || '';
           try {
-            const result = await firestoreService.getUserPermissions(user.email);
-            permissionsMap[user.email] = result?.pages || [];
-            featurePermissionsMap[user.email] = result?.features || [];
+            const result = await firestoreService.getUserPermissions(uEmail);
+            permissionsMap[uEmail] = result?.pages || [];
+            featurePermissionsMap[uEmail] = result?.features || [];
           } catch (e) {
-            permissionsMap[user.email] = [];
-            featurePermissionsMap[user.email] = [];
+            permissionsMap[uEmail] = [];
+            featurePermissionsMap[uEmail] = [];
           }
-          // Initialize role from user data
-          rolesMap[user.email] = user.primaryRole || user.role || user.roles?.[0] || 'social_media_manager';
+          rolesMap[uEmail] = user.primaryRole || user.role || user.roles?.[0] || 'social_media_manager';
         }
         setUserRoles(rolesMap);
         setUserPermissions(permissionsMap);
@@ -513,15 +513,18 @@ const PermissionsManager = () => {
     toast.success(`Now viewing as ${user.displayName || user.email}`);
   };
 
+  // Normalize email for display/key (doc id may be email when field missing)
+  const userEmail = (user) => user.email || user.id || '';
+
   // Filter users by search
   const filteredUsers = users.filter(user => 
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    userEmail(user).toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Count non-admin users
   const regularUserCount = users.filter(user => 
-    !SYSTEM_ADMINS.includes(user.email?.toLowerCase())
+    !SYSTEM_ADMINS.includes(userEmail(user).toLowerCase())
   ).length;
 
   if (!isSystemAdmin) {
@@ -601,14 +604,15 @@ const PermissionsManager = () => {
       ) : (
         <div className="space-y-3">
           {filteredUsers.map((user) => {
-            const isExpanded = expandedUser === user.email;
-            const isAdmin = SYSTEM_ADMINS.includes(user.email?.toLowerCase());
-            const perms = userPermissions[user.email] || [];
-            const hasUnsavedChanges = hasChanges[user.email];
+            const email = userEmail(user);
+            const isExpanded = expandedUser === email;
+            const isAdmin = SYSTEM_ADMINS.includes(email.toLowerCase());
+            const perms = userPermissions[email] || [];
+            const hasUnsavedChanges = hasChanges[email];
 
             return (
               <div
-                key={user.email}
+                key={email}
                 className={`rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border transition-all ${
                   isExpanded 
                     ? 'border-[#0071e3]/30 shadow-lg' 
@@ -618,7 +622,7 @@ const PermissionsManager = () => {
                 {/* User Header */}
                 <div 
                   className="flex items-center justify-between p-4 cursor-pointer"
-                  onClick={() => setExpandedUser(isExpanded ? null : user.email)}
+                  onClick={() => setExpandedUser(isExpanded ? null : email)}
                 >
                   <div className="flex items-center gap-4">
                     {user.avatar || user.photoURL ? (
@@ -635,13 +639,13 @@ const PermissionsManager = () => {
                     <div 
                       className={`w-12 h-12 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center text-white font-semibold text-[15px] ${user.avatar || user.photoURL ? 'hidden' : 'flex'}`}
                     >
-                      {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
+                      {user.displayName?.charAt(0) || email?.charAt(0) || 'U'}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <UserLink user={user} showId className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+                        <EmployeeLink user={user} showId className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
                           {user.displayName || 'Unknown User'}
-                        </UserLink>
+                        </EmployeeLink>
                         {isAdmin && (
                           <span className="px-2 py-0.5 rounded-full bg-[#ff9500]/10 text-[#ff9500] text-[11px] font-semibold">
                             System Admin
@@ -653,12 +657,12 @@ const PermissionsManager = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-[13px] text-[#86868b]">{user.email}</p>
+                      <p className="text-[13px] text-[#86868b]">{email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[13px] text-[#86868b]">
-                      {isAdmin ? 'Full Access' : `${perms.length} pages, ${(userFeaturePermissions[user.email] || []).length} features`}
+                      {isAdmin ? 'Full Access' : `${perms.length} pages, ${(userFeaturePermissions[email] || []).length} features`}
                     </span>
                     {isExpanded ? (
                       <ChevronDown className="w-5 h-5 text-[#86868b]" />
@@ -691,9 +695,9 @@ const PermissionsManager = () => {
                                 <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Role</span>
                               </div>
                               <select
-                                value={userRoles[user.email] || 'social_media_manager'}
-                                onChange={(e) => handleRoleChange(user.email, e.target.value)}
-                                disabled={savingRole === user.email}
+                                value={userRoles[email] || 'social_media_manager'}
+                                onChange={(e) => handleRoleChange(email, e.target.value)}
+                                disabled={savingRole === email}
                                 className="h-9 px-3 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50"
                               >
                                 <option value="admin">Admin</option>
@@ -704,7 +708,7 @@ const PermissionsManager = () => {
                                 <option value="hr_manager">HR Manager</option>
                                 <option value="sales_manager">Sales Manager</option>
                               </select>
-                              {savingRole === user.email && (
+                              {savingRole === email && (
                                 <RefreshCw className="w-4 h-4 text-[#0071e3] animate-spin" />
                               )}
                             </div>
@@ -732,28 +736,28 @@ const PermissionsManager = () => {
                               View as User
                             </button>
                             <button
-                              onClick={() => grantAllPages(user.email)}
+                              onClick={() => grantAllPages(email)}
                               className="px-3 py-1.5 rounded-lg bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors"
                             >
                               Grant All
                             </button>
                             <button
-                              onClick={() => revokeAllPages(user.email)}
+                              onClick={() => revokeAllPages(email)}
                               className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
                             >
                               Revoke All
                             </button>
                           </div>
                           <button
-                            onClick={() => saveUserPermissions(user.email)}
-                            disabled={!hasUnsavedChanges || saving === user.email}
+                            onClick={() => saveUserPermissions(email)}
+                            disabled={!hasUnsavedChanges || saving === email}
                             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all ${
                               hasUnsavedChanges
                                 ? 'bg-[#0071e3] text-white hover:bg-[#0077ed] shadow-lg shadow-[#0071e3]/25'
                                 : 'bg-black/5 dark:bg-white/5 text-[#86868b] cursor-not-allowed'
                             }`}
                           >
-                            {saving === user.email ? (
+                            {saving === email ? (
                               <RefreshCw className="w-4 h-4 animate-spin" />
                             ) : (
                               <Save className="w-4 h-4" />
@@ -775,7 +779,7 @@ const PermissionsManager = () => {
                               return (
                                 <button
                                   key={pageId}
-                                  onClick={() => togglePermission(user.email, pageId)}
+                                  onClick={() => togglePermission(email, pageId)}
                                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                                     hasAccess
                                       ? 'bg-[#ff9500]/10 border-[#ff9500]/30 text-[#ff9500]'
@@ -820,7 +824,7 @@ const PermissionsManager = () => {
                             return (
                               <button
                                 key={pageId}
-                                onClick={() => !isDashboard && togglePermission(user.email, pageId)}
+                                onClick={() => !isDashboard && togglePermission(email, pageId)}
                                 disabled={isDashboard}
                                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                                   hasAccess
@@ -864,14 +868,14 @@ const PermissionsManager = () => {
                           </p>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {Object.entries(ALL_FEATURES).map(([featureId, feature]) => {
-                              const featurePerms = userFeaturePermissions[user.email] || [];
+                              const featurePerms = userFeaturePermissions[email] || [];
                               const hasFeature = featurePerms.includes(featureId);
                               const Icon = feature.icon;
 
                               return (
                                 <button
                                   key={featureId}
-                                  onClick={() => toggleFeaturePermission(user.email, featureId)}
+                                  onClick={() => toggleFeaturePermission(email, featureId)}
                                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                                     hasFeature
                                       ? 'bg-[#af52de]/10 border-[#af52de]/30'
