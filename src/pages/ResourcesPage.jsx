@@ -44,6 +44,16 @@ const resources = [
     featured: true
   },
   {
+    id: 101,
+    title: "Future Features",
+    description: "Potential add-ons we can quote for your portal — Sales & CRM and more",
+    type: "internal",
+    category: "training",
+    internalPath: "/features",
+    important: true,
+    featured: true
+  },
+  {
     id: 100,
     title: "Tutorials & Training",
     description: "Step-by-step guides and video tutorials for all roles",

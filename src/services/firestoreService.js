@@ -41,6 +41,7 @@ class FirestoreService {
     TICKET_COMMENTS: 'ticket_comments',
     NOTIFICATIONS: 'notifications',
     TASK_REQUESTS: 'task_requests',
+    USER_TASK_ARCHIVES: 'user_task_archives',
     CLIENT_MESSAGES: 'client_messages',
     CLIENT_REPORTS: 'client_reports',
     PENDING_CLIENTS: 'pending_clients',
@@ -421,6 +422,29 @@ class FirestoreService {
     }
     
     try {
+      // If marking as completed, notify requester for delegated tasks
+      if (updates.status === 'completed') {
+        const taskRef = doc(db, this.collections.TASKS, taskId);
+        const taskSnap = await getDoc(taskRef);
+        if (taskSnap.exists()) {
+          const taskData = taskSnap.data();
+          const assignedBy = taskData.assigned_by;
+          if (assignedBy && typeof assignedBy === 'string') {
+            const taskRequestId = taskData.taskRequestId || null;
+            const link = taskRequestId ? `/tasks?tab=outbox&requestId=${taskRequestId}` : '/tasks?tab=outbox';
+            await this.createNotification({
+              userEmail: assignedBy,
+              type: 'task_completed',
+              title: 'Task completed',
+              message: `A task you requested was completed: ${taskData.title || 'Task'}`,
+              link,
+              taskRequestId,
+              read: false
+            });
+          }
+        }
+      }
+
       await updateDoc(doc(db, this.collections.TASKS, taskId), {
         ...cleanUpdates,
         updatedAt: serverTimestamp()
@@ -431,6 +455,136 @@ class FirestoreService {
       console.error('❌ Updates object:', updates);
       console.error('❌ Clean updates:', cleanUpdates);
       throw error;
+    }
+  }
+
+  // Get a single task by ID
+  async getTaskById(taskId) {
+    try {
+      const taskRef = doc(db, this.collections.TASKS, taskId);
+      const taskSnap = await getDoc(taskRef);
+      if (!taskSnap.exists()) return null;
+      return { id: taskSnap.id, ...taskSnap.data() };
+    } catch (error) {
+      console.error('❌ Error getting task:', error);
+      return null;
+    }
+  }
+
+  // Get sent task requests (outbox: requests you sent to others)
+  async getSentTaskRequests(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.TASK_REQUESTS),
+        where('fromUserEmail', '==', userEmail)
+      );
+      const snapshot = await getDocs(q);
+      const requests = [];
+      snapshot.forEach((docSnap) => {
+        requests.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      return requests.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+    } catch (error) {
+      console.error('❌ Error getting sent task requests:', error);
+      return [];
+    }
+  }
+
+  // ----- Per-user task/request archives (local only, not shared) -----
+  _archiveDocId(userEmail, refType, refId) {
+    const safe = (s) => String(s).replace(/[@./]/g, '_').slice(0, 200);
+    return `${safe(userEmail)}__${refType}__${safe(refId)}`;
+  }
+
+  async archiveTaskForUser(userEmail, taskId) {
+    try {
+      const docId = this._archiveDocId(userEmail, 'task', taskId);
+      await setDoc(doc(db, this.collections.USER_TASK_ARCHIVES, docId), {
+        userEmail,
+        refType: 'task',
+        refId: taskId,
+        archivedAt: serverTimestamp()
+      }, { merge: true });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error archiving task for user:', error);
+      throw error;
+    }
+  }
+
+  async archiveRequestForUser(userEmail, taskRequestId) {
+    try {
+      const docId = this._archiveDocId(userEmail, 'request', taskRequestId);
+      await setDoc(doc(db, this.collections.USER_TASK_ARCHIVES, docId), {
+        userEmail,
+        refType: 'request',
+        refId: taskRequestId,
+        archivedAt: serverTimestamp()
+      }, { merge: true });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error archiving request for user:', error);
+      throw error;
+    }
+  }
+
+  async unarchiveTaskForUser(userEmail, taskId) {
+    try {
+      const docId = this._archiveDocId(userEmail, 'task', taskId);
+      await deleteDoc(doc(db, this.collections.USER_TASK_ARCHIVES, docId));
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error unarchiving task:', error);
+      throw error;
+    }
+  }
+
+  async unarchiveRequestForUser(userEmail, taskRequestId) {
+    try {
+      const docId = this._archiveDocId(userEmail, 'request', taskRequestId);
+      await deleteDoc(doc(db, this.collections.USER_TASK_ARCHIVES, docId));
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error unarchiving request:', error);
+      throw error;
+    }
+  }
+
+  async getArchivedTaskIds(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.USER_TASK_ARCHIVES),
+        where('userEmail', '==', userEmail),
+        where('refType', '==', 'task')
+      );
+      const snapshot = await getDocs(q);
+      const ids = [];
+      snapshot.forEach((d) => { ids.push(d.data().refId); });
+      return ids;
+    } catch (error) {
+      console.error('❌ Error getting archived task ids:', error);
+      return [];
+    }
+  }
+
+  async getArchivedRequestIds(userEmail) {
+    try {
+      const q = query(
+        collection(db, this.collections.USER_TASK_ARCHIVES),
+        where('userEmail', '==', userEmail),
+        where('refType', '==', 'request')
+      );
+      const snapshot = await getDocs(q);
+      const ids = [];
+      snapshot.forEach((d) => { ids.push(d.data().refId); });
+      return ids;
+    } catch (error) {
+      console.error('❌ Error getting archived request ids:', error);
+      return [];
     }
   }
 
@@ -1870,13 +2024,7 @@ class FirestoreService {
   // Accept task request
   async acceptTaskRequest(requestId, requestData) {
     try {
-      // Update request status
-      await updateDoc(doc(db, this.collections.TASK_REQUESTS, requestId), {
-        status: 'accepted',
-        acceptedAt: serverTimestamp()
-      });
-
-      // Create the actual task
+      // Create the actual task first (include taskRequestId for outbox linking)
       const newTask = {
         title: requestData.taskTitle,
         description: requestData.taskDescription,
@@ -1886,19 +2034,29 @@ class FirestoreService {
         assigned_by: requestData.fromUserEmail,
         due_date: requestData.taskDueDate || null,
         createdAt: serverTimestamp(),
-        task_type: 'delegated'
+        task_type: 'delegated',
+        taskRequestId: requestId
       };
 
       const taskRef = await addDoc(collection(db, this.collections.TASKS), newTask);
       console.log('✅ Task created from request:', taskRef.id);
 
+      // Update request status and link taskId for outbox
+      await updateDoc(doc(db, this.collections.TASK_REQUESTS, requestId), {
+        status: 'accepted',
+        acceptedAt: serverTimestamp(),
+        taskId: taskRef.id
+      });
+
       // Notify the requester that their request was accepted
+      const acceptLink = `/tasks?tab=outbox&requestId=${requestId}`;
       await this.createNotification({
         userEmail: requestData.fromUserEmail,
         type: 'task_accepted',
         title: 'Task request accepted',
         message: `${requestData.toUserName} accepted your task request: ${requestData.taskTitle}`,
-        link: '/tasks',
+        link: acceptLink,
+        taskRequestId: requestId,
         read: false
       });
 

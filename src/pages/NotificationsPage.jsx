@@ -99,6 +99,8 @@ const NotificationsPage = () => {
         return <MessageSquare className="w-5 h-5 text-orange-600" />;
       case 'task_accepted':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'task_completed':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'task_rejected':
         return <Bell className="w-5 h-5 text-red-600" />;
       case 'error_report':
@@ -119,6 +121,7 @@ const NotificationsPage = () => {
       'ticket_status': 'Ticket Update',
       'task_request': 'Task Request',
       'task_accepted': 'Task Accepted',
+      'task_completed': 'Task Completed',
       'task_rejected': 'Task Rejected',
       'error_report': 'Error Report',
     };

@@ -7,10 +7,12 @@ import {
   Repeat,
   Bell,
   MoreHorizontal,
-  Target
+  Target,
+  Archive,
+  ArchiveRestore
 } from 'lucide-react';
 
-const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect, bulkMode }) => {
+const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect, bulkMode, showArchiveButton = false, onArchive, onUnarchive, isArchived = false }) => {
   const isCompleted = task.status === 'completed';
 
   return (
@@ -139,6 +141,15 @@ const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect
       )}
 
       {/* Actions */}
+      {showArchiveButton && isCompleted && (onArchive || onUnarchive) && (
+        <button
+          className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 hover:bg-black/5 dark:hover:bg-white/10"
+          onClick={(e) => { e.stopPropagation(); isArchived ? onUnarchive?.(task.id) : onArchive?.(task.id); }}
+          title={isArchived ? 'Restore from archive' : 'Archive (only you)'}
+        >
+          {isArchived ? <ArchiveRestore className="w-4 h-4 text-[#86868b]" /> : <Archive className="w-4 h-4 text-[#86868b]" />}
+        </button>
+      )}
       <button
         className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 hover:bg-black/5 dark:hover:bg-white/10"
         onClick={(e) => { e.stopPropagation(); onEdit(task); }}

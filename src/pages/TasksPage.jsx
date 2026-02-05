@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical, Palette, Loader2 } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical, Palette, Loader2, Send, Bell, Archive, ArchiveRestore } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -27,6 +27,7 @@ import TemplateEditor from '../components/tasks/TemplateEditor';
 import SmartFilters from '../components/tasks/SmartFilters';
 import FilterDropdown from '../components/tasks/FilterDropdown';
 import CalendarView from '../components/tasks/CalendarView';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { useViewAs } from '../contexts/ViewAsContext';
@@ -113,6 +114,7 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 };
 
 const TasksPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser, hasPermission, getCurrentRolePermissions } = useAuth();
   const { confirm } = useConfirm();
   const { isViewingAs, viewingAsUser } = useViewAs();
@@ -175,6 +177,16 @@ const TasksPage = () => {
   const filterButtonRef = useRef(null);
   const [completionToast, setCompletionToast] = useState(null);
   const [lastCompletedTask, setLastCompletedTask] = useState(null);
+  // Outbox: tasks the user requested others to do
+  const [sentRequests, setSentRequests] = useState([]);
+  const [outboxTaskMap, setOutboxTaskMap] = useState({}); // requestId -> task
+  const [outboxLoading, setOutboxLoading] = useState(false);
+  const [outboxUnreadCount, setOutboxUnreadCount] = useState(0);
+  const [archivedTaskIds, setArchivedTaskIds] = useState(new Set());
+  const [archivedRequestIds, setArchivedRequestIds] = useState(new Set());
+  const [showArchivedTasks, setShowArchivedTasks] = useState(false);
+  const [showArchivedOutbox, setShowArchivedOutbox] = useState(false);
+  const outboxRequestRef = useRef(null);
 
   // Toggle task selection
   const toggleTaskSelection = (taskId) => {
@@ -475,6 +487,98 @@ const TasksPage = () => {
     loadTaskRequests();
   }, [currentUser?.email]);
 
+  // Load sent request count for Outbox tab (lightweight)
+  useEffect(() => {
+    if (!effectiveUser?.email) return;
+    firestoreService.getSentTaskRequests(effectiveUser.email).then((r) => setSentRequests(r || []));
+  }, [effectiveUser?.email]);
+
+  // Load full outbox (sent requests + task statuses) when user opens Outbox tab
+  useEffect(() => {
+    if (!effectiveUser?.email || activeFilter !== 'outbox') return;
+
+    const loadOutboxDetails = async () => {
+      setOutboxLoading(true);
+      try {
+        const requests = await firestoreService.getSentTaskRequests(effectiveUser.email);
+        setSentRequests(requests || []);
+        const map = {};
+        await Promise.all(
+          (requests || [])
+            .filter((r) => r.status === 'accepted' && r.taskId)
+            .map(async (r) => {
+              const task = await firestoreService.getTaskById(r.taskId);
+              if (task) map[r.id] = task;
+            })
+        );
+        setOutboxTaskMap(map);
+      } catch (error) {
+        console.error('Error loading outbox:', error);
+      } finally {
+        setOutboxLoading(false);
+      }
+    };
+
+    loadOutboxDetails();
+  }, [effectiveUser?.email, activeFilter]);
+
+  // Sync URL ?tab=outbox&requestId= with activeFilter and scroll to request
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const requestId = searchParams.get('requestId');
+    if (tab === 'outbox') {
+      setActiveFilter('outbox');
+    }
+    if (requestId && tab === 'outbox') {
+      outboxRequestRef.current = requestId;
+    }
+  }, [searchParams]);
+
+  // Scroll to outbox request when list is ready
+  useEffect(() => {
+    if (activeFilter !== 'outbox' || !outboxRequestRef.current || sentRequests.length === 0) return;
+    const id = outboxRequestRef.current;
+    outboxRequestRef.current = null;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`outbox-request-${id}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }, [activeFilter, sentRequests.length]);
+
+  // Load archived task and request ids (per-user, local)
+  useEffect(() => {
+    if (!effectiveUser?.email) return;
+    Promise.all([
+      firestoreService.getArchivedTaskIds(effectiveUser.email),
+      firestoreService.getArchivedRequestIds(effectiveUser.email)
+    ]).then(([taskIds, requestIds]) => {
+      setArchivedTaskIds(new Set(taskIds || []));
+      setArchivedRequestIds(new Set(requestIds || []));
+    });
+  }, [effectiveUser?.email]);
+
+  // Unread count for outbox-related notifications (task_accepted, task_completed)
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    const loadUnread = async () => {
+      try {
+        const notifs = await firestoreService.getNotifications(currentUser.email);
+        const outboxTypes = ['task_accepted', 'task_completed'];
+        const unread = (notifs || []).filter(
+          (n) => !n.read && outboxTypes.includes(n.type)
+        ).length;
+        setOutboxUnreadCount(unread);
+      } catch (error) {
+        console.error('Error loading notification count:', error);
+      }
+    };
+
+    loadUnread();
+    const interval = setInterval(loadUnread, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser?.email]);
+
   // Refresh tasks function - call after create/edit/delete actions
   const refreshTasks = async () => {
     try {
@@ -514,10 +618,10 @@ const TasksPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Filter tasks whenever activeFilter, tasks, activeSmartFilter, or timeTick change
+  // Filter tasks whenever activeFilter, tasks, activeSmartFilter, timeTick, or archive state change
   useEffect(() => {
     filterTasks();
-  }, [activeFilter, tasks, activeSmartFilter, timeTick]);
+  }, [activeFilter, tasks, activeSmartFilter, timeTick, archivedTaskIds, showArchivedTasks]);
 
   const applySmartFilter = (filter) => {
     if (filter === null) {
@@ -586,14 +690,20 @@ const TasksPage = () => {
         );
         break;
       case "completed":
-        // Only show tasks completed within the last 24 hours
+        // Only show tasks completed within the last 24 hours; respect per-user archive (show archived only if toggle on)
         filtered = tasks.filter(task => 
           task.status === 'completed' && 
-          !isCompletedMoreThan24HoursAgo(task.completed_date)
+          !isCompletedMoreThan24HoursAgo(task.completed_date) &&
+          (showArchivedTasks || !archivedTaskIds.has(task.id))
         );
         break;
       default:
         filtered = tasks;
+    }
+
+    // Exclude archived tasks from non-completed task tabs (completed tab already respects showArchivedTasks)
+    if (activeFilter !== 'outbox' && activeFilter !== 'completed') {
+      filtered = filtered.filter(task => !archivedTaskIds.has(task.id));
     }
     
     // STEP 2: Apply smart filter criteria on top of tab filter
@@ -885,6 +995,9 @@ const TasksPage = () => {
         taskPriority: 'medium',
         taskDueDate: ''
       });
+      // Refresh outbox count
+      const sent = await firestoreService.getSentTaskRequests(currentUser.email);
+      setSentRequests(sent || []);
     } catch (error) {
       console.error('❌ Error sending task request:', error);
       toast.error('Failed to send task request. Please try again.');
@@ -935,6 +1048,64 @@ const TasksPage = () => {
       toast.error('Failed to reject task request. Please try again.');
     } finally {
       setProcessingRequestId(null);
+    }
+  };
+
+  const handleArchiveTask = async (taskId) => {
+    if (!effectiveUser?.email) return;
+    try {
+      await firestoreService.archiveTaskForUser(effectiveUser.email, taskId);
+      setArchivedTaskIds((prev) => new Set([...prev, taskId]));
+      toast.success('Task archived');
+    } catch (error) {
+      console.error('Error archiving task:', error);
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleUnarchiveTask = async (taskId) => {
+    if (!effectiveUser?.email) return;
+    try {
+      await firestoreService.unarchiveTaskForUser(effectiveUser.email, taskId);
+      setArchivedTaskIds((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+      toast.success('Task restored from archive');
+    } catch (error) {
+      console.error('Error unarchiving task:', error);
+      toast.error('Failed to unarchive');
+    }
+  };
+
+  const handleArchiveRequest = async (requestId) => {
+    if (!effectiveUser?.email) return;
+    try {
+      await firestoreService.archiveRequestForUser(effectiveUser.email, requestId);
+      setArchivedRequestIds((prev) => new Set([...prev, requestId]));
+      toast.success('Request archived');
+    } catch (error) {
+      console.error('Error archiving request:', error);
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleUnarchiveRequest = async (requestId) => {
+    if (!effectiveUser?.email) return;
+    try {
+      await firestoreService.unarchiveRequestForUser(effectiveUser.email, requestId);
+      setArchivedRequestIds((prev) => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
+      const requests = await firestoreService.getSentTaskRequests(effectiveUser.email);
+      setSentRequests(requests || []);
+      toast.success('Request restored from archive');
+    } catch (error) {
+      console.error('Error unarchiving request:', error);
+      toast.error('Failed to unarchive');
     }
   };
 
@@ -1007,7 +1178,8 @@ const TasksPage = () => {
       overdue: overdueTasks.length,
       completed: tasks.filter(task => 
         task.status === 'completed' && 
-        !isCompletedMoreThan24HoursAgo(task.completed_date)
+        !isCompletedMoreThan24HoursAgo(task.completed_date) &&
+        !archivedTaskIds.has(task.id)
       ).length
     };
   };
@@ -1125,7 +1297,8 @@ const TasksPage = () => {
             { value: 'inbox', icon: Inbox, label: 'Inbox', count: counts.inbox },
             { value: 'today', icon: Calendar, label: 'Today', count: counts.today },
             { value: 'upcoming', icon: Clock, label: 'Upcoming', count: counts.upcoming },
-            { value: 'completed', icon: CheckCircle2, label: 'Completed', count: counts.completed }
+            { value: 'completed', icon: CheckCircle2, label: 'Completed', count: counts.completed },
+            { value: 'outbox', icon: Send, label: 'Outbox', count: sentRequests.length, badge: outboxUnreadCount }
           ].map(tab => (
             <button
               key={tab.value}
@@ -1138,6 +1311,11 @@ const TasksPage = () => {
             >
               <tab.icon className="w-4 h-4" />
               {tab.label} ({tab.count})
+              {tab.badge > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 bg-[#ff3b30] text-white text-[10px] font-medium rounded-full">
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -1261,6 +1439,84 @@ const TasksPage = () => {
         onNavigate={(newTask) => setEditingTask(newTask)}
       />
 
+      {/* Outbox: tasks you requested others to do */}
+      {activeFilter === 'outbox' ? (
+        <div className="bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+          <div className="p-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
+            <p className="text-[13px] text-[#86868b]">
+              Tasks you requested from others. You’ll get a notification when someone accepts or completes them.
+            </p>
+            {outboxUnreadCount > 0 && (
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium">
+                <Bell className="w-3.5 h-3.5" />
+                {outboxUnreadCount} new
+              </span>
+            )}
+          </div>
+          {outboxLoading ? (
+            <div className="p-12 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 text-[#0071e3] animate-spin" />
+            </div>
+          ) : sentRequests.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-black/5 dark:bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Send className="w-8 h-8 text-[#86868b]" />
+              </div>
+              <p className="text-[15px] text-[#86868b] font-medium">No requested tasks yet</p>
+              <p className="text-[13px] text-[#86868b] mt-1">Use “Request Task” to ask someone else to do a task</p>
+            </div>
+          ) : (
+            <>
+              {sentRequests.some((r) => archivedRequestIds.has(r.id)) && (
+                <div className="px-4 py-2 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
+                  <span className="text-[12px] text-[#86868b]">Archived is local to you</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowArchivedOutbox(!showArchivedOutbox)}
+                    className="text-[12px] font-medium text-[#0071e3] hover:underline"
+                  >
+                    {showArchivedOutbox ? 'Hide archived' : 'Show archived'}
+                  </button>
+                </div>
+              )}
+              <ul className="divide-y divide-black/5 dark:divide-white/10">
+              {(showArchivedOutbox ? sentRequests : sentRequests.filter((r) => !archivedRequestIds.has(r.id))).map((req) => {
+                const task = outboxTaskMap[req.id];
+                const statusLabel = req.status === 'pending' ? 'Pending' : req.status === 'accepted' ? (task?.status === 'completed' ? 'Completed' : 'In progress') : 'Declined';
+                const statusColor = req.status === 'pending' ? 'text-[#ff9500]' : req.status === 'accepted' ? (task?.status === 'completed' ? 'text-[#34c759]' : 'text-[#0071e3]') : 'text-[#ff3b30]';
+                const isArchived = archivedRequestIds.has(req.id);
+                return (
+                  <li
+                    key={req.id}
+                    id={`outbox-request-${req.id}`}
+                    className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-[#1d1d1f] dark:text-white">{req.taskTitle}</p>
+                      <p className="text-[12px] text-[#86868b] mt-0.5">
+                        To: {req.toUserName || req.toUserEmail}
+                        {req.taskDueDate && ` · Due ${format(new Date(req.taskDueDate), 'MMM d, yyyy')}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-[12px] font-medium ${statusColor}`}>{statusLabel}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); isArchived ? handleUnarchiveRequest(req.id) : handleArchiveRequest(req.id); }}
+                        className="p-1.5 rounded-lg text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-white"
+                        title={isArchived ? 'Restore from archive' : 'Archive (only you)'}
+                      >
+                        {isArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+              </ul>
+            </>
+          )}
+        </div>
+      ) : (
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -1284,10 +1540,25 @@ const TasksPage = () => {
                 {activeFilter === "today" && "No tasks scheduled for today"}
                 {activeFilter === "upcoming" && "No upcoming tasks"}
                 {activeFilter === "overdue" && "No overdue tasks"}
-                {activeFilter === "completed" && "No completed tasks yet"}
+                {activeFilter === "completed" && (showArchivedTasks ? "No archived tasks" : "No completed tasks yet")}
               </p>
+              {activeFilter === "completed" && tasks.some((t) => t.status === 'completed' && archivedTaskIds.has(t.id)) && (
+                <button type="button" onClick={() => setShowArchivedTasks(!showArchivedTasks)} className="mt-2 text-[13px] font-medium text-[#0071e3] hover:underline">
+                  {showArchivedTasks ? 'Hide archived' : 'Show archived'}
+                </button>
+              )}
             </div>
-          ) : viewMode === 'grid' ? (
+          ) : (
+            <>
+              {activeFilter === 'completed' && tasks.some((t) => t.status === 'completed' && archivedTaskIds.has(t.id)) && (
+                <div className="mb-3 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-between">
+                  <span className="text-[12px] text-[#86868b]">Archived is local to you</span>
+                  <button type="button" onClick={() => setShowArchivedTasks(!showArchivedTasks)} className="text-[12px] font-medium text-[#0071e3] hover:underline">
+                    {showArchivedTasks ? 'Hide archived' : 'Show archived'}
+                  </button>
+                </div>
+              )}
+              {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTasks.map((task) => (
                 <SortableTaskCard
@@ -1301,6 +1572,10 @@ const TasksPage = () => {
                   onDelete={handleDeleteTask}
                   canEdit={canCreateTasks}
                   canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
+                  showArchiveButton={activeFilter === 'completed'}
+                  onArchive={handleArchiveTask}
+                  onUnarchive={handleUnarchiveTask}
+                  isArchived={archivedTaskIds.has(task.id)}
                 />
               ))}
             </div>
@@ -1318,12 +1593,19 @@ const TasksPage = () => {
                   onDelete={handleDeleteTask}
                   canEdit={canCreateTasks}
                   canDelete={canDeleteAnyTask || task.createdBy === currentUser?.email}
+                  showArchiveButton={activeFilter === 'completed'}
+                  onArchive={handleArchiveTask}
+                  onUnarchive={handleUnarchiveTask}
+                  isArchived={archivedTaskIds.has(task.id)}
                 />
               ))}
             </div>
           )}
+            </>
+          )}
         </SortableContext>
       </DndContext>
+      )}
 
       {/* Task Request Modal */}
       {showRequestModal && createPortal(

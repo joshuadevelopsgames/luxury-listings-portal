@@ -146,9 +146,7 @@ const PublicInstagramReportPage = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-                <Instagram className="w-5 h-5 text-white" />
-              </div>
+              <img src="/Luxury-listings-logo-CLR.png" alt="Luxury Listings" className="w-10 h-10 object-contain" />
               <div>
                 <h1 className="font-semibold text-gray-900">Instagram Analytics</h1>
                 <p className="text-xs text-gray-500">Powered by Luxury Listings</p>

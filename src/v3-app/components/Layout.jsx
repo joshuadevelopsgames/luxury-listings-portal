@@ -37,7 +37,8 @@ import {
   X,
   Instagram,
   BarChart3,
-  Palette
+  Palette,
+  Sparkles
 } from 'lucide-react';
 
 /**
@@ -197,6 +198,7 @@ const V3Layout = () => {
     'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
+    'features': { name: 'Features', icon: Sparkles, path: '/features' },
     'workload': { name: 'Team Workload', icon: BarChart3, path: '/workload' },
     'graphic-projects': { name: 'Team Projects', icon: Palette, path: '/graphic-projects' },
   };

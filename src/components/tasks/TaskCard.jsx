@@ -15,10 +15,12 @@ import {
   MessageSquare,
   CheckSquare,
   Repeat,
-  Bell
+  Bell,
+  Archive,
+  ArchiveRestore
 } from 'lucide-react';
 
-const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canDelete = true }) => {
+const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canDelete = true, showArchiveButton = false, onArchive, onUnarchive, isArchived = false }) => {
   const [showActions, setShowActions] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
@@ -254,6 +256,19 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
                     <Trash2 className="w-3.5 h-3.5" />
                     Delete
                   </button>
+                  {showArchiveButton && isCompleted && (onArchive || onUnarchive) && (
+                    <button
+                      className="w-full text-left px-3 py-2 text-[13px] text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowActions(false);
+                        isArchived ? onUnarchive?.(task.id) : onArchive?.(task.id);
+                      }}
+                    >
+                      {isArchived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                      {isArchived ? 'Restore' : 'Archive'}
+                    </button>
+                  )}
                 </div>
               </div>
             )}

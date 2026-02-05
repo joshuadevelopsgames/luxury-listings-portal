@@ -87,6 +87,8 @@ const NotificationsCenter = () => {
         return <MessageSquare className="w-4 h-4 text-orange-600" />;
       case 'task_accepted':
         return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'task_completed':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'task_rejected':
         return <Bell className="w-4 h-4 text-red-600" />;
       // Error reports

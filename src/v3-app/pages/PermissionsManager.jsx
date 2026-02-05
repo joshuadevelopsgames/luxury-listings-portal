@@ -36,7 +36,8 @@ import {
   UserCog,
   Clock,
   BarChart3,
-  Palette
+  Palette,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
@@ -101,6 +102,7 @@ const ALL_PAGES = {
   'it-support': { name: 'IT Support', icon: Wrench, description: 'Technical support' },
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },
+  'features': { name: 'Features', icon: Sparkles, description: 'Future features to quote' },
   'graphic-projects': { name: 'Team Projects', icon: Palette, description: 'Graphic design project tracker' },
 };
 
@@ -446,7 +448,7 @@ const PermissionsManager = () => {
       await firestoreService.addApprovedUser(userData);
       
       // Set default permissions (dashboard + base modules + role-appropriate pages)
-      const defaultPages = ['dashboard', 'tasks', 'resources', 'tutorials', ...BASE_MODULE_IDS];
+      const defaultPages = ['dashboard', 'tasks', 'resources', 'features', 'tutorials', ...BASE_MODULE_IDS];
       await firestoreService.setUserPagePermissions(userData.email, defaultPages);
       
       // Update local state
