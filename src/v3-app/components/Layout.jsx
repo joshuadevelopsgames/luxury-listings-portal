@@ -307,6 +307,8 @@ const V3Layout = () => {
   const isMichelle = currentUser?.email?.toLowerCase() === 'michelle@luxury-listings.com' ||
     (isViewingAs && viewingAsUser?.email?.toLowerCase() === 'michelle@luxury-listings.com');
 
+  const isFeaturesPage = location.pathname === '/features';
+
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''} ${isMichelle ? 'michelle-theme' : ''}`}>
       {/* Background */}
@@ -314,6 +316,15 @@ const V3Layout = () => {
         <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#161617]" />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-purple-50/20 dark:from-blue-950/10 dark:via-transparent dark:to-purple-950/5" />
       </div>
+      {/* Features page: full-viewport Apple-style gradient (covers whole screen including behind sidebar) */}
+      {isFeaturesPage && (
+        <div className="fixed inset-0 -z-10 min-h-screen min-w-full" aria-hidden>
+          <div className="absolute inset-0 min-h-full min-w-full bg-[#f5f5f7] dark:bg-[#1d1d1f]" />
+          <div className="absolute inset-0 min-h-full min-w-full bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" />
+          <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl" />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl" />
+        </div>
+      )}
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (

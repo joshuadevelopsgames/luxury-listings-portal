@@ -6,17 +6,30 @@ import { BarChart3, ChevronDown, ChevronUp, Users, ArrowRight, Camera } from 'lu
 import PlatformIcons, { PLATFORMS } from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
 
-// Capacity thresholds
-const CAPACITY = { LOW: 5, MED: 9 }; // green <=5, yellow 6-9, red 10+
+// Workload: 1 base unit per client + (posts per month / 10). More posts + more platforms = more work.
+const WORKLOAD_FULL = 40; // bar is 100% at this many units
+const WORKLOAD_LOW = 15;  // Light
+const WORKLOAD_MED = 28; // Moderate
 
-function getCapacityColor(clientCount) {
-  if (clientCount <= CAPACITY.LOW) return { bar: 'bg-[#34c759]', text: 'text-[#34c759]', label: 'Light' };
-  if (clientCount <= CAPACITY.MED) return { bar: 'bg-[#ff9500]', text: 'text-[#ff9500]', label: 'Moderate' };
+function getWorkloadUnits(clients) {
+  return clients.reduce((sum, c) => {
+    const posts = Number(c.packageSize) || 0;
+    const platformCount = c.platforms ? Object.values(c.platforms).filter(Boolean).length : 0;
+    const base = 1;
+    const postUnits = posts / 10;
+    const platformBonus = platformCount > 2 ? 0.2 : 0; // extra complexity for 3+ platforms
+    return sum + base + postUnits + platformBonus;
+  }, 0);
+}
+
+function getCapacityColor(workloadUnits) {
+  if (workloadUnits <= WORKLOAD_LOW) return { bar: 'bg-[#34c759]', text: 'text-[#34c759]', label: 'Light' };
+  if (workloadUnits <= WORKLOAD_MED) return { bar: 'bg-[#ff9500]', text: 'text-[#ff9500]', label: 'Moderate' };
   return { bar: 'bg-[#ff3b30]', text: 'text-[#ff3b30]', label: 'Heavy' };
 }
 
-function getCapacityPercent(clientCount) {
-  return Math.min(100, Math.round((clientCount / 12) * 100)); // 12 = "full" for bar display
+function getCapacityPercent(workloadUnits) {
+  return Math.min(100, Math.round((workloadUnits / WORKLOAD_FULL) * 100));
 }
 
 // Aggregate platform counts across a list of clients
@@ -144,7 +157,7 @@ export default function WorkloadPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">Team Workload</h1>
-          <p className="text-[15px] text-[#86868b]">Client portfolio distribution across your team</p>
+          <p className="text-[15px] text-[#86868b]">Workload by clients, posts per month, and platforms — not just client count</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1,2,3].map(i => (
@@ -168,7 +181,7 @@ export default function WorkloadPage() {
       {/* Header */}
       <div>
         <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">Team Workload</h1>
-        <p className="text-[15px] text-[#86868b]">Client portfolio distribution across your team</p>
+        <p className="text-[15px] text-[#86868b]">Workload by clients, posts per month, and platforms — not just client count</p>
       </div>
 
       {/* Summary Stats */}
@@ -190,11 +203,12 @@ export default function WorkloadPage() {
         {managers.map(manager => {
           const managerClients = clientsByManager[manager.email] || [];
           const count = managerClients.length;
-          const capacity = getCapacityColor(count);
-          const pct = getCapacityPercent(count);
+          const workloadUnits = getWorkloadUnits(managerClients);
+          const capacity = getCapacityColor(workloadUnits);
+          const pct = getCapacityPercent(workloadUnits);
           const platformCounts = aggregatePlatforms(managerClients);
           const packageCounts = aggregatePackages(managerClients);
-          const totalPostsPerMonth = managerClients.reduce((sum, c) => sum + (c.packageSize || 0), 0);
+          const totalPostsPerMonth = managerClients.reduce((sum, c) => sum + (Number(c.packageSize) || 0), 0);
           const isExpanded = expandedManager === manager.email;
 
           return (
@@ -215,7 +229,7 @@ export default function WorkloadPage() {
                     </div>
                     <div>
                       <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{manager.displayName}</h3>
-                      <p className="text-[12px] text-[#86868b]">{count} client{count !== 1 ? 's' : ''}</p>
+                      <p className="text-[12px] text-[#86868b]">{count} client{count !== 1 ? 's' : ''} · {totalPostsPerMonth} posts/mo</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -240,11 +254,6 @@ export default function WorkloadPage() {
                       </span>
                     ))}
                   </div>
-
-                  {/* Posts per month */}
-                  {totalPostsPerMonth > 0 && (
-                    <span className="text-[11px] text-[#86868b]">{totalPostsPerMonth} posts/mo</span>
-                  )}
 
                   {/* Package breakdown */}
                   <div className="flex items-center gap-1 ml-auto">

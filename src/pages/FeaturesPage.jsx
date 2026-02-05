@@ -110,11 +110,7 @@ const addOnFeatures = [
 export default function FeaturesPage() {
   return (
     <div className="min-h-screen relative">
-      {/* Full-viewport gradient background (fixed so it covers whole screen behind layout) */}
-      <div className="fixed inset-0 -z-10 bg-[#f5f5f7] dark:bg-[#1d1d1f]" />
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" />
-      <div className="fixed top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl -z-10" />
-      <div className="fixed bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl -z-10" />
+      {/* Gradient is rendered in Layout so it covers the full viewport (including behind sidebar) */}
 
       <div className="relative max-w-5xl mx-auto px-6 py-12 sm:py-16">
         <Link
