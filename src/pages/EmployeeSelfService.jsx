@@ -33,6 +33,7 @@ const EmployeeSelfService = () => {
   const [employeeNumber, setEmployeeNumber] = useState(null);
   const [loading, setLoading] = useState(true);
   const [personalInfo, setPersonalInfo] = useState(null); // Real data from Firestore
+  const [leaveBalances, setLeaveBalances] = useState(null); // From Firestore (same source as My Time Off)
   
   const isHRManager = currentRole === 'hr_manager';
   const canEditAllFields = isHRManager || isSystemAdmin;
@@ -53,6 +54,7 @@ const EmployeeSelfService = () => {
       setEmployeeFirestoreId(null);
       setEmployeeNumber(null);
       setPersonalInfo(null);
+      setLeaveBalances(null);
       setActiveTab('overview');
       
       try {
@@ -94,6 +96,10 @@ const EmployeeSelfService = () => {
             setEmployeeNumber('EMP-001'); // Default fallback
           }
         }
+
+        // Leave balances from Firestore (same source as My Time Off page)
+        const balances = await firestoreService.getUserLeaveBalances(currentUser.email);
+        if (!cancelled) setLeaveBalances(balances);
       } catch (error) {
         console.error('❌ Error loading employee data:', error);
         setEmployeeNumber('EMP-001'); // Fallback on error
@@ -102,7 +108,9 @@ const EmployeeSelfService = () => {
       }
     };
 
+    let cancelled = false;
     loadEmployeeData();
+    return () => { cancelled = true; };
   }, [currentUser?.email]);
 
   // Default personal info (used when Firestore data not loaded yet)
@@ -123,13 +131,14 @@ const EmployeeSelfService = () => {
   // Make sure employeeId is always current
   currentPersonalInfo.employeeId = employeeNumber || currentPersonalInfo.employeeId || 'Loading...';
   
-  // Employee data structure (personalInfo is now dynamic)
+  // Employee data structure (personalInfo and timeOff from Firestore; My Time Off is source of truth)
+  const defaultTimeOff = {
+    vacation: { total: 15, used: 0, remaining: 15 },
+    sick: { total: 3, used: 0, remaining: 3 }
+  };
   const employeeData = {
     personalInfo: currentPersonalInfo,
-    timeOff: {
-      vacation: { total: 15, used: 8, remaining: 7 },
-      sick: { total: 3, used: 2, remaining: 1 }
-    },
+    timeOff: leaveBalances || defaultTimeOff,
     compensation: {
       salary: '$72,000',
       paySchedule: 'Bi-weekly',
