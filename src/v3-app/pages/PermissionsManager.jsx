@@ -104,10 +104,10 @@ const ALL_PAGES = {
   'team': { name: 'Team Management', icon: Users, description: 'Team directory' },
   'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, description: 'HR metrics and reports' },
   'client-health': { name: 'Client Health', icon: Activity, description: 'AI health overview for all clients (admin)' },
-  'it-support': { name: 'IT Support', icon: Wrench, description: 'Technical support' },
+  'it-support': { name: 'Feedback & Support', icon: Wrench, description: 'Bug reports, feature requests, chat with developer' },
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },
-  'features': { name: 'Add ons', icon: Sparkles, description: 'Add-ons available to quote' },
+  'features': { name: 'Add-ons', icon: Sparkles, description: 'Add-ons available to quote' },
   'workload': { name: 'Team Workload', icon: BarChart3, description: 'Team capacity and client distribution' },
   'graphic-projects': { name: 'Team Projects', icon: Palette, description: 'Graphic design project tracker' },
 };

@@ -742,6 +742,12 @@ export default function FeedbackButton() {
             {/* Menu View */}
             {view === 'menu' && (
               <div className="space-y-2">
+                <a
+                  href="/it-support"
+                  className="block mt-1 mb-3 text-center text-[12px] text-[#0071e3] hover:underline"
+                >
+                  Open full Feedback & Support page →
+                </a>
                 {menuOptions.map(option => {
                   const Icon = option.icon;
                   return (

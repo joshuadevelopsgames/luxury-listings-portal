@@ -93,8 +93,8 @@ const resources = [
   },
   {
     id: 2,
-    title: "IT Support Portal",
-    description: "Submit technical support tickets with screenshots and page details",
+    title: "Feedback and Technical Support",
+    description: "Submit a bug report, feature request, or chat with the developer",
     type: "internal",
     category: "support",
     internalPath: "/it-support",

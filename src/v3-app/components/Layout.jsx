@@ -213,10 +213,10 @@ const V3Layout = () => {
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
     'client-health': { name: 'Client Health', icon: Activity, path: '/client-health' },
     'permissions': { name: 'Users & Permissions', icon: Settings, path: '/permissions' },
-    'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
+    'it-support': { name: 'Feedback & Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
-    'features': { name: 'Add ons', icon: Sparkles, path: '/features' },
+    'features': { name: 'Add-ons', icon: Sparkles, path: '/features' },
     'workload': { name: 'Team Workload', icon: BarChart3, path: '/workload' },
     'graphic-projects': { name: 'Team Projects', icon: Palette, path: '/graphic-projects' },
   };
@@ -334,7 +334,7 @@ const V3Layout = () => {
         <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#161617]" />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-purple-50/20 dark:from-blue-950/10 dark:via-transparent dark:to-purple-950/5" />
       </div>
-      {/* Add ons page: full-viewport Apple-style gradient (above default bg so it shows) */}
+      {/* Add-ons page: full-viewport Apple-style gradient (above default bg so it shows) */}
       {isFeaturesPage && (
         <div className="fixed inset-0 z-0 min-h-[100vh] w-full" aria-hidden style={{ minWidth: '100vw' }}>
           <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#1d1d1f]" />
@@ -464,7 +464,7 @@ const V3Layout = () => {
         </div>
       </aside>
 
-      {/* Main Content - transparent when on Add ons page so gradient shows */}
+      {/* Main Content - transparent when on Add-ons page so gradient shows */}
       <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'}`}>
         {/* View As Banner */}
         {isViewingAs && viewingAsUser && (

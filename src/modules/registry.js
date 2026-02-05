@@ -191,7 +191,7 @@ export const modules = {
 
   'it-support': {
     id: 'it-support',
-    name: 'IT Support',
+    name: 'Feedback & Support',
     description: 'Submit and track support tickets',
     icon: Wrench,
     routes: ['/it-support'],
@@ -233,7 +233,7 @@ export const modules = {
 
   'features': {
     id: 'features',
-    name: 'Add ons',
+    name: 'Add-ons',
     description: 'Add-ons available to quote',
     icon: Sparkles,
     routes: ['/features'],
