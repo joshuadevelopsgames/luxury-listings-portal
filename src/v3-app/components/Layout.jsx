@@ -559,7 +559,9 @@ const V3Layout = () => {
                     <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-[#f5f5f7]">
                       {currentUser?.displayName || 'User'}
                     </p>
-                    <p className="text-[11px] text-[#86868b] capitalize">{currentRole?.replace('_', ' ') || 'Member'}</p>
+                    <p className="text-[11px] text-[#86868b]">
+                      {currentUser?.position || (currentRole ? String(currentRole).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Member')}
+                    </p>
                   </div>
                   {currentUser?.avatar || currentUser?.photoURL ? (
                     <img 
@@ -582,6 +584,9 @@ const V3Layout = () => {
                     <div className="absolute right-0 top-full mt-2 w-56 py-2 bg-[#ffffff] dark:bg-[#2c2c2e] rounded-xl shadow-xl border border-gray-200 dark:border-white/10 z-50">
                       <div className="px-4 py-2 border-b border-black/5 dark:border-white/5">
                         <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{currentUser?.displayName}</p>
+                        <p className="text-[12px] text-[#86868b]">
+                          {currentUser?.position || (currentRole ? String(currentRole).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Member')}
+                        </p>
                         <p className="text-[12px] text-[#86868b] truncate">{currentUser?.email}</p>
                       </div>
                       <div className="py-1">

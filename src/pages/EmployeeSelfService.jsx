@@ -296,10 +296,12 @@ const EmployeeSelfService = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 bg-[#0071e3] rounded-full flex items-center justify-center text-white text-[17px] font-semibold">
-                    {employeeData.personalInfo.firstName[0]}{employeeData.personalInfo.lastName[0]}
+                    {(currentUser?.displayName || '').slice(0, 2).toUpperCase() || `${employeeData.personalInfo.firstName?.[0] || ''}${employeeData.personalInfo.lastName?.[0] || ''}`.toUpperCase() || '?'}
                   </div>
                   <div>
-                    <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">{employeeData.personalInfo.firstName} {employeeData.personalInfo.lastName}</p>
+                    <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
+                      {currentUser?.displayName || `${(employeeData.personalInfo.firstName || '').trim()} ${(employeeData.personalInfo.lastName || '').trim()}`.trim() || 'Team Member'}
+                    </p>
                     <p className="text-[12px] text-[#86868b]">{employeeData.personalInfo.position}</p>
                     <p className="text-[12px] text-[#86868b]">{employeeData.personalInfo.department}</p>
                   </div>
@@ -386,7 +388,10 @@ const EmployeeSelfService = () => {
             </div>
           ) : (
             <PersonCard 
-              person={employeeData.personalInfo}
+              person={{
+                ...employeeData.personalInfo,
+                displayName: currentUser?.displayName || `${(employeeData.personalInfo.firstName || '').trim()} ${(employeeData.personalInfo.lastName || '').trim()}`.trim()
+              }}
               editable={true}
               isHRView={canEditAllFields}
               onSave={handleSavePersonal}

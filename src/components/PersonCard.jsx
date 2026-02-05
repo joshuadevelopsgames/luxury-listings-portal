@@ -185,11 +185,11 @@ const PersonCard = ({
         {showAvatar && !compact && (
           <div className="flex items-center gap-5 mb-6 pb-6 border-b border-black/5 dark:border-white/10">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-2xl font-semibold shadow-lg shadow-[#0071e3]/30">
-              {displayPerson.firstName?.[0]}{displayPerson.lastName?.[0]}
+              {(displayPerson.displayName || '').slice(0, 2).toUpperCase() || `${displayPerson.firstName?.[0] || ''}${displayPerson.lastName?.[0] || ''}`.toUpperCase() || '?'}
             </div>
             <div>
               <h3 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
-                {displayPerson.firstName} {displayPerson.lastName}
+                {displayPerson.displayName || `${(displayPerson.firstName || '').trim()} ${(displayPerson.lastName || '').trim()}`.trim() || 'Team Member'}
               </h3>
               <p className="text-[15px] text-[#86868b] mt-0.5">{displayPerson.position}</p>
               <span className="inline-flex items-center px-3 py-1 mt-2 text-[12px] font-medium text-[#0071e3] bg-[#0071e3]/10 rounded-full">
