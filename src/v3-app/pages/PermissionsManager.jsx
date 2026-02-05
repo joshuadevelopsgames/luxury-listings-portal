@@ -522,11 +522,6 @@ const PermissionsManager = () => {
     user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Count non-admin users
-  const regularUserCount = users.filter(user => 
-    !SYSTEM_ADMINS.includes(userEmail(user).toLowerCase())
-  ).length;
-
   if (!isSystemAdmin) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -554,7 +549,7 @@ const PermissionsManager = () => {
             </h1>
             {!loading && (
               <span className="px-3 py-1 rounded-full bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-semibold">
-                {regularUserCount} {regularUserCount === 1 ? 'user' : 'users'}
+                {users.length} {users.length === 1 ? 'user' : 'users'}
               </span>
             )}
           </div>
