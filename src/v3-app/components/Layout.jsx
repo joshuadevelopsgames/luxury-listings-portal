@@ -316,11 +316,11 @@ const V3Layout = () => {
         <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#161617]" />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-purple-50/20 dark:from-blue-950/10 dark:via-transparent dark:to-purple-950/5" />
       </div>
-      {/* Features page: full-viewport Apple-style gradient (covers whole screen including behind sidebar) */}
+      {/* Features page: full-viewport Apple-style gradient (above default bg so it shows) */}
       {isFeaturesPage && (
-        <div className="fixed inset-0 -z-10 min-h-screen min-w-full" aria-hidden>
-          <div className="absolute inset-0 min-h-full min-w-full bg-[#f5f5f7] dark:bg-[#1d1d1f]" />
-          <div className="absolute inset-0 min-h-full min-w-full bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" />
+        <div className="fixed inset-0 z-0 min-h-[100vh] w-full" aria-hidden style={{ minWidth: '100vw' }}>
+          <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#1d1d1f]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" />
           <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl" />
           <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl" />
         </div>
@@ -446,8 +446,8 @@ const V3Layout = () => {
         </div>
       </aside>
 
-      {/* Main Content - transparent when on Features page so its full-bleed gradient shows */}
-      <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} ${location.pathname === '/features' ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'}`}>
+      {/* Main Content - transparent when on Features page so gradient shows */}
+      <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'}`}>
         {/* View As Banner */}
         {isViewingAs && viewingAsUser && (
           <div className="sticky top-0 z-40 bg-gradient-to-r from-[#5856d6] to-[#af52de] text-white px-4 py-2.5 shadow-lg">

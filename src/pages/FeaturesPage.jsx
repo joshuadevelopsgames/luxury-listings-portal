@@ -19,6 +19,9 @@ import {
   Plug,
   FileText,
   Smartphone,
+  Send,
+  Palette,
+  FolderOpen,
 } from 'lucide-react';
 
 const salesCrmFeatures = [
@@ -103,14 +106,36 @@ const addOnFeatures = [
   {
     icon: Smartphone,
     title: 'Mobile Companion',
-    description: 'Light mobile view or app for checking pipeline and logging quick touches on the go.',
+    description: 'Light mobile view or app for checking pipeline, tasks, and logging quick touches on the go.',
+  },
+];
+
+const contentCollaborationFeatures = [
+  {
+    icon: Send,
+    title: 'Client Approval Workflow',
+    description: 'Submit content for client review, track approval status and version history. Email or in-portal approval.',
+  },
+  {
+    icon: Palette,
+    title: 'Brand Asset Storage',
+    description: 'Store client brand guidelines, logos, color codes, and voice/tone in the portal for quick reference.',
+  },
+  {
+    icon: FolderOpen,
+    title: 'Content Library',
+    description: 'Centralized assets by client and campaign. Tag and filter by platform or theme for reuse.',
   },
 ];
 
 export default function FeaturesPage() {
   return (
     <div className="min-h-screen relative">
-      {/* Gradient is rendered in Layout so it covers the full viewport (including behind sidebar) */}
+      {/* Full-viewport gradient (fixed so it fills the whole content area) */}
+      <div className="fixed inset-0 -z-10 bg-[#f5f5f7] dark:bg-[#1d1d1f]" style={{ minHeight: '100vh', minWidth: '100vw' }} />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" style={{ minHeight: '100vh', minWidth: '100vw' }} />
+      <div className="fixed top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl -z-10" />
+      <div className="fixed bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl -z-10" />
 
       <div className="relative max-w-5xl mx-auto px-6 py-12 sm:py-16">
         <Link
@@ -143,6 +168,29 @@ export default function FeaturesPage() {
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {salesCrmFeatures.map((feature, idx) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={idx}
+                  className="p-6 rounded-2xl bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:border-[#0071e3]/20 dark:hover:border-[#0a84ff]/30 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center mb-4 shadow-lg shadow-[#0071e3]/20">
+                    <Icon className="w-5 h-5 text-white" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white mb-2">{feature.title}</h3>
+                  <p className="text-[14px] text-[#86868b] leading-relaxed">{feature.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="mt-16">
+          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-6">
+            Content & Collaboration
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {contentCollaborationFeatures.map((feature, idx) => {
               const Icon = feature.icon;
               return (
                 <div
