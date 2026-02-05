@@ -13,7 +13,7 @@ const POSTS_PER_UNIT = 7.5;  // 120 posts + 10 clients ≈ 17 units → Heavy
 const CLIENT_WEIGHT = 0.1;
 const MAX_CLIENT_EQUIVALENTS = 13;  // max heaviness; bar is 100% at this
 const WORKLOAD_AT_MAX = 26;         // raw units at 13 avg clients (182 posts + 1.3)
-const WORKLOAD_LOW = 12;   // Light
+const WORKLOAD_LOW = 11;   // Light (max)
 const WORKLOAD_MED = 16;   // Heavy starts here: 120 posts + 10 clients (lighter side of heavy)
 
 function getWorkloadUnits(clients) {
