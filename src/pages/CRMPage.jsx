@@ -57,7 +57,7 @@ const CRMPage = () => {
   const canManageLeads = hasPermission(PERMISSIONS.MANAGE_LEADS);
   const canViewLeads = hasPermission(PERMISSIONS.VIEW_LEADS);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('warm-leads');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'warm' | 'cold' | 'contacted' | 'clients'
   // Default to card view on mobile, list on desktop
   const [viewMode, setViewMode] = useState(() => 
     typeof window !== 'undefined' && window.innerWidth < 640 ? 'card' : 'list'
@@ -730,37 +730,30 @@ const CRMPage = () => {
     }
   };
 
-  const filteredWarmLeads = warmLeads.filter(client => 
-    (client.contactName && client.contactName.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.email && client.email.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.instagram && client.instagram.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.organization && client.organization.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.website && client.website.toLowerCase().includes((searchTerm || '').toLowerCase()))
-  );
+  const matchesSearch = (client, isExisting) => {
+    const q = (searchTerm || '').toLowerCase();
+    const name = (client.contactName || client.clientName || '').toLowerCase();
+    const email = (client.email || client.clientEmail || '').toLowerCase();
+    const org = (client.organization || '').toLowerCase();
+    const ig = (client.instagram || '').toLowerCase();
+    const web = (client.website || '').toLowerCase();
+    return !q || name.includes(q) || email.includes(q) || org.includes(q) || ig.includes(q) || web.includes(q);
+  };
 
-  const filteredContactedClients = contactedClients.filter(client => 
-    (client.contactName && client.contactName.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.email && client.email.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.instagram && client.instagram.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.organization && client.organization.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.website && client.website.toLowerCase().includes((searchTerm || '').toLowerCase()))
-  );
-
-  const filteredColdLeads = coldLeads.filter(client => 
-    (client.contactName && client.contactName.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.email && client.email.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.instagram && client.instagram.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.organization && client.organization.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.website && client.website.toLowerCase().includes((searchTerm || '').toLowerCase()))
-  );
-
-  const filteredExistingClients = existingClients.filter(client => 
-    (client.contactName && client.contactName.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.email && client.email.toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    ((client.clientName || '').toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    ((client.clientEmail || '').toLowerCase().includes((searchTerm || '').toLowerCase())) ||
-    (client.organization && client.organization.toLowerCase().includes((searchTerm || '').toLowerCase()))
-  );
+  // Single combined list: warm + contacted + cold + existing, with type for filtering
+  const allContacts = [
+    ...warmLeads.map(c => ({ ...c, _type: 'warm', isExisting: false })),
+    ...contactedClients.map(c => ({ ...c, _type: 'contacted', isExisting: false })),
+    ...coldLeads.map(c => ({ ...c, _type: 'cold', isExisting: false })),
+    ...existingClients.map(c => ({ ...c, _type: 'clients', isExisting: true }))
+  ]
+    .filter(c => matchesSearch(c, c.isExisting))
+    .filter(c => statusFilter === 'all' || c._type === statusFilter)
+    .sort((a, b) => {
+      const nameA = (a.contactName || a.clientName || a.email || '').toLowerCase();
+      const nameB = (b.contactName || b.clientName || b.email || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
   const totalWarmLeads = warmLeads.length;
   const totalContacted = contactedClients.length;
@@ -927,7 +920,7 @@ const CRMPage = () => {
     </tr>
   );
 
-  const renderLeadList = (items, isExisting = false) => (
+  const renderLeadList = (items, isExistingDefault = false) => (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-white/10">
       <table className="w-full">
         <thead>
@@ -940,7 +933,7 @@ const CRMPage = () => {
           </tr>
         </thead>
         <tbody>
-          {items.map((client) => renderClientRow(client, isExisting))}
+          {items.map((client) => renderClientRow(client, client.isExisting !== undefined ? client.isExisting : isExistingDefault))}
         </tbody>
       </table>
     </div>
@@ -1105,113 +1098,79 @@ const CRMPage = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
+      {/* Filter: single list, filter by type */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[13px] text-[#86868b] mr-1">Filter:</span>
         <button
-          onClick={() => setActiveTab('warm-leads')}
-          className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-            activeTab === 'warm-leads'
-              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+          onClick={() => setStatusFilter('all')}
+          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+            statusFilter === 'all'
+              ? 'bg-[#0071e3] text-white'
+              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
           }`}
         >
-          Warm Leads ({totalWarmLeads})
+          All
         </button>
         <button
-          onClick={() => setActiveTab('contacted')}
-          className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-            activeTab === 'contacted'
-              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+          onClick={() => setStatusFilter('warm')}
+          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+            statusFilter === 'warm'
+              ? 'bg-[#34c759] text-white'
+              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+          }`}
+        >
+          Warm leads ({totalWarmLeads})
+        </button>
+        <button
+          onClick={() => setStatusFilter('cold')}
+          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+            statusFilter === 'cold'
+              ? 'bg-[#86868b] text-white'
+              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+          }`}
+        >
+          Cold leads ({totalColdLeads})
+        </button>
+        <button
+          onClick={() => setStatusFilter('contacted')}
+          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+            statusFilter === 'contacted'
+              ? 'bg-[#0071e3] text-white'
+              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
           }`}
         >
           Contacted ({totalContacted})
         </button>
         <button
-          onClick={() => setActiveTab('cold-leads')}
-          className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-            activeTab === 'cold-leads'
-              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+          onClick={() => setStatusFilter('clients')}
+          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+            statusFilter === 'clients'
+              ? 'bg-[#5856d6] text-white'
+              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
           }`}
         >
-          Cold Leads ({totalColdLeads})
-        </button>
-        <button
-          onClick={() => setActiveTab('existing-clients')}
-          className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-            activeTab === 'existing-clients'
-              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
-          }`}
-        >
-          Existing Clients ({totalExistingClients})
+          Existing clients ({totalExistingClients})
         </button>
       </div>
 
-      {/* Content based on active tab */}
-      {activeTab === 'warm-leads' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Warm Leads</h2>
-            <p className="text-[13px] text-[#86868b]">Leads showing interest and engagement</p>
+      {/* Single list: A–Z by name */}
+      <div className="space-y-4">
+        <p className="text-[13px] text-[#86868b]">
+          {allContacts.length} contact{allContacts.length !== 1 ? 's' : ''} (A–Z by name)
+        </p>
+        {loadingExistingClients && statusFilter === 'all' ? (
+          <p className="text-[#86868b] py-8">Loading...</p>
+        ) : viewMode === 'list' ? (
+          renderLeadList(allContacts, false)
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allContacts.map((client) => renderClientCard(client, client.isExisting))}
           </div>
-          {viewMode === 'list' ? renderLeadList(filteredWarmLeads, false) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredWarmLeads.map(renderClientCard)}
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'contacted' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Clients We've Contacted Before</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Leads with previous communication history</p>
-          </div>
-          {viewMode === 'list' ? renderLeadList(filteredContactedClients, false) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredContactedClients.map(renderClientCard)}
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'cold-leads' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Cold Leads</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Leads requiring initial outreach or re-engagement</p>
-          </div>
-          {viewMode === 'list' ? renderLeadList(filteredColdLeads, false) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredColdLeads.map(renderClientCard)}
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'existing-clients' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Existing Clients</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Clients from your client directory (auto-synced)</p>
-          </div>
-          {loadingExistingClients ? (
-            <p className="text-gray-500 dark:text-gray-400 py-8">Loading clients...</p>
-          ) : viewMode === 'list' ? (
-            renderLeadList(filteredExistingClients, true)
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredExistingClients.map(client => renderClientCard(client, true))}
-            </div>
-          )}
-          {!loadingExistingClients && filteredExistingClients.length === 0 && (
-            <p className="text-gray-500 dark:text-gray-400 py-8 text-center">No existing clients yet. Approved clients will appear here automatically.</p>
-          )}
-        </div>
-      )}
+        )}
+        {!loadingExistingClients && allContacts.length === 0 && (
+          <p className="text-[#86868b] py-8 text-center">No contacts match the current filter and search.</p>
+        )}
+      </div>
 
       {/* Add New Lead Modal */}
       {showAddModal && createPortal(
