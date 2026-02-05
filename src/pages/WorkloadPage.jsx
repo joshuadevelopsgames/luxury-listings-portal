@@ -11,9 +11,9 @@ import ClientLink from '../components/ui/ClientLink';
 // Formula: total_posts / POSTS_PER_UNIT + 0.1 * client_count + platform bonus (0.2 per client with 3+ platforms).
 const POSTS_PER_UNIT = 7.5;  // 120 posts + 10 clients ≈ 17 units → Heavy
 const CLIENT_WEIGHT = 0.1;
-const MAX_CLIENT_EQUIVALENTS = 13;  // max heaviness; bar is 100% at this
-const WORKLOAD_AT_MAX = 26;         // raw units at 13 avg clients (182 posts + 1.3)
-const WORKLOAD_LOW = 11;   // Light (max)
+const MAX_CLIENT_EQUIVALENTS = 11;  // scale out of 11; bar is 100% at this
+const WORKLOAD_AT_MAX = 22;         // raw units at 11 equiv (~165 posts + 1.1)
+const WORKLOAD_LOW = 12;   // Light
 const WORKLOAD_MED = 16;   // Heavy starts here: 120 posts + 10 clients (lighter side of heavy)
 
 function getWorkloadUnits(clients) {
@@ -35,12 +35,12 @@ function getCapacityColor(workloadUnits) {
   return { bar: 'bg-[#ff3b30]', text: 'text-[#ff3b30]', label: 'Heavy' };
 }
 
-// Bar scale 1–13: 13 = 100%
+// Bar scale 1–11: 11 = 100%
 function getCapacityPercent(workloadUnits) {
   return Math.min(100, Math.round((workloadUnits / WORKLOAD_AT_MAX) * 100));
 }
 
-// Effective client-equivalents (1–13) for display
+// Effective client-equivalents (1–11) for display
 function getEffectiveEquivalents(workloadUnits) {
   return Math.min(MAX_CLIENT_EQUIVALENTS, Math.max(0, (workloadUnits / WORKLOAD_AT_MAX) * MAX_CLIENT_EQUIVALENTS));
 }
@@ -249,7 +249,7 @@ export default function WorkloadPage() {
                   </div>
                 </div>
 
-                {/* Capacity Bar (1–13 scale; 13 = max heaviness) */}
+                {/* Capacity Bar (1–11 scale; 11 = max heaviness) */}
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex-1 h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all ${capacity.bar}`} style={{ width: `${pct}%` }} />
