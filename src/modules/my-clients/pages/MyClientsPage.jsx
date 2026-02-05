@@ -11,11 +11,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useViewAs } from '../../../contexts/ViewAsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import PlatformIcons from '../../../components/PlatformIcons';
 import ClientLink from '../../../components/ui/ClientLink';
+import { toast } from 'react-hot-toast';
 import { 
   Users, 
   Package, 
@@ -38,7 +40,11 @@ import {
   Instagram,
   Globe,
   MapPin,
-  DollarSign
+  DollarSign,
+  Plus,
+  Youtube,
+  Facebook,
+  Linkedin
 } from 'lucide-react';
 
 const MyClientsPage = () => {
@@ -51,6 +57,9 @@ const MyClientsPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedClient, setSelectedClient] = useState(null);
   const [detailClient, setDetailClient] = useState(null); // For detail modal
+  const [logPostClient, setLogPostClient] = useState(null);
+  const [logPlatform, setLogPlatform] = useState('instagram');
+  const [logSaving, setLogSaving] = useState(false);
 
   // Get the effective user (viewed-as user or current user)
   const effectiveUser = getEffectiveUser(currentUser);
@@ -97,6 +106,42 @@ const MyClientsPage = () => {
     if (status === 'Paid') return 'text-[#34c759] bg-[#34c759]/10';
     if (status === 'Pending') return 'text-[#ff9500] bg-[#ff9500]/10';
     return 'text-[#ff3b30] bg-[#ff3b30]/10';
+  };
+
+  const logPostPlatformIcons = { instagram: Instagram, youtube: Youtube, facebook: Facebook, linkedin: Linkedin };
+
+  const handleLogPostForClient = async () => {
+    if (!logPostClient || !effectiveUser?.email) return;
+    setLogSaving(true);
+    try {
+      const now = new Date();
+      const taskData = {
+        title: `Post for ${logPostClient.clientName}`,
+        description: `${logPlatform.charAt(0).toUpperCase() + logPlatform.slice(1)} post completed`,
+        assigned_to: effectiveUser.email,
+        assignedBy: effectiveUser.email,
+        status: 'completed',
+        priority: 'medium',
+        due_date: format(now, 'yyyy-MM-dd'),
+        created_date: now.toISOString(),
+        completed_date: now.toISOString(),
+        labels: ['client-post', `client-${logPostClient.id}`, logPlatform],
+        task_type: 'post_log'
+      };
+      await firestoreService.addTask(taskData);
+      const newPostsUsed = (logPostClient.postsUsed || 0) + 1;
+      const newPostsRemaining = Math.max((logPostClient.postsRemaining || 0) - 1, 0);
+      await firestoreService.updateClient(logPostClient.id, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
+      setClients(prev => prev.map(c => c.id === logPostClient.id ? { ...c, postsUsed: newPostsUsed, postsRemaining: newPostsRemaining } : c));
+      toast.success(`Post logged for ${logPostClient.clientName}`);
+      setLogPostClient(null);
+      setLogPlatform('instagram');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to log post');
+    } finally {
+      setLogSaving(false);
+    }
   };
 
   // Filter clients
@@ -276,9 +321,18 @@ const MyClientsPage = () => {
                       )}
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-lg text-[11px] font-medium ${health.color} ${health.bgColor}`}>
-                    {health.label}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setLogPostClient(client); setLogPlatform('instagram'); }}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#34c759]/15 text-[#34c759] hover:bg-[#34c759]/25 text-[11px] font-medium transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" strokeWidth={2} />
+                      Log post
+                    </button>
+                    <span className={`px-2 py-1 rounded-lg text-[11px] font-medium ${health.color} ${health.bgColor}`}>
+                      {health.label}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Progress */}
@@ -356,6 +410,43 @@ const MyClientsPage = () => {
             );
           })}
         </div>
+      )}
+
+      {/* Log post modal */}
+      {logPostClient && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => !logSaving && setLogPostClient(null)}>
+          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl w-full max-w-sm shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Log post</h3>
+              <p className="text-[13px] text-[#86868b] mt-0.5">{logPostClient.clientName}</p>
+            </div>
+            <div className="p-5">
+              <p className="text-[12px] font-medium text-[#86868b] mb-2">Platform</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(logPostPlatformIcons).map(([platform, Icon]) => (
+                  <button
+                    key={platform}
+                    type="button"
+                    onClick={() => setLogPlatform(platform)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+                      logPlatform === platform ? 'bg-[#0071e3] text-white' : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" strokeWidth={1.5} />
+                    <span className="capitalize">{platform}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 px-5 py-4 border-t border-black/5 dark:border-white/10">
+              <button type="button" onClick={() => setLogPostClient(null)} disabled={logSaving} className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={handleLogPostForClient} disabled={logSaving} className="flex-1 h-11 rounded-xl bg-[#34c759] text-white text-[14px] font-medium hover:bg-[#30d158] disabled:opacity-50">
+                {logSaving ? 'Logging...' : 'Log post'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Client Detail Modal */}

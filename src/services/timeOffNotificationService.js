@@ -17,7 +17,7 @@ export const timeOffNotifications = {
       
       const promises = admins.map(admin => 
         firestoreService.createNotification({
-          userEmail: admin.email,
+          userEmail: admin.email || admin.id,
           type: 'time_off_request',
           title: 'New Time Off Request',
           message: `${request.employeeName || request.employeeEmail} requested ${request.days || '?'} days of ${request.type || 'time off'}`,

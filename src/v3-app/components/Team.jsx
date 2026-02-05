@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Calendar, MoreHorizontal, RefreshCw, Users } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { format } from 'date-fns';
-import UserLink from '../../components/ui/UserLink';
+import EmployeeLink from '../../components/ui/EmployeeLink';
 
 /**
  * V3 Team - Real Data from Firestore (Approved Users)
@@ -155,9 +155,9 @@ const V3Team = () => {
                   </div>
                   <div>
                     <h3 className="text-[15px] font-semibold">
-                      <UserLink user={member} showId className="text-[#1d1d1f] dark:text-white">
+                      <EmployeeLink user={member} showId className="text-[#1d1d1f] dark:text-white">
                         {member.displayName || member.email?.split('@')[0] || 'Team Member'}
-                      </UserLink>
+                      </EmployeeLink>
                     </h3>
                     <p className="text-[13px] text-[#86868b]">{getRoleDisplay(member.role)}</p>
                   </div>

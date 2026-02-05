@@ -31,7 +31,7 @@ import { firestoreService } from '../services/firestoreService';
 import { USER_ROLES } from '../entities/UserRoles';
 import { auth } from '../firebase';
 import { PERMISSIONS, PERMISSION_CATEGORIES, PERMISSION_LABELS } from '../entities/Permissions';
-import UserLink from '../components/ui/UserLink';
+import EmployeeLink from '../components/ui/EmployeeLink';
 
 const UserManagement = () => {
   const { currentUser, hasPermission, isSystemAdmin } = useAuth();
@@ -1340,9 +1340,9 @@ const UserManagement = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-lg">
-                          <UserLink user={user} showId className="text-[#1d1d1f] dark:text-white">
+                          <EmployeeLink user={user} showId className="text-[#1d1d1f] dark:text-white">
                             {user.firstName} {user.lastName}
-                          </UserLink>
+                          </EmployeeLink>
                         </CardTitle>
                       </div>
                       <Badge variant="outline" className="border-orange-300 text-orange-700">
@@ -1438,9 +1438,9 @@ const UserManagement = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-lg">
-                          <UserLink user={user} showId className="text-[#1d1d1f] dark:text-white">
+                          <EmployeeLink user={user} showId className="text-[#1d1d1f] dark:text-white">
                             {user.firstName} {user.lastName}
-                          </UserLink>
+                          </EmployeeLink>
                         </CardTitle>
                       </div>
                       <Badge variant="outline" className="border-green-300 text-green-700">

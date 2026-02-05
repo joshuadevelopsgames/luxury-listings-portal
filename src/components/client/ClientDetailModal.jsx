@@ -22,8 +22,11 @@ import {
   Loader2,
   Globe,
   Instagram,
-  ExternalLink
+  ExternalLink,
+  Upload,
+  Camera
 } from 'lucide-react';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format } from 'date-fns';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
@@ -47,6 +50,8 @@ const ClientDetailModal = ({
   const [showManagerModal, setShowManagerModal] = useState(false);
   const [assigningManager, setAssigningManager] = useState(false);
   const [editForm, setEditForm] = useState({});
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = React.useRef(null);
 
   useEffect(() => {
     setLocalClient(client);
@@ -83,6 +88,32 @@ const ClientDetailModal = ({
       profilePhoto: localClient.profilePhoto || ''
     });
     setIsEditing(true);
+  };
+
+  const handleProfilePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !localClient?.id) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const storage = getStorage();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `client-photos/${localClient.id}/profile_${Date.now()}.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setEditForm(prev => ({ ...prev, profilePhoto: url }));
+      toast.success('Photo uploaded');
+    } catch (err) {
+      console.error(err);
+      toast.error('Upload failed');
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
+    }
   };
 
   const handleSave = async () => {
@@ -279,20 +310,53 @@ const ClientDetailModal = ({
                 </div>
               </div>
               <div>
-                <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Profile Photo URL</label>
+                <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Profile Photo</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex-shrink-0">
+                    {editForm.profilePhoto ? (
+                      <img src={editForm.profilePhoto} alt="Profile" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[#86868b]">
+                        <Camera className="w-6 h-6" strokeWidth={1.5} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProfilePhotoUpload}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors disabled:opacity-50"
+                    >
+                      {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      {uploadingPhoto ? 'Uploading...' : 'Upload photo'}
+                    </button>
+                    {editForm.profilePhoto && (
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(prev => ({ ...prev, profilePhoto: '' }))}
+                        className="block text-[12px] text-[#86868b] hover:text-[#ff3b30]"
+                      >
+                        Remove photo
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-[#86868b] mt-2">Or paste URL:</p>
                 <input
                   type="text"
                   value={editForm.profilePhoto}
                   onChange={(e) => setEditForm({ ...editForm, profilePhoto: e.target.value })}
-                  className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
-                  placeholder="/avatars/client-name.png"
+                  className="mt-1 w-full h-9 px-3 text-[13px] rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                  placeholder="https://..."
                 />
-                {editForm.profilePhoto && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <img src={editForm.profilePhoto} alt="Preview" className="w-10 h-10 rounded-lg object-cover" onError={(e) => e.target.style.display = 'none'} />
-                    <span className="text-[11px] text-[#86868b]">Preview</span>
-                  </div>
-                )}
               </div>
               <div>
                 <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Notes</label>

@@ -22,8 +22,12 @@ import {
   Instagram,
   Facebook,
   Linkedin,
-  Youtube
+  Youtube,
+  Upload,
+  Camera,
+  Loader2
 } from 'lucide-react';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestoreService } from '../../services/firestoreService';
 import { format } from 'date-fns';
 import ClientContractsSection from './ClientContractsSection';
@@ -80,6 +84,8 @@ const ClientProfilesList = () => {
     platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
   });
   const [adding, setAdding] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = React.useRef(null);
 
   // Permissions
   const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
@@ -208,6 +214,32 @@ const ClientProfilesList = () => {
     } catch (error) {
       console.error('Error updating client:', error);
       toast.error('Failed to update client');
+    }
+  };
+
+  const handleProfilePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedClient?.id) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const storage = getStorage();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `client-photos/${selectedClient.id}/profile_${Date.now()}.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setEditForm(prev => ({ ...prev, profilePhoto: url }));
+      toast.success('Photo uploaded');
+    } catch (err) {
+      console.error(err);
+      toast.error('Upload failed');
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
     }
   };
 
@@ -1160,6 +1192,60 @@ const ClientProfilesList = () => {
                       placeholder="Additional notes..."
                       className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
                       rows={3}
+                    />
+                  </div>
+                )}
+
+                {canManageClients && (
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      Profile Photo
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex-shrink-0">
+                        {editForm.profilePhoto ? (
+                          <img src={editForm.profilePhoto} alt="Profile" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[#86868b]">
+                            <Camera className="w-6 h-6" strokeWidth={1.5} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <input
+                          ref={photoInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleProfilePhotoUpload}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => photoInputRef.current?.click()}
+                          disabled={uploadingPhoto}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors disabled:opacity-50"
+                        >
+                          {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                          {uploadingPhoto ? 'Uploading...' : 'Upload photo'}
+                        </button>
+                        {editForm.profilePhoto && (
+                          <button
+                            type="button"
+                            onClick={() => setEditForm(prev => ({ ...prev, profilePhoto: '' }))}
+                            className="block text-[12px] text-[#86868b] hover:text-[#ff3b30]"
+                          >
+                            Remove photo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-[#86868b] mt-2">Or paste URL:</p>
+                    <input
+                      type="text"
+                      value={editForm.profilePhoto || ''}
+                      onChange={(e) => setEditForm({...editForm, profilePhoto: e.target.value})}
+                      placeholder="https://..."
+                      className="mt-1 w-full h-9 px-3 text-[13px] rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                     />
                   </div>
                 )}

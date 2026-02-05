@@ -84,13 +84,14 @@ const PostsLoggedWidget = () => {
 
         setPostsToday(todaysPosts);
 
-        // Load clients for the log modal
+        // Load clients for the log modal: only clients assigned to this user
         const allClients = await firestoreService.getClients();
-        // Filter to clients assigned to this user or all if admin
+        const email = (effectiveUser?.email || '').trim().toLowerCase();
+        const uid = (effectiveUser?.uid || '').trim().toLowerCase();
         const myClients = allClients.filter(c => {
-          const am = (c.assignedManager || '').toLowerCase();
-          const email = (effectiveUser?.email || '').toLowerCase();
-          return am === email || c.postsRemaining > 0;
+          const am = (c.assignedManager || '').trim().toLowerCase();
+          if (!am) return false;
+          return am === email || (uid && am === uid);
         });
         setClients(myClients);
       } catch (error) {
@@ -101,7 +102,7 @@ const PostsLoggedWidget = () => {
     };
 
     loadPostsToday();
-  }, [effectiveUser?.email]);
+  }, [effectiveUser?.email, effectiveUser?.uid]);
 
   const handleLogPost = async () => {
     if (!selectedClient) {
