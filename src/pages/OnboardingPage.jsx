@@ -147,6 +147,11 @@ const OnboardingPage = () => {
         await firestoreService.addEmployee(employeeData);
       }
 
+      await firestoreService.updateApprovedUser(currentUser.email, {
+        onboardingCompleted: true,
+        onboardingCompletedDate: employeeData.onboardingCompletedDate
+      });
+
       console.log('✅ Employee data saved successfully');
       toast.success('🎉 Welcome aboard! Let\'s get started!');
       

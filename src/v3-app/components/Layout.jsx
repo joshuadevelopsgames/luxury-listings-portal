@@ -56,9 +56,10 @@ const V3Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Redirect to onboarding when logged in but not yet completed (catches dashboard and any in-app route)
+  // As soon as we load dashboard (or any app route) and user hasn't completed onboarding, show onboarding
   useEffect(() => {
-    if (!currentUser?.isApproved || currentUser?.onboardingCompleted) return;
+    if (!currentUser?.isApproved) return;
+    if (currentUser?.onboardingCompleted === true) return;
     if (location.pathname === '/onboarding') return;
     navigate('/onboarding', { replace: true });
   }, [currentUser?.isApproved, currentUser?.onboardingCompleted, location.pathname, navigate]);

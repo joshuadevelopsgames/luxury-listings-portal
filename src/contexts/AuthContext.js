@@ -426,7 +426,9 @@ export function AuthProvider({ children }) {
           role: approvedUser.role || prev.role,
           primaryRole: approvedUser.primaryRole || prev.primaryRole,
           roles: approvedUser.roles || prev.roles,
-          customPermissions: approvedUser.customPermissions || prev.customPermissions || []
+          customPermissions: approvedUser.customPermissions || prev.customPermissions || [],
+          onboardingCompleted: approvedUser.onboardingCompleted !== undefined ? approvedUser.onboardingCompleted : prev.onboardingCompleted,
+          onboardingCompletedDate: approvedUser.onboardingCompletedDate ?? prev.onboardingCompletedDate
         };
         
         // Also update localStorage cache
