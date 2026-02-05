@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical, Palette, Loader2, Send, Bell, Archive, ArchiveRestore } from 'lucide-react';
 import {
@@ -38,6 +38,43 @@ import { reminderService } from '../services/reminderService';
 import { format } from 'date-fns';
 import { PERMISSIONS } from '../entities/Permissions';
 import { parseNaturalLanguageDate } from '../utils/dateParser';
+
+// Shared: parse YYYY-MM-DD for filter logic (module-level to avoid stale closure)
+const parseLocalDateForFilter = (dateString) => {
+  if (!dateString) return null;
+  const [y, m, d] = dateString.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+const taskMatchesSmartFilter = (task, criteria) => {
+  if (!criteria) return true;
+  const priorityMap = {
+    urgent: ['urgent', 'p1'], p1: ['urgent', 'p1'],
+    high: ['high', 'p2'], p2: ['high', 'p2'],
+    medium: ['medium', 'p3'], p3: ['medium', 'p3'],
+    low: ['low', 'p4'], p4: ['low', 'p4']
+  };
+  if (criteria.priorities?.length > 0) {
+    const ok = criteria.priorities.some(fp => (priorityMap[fp] || [fp]).includes(task.priority));
+    if (!ok) return false;
+  }
+  if (criteria.labels?.length > 0) {
+    if (!task.labels || !criteria.labels.some(l => task.labels.includes(l))) return false;
+  }
+  if (criteria.categories?.length > 0 && !criteria.categories.includes(task.category)) return false;
+  if (criteria.dueWithinDays) {
+    if (!task.due_date) return false;
+    const due = parseLocalDateForFilter(task.due_date);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const max = new Date(today); max.setDate(today.getDate() + criteria.dueWithinDays);
+    if (!due || due > max || due < today) return false;
+  }
+  if (criteria.estimatedTimeMax != null && (task.estimated_time == null || task.estimated_time > criteria.estimatedTimeMax)) return false;
+  if (criteria.hasSubtasks && (!task.subtasks || task.subtasks.length === 0)) return false;
+  if (criteria.hasReminders && (!task.reminders || task.reminders.length === 0)) return false;
+  if (criteria.isRecurring && !task.recurring) return false;
+  return true;
+};
 
 // Graphic team members for project requests
 const GRAPHIC_TEAM = [
@@ -618,9 +655,42 @@ const TasksPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Filter tasks whenever activeFilter, tasks, activeSmartFilter, timeTick, or archive state change
+  // Filter tasks: run logic inside effect so we always use current state (no stale closure)
   useEffect(() => {
-    filterTasks();
+    let filtered = [...tasks];
+    switch (activeFilter) {
+      case 'inbox':
+        filtered = tasks.filter(t => t.status !== 'completed' && !t.due_date);
+        break;
+      case 'today': {
+        const overdue = tasks.filter(t => t.status !== 'completed' && isOverdue(t));
+        const today = tasks.filter(t => t.status !== 'completed' && isDueToday(t) && !isOverdue(t));
+        filtered = [...overdue, ...today];
+        break;
+      }
+      case 'upcoming':
+        filtered = tasks.filter(t => t.status !== 'completed' && t.due_date && isDueInFuture(t) && !isDueToday(t));
+        break;
+      case 'overdue':
+        filtered = tasks.filter(t => t.status !== 'completed' && isOverdue(t) && !isDueToday(t));
+        break;
+      case 'completed':
+        filtered = tasks.filter(t => t.status === 'completed' && !isCompletedMoreThan24HoursAgo(t.completed_date) && (showArchivedTasks || !archivedTaskIds.has(t.id)));
+        break;
+      default:
+        break;
+    }
+    if (activeFilter !== 'outbox' && activeFilter !== 'completed') {
+      filtered = filtered.filter(t => !archivedTaskIds.has(t.id));
+    }
+    if (activeSmartFilter?.criteria) {
+      filtered = filtered.filter(t => taskMatchesSmartFilter(t, activeSmartFilter.criteria));
+    }
+    const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1, p1: 4, p2: 3, p3: 2, p4: 1 };
+    setFilteredTasks([...filtered].sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+      return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+    }));
   }, [activeFilter, tasks, activeSmartFilter, timeTick, archivedTaskIds, showArchivedTasks]);
 
   const applySmartFilter = (filter) => {
@@ -642,159 +712,15 @@ const TasksPage = () => {
     return () => window.removeEventListener('create-smart-filter', handleCreateFilter);
   }, []);
 
-  const filterTasks = () => {
-    let filtered = [...tasks];
-    
-    // Debug logging for date filtering
-    console.log('Filtering tasks with activeFilter:', activeFilter);
-    console.log('All tasks:', tasks.map(task => ({
-      id: task.id,
-      title: task.title,
-      due_date: task.due_date,
-      due_date_obj: new Date(task.due_date),
-      status: task.status
-    })));
-    
-    // STEP 1: Apply tab filter (inbox, today, upcoming, completed)
-    switch (activeFilter) {
-      case "inbox":
-        // Tasks without a due date (Todoist-style inbox)
-        filtered = tasks.filter(task => 
-          task.status !== 'completed' && !task.due_date
-        );
-        break;
-      case "today":
-        // Overdue tasks + tasks due today (considering time)
-        const overdueTasks = tasks.filter(task => 
-          task.status !== 'completed' && isOverdue(task)
-        );
-        const todayTasks = tasks.filter(task => 
-          task.status !== 'completed' && isDueToday(task) && !isOverdue(task)
-        );
-        // Overdue tasks first, then today's tasks
-        filtered = [...overdueTasks, ...todayTasks];
-        break;
-      case "upcoming":
-        filtered = tasks.filter(task => 
-          task.status !== 'completed' && 
-          task.due_date && 
-          isDueInFuture(task) &&
-          !isDueToday(task)
-        );
-        break;
-      case "overdue":
-        filtered = tasks.filter(task => 
-          task.status !== 'completed' && 
-          isOverdue(task) &&
-          !isDueToday(task)
-        );
-        break;
-      case "completed":
-        // Only show tasks completed within the last 24 hours; respect per-user archive (show archived only if toggle on)
-        filtered = tasks.filter(task => 
-          task.status === 'completed' && 
-          !isCompletedMoreThan24HoursAgo(task.completed_date) &&
-          (showArchivedTasks || !archivedTaskIds.has(task.id))
-        );
-        break;
-      default:
-        filtered = tasks;
-    }
-
-    // Exclude archived tasks from non-completed task tabs (completed tab already respects showArchivedTasks)
-    if (activeFilter !== 'outbox' && activeFilter !== 'completed') {
-      filtered = filtered.filter(task => !archivedTaskIds.has(task.id));
-    }
-    
-    // STEP 2: Apply smart filter criteria on top of tab filter
-    if (activeSmartFilter) {
-      const criteria = activeSmartFilter.criteria;
-      
-      filtered = filtered.filter(task => {
-        // Priority filter - normalize to handle both formats (p1/urgent, p2/high, etc.)
-        if (criteria.priorities?.length > 0) {
-          const priorityMap = {
-            'urgent': ['urgent', 'p1'],
-            'p1': ['urgent', 'p1'],
-            'high': ['high', 'p2'],
-            'p2': ['high', 'p2'],
-            'medium': ['medium', 'p3'],
-            'p3': ['medium', 'p3'],
-            'low': ['low', 'p4'],
-            'p4': ['low', 'p4']
-          };
-          
-          const matchesPriority = criteria.priorities.some(filterPriority => {
-            const validPriorities = priorityMap[filterPriority] || [filterPriority];
-            return validPriorities.includes(task.priority);
-          });
-          
-          if (!matchesPriority) return false;
-        }
-        
-        // Label filter
-        if (criteria.labels?.length > 0) {
-          if (!task.labels || !criteria.labels.some(label => task.labels.includes(label))) {
-            return false;
-          }
-        }
-        
-        // Category filter
-        if (criteria.categories?.length > 0) {
-          if (!criteria.categories.includes(task.category)) return false;
-        }
-        
-        // Due within days (for "This Week" preset)
-        if (criteria.dueWithinDays) {
-          if (!task.due_date) return false;
-          const dueDate = parseLocalDate(task.due_date);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const maxDate = new Date(today);
-          maxDate.setDate(today.getDate() + criteria.dueWithinDays);
-          if (dueDate > maxDate || dueDate < today) return false;
-        }
-        
-        // Estimated time max (for "Quick Wins" preset)
-        if (criteria.estimatedTimeMax && task.estimated_time > criteria.estimatedTimeMax) {
-          return false;
-        }
-        
-        // Special criteria
-        if (criteria.hasSubtasks && (!task.subtasks || task.subtasks.length === 0)) {
-          return false;
-        }
-        
-        if (criteria.hasReminders && (!task.reminders || task.reminders.length === 0)) {
-          return false;
-        }
-        
-        if (criteria.isRecurring && !task.recurring) {
-          return false;
-        }
-        
-        return true;
-      });
-    }
-    
-    console.log('Filtered tasks:', filtered.map(task => ({
-      id: task.id,
-      title: task.title,
-      due_date: task.due_date,
-      filter: activeFilter
-    })));
-    
-    // Sort by manual order if it exists, otherwise by priority
-    setFilteredTasks(filtered.sort((a, b) => {
-      // If both have order fields, sort by order
-      if (a.order !== undefined && b.order !== undefined) {
-        return a.order - b.order;
-      }
-      // Otherwise sort by priority
-      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1, p1: 4, p2: 3, p3: 2, p4: 1 };
-      return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
-    }));
-  };
+  // Outbox list with same smart filter as main list (filter by linked task when filter is active)
+  const displayedOutboxRequests = useMemo(() => {
+    const base = showArchivedOutbox ? sentRequests : sentRequests.filter((r) => !archivedRequestIds.has(r.id));
+    if (!activeSmartFilter?.criteria) return base;
+    return base.filter((r) => {
+      const task = outboxTaskMap[r.id];
+      return task && taskMatchesSmartFilter(task, activeSmartFilter.criteria);
+    });
+  }, [sentRequests, showArchivedOutbox, archivedRequestIds, activeSmartFilter, outboxTaskMap]);
 
   const createTask = async (taskData) => {
     try {
@@ -1483,6 +1409,11 @@ const TasksPage = () => {
               <p className="text-[15px] text-[#86868b] font-medium">No requested tasks yet</p>
               <p className="text-[13px] text-[#86868b] mt-1">Use “Request Task” to ask someone else to do a task</p>
             </div>
+          ) : displayedOutboxRequests.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-[15px] text-[#86868b] font-medium">No outbox items match the current filter</p>
+              <p className="text-[13px] text-[#86868b] mt-1">Clear the filter or add requests that match</p>
+            </div>
           ) : (
             <>
               {sentRequests.some((r) => archivedRequestIds.has(r.id)) && (
@@ -1498,7 +1429,7 @@ const TasksPage = () => {
                 </div>
               )}
               <ul className="divide-y divide-black/5 dark:divide-white/10">
-              {(showArchivedOutbox ? sentRequests : sentRequests.filter((r) => !archivedRequestIds.has(r.id))).map((req) => {
+              {displayedOutboxRequests.map((req) => {
                 const task = outboxTaskMap[req.id];
                 const statusLabel = req.status === 'pending' ? 'Pending' : req.status === 'accepted' ? (task?.status === 'completed' ? 'Completed' : 'In progress') : 'Declined';
                 const statusColor = req.status === 'pending' ? 'text-[#ff9500]' : req.status === 'accepted' ? (task?.status === 'completed' ? 'text-[#34c759]' : 'text-[#0071e3]') : 'text-[#ff3b30]';
