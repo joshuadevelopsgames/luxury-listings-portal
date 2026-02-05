@@ -18,31 +18,36 @@ const ProductivityStats = ({ tasks, onClose }) => {
   const [weeklyData, setWeeklyData] = useState([]);
 
   useEffect(() => {
+    const taskList = Array.isArray(tasks) ? tasks : [];
     const calculateStats = async () => {
-      console.log('📊 ProductivityStats - Total tasks received:', tasks.length);
-      const completedCount = tasks.filter(t => t.status === 'completed').length;
-      console.log('✅ Completed tasks:', completedCount);
-      const withDates = tasks.filter(t => t.completed_date).length;
-      console.log('📅 Tasks with completed_date:', withDates);
-      
-      const userEmail = 'current-user@example.com';
-      const productivityStats = await productivityService.getProductivityStats(userEmail, tasks);
-      console.log('📈 Calculated stats:', productivityStats);
-      setStats(productivityStats);
-      
-      const level = productivityService.getKarmaLevel(productivityStats.karma);
-      setKarmaLevel(level);
-
-      const weekData = productivityService.getWeeklyChartData(tasks);
-      console.log('📊 Weekly data:', weekData);
-      setWeeklyData(weekData);
+      try {
+        const productivityStats = await productivityService.getProductivityStats('', taskList);
+        setStats(productivityStats);
+        setKarmaLevel(productivityService.getKarmaLevel(productivityStats.karma));
+        setWeeklyData(productivityService.getWeeklyChartData(taskList));
+      } catch (err) {
+        console.error('ProductivityStats error:', err);
+        setStats({
+          total: taskList.length,
+          completed: 0,
+          pending: taskList.filter(t => t.status === 'pending').length,
+          inProgress: taskList.filter(t => t.status === 'in_progress').length,
+          completedToday: 0,
+          completedThisWeek: 0,
+          completedThisMonth: 0,
+          streak: 0,
+          completionRate: 0,
+          avgTasksPerDay: 0,
+          priorityBreakdown: { urgent: 0, high: 0, medium: 0, low: 0 },
+          mostProductiveDay: 'Sunday',
+          karma: 0
+        });
+        setKarmaLevel(productivityService.getKarmaLevel(0));
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        setWeeklyData(days.map(day => ({ day, completed: 0, date: '' })));
+      }
     };
-
-    if (tasks && tasks.length > 0) {
-      calculateStats();
-    } else {
-      console.log('⚠️ No tasks available for stats');
-    }
+    calculateStats();
   }, [tasks]);
 
   if (!stats) {
