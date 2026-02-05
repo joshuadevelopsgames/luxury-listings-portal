@@ -20,12 +20,16 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+const DEPARTMENTS = ['Executive', 'Content Team', 'Design Team', 'Sales', 'Marketing', 'Operations', 'HR', 'IT', 'Finance', 'General'];
+
 function normalizeToEmployee(user) {
   if (!user) return null;
   const name = user.name || user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
   return {
     ...user,
     name,
+    firstName: user.firstName ?? name.split(' ')[0] ?? '',
+    lastName: user.lastName ?? name.split(' ').slice(1).join(' ') ?? '',
     email: user.email || user.id,
     id: user.id || user.email,
     performance: user.performance || { rating: 0, projectsCompleted: 0, onTimeDelivery: 0, clientSatisfaction: 0 },
@@ -37,25 +41,28 @@ function normalizeToEmployee(user) {
     startDate: user.startDate || (user.createdAt?.toDate?.()?.toISOString?.()?.split('T')[0] || ''),
     manager: user.manager || '',
     employeeId: user.employeeId || '',
-    address: user.address || 'Not provided',
+    address: user.address || user.location || 'Not provided',
+    location: user.location ?? user.address ?? '',
     phone: user.phone || ''
   };
 }
 
-const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate }) => {
+const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, startInEditMode = false }) => {
   const { currentRole } = useAuth();
   const { isSystemAdmin } = usePermissions();
   const isHRManager = currentRole === 'hr_manager';
-  const canEditLeave = isHRManager || isSystemAdmin;
+  const canEdit = isHRManager || isSystemAdmin;
+  const canEditLeave = canEdit;
 
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(startInEditMode);
+  const [editProfileForm, setEditProfileForm] = useState({ firstName: '', lastName: '', department: '', phone: '', location: '' });
   const [editLeaveForm, setEditLeaveForm] = useState({
     vacation: { total: 15, used: 0 },
     sick: { total: 3, used: 0 }
   });
-  const [savingLeave, setSavingLeave] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,39 +89,76 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate }) => 
     return () => { cancelled = true; };
   }, [userProp?.id, userProp?.email]);
 
-  const openEditModal = () => {
-    if (!employee) return;
-    setEditLeaveForm({
-      vacation: {
-        total: employee.leaveBalance?.vacation?.total ?? 15,
-        used: employee.leaveBalance?.vacation?.used ?? 0
-      },
-      sick: {
-        total: employee.leaveBalance?.sick?.total ?? 3,
-        used: employee.leaveBalance?.sick?.used ?? 0
-      }
+  useEffect(() => {
+    if (!employee || !isEditMode) return;
+    setEditProfileForm({
+      firstName: employee.firstName ?? employee.name?.split(' ')[0] ?? '',
+      lastName: employee.lastName ?? employee.name?.split(' ').slice(1).join(' ') ?? '',
+      department: employee.department ?? '',
+      phone: employee.phone ?? '',
+      location: employee.location ?? employee.address ?? ''
     });
-    setShowEditModal(true);
+    setEditLeaveForm({
+      vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
+      sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 }
+    });
+  }, [employee?.email, isEditMode]);
+
+  const openEditMode = () => {
+    if (!employee) return;
+    setEditProfileForm({
+      firstName: employee.firstName ?? employee.name?.split(' ')[0] ?? '',
+      lastName: employee.lastName ?? employee.name?.split(' ').slice(1).join(' ') ?? '',
+      department: employee.department ?? '',
+      phone: employee.phone ?? '',
+      location: employee.location ?? employee.address ?? ''
+    });
+    setEditLeaveForm({
+      vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
+      sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 }
+    });
+    setIsEditMode(true);
   };
 
-  const saveLeaveBalances = async () => {
+  const saveAll = async () => {
     if (!employee?.email) return;
-    setSavingLeave(true);
+    setSaving(true);
     try {
+      const displayName = `${editProfileForm.firstName} ${editProfileForm.lastName}`.trim();
+      await firestoreService.updateApprovedUser(employee.email, {
+        firstName: editProfileForm.firstName,
+        lastName: editProfileForm.lastName,
+        displayName: displayName || employee.name,
+        department: editProfileForm.department,
+        phone: editProfileForm.phone,
+        location: editProfileForm.location
+      });
       await firestoreService.updateUserLeaveBalances(employee.email, editLeaveForm);
       const nextLeave = {
         vacation: { ...editLeaveForm.vacation, remaining: editLeaveForm.vacation.total - editLeaveForm.vacation.used },
         sick: { ...editLeaveForm.sick, remaining: editLeaveForm.sick.total - editLeaveForm.sick.used }
       };
-      setEmployee((prev) => (prev ? { ...prev, leaveBalance: nextLeave } : null));
-      onEmployeeUpdate?.({ ...employee, leaveBalance: nextLeave });
-      toast.success(`Updated leave balances for ${employee.name}`);
-      setShowEditModal(false);
+      const updated = {
+        ...employee,
+        firstName: editProfileForm.firstName,
+        lastName: editProfileForm.lastName,
+        name: displayName || employee.name,
+        displayName: displayName || employee.name,
+        department: editProfileForm.department,
+        phone: editProfileForm.phone,
+        location: editProfileForm.location,
+        address: editProfileForm.location,
+        leaveBalance: nextLeave
+      };
+      setEmployee(updated);
+      onEmployeeUpdate?.(updated);
+      toast.success(`Updated profile and leave for ${updated.name}`);
+      setIsEditMode(false);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to save leave balances');
+      toast.error('Failed to save changes');
     } finally {
-      setSavingLeave(false);
+      setSaving(false);
     }
   };
 
@@ -149,16 +193,18 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate }) => 
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              {canEditLeave && employee && (
-                <button
-                  type="button"
-                  onClick={openEditModal}
-                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                  title="Edit leave balances and details"
-                >
+              {isEditMode && employee ? (
+                <>
+                  <button type="button" onClick={() => setIsEditMode(false)} disabled={saving} className="px-3 py-1.5 rounded-lg text-[14px] font-medium text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50">Cancel</button>
+                  <button type="button" onClick={saveAll} disabled={saving} className="px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center gap-2">
+                    {saving ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</>) : 'Save'}
+                  </button>
+                </>
+              ) : canEdit && employee ? (
+                <button type="button" onClick={openEditMode} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors" title="Edit profile and leave">
                   <Edit className="w-5 h-5 text-[#86868b]" strokeWidth={1.5} />
                 </button>
-              )}
+              ) : null}
               <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
                 <XCircle className="w-5 h-5 text-[#86868b]" strokeWidth={1.5} />
               </button>
@@ -170,28 +216,106 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate }) => 
           <div className="p-8 text-center text-[#86868b]">Loading...</div>
         ) : !employee ? (
           <div className="p-8 text-center text-[#86868b]">Could not load employee.</div>
+        ) : isEditMode ? (
+          <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+            <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+              <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
+                <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Profile</h3>
+              </div>
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">First Name</label>
+                  <input type="text" value={editProfileForm.firstName} onChange={(e) => setEditProfileForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="First name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Last Name</label>
+                  <input type="text" value={editProfileForm.lastName} onChange={(e) => setEditProfileForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Department</label>
+                  <select value={editProfileForm.department} onChange={(e) => setEditProfileForm((p) => ({ ...p, department: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]">
+                    <option value="">Select department...</option>
+                    {DEPARTMENTS.map((d) => (<option key={d} value={d}>{d}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Phone</label>
+                  <input type="tel" value={editProfileForm.phone} onChange={(e) => setEditProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Location</label>
+                  <input type="text" value={editProfileForm.location} onChange={(e) => setEditProfileForm((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. Los Angeles, CA" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+              <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5ac8fa] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                  <Calendar className="w-4 h-4 text-white" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Leave Balance</h3>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
+                    <h4 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Vacation</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
+                      <input type="number" min="0" value={editLeaveForm.vacation.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                      <input type="number" min="0" value={editLeaveForm.vacation.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.vacation.total - editLeaveForm.vacation.used} days</p>
+                </div>
+                <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-3 h-3 rounded-full bg-[#ff3b30]" />
+                    <h4 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Sick</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
+                      <input type="number" min="0" value={editLeaveForm.sick.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                      <input type="number" min="0" value={editLeaveForm.sick.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days</p>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
             <PersonCard
               person={{
-                firstName: employee.name.split(' ')[0],
-                lastName: employee.name.split(' ').slice(1).join(' '),
+                firstName: employee.firstName ?? employee.name.split(' ')[0],
+                lastName: employee.lastName ?? employee.name.split(' ').slice(1).join(' '),
                 email: employee.email,
                 phone: employee.phone,
-                address: employee.address || 'Not provided',
+                address: employee.address || employee.location || 'Not provided',
                 department: employee.department,
                 position: employee.position,
                 manager: employee.manager,
                 startDate: employee.startDate,
                 employeeId: employee.employeeId
               }}
-              editable={isHRManager}
-              isHRView={isHRManager}
+              editable={canEdit}
+              isHRView={canEdit}
               onSave={async (updatedData) => {
                 try {
+                  await firestoreService.updateApprovedUser(employee.email, { ...updatedData, displayName: `${updatedData.firstName || ''} ${updatedData.lastName || ''}`.trim(), location: updatedData.address ?? updatedData.location });
                   const emp = await firestoreService.getEmployeeByEmail(employee.email);
                   if (emp) await firestoreService.updateEmployee(emp.id, updatedData);
-                  else await firestoreService.addEmployee({ firstName: updatedData.firstName || employee.name.split(' ')[0], lastName: updatedData.lastName || employee.name.split(' ').slice(1).join(' '), email: employee.email, ...updatedData });
+                  else await firestoreService.addEmployee({ firstName: updatedData.firstName, lastName: updatedData.lastName, email: employee.email, ...updatedData });
                   onEmployeeUpdate?.({ ...employee, ...updatedData });
                 } catch (e) {
                   console.error(e);
@@ -303,71 +427,6 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate }) => 
           </div>
         )}
 
-        {showEditModal && employee && createPortal(
-          <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="bg-[#f5f5f7] dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-black/5 dark:border-white/10">
-              <div className="bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
-                      <Calendar className="w-5 h-5 text-white" strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Edit Leave Balances</h2>
-                      <p className="text-[13px] text-[#86868b]">{employee.name}</p>
-                    </div>
-                  </div>
-                  <button type="button" onClick={() => setShowEditModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                    <XCircle className="w-5 h-5 text-[#86868b]" strokeWidth={1.5} />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6 space-y-6">
-                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-black/5 dark:border-white/10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
-                    <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Vacation Days</h3>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Allotted</label>
-                      <input type="number" min="0" value={editLeaveForm.vacation.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Days Used</label>
-                      <input type="number" min="0" max={editLeaveForm.vacation.total} value={editLeaveForm.vacation.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.vacation.total - editLeaveForm.vacation.used} days</p>
-                </div>
-                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-black/5 dark:border-white/10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-[#ff3b30]" />
-                    <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Sick Days</h3>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Allotted</label>
-                      <input type="number" min="0" value={editLeaveForm.sick.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Days Used</label>
-                      <input type="number" min="0" max={editLeaveForm.sick.total} value={editLeaveForm.sick.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days</p>
-                </div>
-                <div className="flex justify-end gap-3 pt-2">
-                  <button type="button" onClick={() => setShowEditModal(false)} disabled={savingLeave} className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50">Cancel</button>
-                  <button type="button" onClick={saveLeaveBalances} disabled={savingLeave} className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center gap-2">
-                    {savingLeave ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</>) : 'Save Changes'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
       </div>
     </div>,
     document.body

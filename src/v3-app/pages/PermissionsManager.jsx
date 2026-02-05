@@ -43,6 +43,7 @@ import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
 import { USER_ROLES } from '../../entities/UserRoles';
 import EmployeeLink from '../../components/ui/EmployeeLink';
+import EmployeeDetailsModal from '../../components/EmployeeDetailsModal';
 
 // Feature permissions with descriptions
 const ALL_FEATURES = {
@@ -164,17 +165,8 @@ const PermissionsManager = () => {
   const [savingRole, setSavingRole] = useState(null);
   const [removingUser, setRemovingUser] = useState(false);
   
-  // Edit profile modal state
-  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
-  const [editingUserProfile, setEditingUserProfile] = useState(null);
-  const [editProfileForm, setEditProfileForm] = useState({
-    firstName: '',
-    lastName: '',
-    department: '',
-    phone: '',
-    location: ''
-  });
-  const [savingProfile, setSavingProfile] = useState(false);
+  // Unified edit profile: open EmployeeDetailsModal in edit mode
+  const [profileModalUser, setProfileModalUser] = useState(null);
 
   // Check if current user is system admin
   const isSystemAdmin = SYSTEM_ADMINS.includes(currentUser?.email?.toLowerCase());
@@ -357,61 +349,7 @@ const PermissionsManager = () => {
     return displayNames[role] || role;
   };
 
-  // Open edit profile modal
-  const handleEditProfile = (user) => {
-    setEditingUserProfile(user);
-    setEditProfileForm({
-      firstName: user.firstName || user.displayName?.split(' ')[0] || '',
-      lastName: user.lastName || user.displayName?.split(' ').slice(1).join(' ') || '',
-      department: user.department || '',
-      phone: user.phone || '',
-      location: user.location || ''
-    });
-    setShowEditProfileModal(true);
-  };
-
-  // Save profile changes
-  const handleSaveProfile = async () => {
-    if (!editingUserProfile) return;
-    
-    try {
-      setSavingProfile(true);
-      const displayName = `${editProfileForm.firstName} ${editProfileForm.lastName}`.trim();
-      
-      await firestoreService.updateApprovedUser(editingUserProfile.email, {
-        firstName: editProfileForm.firstName,
-        lastName: editProfileForm.lastName,
-        displayName: displayName,
-        department: editProfileForm.department,
-        phone: editProfileForm.phone,
-        location: editProfileForm.location
-      });
-      
-      // Update local state
-      setUsers(prev => prev.map(u => 
-        u.email === editingUserProfile.email 
-          ? { 
-              ...u, 
-              firstName: editProfileForm.firstName,
-              lastName: editProfileForm.lastName,
-              displayName: displayName,
-              department: editProfileForm.department,
-              phone: editProfileForm.phone,
-              location: editProfileForm.location
-            }
-          : u
-      ));
-      
-      toast.success('Profile updated successfully');
-      setShowEditProfileModal(false);
-      setEditingUserProfile(null);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
-    } finally {
-      setSavingProfile(false);
-    }
-  };
+  const handleEditProfile = (user) => setProfileModalUser(user);
 
   // Add a new user
   const handleAddUser = async () => {
@@ -1074,127 +1012,16 @@ const PermissionsManager = () => {
         </>
       )}
 
-      {/* Edit Profile Modal */}
-      {showEditProfileModal && editingUserProfile && (
-        <>
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={() => setShowEditProfileModal(false)} />
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#ffffff] dark:bg-[#2c2c2e] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#af52de]/10 flex items-center justify-center">
-                    <User className="w-5 h-5 text-[#af52de]" />
-                  </div>
-                  <div>
-                    <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Edit Profile</h2>
-                    <p className="text-[12px] text-[#86868b]">{editingUserProfile.email}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowEditProfileModal(false)}
-                  className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center"
-                >
-                  <X className="w-5 h-5 text-[#86868b]" />
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <div className="p-5 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      value={editProfileForm.firstName}
-                      onChange={(e) => setEditProfileForm(prev => ({ ...prev, firstName: e.target.value }))}
-                      placeholder="First name"
-                      className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      value={editProfileForm.lastName}
-                      onChange={(e) => setEditProfileForm(prev => ({ ...prev, lastName: e.target.value }))}
-                      placeholder="Last name"
-                      className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
-                    Department
-                  </label>
-                  <select
-                    value={editProfileForm.department}
-                    onChange={(e) => setEditProfileForm(prev => ({ ...prev, department: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
-                  >
-                    <option value="">Select department...</option>
-                    {DEPARTMENTS.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={editProfileForm.phone}
-                    onChange={(e) => setEditProfileForm(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="+1 (555) 123-4567"
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    value={editProfileForm.location}
-                    onChange={(e) => setEditProfileForm(prev => ({ ...prev, location: e.target.value }))}
-                    placeholder="e.g., Los Angeles, CA"
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
-                  />
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="flex items-center gap-3 p-5 border-t border-gray-200 dark:border-white/5">
-                <button
-                  onClick={() => setShowEditProfileModal(false)}
-                  className="flex-1 h-11 rounded-xl text-[15px] font-medium text-[#1d1d1f] dark:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveProfile}
-                  disabled={savingProfile || !editProfileForm.firstName}
-                  className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all disabled:opacity-50"
-                >
-                  {savingProfile ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+      {profileModalUser && (
+        <EmployeeDetailsModal
+          user={profileModalUser}
+          startInEditMode
+          onClose={() => setProfileModalUser(null)}
+          onEmployeeUpdate={(updated) => {
+            setUsers(prev => prev.map(u => u.email === updated.email ? { ...u, ...updated } : u));
+            setProfileModalUser(null);
+          }}
+        />
       )}
     </div>
   );
