@@ -107,7 +107,7 @@ const ALL_PAGES = {
   'it-support': { name: 'IT Support', icon: Wrench, description: 'Technical support' },
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },
-  'features': { name: 'Features', icon: Sparkles, description: 'Future features to quote' },
+  'features': { name: 'Add ons', icon: Sparkles, description: 'Add-ons available to quote' },
   'workload': { name: 'Team Workload', icon: BarChart3, description: 'Team capacity and client distribution' },
   'graphic-projects': { name: 'Team Projects', icon: Palette, description: 'Graphic design project tracker' },
 };

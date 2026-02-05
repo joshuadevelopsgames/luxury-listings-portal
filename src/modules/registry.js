@@ -233,8 +233,8 @@ export const modules = {
 
   'features': {
     id: 'features',
-    name: 'Features',
-    description: 'Future features available to quote',
+    name: 'Add ons',
+    description: 'Add-ons available to quote',
     icon: Sparkles,
     routes: ['/features'],
     widgets: [],

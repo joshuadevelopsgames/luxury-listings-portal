@@ -321,14 +321,17 @@ export function AuthProvider({ children }) {
         setUserData(mergedUser);
         saveAuthToStorage(mergedUser);
         
-        // Navigate based on status
+        // Navigate based on status (only redirect to onboarding after they're past login)
         const currentPath = window.location.pathname;
-        if (currentPath === '/login' || currentPath === '/') {
-          if (!mergedUser.onboardingCompleted) {
-            appNavigate('/onboarding', { replace: true });
-          } else {
+        const onLoginOrHome = currentPath === '/login' || currentPath === '/';
+        if (onLoginOrHome) {
+          if (mergedUser.onboardingCompleted) {
             appNavigate('/dashboard', { replace: true });
+          } else {
+            appNavigate('/onboarding', { replace: true });
           }
+        } else if (!mergedUser.onboardingCompleted && currentPath !== '/onboarding') {
+          appNavigate('/onboarding', { replace: true });
         }
       } else {
         // New/pending user

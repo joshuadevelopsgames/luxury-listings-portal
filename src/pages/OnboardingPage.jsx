@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../contexts/PermissionsContext';
+import { modules } from '../modules/registry';
 import { 
   CheckCircle2, 
   Calendar, 
   LayoutDashboard, 
-  ListTodo, 
   BookOpen, 
   Users, 
   FileText,
@@ -24,8 +25,33 @@ import { firestoreService } from '../services/firestoreService';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 
+// Short "how to use" copy per module for onboarding
+const MODULE_HOW_TO_USE = {
+  'time-off': 'Request time off and see your balance. Approvers will get notified.',
+  'my-clients': 'View your assigned clients, deliverables, and log posts. Your home base for client work.',
+  'instagram-reports': 'Create and share Instagram analytics reports with clients.',
+  'tasks': 'Manage your tasks, use filters and templates, and request tasks from teammates.',
+  'clients': 'View and manage all clients, assign managers, and edit packages.',
+  'posting-packages': 'See posting packages and use the Posts Today tally to log completed posts.',
+  'content-calendar': 'Plan and schedule content across channels.',
+  'crm': 'Track leads and deals through the sales pipeline.',
+  'team': 'Manage team members and roles.',
+  'hr-calendar': 'View and approve team time off and leave requests.',
+  'hr-analytics': 'See team analytics and insights.',
+  'client-health': 'Review AI-powered client health and risk overview.',
+  'it-support': 'Submit and track support tickets.',
+  'tutorials': 'Work through step-by-step guides and training.',
+  'resources': 'Access company docs and resources.',
+  'features': 'Browse add-ons available to quote.',
+  'workload': 'View team capacity and how clients are distributed.',
+  'graphic-projects': 'Track graphic design projects and requests.'
+};
+
+const SECTION_ORDER = ['Main', 'SMM', 'Content Team', 'Design Team', 'Sales Team', 'HR', 'Admin', 'Resources'];
+
 const OnboardingPage = () => {
   const { currentUser, userData } = useAuth();
+  const { permissions, isSystemAdmin } = usePermissions();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [completing, setCompleting] = useState(false);
@@ -44,6 +70,26 @@ const OnboardingPage = () => {
     emergencyContactPhone: userData?.emergencyContactPhone || '',
     emergencyContactRelation: userData?.emergencyContactRelation || ''
   });
+
+  const onboardingModules = useMemo(() => {
+    const ids = isSystemAdmin ? Object.keys(modules) : (Array.isArray(permissions) ? permissions : []);
+    return ids
+      .filter((id) => modules[id] && modules[id].navItem)
+      .map((id) => {
+        const m = modules[id];
+        const Icon = m.icon;
+        return {
+          id,
+          name: m.name,
+          description: m.description,
+          icon: Icon,
+          path: m.navItem.path,
+          section: m.navItem.section,
+          howTo: MODULE_HOW_TO_USE[id] || m.description
+        };
+      })
+      .sort((a, b) => SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section));
+  }, [permissions, isSystemAdmin]);
 
   useEffect(() => {
     checkGoogleConnection();
@@ -135,141 +181,77 @@ const OnboardingPage = () => {
   const steps = [
     {
       id: 0,
-      title: `Welcome to Luxury Listings, ${userData?.firstName || 'Team Member'}! 👋`,
-      description: 'We\'re excited to have you join the team. Let\'s take a quick tour of your new workspace.',
+      title: `Welcome, ${userData?.firstName || currentUser?.displayName?.split(' ')[0] || 'Team Member'}`,
+      description: 'Your workspace is ready. Next we\'ll show you what you have access to.',
       icon: Sparkles,
       content: (
         <div className="space-y-8">
-          {/* Role Hero Section */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 p-8 shadow-xl">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative">
-              <div className="flex items-start gap-5">
-                <div className="flex-shrink-0 h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <Sparkles className="h-8 w-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold mb-3 text-white drop-shadow-lg">
+          <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#1d1d1f] p-10 text-center">
+            <div className="inline-flex h-20 w-20 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center mb-6 shadow-lg shadow-[#0071e3]/20">
+              <Sparkles className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white mb-2">
               {(() => {
-                // Get all roles the user has access to (not just the currently switched one)
-                const allRoles = (currentUser?.roles || userData?.roles || [])
-                  .filter(role => role && role.toLowerCase() !== 'pending'); // Filter out 'pending' status
+                const allRoles = (currentUser?.roles || userData?.roles || []).filter(r => r && r.toLowerCase() !== 'pending');
                 const position = userData?.position || currentUser?.position;
-                
                 if (allRoles.length > 1) {
-                  const roleNames = allRoles.map(role => 
-                    role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                  );
-                  return `Your Roles: ${roleNames.join(' & ')}`;
-                } else if (position) {
-                  return `Your Role: ${position}`;
-                } else if (allRoles.length === 1) {
-                  return `Your Role: ${allRoles[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
-                } else {
-                  return 'Your Role: Team Member';
+                  return `Your roles: ${allRoles.map(r => r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' & ')}`;
                 }
+                if (position) return `Your role: ${position}`;
+                if (allRoles.length === 1) return `Your role: ${allRoles[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+                return 'Team Member';
               })()}
             </h3>
-            <p className="text-white/90 text-lg">
-              {(() => {
-                // Get all roles the user has access to (not just the currently switched one)
-                const allRoles = (currentUser?.roles || userData?.roles || [])
-                  .filter(role => role && role.toLowerCase() !== 'pending'); // Filter out 'pending' status
-                const position = (userData?.position || currentUser?.position || '').toLowerCase();
-                const rolesList = allRoles.map(r => r.toLowerCase());
-                
-                // Build description based on all roles
-                const responsibilities = [];
-                
-                if (rolesList.some(r => r.includes('content_director')) || position.includes('content director')) {
-                  responsibilities.push("manage content strategy and oversee campaigns");
-                }
-                if (rolesList.some(r => r.includes('social_media_manager')) || position.includes('social media manager')) {
-                  responsibilities.push("create content and manage social media");
-                }
-                if (rolesList.some(r => r.includes('hr_manager')) || position.includes('hr manager')) {
-                  responsibilities.push("handle HR operations and team management");
-                }
-                if (rolesList.some(r => r.includes('admin')) || position.includes('admin')) {
-                  responsibilities.push("manage users and system settings");
-                }
-                if (rolesList.some(r => r.includes('sales')) || position.includes('sales')) {
-                  responsibilities.push("manage leads and close deals");
-                }
-                
-                if (responsibilities.length > 1) {
-                  return `With your multiple roles, you'll ${responsibilities.slice(0, -1).join(', ')}, and ${responsibilities[responsibilities.length - 1]}.`;
-                } else if (responsibilities.length === 1) {
-                  if (position.includes('content director')) {
-                    return "As Content Director, you'll manage content strategy, oversee campaigns, approve deliverables, and guide the creative team.";
-                  } else if (position.includes('social media manager')) {
-                    return "As Social Media Manager, you'll create and schedule posts, manage client packages, track engagement, and maintain the content calendar.";
-                  } else if (position.includes('hr manager')) {
-                    return "As HR Manager, you'll handle leave requests, manage team operations, track employee performance, and maintain team satisfaction.";
-                  } else if (position.includes('admin')) {
-                    return "As Administrator, you have full access to manage users, oversee all operations, handle support tickets, and configure system settings.";
-                  } else if (position.includes('sales')) {
-                    return "As part of the Sales team, you'll manage leads, track deals through the pipeline, maintain client relationships, and close new business.";
-                  } else {
-                    return `You'll ${responsibilities[0]}.`;
-                  }
-                } else {
-                  return `As a ${position || 'team member'}, you'll have access to personalized tools and features designed specifically for your role.`;
-                }
-              })()}
+            <p className="text-[15px] text-[#86868b] max-w-md mx-auto">
+              You’ll see your tools in the sidebar. We’ll walk you through each one in the next step.
             </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Setup Steps */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
-              <h4 className="font-bold text-xl text-gray-800">This quick setup will help you:</h4>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
-                    <CheckCircle2 className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900">Understand the key features available to you</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-indigo-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                    <CheckCircle2 className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900">Connect your Google Calendar for team collaboration</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
-                    <CheckCircle2 className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900">Get familiar with your personalized dashboard</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )
     },
     {
       id: 1,
+      title: 'Your workspace',
+      description: 'Here’s what you have access to and how to use it.',
+      icon: LayoutDashboard,
+      content: (
+        <div className="space-y-6">
+          <p className="text-[15px] text-[#86868b]">
+            These modules appear in your sidebar. Use them to manage your work and collaborate with the team.
+          </p>
+          {onboardingModules.length === 0 ? (
+            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] p-8 text-center">
+              <p className="text-[15px] text-[#86868b]">Your modules are still being set up. You can explore the Dashboard after finishing this setup.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {onboardingModules.map((mod, idx) => {
+                const Icon = mod.icon;
+                return (
+                  <div
+                    key={mod.id}
+                    className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-white dark:bg-white/10 shadow-sm flex items-center justify-center">
+                        <Icon className="h-6 w-6 text-[#0071e3]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">{mod.name}</h4>
+                        <p className="text-[13px] text-[#86868b] leading-snug">{mod.howTo}</p>
+                        <p className="text-[11px] text-[#86868b] mt-2">Sidebar → {mod.section}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      id: 2,
       title: 'Complete Your Profile',
       description: 'Tell us a bit about yourself',
       icon: User,
@@ -459,106 +441,6 @@ const OnboardingPage = () => {
               <p className="text-sm text-blue-900">
                 <strong>💡 Tip:</strong> You can update this information anytime from your profile page.
               </p>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 2,
-      title: 'Your Platform Features',
-      description: 'Here\'s what you can do in the Luxury Listings Portal',
-      icon: LayoutDashboard,
-      content: (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
-            <h4 className="font-bold text-xl text-gray-800">Explore Your Tools</h4>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-indigo-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                  <LayoutDashboard className="h-7 w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-2">Dashboard</h4>
-                  <p className="text-sm text-gray-600">
-                    Your personalized hub with quick stats, recent activity, and important updates
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
-                  <ListTodo className="h-7 w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">Daily Tasks</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Manage your tasks, collaborate with teammates, and track your progress
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
-                  <BookOpen className="h-7 w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-2">Resources & Training</h4>
-                  <p className="text-sm text-gray-600">
-                    Access tutorials, time-off requests, and helpful resources
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200 hover:border-orange-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg">
-                  <Calendar className="h-7 w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-2">Calendar & Events</h4>
-                  <p className="text-sm text-gray-600">
-                    View team events, schedule meetings, and manage your availability
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative overflow-hidden bg-gradient-to-br from-cyan-50 to-sky-50 border-2 border-cyan-200 hover:border-cyan-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg">
-                  <Users className="h-7 w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-2">My Profile</h4>
-                  <p className="text-sm text-gray-600">
-                    Update your information, manage settings, and personalize your experience
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative overflow-hidden bg-gradient-to-br from-rose-50 to-red-50 border-2 border-rose-200 hover:border-rose-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg">
-                  <FileText className="h-7 w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-2">IT Support</h4>
-                  <p className="text-sm text-gray-600">
-                    Get help with technical issues, report bugs, and submit support requests
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>

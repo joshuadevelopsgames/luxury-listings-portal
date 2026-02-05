@@ -242,7 +242,7 @@ const router = createBrowserRouter([
           { path: 'it-support', element: <PermissionRoute pageId="it-support" pageName="IT Support"><ITSupportPage /></PermissionRoute> },
           { path: 'tutorials', element: <PermissionRoute pageId="tutorials" pageName="Tutorials"><TutorialsPage /></PermissionRoute> },
           { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
-          { path: 'features', element: <PermissionRoute pageId="features" pageName="Features"><FeaturesPage /></PermissionRoute> },
+          { path: 'features', element: <PermissionRoute pageId="features" pageName="Add ons"><FeaturesPage /></PermissionRoute> },
           { path: 'workload', element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
 

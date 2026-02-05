@@ -1926,6 +1926,7 @@ const TasksPage = () => {
           currentUser={currentUser}
           onClose={() => setShowTemplateSelector(false)}
           onEditTemplate={() => setShowTemplateEditor(true)}
+          onTasksCreated={refreshTasks}
         />
       )}
 

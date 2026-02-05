@@ -45,7 +45,7 @@ const resources = [
   },
   {
     id: 101,
-    title: "Future Features",
+    title: "Add ons",
     description: "Potential add-ons we can quote for your portal — Sales & CRM and more",
     type: "internal",
     category: "training",

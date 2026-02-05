@@ -8,7 +8,7 @@ import { PERMISSIONS } from '../../entities/Permissions';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
-const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
+const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated }) => {
   const { hasPermission } = useAuth();
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -71,7 +71,7 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate }) => {
       });
 
       await Promise.all(promises);
-      
+      onTasksCreated?.();
       toast.success(`✨ Created ${selectedTemplate.tasks.length} tasks from template!`);
       onClose();
     } catch (error) {
