@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Mail, Search, RefreshCw, Building } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import EmployeeLink from '../components/ui/EmployeeLink';
 
 const ROLE_DISPLAY = {
   admin: 'Administrator',
@@ -126,18 +127,32 @@ export default function TeamDirectoryPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((member, idx) => (
             <div
-              key={member.id || member.email}
+              key={member.uid || member.id || member.email}
               className="p-5 rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:shadow-md transition-all"
             >
               <div className="flex items-center gap-3 mb-4">
                 <div
-                  className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradients[idx % gradients.length]} flex items-center justify-center text-white text-[14px] font-semibold shrink-0`}
+                  className={`w-11 h-11 rounded-xl overflow-hidden bg-gradient-to-br ${gradients[idx % gradients.length]} flex items-center justify-center text-white text-[14px] font-semibold shrink-0`}
                 >
-                  {getInitials(member)}
+                  {(member.avatar || member.photoURL) ? (
+                    <img
+                      src={member.avatar || member.photoURL}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    getInitials(member)
+                  )}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">
-                    {member.displayName || member.firstName || member.email?.split('@')[0] || 'Team Member'}
+                    <EmployeeLink
+                      user={member}
+                      showId={true}
+                      className="!text-[#1d1d1f] dark:!text-white hover:!underline font-semibold"
+                    >
+                      {member.displayName || member.firstName || member.email?.split('@')[0] || 'Team Member'}
+                    </EmployeeLink>
                   </p>
                   {member.role === 'admin' && (member.email || '').toLowerCase() === 'jrsschroeder@gmail.com' ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#5856d6]/10 text-[#5856d6]">

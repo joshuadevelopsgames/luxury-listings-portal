@@ -180,6 +180,17 @@ const EmployeeSelfService = () => {
         await firestoreService.updateEmployee(employeeFirestoreId, updatedData);
         console.log('✅ Employee updated in Firestore');
       }
+
+      // Sync name and position to approved_users so header (and auth context) stay in sync
+      const displayName = `${updatedData.firstName ?? ''} ${updatedData.lastName ?? ''}`.trim();
+      const profileUpdates = {};
+      if (updatedData.firstName !== undefined) profileUpdates.firstName = updatedData.firstName;
+      if (updatedData.lastName !== undefined) profileUpdates.lastName = updatedData.lastName;
+      if (displayName) profileUpdates.displayName = displayName;
+      if (updatedData.position !== undefined) profileUpdates.position = updatedData.position;
+      if (Object.keys(profileUpdates).length > 0) {
+        await firestoreService.updateApprovedUser(currentUser.email, profileUpdates);
+      }
       
       // Update local state immediately so UI reflects changes
       setPersonalInfo(prev => ({

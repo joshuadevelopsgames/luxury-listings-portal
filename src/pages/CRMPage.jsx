@@ -56,6 +56,7 @@ const CRMPage = () => {
   const canManageCRM = hasPermission(PERMISSIONS.MANAGE_CRM);
   const canManageLeads = hasPermission(PERMISSIONS.MANAGE_LEADS);
   const canViewLeads = hasPermission(PERMISSIONS.VIEW_LEADS);
+  const canDeleteClients = hasPermission(PERMISSIONS.DELETE_CLIENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'warm' | 'cold' | 'contacted' | 'clients'
   // Default to card view on mobile, list on desktop
@@ -705,6 +706,30 @@ const CRMPage = () => {
     }
   };
 
+  const deleteExistingClient = async (client) => {
+    if (!client || !canDeleteClients) return;
+    const name = client.clientName || client.name || 'this client';
+    const confirmed = await confirm({
+      title: 'Delete Client',
+      message: `Are you sure you want to permanently delete "${name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
+    try {
+      await firestoreService.deleteClient(client.id);
+      setExistingClients(prev => prev.filter(c => c.id !== client.id));
+      showToast(`✅ Client "${name}" deleted successfully!`);
+      if (selectedClient?.id === client.id && selectedItemType === 'client') {
+        setSelectedClient(null);
+        setSelectedItemType(null);
+      }
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      showToast(`❌ Error deleting client: ${error.message}`, 'error');
+    }
+  };
+
   const getStatusColor = (status) => {
     const s = (status || '').toLowerCase();
     const colors = {
@@ -775,7 +800,7 @@ const CRMPage = () => {
                 <LeadLink 
                   lead={client} 
                   onEdit={handleEditLead}
-                  onDelete={deleteLead}
+                  onDelete={canManageLeads ? deleteLead : null}
                 />
               </h4>
             )}

@@ -149,7 +149,7 @@ export default function FeaturesPage() {
         <header className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-white/10 backdrop-blur border border-black/5 dark:border-white/10 mb-6">
             <Sparkles className="w-4 h-4 text-[#0071e3] dark:text-[#0a84ff]" />
-            <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Add ons</span>
+            <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Add-ons</span>
           </div>
           <h1 className="text-[40px] sm:text-[56px] font-semibold text-[#1d1d1f] dark:text-white leading-[1.05] tracking-[-0.03em] mb-5">
             Power up your{' '}
