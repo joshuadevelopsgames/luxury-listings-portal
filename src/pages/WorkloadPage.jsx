@@ -72,27 +72,22 @@ export default function WorkloadPage() {
   const [expandedManager, setExpandedManager] = useState(null);
   const [reassigning, setReassigning] = useState(null); // { clientId, currentManager }
 
-  // Fetch data
+  // Live client data so edits (e.g. posts remaining, package size) in client profile update here
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
-      try {
-        const [clientsData, usersData] = await Promise.all([
-          firestoreService.getClients(),
-          firestoreService.getApprovedUsers()
-        ]);
-        if (mounted) {
-          setClients(clientsData);
-          setApprovedUsers(usersData);
-        }
-      } catch (err) {
-        console.error('Error loading workload data:', err);
-      } finally {
-        if (mounted) setLoading(false);
+    const unsubClients = firestoreService.onClientsChange((clientsData) => {
+      if (mounted) {
+        setClients(clientsData);
+        setLoading(false);
       }
+    });
+    firestoreService.getApprovedUsers().then((usersData) => {
+      if (mounted) setApprovedUsers(usersData);
+    }).catch((err) => console.error('Error loading users:', err));
+    return () => {
+      mounted = false;
+      if (typeof unsubClients === 'function') unsubClients();
     };
-    load();
-    return () => { mounted = false; };
   }, []);
 
   // Get managers (social_media_manager role or anyone with assigned clients)
