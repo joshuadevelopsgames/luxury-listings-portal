@@ -457,104 +457,89 @@ const OnboardingPage = () => {
       description: 'Stay in sync with team meetings and events',
       icon: Calendar,
       content: (
-        <div className="space-y-8">
-          {/* Benefits Section */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-500 p-8 shadow-xl">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative">
-              <div className="flex items-start gap-5">
-                <div className="flex-shrink-0 h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <Calendar className="h-8 w-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold mb-4 text-white drop-shadow-lg">
-                    Why connect your calendar? 📅
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex items-start gap-3 bg-white/20 backdrop-blur-sm rounded-lg p-3">
-                      <CheckCircle2 className="h-5 w-5 text-white flex-shrink-0 mt-0.5" />
-                      <span className="text-white font-medium text-sm">See all team meetings in one place</span>
-                    </div>
-                    <div className="flex items-start gap-3 bg-white/20 backdrop-blur-sm rounded-lg p-3">
-                      <CheckCircle2 className="h-5 w-5 text-white flex-shrink-0 mt-0.5" />
-                      <span className="text-white font-medium text-sm">Never miss important deadlines</span>
-                    </div>
-                    <div className="flex items-start gap-3 bg-white/20 backdrop-blur-sm rounded-lg p-3">
-                      <CheckCircle2 className="h-5 w-5 text-white flex-shrink-0 mt-0.5" />
-                      <span className="text-white font-medium text-sm">Book meetings easily</span>
-                    </div>
-                    <div className="flex items-start gap-3 bg-white/20 backdrop-blur-sm rounded-lg p-3">
-                      <CheckCircle2 className="h-5 w-5 text-white flex-shrink-0 mt-0.5" />
-                      <span className="text-white font-medium text-sm">Your data stays private & secure</span>
-                    </div>
-                  </div>
-                </div>
+        <div className="space-y-6">
+          {/* Benefits - Apple-style card */}
+          <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-[#0071e3]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-3">
+                  Why connect your calendar?
+                </h3>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <li className="flex items-center gap-2 text-[13px] text-[#1d1d1f] dark:text-white">
+                    <CheckCircle2 className="h-4 w-4 text-[#34c759] flex-shrink-0" />
+                    See all team meetings in one place
+                  </li>
+                  <li className="flex items-center gap-2 text-[13px] text-[#1d1d1f] dark:text-white">
+                    <CheckCircle2 className="h-4 w-4 text-[#34c759] flex-shrink-0" />
+                    Never miss important deadlines
+                  </li>
+                  <li className="flex items-center gap-2 text-[13px] text-[#1d1d1f] dark:text-white">
+                    <CheckCircle2 className="h-4 w-4 text-[#34c759] flex-shrink-0" />
+                    Book meetings easily
+                  </li>
+                  <li className="flex items-center gap-2 text-[13px] text-[#1d1d1f] dark:text-white">
+                    <CheckCircle2 className="h-4 w-4 text-[#34c759] flex-shrink-0" />
+                    Your data stays private & secure
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
 
           {/* Connection Card */}
           {isGoogleConnected ? (
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 p-10 text-center shadow-lg">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5"></div>
-              <div className="relative space-y-4">
-                <div className="inline-flex h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 items-center justify-center mx-auto shadow-lg animate-pulse">
-                  <CheckCircle2 className="h-10 w-10 text-white" />
-                </div>
-                <div>
-                  <h4 className="text-2xl font-bold text-gray-900 mb-2">Calendar Connected! ✅</h4>
-                  <p className="text-gray-600">
-                    You're all set to view team events and schedule meetings
-                  </p>
-                </div>
+            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-8 text-center">
+              <div className="inline-flex h-16 w-16 rounded-2xl bg-[#34c759]/15 dark:bg-[#34c759]/25 items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="h-8 w-8 text-[#34c759]" />
               </div>
+              <h4 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Calendar connected</h4>
+              <p className="text-[13px] text-[#86868b]">
+                You're all set to view team events and schedule meetings
+              </p>
             </div>
           ) : (
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-10 text-center shadow-lg hover:shadow-xl transition-shadow">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5"></div>
-              <div className="relative space-y-5">
-                <div className="inline-flex h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 items-center justify-center mx-auto shadow-lg">
-                  <Calendar className="h-10 w-10 text-white" />
-                </div>
-                <div>
-                  <h4 className="text-2xl font-bold text-gray-900 mb-2">Connect Google Calendar</h4>
-                  <p className="text-gray-600 mb-6">
-                    Click below to authorize calendar access
-                  </p>
-                  <button
-                    onClick={handleConnectCalendar}
-                    disabled={connectingCalendar}
-                    className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#0071e3] to-[#5856d6] text-white text-[15px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg"
-                  >
-                    {connectingCalendar ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Connecting...
-                      </>
-                    ) : (
-                      <>
-                        <Calendar className="h-5 w-5" />
-                        Connect Calendar
-                      </>
-                    )}
-                  </button>
-                  <p className="text-xs text-gray-500 mt-4">
-                    You can always connect later from your calendar page
-                  </p>
-                </div>
+            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-8 text-center">
+              <div className="inline-flex h-16 w-16 rounded-2xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-[#0071e3]" />
               </div>
+              <h4 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Connect Google Calendar</h4>
+              <p className="text-[13px] text-[#86868b] mb-6">
+                Click below to authorize calendar access
+              </p>
+              <button
+                onClick={handleConnectCalendar}
+                disabled={connectingCalendar}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#0071e3] hover:bg-[#0077ed] text-white text-[15px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {connectingCalendar ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="h-5 w-5" />
+                    Connect Calendar
+                  </>
+                )}
+              </button>
+              <p className="text-[11px] text-[#86868b] mt-4">
+                You can always connect later from your calendar page
+              </p>
             </div>
           )}
 
           {/* Privacy Note */}
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-500 p-5 shadow-md">
+          <div className="rounded-xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 border-l-4 border-l-[#0071e3] dark:border-l-[#0a84ff] p-4">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
-                <span className="text-lg">🔒</span>
-              </div>
+              <span className="text-lg" aria-hidden>🔒</span>
               <div>
-                <p className="text-sm text-gray-800">
-                  <strong className="text-indigo-700">Privacy Note:</strong> We only access your calendar to show you team events. 
+                <p className="text-[13px] text-[#1d1d1f] dark:text-white">
+                  <strong className="text-[#0071e3] dark:text-[#0a84ff]">Privacy:</strong> We only access your calendar to show you team events.
                   We never modify your calendar or share your personal events without permission.
                 </p>
               </div>
@@ -569,84 +554,56 @@ const OnboardingPage = () => {
       description: 'Ready to start your journey with Luxury Listings',
       icon: CheckCircle2,
       content: (
-        <div className="space-y-8">
-          {/* Hero Section */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-12 text-center shadow-xl">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative">
-              <div className="inline-flex h-24 w-24 rounded-full bg-white/20 backdrop-blur-sm items-center justify-center mx-auto mb-6 animate-bounce">
-                <CheckCircle2 className="h-12 w-12 text-white" />
-              </div>
-              <h3 className="text-3xl font-bold mb-3 text-white drop-shadow-lg">
-                Welcome Aboard! 🎉
-              </h3>
-              <p className="text-lg text-white/90 max-w-md mx-auto">
-                You're all set to explore your personalized workspace
-              </p>
+        <div className="space-y-6">
+          {/* Hero - Apple-style */}
+          <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-10 text-center">
+            <div className="inline-flex h-20 w-20 rounded-2xl bg-[#34c759]/15 dark:bg-[#34c759]/25 items-center justify-center mb-6">
+              <CheckCircle2 className="h-10 w-10 text-[#34c759]" />
             </div>
+            <h3 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white mb-2">
+              Welcome aboard
+            </h3>
+            <p className="text-[15px] text-[#86868b] max-w-md mx-auto">
+              You're all set to explore your personalized workspace
+            </p>
           </div>
 
-          {/* Quick Tips Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
-              <h4 className="font-bold text-xl text-gray-800">Quick Tips to Get Started</h4>
+          {/* Quick Tips - same card style as rest of onboarding */}
+          <p className="text-[13px] font-medium text-[#86868b]">Quick tips to get started</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center text-[15px] font-semibold text-[#0071e3]">1</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">Check your Dashboard</p>
+                  <p className="text-[13px] text-[#86868b]">Start with the dashboard to see your tasks and updates</p>
+                </div>
+              </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-indigo-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">1</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 mb-1">Check your Dashboard</p>
-                    <p className="text-sm text-gray-600">
-                      Start with the dashboard to see your tasks and updates
-                    </p>
-                  </div>
+            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center text-[15px] font-semibold text-[#0071e3]">2</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">Complete your profile</p>
+                  <p className="text-[13px] text-[#86868b]">Visit "My Profile" to update your contact information</p>
                 </div>
               </div>
-
-              <div className="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">2</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 mb-1">Complete your profile</p>
-                    <p className="text-sm text-gray-600">
-                      Visit "My Profile" to update your contact information
-                    </p>
-                  </div>
+            </div>
+            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center text-[15px] font-semibold text-[#0071e3]">3</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">Explore the Resources page</p>
+                  <p className="text-[13px] text-[#86868b]">Find tutorials, request time off, and access helpful tools</p>
                 </div>
               </div>
-
-              <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">3</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 mb-1">Explore the Resources page</p>
-                    <p className="text-sm text-gray-600">
-                      Find tutorials, request time off, and access helpful tools
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="group relative overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200 hover:border-orange-400 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">4</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 mb-1">Need help?</p>
-                    <p className="text-sm text-gray-600">
-                      Use the AI assistant (bottom right) or visit IT Support anytime
-                    </p>
-                  </div>
+            </div>
+            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center text-[15px] font-semibold text-[#0071e3]">4</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">Need help?</p>
+                  <p className="text-[13px] text-[#86868b]">Use the AI assistant (bottom right) or visit IT Support anytime</p>
                 </div>
               </div>
             </div>

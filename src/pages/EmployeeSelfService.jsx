@@ -23,7 +23,7 @@ import {
   Edit
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 
 const EmployeeSelfService = () => {
   const { currentUser, currentRole, isSystemAdmin } = useAuth();
@@ -304,7 +304,7 @@ const EmployeeSelfService = () => {
                   </div>
                   <div className="flex items-center gap-2 text-[12px]">
                     <Briefcase className="w-4 h-4 text-[#86868b]" />
-                    <span className="text-[#86868b]">Start Date: {format(new Date(employeeData.personalInfo.startDate), 'MMM dd, yyyy')}</span>
+                    <span className="text-[#86868b]">Start Date: {employeeData.personalInfo.startDate && isValid(new Date(employeeData.personalInfo.startDate)) ? format(new Date(employeeData.personalInfo.startDate), 'MMM dd, yyyy') : (employeeData.personalInfo.startDate || '—')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[12px]">
                     <User className="w-4 h-4 text-[#86868b]" />
@@ -436,7 +436,7 @@ const EmployeeSelfService = () => {
               </div>
               <div>
                 <label className="text-[12px] font-medium text-[#86868b]">Next Pay Date</label>
-                <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1">{format(new Date(employeeData.compensation.nextPayDate), 'MMMM dd, yyyy')}</p>
+                <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1">{employeeData.compensation.nextPayDate && isValid(new Date(employeeData.compensation.nextPayDate)) ? format(new Date(employeeData.compensation.nextPayDate), 'MMMM dd, yyyy') : (employeeData.compensation.nextPayDate || '—')}</p>
               </div>
               <div>
                 <label className="text-[12px] font-medium text-[#86868b]">YTD Earnings</label>
@@ -484,7 +484,7 @@ const EmployeeSelfService = () => {
                   <div>
                     <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{doc.name}</p>
                     <p className="text-[12px] text-[#86868b]">
-                      {doc.category} • {format(new Date(doc.date), 'MMM dd, yyyy')}
+                      {doc.category} • {doc.date && isValid(new Date(doc.date)) ? format(new Date(doc.date), 'MMM dd, yyyy') : (doc.date || '—')}
                     </p>
                   </div>
                 </div>
