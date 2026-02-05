@@ -57,7 +57,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(startInEditMode);
-  const [editProfileForm, setEditProfileForm] = useState({ firstName: '', lastName: '', department: '', phone: '', location: '' });
+  const [editProfileForm, setEditProfileForm] = useState({ firstName: '', lastName: '', department: '', phone: '', location: '', position: '', manager: '', startDate: '' });
   const [editLeaveForm, setEditLeaveForm] = useState({
     vacation: { total: 15, used: 0 },
     sick: { total: 3, used: 0 }
@@ -96,7 +96,10 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
       lastName: employee.lastName ?? employee.name?.split(' ').slice(1).join(' ') ?? '',
       department: employee.department ?? '',
       phone: employee.phone ?? '',
-      location: employee.location ?? employee.address ?? ''
+      location: employee.location ?? employee.address ?? '',
+      position: employee.position ?? '',
+      manager: employee.manager ?? '',
+      startDate: employee.startDate ?? ''
     });
     setEditLeaveForm({
       vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
@@ -111,7 +114,10 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
       lastName: employee.lastName ?? employee.name?.split(' ').slice(1).join(' ') ?? '',
       department: employee.department ?? '',
       phone: employee.phone ?? '',
-      location: employee.location ?? employee.address ?? ''
+      location: employee.location ?? employee.address ?? '',
+      position: employee.position ?? '',
+      manager: employee.manager ?? '',
+      startDate: employee.startDate ?? ''
     });
     setEditLeaveForm({
       vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
@@ -131,7 +137,10 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
         displayName: displayName || employee.name,
         department: editProfileForm.department,
         phone: editProfileForm.phone,
-        location: editProfileForm.location
+        location: editProfileForm.location,
+        position: editProfileForm.position,
+        manager: editProfileForm.manager,
+        startDate: editProfileForm.startDate
       });
       await firestoreService.updateUserLeaveBalances(employee.email, editLeaveForm);
       const nextLeave = {
@@ -148,6 +157,9 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
         phone: editProfileForm.phone,
         location: editProfileForm.location,
         address: editProfileForm.location,
+        position: editProfileForm.position,
+        manager: editProfileForm.manager,
+        startDate: editProfileForm.startDate,
         leaveBalance: nextLeave
       };
       setEmployee(updated);
@@ -219,8 +231,11 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
         ) : isEditMode ? (
           <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
             <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-              <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
-                <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Profile</h3>
+              <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                  <Users className="w-4 h-4 text-white" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Personal Information</h3>
               </div>
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -231,7 +246,19 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                   <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Last Name</label>
                   <input type="text" value={editProfileForm.lastName} onChange={(e) => setEditProfileForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                 </div>
-                <div className="md:col-span-2">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Email</label>
+                  <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-[#86868b]">{employee.email}</div>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Phone</label>
+                  <input type="tel" value={editProfileForm.phone} onChange={(e) => setEditProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Address / Location</label>
+                  <input type="text" value={editProfileForm.location} onChange={(e) => setEditProfileForm((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. Los Angeles, CA" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                </div>
+                <div>
                   <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Department</label>
                   <select value={editProfileForm.department} onChange={(e) => setEditProfileForm((p) => ({ ...p, department: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]">
                     <option value="">Select department...</option>
@@ -239,12 +266,20 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Phone</label>
-                  <input type="tel" value={editProfileForm.phone} onChange={(e) => setEditProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Position</label>
+                  <input type="text" value={editProfileForm.position} onChange={(e) => setEditProfileForm((p) => ({ ...p, position: e.target.value }))} placeholder="e.g. social_media_manager" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Location</label>
-                  <input type="text" value={editProfileForm.location} onChange={(e) => setEditProfileForm((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. Los Angeles, CA" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Employee ID</label>
+                  <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-[#86868b]">{employee.employeeId || 'Not assigned'}</div>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Manager</label>
+                  <input type="text" value={editProfileForm.manager} onChange={(e) => setEditProfileForm((p) => ({ ...p, manager: e.target.value }))} placeholder="Manager name or email" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Start Date</label>
+                  <input type="date" value={editProfileForm.startDate} onChange={(e) => setEditProfileForm((p) => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                 </div>
               </div>
             </div>

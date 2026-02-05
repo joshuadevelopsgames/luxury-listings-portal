@@ -37,7 +37,9 @@ import {
   Clock,
   BarChart3,
   Palette,
-  Sparkles
+  Sparkles,
+  Bug,
+  MessageSquare
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
@@ -104,11 +106,17 @@ const ALL_PAGES = {
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },
   'features': { name: 'Features', icon: Sparkles, description: 'Future features to quote' },
+  'workload': { name: 'Team Workload', icon: BarChart3, description: 'Team capacity and client distribution' },
   'graphic-projects': { name: 'Team Projects', icon: Palette, description: 'Graphic design project tracker' },
+  'admin-feedback': { name: 'Feedback & Reports', icon: Bug, description: 'Bug reports and feature requests (admin)' },
+  'admin-chats': { name: 'Support Chats', icon: MessageSquare, description: 'User support chats (admin)' },
 };
 
 // Get list of base module IDs
 const BASE_MODULE_IDS = getBaseModuleIds();
+
+// Default pages for new users (clients and other pages are hidden by default; enable per user in Permissions)
+const DEFAULT_PAGES = ['dashboard', 'tasks', 'resources', 'features', 'tutorials', ...BASE_MODULE_IDS];
 
 // Department options
 const DEPARTMENTS = [
@@ -385,13 +393,13 @@ const PermissionsManager = () => {
 
       await firestoreService.addApprovedUser(userData);
       
-      // Set default permissions (dashboard + base modules + role-appropriate pages)
-      const defaultPages = ['dashboard', 'tasks', 'resources', 'features', 'tutorials', ...BASE_MODULE_IDS];
-      await firestoreService.setUserPagePermissions(userData.email, defaultPages);
+      // Default pages only; clients and other pages are enabled per user. Role is not used for permissions.
+      await firestoreService.setUserFullPermissions(userData.email, { pages: DEFAULT_PAGES, features: [] });
       
       // Update local state
       setUsers(prev => [...prev, userData]);
-      setUserPermissions(prev => ({ ...prev, [userData.email]: defaultPages }));
+      setUserPermissions(prev => ({ ...prev, [userData.email]: DEFAULT_PAGES }));
+      setUserFeaturePermissions(prev => ({ ...prev, [userData.email]: [] }));
       
       toast.success(`User ${newUserForm.displayName} added successfully`);
       setShowAddModal(false);
