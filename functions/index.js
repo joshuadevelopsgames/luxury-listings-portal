@@ -833,7 +833,7 @@ Guidelines:
     });
     throw new HttpsError('internal', `Health prediction failed: ${error.message}`);
   }
-});
+}
 
 /**
  * Get current rate limit status for a user
@@ -875,6 +875,104 @@ exports.getRateLimitStatus = onCall({
     cooldownUntil: data.cooldownUntil || null,
     inCooldown: data.cooldownUntil && new Date(data.cooldownUntil) > now
   };
+});
+
+/**
+ * Run bulk health prediction for all clients (writes to client_health_snapshots).
+ * Admin only. Set ADMIN_EMAILS (comma-separated) in Firebase config or .env to add production admins.
+ */
+function getAdminEmails() {
+  const env = process.env.ADMIN_EMAILS || '';
+  const list = env ? env.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean) : [];
+  if (list.length) return list;
+  return ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+}
+
+async function doBulkHealthPrediction() {
+  const db = admin.firestore();
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const openAIKey = process.env.OPENAI_API_KEY;
+  if (!openRouterKey && !openAIKey) {
+    throw new Error('No AI provider key configured');
+  }
+  const clientsSnap = await db.collection('clients').get();
+  const snapshotsCol = db.collection('client_health_snapshots');
+  const instagramCol = db.collection('instagram_reports');
+  let processed = 0;
+  let failed = 0;
+  const systemPrompt = `You are a client success analyst for a luxury real estate social media agency. Analyze client health data and Instagram performance trends to predict churn risk. Return ONLY valid JSON: { "status": "good"|"warning"|"critical", "churnRisk": 0-100, "reason": "brief explanation", "action": "recommended next step" }.`;
+  for (const docSnap of clientsSnap.docs) {
+    const client = { id: docSnap.id, ...docSnap.data() };
+    const clientData = {
+      clientName: client.clientName || client.name || 'Unknown',
+      postsRemaining: client.postsRemaining ?? 0,
+      packageSize: client.packageSize ?? 10,
+      postsUsed: client.postsUsed ?? 0,
+      paymentStatus: client.paymentStatus || 'unknown',
+      packageType: client.packageType || 'unknown',
+      daysSinceContact: null,
+      daysUntilRenewal: null,
+      createdAt: client.createdAt || null,
+      lastPostDate: client.lastPostDate || null,
+      notes: client.notes || ''
+    };
+    let reportHistory = [];
+    try {
+      const reportsSnap = await instagramCol.where('clientId', '==', client.id).limit(20).get();
+      const sorted = reportsSnap.docs.sort((a, b) => (b.data().startDate || '').localeCompare(a.data().startDate || ''));
+      reportHistory = sorted.slice(0, 6).map((d) => {
+        const d_ = d.data();
+        return { dateRange: d_.dateRange || `${d_.startDate || ''}-${d_.endDate || ''}`, startDate: d_.startDate, metrics: d_.metrics || {} };
+      });
+    } catch (e) {
+      // ignore
+    }
+    const userPrompt = `Analyze health. Client: ${clientData.clientName}. Posts: ${clientData.postsRemaining}/${clientData.packageSize} remaining, used ${clientData.postsUsed}. Payment: ${clientData.paymentStatus}. ${reportHistory.length ? `Reports: ${reportHistory.length} periods.` : ''} Return ONLY valid JSON with status, churnRisk (0-100), reason, action.`;
+    const body = { messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], max_tokens: 300, temperature: 0.3 };
+    try {
+      const response = openRouterKey
+        ? await fetch(OPENROUTER_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openRouterKey}` }, body: JSON.stringify({ ...body, model: 'openai/gpt-4o-mini' }) })
+        : await fetch(OPENAI_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openAIKey}` }, body: JSON.stringify({ ...body, model: 'gpt-4o-mini' }) });
+      if (!response.ok) throw new Error('AI request failed');
+      const data = await response.json();
+      let content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const result = JSON.parse(content);
+      const status = ['good', 'warning', 'critical'].includes(result.status) ? result.status : 'warning';
+      const churnRisk = typeof result.churnRisk === 'number' && result.churnRisk >= 0 && result.churnRisk <= 100 ? result.churnRisk : 50;
+      await snapshotsCol.doc(client.id).set({
+        clientName: clientData.clientName,
+        assignedManager: client.assignedManager || null,
+        status,
+        churnRisk,
+        reason: result.reason || '',
+        action: result.action || '',
+        timestamp: new Date().toISOString()
+      });
+      processed++;
+    } catch (err) {
+      console.warn(`Health prediction failed for client ${client.id}:`, err.message);
+      failed++;
+    }
+  }
+  return { processed, failed, total: clientsSnap.size };
+}
+
+exports.runBulkHealthPrediction = onCall({
+  cors: true,
+  maxInstances: 1,
+  secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+  const email = (request.auth.token.email || '').toLowerCase();
+  const adminEmails = getAdminEmails();
+  if (!adminEmails.includes(email)) {
+    throw new HttpsError('permission-denied', 'Only admins can run bulk health prediction. Set ADMIN_EMAILS in Firebase config to add admins.');
+  }
+  const result = await doBulkHealthPrediction();
+  return { success: true, ...result };
 });
 
 /**

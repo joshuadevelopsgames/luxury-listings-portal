@@ -204,8 +204,6 @@ const V3Layout = () => {
     'features': { name: 'Features', icon: Sparkles, path: '/features' },
     'workload': { name: 'Team Workload', icon: BarChart3, path: '/workload' },
     'graphic-projects': { name: 'Team Projects', icon: Palette, path: '/graphic-projects' },
-    'admin-feedback': { name: 'Feedback & Reports', icon: Bug, path: '/admin/feedback' },
-    'admin-chats': { name: 'Support Chats', icon: MessageSquare, path: '/admin/chats' },
   };
 
   // Navigation sections based on role/permissions - properly categorized

@@ -73,16 +73,16 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
-    // Client movements (deletions, reassignments) - for HR analytics
+    // Client movements (deletions, reassignments, added) - for HR analytics. Read: any authenticated (page is permission-gated).
     match /client_movements/{movementId} {
       allow create: if isAuthenticated();
-      allow read: if isAdmin();
+      allow read: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
     
-    // Client health snapshots (monthly AI health run) - admin reads all; account managers read own assigned
+    // Client health snapshots (monthly AI health run). Read: any authenticated (Client Health / My Clients are permission-gated).
     match /client_health_snapshots/{clientId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.assignedManager != null && resource.data.assignedManager == request.auth.token.email);
+      allow read: if isAuthenticated();
       allow write: if false;
     }
     

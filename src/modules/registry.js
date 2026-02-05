@@ -184,7 +184,7 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/client-health',
-      section: 'HR'
+      section: 'SMM'
     },
     baseModule: false
   },
@@ -277,35 +277,6 @@ export const modules = {
   // ADMIN MODULES (system admin only)
   // -------------------------------------------------------------------------
 
-  'admin-feedback': {
-    id: 'admin-feedback',
-    name: 'Feedback & Reports',
-    description: 'View bug reports and feature requests',
-    icon: Bug,
-    routes: ['/admin/feedback'],
-    widgets: [],
-    navItem: {
-      path: '/admin/feedback',
-      section: 'Admin'
-    },
-    baseModule: false,
-    adminOnly: true
-  },
-
-  'admin-chats': {
-    id: 'admin-chats',
-    name: 'Support Chats',
-    description: 'Respond to user support chats',
-    icon: MessageSquare,
-    routes: ['/admin/chats'],
-    widgets: [],
-    navItem: {
-      path: '/admin/chats',
-      section: 'Admin'
-    },
-    baseModule: false,
-    adminOnly: true
-  }
 };
 
 // ============================================================================

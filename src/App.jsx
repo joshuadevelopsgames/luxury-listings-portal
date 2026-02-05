@@ -65,8 +65,6 @@ import NotificationsPage from './pages/NotificationsPage';
 import WorkloadPage from './pages/WorkloadPage';
 import SlackCallback from './pages/SlackCallback';
 import GraphicProjectTracker from './pages/GraphicProjectTracker';
-import AdminFeedback from './pages/AdminFeedback';
-import AdminChats from './pages/AdminChats';
 
 // Module Pages
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
@@ -249,8 +247,6 @@ const router = createBrowserRouter([
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
 
           // Admin pages - system admin only
-          { path: 'admin/feedback', element: <PermissionRoute pageId="admin-feedback" pageName="Feedback & Reports"><AdminFeedback /></PermissionRoute> },
-          { path: 'admin/chats', element: <PermissionRoute pageId="admin-chats" pageName="Support Chats"><AdminChats /></PermissionRoute> },
 
           // Profile pages - always accessible when logged in
           { path: 'my-time-off', element: <MyTimeOff /> },

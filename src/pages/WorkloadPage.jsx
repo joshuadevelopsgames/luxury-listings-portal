@@ -6,18 +6,25 @@ import { BarChart3, ChevronDown, ChevronUp, Users, ArrowRight, Camera } from 'lu
 import PlatformIcons, { PLATFORMS } from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
 
-// Workload: 1 base unit per client + (posts per month / 10). More posts + more platforms = more work.
-const WORKLOAD_FULL = 40; // bar is 100% at this many units
-const WORKLOAD_LOW = 15;  // Light
-const WORKLOAD_MED = 28; // Moderate
+// Workload: client count, post volume, and platform complexity.
+// Post volume scaled so 14 posts/mo = 1 "client-equivalent" of work (avg client 12–16 posts/mo).
+// So 50 posts ≈ 3.5 client-equivalents of post volume — one 50-post client ≈ like having 4 clients.
+// Per client: 1 base + (posts / 14) + 0.2 if 3+ platforms.
+//   Light   ≤15 units ≈ ≤6 avg clients
+//   Moderate 16–20    ≈ 7–9 avg clients
+//   Heavy   >20       ≈ 10+ avg clients (9 just under, 12 definitely heavy)
+const POSTS_PER_UNIT = 14; // ~1 avg client's post volume = 1 unit
+const WORKLOAD_FULL = 40;
+const WORKLOAD_LOW = 15;
+const WORKLOAD_MED = 20;
 
 function getWorkloadUnits(clients) {
   return clients.reduce((sum, c) => {
     const posts = Number(c.packageSize) || 0;
     const platformCount = c.platforms ? Object.values(c.platforms).filter(Boolean).length : 0;
     const base = 1;
-    const postUnits = posts / 10;
-    const platformBonus = platformCount > 2 ? 0.2 : 0; // extra complexity for 3+ platforms
+    const postUnits = posts / POSTS_PER_UNIT;
+    const platformBonus = platformCount > 2 ? 0.2 : 0;
     return sum + base + postUnits + platformBonus;
   }, 0);
 }

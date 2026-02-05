@@ -31,18 +31,30 @@ const ClientHealthPage = () => {
   const [runningBulk, setRunningBulk] = useState(false);
   const [clients, setClients] = useState([]);
   const [snapshots, setSnapshots] = useState({});
+  const [assignedUserByKey, setAssignedUserByKey] = useState({}); // email/uid -> { uid, displayName }
   const [filterStatus, setFilterStatus] = useState('all');
   const [refreshingId, setRefreshingId] = useState(null);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [clientsList, snapMap] = await Promise.all([
+      const [clientsList, snapMap, usersList] = await Promise.all([
         firestoreService.getClients(),
-        firestoreService.getClientHealthSnapshots()
+        firestoreService.getClientHealthSnapshots(),
+        firestoreService.getApprovedUsers()
       ]);
       setClients(clientsList);
       setSnapshots(snapMap);
+      const byKey = {};
+      (usersList || []).forEach((u) => {
+        const uid = u.uid || u.userId;
+        const email = (u.email || u.id || '').toLowerCase();
+        const label = u.displayName || u.name || u.email || u.id || uid || '—';
+        const entry = { uid: uid || email, label };
+        if (email) byKey[email] = entry;
+        if (uid) byKey[uid] = entry;
+      });
+      setAssignedUserByKey(byKey);
     } catch (err) {
       console.error('Error loading client health data:', err);
       toast.error('Failed to load data');
@@ -186,7 +198,7 @@ const ClientHealthPage = () => {
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/10">
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Client</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Manager</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Assigned user (ID)</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Status</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Churn risk</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Insight</th>
@@ -206,7 +218,19 @@ const ClientHealthPage = () => {
                       <td className="py-3 px-4">
                         <ClientLink client={client} showId />
                       </td>
-                      <td className="py-3 px-4 text-[12px] text-[#86868b]">{client.assignedManager || '—'}</td>
+                      <td className="py-3 px-4 text-[12px] text-[#86868b]">
+                        {client.assignedManager
+                          ? (() => {
+                              const raw = (client.assignedManager || '').trim();
+                              const byEmail = assignedUserByKey[raw.toLowerCase()];
+                              const byUid = assignedUserByKey[raw];
+                              const resolved = byEmail || byUid;
+                              if (resolved?.uid) return resolved.uid;
+                              if (/^[a-zA-Z0-9]{20,}$/.test(raw)) return raw;
+                              return resolved?.label ? `${resolved.label} (${resolved.uid || raw})` : raw;
+                            })()
+                          : '—'}
+                      </td>
                       <td className="py-3 px-4">
                         {snap ? (
                           <span className={`text-[11px] px-2 py-1 rounded-md font-medium ${style ? style.bg + ' ' + style.color : ''}`}>

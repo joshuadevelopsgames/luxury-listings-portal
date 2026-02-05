@@ -110,8 +110,6 @@ const ALL_PAGES = {
   'features': { name: 'Features', icon: Sparkles, description: 'Future features to quote' },
   'workload': { name: 'Team Workload', icon: BarChart3, description: 'Team capacity and client distribution' },
   'graphic-projects': { name: 'Team Projects', icon: Palette, description: 'Graphic design project tracker' },
-  'admin-feedback': { name: 'Feedback & Reports', icon: Bug, description: 'Bug reports and feature requests (admin)' },
-  'admin-chats': { name: 'Support Chats', icon: MessageSquare, description: 'User support chats (admin)' },
 };
 
 // Get list of base module IDs
