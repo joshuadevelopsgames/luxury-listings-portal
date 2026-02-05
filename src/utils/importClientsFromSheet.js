@@ -229,7 +229,7 @@ const CLIENTS_DATA = [
 ];
 
 // Default package settings
-const DEFAULT_PACKAGE = { packageType: 'Standard', packageSize: 10 };
+const DEFAULT_PACKAGE = { packageType: 'Standard', packageSize: 12 };
 
 /**
  * Find manager email by name from approved users

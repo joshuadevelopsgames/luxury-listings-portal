@@ -132,7 +132,7 @@ export const bulkAddClients = async () => {
             clientName: clientName,
             clientEmail: normalizedEmail, // Placeholder email - can be updated later
             packageType: 'Standard',
-            packageSize: 10,
+            packageSize: 12,
             postsUsed: 0,
             postsRemaining: 10,
             postedOn: 'Luxury Listings',

@@ -97,7 +97,7 @@ const ClientHealthPage = () => {
       const clientData = {
         clientName: client.clientName || 'Unknown',
         postsRemaining: client.postsRemaining ?? 0,
-        packageSize: client.packageSize ?? 10,
+        packageSize: client.packageSize ?? 12,
         postsUsed: client.postsUsed ?? 0,
         paymentStatus: client.paymentStatus || 'unknown',
         packageType: client.packageType || 'unknown',

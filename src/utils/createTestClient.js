@@ -9,7 +9,7 @@ export const createTestClient = async () => {
       clientName: 'Joshua Test Client',
       clientEmail: 'joshua@luxury-listings.com',
       packageType: 'Gold',
-      packageSize: 10,
+      packageSize: 12,
       postsUsed: 2,
       postsRemaining: 8,
       postedOn: 'Luxury Listings',

@@ -6,27 +6,27 @@ import { BarChart3, ChevronDown, ChevronUp, Users, ArrowRight, Camera } from 'lu
 import PlatformIcons, { PLATFORMS } from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
 
-// Workload: client count, post volume, and platform complexity.
-// Post volume scaled so 14 posts/mo = 1 "client-equivalent" of work (avg client 12–16 posts/mo).
-// So 50 posts ≈ 3.5 client-equivalents of post volume — one 50-post client ≈ like having 4 clients.
-// Per client: 1 base + (posts / 14) + 0.2 if 3+ platforms.
-//   Light   ≤15 units ≈ ≤6 avg clients
-//   Moderate 16–20    ≈ 7–9 avg clients
-//   Heavy   >20       ≈ 10+ avg clients (9 just under, 12 definitely heavy)
-const POSTS_PER_UNIT = 14; // ~1 avg client's post volume = 1 unit
-const WORKLOAD_FULL = 40;
-const WORKLOAD_LOW = 15;
-const WORKLOAD_MED = 20;
+// Workload: post volume is the main metric (~90%); client count matters little (~10%).
+// "Heavy" = ~10+ client-equivalents of posts (1 equivalent = 14 posts/mo, avg client).
+// So 140+ total posts/mo = heavy whether that's 10 clients × 14 or 5 clients × 28.
+// Formula: total_posts / POSTS_PER_UNIT + 0.1 * client_count + platform bonus (0.2 per client with 3+ platforms).
+const POSTS_PER_UNIT = 7.5;  // 140 posts + 10 clients ≈ 20 (heavy)
+const CLIENT_WEIGHT = 0.1;
+const WORKLOAD_FULL = 35;
+const WORKLOAD_LOW = 12;   // Light
+const WORKLOAD_MED = 20;   // Heavy: 10 avg clients (140 posts) or e.g. 5 clients @ 28 each
 
 function getWorkloadUnits(clients) {
-  return clients.reduce((sum, c) => {
+  const n = clients.length;
+  let totalPosts = 0;
+  let platformBonus = 0;
+  clients.forEach(c => {
     const posts = Number(c.packageSize) || 0;
+    totalPosts += posts;
     const platformCount = c.platforms ? Object.values(c.platforms).filter(Boolean).length : 0;
-    const base = 1;
-    const postUnits = posts / POSTS_PER_UNIT;
-    const platformBonus = platformCount > 2 ? 0.2 : 0;
-    return sum + base + postUnits + platformBonus;
-  }, 0);
+    if (platformCount > 2) platformBonus += 0.2;
+  });
+  return totalPosts / POSTS_PER_UNIT + CLIENT_WEIGHT * n + platformBonus;
 }
 
 function getCapacityColor(workloadUnits) {

@@ -181,7 +181,7 @@ const V3Clients = () => {
           {filteredClients.map((client, idx) => {
             const status = getStatus(client);
             const postsUsed = client.postsUsed || 0;
-            const postsTotal = client.packageSize || client.postsTotal || 10;
+            const postsTotal = client.packageSize || client.postsTotal || 12;
             
             return (
               <div

@@ -106,7 +106,7 @@ const MyClientsPage = () => {
 
   const getHealthStatus = (client) => {
     const postsRemaining = client.postsRemaining || 0;
-    const packageSize = client.packageSize || 10;
+    const packageSize = client.packageSize || 12;
     const percentage = (postsRemaining / packageSize) * 100;
     
     if (percentage <= 20) return { status: 'critical', color: 'text-[#ff3b30]', bgColor: 'bg-[#ff3b30]/10', label: 'Low Posts' };
@@ -157,7 +157,7 @@ const MyClientsPage = () => {
       const clientData = {
         clientName: client.clientName || 'Unknown',
         postsRemaining: client.postsRemaining || 0,
-        packageSize: client.packageSize || 10,
+        packageSize: client.packageSize || 12,
         postsUsed: client.postsUsed || 0,
         paymentStatus: client.paymentStatus || 'unknown',
         packageType: client.packageType || 'Standard',
@@ -429,7 +429,7 @@ const MyClientsPage = () => {
             const health = getEnhancedHealthStatus(client);
             const isLoadingAi = loadingAiHealth[client.id];
             const postsUsed = client.postsUsed || 0;
-            const packageSize = client.packageSize || 10;
+            const packageSize = client.packageSize || 12;
             const progress = (postsUsed / packageSize) * 100;
 
             return (

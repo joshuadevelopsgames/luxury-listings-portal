@@ -83,7 +83,7 @@ const ClientDetailModal = ({
       website: localClient.website || '',
       instagramHandle: localClient.instagramHandle || '',
       packageType: localClient.packageType || 'Standard',
-      packageSize: localClient.packageSize || 10,
+      packageSize: localClient.packageSize || 12,
       postsRemaining: localClient.postsRemaining || 0,
       paymentStatus: localClient.paymentStatus || 'Pending',
       notes: localClient.notes || '',

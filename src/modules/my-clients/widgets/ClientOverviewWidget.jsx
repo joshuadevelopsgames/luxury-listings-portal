@@ -47,7 +47,7 @@ const ClientOverviewWidget = () => {
 
   const getHealthStatus = (client) => {
     const postsRemaining = client.postsRemaining || 0;
-    const packageSize = client.packageSize || 10;
+    const packageSize = client.packageSize || 12;
     const percentage = (postsRemaining / packageSize) * 100;
     
     if (percentage <= 20) return { color: 'bg-[#ff3b30]', label: 'Low' };
@@ -96,7 +96,7 @@ const ClientOverviewWidget = () => {
           {clients.map((client) => {
             const health = getHealthStatus(client);
             const postsUsed = client.postsUsed || 0;
-            const packageSize = client.packageSize || 10;
+            const packageSize = client.packageSize || 12;
             const progress = (postsUsed / packageSize) * 100;
             
             return (
