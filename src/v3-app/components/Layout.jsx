@@ -55,6 +55,13 @@ const V3Layout = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Redirect to onboarding when logged in but not yet completed (catches dashboard and any in-app route)
+  useEffect(() => {
+    if (!currentUser?.isApproved || currentUser?.onboardingCompleted) return;
+    if (location.pathname === '/onboarding') return;
+    navigate('/onboarding', { replace: true });
+  }, [currentUser?.isApproved, currentUser?.onboardingCompleted, location.pathname, navigate]);
   
   // Vancouver time: dark from 5 PM to 6 AM (switches at 6:00 and 17:00)
   const getVancouverHour = () => {
