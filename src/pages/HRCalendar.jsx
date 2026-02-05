@@ -75,7 +75,6 @@ const HRCalendar = () => {
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [syncingRequestId, setSyncingRequestId] = useState(null);
 
   // Reset calendar data when user changes
   useEffect(() => {
@@ -657,31 +656,6 @@ const HRCalendar = () => {
     }
   };
 
-  // Sync approved leave request to Google Calendar
-  const syncLeaveToCalendar = async (request) => {
-    if (!isGoogleConnected) {
-      toast.error('Please connect Google Calendar first');
-      return;
-    }
-    
-    if (syncingRequestId) return; // Prevent double-clicks
-
-    try {
-      setSyncingRequestId(request.id);
-      toast.loading('Adding to Google Calendar...', { id: 'sync-leave' });
-      await googleCalendarService.createLeaveEvent(request);
-      toast.dismiss('sync-leave');
-      toast.success('Leave added to Google Calendar!');
-      await loadGoogleCalendarEvents(); // Refresh events
-    } catch (error) {
-      toast.dismiss('sync-leave');
-      console.error('Failed to sync to calendar:', error);
-      toast.error('Failed to add to Google Calendar');
-    } finally {
-      setSyncingRequestId(null);
-    }
-  };
-
   const loadGoogleCalendarEvents = async () => {
     try {
       const events = await googleCalendarService.getEvents();
@@ -1025,26 +999,6 @@ const HRCalendar = () => {
                         </button>
                       </div>
                     )}
-                    {request.status === 'approved' && isGoogleConnected && (
-                      <button 
-                        onClick={() => syncLeaveToCalendar(request)}
-                        disabled={syncingRequestId === request.id}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {syncingRequestId === request.id ? (
-                          <>
-                            <div className="w-3 h-3 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
-                            Adding...
-                          </>
-                        ) : (
-                          <>
-                            <CalendarIcon className="w-3 h-3" />
-                            Add to Calendar
-                          </>
-                        )}
-                      </button>
-                    )}
-                    
                     {/* Archive/Unarchive Button */}
                     {request.status !== 'pending' && (
                       <button 
