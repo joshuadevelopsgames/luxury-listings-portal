@@ -48,7 +48,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
   if (!stats) {
     return createPortal(
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 text-center">
+        <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl p-8 text-center border border-black/10 dark:border-white/10">
           <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-[15px] text-[#86868b]">Loading statistics...</p>
         </div>
@@ -71,7 +71,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
 
   return createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
+      <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10 flex-shrink-0">
           <div className="flex items-center gap-3">

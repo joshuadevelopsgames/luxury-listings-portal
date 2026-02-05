@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { X, Plus, Filter, Save, Trash2, Star } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { toast } from 'react-hot-toast';
@@ -99,262 +96,216 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
     });
   };
 
+  const priorityOptions = [
+    { value: 'p1', label: 'P1 (Urgent)', activeClass: 'bg-[#ff3b30]/10 text-[#ff3b30] border-[#ff3b30]/30' },
+    { value: 'p2', label: 'P2 (High)', activeClass: 'bg-[#ff9500]/10 text-[#ff9500] border-[#ff9500]/30' },
+    { value: 'p3', label: 'P3 (Medium)', activeClass: 'bg-[#0071e3]/10 text-[#0071e3] border-[#0071e3]/30' },
+    { value: 'p4', label: 'P4 (Low)', activeClass: 'bg-black/10 dark:bg-white/10 text-[#86868b] border-black/20 dark:border-white/20' }
+  ];
+
   if (creating) {
     return createPortal(
-      <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-        <Card className="w-full max-w-2xl mb-8">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold">
-                {editingFilter ? 'Edit Filter' : 'Create Smart Filter'}
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setCreating(false);
-                  setEditingFilter(null);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="space-y-6 pb-8">
-            {/* Filter Name */}
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
+        <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-2xl mb-8 border border-black/10 dark:border-white/10 shadow-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
+            <h2 className="text-[18px] font-semibold text-[#1d1d1f] dark:text-white">
+              {editingFilter ? 'Edit Filter' : 'Create Smart Filter'}
+            </h2>
+            <button
+              type="button"
+              onClick={() => { setCreating(false); setEditingFilter(null); }}
+              className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center text-[#86868b]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-6 space-y-6 pb-8">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filter Name *
-              </label>
+              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Filter Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., Urgent Client Work"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] text-[14px]"
               />
             </div>
-
-            {/* Priority Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Priorities
-              </label>
+              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Priorities</label>
               <div className="flex flex-wrap gap-2">
-                {[
-                  { value: 'p1', label: 'P1 (Urgent)', color: 'red' },
-                  { value: 'p2', label: 'P2 (High)', color: 'orange' },
-                  { value: 'p3', label: 'P3 (Medium)', color: 'blue' },
-                  { value: 'p4', label: 'P4 (Low)', color: 'gray' }
-                ].map((priority) => (
-                  <Badge
-                    key={priority.value}
-                    variant="outline"
-                    className={`cursor-pointer transition-colors ${
-                      formData.criteria.priorities?.includes(priority.value)
-                        ? `bg-${priority.color}-50 text-${priority.color}-700 border-${priority.color}-300`
-                        : 'bg-gray-50 text-gray-600 border-gray-300 hover:bg-blue-50'
-                    }`}
-                    onClick={() => togglePriority(priority.value)}
-                  >
-                    {priority.label}
-                  </Badge>
-                ))}
+                {priorityOptions.map((p) => {
+                  const isActive = formData.criteria.priorities?.includes(p.value);
+                  return (
+                    <button
+                      key={p.value}
+                      type="button"
+                      onClick={() => togglePriority(p.value)}
+                      className={`px-3 py-1.5 rounded-lg text-[13px] font-medium border transition-colors ${
+                        isActive ? p.activeClass : 'bg-black/5 dark:bg-white/10 text-[#86868b] border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/15'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Label Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Labels (select all that match)
-              </label>
+              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Labels (select all that match)</label>
               <div className="flex flex-wrap gap-2">
-                {['urgent', 'client-work', 'marketing', 'follow-up', 'important', 'quick-win'].map((label) => (
-                  <Badge
-                    key={label}
-                    variant="outline"
-                    className={`cursor-pointer transition-colors ${
-                      formData.criteria.labels?.includes(label)
-                        ? 'bg-purple-50 text-purple-700 border-purple-300'
-                        : 'bg-gray-50 text-gray-600 border-gray-300 hover:bg-purple-50'
-                    }`}
-                    onClick={() => toggleLabel(label)}
-                  >
-                    {label}
-                  </Badge>
-                ))}
+                {['urgent', 'client-work', 'marketing', 'follow-up', 'important', 'quick-win'].map((label) => {
+                  const isActive = formData.criteria.labels?.includes(label);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => toggleLabel(label)}
+                      className={`px-3 py-1.5 rounded-lg text-[13px] font-medium border transition-colors ${
+                        isActive ? 'bg-[#af52de]/10 text-[#af52de] border-[#af52de]/30' : 'bg-black/5 dark:bg-white/10 text-[#86868b] border-black/10 dark:border-white/10 hover:bg-[#af52de]/10'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Special Filters */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Special Criteria
-              </label>
+              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Special Criteria</label>
               <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.criteria.hasSubtasks === true}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      criteria: { ...formData.criteria, hasSubtasks: e.target.checked ? true : null }
-                    })}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-gray-700">Has subtasks</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.criteria.hasReminders === true}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      criteria: { ...formData.criteria, hasReminders: e.target.checked ? true : null }
-                    })}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-gray-700">Has reminders</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.criteria.isRecurring === true}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      criteria: { ...formData.criteria, isRecurring: e.target.checked ? true : null }
-                    })}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-gray-700">Recurring tasks only</span>
-                </label>
+                {[
+                  { key: 'hasSubtasks', label: 'Has subtasks' },
+                  { key: 'hasReminders', label: 'Has reminders' },
+                  { key: 'isRecurring', label: 'Recurring tasks only' }
+                ].map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-3 cursor-pointer text-[14px] text-[#1d1d1f] dark:text-white">
+                    <input
+                      type="checkbox"
+                      checked={formData.criteria[key] === true}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        criteria: { ...formData.criteria, [key]: e.target.checked ? true : null }
+                      })}
+                      className="h-4 w-4 rounded border-black/20 dark:border-white/20 text-[#0071e3] focus:ring-[#0071e3] accent-[#0071e3]"
+                    />
+                    {label}
+                  </label>
+                ))}
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
+            <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+              <button
+                type="button"
                 onClick={() => setCreating(false)}
+                className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={handleSaveFilter}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed]"
               >
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="w-4 h-4" />
                 Save Filter
-              </Button>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>,
       document.body
     );
   }
 
   return createPortal(
-    <div className="modal-overlay bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-      <Card className="w-full max-w-3xl mb-8">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <Filter className="w-6 h-6 text-blue-500" />
-              Smart Filters
-            </CardTitle>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => setCreating(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Filter
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </Button>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
+      <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-3xl mb-8 border border-black/10 dark:border-white/10 shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center">
+              <Filter className="w-5 h-5 text-[#0071e3]" />
             </div>
+            <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white">Smart Filters</h2>
           </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-4 pb-8">
-          <p className="text-gray-600">
-            Create custom views to quickly find specific tasks
-          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed]"
+            >
+              <Plus className="w-4 h-4" />
+              New Filter
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center text-[#86868b]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        <div className="p-6 space-y-4 pb-8">
+          <p className="text-[14px] text-[#86868b]">Create custom views to quickly find specific tasks</p>
 
-          {/* Filters List */}
           {filters.length > 0 ? (
             <div className="space-y-3">
               {filters.map((filter) => (
-                <Card key={filter.id} className="border border-gray-200 hover:shadow-md transition-all">
-                  <CardContent className="p-6 pt-8">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Star className="w-4 h-4 text-yellow-500" />
-                          <h3 className="font-semibold text-gray-900">{filter.name}</h3>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          {filter.criteria.priorities?.length > 0 && (
-                            <span className="text-gray-600">
-                              Priorities: {filter.criteria.priorities.join(', ')}
-                            </span>
-                          )}
-                          {filter.criteria.labels?.length > 0 && (
-                            <span className="text-gray-600">
-                              Labels: {filter.criteria.labels.join(', ')}
-                            </span>
-                          )}
-                          {filter.criteria.hasSubtasks && (
-                            <Badge variant="outline" className="text-xs">Has subtasks</Badge>
-                          )}
-                          {filter.criteria.isRecurring && (
-                            <Badge variant="outline" className="text-xs">Recurring</Badge>
-                          )}
-                        </div>
+                <div
+                  key={filter.id}
+                  className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/5 p-5 hover:border-black/20 dark:hover:border-white/20 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Star className="w-4 h-4 text-[#ff9500] dark:text-[#ff9f0a] shrink-0" />
+                        <h3 className="font-semibold text-[#1d1d1f] dark:text-white">{filter.name}</h3>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            onApplyFilter(filter);
-                            onClose();
-                          }}
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
-                        >
-                          Apply
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteFilter(filter.id)}
-                          className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </Button>
+                      <div className="flex flex-wrap gap-2 text-[12px] text-[#86868b]">
+                        {filter.criteria.priorities?.length > 0 && (
+                          <span>Priorities: {filter.criteria.priorities.join(', ')}</span>
+                        )}
+                        {filter.criteria.labels?.length > 0 && (
+                          <span>Labels: {filter.criteria.labels.join(', ')}</span>
+                        )}
+                        {filter.criteria.hasSubtasks && (
+                          <span className="px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10">Has subtasks</span>
+                        )}
+                        {filter.criteria.isRecurring && (
+                          <span className="px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10">Recurring</span>
+                        )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => { onApplyFilter(filter); onClose(); }}
+                        className="px-3 py-2 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 dark:hover:bg-[#0071e3]/30"
+                      >
+                        Apply
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFilter(filter.id)}
+                        className="p-2 rounded-xl text-[#ff3b30] hover:bg-[#ff3b30]/10 dark:hover:bg-[#ff3b30]/20 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-12">
-              <Filter className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600">No custom filters yet. Create your first one!</p>
+              <div className="w-14 h-14 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center mx-auto mb-4">
+                <Filter className="w-7 h-7 text-[#86868b]" />
+              </div>
+              <p className="text-[15px] text-[#86868b]">No custom filters yet. Create your first one!</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>,
     document.body
   );

@@ -1999,6 +1999,8 @@ const TasksPage = () => {
       {showCalendarView && (
         <CalendarView 
           tasks={tasks}
+          sentRequests={sentRequests}
+          outboxTaskMap={outboxTaskMap}
           onClose={() => setShowCalendarView(false)}
           onTaskClick={(task) => {
             setEditingTask(task);
