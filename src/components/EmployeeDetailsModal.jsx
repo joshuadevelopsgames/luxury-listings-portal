@@ -1,5 +1,5 @@
 /**
- * EmployeeDetailsModal - Reusable employee details popup (PersonCard, performance, leave, edit).
+ * EmployeeDetailsModal - Reusable employee details popup (PersonCard, leave, edit).
  * Use from Team Management or via EmployeeLink from any page that lists team members.
  */
 
@@ -13,10 +13,7 @@ import {
   Users,
   Edit,
   XCircle,
-  Calendar,
-  BarChart3,
-  GraduationCap,
-  Award
+  Calendar
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -32,9 +29,6 @@ function normalizeToEmployee(user) {
     lastName: user.lastName ?? name.split(' ').slice(1).join(' ') ?? '',
     email: user.email || user.id,
     id: user.id || user.email,
-    performance: user.performance || { rating: 0, projectsCompleted: 0, onTimeDelivery: 0, clientSatisfaction: 0 },
-    skills: user.skills || [],
-    certifications: user.certifications || [],
     leaveBalance: user.leaveBalance || null,
     department: user.department || 'General',
     position: user.position || user.role || 'Team Member',
@@ -356,74 +350,6 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
               showAvatar
               employeeId={null}
             />
-
-            <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-              <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#34c759] to-[#30d158] flex items-center justify-center shadow-lg shadow-[#34c759]/20">
-                    <BarChart3 className="w-4 h-4 text-white" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Performance Metrics</h3>
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl">
-                    <p className="text-[28px] font-semibold text-[#0071e3]">{employee.performance.rating}</p>
-                    <p className="text-[13px] text-[#0071e3]/80">Overall Rating</p>
-                  </div>
-                  <div className="text-center p-4 bg-[#34c759]/5 dark:bg-[#34c759]/10 rounded-xl">
-                    <p className="text-[28px] font-semibold text-[#34c759]">{employee.performance.projectsCompleted}</p>
-                    <p className="text-[13px] text-[#34c759]/80">Projects Completed</p>
-                  </div>
-                  <div className="text-center p-4 bg-[#ff9500]/5 dark:bg-[#ff9500]/10 rounded-xl">
-                    <p className="text-[28px] font-semibold text-[#ff9500]">{employee.performance.onTimeDelivery}%</p>
-                    <p className="text-[13px] text-[#ff9500]/80">On-Time Delivery</p>
-                  </div>
-                  <div className="text-center p-4 bg-[#af52de]/5 dark:bg-[#af52de]/10 rounded-xl">
-                    <p className="text-[28px] font-semibold text-[#af52de]">{employee.performance.clientSatisfaction}</p>
-                    <p className="text-[13px] text-[#af52de]/80">Client Satisfaction</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-                <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5856d6] to-[#af52de] flex items-center justify-center shadow-lg shadow-[#5856d6]/20">
-                      <GraduationCap className="w-4 h-4 text-white" strokeWidth={1.5} />
-                    </div>
-                    <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Skills</h3>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="flex flex-wrap gap-2">
-                    {(employee.skills?.length > 0) ? employee.skills.map((skill, i) => (
-                      <span key={i} className="px-3 py-1.5 text-[13px] font-medium text-[#5856d6] bg-[#5856d6]/10 rounded-full">{skill}</span>
-                    )) : <p className="text-[13px] text-[#86868b]">No skills added yet</p>}
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-                <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ff9500] to-[#ff3b30] flex items-center justify-center shadow-lg shadow-[#ff9500]/20">
-                      <Award className="w-4 h-4 text-white" strokeWidth={1.5} />
-                    </div>
-                    <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Certifications</h3>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="flex flex-wrap gap-2">
-                    {(employee.certifications?.length > 0) ? employee.certifications.map((cert, i) => (
-                      <span key={i} className="px-3 py-1.5 text-[13px] font-medium text-[#ff9500] bg-[#ff9500]/10 rounded-full">{cert}</span>
-                    )) : <p className="text-[13px] text-[#86868b]">No certifications added yet</p>}
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
               <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">

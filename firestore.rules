@@ -38,10 +38,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Approved users - authenticated users can read, admins can write
+    // Approved users - authenticated users can read; admins can write; users can update own profile (Gmail photo/name)
     match /approved_users/{userEmail} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+        (isAuthenticated() && request.auth.token.email == userEmail &&
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+           'role', 'roles', 'primaryRole', 'isApproved', 'email', 'customPermissions'
+         ]));
     }
     
     // Employees - authenticated users can read, admins can write

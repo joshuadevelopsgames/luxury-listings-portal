@@ -311,7 +311,7 @@ export default function ResourcesPage() {
                   </div>
                   <div>
                     <p className="text-[12px] text-white/70">HR Support</p>
-                    <p className="text-[14px] font-medium">hr@company.com</p>
+                    <a href="mailto:matthew@luxury-listings.com" className="text-[14px] font-medium hover:underline block">matthew@luxury-listings.com</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -319,17 +319,17 @@ export default function ResourcesPage() {
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-[12px] text-white/70">IT Helpdesk</p>
-                    <p className="text-[14px] font-medium">+1 (555) 123-4567</p>
+                    <p className="text-[12px] text-white/70">Technical Support</p>
+                    <a href="tel:+17783862548" className="text-[14px] font-medium hover:underline block">7783862548</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white/20 rounded-lg">
-                    <Users className="w-4 h-4" />
+                    <Mail className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-[12px] text-white/70">Manager</p>
-                    <p className="text-[14px] font-medium">Ask your buddy!</p>
+                    <a href="mailto:michelle@luxury-listings.com" className="text-[14px] font-medium hover:underline block">michelle@luxury-listings.com</a>
                   </div>
                 </div>
               </div>

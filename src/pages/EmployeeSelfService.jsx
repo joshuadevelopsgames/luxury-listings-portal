@@ -26,7 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, isValid } from 'date-fns';
 
 const EmployeeSelfService = () => {
-  const { currentUser, currentRole, isSystemAdmin } = useAuth();
+  const { currentUser, currentRole, isSystemAdmin, mergeCurrentUser } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [employeeFirestoreId, setEmployeeFirestoreId] = useState(null);
@@ -190,6 +190,8 @@ const EmployeeSelfService = () => {
       if (updatedData.position !== undefined) profileUpdates.position = updatedData.position;
       if (Object.keys(profileUpdates).length > 0) {
         await firestoreService.updateApprovedUser(currentUser.email, profileUpdates);
+        // Update header immediately (needed for system admins — they don't have the approved_user listener)
+        mergeCurrentUser(profileUpdates);
       }
       
       // Update local state immediately so UI reflects changes

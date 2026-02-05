@@ -322,6 +322,22 @@ export function AuthProvider({ children }) {
         setUserData(mergedUser);
         saveAuthToStorage(mergedUser);
         
+        // Sync Gmail profile photo (and name) to approved_users so team directory shows it
+        if (photoURL || displayName) {
+          const profileUpdates = {};
+          if (photoURL) profileUpdates.avatar = photoURL;
+          if (displayName) {
+            profileUpdates.displayName = displayName;
+            const parts = displayName.trim().split(/\s+/);
+            if (parts.length > 0) profileUpdates.firstName = parts[0];
+            if (parts.length > 1) profileUpdates.lastName = parts.slice(1).join(' ');
+          }
+          if (Object.keys(profileUpdates).length > 0) {
+            const docId = approvedUser.id || email;
+            firestoreService.updateApprovedUser(docId, profileUpdates).catch(() => {});
+          }
+        }
+        
         // Navigate based on status (only redirect to onboarding after they're past login)
         const currentPath = window.location.pathname;
         const onLoginOrHome = currentPath === '/login' || currentPath === '/';
