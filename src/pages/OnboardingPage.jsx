@@ -735,7 +735,7 @@ const OnboardingPage = () => {
 
         {/* Help Text */}
         <p className="text-center text-[13px] text-[#86868b] mt-6">
-          Questions? Click the AI assistant icon in the bottom right corner anytime! 💬
+          Questions? Reach out to support anytime!
         </p>
       </div>
     </div>
