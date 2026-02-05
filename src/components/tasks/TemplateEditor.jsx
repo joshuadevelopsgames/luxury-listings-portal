@@ -6,10 +6,12 @@ import { Badge } from '../ui/badge';
 import { X, Plus, Edit, Trash2, Save, Sparkles } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 const TEMPLATE_ICONS = ['👋', '📊', '✍️', '📱', '🏡', '🎯', '💼', '🎨', '📈', '🎉', '⚡', '🚀'];
 
 const TemplateEditor = ({ onClose }) => {
+  const { confirm } = useConfirm();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -75,9 +77,8 @@ const TemplateEditor = ({ onClose }) => {
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    if (!window.confirm('Are you sure you want to delete this template?')) {
-      return;
-    }
+    const confirmed = await confirm({ title: 'Delete template', message: 'Are you sure you want to delete this template?', confirmText: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       await firestoreService.deleteTaskTemplate(templateId);

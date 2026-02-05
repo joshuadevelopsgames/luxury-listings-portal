@@ -17,8 +17,10 @@ import { contractService } from '../../services/contractService';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import ContractUploadModal from './ContractUploadModal';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 const ClientContractsSection = ({ client }) => {
+  const { confirm } = useConfirm();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -60,9 +62,8 @@ const ClientContractsSection = ({ client }) => {
   };
 
   const handleDeleteContract = async (contractId) => {
-    if (!window.confirm('Are you sure you want to delete this contract?')) {
-      return;
-    }
+    const confirmed = await confirm({ title: 'Delete contract', message: 'Are you sure you want to delete this contract?', confirmText: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       await contractService.deleteContract(contractId);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { firestoreService } from '../services/firestoreService';
 import { 
   User, 
@@ -86,12 +87,12 @@ const PersonCard = ({
       // Update local state to reflect changes immediately
       setLocalPerson({ ...displayPerson, ...editedData });
       
-      alert('Personal information updated successfully! ✅\n\nChanges have been saved.');
+      toast.success('Personal information updated successfully. Changes have been saved.');
       setIsEditing(false);
       setEditedData({});
     } catch (error) {
       console.error('❌ Error saving employee data:', error);
-      alert(`Failed to save changes: ${error.message}\n\nPlease try again.`);
+      toast.error(`Failed to save changes: ${error.message}. Please try again.`);
     } finally {
       setSaving(false);
     }

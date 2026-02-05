@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { toast } from 'react-hot-toast';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -12,7 +14,8 @@ import {
   FileText,
   Instagram,
   Facebook,
-  Twitter
+  Twitter,
+  X
 } from 'lucide-react';
 import { format, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { firestoreService } from '../../services/firestoreService';
@@ -22,6 +25,7 @@ const ClientCalendarApproval = ({ clientId, clientEmail }) => {
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [selectedItem, setSelectedItem] = useState(null);
+  const [rejectModal, setRejectModal] = useState({ open: false, itemId: null, reason: '' });
 
   useEffect(() => {
     loadContentItems();
@@ -71,16 +75,23 @@ const ClientCalendarApproval = ({ clientId, clientEmail }) => {
       
       // TODO: Save to Firestore when we implement that
       
-      alert('Content approved successfully!');
+      toast.success('Content approved successfully!');
     } catch (error) {
       console.error('Error approving content:', error);
-      alert('Failed to approve content. Please try again.');
+      toast.error('Failed to approve content. Please try again.');
     }
   };
 
+  const openRejectModal = (itemId) => setRejectModal({ open: true, itemId, reason: '' });
+  const closeRejectModal = () => setRejectModal({ open: false, itemId: null, reason: '' });
+
   const handleReject = async (itemId, reason) => {
-    const rejectionReason = reason || prompt('Please provide a reason for rejection:');
-    if (!rejectionReason) return;
+    const rejectionReason = (reason || rejectModal.reason || '').trim();
+    if (!rejectionReason) {
+      toast.error('Please provide a reason for rejection.');
+      return;
+    }
+    if (rejectModal.open) closeRejectModal();
 
     try {
       const updatedItems = contentItems.map(item =>
@@ -93,11 +104,17 @@ const ClientCalendarApproval = ({ clientId, clientEmail }) => {
       const userStorageKey = `content_items_client_${clientEmail}`;
       localStorage.setItem(userStorageKey, JSON.stringify(updatedItems));
       
-      alert('Content rejected. Your media manager will be notified.');
+      toast.success('Content rejected. Your media manager will be notified.');
     } catch (error) {
       console.error('Error rejecting content:', error);
-      alert('Failed to reject content. Please try again.');
+      toast.error('Failed to reject content. Please try again.');
     }
+  };
+
+  const submitRejectModal = async () => {
+    if (!rejectModal.itemId) return;
+    await handleReject(rejectModal.itemId, rejectModal.reason);
+    setSelectedItem(null);
   };
 
   const getWeekDays = () => {
@@ -281,10 +298,7 @@ const ClientCalendarApproval = ({ clientId, clientEmail }) => {
                   Approve
                 </Button>
                 <Button
-                  onClick={() => {
-                    handleReject(selectedItem.id);
-                    setSelectedItem(null);
-                  }}
+                  onClick={() => openRejectModal(selectedItem.id)}
                   variant="outline"
                   className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
                 >
@@ -295,6 +309,31 @@ const ClientCalendarApproval = ({ clientId, clientEmail }) => {
             </div>
           </Card>
         </div>
+      )}
+
+      {rejectModal.open && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <Card className="max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Reason for rejection</h3>
+              <button type="button" onClick={closeRejectModal} className="p-1 rounded hover:bg-gray-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <textarea
+              value={rejectModal.reason}
+              onChange={(e) => setRejectModal((p) => ({ ...p, reason: e.target.value }))}
+              placeholder="Please provide a reason for rejection..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            <div className="flex gap-2 mt-4">
+              <Button onClick={closeRejectModal} variant="outline" className="flex-1">Cancel</Button>
+              <Button onClick={submitRejectModal} className="flex-1 bg-red-600 hover:bg-red-700 text-white">Submit</Button>
+            </div>
+          </Card>
+        </div>,
+        document.body
       )}
 
       {contentItems.length === 0 && (

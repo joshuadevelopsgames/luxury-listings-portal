@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { toast } from 'react-hot-toast';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -124,7 +125,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     e.stopPropagation();
     
     if (!formData.title.trim()) {
-      alert('Please enter a task name');
+      toast.error('Please enter a task name');
       return;
     }
 
@@ -138,7 +139,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
       });
     } catch (error) {
       console.error('Error submitting task:', error);
-      alert('Failed to create task. Please try again.');
+      toast.error('Failed to create task. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -577,7 +578,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                           const timeInput = document.getElementById('reminder-time');
                           
                           if (!dateInput.value || !timeInput.value) {
-                            alert('Please select both date and time');
+                            toast.error('Please select both date and time');
                             return;
                           }
                           
@@ -585,7 +586,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                           const now = new Date();
                           
                           if (reminderDateTime < now) {
-                            alert('Reminder time must be in the future');
+                            toast.error('Reminder time must be in the future');
                             return;
                           }
                           

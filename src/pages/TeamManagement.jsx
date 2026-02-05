@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import EmployeeDetailsModal from '../components/EmployeeDetailsModal';
 import EmployeeLink from '../components/ui/EmployeeLink';
@@ -38,6 +39,7 @@ import { toast } from 'react-hot-toast';
 
 const TeamManagement = () => {
   const { currentUser, currentRole } = useAuth();
+  const { confirm } = useConfirm();
   const { hasFeaturePermission, isSystemAdmin } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
@@ -170,9 +172,13 @@ const TeamManagement = () => {
 
   // Migrate all users' leave balances to new structure (sick=3, remove personal)
   const handleMigrateLeavBalances = async () => {
-    if (!window.confirm('This will set all users\' sick days to 3 and remove personal days. Continue?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Migrate leave balances',
+      message: "This will set all users' sick days to 3 and remove personal days. Continue?",
+      confirmText: 'Continue',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
     setMigratingLeave(true);
     try {
       const result = await firestoreService.migrateLeaveBalances();

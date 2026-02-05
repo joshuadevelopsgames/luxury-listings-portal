@@ -743,7 +743,7 @@ export default function FeedbackButton() {
             {view === 'menu' && (
               <div className="space-y-2">
                 <a
-                  href="/it-support"
+                  href="/feedback-support"
                   className="block mt-1 mb-3 text-center text-[12px] text-[#0071e3] hover:underline"
                 >
                   Open full Feedback & Support page →

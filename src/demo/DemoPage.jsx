@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { 
   FileCode, 
   ListChecks, 
@@ -133,8 +134,8 @@ const DemoPage = () => {
                 { id: '1', question: 'Should we maintain backward compatibility?', options: ['Yes', 'No'] },
                 { id: '2', question: 'Default return value for empty arrays?', options: ['0', 'null', 'undefined'] }
               ]}
-              onApprove={() => alert('Plan approved!')}
-              onModify={() => alert('Modifying plan...')}
+              onApprove={() => toast.success('Plan approved!')}
+              onModify={() => toast('Modifying plan...')}
             />
           </div>
         );
@@ -154,7 +155,7 @@ const DemoPage = () => {
             <ChangeTracker
               changes={sampleChanges}
               onStage={(path) => console.log('Staging:', path)}
-              onCommit={(files) => alert(`Committing ${files.length} files`)}
+              onCommit={(files) => toast.success(`Committing ${files.length} files`)}
               onDiscard={() => console.log('Discarding...')}
             />
           </div>
@@ -176,7 +177,7 @@ const DemoPage = () => {
               initialValue={sampleNewCode}
               language="javascript"
               fileName="calculations.js"
-              onSave={(value) => alert('Code saved!')}
+              onSave={(value) => toast.success('Code saved!')}
             />
           </div>
         );

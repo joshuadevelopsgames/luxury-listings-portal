@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -56,7 +57,7 @@ const ClientReports = ({ clientId, clientEmail }) => {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading report:', error);
-      alert('Failed to download report. Please try again.');
+      toast.error('Failed to download report. Please try again.');
     }
   };
 

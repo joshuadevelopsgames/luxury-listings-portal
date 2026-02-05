@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -95,7 +96,7 @@ const MetaConnectionModal = ({ isOpen, onClose, userEmail, onConnectionSuccess }
     // Save to localStorage for now (in production, this should be in your backend)
     localStorage.setItem('metaAppConfig', JSON.stringify(appConfig));
     setError(null);
-    alert('App configuration saved! You can now connect Instagram accounts.');
+    toast.success('App configuration saved! You can now connect Instagram accounts.');
   };
 
   if (!isOpen) return null;

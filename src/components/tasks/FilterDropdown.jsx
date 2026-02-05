@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Plus, Trash2, Star, Flag, Calendar, Users, Zap, Repeat, CheckCircle2 } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 const PRESET_FILTERS = [
   { id: 'preset-p1', name: 'P1 Urgent', icon: Flag, color: 'text-[#ff3b30]', criteria: { priorities: ['urgent', 'p1'] } },
@@ -13,6 +14,7 @@ const PRESET_FILTERS = [
 ];
 
 const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFilter, buttonRef }) => {
+  const { confirm } = useConfirm();
   const [customFilters, setCustomFilters] = useState([]);
   const [maxHeight, setMaxHeight] = useState('none');
   const [dropUp, setDropUp] = useState(false);
@@ -87,7 +89,8 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
 
   const handleDeleteFilter = async (filterId, e) => {
     e.stopPropagation();
-    if (!window.confirm('Delete this filter?')) return;
+    const confirmed = await confirm({ title: 'Delete filter', message: 'Delete this filter?', confirmText: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       await firestoreService.deleteSmartFilter(filterId);

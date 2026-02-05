@@ -9,6 +9,7 @@ import { ConfirmProvider } from './contexts/ConfirmContext';
 import { Toaster } from 'react-hot-toast';
 import { setNavigate } from './utils/navigation';
 import MobileInstallPrompt from './components/MobileInstallPrompt';
+import NewVersionNotifier from './components/NewVersionNotifier';
 
 // Admin utilities - expose to console for easy access
 import { importClients } from './utils/importClientsFromSheet';
@@ -39,6 +40,7 @@ import HRCalendar from './pages/HRCalendar';
 import HRAnalytics from './pages/HRAnalytics';
 import ClientHealthPage from './pages/ClientHealthPage';
 import ITSupportPage from './pages/ITSupportPage';
+import FeedbackSupportPage from './pages/FeedbackSupportPage';
 import TutorialsPage from './pages/TutorialsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import FeaturesPage from './pages/FeaturesPage';
@@ -253,6 +255,7 @@ const router = createBrowserRouter([
           { path: 'my-time-off', element: <MyTimeOff /> },
           { path: 'self-service', element: <EmployeeSelfService /> },
           { path: 'team-directory', element: <TeamDirectoryPage /> },
+          { path: 'feedback-support', element: <FeedbackSupportPage /> },
           { path: 'onboarding', element: <OnboardingPage /> },
           { path: 'content-manager-message', element: <ContentManagerMessage /> },
           { path: 'admin-message', element: <AdminMessage /> },
@@ -291,6 +294,7 @@ function App() {
               <ConfirmProvider>
                 <RouterProvider router={router} />
                 <MobileInstallPrompt />
+                <NewVersionNotifier />
                 <Toaster
                   position="top-right"
                   toastOptions={{

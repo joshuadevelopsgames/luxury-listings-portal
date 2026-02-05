@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Wrench,
@@ -28,6 +29,7 @@ import { toast } from 'react-hot-toast';
 
 const ITSupportPage = () => {
   const { currentUser, currentRole } = useAuth();
+  const navigate = useNavigate();
   const { confirm } = useConfirm();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [myTickets, setMyTickets] = useState([]);
@@ -87,6 +89,13 @@ const ITSupportPage = () => {
 
   // IT Support can see all tickets - admin or if email is jrsschroeder@gmail.com
   const isITSupport = currentRole === 'admin' || currentUser?.email === 'jrsschroeder@gmail.com';
+
+  // Non-admins: redirect to the dedicated feedback/support page (no nav entry)
+  useEffect(() => {
+    if (currentUser && !isITSupport) {
+      navigate('/feedback-support', { replace: true });
+    }
+  }, [currentUser, isITSupport, navigate]);
 
   // Load user's chats when they open the Chat card (non-admin)
   useEffect(() => {
@@ -781,31 +790,35 @@ const ITSupportPage = () => {
     }
   };
 
+  // Non-admins are redirected to /feedback-support; avoid flashing this page
+  if (currentUser && !isITSupport) {
+    return null;
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
-            {isITSupport ? 'IT Support Dashboard' : 'Feedback and Technical Support'}
+            IT Support Dashboard
           </h1>
           <p className="text-[15px] text-[#86868b] mt-1">
-            {isITSupport ? 'Manage support tickets and help team members' : 'Submit a bug report, feature request, or chat with the developer'}
+            Manage support tickets and help team members
           </p>
         </div>
-        {!isITSupport && (
-          <button 
-            onClick={() => setShowRequestModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Support Ticket</span>
-          </button>
-        )}
+        <button 
+          onClick={() => setShowRequestModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Support Ticket</span>
+        </button>
       </div>
 
-      {/* Feedback & Support: Bug / Feature / Chat (non-admin only) */}
-      {!isITSupport && (
+      {/* Removed: Feedback & Support (bug/feature/chat) for non-admin — now on /feedback-support */}
+
+      {false && (
         <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
           <div className="p-5">
             <p className="text-[13px] text-[#86868b] mb-4">Choose how you’d like to reach out:</p>

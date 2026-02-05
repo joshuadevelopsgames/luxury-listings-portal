@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { signInWithPopup, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
@@ -150,13 +151,13 @@ export function AuthProvider({ children }) {
     if (!isSystemAdmin(currentUser.email)) {
       const assignedRoles = currentUser.roles || [currentUser.primaryRole || currentUser.role] || ['content_director'];
       if (!assignedRoles.includes(newRole)) {
-        alert('You are not authorized to switch to this role.');
+        toast.error('You are not authorized to switch to this role.');
         return;
       }
     }
     
     if (!Object.values(USER_ROLES).includes(newRole)) {
-      alert(`Invalid role: ${newRole}`);
+      toast.error(`Invalid role: ${newRole}`);
       return;
     }
 
@@ -322,20 +323,10 @@ export function AuthProvider({ children }) {
         setUserData(mergedUser);
         saveAuthToStorage(mergedUser);
         
-        // Sync Gmail profile photo (and name) to approved_users so team directory shows it
-        if (photoURL || displayName) {
-          const profileUpdates = {};
-          if (photoURL) profileUpdates.avatar = photoURL;
-          if (displayName) {
-            profileUpdates.displayName = displayName;
-            const parts = displayName.trim().split(/\s+/);
-            if (parts.length > 0) profileUpdates.firstName = parts[0];
-            if (parts.length > 1) profileUpdates.lastName = parts.slice(1).join(' ');
-          }
-          if (Object.keys(profileUpdates).length > 0) {
-            const docId = approvedUser.id || email;
-            firestoreService.updateApprovedUser(docId, profileUpdates).catch(() => {});
-          }
+        // Sync Gmail profile photo only to approved_users (name stays from personal info / Firestore)
+        if (photoURL) {
+          const docId = approvedUser.id || email;
+          firestoreService.updateApprovedUser(docId, { avatar: photoURL }).catch(() => {});
         }
         
         // Navigate based on status (only redirect to onboarding after they're past login)

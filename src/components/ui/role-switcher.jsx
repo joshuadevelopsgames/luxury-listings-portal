@@ -104,7 +104,7 @@ const RoleSwitcher = () => {
       setIsOpen(false);
     } else {
       console.log('❌ User does not have this role');
-      alert('You do not have permission to switch to this role.');
+      toast.error('You do not have permission to switch to this role.');
     }
   };
 

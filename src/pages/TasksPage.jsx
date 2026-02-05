@@ -197,6 +197,7 @@ const TasksPage = () => {
   });
   const [submittingProjectRequest, setSubmittingProjectRequest] = useState(false);
   const [processingRequestId, setProcessingRequestId] = useState(null);
+  const [declineRequestModal, setDeclineRequestModal] = useState({ open: false, request: null, reason: '' });
   const [availableUsers, setAvailableUsers] = useState([]);
   const [showProductivityStats, setShowProductivityStats] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
@@ -973,19 +974,14 @@ const TasksPage = () => {
     }
   };
 
-  // Reject task request
-  const handleRejectRequest = async (request) => {
-    if (processingRequestId) return; // Prevent double-clicks
-    
-    const reason = prompt('Why are you declining this task? (Optional)');
-    
+  // Reject task request (reason from decline modal)
+  const handleRejectRequest = async (request, reason = '') => {
+    if (processingRequestId) return;
     try {
       setProcessingRequestId(request.id);
+      setDeclineRequestModal(prev => ({ ...prev, open: false, request: null }));
       await firestoreService.rejectTaskRequest(request.id, request, reason || '');
-      
-      // Remove from local state immediately
       setTaskRequests(prev => prev.filter(r => r.id !== request.id));
-      
       toast.success('Task request declined.');
     } catch (error) {
       console.error('❌ Error rejecting task request:', error);
@@ -1754,7 +1750,7 @@ const TasksPage = () => {
                             )}
                           </button>
                           <button
-                            onClick={() => handleRejectRequest(request)}
+                            onClick={() => setDeclineRequestModal({ open: true, request, reason: '' })}
                             disabled={processingRequestId === request.id}
                             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -1767,6 +1763,33 @@ const TasksPage = () => {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Decline task request reason modal */}
+      {declineRequestModal.open && declineRequestModal.request && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Decline task request</h3>
+              <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+                <X className="w-5 h-5 text-[#86868b]" />
+              </button>
+            </div>
+            <p className="text-[13px] text-[#86868b] dark:text-gray-400 mb-3">Why are you declining this task? (Optional)</p>
+            <textarea
+              value={declineRequestModal.reason}
+              onChange={(e) => setDeclineRequestModal(prev => ({ ...prev, reason: e.target.value }))}
+              placeholder="Reason for declining..."
+              className="w-full px-3 py-2 border border-black/10 dark:border-white/10 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+              autoFocus
+            />
+            <div className="flex gap-2 mt-4">
+              <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15">Cancel</button>
+              <button type="button" onClick={() => handleRejectRequest(declineRequestModal.request, declineRequestModal.reason)} className="flex-1 px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e5342b]">Decline</button>
             </div>
           </div>
         </div>,

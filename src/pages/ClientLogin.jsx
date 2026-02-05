@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { Mail, Lock, Shield, Calendar, MessageSquare, BarChart3, FileText } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { auth } from '../firebase';
@@ -395,7 +396,7 @@ const ClientLogin = () => {
                       const result = await createTestClient();
                       if (result) {
                         setError('');
-                        alert('Test client created! You can now sign up with joshua@luxury-listings.com');
+                        toast.success('Test client created! You can now sign up with joshua@luxury-listings.com');
                       }
                     } catch (error) {
                       console.error('Error creating test client:', error);

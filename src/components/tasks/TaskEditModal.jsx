@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { toast } from 'react-hot-toast';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { 
@@ -20,9 +21,11 @@ import {
 } from 'lucide-react';
 import { DailyTask } from '../../entities/DailyTask';
 import { useAuth } from '../../contexts/AuthContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], onNavigate }) => {
   const { currentUser } = useAuth();
+  const { confirm } = useConfirm();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [editForm, setEditForm] = useState({
     title: '',
@@ -112,10 +115,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     });
   };
 
-  const handleDelete = () => {
-    if (window.confirm(`Delete "${task.title}"?`)) {
-      onDelete(task);
-    }
+  const handleDelete = async () => {
+    const confirmed = await confirm({ title: 'Delete task', message: `Delete "${task.title}"?`, confirmText: 'Delete', variant: 'danger' });
+    if (confirmed) onDelete(task);
   };
 
   const handleAddSubtask = async () => {
@@ -301,7 +303,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   // Duplicate task
   const duplicateTask = async () => {
     if (!currentUser?.email) {
-      alert('You must be logged in to duplicate tasks');
+      toast.error('You must be logged in to duplicate tasks');
       return;
     }
 
@@ -328,11 +330,11 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
       console.log('Duplicating task with data:', duplicatedTask);
       const newTask = await DailyTask.create(duplicatedTask);
       console.log('✅ Task duplicated successfully:', newTask);
-      alert('Task duplicated successfully!');
+      toast.success('Task duplicated successfully!');
       setShowMoreMenu(false);
     } catch (error) {
       console.error('❌ Error duplicating task:', error);
-      alert(`Failed to duplicate task: ${error.message}`);
+      toast.error(`Failed to duplicate task: ${error.message}`);
     }
   };
 
@@ -436,7 +438,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       e.stopPropagation();
                       const taskText = `${editForm.title}\n${editForm.description}\nPriority: ${editForm.priority}\nDue: ${editForm.dueDate || 'No date'}`;
                       navigator.clipboard.writeText(taskText);
-                      alert('Task details copied to clipboard!');
+                      toast.success('Task details copied to clipboard!');
                       setShowMoreMenu(false);
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left text-gray-900"
@@ -919,7 +921,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                           const timeInput = document.getElementById('reminder-time-edit');
                           
                           if (!dateInput.value || !timeInput.value) {
-                            alert('Please select both date and time');
+                            toast.error('Please select both date and time');
                             return;
                           }
                           
@@ -927,7 +929,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                           const now = new Date();
                           
                           if (reminderDateTime < now) {
-                            alert('Reminder time must be in the future');
+                            toast.error('Reminder time must be in the future');
                             return;
                           }
                           

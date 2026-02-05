@@ -191,8 +191,8 @@ export const modules = {
 
   'it-support': {
     id: 'it-support',
-    name: 'Feedback & Support',
-    description: 'Submit and track support tickets',
+    name: 'IT Support',
+    description: 'Manage support tickets and help team members',
     icon: Wrench,
     routes: ['/it-support'],
     widgets: [],

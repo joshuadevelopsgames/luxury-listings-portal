@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom';
 import { X, Plus, Filter, Save, Trash2, Star } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
+  const { confirm } = useConfirm();
   const [filters, setFilters] = useState([]);
   const [creating, setCreating] = useState(false);
   const [editingFilter, setEditingFilter] = useState(null);
@@ -62,7 +64,8 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
   };
 
   const handleDeleteFilter = async (filterId) => {
-    if (!window.confirm('Delete this filter?')) return;
+    const confirmed = await confirm({ title: 'Delete filter', message: 'Delete this filter?', confirmText: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       await firestoreService.deleteSmartFilter(filterId);

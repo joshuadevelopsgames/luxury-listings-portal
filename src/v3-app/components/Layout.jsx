@@ -213,7 +213,7 @@ const V3Layout = () => {
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
     'client-health': { name: 'Client Health', icon: Activity, path: '/client-health' },
     'permissions': { name: 'Users & Permissions', icon: Settings, path: '/permissions' },
-    'it-support': { name: 'Feedback & Support', icon: Wrench, path: '/it-support' },
+    'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
     'features': { name: 'Add-ons', icon: Sparkles, path: '/features' },

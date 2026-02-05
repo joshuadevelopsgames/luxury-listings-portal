@@ -98,7 +98,8 @@ const resources = [
     description: "Submit a bug report, feature request, or chat with the developer",
     type: "internal",
     category: "support",
-    internalPath: "/it-support",
+    internalPath: "/feedback-support",
+    buttonLabel: "Open feedback and technical support page",
     important: true
   },
   {
@@ -116,7 +117,7 @@ const resources = [
     description: "Welcome videos from leadership and overview of company culture",
     type: "video",
     category: "training",
-    url: "https://example.com/videos"
+    comingSoon: true
   },
   {
     id: 5,
@@ -126,14 +127,6 @@ const resources = [
     category: "benefits",
     comingSoon: true,
     important: true
-  },
-  {
-    id: 6,
-    title: "Emergency Contacts",
-    description: "Important phone numbers for emergencies and urgent situations",
-    type: "emergency",
-    category: "safety",
-    phone: "+1 (555) 123-4567"
   }
 ];
 
@@ -143,7 +136,6 @@ const typeIcons = {
   link: Globe,
   video: Video,
   directory: Users,
-  emergency: Phone,
   message: MessageSquare,
   analytics: BarChart3
 };
@@ -155,7 +147,6 @@ const categoryColors = {
   contacts: "bg-[#af52de]/10 text-[#af52de]",
   training: "bg-[#ff9500]/10 text-[#ff9500]",
   benefits: "bg-[#ff9500]/10 text-[#ff9500]",
-  safety: "bg-[#ff3b30]/10 text-[#ff3b30]",
   hr: "bg-[#5856d6]/10 text-[#5856d6]"
 };
 
@@ -319,8 +310,8 @@ export default function ResourcesPage() {
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-[12px] text-white/70">Technical Support</p>
-                    <a href="tel:+17783862548" className="text-[14px] font-medium hover:underline block">7783862548</a>
+                    <p className="text-[12px] text-white/70">Urgent Technical Support #</p>
+                    <a href="tel:+17783862548" className="text-[14px] font-medium hover:underline block">+1 (778) 386-2548</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -398,7 +389,7 @@ function ResourceCard({ resource, navigate, currentRole, isSystemAdmin }) {
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
           >
             <ArrowRight className="w-4 h-4" />
-            Open {resource.title}
+            {resource.buttonLabel || `Open ${resource.title}`}
           </button>
         )}
         

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { toast } from 'react-hot-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -267,11 +268,11 @@ Joshua@luxury-listings.com`);
       setApprovalNotes('');
       
       // Show success message
-      alert(`Client ${selectedClient.clientName} has been ${approved ? 'approved' : 'rejected'}!`);
+      toast.success(`Client ${selectedClient.clientName} has been ${approved ? 'approved' : 'rejected'}!`);
       
     } catch (error) {
       console.error('Error updating approval status:', error);
-      alert('Error updating approval status. Please try again.');
+      toast.error('Error updating approval status. Please try again.');
     } finally {
       setApprovalLoading({ ...approvalLoading, [selectedClient.id]: false });
     }
@@ -289,11 +290,11 @@ Joshua@luxury-listings.com`);
       // Remove from active clients (in real app, this would move to Archived Clients sheet)
       setClients(prevClients => prevClients.filter(c => c.id !== client.id));
       
-      alert(`Package for ${client.clientName} has been archived!`);
+      toast.success(`Package for ${client.clientName} has been archived!`);
       
     } catch (error) {
       console.error('Error archiving package:', error);
-      alert('Error archiving package. Please try again.');
+      toast.error('Error archiving package. Please try again.');
     } finally {
       setApprovalLoading({ ...approvalLoading, [client.id]: false });
     }
@@ -321,7 +322,7 @@ Joshua@luxury-listings.com`);
     try {
       // Validate form data
       if (editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize) {
-        alert('Posts Used + Posts Remaining must equal Package Size');
+        toast.error('Posts Used + Posts Remaining must equal Package Size');
         return;
       }
       
@@ -354,11 +355,11 @@ Joshua@luxury-listings.com`);
       setEditForm({});
       
       // Show success message
-      alert(`Package for ${editingClient.clientName} has been updated successfully!`);
+      toast.success(`Package for ${editingClient.clientName} has been updated successfully!`);
       
     } catch (error) {
       console.error('Error updating package:', error);
-      alert('Error updating package. Please try again.');
+      toast.error('Error updating package. Please try again.');
     } finally {
       setApprovalLoading({ ...approvalLoading, [editingClient.id]: false });
     }

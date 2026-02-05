@@ -36,11 +36,9 @@ export const createTestClient = async () => {
     // Create new client
     const result = await firestoreService.addClient(testClient);
     console.log('✅ Test client created successfully:', result);
-    alert('Test client created! You can now log in at /client-login');
     return result;
   } catch (error) {
     console.error('❌ Error creating test client:', error);
-    alert('Error creating test client: ' + error.message);
     throw error;
   }
 };
