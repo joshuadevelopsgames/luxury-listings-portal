@@ -45,7 +45,7 @@ const resources = [
   },
   {
     id: 101,
-    title: "Add ons",
+    title: "Add-ons",
     description: "Potential add-ons we can quote for your portal — Sales & CRM and more",
     type: "internal",
     category: "training",
@@ -102,11 +102,12 @@ const resources = [
   },
   {
     id: 3,
-    title: "Team Directory", 
+    title: "Team Directory",
     description: "Contact information for all team members",
     type: "directory",
     category: "contacts",
-    url: "https://example.com/directory"
+    internalPath: "/team-directory",
+    important: true
   },
   {
     id: 4,

@@ -63,6 +63,7 @@ import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
 import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
 import NotificationsPage from './pages/NotificationsPage';
 import WorkloadPage from './pages/WorkloadPage';
+import TeamDirectoryPage from './pages/TeamDirectoryPage';
 import SlackCallback from './pages/SlackCallback';
 import GraphicProjectTracker from './pages/GraphicProjectTracker';
 
@@ -242,7 +243,7 @@ const router = createBrowserRouter([
           { path: 'it-support', element: <PermissionRoute pageId="it-support" pageName="IT Support"><ITSupportPage /></PermissionRoute> },
           { path: 'tutorials', element: <PermissionRoute pageId="tutorials" pageName="Tutorials"><TutorialsPage /></PermissionRoute> },
           { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
-          { path: 'features', element: <PermissionRoute pageId="features" pageName="Add ons"><FeaturesPage /></PermissionRoute> },
+          { path: 'features', element: <PermissionRoute pageId="features" pageName="Add-ons"><FeaturesPage /></PermissionRoute> },
           { path: 'workload', element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
 
@@ -251,6 +252,7 @@ const router = createBrowserRouter([
           // Profile pages - always accessible when logged in
           { path: 'my-time-off', element: <MyTimeOff /> },
           { path: 'self-service', element: <EmployeeSelfService /> },
+          { path: 'team-directory', element: <TeamDirectoryPage /> },
           { path: 'onboarding', element: <OnboardingPage /> },
           { path: 'content-manager-message', element: <ContentManagerMessage /> },
           { path: 'admin-message', element: <AdminMessage /> },
