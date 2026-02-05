@@ -229,101 +229,101 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
         ) : !employee ? (
           <div className="p-8 text-center text-[#86868b]">Could not load employee.</div>
         ) : isEditMode ? (
-          <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
             <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
               <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
-                  <Users className="w-4 h-4 text-white" strokeWidth={1.5} />
+                  <Edit className="w-4 h-4 text-white" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Personal Information</h3>
-              </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">First Name</label>
-                  <input type="text" value={editProfileForm.firstName} onChange={(e) => setEditProfileForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="First name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Last Name</label>
-                  <input type="text" value={editProfileForm.lastName} onChange={(e) => setEditProfileForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Email</label>
-                  <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-[#86868b]">{employee.email}</div>
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Phone</label>
-                  <input type="tel" value={editProfileForm.phone} onChange={(e) => setEditProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Address / Location</label>
-                  <input type="text" value={editProfileForm.location} onChange={(e) => setEditProfileForm((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. Los Angeles, CA" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Department</label>
-                  <select value={editProfileForm.department} onChange={(e) => setEditProfileForm((p) => ({ ...p, department: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]">
-                    <option value="">Select department...</option>
-                    {DEPARTMENTS.map((d) => (<option key={d} value={d}>{d}</option>))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Position</label>
-                  <input type="text" value={editProfileForm.position} onChange={(e) => setEditProfileForm((p) => ({ ...p, position: e.target.value }))} placeholder="e.g. social_media_manager" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Employee ID</label>
-                  <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-[#86868b]">{employee.employeeId || 'Not assigned'}</div>
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Manager</label>
-                  <input type="text" value={editProfileForm.manager} onChange={(e) => setEditProfileForm((p) => ({ ...p, manager: e.target.value }))} placeholder="Manager name or email" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Start Date</label>
-                  <input type="date" value={editProfileForm.startDate} onChange={(e) => setEditProfileForm((p) => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                </div>
-              </div>
-            </div>
-            <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-              <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5ac8fa] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
-                  <Calendar className="w-4 h-4 text-white" strokeWidth={1.5} />
-                </div>
-                <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Leave Balance</h3>
+                <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Edit Employee</h3>
               </div>
               <div className="p-6 space-y-6">
-                <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
-                    <h4 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Vacation</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">First Name</label>
+                    <input type="text" value={editProfileForm.firstName} onChange={(e) => setEditProfileForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="First name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
-                      <input type="number" min="0" value={editLeaveForm.vacation.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
-                      <input type="number" min="0" value={editLeaveForm.vacation.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                    </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Last Name</label>
+                    <input type="text" value={editProfileForm.lastName} onChange={(e) => setEditProfileForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.vacation.total - editLeaveForm.vacation.used} days</p>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Email</label>
+                    <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-[#86868b]">{employee.email}</div>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Phone</label>
+                    <input type="tel" value={editProfileForm.phone} onChange={(e) => setEditProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Address / Location</label>
+                    <input type="text" value={editProfileForm.location} onChange={(e) => setEditProfileForm((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. Los Angeles, CA" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Department</label>
+                    <select value={editProfileForm.department} onChange={(e) => setEditProfileForm((p) => ({ ...p, department: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]">
+                      <option value="">Select department...</option>
+                      {DEPARTMENTS.map((d) => (<option key={d} value={d}>{d}</option>))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Position</label>
+                    <input type="text" value={editProfileForm.position} onChange={(e) => setEditProfileForm((p) => ({ ...p, position: e.target.value }))} placeholder="e.g. social_media_manager" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Employee ID</label>
+                    <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-[#86868b]">{employee.employeeId || 'Not assigned'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Manager</label>
+                    <input type="text" value={editProfileForm.manager} onChange={(e) => setEditProfileForm((p) => ({ ...p, manager: e.target.value }))} placeholder="Manager name or email" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Start Date</label>
+                    <input type="date" value={editProfileForm.startDate} onChange={(e) => setEditProfileForm((p) => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  </div>
                 </div>
-                <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-[#ff3b30]" />
-                    <h4 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Sick</h4>
+                <div className="border-t border-black/5 dark:border-white/10 pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Calendar className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Leave Balance</h4>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
-                      <input type="number" min="0" value={editLeaveForm.sick.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
+                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Vacation</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
+                          <input type="number" min="0" value={editLeaveForm.vacation.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <input type="number" min="0" value={editLeaveForm.vacation.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.vacation.total - editLeaveForm.vacation.used} days</p>
                     </div>
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
-                      <input type="number" min="0" value={editLeaveForm.sick.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 rounded-full bg-[#ff3b30]" />
+                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Sick</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
+                          <input type="number" min="0" value={editLeaveForm.sick.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <input type="number" min="0" value={editLeaveForm.sick.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days</p>
                     </div>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days</p>
                 </div>
               </div>
             </div>
