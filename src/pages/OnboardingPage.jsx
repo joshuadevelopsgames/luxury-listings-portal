@@ -449,11 +449,6 @@ const OnboardingPage = () => {
               </div>
             </div>
 
-            <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mt-4">
-              <p className="text-sm text-blue-900">
-                <strong>💡 Tip:</strong> You can update this information anytime from your profile page.
-              </p>
-            </div>
           </div>
         </div>
       )
