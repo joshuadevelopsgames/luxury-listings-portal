@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
+const DEPARTMENTS = ['Executive', 'Content Team', 'Design Team', 'Sales', 'Marketing', 'Operations', 'HR', 'IT', 'Finance', 'General'];
+
 /**
  * PersonCard - Reusable component for displaying employee information
  * Apple-style design with glass morphism and smooth animations
@@ -207,7 +209,30 @@ const PersonCard = ({
           {renderField("Email", Mail, "email", "email", displayPerson.email)}
           {renderField("Phone", Phone, "phone", "tel", displayPerson.phone)}
           {renderField("Address", MapPin, "address", "text", displayPerson.address, !compact)}
-          {renderField("Department", Building, "department", "text", displayPerson.department)}
+          {/* Department as dropdown when editing */}
+          <div key="department">
+            <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
+              <Building className="w-3.5 h-3.5" strokeWidth={1.5} />
+              <span>Department</span>
+            </label>
+            {canEditField('department') ? (
+              <select
+                value={editedData.department ?? displayPerson.department ?? ''}
+                onChange={(e) => handleFieldChange('department', e.target.value)}
+                className="w-full px-4 py-2.5 bg-white/60 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] transition-all"
+              >
+                <option value="">Select department...</option>
+                {DEPARTMENTS.map((d) => (<option key={d} value={d}>{d}</option>))}
+              </select>
+            ) : (
+              <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
+                <p className="text-[15px] text-[#1d1d1f] dark:text-white">{displayPerson.department || 'Not provided'}</p>
+                {!isHRView && isEditing && (
+                  <p className="text-[11px] text-[#86868b] mt-1">Contact HR to change</p>
+                )}
+              </div>
+            )}
+          </div>
           {renderField("Position", Briefcase, "position", "text", displayPerson.position)}
           
           {/* Employee ID - Read only */}

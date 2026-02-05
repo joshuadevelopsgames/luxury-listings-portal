@@ -118,6 +118,7 @@ const MyClientsPage = () => {
   };
 
   // Fetch AI health prediction for a client (with caching)
+  // Enhanced to pull Instagram report history for trend analysis
   const fetchAiHealthPrediction = useCallback(async (client) => {
     const clientId = client.id;
 
@@ -164,10 +165,38 @@ const MyClientsPage = () => {
         notes: client.notes || ''
       };
 
-      const prediction = await openaiService.predictClientHealth(clientData);
+      // Fetch Instagram report history for trend analysis (last 6 months)
+      let reportHistory = null;
+      try {
+        const reports = await firestoreService.getClientInstagramReportHistory(clientId, 6);
+        if (reports && reports.length > 0) {
+          // Prepare report data for AI (only send essential metrics to reduce payload)
+          reportHistory = reports.map(report => ({
+            dateRange: report.dateRange || `${report.startDate} - ${report.endDate}`,
+            startDate: report.startDate,
+            metrics: {
+              followers: report.metrics?.followers,
+              views: report.metrics?.views,
+              interactions: report.metrics?.interactions,
+              accountsReached: report.metrics?.accountsReached,
+              likes: report.metrics?.likes,
+              shares: report.metrics?.shares,
+              comments: report.metrics?.comments
+            }
+          }));
+          console.log(`📊 Fetched ${reportHistory.length} reports for health analysis`);
+        }
+      } catch (reportError) {
+        console.warn('Could not fetch report history for health analysis:', reportError);
+        // Continue without report history - AI will still work with client data
+      }
+
+      const prediction = await openaiService.predictClientHealth(clientData, reportHistory);
 
       const result = {
         ...prediction,
+        hasReportData: !!reportHistory && reportHistory.length > 0,
+        reportCount: reportHistory?.length || 0,
         timestamp: Date.now()
       };
 

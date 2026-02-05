@@ -555,6 +555,11 @@ Return ONLY the JSON object, no markdown or explanation.`;
    * Predict client health/churn risk based on multiple factors.
    * Uses Cloud Function (OpenRouter/OpenAI).
    *
+   * Enhanced to analyze Instagram report trends for better churn prediction:
+   * - Follower growth/loss
+   * - Engagement trends (views, interactions)
+   * - Deliverable completion rates
+   *
    * @param {Object} clientData - Client data object with health indicators
    * @param {string} clientData.clientName - Client name
    * @param {number} clientData.postsRemaining - Posts remaining in package
@@ -566,9 +571,10 @@ Return ONLY the JSON object, no markdown or explanation.`;
    * @param {number} clientData.daysUntilRenewal - Days until contract renewal
    * @param {string} clientData.lastPostDate - Date of last post
    * @param {string} clientData.notes - Any notes about the client
+   * @param {Array} reportHistory - Optional array of Instagram reports for trend analysis
    * @returns {Promise<{status: string, churnRisk: number, reason: string, action: string}>}
    */
-  async predictClientHealth(clientData) {
+  async predictClientHealth(clientData, reportHistory = null) {
     if (!functions) {
       throw new Error('Firebase Functions not initialized');
     }
@@ -578,10 +584,11 @@ Return ONLY the JSON object, no markdown or explanation.`;
     }
 
     const clientName = clientData.clientName || 'Unknown';
-    console.log(`🔍 Predicting health for client: ${clientName}`);
+    const reportCount = reportHistory?.length || 0;
+    console.log(`🔍 Predicting health for client: ${clientName} (${reportCount} reports for trend analysis)`);
 
     const predictHealthFn = httpsCallable(functions, 'predictClientHealth');
-    const result = await predictHealthFn({ clientData });
+    const result = await predictHealthFn({ clientData, reportHistory });
 
     if (result.data?.success) {
       console.log(`✅ Health predicted: ${result.data.status} (${result.data.churnRisk}% risk)`);

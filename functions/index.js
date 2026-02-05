@@ -639,6 +639,7 @@ Do not include # symbols in the hashtags array. Do not include any markdown or e
 
 /**
  * Predict client health/churn risk based on multiple factors.
+ * Enhanced to analyze Instagram report trends (follower growth, engagement, deliverables).
  * Returns status (good/warning/critical), risk score, reason, and recommended action.
  */
 exports.predictClientHealth = onCall({
@@ -662,7 +663,7 @@ exports.predictClientHealth = onCall({
     );
   }
 
-  const { clientData } = request.data || {};
+  const { clientData, reportHistory } = request.data || {};
   if (!clientData || typeof clientData !== 'object') {
     throw new HttpsError('invalid-argument', 'clientData object is required');
   }
@@ -674,12 +675,82 @@ exports.predictClientHealth = onCall({
   }
 
   const clientName = clientData.clientName || 'Unknown';
-  console.log(`🔍 Predicting health for client: ${clientName}`);
+  console.log(`🔍 Predicting health for client: ${clientName} (${reportHistory?.length || 0} reports)`);
 
-  const systemPrompt = `You are a client success analyst for a luxury real estate social media agency. Analyze client health data to predict churn risk and recommend actions. Be concise and actionable.`;
+  // Build report trend analysis section if we have report history
+  let reportTrendSection = '';
+  if (reportHistory && Array.isArray(reportHistory) && reportHistory.length > 0) {
+    // Extract key metrics from each report
+    const reportSummaries = reportHistory.slice(0, 6).map((report, idx) => {
+      const metrics = report.metrics || {};
+      return `Report ${idx + 1} (${report.dateRange || report.startDate || 'unknown date'}):
+  - Followers: ${metrics.followers ?? 'N/A'}
+  - Views: ${metrics.views ?? 'N/A'}
+  - Interactions: ${metrics.interactions ?? 'N/A'}
+  - Accounts Reached: ${metrics.accountsReached ?? 'N/A'}
+  - Likes: ${metrics.likes ?? 'N/A'}
+  - Shares: ${metrics.shares ?? 'N/A'}`;
+    }).join('\n');
+
+    // Calculate trends if we have at least 2 reports
+    let trendAnalysis = '';
+    if (reportHistory.length >= 2) {
+      const latest = reportHistory[0]?.metrics || {};
+      const oldest = reportHistory[reportHistory.length - 1]?.metrics || {};
+
+      if (latest.followers && oldest.followers) {
+        const followerGrowth = ((latest.followers - oldest.followers) / oldest.followers * 100).toFixed(1);
+        trendAnalysis += `\nFollower Growth (${reportHistory.length} months): ${followerGrowth}% (${oldest.followers} → ${latest.followers})`;
+        if (parseFloat(followerGrowth) < 0) {
+          trendAnalysis += ' ⚠️ LOSING FOLLOWERS';
+        } else if (parseFloat(followerGrowth) < 2 * reportHistory.length) {
+          trendAnalysis += ' ⚠️ STAGNANT GROWTH (<2%/month)';
+        }
+      }
+
+      if (latest.interactions && oldest.interactions) {
+        const interactionChange = ((latest.interactions - oldest.interactions) / oldest.interactions * 100).toFixed(1);
+        trendAnalysis += `\nInteraction Trend: ${interactionChange}% change`;
+        if (parseFloat(interactionChange) < -20) {
+          trendAnalysis += ' ⚠️ SIGNIFICANT ENGAGEMENT DECLINE';
+        }
+      }
+
+      if (latest.views && oldest.views) {
+        const viewsChange = ((latest.views - oldest.views) / oldest.views * 100).toFixed(1);
+        trendAnalysis += `\nViews Trend: ${viewsChange}% change`;
+        if (parseFloat(viewsChange) < -20) {
+          trendAnalysis += ' ⚠️ VIEWS DECLINING';
+        }
+      }
+    }
+
+    reportTrendSection = `
+
+=== INSTAGRAM PERFORMANCE DATA (Last ${reportHistory.length} reports) ===
+${reportSummaries}
+${trendAnalysis}
+
+CRITICAL CHURN SIGNALS TO WATCH:
+- Losing followers month-over-month = VERY HIGH RISK
+- Follower growth <2%/month for 3+ months = HIGH RISK (stagnation)
+- Engagement (interactions/views) declining >20% = HIGH RISK
+- Accounts reached declining = WARNING`;
+  }
+
+  const systemPrompt = `You are a client success analyst for a luxury real estate social media agency. Analyze client health data and Instagram performance trends to predict churn risk.
+
+CRITICAL: Clients leave primarily because:
+1. Their page isn't growing (especially losing followers or <2% growth over months)
+2. Engagement is declining (fewer interactions, views, reach)
+3. Deliverables aren't being met (posts scheduled vs delivered)
+4. Content feels repetitive (hard to measure, but declining engagement can indicate this)
+
+Weight Instagram performance trends HEAVILY in your analysis. A client with good package utilization but declining followers is still at HIGH risk.`;
 
   const userPrompt = `Analyze this client's health and predict churn risk:
 
+=== CLIENT DATA ===
 Client: ${clientName}
 Posts remaining: ${clientData.postsRemaining ?? 'unknown'} of ${clientData.packageSize ?? 'unknown'}
 Posts used: ${clientData.postsUsed ?? 'unknown'}
@@ -689,9 +760,9 @@ Days since last contact: ${clientData.daysSinceContact ?? 'unknown'}
 Contract renewal in days: ${clientData.daysUntilRenewal ?? 'unknown'}
 Account created: ${clientData.createdAt || 'unknown'}
 Last post date: ${clientData.lastPostDate || 'unknown'}
-Client notes: ${clientData.notes || 'none'}
+Client notes: ${clientData.notes || 'none'}${reportTrendSection}
 
-Based on this data, provide a health assessment.
+Based on ALL this data (especially Instagram trends if available), provide a health assessment.
 
 Return ONLY valid JSON:
 {
@@ -702,10 +773,11 @@ Return ONLY valid JSON:
 }
 
 Guidelines:
-- "critical" = high churn risk, needs immediate attention
-- "warning" = some concerns, should monitor closely
-- "good" = healthy relationship, on track
-- Consider: posts remaining, payment status, engagement recency, contract timeline`;
+- "critical" = high churn risk (losing followers, major engagement drop, or overdue payment)
+- "warning" = concerning trends (stagnant growth, declining engagement, low posts)
+- "good" = healthy (growing followers, stable/growing engagement, on track with deliverables)
+- LOSING FOLLOWERS = automatic critical status
+- <2% follower growth over 3+ months = at least warning status`;
 
   const body = {
     messages: [

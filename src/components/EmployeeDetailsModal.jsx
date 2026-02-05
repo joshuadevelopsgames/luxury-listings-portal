@@ -343,7 +343,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                 startDate: employee.startDate,
                 employeeId: employee.employeeId
               }}
-              editable={canEdit}
+              editable={false}
               isHRView={canEdit}
               onSave={async (updatedData) => {
                 try {
