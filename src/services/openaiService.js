@@ -500,6 +500,22 @@ Return ONLY the JSON object, no markdown or explanation.`;
       reader.readAsDataURL(blob);
     });
   }
+
+  /**
+   * Generate a short client-facing analytics summary from extracted Instagram metrics.
+   * Uses Cloud Function (OpenRouter/OpenAI). Returns summary text for report notes.
+   */
+  async generateReportSummary(metrics, { dateRange = '', clientName = '' } = {}) {
+    if (!functions) {
+      throw new Error('Firebase Functions not initialized');
+    }
+    const generateSummary = httpsCallable(functions, 'generateReportSummary');
+    const result = await generateSummary({ metrics, dateRange, clientName });
+    if (result.data?.success && result.data?.summary) {
+      return result.data.summary;
+    }
+    throw new Error(result.data?.error || 'Summary generation failed');
+  }
 }
 
 export const openaiService = new OpenAIService();

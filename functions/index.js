@@ -390,6 +390,112 @@ Return ONLY the JSON object, no markdown or explanation.`;
 });
 
 /**
+ * Generate a short client-facing report summary from extracted Instagram metrics.
+ * Focus: what went well, which content type did best, standout takeaways. 3-5 sentences.
+ */
+exports.generateReportSummary = onCall({
+  cors: true,
+  maxInstances: 10,
+  secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const userId = request.auth.uid;
+  const userEmail = request.auth.token.email || 'unknown';
+  const rateLimit = await checkRateLimit(userId, 'openai');
+  if (!rateLimit.allowed) {
+    throw new HttpsError(
+      'resource-exhausted',
+      rateLimit.reason === 'cooldown'
+        ? `Please wait ${RATE_LIMITS.openai.cooldownMinutes} minutes.`
+        : 'Rate limit exceeded. Try again later.'
+    );
+  }
+
+  const { metrics = {}, dateRange = '', clientName = '' } = request.data || {};
+  if (!metrics || typeof metrics !== 'object') {
+    throw new HttpsError('invalid-argument', 'metrics object is required');
+  }
+
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const openAIKey = process.env.OPENAI_API_KEY;
+  if (!openRouterKey && !openAIKey) {
+    throw new HttpsError('internal', 'No AI provider key configured');
+  }
+
+  const metricsJson = JSON.stringify(metrics, null, 0).substring(0, 8000);
+  const systemPrompt = `You are a social media analyst writing a short client-facing summary for an Instagram performance report. Focus on insights, not raw numbers. Be concise: 3-5 sentences only.`;
+  const userPrompt = `Using this Instagram Insights data, write a short summary that:
+1. Says what went well this period (e.g. strong engagement, growth, reach).
+2. States which content type performed best (Reels vs Posts vs Stories) and why it matters.
+3. Includes one or two standout takeaways (e.g. profile visits up, top content, follower growth).
+4. Optionally one short line on something to watch if relevant (e.g. reach down).
+Write in a professional, client-ready tone. No bullet lists. No preamble like "Here is your summary." Output only the summary text.
+
+Date range: ${dateRange || 'Not specified'}
+${clientName ? `Client: ${clientName}` : ''}
+
+Metrics (JSON):
+${metricsJson}`;
+
+  const body = {
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    max_tokens: 400,
+    temperature: 0.4
+  };
+
+  let data;
+  if (openRouterKey) {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openRouterKey}`
+      },
+      body: JSON.stringify({ ...body, model: OPENROUTER_VISION_MODEL })
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new HttpsError('internal', err.error?.message || 'Summary generation failed');
+    }
+    data = await response.json();
+  } else {
+    const response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openAIKey}`
+      },
+      body: JSON.stringify({
+        ...body,
+        model: 'gpt-4o-mini'
+      })
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new HttpsError('internal', err.error?.message || 'Summary generation failed');
+    }
+    data = await response.json();
+  }
+
+  const summary = data.choices?.[0]?.message?.content?.trim() || '';
+  if (!summary) {
+    throw new HttpsError('internal', 'No summary returned from AI');
+  }
+
+  await logApiUsage(userId, userEmail, 'openai_report_summary', {
+    tokensUsed: data.usage?.total_tokens || 0
+  });
+
+  return { success: true, summary };
+});
+
+/**
  * Get current rate limit status for a user
  */
 exports.getRateLimitStatus = onCall({
@@ -1336,6 +1442,95 @@ exports.sendFeedbackChatEmail = onDocumentCreated(
       }
     } catch (error) {
       console.error('❌ Failed to send chat notification email:', error);
+    }
+  }
+);
+
+// ============================================================================
+// TIME OFF REQUEST EMAIL TO ADMINS
+// ============================================================================
+
+/**
+ * Send email to all time off admins when a new leave request is submitted.
+ * Triggers when a document is created in leave_requests (status pending).
+ */
+exports.sendTimeOffRequestEmail = onDocumentCreated(
+  {
+    document: 'leave_requests/{requestId}',
+    region: 'us-central1',
+    secrets: ['EMAIL_PASS'],
+  },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const request = snapshot.data();
+    const requestId = event.params.requestId;
+
+    if (request.status !== 'pending') return;
+
+    const db = admin.firestore();
+    const adminsSnap = await db.collection('approved_users')
+      .where('isTimeOffAdmin', '==', true)
+      .get();
+
+    const adminEmails = adminsSnap.docs.map(d => d.id).filter(Boolean);
+    if (adminEmails.length === 0) {
+      console.log('📧 No time off admins to email for leave request:', requestId);
+      return;
+    }
+
+    const employeeName = request.employeeName || request.employeeEmail || 'An employee';
+    const days = request.days != null ? request.days : '?';
+    const leaveType = (request.type || 'time off').replace(/^\w/, c => c.toUpperCase());
+    const startDate = request.startDate || '—';
+    const endDate = request.endDate || '—';
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER || 'jrsschroeder@gmail.com',
+        pass: process.env.EMAIL_PASS || '',
+      },
+    });
+
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #0071e3, #0077ed); padding: 20px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">📅 New Time Off Request</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0;">Luxury Listings Portal</p>
+        </div>
+        <div style="background: #f5f5f7; padding: 20px; border-radius: 0 0 12px 12px;">
+          <p style="color: #1d1d1f; margin: 0 0 12px 0;">${employeeName} submitted a time off request.</p>
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <p style="margin: 5px 0;"><strong>Type:</strong> ${leaveType}</p>
+            <p style="margin: 5px 0;"><strong>Days:</strong> ${days}</p>
+            <p style="margin: 5px 0;"><strong>Start:</strong> ${startDate}</p>
+            <p style="margin: 5px 0;"><strong>End:</strong> ${endDate}</p>
+          </div>
+          <p style="margin: 0;"><a href="https://luxury-listings-portal.web.app/hr-calendar" style="color: #0071e3;">Open HR Calendar to approve or reject →</a></p>
+        </div>
+      </div>
+    `;
+
+    const subject = `📅 Time off request: ${employeeName} – ${leaveType} (${days} days)`;
+
+    try {
+      if (!process.env.EMAIL_PASS) {
+        console.log('⚠️ Time off admin email not sent – EMAIL_PASS not configured');
+        return;
+      }
+      await Promise.all(adminEmails.map(to =>
+        transporter.sendMail({
+          from: '"Luxury Listings Portal" <jrsschroeder@gmail.com>',
+          to,
+          subject,
+          html: emailHtml,
+        })
+      ));
+      console.log('✅ Time off request email sent to', adminEmails.length, 'admin(s)');
+    } catch (error) {
+      console.error('❌ Failed to send time off request email:', error);
     }
   }
 );

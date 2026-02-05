@@ -901,8 +901,29 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
   const [extractionProgress, setExtractionProgress] = useState({ current: 0, total: 0, status: '' });
   const [metricsSectionCollapsed, setMetricsSectionCollapsed] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
   const fileInputRef = useRef(null);
   const hasAutoExtractedRef = useRef(false);
+
+  const hasMetricsForSummary = formData.metrics && typeof formData.metrics === 'object' && Object.keys(formData.metrics).length > 0;
+
+  const handleGenerateSummary = async () => {
+    if (!hasMetricsForSummary || generatingSummary) return;
+    setGeneratingSummary(true);
+    try {
+      const summary = await openaiService.generateReportSummary(formData.metrics, {
+        dateRange: formData.dateRange || '',
+        clientName: formData.clientName || ''
+      });
+      setFormData(prev => ({ ...prev, notes: summary }));
+      toast.success('Summary generated. You can edit it below.');
+    } catch (err) {
+      console.error('Generate summary error:', err);
+      toast.error(err.message || 'Could not generate summary. Try again.');
+    } finally {
+      setGeneratingSummary(false);
+    }
+  };
 
   // Load clients for dropdown
   useEffect(() => {
@@ -1323,15 +1344,47 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
               </div>
             </div>
 
-            {/* Notes */}
+            {/* Notes / Summary */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Report Highlights / Notes
-              </label>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Report Highlights / Notes
+                </label>
+                {hasMetricsForSummary && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateSummary}
+                    disabled={generatingSummary}
+                    className="
+                      inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white text-sm
+                      bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-500
+                      hover:from-violet-500 hover:via-fuchsia-500 hover:to-cyan-400
+                      focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:ring-offset-2 focus:ring-offset-gray-900
+                      disabled:opacity-60 disabled:cursor-not-allowed
+                      transition-all duration-300
+                      shadow-[0_0_20px_-4px_rgba(139,92,246,0.5),0_0_24px_-6px_rgba(6,182,212,0.35)]
+                      hover:shadow-[0_0_28px_-4px_rgba(139,92,246,0.6),0_0_32px_-4px_rgba(6,182,212,0.45)]
+                      hover:scale-[1.02] active:scale-[0.98]
+                    "
+                  >
+                    {generatingSummary ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Generating…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Generate analytics summary</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Add insights, highlights, and recommendations for the client..."
+                placeholder="Add insights, highlights, and recommendations for the client — or use the button above to generate an AI summary from your metrics."
                 rows={3}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
               />
