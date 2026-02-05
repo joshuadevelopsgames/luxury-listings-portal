@@ -169,6 +169,21 @@ You can use either the **Firebase Console** (copy‑paste) or the **Firebase CLI
 
 ---
 
+## Troubleshooting: "Missing or insufficient permissions"
+
+If you see **FirebaseError: Missing or insufficient permissions** when loading graphic projects, approved users, team management, etc., the **live Firestore rules are likely incomplete or wrong**. For example, if a different rules file (e.g. `firestore.rules.production`) was deployed, it only allows a few collections; any collection with no matching rule is **denied by default**, so reads fail.
+
+**Fix:** Deploy the **full** rules from this repo (the file referenced in `firebase.json` is `firestore.rules`):
+
+```bash
+firebase use YOUR_PROJECT_ID   # or firebase use --add
+firebase deploy --only firestore:rules
+```
+
+Then hard-refresh the app or log out and back in. Do **not** deploy `firestore.rules.production` or other variants unless you intend to use them; they omit many collections (e.g. `graphic_projects`, `employees`, `clients`).
+
+---
+
 ## After you deploy
 
 - Changes apply within a few seconds.

@@ -1,3 +1,4 @@
+// DEPLOY THIS FILE ONLY. firebase.json points here. Do NOT deploy firestore.rules.production (incomplete - breaks app).
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
