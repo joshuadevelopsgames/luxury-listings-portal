@@ -464,7 +464,9 @@ const InstagramReportsPage = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-[24px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] flex items-center gap-2 sm:gap-3">
-            <img src="/Luxury-listings-logo-CLR.png" alt="Luxury Listings" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
+            <span className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] text-white">
+              <Instagram className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
+            </span>
             Instagram Analytics
           </h1>
           <p className="text-[13px] sm:text-[15px] text-[#86868b] mt-1">

@@ -7,12 +7,13 @@ import PlatformIcons, { PLATFORMS } from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
 
 // Workload: post volume is the main metric (~90%); client count matters little (~10%).
-// "Heavy" = ~10+ client-equivalents of posts (1 equivalent = 14 posts/mo, avg client).
-// So 140+ total posts/mo = heavy whether that's 10 clients × 14 or 5 clients × 28.
+// Max heaviness = 13 client-equivalents (1 equiv = 14 posts/mo). Progress bar scale 1–13.
+// "Heavy" = ~10+ client-equivalents; 13 = 100% bar.
 // Formula: total_posts / POSTS_PER_UNIT + 0.1 * client_count + platform bonus (0.2 per client with 3+ platforms).
 const POSTS_PER_UNIT = 7.5;  // 140 posts + 10 clients ≈ 20 (heavy)
 const CLIENT_WEIGHT = 0.1;
-const WORKLOAD_FULL = 35;
+const MAX_CLIENT_EQUIVALENTS = 13;  // max heaviness; bar is 100% at this
+const WORKLOAD_AT_MAX = 26;         // raw units at 13 avg clients (182 posts + 1.3)
 const WORKLOAD_LOW = 12;   // Light
 const WORKLOAD_MED = 20;   // Heavy: 10 avg clients (140 posts) or e.g. 5 clients @ 28 each
 
@@ -35,8 +36,14 @@ function getCapacityColor(workloadUnits) {
   return { bar: 'bg-[#ff3b30]', text: 'text-[#ff3b30]', label: 'Heavy' };
 }
 
+// Bar scale 1–13: 13 = 100%
 function getCapacityPercent(workloadUnits) {
-  return Math.min(100, Math.round((workloadUnits / WORKLOAD_FULL) * 100));
+  return Math.min(100, Math.round((workloadUnits / WORKLOAD_AT_MAX) * 100));
+}
+
+// Effective client-equivalents (1–13) for display
+function getEffectiveEquivalents(workloadUnits) {
+  return Math.min(MAX_CLIENT_EQUIVALENTS, Math.max(0, (workloadUnits / WORKLOAD_AT_MAX) * MAX_CLIENT_EQUIVALENTS));
 }
 
 // Aggregate platform counts across a list of clients
@@ -210,6 +217,7 @@ export default function WorkloadPage() {
           const workloadUnits = getWorkloadUnits(managerClients);
           const capacity = getCapacityColor(workloadUnits);
           const pct = getCapacityPercent(workloadUnits);
+          const equiv = getEffectiveEquivalents(workloadUnits);
           const platformCounts = aggregatePlatforms(managerClients);
           const packageCounts = aggregatePackages(managerClients);
           const totalPostsPerMonth = managerClients.reduce((sum, c) => sum + (Number(c.packageSize) || 0), 0);
@@ -242,9 +250,12 @@ export default function WorkloadPage() {
                   </div>
                 </div>
 
-                {/* Capacity Bar */}
-                <div className="h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden mb-3">
-                  <div className={`h-full rounded-full transition-all ${capacity.bar}`} style={{ width: `${pct}%` }} />
+                {/* Capacity Bar (1–13 scale; 13 = max heaviness) */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex-1 h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${capacity.bar}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="text-[11px] font-medium text-[#86868b] tabular-nums">{Math.round(equiv * 10) / 10} / {MAX_CLIENT_EQUIVALENTS}</span>
                 </div>
 
                 {/* Quick Stats Row */}

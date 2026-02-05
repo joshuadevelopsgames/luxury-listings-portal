@@ -17,7 +17,9 @@ import {
   CheckCircle,
   TrendingUp,
   Filter,
-  Calendar
+  Calendar,
+  X,
+  FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
@@ -34,6 +36,7 @@ const ClientHealthPage = () => {
   const [assignedUserByKey, setAssignedUserByKey] = useState({}); // email/uid -> { uid, displayName }
   const [filterStatus, setFilterStatus] = useState('all');
   const [refreshingId, setRefreshingId] = useState(null);
+  const [reportClient, setReportClient] = useState(null); // { client, snap } for health report modal
 
   const loadData = useCallback(async () => {
     try {
@@ -47,12 +50,19 @@ const ClientHealthPage = () => {
       setSnapshots(snapMap);
       const byKey = {};
       (usersList || []).forEach((u) => {
-        const uid = u.uid || u.userId;
+        const uid = u.uid || u.userId || u.id;
         const email = (u.email || u.id || '').toLowerCase();
-        const label = u.displayName || u.name || u.email || u.id || uid || '—';
-        const entry = { uid: uid || email, label };
+        const label = u.displayName
+          || ((u.firstName || u.lastName) ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : null)
+          || u.name
+          || u.email
+          || u.id
+          || uid
+          || '—';
+        const entry = { label };
         if (email) byKey[email] = entry;
         if (uid) byKey[uid] = entry;
+        if (u.id && !byKey[u.id]) byKey[u.id] = entry;
       });
       setAssignedUserByKey(byKey);
     } catch (err) {
@@ -198,7 +208,7 @@ const ClientHealthPage = () => {
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/10">
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Client</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Assigned user (ID)</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Manager</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Status</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Churn risk</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Insight</th>
@@ -210,26 +220,28 @@ const ClientHealthPage = () => {
                 {filteredClients.map((client) => {
                   const snap = snapshots[client.id];
                   const style = snap?.status ? statusColors[snap.status] : null;
+                  const managerLabel = !client.assignedManager || (client.assignedManager || '').trim() === ''
+                    ? 'Unassigned'
+                    : (() => {
+                        const raw = (client.assignedManager || '').trim();
+                        const resolved = assignedUserByKey[raw.toLowerCase()] || assignedUserByKey[raw];
+                        return resolved?.label && resolved.label !== '—' ? resolved.label : (raw.includes('@') ? raw : 'Unknown');
+                      })();
                   return (
                     <tr
                       key={client.id}
-                      className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/5"
+                      onClick={() => setReportClient({ client, snap })}
+                      className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/5 cursor-pointer"
                     >
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <ClientLink client={client} showId />
                       </td>
-                      <td className="py-3 px-4 text-[12px] text-[#86868b]">
-                        {client.assignedManager
-                          ? (() => {
-                              const raw = (client.assignedManager || '').trim();
-                              const byEmail = assignedUserByKey[raw.toLowerCase()];
-                              const byUid = assignedUserByKey[raw];
-                              const resolved = byEmail || byUid;
-                              if (resolved?.uid) return resolved.uid;
-                              if (/^[a-zA-Z0-9]{20,}$/.test(raw)) return raw;
-                              return resolved?.label ? `${resolved.label} (${resolved.uid || raw})` : raw;
-                            })()
-                          : '—'}
+                      <td className="py-3 px-4 text-[12px]">
+                        {managerLabel === 'Unassigned' ? (
+                          <span className="text-[#ff9500] font-medium">Unassigned</span>
+                        ) : (
+                          <span className="text-[#34c759] font-medium">{managerLabel}</span>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         {snap ? (
@@ -249,7 +261,7 @@ const ClientHealthPage = () => {
                       <td className="py-3 px-4 text-[11px] text-[#86868b]">
                         {snap?.timestamp ? format(new Date(snap.timestamp), 'MMM d, yyyy') : '—'}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => refreshOne(client)}
                           disabled={!!refreshingId}
@@ -270,6 +282,109 @@ const ClientHealthPage = () => {
               No clients match the filter.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Health Report Modal */}
+      {reportClient && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setReportClient(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#1d1d1f] rounded-2xl border border-black/10 dark:border-white/10 shadow-2xl w-full max-w-lg overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  reportClient.snap?.status === 'good' ? 'bg-[#34c759]/10' :
+                  reportClient.snap?.status === 'warning' ? 'bg-[#ff9500]/10' :
+                  reportClient.snap?.status === 'critical' ? 'bg-[#ff3b30]/10' : 'bg-black/5 dark:bg-white/10'
+                }`}>
+                  <FileText className={`w-5 h-5 ${
+                    reportClient.snap?.status === 'good' ? 'text-[#34c759]' :
+                    reportClient.snap?.status === 'warning' ? 'text-[#ff9500]' :
+                    reportClient.snap?.status === 'critical' ? 'text-[#ff3b30]' : 'text-[#86868b]'
+                  }`} />
+                </div>
+                <div>
+                  <h2 className="text-[18px] font-semibold text-[#1d1d1f] dark:text-white">Health Report</h2>
+                  <p className="text-[13px] text-[#86868b]">{reportClient.client.clientName || reportClient.client.name || 'Client'}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReportClient(null)}
+                className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center text-[#86868b]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-[13px]">
+                <div>
+                  <p className="text-[#86868b] mb-0.5">Manager</p>
+                  <p className="font-medium text-[#1d1d1f] dark:text-white">
+                    {!reportClient.client.assignedManager || (reportClient.client.assignedManager || '').trim() === '' ? (
+                      <span className="text-[#ff9500]">Unassigned</span>
+                    ) : (() => {
+                      const raw = (reportClient.client.assignedManager || '').trim();
+                      const resolved = assignedUserByKey[raw.toLowerCase()] || assignedUserByKey[raw];
+                      return resolved?.label && resolved.label !== '—' ? resolved.label : raw;
+                    })()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[#86868b] mb-0.5">Status</p>
+                  <p className="font-medium">
+                    {reportClient.snap ? (
+                      <span className={reportClient.snap.status ? statusColors[reportClient.snap.status]?.color : ''}>
+                        {reportClient.snap.status === 'good' ? 'Healthy' : reportClient.snap.status === 'warning' ? 'Watch' : reportClient.snap.status === 'critical' ? 'At risk' : '—'}
+                      </span>
+                    ) : (
+                      <span className="text-[#86868b]">No snapshot</span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[#86868b] mb-0.5">Churn risk</p>
+                  <p className="font-medium text-[#1d1d1f] dark:text-white">
+                    {reportClient.snap?.churnRisk != null ? `${reportClient.snap.churnRisk}%` : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[#86868b] mb-0.5">As of</p>
+                  <p className="font-medium text-[#1d1d1f] dark:text-white">
+                    {reportClient.snap?.timestamp ? format(new Date(reportClient.snap.timestamp), 'MMM d, yyyy') : '—'}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-[#86868b] text-[12px] font-medium uppercase tracking-wide mb-1.5">Insight</p>
+                <p className="text-[14px] text-[#1d1d1f] dark:text-white leading-relaxed">
+                  {reportClient.snap?.reason || 'No insight available.'}
+                </p>
+              </div>
+              {reportClient.snap?.action && (
+                <div>
+                  <p className="text-[#86868b] text-[12px] font-medium uppercase tracking-wide mb-1.5">Recommended action</p>
+                  <p className="text-[14px] text-[#1d1d1f] dark:text-white leading-relaxed">
+                    {reportClient.snap.action}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-3 border-t border-black/5 dark:border-white/10 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setReportClient(null)}
+                className="px-4 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -32,6 +32,14 @@ const RATE_LIMITS = {
   }
 };
 
+// CORS origins for callable functions (avoids preflight failures from app origin)
+const ALLOWED_ORIGINS = [
+  'https://www.smmluxurylistings.info',
+  'https://smmluxurylistings.info',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+
 /**
  * Check and update rate limit for a user
  * @param {string} userId - Firebase user ID
@@ -395,40 +403,41 @@ Return ONLY the JSON object, no markdown or explanation.`;
  * Focus: what went well, which content type did best, standout takeaways. 3-5 sentences.
  */
 exports.generateReportSummary = onCall({
-  cors: true,
+  cors: ALLOWED_ORIGINS,
   maxInstances: 10,
   secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
 }, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'User must be authenticated');
-  }
+  try {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
 
-  const userId = request.auth.uid;
-  const userEmail = request.auth.token.email || 'unknown';
-  const rateLimit = await checkRateLimit(userId, 'openai');
-  if (!rateLimit.allowed) {
-    throw new HttpsError(
-      'resource-exhausted',
-      rateLimit.reason === 'cooldown'
-        ? `Please wait ${RATE_LIMITS.openai.cooldownMinutes} minutes.`
-        : 'Rate limit exceeded. Try again later.'
-    );
-  }
+    const userId = request.auth.uid;
+    const userEmail = request.auth.token.email || 'unknown';
+    const rateLimit = await checkRateLimit(userId, 'openai');
+    if (!rateLimit.allowed) {
+      throw new HttpsError(
+        'resource-exhausted',
+        rateLimit.reason === 'cooldown'
+          ? `Please wait ${RATE_LIMITS.openai.cooldownMinutes} minutes.`
+          : 'Rate limit exceeded. Try again later.'
+      );
+    }
 
-  const { metrics = {}, dateRange = '', clientName = '' } = request.data || {};
-  if (!metrics || typeof metrics !== 'object') {
-    throw new HttpsError('invalid-argument', 'metrics object is required');
-  }
+    const { metrics = {}, dateRange = '', clientName = '' } = request.data || {};
+    if (!metrics || typeof metrics !== 'object') {
+      throw new HttpsError('invalid-argument', 'metrics object is required');
+    }
 
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const openAIKey = process.env.OPENAI_API_KEY;
-  if (!openRouterKey && !openAIKey) {
-    throw new HttpsError('internal', 'No AI provider key configured');
-  }
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    const openAIKey = process.env.OPENAI_API_KEY;
+    if (!openRouterKey && !openAIKey) {
+      throw new HttpsError('internal', 'No AI provider key configured');
+    }
 
-  const metricsJson = JSON.stringify(metrics, null, 0).substring(0, 8000);
-  const systemPrompt = `You are a social media analyst writing a short client-facing summary for an Instagram performance report. Focus on insights, not raw numbers. Be concise: 3-5 sentences only.`;
-  const userPrompt = `Using this Instagram Insights data, write a short summary that:
+    const metricsJson = JSON.stringify(metrics, null, 0).substring(0, 8000);
+    const systemPrompt = `You are a social media analyst writing a short client-facing summary for an Instagram performance report. Focus on insights, not raw numbers. Be concise: 3-5 sentences only.`;
+    const userPrompt = `Using this Instagram Insights data, write a short summary that:
 1. Says what went well this period (e.g. strong engagement, growth, reach).
 2. States which content type performed best (Reels vs Posts vs Stories) and why it matters.
 3. Includes one or two standout takeaways (e.g. profile visits up, top content, follower growth).
@@ -441,59 +450,64 @@ ${clientName ? `Client: ${clientName}` : ''}
 Metrics (JSON):
 ${metricsJson}`;
 
-  const body = {
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ],
-    max_tokens: 400,
-    temperature: 0.4
-  };
+    const body = {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      max_tokens: 400,
+      temperature: 0.4
+    };
 
-  let data;
-  if (openRouterKey) {
-    const response = await fetch(OPENROUTER_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openRouterKey}`
-      },
-      body: JSON.stringify({ ...body, model: OPENROUTER_VISION_MODEL })
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new HttpsError('internal', err.error?.message || 'Summary generation failed');
+    let data;
+    if (openRouterKey) {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openRouterKey}`
+        },
+        body: JSON.stringify({ ...body, model: OPENROUTER_VISION_MODEL })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new HttpsError('internal', err.error?.message || 'Summary generation failed');
+      }
+      data = await response.json();
+    } else {
+      const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openAIKey}`
+        },
+        body: JSON.stringify({
+          ...body,
+          model: 'gpt-4o-mini'
+        })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new HttpsError('internal', err.error?.message || 'Summary generation failed');
+      }
+      data = await response.json();
     }
-    data = await response.json();
-  } else {
-    const response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAIKey}`
-      },
-      body: JSON.stringify({
-        ...body,
-        model: 'gpt-4o-mini'
-      })
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new HttpsError('internal', err.error?.message || 'Summary generation failed');
+
+    const summary = data.choices?.[0]?.message?.content?.trim() || '';
+    if (!summary) {
+      throw new HttpsError('internal', 'No summary returned from AI');
     }
-    data = await response.json();
+
+    await logApiUsage(userId, userEmail, 'openai_report_summary', {
+      tokensUsed: data.usage?.total_tokens || 0
+    });
+
+    return { success: true, summary };
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    console.error('generateReportSummary error:', err);
+    throw new HttpsError('internal', err.message || 'Summary generation failed');
   }
-
-  const summary = data.choices?.[0]?.message?.content?.trim() || '';
-  if (!summary) {
-    throw new HttpsError('internal', 'No summary returned from AI');
-  }
-
-  await logApiUsage(userId, userEmail, 'openai_report_summary', {
-    tokensUsed: data.usage?.total_tokens || 0
-  });
-
-  return { success: true, summary };
 });
 
 /**
@@ -959,20 +973,26 @@ async function doBulkHealthPrediction() {
 }
 
 exports.runBulkHealthPrediction = onCall({
-  cors: true,
+  cors: ALLOWED_ORIGINS,
   maxInstances: 1,
   secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
 }, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  try {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    const email = (request.auth.token.email || '').toLowerCase();
+    const adminEmails = getAdminEmails();
+    if (!adminEmails.includes(email)) {
+      throw new HttpsError('permission-denied', 'Only admins can run bulk health prediction. Set ADMIN_EMAILS in Firebase config to add admins.');
+    }
+    const result = await doBulkHealthPrediction();
+    return { success: true, ...result };
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    console.error('runBulkHealthPrediction error:', err);
+    throw new HttpsError('internal', err.message || 'Bulk health prediction failed');
   }
-  const email = (request.auth.token.email || '').toLowerCase();
-  const adminEmails = getAdminEmails();
-  if (!adminEmails.includes(email)) {
-    throw new HttpsError('permission-denied', 'Only admins can run bulk health prediction. Set ADMIN_EMAILS in Firebase config to add admins.');
-  }
-  const result = await doBulkHealthPrediction();
-  return { success: true, ...result };
 });
 
 /**
