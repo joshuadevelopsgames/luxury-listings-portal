@@ -67,6 +67,10 @@ const MyTimeOff = () => {
   // Validation state
   const [validationErrors, setValidationErrors] = useState([]);
   const [validationWarnings, setValidationWarnings] = useState([]);
+
+  // Team leave conflicts state
+  const [leaveConflicts, setLeaveConflicts] = useState([]);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
   const [cancelling, setCancelling] = useState(null);
   const [archiving, setArchiving] = useState(null);
   const [expandedRequest, setExpandedRequest] = useState(null);
@@ -168,6 +172,35 @@ const MyTimeOff = () => {
 
     loadLeaveBalances();
   }, [currentUser?.email, myRequests]);
+
+  // Check for team leave conflicts when dates change
+  useEffect(() => {
+    const checkConflicts = async () => {
+      if (!leaveForm.startDate || !leaveForm.endDate || !currentUser?.email) {
+        setLeaveConflicts([]);
+        return;
+      }
+
+      setCheckingConflicts(true);
+      try {
+        const conflicts = await firestoreService.getTeamLeaveConflicts(
+          leaveForm.startDate,
+          leaveForm.endDate,
+          currentUser.email
+        );
+        setLeaveConflicts(conflicts);
+      } catch (error) {
+        console.error('Error checking leave conflicts:', error);
+        setLeaveConflicts([]);
+      } finally {
+        setCheckingConflicts(false);
+      }
+    };
+
+    // Debounce the check to avoid too many queries
+    const timeoutId = setTimeout(checkConflicts, 300);
+    return () => clearTimeout(timeoutId);
+  }, [leaveForm.startDate, leaveForm.endDate, currentUser?.email]);
 
   const leaveTypes = {
     vacation: { 
@@ -793,6 +826,59 @@ const MyTimeOff = () => {
                     <span className="text-[13px] font-medium text-[#0071e3]">Total Business Days Requested:</span>
                     <span className="text-[24px] font-semibold text-[#0071e3]">{calculateDays()}</span>
                   </div>
+                </div>
+              )}
+
+              {/* Team Leave Conflicts Warning */}
+              {leaveConflicts.length > 0 && (
+                <div className="bg-[#ff9500]/10 border border-[#ff9500]/20 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#ff9500]/20 flex items-center justify-center">
+                      <AlertCircle className="w-4 h-4 text-[#ff9500]" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[13px] font-medium text-[#ff9500] mb-2">
+                        Heads up: {leaveConflicts.length} team member{leaveConflicts.length > 1 ? 's' : ''} also {leaveConflicts.length > 1 ? 'have' : 'has'} time off during this period
+                      </p>
+                      <div className="space-y-2">
+                        {leaveConflicts.slice(0, 5).map((conflict) => (
+                          <div
+                            key={conflict.id}
+                            className="flex items-center justify-between text-[12px] bg-white/50 dark:bg-black/20 rounded-lg px-3 py-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${conflict.status === 'approved' ? 'bg-[#34c759]' : 'bg-[#ff9500]'}`} />
+                              <span className="font-medium text-[#1d1d1f] dark:text-white">
+                                {conflict.employeeName}
+                              </span>
+                              <span className="text-[#86868b]">
+                                ({conflict.type})
+                              </span>
+                            </div>
+                            <span className="text-[#86868b]">
+                              {conflict.startDate} → {conflict.endDate}
+                            </span>
+                          </div>
+                        ))}
+                        {leaveConflicts.length > 5 && (
+                          <p className="text-[11px] text-[#ff9500]/70">
+                            +{leaveConflicts.length - 5} more...
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#86868b] mt-2">
+                        You can still submit your request. This is just a heads up about potential coverage gaps.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Checking Conflicts Indicator */}
+              {checkingConflicts && leaveForm.startDate && leaveForm.endDate && (
+                <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  Checking team availability...
                 </div>
               )}
 

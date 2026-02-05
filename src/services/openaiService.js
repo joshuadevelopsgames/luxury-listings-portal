@@ -516,6 +516,85 @@ Return ONLY the JSON object, no markdown or explanation.`;
     }
     throw new Error(result.data?.error || 'Summary generation failed');
   }
+
+  /**
+   * Generate a social media caption with hashtags for luxury real estate content.
+   * Uses Cloud Function (OpenRouter/OpenAI).
+   *
+   * @param {string} description - Description of the content to post about
+   * @param {string} platform - Target platform: 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube'
+   * @param {string} tone - Tone of the caption: 'luxury' (default), 'casual', 'professional'
+   * @returns {Promise<{caption: string, hashtags: string[]}>}
+   */
+  async generateCaption(description, platform = 'instagram', tone = 'luxury') {
+    if (!functions) {
+      throw new Error('Firebase Functions not initialized');
+    }
+
+    if (!description || description.trim().length < 3) {
+      throw new Error('Please provide a description of the content (at least 3 characters)');
+    }
+
+    console.log(`✍️ Generating ${platform} caption...`);
+
+    const generateCaptionFn = httpsCallable(functions, 'generateCaption');
+    const result = await generateCaptionFn({ description, platform, tone });
+
+    if (result.data?.success) {
+      console.log(`✅ Caption generated (${result.data.rateLimitRemaining} requests remaining)`);
+      return {
+        caption: result.data.caption,
+        hashtags: result.data.hashtags || []
+      };
+    }
+
+    throw new Error(result.data?.error || 'Caption generation failed');
+  }
+
+  /**
+   * Predict client health/churn risk based on multiple factors.
+   * Uses Cloud Function (OpenRouter/OpenAI).
+   *
+   * @param {Object} clientData - Client data object with health indicators
+   * @param {string} clientData.clientName - Client name
+   * @param {number} clientData.postsRemaining - Posts remaining in package
+   * @param {number} clientData.packageSize - Total package size
+   * @param {number} clientData.postsUsed - Posts used so far
+   * @param {string} clientData.paymentStatus - 'Paid', 'Pending', 'Overdue'
+   * @param {string} clientData.packageType - Type of package
+   * @param {number} clientData.daysSinceContact - Days since last contact
+   * @param {number} clientData.daysUntilRenewal - Days until contract renewal
+   * @param {string} clientData.lastPostDate - Date of last post
+   * @param {string} clientData.notes - Any notes about the client
+   * @returns {Promise<{status: string, churnRisk: number, reason: string, action: string}>}
+   */
+  async predictClientHealth(clientData) {
+    if (!functions) {
+      throw new Error('Firebase Functions not initialized');
+    }
+
+    if (!clientData || typeof clientData !== 'object') {
+      throw new Error('Client data is required');
+    }
+
+    const clientName = clientData.clientName || 'Unknown';
+    console.log(`🔍 Predicting health for client: ${clientName}`);
+
+    const predictHealthFn = httpsCallable(functions, 'predictClientHealth');
+    const result = await predictHealthFn({ clientData });
+
+    if (result.data?.success) {
+      console.log(`✅ Health predicted: ${result.data.status} (${result.data.churnRisk}% risk)`);
+      return {
+        status: result.data.status,
+        churnRisk: result.data.churnRisk,
+        reason: result.data.reason,
+        action: result.data.action
+      };
+    }
+
+    throw new Error(result.data?.error || 'Health prediction failed');
+  }
 }
 
 export const openaiService = new OpenAIService();

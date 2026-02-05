@@ -976,6 +976,66 @@ class FirestoreService {
     }
   }
 
+  /**
+   * Get team members with overlapping leave requests for given date range.
+   * Used to warn users about potential scheduling conflicts before submitting leave.
+   *
+   * @param {string} startDate - Start date in YYYY-MM-DD format
+   * @param {string} endDate - End date in YYYY-MM-DD format
+   * @param {string} excludeEmail - Email of user to exclude (the one making the request)
+   * @returns {Promise<Array>} - Array of { employeeName, employeeEmail, startDate, endDate, type, status }
+   */
+  async getTeamLeaveConflicts(startDate, endDate, excludeEmail = null) {
+    try {
+      // Query for approved and pending requests
+      const q = query(
+        collection(db, this.collections.LEAVE_REQUESTS),
+        where('status', 'in', ['approved', 'pending']),
+        orderBy('startDate', 'asc')
+      );
+
+      const snapshot = await getDocs(q);
+      const conflicts = [];
+
+      snapshot.forEach((doc) => {
+        const request = doc.data();
+
+        // Skip the requesting user's own requests
+        if (excludeEmail && request.employeeEmail === excludeEmail) {
+          return;
+        }
+
+        // Check for date overlap
+        // Overlap occurs if: requestStart <= queryEnd AND requestEnd >= queryStart
+        const requestStart = request.startDate;
+        const requestEnd = request.endDate;
+
+        if (requestStart && requestEnd) {
+          const hasOverlap = requestStart <= endDate && requestEnd >= startDate;
+
+          if (hasOverlap) {
+            conflicts.push({
+              id: doc.id,
+              employeeName: request.employeeName || request.employeeEmail?.split('@')[0] || 'Unknown',
+              employeeEmail: request.employeeEmail,
+              startDate: requestStart,
+              endDate: requestEnd,
+              type: request.type || 'vacation',
+              status: request.status,
+              days: request.days || 1
+            });
+          }
+        }
+      });
+
+      console.log(`📅 Found ${conflicts.length} leave conflicts for ${startDate} to ${endDate}`);
+      return conflicts;
+    } catch (error) {
+      console.error('❌ Error getting team leave conflicts:', error);
+      return [];
+    }
+  }
+
   // Listen to leave requests changes (real-time listener - kept for backwards compatibility)
   onLeaveRequestsChange(callback, userEmail = null) {
     let q;

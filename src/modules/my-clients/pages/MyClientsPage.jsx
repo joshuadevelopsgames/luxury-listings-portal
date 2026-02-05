@@ -8,13 +8,14 @@
  * - Quick actions
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useViewAs } from '../../../contexts/ViewAsContext';
 import { firestoreService } from '../../../services/firestoreService';
+import { openaiService } from '../../../services/openaiService';
 import PlatformIcons from '../../../components/PlatformIcons';
 import ClientLink from '../../../components/ui/ClientLink';
 import { toast } from 'react-hot-toast';
@@ -44,7 +45,10 @@ import {
   Plus,
   Youtube,
   Facebook,
-  Linkedin
+  Linkedin,
+  RefreshCw,
+  Sparkles,
+  Info
 } from 'lucide-react';
 
 const MyClientsPage = () => {
@@ -60,6 +64,11 @@ const MyClientsPage = () => {
   const [logPostClient, setLogPostClient] = useState(null);
   const [logPlatform, setLogPlatform] = useState('instagram');
   const [logSaving, setLogSaving] = useState(false);
+
+  // AI Health Prediction state
+  const [aiHealthPredictions, setAiHealthPredictions] = useState({}); // { clientId: { status, churnRisk, reason, action, timestamp } }
+  const [loadingAiHealth, setLoadingAiHealth] = useState({}); // { clientId: boolean }
+  const [showAiTooltip, setShowAiTooltip] = useState(null); // clientId to show tooltip for
 
   // Get the effective user (viewed-as user or current user)
   const effectiveUser = getEffectiveUser(currentUser);
@@ -106,6 +115,103 @@ const MyClientsPage = () => {
     if (status === 'Paid') return 'text-[#34c759] bg-[#34c759]/10';
     if (status === 'Pending') return 'text-[#ff9500] bg-[#ff9500]/10';
     return 'text-[#ff3b30] bg-[#ff3b30]/10';
+  };
+
+  // Fetch AI health prediction for a client (with caching)
+  const fetchAiHealthPrediction = useCallback(async (client) => {
+    const clientId = client.id;
+
+    // Check cache first (24 hour expiry)
+    const cached = aiHealthPredictions[clientId];
+    if (cached && cached.timestamp && (Date.now() - cached.timestamp) < 24 * 60 * 60 * 1000) {
+      return cached;
+    }
+
+    // Check localStorage cache
+    const storageKey = `ai_health_${clientId}`;
+    const storedCache = localStorage.getItem(storageKey);
+    if (storedCache) {
+      try {
+        const parsed = JSON.parse(storedCache);
+        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 24 * 60 * 60 * 1000) {
+          setAiHealthPredictions(prev => ({ ...prev, [clientId]: parsed }));
+          return parsed;
+        }
+      } catch (e) {
+        // Invalid cache, continue to fetch
+      }
+    }
+
+    setLoadingAiHealth(prev => ({ ...prev, [clientId]: true }));
+
+    try {
+      // Prepare client data for AI
+      const now = new Date();
+      const lastContact = client.lastContactDate ? new Date(client.lastContactDate) : null;
+      const renewalDate = client.renewalDate ? new Date(client.renewalDate) : null;
+
+      const clientData = {
+        clientName: client.clientName || 'Unknown',
+        postsRemaining: client.postsRemaining || 0,
+        packageSize: client.packageSize || 10,
+        postsUsed: client.postsUsed || 0,
+        paymentStatus: client.paymentStatus || 'unknown',
+        packageType: client.packageType || 'Standard',
+        daysSinceContact: lastContact ? differenceInDays(now, lastContact) : null,
+        daysUntilRenewal: renewalDate ? differenceInDays(renewalDate, now) : null,
+        createdAt: client.createdAt || null,
+        lastPostDate: client.lastPostDate || null,
+        notes: client.notes || ''
+      };
+
+      const prediction = await openaiService.predictClientHealth(clientData);
+
+      const result = {
+        ...prediction,
+        timestamp: Date.now()
+      };
+
+      // Update state cache
+      setAiHealthPredictions(prev => ({ ...prev, [clientId]: result }));
+
+      // Update localStorage cache
+      localStorage.setItem(storageKey, JSON.stringify(result));
+
+      return result;
+    } catch (error) {
+      console.error('AI health prediction failed:', error);
+      return null;
+    } finally {
+      setLoadingAiHealth(prev => ({ ...prev, [clientId]: false }));
+    }
+  }, [aiHealthPredictions]);
+
+  // Get combined health status (rule-based + AI enhanced)
+  const getEnhancedHealthStatus = (client) => {
+    const baseHealth = getHealthStatus(client);
+    const aiPrediction = aiHealthPredictions[client.id];
+
+    if (aiPrediction) {
+      // Map AI status to our color scheme
+      const statusColors = {
+        good: { color: 'text-[#34c759]', bgColor: 'bg-[#34c759]/10' },
+        warning: { color: 'text-[#ff9500]', bgColor: 'bg-[#ff9500]/10' },
+        critical: { color: 'text-[#ff3b30]', bgColor: 'bg-[#ff3b30]/10' }
+      };
+
+      return {
+        ...baseHealth,
+        ...statusColors[aiPrediction.status] || statusColors.warning,
+        status: aiPrediction.status,
+        label: aiPrediction.status === 'good' ? 'Healthy' : aiPrediction.status === 'warning' ? 'Watch' : 'At Risk',
+        aiEnhanced: true,
+        churnRisk: aiPrediction.churnRisk,
+        reason: aiPrediction.reason,
+        action: aiPrediction.action
+      };
+    }
+
+    return { ...baseHealth, aiEnhanced: false };
   };
 
   const logPostPlatformIcons = { instagram: Instagram, youtube: Youtube, facebook: Facebook, linkedin: Linkedin };
@@ -287,13 +393,14 @@ const MyClientsPage = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => {
-            const health = getHealthStatus(client);
+            const health = getEnhancedHealthStatus(client);
+            const isLoadingAi = loadingAiHealth[client.id];
             const postsUsed = client.postsUsed || 0;
             const packageSize = client.packageSize || 10;
             const progress = (postsUsed / packageSize) * 100;
-            
+
             return (
-              <div 
+              <div
                 key={client.id}
                 className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-black/5 dark:border-white/10 hover:shadow-lg transition-all cursor-pointer group"
                 onClick={() => setSelectedClient(selectedClient?.id === client.id ? null : client)}
@@ -329,9 +436,55 @@ const MyClientsPage = () => {
                       <Plus className="w-3.5 h-3.5" strokeWidth={2} />
                       Log post
                     </button>
-                    <span className={`px-2 py-1 rounded-lg text-[11px] font-medium ${health.color} ${health.bgColor}`}>
-                      {health.label}
-                    </span>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!health.aiEnhanced && !isLoadingAi) {
+                            fetchAiHealthPrediction(client);
+                          }
+                          setShowAiTooltip(showAiTooltip === client.id ? null : client.id);
+                        }}
+                        className={`px-2 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1 ${health.color} ${health.bgColor} hover:opacity-80 transition-opacity`}
+                      >
+                        {isLoadingAi ? (
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                        ) : health.aiEnhanced ? (
+                          <Sparkles className="w-3 h-3" />
+                        ) : null}
+                        {health.label}
+                      </button>
+
+                      {/* AI Health Tooltip */}
+                      {showAiTooltip === client.id && health.aiEnhanced && (
+                        <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-white dark:bg-[#2d2d2d] rounded-xl shadow-xl border border-black/10 dark:border-white/10 z-20">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-4 h-4 text-purple-500" />
+                            <span className="text-[12px] font-semibold text-[#1d1d1f] dark:text-white">AI Health Analysis</span>
+                          </div>
+                          <div className="space-y-2 text-[11px]">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[#86868b]">Churn Risk</span>
+                              <span className={`font-medium ${health.churnRisk > 60 ? 'text-[#ff3b30]' : health.churnRisk > 30 ? 'text-[#ff9500]' : 'text-[#34c759]'}`}>
+                                {health.churnRisk}%
+                              </span>
+                            </div>
+                            {health.reason && (
+                              <div>
+                                <span className="text-[#86868b] block mb-1">Insight</span>
+                                <p className="text-[#1d1d1f] dark:text-white">{health.reason}</p>
+                              </div>
+                            )}
+                            {health.action && (
+                              <div className="pt-2 border-t border-black/5 dark:border-white/10">
+                                <span className="text-[#86868b] block mb-1">Recommended Action</span>
+                                <p className="text-[#0071e3] font-medium">{health.action}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

@@ -53,6 +53,12 @@ const ContentCalendar = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isSheetsAuthorized, setIsSheetsAuthorized] = useState(false);
 
+  // AI Caption Generation state
+  const [showAICaptionModal, setShowAICaptionModal] = useState(false);
+  const [aiCaptionPrompt, setAiCaptionPrompt] = useState('');
+  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
+  const [generatedCaption, setGeneratedCaption] = useState(null);
+
   // Load user-specific content and calendars from localStorage
   useEffect(() => {
     if (!currentUser?.email) return;
@@ -1591,11 +1597,23 @@ const ContentCalendar = () => {
               </div>
 
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Description</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Description</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAICaptionModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all shadow-sm"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    AI Generate
+                  </button>
+                </div>
                 <textarea
                   value={postForm.description}
                   onChange={(e) => setPostForm({...postForm, description: e.target.value})}
-                  placeholder="Enter content description"
+                  placeholder="Enter content description or use AI Generate"
                   rows={3}
                   className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
                 />
@@ -1692,6 +1710,196 @@ const ContentCalendar = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* AI Caption Generation Modal */}
+      {showAICaptionModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-lg border border-black/10 dark:border-white/10 shadow-2xl">
+            {/* Modal Header */}
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">AI Caption Generator</h2>
+                  <p className="text-[12px] text-[#86868b]">Generate captions for {platforms.find(p => p.id === postForm.platform)?.name || 'social media'}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAICaptionModal(false);
+                  setAiCaptionPrompt('');
+                  setGeneratedCaption(null);
+                }}
+                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5 text-[#86868b]" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {!generatedCaption ? (
+                <>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      Describe your content
+                    </label>
+                    <textarea
+                      value={aiCaptionPrompt}
+                      onChange={(e) => setAiCaptionPrompt(e.target.value)}
+                      placeholder="e.g., Luxury oceanfront villa in Malibu with infinity pool, 5 bedrooms, panoramic ocean views"
+                      rows={4}
+                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                      disabled={isGeneratingCaption}
+                    />
+                    <p className="text-[11px] text-[#86868b] mt-2">
+                      Include details like property type, location, features, and any key selling points.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAICaptionModal(false);
+                        setAiCaptionPrompt('');
+                      }}
+                      className="px-4 py-2 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                      disabled={isGeneratingCaption}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!aiCaptionPrompt.trim()) {
+                          toast.error('Please describe your content first');
+                          return;
+                        }
+                        setIsGeneratingCaption(true);
+                        try {
+                          const result = await openaiService.generateCaption(
+                            aiCaptionPrompt,
+                            postForm.platform,
+                            'luxury'
+                          );
+                          setGeneratedCaption(result);
+                          toast.success('Caption generated!');
+                        } catch (error) {
+                          console.error('Caption generation error:', error);
+                          toast.error(error.message || 'Failed to generate caption');
+                        } finally {
+                          setIsGeneratingCaption(false);
+                        }
+                      }}
+                      disabled={isGeneratingCaption || !aiCaptionPrompt.trim()}
+                      className="px-5 py-2 text-[14px] font-medium rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isGeneratingCaption ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Generate Caption
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      Generated Caption
+                    </label>
+                    <div className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                      {generatedCaption.caption}
+                    </div>
+                  </div>
+
+                  {generatedCaption.hashtags && generatedCaption.hashtags.length > 0 && (
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                        Suggested Hashtags
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {generatedCaption.hashtags.map((tag, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 text-[12px] rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGeneratedCaption(null);
+                      }}
+                      className="px-4 py-2 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors flex items-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Regenerate
+                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Use caption only
+                          setPostForm(prev => ({
+                            ...prev,
+                            description: generatedCaption.caption
+                          }));
+                          setShowAICaptionModal(false);
+                          setAiCaptionPrompt('');
+                          setGeneratedCaption(null);
+                          toast.success('Caption added!');
+                        }}
+                        className="px-4 py-2 text-[14px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors"
+                      >
+                        Use Caption
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Use caption + hashtags in tags field
+                          const hashtagsString = generatedCaption.hashtags?.join(', ') || '';
+                          setPostForm(prev => ({
+                            ...prev,
+                            description: generatedCaption.caption,
+                            tags: hashtagsString
+                          }));
+                          setShowAICaptionModal(false);
+                          setAiCaptionPrompt('');
+                          setGeneratedCaption(null);
+                          toast.success('Caption and hashtags added!');
+                        }}
+                        className="px-4 py-2 text-[14px] font-medium rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all"
+                      >
+                        Use Both
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>,
         document.body

@@ -496,6 +496,301 @@ ${metricsJson}`;
 });
 
 /**
+ * Generate social media captions with hashtags for luxury real estate content.
+ * Returns platform-specific captions optimized for engagement.
+ */
+exports.generateCaption = onCall({
+  cors: true,
+  maxInstances: 10,
+  secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const userId = request.auth.uid;
+  const userEmail = request.auth.token.email || 'unknown';
+  const rateLimit = await checkRateLimit(userId, 'openai');
+  if (!rateLimit.allowed) {
+    throw new HttpsError(
+      'resource-exhausted',
+      rateLimit.reason === 'cooldown'
+        ? `Please wait ${RATE_LIMITS.openai.cooldownMinutes} minutes.`
+        : 'Rate limit exceeded. Try again later.'
+    );
+  }
+
+  const { description, platform = 'instagram', tone = 'luxury' } = request.data || {};
+  if (!description || typeof description !== 'string' || description.trim().length < 3) {
+    throw new HttpsError('invalid-argument', 'Description is required (at least 3 characters)');
+  }
+
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const openAIKey = process.env.OPENAI_API_KEY;
+  if (!openRouterKey && !openAIKey) {
+    throw new HttpsError('internal', 'No AI provider key configured');
+  }
+
+  console.log(`✍️ Generating ${platform} caption for ${userEmail}`);
+
+  const platformGuidelines = {
+    instagram: 'Instagram: 2200 char max, use line breaks for readability, up to 30 hashtags (include 15-20 relevant ones), use occasional emojis',
+    facebook: 'Facebook: Conversational tone, 1-3 hashtags only, can be longer form, no excessive emojis',
+    linkedin: 'LinkedIn: Professional tone, no hashtags or only 3-5 industry ones, focus on value and insights, no emojis',
+    twitter: 'Twitter/X: Under 280 characters total including hashtags, punchy and engaging, 2-3 hashtags max',
+    youtube: 'YouTube: Title-style or description format, include relevant keywords, 3-5 hashtags',
+  };
+
+  const systemPrompt = `You are an expert social media copywriter for luxury real estate. Write captions that are aspirational, sophisticated, and engaging. Your tone should be ${tone === 'luxury' ? 'elegant and premium' : tone}.`;
+
+  const userPrompt = `Write a ${platform} caption for this luxury real estate content:
+
+"${description.substring(0, 1000)}"
+
+Platform requirements: ${platformGuidelines[platform] || platformGuidelines.instagram}
+
+Return ONLY valid JSON in this format:
+{
+  "caption": "The full caption text with line breaks as \\n",
+  "hashtags": ["hashtag1", "hashtag2", "..."]
+}
+
+Do not include # symbols in the hashtags array. Do not include any markdown or explanation outside the JSON.`;
+
+  const body = {
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    max_tokens: 800,
+    temperature: 0.7
+  };
+
+  let data;
+  let provider;
+
+  try {
+    if (openRouterKey) {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openRouterKey}`
+        },
+        body: JSON.stringify({ ...body, model: 'openai/gpt-4o-mini' })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'OpenRouter request failed');
+      }
+      data = await response.json();
+      provider = 'openrouter';
+    } else {
+      const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openAIKey}`
+        },
+        body: JSON.stringify({ ...body, model: 'gpt-4o-mini' })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'OpenAI request failed');
+      }
+      data = await response.json();
+      provider = 'openai';
+    }
+
+    let content = data.choices?.[0]?.message?.content?.trim() || '';
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const result = JSON.parse(content);
+
+    if (!result.caption) {
+      throw new Error('No caption in response');
+    }
+
+    await logApiUsage(userId, userEmail, 'generate_caption', {
+      platform,
+      descriptionLength: description.length,
+      tokensUsed: data.usage?.total_tokens || 0,
+      provider
+    });
+
+    console.log(`✅ Caption generated for ${platform} (${provider})`);
+
+    return {
+      success: true,
+      caption: result.caption,
+      hashtags: result.hashtags || [],
+      platform,
+      rateLimitRemaining: rateLimit.remaining
+    };
+  } catch (error) {
+    console.error('❌ Caption generation failed:', error);
+    await logApiUsage(userId, userEmail, 'generate_caption', {
+      platform,
+      error: error.message
+    });
+    throw new HttpsError('internal', `Caption generation failed: ${error.message}`);
+  }
+});
+
+/**
+ * Predict client health/churn risk based on multiple factors.
+ * Returns status (good/warning/critical), risk score, reason, and recommended action.
+ */
+exports.predictClientHealth = onCall({
+  cors: true,
+  maxInstances: 10,
+  secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const userId = request.auth.uid;
+  const userEmail = request.auth.token.email || 'unknown';
+  const rateLimit = await checkRateLimit(userId, 'openai');
+  if (!rateLimit.allowed) {
+    throw new HttpsError(
+      'resource-exhausted',
+      rateLimit.reason === 'cooldown'
+        ? `Please wait ${RATE_LIMITS.openai.cooldownMinutes} minutes.`
+        : 'Rate limit exceeded. Try again later.'
+    );
+  }
+
+  const { clientData } = request.data || {};
+  if (!clientData || typeof clientData !== 'object') {
+    throw new HttpsError('invalid-argument', 'clientData object is required');
+  }
+
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const openAIKey = process.env.OPENAI_API_KEY;
+  if (!openRouterKey && !openAIKey) {
+    throw new HttpsError('internal', 'No AI provider key configured');
+  }
+
+  const clientName = clientData.clientName || 'Unknown';
+  console.log(`🔍 Predicting health for client: ${clientName}`);
+
+  const systemPrompt = `You are a client success analyst for a luxury real estate social media agency. Analyze client health data to predict churn risk and recommend actions. Be concise and actionable.`;
+
+  const userPrompt = `Analyze this client's health and predict churn risk:
+
+Client: ${clientName}
+Posts remaining: ${clientData.postsRemaining ?? 'unknown'} of ${clientData.packageSize ?? 'unknown'}
+Posts used: ${clientData.postsUsed ?? 'unknown'}
+Payment status: ${clientData.paymentStatus || 'unknown'}
+Package type: ${clientData.packageType || 'unknown'}
+Days since last contact: ${clientData.daysSinceContact ?? 'unknown'}
+Contract renewal in days: ${clientData.daysUntilRenewal ?? 'unknown'}
+Account created: ${clientData.createdAt || 'unknown'}
+Last post date: ${clientData.lastPostDate || 'unknown'}
+Client notes: ${clientData.notes || 'none'}
+
+Based on this data, provide a health assessment.
+
+Return ONLY valid JSON:
+{
+  "status": "good" | "warning" | "critical",
+  "churnRisk": 0-100,
+  "reason": "Brief explanation of the primary concern or positive indicator",
+  "action": "Specific recommended next step"
+}
+
+Guidelines:
+- "critical" = high churn risk, needs immediate attention
+- "warning" = some concerns, should monitor closely
+- "good" = healthy relationship, on track
+- Consider: posts remaining, payment status, engagement recency, contract timeline`;
+
+  const body = {
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    max_tokens: 300,
+    temperature: 0.3
+  };
+
+  let data;
+  let provider;
+
+  try {
+    if (openRouterKey) {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openRouterKey}`
+        },
+        body: JSON.stringify({ ...body, model: 'openai/gpt-4o-mini' })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'OpenRouter request failed');
+      }
+      data = await response.json();
+      provider = 'openrouter';
+    } else {
+      const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openAIKey}`
+        },
+        body: JSON.stringify({ ...body, model: 'gpt-4o-mini' })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'OpenAI request failed');
+      }
+      data = await response.json();
+      provider = 'openai';
+    }
+
+    let content = data.choices?.[0]?.message?.content?.trim() || '';
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const result = JSON.parse(content);
+
+    // Validate response
+    if (!['good', 'warning', 'critical'].includes(result.status)) {
+      result.status = 'warning';
+    }
+    if (typeof result.churnRisk !== 'number' || result.churnRisk < 0 || result.churnRisk > 100) {
+      result.churnRisk = 50;
+    }
+
+    await logApiUsage(userId, userEmail, 'predict_client_health', {
+      clientName,
+      status: result.status,
+      churnRisk: result.churnRisk,
+      tokensUsed: data.usage?.total_tokens || 0,
+      provider
+    });
+
+    console.log(`✅ Health predicted for ${clientName}: ${result.status} (${result.churnRisk}% risk)`);
+
+    return {
+      success: true,
+      ...result,
+      rateLimitRemaining: rateLimit.remaining
+    };
+  } catch (error) {
+    console.error('❌ Client health prediction failed:', error);
+    await logApiUsage(userId, userEmail, 'predict_client_health', {
+      clientName,
+      error: error.message
+    });
+    throw new HttpsError('internal', `Health prediction failed: ${error.message}`);
+  }
+});
+
+/**
  * Get current rate limit status for a user
  */
 exports.getRateLimitStatus = onCall({
