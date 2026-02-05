@@ -248,7 +248,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
             type="text"
             value={formData.title}
             onChange={(e) => handleInputChange('title', e.target.value)}
-            className="w-full text-base font-semibold border-none outline-none focus:ring-0 px-0 py-2 placeholder-gray-400"
+            className="w-full text-base font-semibold border-none outline-none focus:ring-0 px-0 py-2 placeholder-gray-400 text-gray-900"
             placeholder="Task name"
             autoFocus
           />
@@ -258,7 +258,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
             value={formData.description}
             onChange={(e) => handleInputChange('description', e.target.value)}
             rows={2}
-            className="w-full text-sm border-none outline-none focus:ring-0 px-0 py-2 placeholder-gray-400 resize-none"
+            className="w-full text-sm border-none outline-none focus:ring-0 px-0 py-2 placeholder-gray-400 resize-none text-gray-900"
             placeholder="Description"
           />
 

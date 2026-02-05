@@ -435,8 +435,8 @@ const V3Layout = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className={`min-h-screen bg-[#f5f5f7] dark:bg-[#161617] transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
+      {/* Main Content - transparent when on Features page so its full-bleed gradient shows */}
+      <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} ${location.pathname === '/features' ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'}`}>
         {/* View As Banner */}
         {isViewingAs && viewingAsUser && (
           <div className="sticky top-0 z-40 bg-gradient-to-r from-[#5856d6] to-[#af52de] text-white px-4 py-2.5 shadow-lg">

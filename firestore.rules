@@ -129,6 +129,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
+    // Per-user task/request archive preferences (which tasks/requests user has archived locally)
+    match /user_task_archives/{docId} {
+      allow read: if isAuthenticated() && resource.data.userEmail == request.auth.token.email;
+      allow create: if isAuthenticated() && request.resource.data.userEmail == request.auth.token.email;
+      allow update, delete: if isAuthenticated() && resource.data.userEmail == request.auth.token.email;
+    }
+    
     // Leave requests - authenticated users can read, authenticated users can write
     // TODO: Add HR role check for write operations
     match /leave_requests/{requestId} {

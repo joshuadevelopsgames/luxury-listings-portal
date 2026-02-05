@@ -799,13 +799,15 @@ const TasksPage = () => {
   const createTask = async (taskData) => {
     try {
       console.log('Creating task with data:', taskData);
-      
+      // No due date + self-assigned (quick add) → default to today so it shows in Today; Inbox is for requested tasks
+      const dueDate = taskData.dueDate || format(new Date(), 'yyyy-MM-dd');
+
       await DailyTask.create({
         title: taskData.title,
         description: taskData.description,
         category: taskData.category,
         priority: taskData.priority,
-        due_date: taskData.dueDate, // Map dueDate to due_date
+        due_date: dueDate,
         estimated_time: taskData.estimatedTime, // Map estimatedTime to estimated_time
         assigned_to: currentUser.email,
         status: 'pending',
