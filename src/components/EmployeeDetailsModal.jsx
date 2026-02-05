@@ -256,10 +256,6 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                     <input type="tel" value={editProfileForm.phone} onChange={(e) => setEditProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Address / Location</label>
-                    <input type="text" value={editProfileForm.location} onChange={(e) => setEditProfileForm((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. Los Angeles, CA" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                  </div>
-                  <div>
                     <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Department</label>
                     <select value={editProfileForm.department} onChange={(e) => setEditProfileForm((p) => ({ ...p, department: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]">
                       <option value="">Select department...</option>

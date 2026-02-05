@@ -4,7 +4,6 @@ import {
   User, 
   Mail, 
   Phone, 
-  MapPin, 
   Briefcase, 
   Calendar,
   Edit,
@@ -57,17 +56,15 @@ const PersonCard = ({
         lastName: displayPerson.lastName,
         email: displayPerson.email,
         phone: displayPerson.phone,
-        address: displayPerson.address,
         department: displayPerson.department,
         position: displayPerson.position,
         manager: displayPerson.manager,
         startDate: displayPerson.startDate
       });
     } else {
-      // Regular users can only edit phone and address
+      // Regular users can only edit phone
       setEditedData({
-        phone: displayPerson.phone,
-        address: displayPerson.address
+        phone: displayPerson.phone
       });
     }
   };
@@ -108,7 +105,7 @@ const PersonCard = ({
   const canEditField = (field) => {
     if (!isEditing) return false;
     if (isHRView) return field !== 'employeeId'; // HR can edit all except ID
-    return field === 'phone' || field === 'address'; // Regular users can only edit these
+    return field === 'phone'; // Regular users can only edit phone
   };
 
   const handleFieldChange = (field, value) => {
@@ -132,7 +129,7 @@ const PersonCard = ({
       ) : (
         <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
           <p className="text-[15px] text-[#1d1d1f] dark:text-white">{value || 'Not provided'}</p>
-          {!isHRView && isEditing && field !== 'phone' && field !== 'address' && (
+          {!isHRView && isEditing && field !== 'phone' && (
             <p className="text-[11px] text-[#86868b] mt-1">Contact HR to change</p>
           )}
         </div>
@@ -208,7 +205,6 @@ const PersonCard = ({
           {renderField("Last Name", User, "lastName", "text", displayPerson.lastName)}
           {renderField("Email", Mail, "email", "email", displayPerson.email)}
           {renderField("Phone", Phone, "phone", "tel", displayPerson.phone)}
-          {renderField("Address", MapPin, "address", "text", displayPerson.address, !compact)}
           {/* Department as dropdown when editing */}
           <div key="department">
             <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
@@ -281,7 +277,7 @@ const PersonCard = ({
               {isHRView ? (
                 <><span className="font-semibold">HR Manager:</span> You can update all employee information fields except Employee ID.</>
               ) : (
-                <><span className="font-semibold">Note:</span> You can update your phone and address. For changes to name, email, or employment details, please contact HR.</>
+                <><span className="font-semibold">Note:</span> You can update your phone. For changes to name, email, or employment details, please contact HR.</>
               )}
             </p>
           </div>

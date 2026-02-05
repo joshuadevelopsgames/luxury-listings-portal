@@ -18,7 +18,6 @@ import {
   User,
   Mail,
   Phone,
-  MapPin,
   Briefcase
 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
@@ -62,7 +61,6 @@ const OnboardingPage = () => {
     lastName: userData?.lastName || currentUser?.lastName || '',
     email: currentUser?.email || '',
     phone: userData?.phone || '',
-    address: userData?.address || '',
     city: userData?.city || '',
     state: userData?.state || '',
     zipCode: userData?.zipCode || '',
@@ -346,20 +344,6 @@ const OnboardingPage = () => {
                   placeholder="(555) 123-4567"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                <MapPin className="inline w-4 h-4 mr-1" />
-                Address
-              </label>
-              <input
-                type="text"
-                value={profileData.address}
-                onChange={(e) => handleProfileInputChange('address', e.target.value)}
-                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                placeholder="123 Main Street"
-              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
