@@ -436,16 +436,25 @@ exports.generateReportSummary = onCall({
     }
 
     const metricsJson = JSON.stringify(metrics, null, 0).substring(0, 8000);
-    const systemPrompt = `You are a social media analyst writing a short client-facing summary for an Instagram performance report. Focus on insights, not raw numbers. Be concise: 3-5 sentences only.`;
-    const userPrompt = `Using this Instagram Insights data, write a short summary that:
-1. Says what went well this period (e.g. strong engagement, growth, reach).
-2. States which content type performed best (Reels vs Posts vs Stories) and why it matters.
-3. Includes one or two standout takeaways (e.g. profile visits up, top content, follower growth).
-4. Optionally one short line on something to watch if relevant (e.g. reach down).
-Write in a professional, client-ready tone. No bullet lists. No preamble like "Here is your summary." Output only the summary text.
+    const systemPrompt = `You are a social media account manager writing a short summary for a client's Instagram report. The client will read this, so write as their SMM: friendly, clear, and insightful.
+
+Rules:
+- Always refer to the account as "your account" (e.g. "Your account had a strong month..."). If a client/account name is provided, you may add it once for clarity (e.g. "Your account (Blair Chang)..."), but never use the client name as the subject (e.g. do NOT write "Blair Chang experienced...").
+- Tone: professional but casual and friendly — like a sharp SMM who knows what matters, not a generic analyst.
+- Be insightful, not descriptive. Avoid weak or vague phrasing (e.g. "indicating heightened engagement", "underscores the importance of video"). Be concrete: use a key number when it tells the story, then say what it means for them or what we should do next.
+- Include a clear "so what" where it fits naturally (what the numbers suggest, what’s working) — but do not add a forward-looking next step or recommendation at the end.
+- 3-5 sentences. No bullet lists. No preamble. Always end the paragraph on a positive or neutral note, never on a negative. Do not use em dashes (—); use commas, periods, or "and" instead. Output only the summary paragraph.`;
+    const userPrompt = `Using this Instagram Insights data, write a short, insightful summary. Required:
+
+1. Lead with what actually went well for their account this period — be specific (e.g. "Profile visits up 44% and Reels drove nearly half of all interactions"). Always say "your account", not the client name.
+2. Name the best-performing content type (Reels vs Posts vs Stories) and what we should do with that (e.g. "Reels are carrying engagement — worth leaning into more short-form this month").
+3. One standout number or win (e.g. a top post's reach, follower growth) and what it means.
+4. If something dropped or is worth watching, mention it in a friendly way in the middle of the summary — never end on a negative. Always close with a positive or neutral line (e.g. a win, what’s working, or the standout takeaway). Do not add a recommendation or next step at the end.
+
+Avoid: generic analyst language, filler like "indicating" or "underscores the importance", and em dashes (—). Do not end with a call to action or "we should try X next". Do not end on a down note. Be concrete and useful; stop at the insight.
 
 Date range: ${dateRange || 'Not specified'}
-${clientName ? `Client: ${clientName}` : ''}
+${clientName ? `Account / client name (for clarity only, e.g. "Your account (${clientName})"): ${clientName}` : ''}
 
 Metrics (JSON):
 ${metricsJson}`;
