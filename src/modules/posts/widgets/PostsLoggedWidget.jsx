@@ -3,8 +3,7 @@
  * Allows SMMs to quickly log completed posts for their clients
  */
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   CheckCircle2, 
   Plus, 
@@ -12,7 +11,6 @@ import {
   Youtube, 
   Facebook, 
   Linkedin,
-  Calendar,
   X
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -53,7 +51,6 @@ const platformColors = {
 };
 
 const PostsLoggedWidget = () => {
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { isViewingAs, viewingAsUser } = useViewAs();
   const [loading, setLoading] = useState(true);
@@ -104,47 +101,64 @@ const PostsLoggedWidget = () => {
     loadPostsToday();
   }, [effectiveUser?.email, effectiveUser?.uid]);
 
+  const postsByClient = useMemo(() => {
+    const map = {};
+    postsToday.forEach(task => {
+      const label = task.labels?.find(l => l.startsWith('client-') && l !== 'client-post');
+      const id = label ? label.replace('client-', '') : null;
+      if (id) map[id] = (map[id] || 0) + 1;
+    });
+    return map;
+  }, [postsToday]);
+
+  const doLogPost = async (client, platform) => {
+    const now = new Date();
+    const taskData = {
+      title: `Post for ${client.clientName}`,
+      description: `${platform.charAt(0).toUpperCase() + platform.slice(1)} post completed`,
+      assigned_to: effectiveUser.email,
+      assignedBy: effectiveUser.email,
+      status: 'completed',
+      priority: 'medium',
+      due_date: format(now, 'yyyy-MM-dd'),
+      created_date: now.toISOString(),
+      completed_date: now.toISOString(),
+      labels: ['client-post', `client-${client.id}`, platform],
+      task_type: 'post_log'
+    };
+    await firestoreService.addTask(taskData);
+    const newPostsUsed = (client.postsUsed || 0) + 1;
+    const newPostsRemaining = Math.max((client.postsRemaining || 0) - 1, 0);
+    await firestoreService.updateClient(client.id, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
+    setPostsToday(prev => [...prev, { ...taskData, id: Date.now().toString(), clientName: client.clientName }]);
+    return client.clientName;
+  };
+
+  const handleQuickLog = async (clientId, platform = 'instagram') => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+    setLogging(true);
+    try {
+      const name = await doLogPost(client, platform);
+      toast.success(`+1 for ${name}`);
+    } catch (error) {
+      console.error('Error logging post:', error);
+      toast.error('Failed to log post');
+    } finally {
+      setLogging(false);
+    }
+  };
+
   const handleLogPost = async () => {
     if (!selectedClient) {
       toast.error('Please select a client');
       return;
     }
-
+    const client = clients.find(c => c.id === selectedClient);
+    if (!client) return;
     setLogging(true);
     try {
-      const client = clients.find(c => c.id === selectedClient);
-      if (!client) throw new Error('Client not found');
-
-      // Create a completed task for the post
-      const now = new Date();
-      const taskData = {
-        title: `Post for ${client.clientName}`,
-        description: `${selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} post completed`,
-        assigned_to: effectiveUser.email,
-        assignedBy: effectiveUser.email,
-        status: 'completed',
-        priority: 'medium',
-        due_date: format(now, 'yyyy-MM-dd'),
-        created_date: now.toISOString(),
-        completed_date: now.toISOString(),
-        labels: ['client-post', `client-${client.id}`, selectedPlatform],
-        task_type: 'post_log'
-      };
-
-      await firestoreService.addTask(taskData);
-
-      // Update client's post counts
-      const newPostsUsed = (client.postsUsed || 0) + 1;
-      const newPostsRemaining = Math.max((client.postsRemaining || 0) - 1, 0);
-      
-      await firestoreService.updateClient(client.id, {
-        postsUsed: newPostsUsed,
-        postsRemaining: newPostsRemaining
-      });
-
-      // Add to local state
-      setPostsToday(prev => [...prev, { ...taskData, id: Date.now().toString(), clientName: client.clientName }]);
-      
+      await doLogPost(client, selectedPlatform);
       toast.success(`Post logged for ${client.clientName}!`);
       setShowLogModal(false);
       setSelectedClient('');
@@ -159,7 +173,7 @@ const PostsLoggedWidget = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
+      <div className="min-h-[320px] sm:min-h-[380px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
         <div className="space-y-3">
           <div className="h-10 w-full bg-black/5 dark:bg-white/5 rounded" />
@@ -171,74 +185,61 @@ const PostsLoggedWidget = () => {
 
   return (
     <>
-      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#34c759] to-[#30d158] flex items-center justify-center shadow-lg shadow-[#34c759]/20">
-              <CheckCircle2 className="w-4 h-4 text-white" strokeWidth={1.5} />
+      <div className="min-h-[320px] sm:min-h-[380px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10">
+        {/* Header: big tally total */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#34c759] to-[#30d158] flex items-center justify-center shadow-lg shadow-[#34c759]/20">
+              <CheckCircle2 className="w-6 h-6 text-white" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white">Posts Today</h3>
-              <p className="text-[11px] text-[#86868b]">{postsToday.length} logged</p>
+              <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Posts Today</h3>
+              <p className="text-2xl sm:text-3xl font-semibold tabular-nums text-[#1d1d1f] dark:text-white">{postsToday.length}</p>
+              <p className="text-[11px] text-[#86868b]">logged</p>
             </div>
           </div>
           <button
             onClick={() => setShowLogModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#30d158] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            Log Post
+            Log (other)
           </button>
         </div>
 
-        {/* Posts List */}
-        {postsToday.length === 0 ? (
-          <div className="text-center py-8">
-            <Calendar className="w-10 h-10 mx-auto mb-2 text-[#86868b] opacity-50" />
-            <p className="text-[13px] text-[#86868b]">No posts logged today</p>
-            <p className="text-[11px] text-[#86868b] mt-1">Click "Log Post" to record a completed post</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {postsToday.slice(0, 5).map((post) => {
-              const platform = post.labels?.find(l => platformIcons[l]) || 'instagram';
-              const PlatformIcon = platformIcons[platform] || Instagram;
-              const clientLabel = post.labels?.find(l => l.startsWith('client-') && l !== 'client-post');
-              
+        {/* Tally by client: name | count | + */}
+        <div className="space-y-1">
+          <p className="text-[11px] font-medium text-[#86868b] uppercase tracking-wide mb-2">By client</p>
+          {clients.length === 0 ? (
+            <p className="text-[13px] text-[#86868b]">No clients assigned</p>
+          ) : (
+            clients.map(client => {
+              const count = postsByClient[client.id] || 0;
               return (
-                <div 
-                  key={post.id}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]"
+                <div
+                  key={client.id}
+                  className="flex items-center gap-3 py-2 px-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
                 >
-                  <div 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: `${platformColors[platform] || '#86868b'}15` }}
+                  <span className="flex-1 min-w-0 text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                    {client.clientName}
+                  </span>
+                  <span className="tabular-nums text-[15px] font-semibold text-[#1d1d1f] dark:text-white w-8 text-right">
+                    {count}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLog(client.id)}
+                    disabled={logging}
+                    className="w-8 h-8 rounded-lg bg-[#34c759] text-white flex items-center justify-center hover:bg-[#30d158] transition-colors disabled:opacity-50"
+                    title="Log 1 post (Instagram)"
                   >
-                    <PlatformIcon 
-                      className="w-4 h-4" 
-                      style={{ color: platformColors[platform] || '#86868b' }}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
-                      {post.title || post.clientName || 'Post'}
-                    </p>
-                    <p className="text-[11px] text-[#86868b]">
-                      {format(new Date(post.completed_date), 'h:mm a')}
-                    </p>
-                  </div>
-                  <CheckCircle2 className="w-4 h-4 text-[#34c759] flex-shrink-0" />
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
               );
-            })}
-            {postsToday.length > 5 && (
-              <p className="text-[11px] text-[#86868b] text-center pt-2">
-                +{postsToday.length - 5} more posts
-              </p>
-            )}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </div>
 
       {/* Log Post Modal */}

@@ -147,11 +147,14 @@ const CalendarView = ({ tasks = [], sentRequests = [], outboxTaskMap = {}, onClo
                     {dayOutbox.slice(0, 2).map((req) => {
                       const task = outboxTaskMap[req.id];
                       const label = task?.title || req.taskTitle || 'Requested';
+                      const canOpen = !!task;
                       return (
                         <div
                           key={req.id}
-                          className="text-[11px] sm:text-xs px-1.5 py-1 rounded-lg truncate border border-dashed border-[#5856d6]/50 dark:border-[#5856d6]/60 bg-[#5856d6]/10 dark:bg-[#5856d6]/15 text-[#5856d6]"
-                          title={`Outbox: ${label}`}
+                          role={canOpen ? 'button' : undefined}
+                          onClick={canOpen ? () => onTaskClick?.(task) : undefined}
+                          className={`text-[11px] sm:text-xs px-1.5 py-1 rounded-lg truncate border border-dashed border-[#5856d6]/50 dark:border-[#5856d6]/60 bg-[#5856d6]/10 dark:bg-[#5856d6]/15 text-[#5856d6] ${canOpen ? 'cursor-pointer hover:bg-[#5856d6]/20 dark:hover:bg-[#5856d6]/25' : ''}`}
+                          title={canOpen ? `Open: ${label}` : `Outbox: ${label}`}
                         >
                           {label}
                         </div>

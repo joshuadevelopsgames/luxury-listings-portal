@@ -289,6 +289,7 @@ export const WIDGET_DEFAULT_SIZES = {
   deliverablesDue: 'small',   // 1x1
   recentReports: 'medium',   // 2x1
   tasksSummary: 'small',     // 1x1
+  postsLogged: 'medium',     // 2x1 – tally per client
 };
 
 export function getWidgetDefaultSize(widgetId) {

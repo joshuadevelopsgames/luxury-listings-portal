@@ -943,11 +943,27 @@ const TasksPage = () => {
       }
       
       await DailyTask.update(updatedTask.id, updates);
-      
+
       // Refresh tasks after update
       await refreshTasks();
       setShowEditModal(false);
       setEditingTask(null);
+
+      // If this task is linked to an outbox request, refresh outbox so sender sees updated status
+      if (updatedTask.taskRequestId && effectiveUser?.email) {
+        const requests = await firestoreService.getSentTaskRequests(effectiveUser.email);
+        setSentRequests(requests || []);
+        const map = {};
+        await Promise.all(
+          (requests || [])
+            .filter((r) => r.status === 'accepted' && r.taskId)
+            .map(async (r) => {
+              const t = await firestoreService.getTaskById(r.taskId);
+              if (t) map[r.id] = t;
+            })
+        );
+        setOutboxTaskMap(map);
+      }
     } catch (error) {
       console.error("Error updating task:", error);
       toast.error('Failed to update task. Please try again.');
@@ -1427,7 +1443,7 @@ const TasksPage = () => {
         />
       )}
 
-      {/* Edit Task Modal */}
+      {/* Edit Task Modal - when on outbox tab, pass outbox tasks so modal can open/edit linked tasks */}
       <TaskEditModal
         task={editingTask}
         isOpen={showEditModal}
@@ -1437,7 +1453,7 @@ const TasksPage = () => {
         }}
         onSave={handleSaveTask}
         onDelete={handleDeleteTask}
-        tasks={filteredTasks}
+        tasks={activeFilter === 'outbox' ? Object.values(outboxTaskMap) : filteredTasks}
         onNavigate={(newTask) => setEditingTask(newTask)}
       />
 
@@ -1487,20 +1503,23 @@ const TasksPage = () => {
                 const statusLabel = req.status === 'pending' ? 'Pending' : req.status === 'accepted' ? (task?.status === 'completed' ? 'Completed' : 'In progress') : 'Declined';
                 const statusColor = req.status === 'pending' ? 'text-[#ff9500]' : req.status === 'accepted' ? (task?.status === 'completed' ? 'text-[#34c759]' : 'text-[#0071e3]') : 'text-[#ff3b30]';
                 const isArchived = archivedRequestIds.has(req.id);
+                const canOpenTask = task && (req.status === 'accepted');
                 return (
                   <li
                     key={req.id}
                     id={`outbox-request-${req.id}`}
-                    className="p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    role={canOpenTask ? 'button' : undefined}
+                    onClick={canOpenTask ? () => { setEditingTask(task); setShowEditModal(true); } : undefined}
+                    className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${canOpenTask ? 'cursor-pointer hover:bg-black/[0.04] dark:hover:bg-white/[0.06]' : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'} transition-colors`}
                   >
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-[#1d1d1f] dark:text-white">{req.taskTitle}</p>
                       <p className="text-[12px] text-[#86868b] mt-0.5">
                         To: {req.toUserName || req.toUserEmail}
                         {req.taskDueDate && ` · Due ${format(new Date(req.taskDueDate), 'MMM d, yyyy')}`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                       <span className={`text-[12px] font-medium ${statusColor}`}>{statusLabel}</span>
                       <button
                         type="button"
@@ -1995,10 +2014,10 @@ const TasksPage = () => {
         />
       )}
 
-      {/* Calendar View Modal */}
+      {/* Calendar View Modal - use filtered tasks so tab + smart filter apply; outbox tab uses outbox tasks */}
       {showCalendarView && (
         <CalendarView 
-          tasks={tasks}
+          tasks={activeFilter === 'outbox' ? Object.values(outboxTaskMap) : filteredTasks}
           sentRequests={sentRequests}
           outboxTaskMap={outboxTaskMap}
           onClose={() => setShowCalendarView(false)}
