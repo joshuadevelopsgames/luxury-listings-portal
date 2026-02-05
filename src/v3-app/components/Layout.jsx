@@ -56,13 +56,19 @@ const V3Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // As soon as we load dashboard (or any app route) and user hasn't completed onboarding, show onboarding
+  // On load/refresh: use Firestore (not cache) so onboarding shows when server says not completed
   useEffect(() => {
-    if (!currentUser?.isApproved) return;
-    if (currentUser?.onboardingCompleted === true) return;
+    if (!currentUser?.email || !currentUser?.isApproved) return;
     if (location.pathname === '/onboarding') return;
-    navigate('/onboarding', { replace: true });
-  }, [currentUser?.isApproved, currentUser?.onboardingCompleted, location.pathname, navigate]);
+
+    let cancelled = false;
+    firestoreService.getApprovedUserByEmail(currentUser.email).then((approved) => {
+      if (cancelled) return;
+      if (approved?.onboardingCompleted === true) return;
+      navigate('/onboarding', { replace: true });
+    });
+    return () => { cancelled = true; };
+  }, [currentUser?.email, currentUser?.isApproved, location.pathname, navigate]);
   
   // Vancouver time: dark from 5 PM to 6 AM (switches at 6:00 and 17:00)
   const getVancouverHour = () => {

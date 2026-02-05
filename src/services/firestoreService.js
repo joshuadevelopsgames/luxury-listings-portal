@@ -250,6 +250,20 @@ class FirestoreService {
     }
   }
 
+  // Get one approved user by email (for fresh onboarding check)
+  async getApprovedUserByEmail(email) {
+    if (!email) return null;
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+      const docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, normalizedEmail));
+      if (!docSnap.exists()) return null;
+      return { id: docSnap.id, ...docSnap.data() };
+    } catch (error) {
+      console.error('Error getting approved user:', error);
+      return null;
+    }
+  }
+
   // Add approved user
   async addApprovedUser(userData) {
     try {
