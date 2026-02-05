@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-hot-toast";
 import AppSetupPage from "./AppSetupPage";
 import { USER_ROLES } from "../entities/UserRoles";
 import { 
@@ -88,7 +89,7 @@ const resources = [
     description: "Complete guide to company policies, benefits, and procedures",
     type: "document",
     category: "policy",
-    url: "https://example.com/handbook",
+    comingSoon: true,
     important: true
   },
   {
@@ -121,9 +122,9 @@ const resources = [
     id: 5,
     title: "Benefits Guide",
     description: "Comprehensive overview of health insurance, retirement plans, and perks",
-    type: "document", 
+    type: "document",
     category: "benefits",
-    url: "https://example.com/benefits",
+    comingSoon: true,
     important: true
   },
   {
@@ -380,7 +381,18 @@ function ResourceCard({ resource, navigate, currentRole, isSystemAdmin }) {
           {resource.category}
         </span>
         
-        {resource.internalPath && (
+        {resource.comingSoon && (
+          <button
+            type="button"
+            onClick={() => toast('Coming Soon!')}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
+            <ArrowRight className="w-4 h-4" />
+            Open Resource
+          </button>
+        )}
+        
+        {!resource.comingSoon && resource.internalPath && (
           <button 
             onClick={() => navigate(getInternalPath())}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
@@ -390,7 +402,7 @@ function ResourceCard({ resource, navigate, currentRole, isSystemAdmin }) {
           </button>
         )}
         
-        {resource.url && (
+        {!resource.comingSoon && resource.url && (
           <a
             href={resource.url}
             target="_blank"
