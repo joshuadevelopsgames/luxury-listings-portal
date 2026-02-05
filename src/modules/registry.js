@@ -6,7 +6,7 @@
  * it's included in the base package or requires upgrade.
  */
 
-import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3, User, Palette, Bug, MessageSquare, Sparkles } from 'lucide-react';
+import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3, User, Palette, Bug, MessageSquare, Sparkles, Activity } from 'lucide-react';
 
 // ============================================================================
 // MODULE DEFINITIONS
@@ -170,6 +170,20 @@ export const modules = {
     widgets: [],
     navItem: {
       path: '/hr-analytics',
+      section: 'HR'
+    },
+    baseModule: false
+  },
+
+  'client-health': {
+    id: 'client-health',
+    name: 'Client Health',
+    description: 'AI health overview for all clients',
+    icon: Activity,
+    routes: ['/client-health'],
+    widgets: [],
+    navItem: {
+      path: '/client-health',
       section: 'HR'
     },
     baseModule: false

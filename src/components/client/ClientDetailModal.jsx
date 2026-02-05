@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   X,
   Mail,
@@ -40,6 +41,7 @@ const ClientDetailModal = ({
   employees = [], // For manager assignment
   showManagerAssignment = false
 }) => {
+  const { currentUser } = useAuth();
   const { isSystemAdmin, hasPermission } = usePermissions();
   const canEdit = isSystemAdmin || hasPermission('clients');
   const canAssignManagers = isSystemAdmin || hasPermission('assign_managers');
@@ -141,7 +143,9 @@ const ClientDetailModal = ({
   const handleAssignManager = async (managerEmail) => {
     setAssigningManager(true);
     try {
+      const previousManager = localClient.assignedManager || null;
       await firestoreService.updateClient(localClient.id, { assignedManager: managerEmail || null });
+      await firestoreService.logClientReassignment(localClient.id, localClient.clientName || localClient.name, previousManager, managerEmail || null, currentUser?.email);
       const updatedClient = { ...localClient, assignedManager: managerEmail || null };
       setLocalClient(updatedClient);
       if (onClientUpdate) onClientUpdate(updatedClient);

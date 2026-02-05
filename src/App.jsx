@@ -37,6 +37,7 @@ import CRMPage from './pages/CRMPage';
 import TeamManagement from './pages/TeamManagement';
 import HRCalendar from './pages/HRCalendar';
 import HRAnalytics from './pages/HRAnalytics';
+import ClientHealthPage from './pages/ClientHealthPage';
 import ITSupportPage from './pages/ITSupportPage';
 import TutorialsPage from './pages/TutorialsPage';
 import ResourcesPage from './pages/ResourcesPage';
@@ -239,6 +240,7 @@ const router = createBrowserRouter([
           { path: 'team', element: <PermissionRoute pageId="team" pageName="Team Management"><TeamManagement /></PermissionRoute> },
           { path: 'hr-calendar', element: <PermissionRoute pageId="hr-calendar" pageName="HR Calendar"><HRCalendar /></PermissionRoute> },
           { path: 'hr-analytics', element: <PermissionRoute pageId="hr-analytics" pageName="HR Analytics"><HRAnalytics /></PermissionRoute> },
+          { path: 'client-health', element: <PermissionRoute pageId="client-health" pageName="Client Health"><ClientHealthPage /></PermissionRoute> },
           { path: 'it-support', element: <PermissionRoute pageId="it-support" pageName="IT Support"><ITSupportPage /></PermissionRoute> },
           { path: 'tutorials', element: <PermissionRoute pageId="tutorials" pageName="Tutorials"><TutorialsPage /></PermissionRoute> },
           { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },

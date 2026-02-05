@@ -39,7 +39,8 @@ import {
   Palette,
   Sparkles,
   Bug,
-  MessageSquare
+  MessageSquare,
+  Activity
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
@@ -102,6 +103,7 @@ const ALL_PAGES = {
   'hr-calendar': { name: 'HR Calendar', icon: Calendar, description: 'Team calendar' },
   'team': { name: 'Team Management', icon: Users, description: 'Team directory' },
   'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, description: 'HR metrics and reports' },
+  'client-health': { name: 'Client Health', icon: Activity, description: 'AI health overview for all clients (admin)' },
   'it-support': { name: 'IT Support', icon: Wrench, description: 'Technical support' },
   'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },

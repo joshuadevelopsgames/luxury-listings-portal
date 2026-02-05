@@ -67,6 +67,7 @@ const MyClientsPage = () => {
 
   // AI Health Prediction state
   const [aiHealthPredictions, setAiHealthPredictions] = useState({}); // { clientId: { status, churnRisk, reason, action, timestamp } }
+  const [clientHealthSnapshots, setClientHealthSnapshots] = useState({}); // from monthly run (admin) - { clientId: { status, churnRisk, reason, action, timestamp } }
   const [loadingAiHealth, setLoadingAiHealth] = useState({}); // { clientId: boolean }
   const [showAiTooltip, setShowAiTooltip] = useState(null); // clientId to show tooltip for
 
@@ -90,6 +91,8 @@ const MyClientsPage = () => {
         const allClients = await firestoreService.getClients();
         const myClients = allClients.filter(isAssignedToMe);
         setClients(myClients);
+        const snapshots = await firestoreService.getClientHealthSnapshots();
+        setClientHealthSnapshots(snapshots);
         console.log(`📋 Loaded ${myClients.length} clients for ${effectiveUser?.email}${isViewingAs ? ' (View As mode)' : ''}`);
       } catch (error) {
         console.error('Error loading clients:', error);
@@ -215,13 +218,14 @@ const MyClientsPage = () => {
     }
   }, [aiHealthPredictions]);
 
-  // Get combined health status (rule-based + AI enhanced)
+  // Get combined health status (rule-based + AI enhanced). Prefer snapshot from monthly run, else on-demand prediction.
   const getEnhancedHealthStatus = (client) => {
     const baseHealth = getHealthStatus(client);
+    const snapshot = clientHealthSnapshots[client.id];
     const aiPrediction = aiHealthPredictions[client.id];
+    const source = snapshot || aiPrediction;
 
-    if (aiPrediction) {
-      // Map AI status to our color scheme
+    if (source) {
       const statusColors = {
         good: { color: 'text-[#34c759]', bgColor: 'bg-[#34c759]/10' },
         warning: { color: 'text-[#ff9500]', bgColor: 'bg-[#ff9500]/10' },
@@ -230,13 +234,13 @@ const MyClientsPage = () => {
 
       return {
         ...baseHealth,
-        ...statusColors[aiPrediction.status] || statusColors.warning,
-        status: aiPrediction.status,
-        label: aiPrediction.status === 'good' ? 'Healthy' : aiPrediction.status === 'warning' ? 'Watch' : 'At Risk',
+        ...statusColors[source.status] || statusColors.warning,
+        status: source.status,
+        label: source.status === 'good' ? 'Healthy' : source.status === 'warning' ? 'Watch' : 'At Risk',
         aiEnhanced: true,
-        churnRisk: aiPrediction.churnRisk,
-        reason: aiPrediction.reason,
-        action: aiPrediction.action
+        churnRisk: source.churnRisk,
+        reason: source.reason,
+        action: source.action
       };
     }
 

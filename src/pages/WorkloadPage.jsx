@@ -141,8 +141,10 @@ export default function WorkloadPage() {
 
   // Handle reassignment
   const handleReassign = async (clientId, newManagerEmail) => {
+    const client = clients.find(c => c.id === clientId);
     try {
       await firestoreService.updateClient(clientId, { assignedManager: newManagerEmail || null });
+      await firestoreService.logClientReassignment(clientId, client?.clientName, client?.assignedManager || null, newManagerEmail || null, currentUser?.email);
       setClients(prev => prev.map(c =>
         c.id === clientId ? { ...c, assignedManager: newManagerEmail || null } : c
       ));

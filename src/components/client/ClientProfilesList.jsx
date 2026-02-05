@@ -176,11 +176,14 @@ const ClientProfilesList = () => {
   const handleAssignManager = async (clientId, managerEmail) => {
     try {
       setAssigningManager(true);
+      const previousManager = selectedClient?.id === clientId ? selectedClient.assignedManager : null;
+      const clientName = selectedClient?.id === clientId ? (selectedClient.clientName || selectedClient.name) : null;
       const updateData = managerEmail 
         ? { assignedManager: managerEmail }
         : { assignedManager: null };
       
       await firestoreService.updateClient(clientId, updateData);
+      await firestoreService.logClientReassignment(clientId, clientName, previousManager, managerEmail || null, currentUser?.email);
       toast.success(managerEmail ? 'Manager assigned successfully' : 'Manager unassigned');
       setShowManagerAssignModal(false);
       await loadData();

@@ -38,6 +38,7 @@ const HRAnalytics = () => {
   const [timeRange, setTimeRange] = useState('6months');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [clientMovements, setClientMovements] = useState([]);
   const [analyticsData, setAnalyticsData] = useState({
     teamOverview: { totalEmployees: 0, activeEmployees: 0, newHires: 0, terminations: 0, retentionRate: 0, averageTenure: 0, genderDistribution: {}, ageDistribution: {} },
     performance: { averageRating: 0, topPerformers: 0, needsImprovement: 0, onTrack: 0, ratingDistribution: {}, monthlyTrend: [] },
@@ -70,6 +71,8 @@ const HRAnalytics = () => {
           teamOverview: { ...prev.teamOverview, totalEmployees, activeEmployees, retentionRate: totalEmployees > 0 ? (activeEmployees / totalEmployees) * 100 : 0 },
           departmentPerformance: Object.keys(deptCounts).reduce((acc, dept) => ({ ...acc, [dept]: { headcount: deptCounts[dept], avgRating: 0, turnover: 0, satisfaction: 0 } }), {})
         }));
+        const movements = await firestoreService.getClientMovements({ limitCount: 100 });
+        setClientMovements(movements);
       } catch (error) {
         console.error('Error loading analytics:', error);
       } finally {
@@ -208,6 +211,66 @@ const HRAnalytics = () => {
               <UserX className="w-5 h-5 text-[#ff9500]" />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Client Churn & Movements */}
+      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2">
+            <UserMinus className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Client Churn & Movements</span>
+          </div>
+          <p className="text-[12px] text-[#86868b] mt-1">Deletions and reassignments for account manager retention and workload insights</p>
+        </div>
+        <div className="p-5">
+          {clientMovements.length === 0 ? (
+            <p className="text-[13px] text-[#86868b]">No client movements recorded yet. Deletions and manager reassignments will appear here.</p>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-black/5 dark:border-white/10">
+                      <th className="text-left py-2 px-3 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Date</th>
+                      <th className="text-left py-2 px-3 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Type</th>
+                      <th className="text-left py-2 px-3 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Client</th>
+                      <th className="text-left py-2 px-3 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">From → To</th>
+                      <th className="text-left py-2 px-3 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientMovements.slice(0, 30).map((ev) => (
+                      <tr key={ev.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/5">
+                        <td className="py-2 px-3 text-[12px] text-[#1d1d1f] dark:text-white">{ev.timestamp ? format(new Date(ev.timestamp), 'MMM d, yyyy') : '—'}</td>
+                        <td className="py-2 px-3">
+                          <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
+                            ev.type === 'client_deleted' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
+                            ev.type === 'client_added' ? 'bg-[#34c759]/10 text-[#34c759]' :
+                            ev.type === 'contract_value_increased' ? 'bg-[#af52de]/10 text-[#af52de]' :
+                            ev.type === 'social_accounts_added' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
+                            'bg-[#0071e3]/10 text-[#0071e3]'
+                          }`}>
+                            {ev.type === 'client_deleted' ? 'Deleted' : ev.type === 'client_added' ? 'Added' : ev.type === 'contract_value_increased' ? 'Contract ↑' : ev.type === 'social_accounts_added' ? 'Accounts ↑' : 'Reassigned'}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-[12px] text-[#1d1d1f] dark:text-white">{ev.clientName || ev.clientId || '—'}</td>
+                        <td className="py-2 px-3 text-[12px] text-[#86868b]">
+                          {ev.type === 'client_reassigned' ? `${ev.previousAssignedManager || 'Unassigned'} → ${ev.newAssignedManager || 'Unassigned'}` :
+                            ev.type === 'client_added' ? (ev.newAssignedManager ? `Assigned to ${ev.newAssignedManager}` : '—') :
+                            ev.type === 'contract_value_increased' ? (ev.valuePrevious != null && ev.valueNew != null ? `${ev.valuePrevious} → ${ev.valueNew}` : '—') :
+                            ev.type === 'social_accounts_added' ? (ev.details || '—') :
+                            ev.type === 'client_deleted' ? (ev.previousAssignedManager || '—') : '—'}
+                        </td>
+                        <td className="py-2 px-3 text-[12px] text-[#86868b]">{ev.performedBy || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {clientMovements.length > 30 && <p className="text-[11px] text-[#86868b] mt-2">Showing latest 30. Total: {clientMovements.length}</p>}
+            </>
+          )}
         </div>
       </div>
 
@@ -477,6 +540,22 @@ const HRAnalytics = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Ideas for future HR metrics */}
+      <div className="rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="px-5 py-3 border-b border-black/5 dark:border-white/10">
+          <span className="text-[13px] font-medium text-[#86868b]">Future metrics we could add</span>
+        </div>
+        <div className="p-4 text-[12px] text-[#86868b] space-y-1">
+          <p>• Time-to-first-post per client (onboarding speed by manager)</p>
+          <p>• Posts delivered vs scheduled per client / per manager</p>
+          <p>• Leave frequency and overlap by person or team</p>
+          <p>• Training completion and skill gaps by department</p>
+          <p>• Client health score trends (from monthly AI run) by manager</p>
+          <p>• Contract value increases (tracked when feature is implemented; use logContractValueIncrease)</p>
+          <p>• Social/media accounts added per client (growth signal; tracked from April 2026 via logSocialAccountsAdded)</p>
         </div>
       </div>
     </div>

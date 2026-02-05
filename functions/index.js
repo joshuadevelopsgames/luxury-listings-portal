@@ -6,6 +6,7 @@
 
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const vision = require('@google-cloud/vision');
 const nodemailer = require('nodemailer');
@@ -638,46 +639,18 @@ Do not include # symbols in the hashtags array. Do not include any markdown or e
 });
 
 /**
- * Predict client health/churn risk based on multiple factors.
- * Enhanced to analyze Instagram report trends (follower growth, engagement, deliverables).
- * Returns status (good/warning/critical), risk score, reason, and recommended action.
+ * Core health prediction logic (shared by onCall and bulk/scheduled run).
+ * Returns { status, churnRisk, reason, action, tokensUsed }.
  */
-exports.predictClientHealth = onCall({
-  cors: true,
-  maxInstances: 10,
-  secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
-}, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'User must be authenticated');
-  }
-
-  const userId = request.auth.uid;
-  const userEmail = request.auth.token.email || 'unknown';
-  const rateLimit = await checkRateLimit(userId, 'openai');
-  if (!rateLimit.allowed) {
-    throw new HttpsError(
-      'resource-exhausted',
-      rateLimit.reason === 'cooldown'
-        ? `Please wait ${RATE_LIMITS.openai.cooldownMinutes} minutes.`
-        : 'Rate limit exceeded. Try again later.'
-    );
-  }
-
-  const { clientData, reportHistory } = request.data || {};
-  if (!clientData || typeof clientData !== 'object') {
-    throw new HttpsError('invalid-argument', 'clientData object is required');
-  }
-
+async function computeHealthPrediction(clientData, reportHistory) {
   const openRouterKey = process.env.OPENROUTER_API_KEY;
   const openAIKey = process.env.OPENAI_API_KEY;
   if (!openRouterKey && !openAIKey) {
-    throw new HttpsError('internal', 'No AI provider key configured');
+    throw new Error('No AI provider key configured');
   }
 
   const clientName = clientData.clientName || 'Unknown';
-  console.log(`🔍 Predicting health for client: ${clientName} (${reportHistory?.length || 0} reports)`);
 
-  // Build report trend analysis section if we have report history
   let reportTrendSection = '';
   if (reportHistory && Array.isArray(reportHistory) && reportHistory.length > 0) {
     // Extract key metrics from each report

@@ -47,6 +47,8 @@ class FirestoreService {
     PENDING_CLIENTS: 'pending_clients',
     CLIENT_CONTRACTS: 'client_contracts',
     INSTAGRAM_REPORTS: 'instagram_reports',
+    CLIENT_MOVEMENTS: 'client_movements',
+    CLIENT_HEALTH_SNAPSHOTS: 'client_health_snapshots',
     ERROR_REPORTS: 'error_reports',
     USER_DASHBOARD_PREFERENCES: 'user_dashboard_preferences',
     GRAPHIC_PROJECTS: 'graphic_projects',
@@ -1573,7 +1575,7 @@ class FirestoreService {
     }
   }
 
-  // Add new client (auto-generates clientNumber)
+  // Add new client (auto-generates clientNumber). Logs client_added for HR analytics.
   async addClient(clientData) {
     try {
       // Generate client number if not provided
@@ -1586,6 +1588,9 @@ class FirestoreService {
         updatedAt: serverTimestamp()
       });
       console.log('✅ Client added:', docRef.id, 'with number:', clientNumber);
+
+      await this.logClientAdded(docRef.id, clientData.clientName || clientData.name || 'Unknown', clientData.assignedManager || null, auth.currentUser?.email || auth.currentUser?.uid || null);
+
       return { success: true, id: docRef.id, clientNumber };
     } catch (error) {
       console.error('❌ Error adding client:', error);
@@ -1609,15 +1614,154 @@ class FirestoreService {
     }
   }
 
-  // Delete client
+  // Delete client (logs movement for HR before delete)
   async deleteClient(clientId) {
     try {
+      const client = await this.getClientById(clientId);
+      if (client) {
+        await this.logClientMovement({
+          type: 'client_deleted',
+          clientId,
+          clientName: client.clientName || client.name || 'Unknown',
+          previousAssignedManager: client.assignedManager || null,
+          performedBy: auth.currentUser?.email || auth.currentUser?.uid || null,
+          timestamp: new Date()
+        });
+      }
       await deleteDoc(doc(db, this.collections.CLIENTS, clientId));
       console.log('✅ Client deleted:', clientId);
       return { success: true };
     } catch (error) {
       console.error('❌ Error deleting client:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Log a client movement event for HR analytics (deletion, reassignment, etc.)
+   */
+  async logClientMovement(event) {
+    try {
+      const col = collection(db, this.collections.CLIENT_MOVEMENTS);
+      const base = {
+        type: event.type,
+        clientId: event.clientId || null,
+        clientName: event.clientName || null,
+        previousAssignedManager: event.previousAssignedManager ?? null,
+        newAssignedManager: event.newAssignedManager ?? null,
+        performedBy: event.performedBy ?? null,
+        timestamp: event.timestamp ? (event.timestamp instanceof Date ? event.timestamp.toISOString() : event.timestamp) : new Date().toISOString()
+      };
+      if (event.valuePrevious != null) base.valuePrevious = event.valuePrevious;
+      if (event.valueNew != null) base.valueNew = event.valueNew;
+      if (event.details != null) base.details = event.details;
+      await addDoc(col, base);
+    } catch (error) {
+      console.warn('⚠️ Failed to log client movement:', error);
+    }
+  }
+
+  /** Log new client added (for HR analytics). */
+  async logClientAdded(clientId, clientName, assignedManager, performedBy) {
+    await this.logClientMovement({
+      type: 'client_added',
+      clientId,
+      clientName: clientName || 'Unknown',
+      previousAssignedManager: null,
+      newAssignedManager: assignedManager || null,
+      performedBy: performedBy || auth.currentUser?.email || auth.currentUser?.uid || null,
+      timestamp: new Date()
+    });
+  }
+
+  /** Log contract value increase (call when contract value feature is implemented). */
+  async logContractValueIncrease(clientId, clientName, previousValue, newValue, performedBy) {
+    await this.logClientMovement({
+      type: 'contract_value_increased',
+      clientId,
+      clientName: clientName || 'Unknown',
+      valuePrevious: previousValue,
+      valueNew: newValue,
+      performedBy: performedBy || auth.currentUser?.email || auth.currentUser?.uid || null,
+      timestamp: new Date()
+    });
+  }
+
+  /** Log social/media accounts added to client (growth signal). Gated: only logs from April 1, 2026. */
+  async logSocialAccountsAdded(clientId, clientName, details, performedBy) {
+    const now = new Date();
+    const trackFrom = new Date('2026-04-01');
+    if (now < trackFrom) return;
+    await this.logClientMovement({
+      type: 'social_accounts_added',
+      clientId,
+      clientName: clientName || 'Unknown',
+      details: details || null,
+      performedBy: performedBy || auth.currentUser?.email || auth.currentUser?.uid || null,
+      timestamp: now
+    });
+  }
+
+  /**
+   * Log client reassignment (from one manager to another or unassigned). Call after updateClient(..., { assignedManager }).
+   */
+  async logClientReassignment(clientId, clientName, previousManager, newManager, performedBy) {
+    await this.logClientMovement({
+      type: 'client_reassigned',
+      clientId,
+      clientName: clientName || 'Unknown',
+      previousAssignedManager: previousManager || null,
+      newAssignedManager: newManager || null,
+      performedBy: performedBy || auth.currentUser?.email || auth.currentUser?.uid || null,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * Get client movement events for HR analytics. Optional filters: type, managerEmail (previous or new), limit.
+   */
+  async getClientMovements(options = {}) {
+    try {
+      const { type, managerEmail, limitCount = 100 } = options;
+      const q = query(
+        collection(db, this.collections.CLIENT_MOVEMENTS),
+        orderBy('timestamp', 'desc'),
+        firestoreLimit(limitCount)
+      );
+      const snapshot = await getDocs(q);
+      const events = [];
+      const emailFilter = managerEmail ? managerEmail.toLowerCase() : null;
+      snapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+        if (type && d.type !== type) return;
+        if (emailFilter) {
+          const prev = (d.previousAssignedManager || '').toLowerCase();
+          const next = (d.newAssignedManager || '').toLowerCase();
+          if (prev !== emailFilter && next !== emailFilter) return;
+        }
+        events.push({ id: docSnap.id, ...d });
+      });
+      return events;
+    } catch (error) {
+      console.error('Error fetching client movements:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get all client health snapshots (from monthly AI run). For admin/HR overview. Returns map clientId -> snapshot.
+   */
+  async getClientHealthSnapshots() {
+    try {
+      const snapshot = await getDocs(collection(db, this.collections.CLIENT_HEALTH_SNAPSHOTS));
+      const map = {};
+      snapshot.forEach((docSnap) => {
+        map[docSnap.id] = { id: docSnap.id, ...docSnap.data() };
+      });
+      return map;
+    } catch (error) {
+      console.error('Error fetching client health snapshots:', error);
+      return {};
     }
   }
 

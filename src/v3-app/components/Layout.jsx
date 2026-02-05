@@ -39,7 +39,8 @@ import {
   BarChart3,
   Palette,
   Sparkles,
-  Bug
+  Bug,
+  Activity
 } from 'lucide-react';
 
 /**
@@ -195,6 +196,7 @@ const V3Layout = () => {
     'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
     'team': { name: 'Team Management', icon: Users, path: '/team' },
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
+    'client-health': { name: 'Client Health', icon: Activity, path: '/client-health' },
     'permissions': { name: 'Users & Permissions', icon: Settings, path: '/permissions' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
