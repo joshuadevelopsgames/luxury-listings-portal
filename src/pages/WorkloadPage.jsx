@@ -7,15 +7,14 @@ import PlatformIcons, { PLATFORMS } from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
 
 // Workload: post volume is the main metric (~90%); client count matters little (~10%).
-// Max heaviness = 13 client-equivalents (1 equiv = 14 posts/mo). Progress bar scale 1–13.
-// "Heavy" = ~10+ client-equivalents; 13 = 100% bar.
+// 120 posts/mo (e.g. 10 clients × 3 posts/week) = heavy but on the lighter side of heavy.
 // Formula: total_posts / POSTS_PER_UNIT + 0.1 * client_count + platform bonus (0.2 per client with 3+ platforms).
-const POSTS_PER_UNIT = 7.5;  // 140 posts + 10 clients ≈ 20 (heavy)
+const POSTS_PER_UNIT = 7.5;  // 120 posts + 10 clients ≈ 17 units → Heavy
 const CLIENT_WEIGHT = 0.1;
 const MAX_CLIENT_EQUIVALENTS = 13;  // max heaviness; bar is 100% at this
 const WORKLOAD_AT_MAX = 26;         // raw units at 13 avg clients (182 posts + 1.3)
 const WORKLOAD_LOW = 12;   // Light
-const WORKLOAD_MED = 20;   // Heavy: 10 avg clients (140 posts) or e.g. 5 clients @ 28 each
+const WORKLOAD_MED = 16;   // Heavy starts here: 120 posts + 10 clients (lighter side of heavy)
 
 function getWorkloadUnits(clients) {
   const n = clients.length;
