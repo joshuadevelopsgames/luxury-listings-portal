@@ -50,7 +50,7 @@ const MODULE_HOW_TO_USE = {
 const SECTION_ORDER = ['Main', 'SMM', 'Content Team', 'Design Team', 'Sales Team', 'HR', 'Admin', 'Resources'];
 
 const OnboardingPage = () => {
-  const { currentUser, userData } = useAuth();
+  const { currentUser, userData, mergeCurrentUser } = useAuth();
   const { permissions, isSystemAdmin } = usePermissions();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
@@ -152,6 +152,11 @@ const OnboardingPage = () => {
         onboardingCompletedDate: employeeData.onboardingCompletedDate
       });
 
+      mergeCurrentUser({
+        onboardingCompleted: true,
+        onboardingCompletedDate: employeeData.onboardingCompletedDate
+      });
+
       console.log('✅ Employee data saved successfully');
       toast.success('🎉 Welcome aboard! Let\'s get started!');
       
@@ -161,8 +166,10 @@ const OnboardingPage = () => {
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);
       toast.error('Failed to save onboarding progress. Trying to continue anyway...');
-      
-      // Navigate anyway even if there's an error
+      mergeCurrentUser({
+        onboardingCompleted: true,
+        onboardingCompletedDate: new Date().toISOString()
+      });
       setTimeout(() => {
         navigate('/dashboard');
       }, 2000);

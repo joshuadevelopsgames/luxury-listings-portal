@@ -458,6 +458,15 @@ export function AuthProvider({ children }) {
   // CONTEXT VALUE
   // ============================================================================
   
+  const mergeCurrentUser = (partial) => {
+    setCurrentUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...partial };
+      saveAuthToStorage(updated);
+      return updated;
+    });
+  };
+
   const value = {
     currentUser,
     userData,
@@ -470,6 +479,7 @@ export function AuthProvider({ children }) {
     signInWithEmail,
     logout,
     chatbotResetTrigger,
+    mergeCurrentUser,
     // For View As feature - real user is always available
     realUser: currentUser,
     isSystemAdmin: isSystemAdmin(currentUser?.email),

@@ -60,6 +60,7 @@ const V3Layout = () => {
   useEffect(() => {
     if (!currentUser?.email || !currentUser?.isApproved) return;
     if (location.pathname === '/onboarding') return;
+    if (currentUser?.onboardingCompleted === true) return;
 
     let cancelled = false;
     firestoreService.getApprovedUserByEmail(currentUser.email).then((approved) => {
@@ -68,7 +69,7 @@ const V3Layout = () => {
       navigate('/onboarding', { replace: true });
     });
     return () => { cancelled = true; };
-  }, [currentUser?.email, currentUser?.isApproved, location.pathname, navigate]);
+  }, [currentUser?.email, currentUser?.isApproved, currentUser?.onboardingCompleted, location.pathname, navigate]);
   
   // Vancouver time: dark from 5 PM to 6 AM (switches at 6:00 and 17:00)
   const getVancouverHour = () => {
