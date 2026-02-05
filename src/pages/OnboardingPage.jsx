@@ -128,10 +128,10 @@ const OnboardingPage = () => {
         ...profileData,
         onboardingCompleted: true,
         onboardingCompletedDate: new Date().toISOString(),
-        position: userData?.position || currentUser?.position,
-        department: userData?.department || currentUser?.department,
-        startDate: userData?.startDate || currentUser?.startDate || new Date().toISOString(),
-        roles: currentUser?.roles || userData?.roles || []
+        position: userData?.position ?? currentUser?.position ?? '',
+        department: userData?.department ?? currentUser?.department ?? '',
+        startDate: userData?.startDate ?? currentUser?.startDate ?? new Date().toISOString(),
+        roles: currentUser?.roles ?? userData?.roles ?? []
       };
 
       console.log('💾 Saving employee data:', employeeData);

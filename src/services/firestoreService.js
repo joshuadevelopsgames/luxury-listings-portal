@@ -852,10 +852,10 @@ class FirestoreService {
   async updateEmployee(employeeId, employeeData) {
     try {
       const docRef = doc(db, this.collections.EMPLOYEES, employeeId);
-      await updateDoc(docRef, {
-        ...employeeData,
-        updatedAt: serverTimestamp()
-      });
+      const sanitized = Object.fromEntries(
+        Object.entries({ ...employeeData, updatedAt: serverTimestamp() }).filter(([, v]) => v !== undefined)
+      );
+      await updateDoc(docRef, sanitized);
       console.log('✅ Employee updated:', employeeId);
       return { success: true };
     } catch (error) {
@@ -867,11 +867,10 @@ class FirestoreService {
   // Add new employee
   async addEmployee(employeeData) {
     try {
-      const docRef = await addDoc(collection(db, this.collections.EMPLOYEES), {
-        ...employeeData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      const sanitized = Object.fromEntries(
+        Object.entries({ ...employeeData, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }).filter(([, v]) => v !== undefined)
+      );
+      const docRef = await addDoc(collection(db, this.collections.EMPLOYEES), sanitized);
       console.log('✅ Employee added:', docRef.id);
       return { success: true, id: docRef.id };
     } catch (error) {
