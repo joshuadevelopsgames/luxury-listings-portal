@@ -139,7 +139,13 @@ export default function TeamDirectoryPage() {
                   <p className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">
                     {member.displayName || member.firstName || member.email?.split('@')[0] || 'Team Member'}
                   </p>
-                  <p className="text-[13px] text-[#86868b]">{getRoleDisplay(member.role)}</p>
+                  {member.role === 'admin' ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#5856d6]/10 text-[#5856d6]">
+                      System Administrator
+                    </span>
+                  ) : (
+                    <p className="text-[13px] text-[#86868b]">{getRoleDisplay(member.role)}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
