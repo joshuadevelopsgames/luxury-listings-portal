@@ -99,7 +99,7 @@ const resources = [
     type: "internal",
     category: "support",
     internalPath: "/feedback-support",
-    buttonLabel: "Open feedback and technical support page",
+    buttonLabel: "Open Technical Support Page",
     important: true
   },
   {
