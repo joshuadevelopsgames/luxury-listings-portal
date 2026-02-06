@@ -259,8 +259,25 @@ class GoogleSheetsService {
         return { headers: [], rows: [], spreadsheetTitle, sheetTitle };
       }
 
-      const headers = values[0];
-      const rows = values.slice(1);
+      // Detect header row: many agency sheets have a title row (e.g. "March 2026") then "Date", "Content Type", "Caption"...
+      const headerKeywords = ['date', 'caption', 'content type', 'platform', 'image', 'video', 'content link', 'post date', 'content topic', 'email confirmation'];
+      let headerRowIndex = 0;
+      for (let r = 0; r < Math.min(10, values.length); r++) {
+        const row = values[r];
+        const cells = (row || []).map((c) => String(c || '').toLowerCase().trim());
+        const looksLikeHeader = cells.some((cell) => headerKeywords.some((kw) => cell.includes(kw) || cell === kw));
+        if (looksLikeHeader) {
+          headerRowIndex = r;
+          break;
+        }
+      }
+      const headerRow = values[headerRowIndex] || [];
+      const maxCols = Math.max(headerRow.length, ...values.slice(headerRowIndex + 1).map((r) => (r || []).length));
+      const headers = Array.from({ length: maxCols }, (_, i) => String(headerRow[i] ?? '').trim());
+      const rows = values.slice(headerRowIndex + 1).map((r) => {
+        const arr = r || [];
+        return Array.from({ length: maxCols }, (_, i) => (arr[i] !== undefined && arr[i] !== null ? arr[i] : ''));
+      });
       if (!spreadsheetTitle) {
         const meta = await this.listSheets(spreadsheetId);
         spreadsheetTitle = meta.spreadsheetTitle;

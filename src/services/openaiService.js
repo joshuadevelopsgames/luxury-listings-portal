@@ -89,37 +89,29 @@ class OpenAIService {
       return `Column ${index} ("${header}"): ${samples.join(', ')}`;
     }).join('\n');
 
-    return `Analyze these Google Sheets columns and map them to content calendar fields.
+    return `You are mapping columns from a content calendar spreadsheet (e.g. agency calendars like "The Agency Corp"). Typically ONE ROW = ONE POST. Map each column to the correct content calendar field.
 
-SHEET COLUMNS:
+SHEET COLUMNS (header and sample values):
 ${columnsInfo}
 
-AVAILABLE FIELDS TO MAP TO:
-- postDate: The date/time to post (CRITICAL - look for dates in ANY format, including "Monday, October 20")
-- platform: Social media platform (Instagram, TikTok, Facebook, LinkedIn, etc.)
-- contentType: Type of content (Reel, Story, Carousel, Post, Video, Image, etc.) - Look for "Content Type" columns
-- caption: The MAIN post text/caption - Look for "Caption", "Post Text", "Description" columns with long text
-- assignedTo: Person responsible (name or email)
-- status: Current status (Planned, Draft, In Progress, Ready, Published, Posted, etc.)
-- imageUrl: URLs to IMAGES/PHOTOS ONLY - Prioritize "Photo Link", "Image", "Cover", "Thumbnail" columns
-- mediaUrls: URLs to VIDEOS or general media - Look for "Video Link", "Media", "Link" columns (but NOT if they're specifically photo/image columns)
-- notes: Additional notes, topics, property addresses, or short reference text - Look for "Content Topic", "Notes", "Topic", "Address"
-- hashtags: Hashtags for the post
+MAP TO THESE FIELDS (one column per field unless multiple image columns):
+- postDate: Date to post. CRITICAL. Look for "Date" column with values like 03/01/26, 03/02/26, MM/DD/YY, or "Monday, October 20".
+- platform: Where to post. "Platform(s)", "Platform", "Channel". Values: Instagram, Post, Facebook, LinkedIn, etc. ("Post" often means general feed.)
+- contentType: Kind of content. "Content Type" column. Values: Image, Story, Video, Reel, Carousel, etc.
+- caption: Main post text. "Caption" column with long copy or descriptions.
+- notes: Short reference. "Content Topic", "Notes", "Topic", "Address", "Listing Link" (short text).
+- imageUrl: Image or cover URL. "Image/Video Cover", "Photo", "Cover", "Thumbnail". May contain full URLs or markdown like ![](url). Google Sheets image URLs (lh7-rt.googleusercontent.com) are valid.
+- mediaUrls: Video or content link. "Content Link", "Video Link", "Media" when they point to video or folders.
+- assignedTo: Owner. "Assigned To", "Email Confirmation" (if it's a person), etc.
+- status: State. "Status", "Email Confirmation" (if values like "Date Confirmed"), etc.
+- hashtags: Hashtags.
 
-IMPORTANT: If there are separate "Photo" and "Video" columns:
-- Map photo/image columns to "imageUrl"
-- Map video columns to "mediaUrls"
-- Do NOT map both to the same field
-
-INSTRUCTIONS:
-1. Analyze each column header and sample data
-2. Determine the best field match for each column
-3. If a column doesn't match any field, map it to "unmapped"
-4. Use context clues from both header names and data patterns
-5. **CRITICAL**: postDate is the MOST IMPORTANT field - look for ANY column with dates:
-   - Headers like: "Date", "Post Date", "Publish Date", "Schedule", "When", "Day", "Week", "Time"
-   - Data patterns like: "11/15/2024", "2024-11-15", "Nov 15", "15-Nov-24", timestamps, etc.
-   - Even if the header doesn't say "date", if the data looks like dates, map it to postDate
+RULES:
+1. "Date" column (with 03/01/26 style) MUST map to postDate.
+2. "Image/Video Cover" or "Image" → imageUrl. "Content Link" → mediaUrls or notes (use notes if it's a listing/topic link).
+3. "Caption" → caption. "Content Topic" → notes.
+4. "Platform(s)" or "Platform" → platform. "Content Type" → contentType.
+5. If a column doesn't fit, use "unmapped".
 
 Return a JSON object with this structure:
 {

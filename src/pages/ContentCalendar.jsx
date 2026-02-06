@@ -452,16 +452,27 @@ const ContentCalendar = () => {
 
       const convertToDirectUrl = (url) => {
         if (!url) return '';
-        if (url.includes('dropbox.com')) {
-          if (url.includes('preview=')) return url.split('?')[0] + '?raw=1';
-          return url.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
+        const u = String(url).trim();
+        if (u.includes('dropbox.com')) {
+          if (u.includes('preview=')) return u.split('?')[0] + '?raw=1';
+          return u.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
         }
-        if (url.includes('drive.google.com')) {
-          const match = url.match(/\/d\/([^\/\?]+)/);
+        if (u.includes('drive.google.com')) {
+          const match = u.match(/\/d\/([^\/\?]+)/);
           if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-          if (url.includes('/folders/')) return '';
+          if (u.includes('/folders/')) return '';
         }
-        return url;
+        return u;
+      };
+      const extractImageUrlFromCell = (cell) => {
+        if (cell == null) return '';
+        const s = String(cell).trim();
+        const markdownMatch = s.match(/!\[.*?\]\((https?[^)]+)\)/);
+        if (markdownMatch) return markdownMatch[1];
+        const imageFormulaMatch = s.match(/=IMAGE\s*\(\s*["']?(https?[^"')]+)["']?\s*\)/i);
+        if (imageFormulaMatch) return imageFormulaMatch[1];
+        if (/^https?:\/\//i.test(s)) return s;
+        return s || '';
       };
 
       const imageUrlColIndices = Object.entries(aiMappings)
@@ -522,22 +533,23 @@ const ContentCalendar = () => {
 
           if (multiPostPerRow) {
             for (const colIdx of imageUrlColIndices) {
-              const cellVal = row[colIdx];
-              if (!cellVal || String(cellVal).trim() === '') continue;
-              const primaryImageUrl = convertToDirectUrl(String(cellVal).trim());
+              const rawUrl = extractImageUrlFromCell(row[colIdx]);
+              if (!rawUrl) continue;
+              const primaryImageUrl = convertToDirectUrl(rawUrl);
               importedContent.push(buildOnePost(primaryImageUrl, ''));
               successCount++;
             }
-            if (imageUrlColIndices.every((colIdx) => !row[colIdx] || String(row[colIdx]).trim() === '')) skipCount++;
+            if (imageUrlColIndices.every((colIdx) => !extractImageUrlFromCell(row[colIdx]))) skipCount++;
           } else {
             if (Object.keys(contentItem).length === 0) { skipCount++; continue; }
             let primaryImageUrl = '';
-            if (contentItem.imageUrl) primaryImageUrl = convertToDirectUrl(contentItem.imageUrl);
+            const rawImageUrl = extractImageUrlFromCell(contentItem.imageUrl);
+            if (rawImageUrl) primaryImageUrl = convertToDirectUrl(rawImageUrl);
             else if (allMediaUrls) {
               const urls = allMediaUrls.split(',').map(u => u.trim());
               const imageUrl = urls.find(url =>
                 url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
-                (!url.includes('video') && !url.includes('.mp4') && (url.includes('drive.google.com') || url.includes('dropbox.com') || url.includes('imgur.com') || url.includes('cloudinary.com')))
+                (!url.includes('video') && !url.includes('.mp4') && (url.includes('drive.google.com') || url.includes('dropbox.com') || url.includes('imgur.com') || url.includes('cloudinary.com') || url.includes('googleusercontent.com')))
               );
               if (imageUrl) primaryImageUrl = convertToDirectUrl(imageUrl);
             }
@@ -766,16 +778,27 @@ const ContentCalendar = () => {
 
       const convertToDirectUrl = (url) => {
         if (!url) return '';
-        if (url.includes('dropbox.com')) {
-          if (url.includes('preview=')) return url.split('?')[0] + '?raw=1';
-          return url.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
+        const u = String(url).trim();
+        if (u.includes('dropbox.com')) {
+          if (u.includes('preview=')) return u.split('?')[0] + '?raw=1';
+          return u.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
         }
-        if (url.includes('drive.google.com')) {
-          const match = url.match(/\/d\/([^\/\?]+)/);
+        if (u.includes('drive.google.com')) {
+          const match = u.match(/\/d\/([^\/\?]+)/);
           if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-          if (url.includes('/folders/')) return '';
+          if (u.includes('/folders/')) return '';
         }
-        return url;
+        return u;
+      };
+      const extractImageUrlFromCell = (cell) => {
+        if (cell == null) return '';
+        const s = String(cell).trim();
+        const markdownMatch = s.match(/!\[.*?\]\((https?[^)]+)\)/);
+        if (markdownMatch) return markdownMatch[1];
+        const imageFormulaMatch = s.match(/=IMAGE\s*\(\s*["']?(https?[^"')]+)["']?\s*\)/i);
+        if (imageFormulaMatch) return imageFormulaMatch[1];
+        if (/^https?:\/\//i.test(s)) return s;
+        return s || '';
       };
 
       const imageUrlColIndices = Object.entries(columnMappings)
@@ -844,21 +867,23 @@ const ContentCalendar = () => {
           if (multiPostPerRow) {
             for (const colIdx of imageUrlColIndices) {
               const cellVal = row[colIdx];
-              if (!cellVal || String(cellVal).trim() === '') continue;
-              const primaryImageUrl = convertToDirectUrl(String(cellVal).trim());
+              const rawUrl = extractImageUrlFromCell(cellVal);
+              if (!rawUrl) continue;
+              const primaryImageUrl = convertToDirectUrl(rawUrl);
               importedContent.push(buildOnePost(primaryImageUrl, ''));
               successCount++;
             }
-            if (imageUrlColIndices.every((colIdx) => !row[colIdx] || String(row[colIdx]).trim() === '')) skipCount++;
+            if (imageUrlColIndices.every((colIdx) => !extractImageUrlFromCell(row[colIdx]))) skipCount++;
           } else {
             if (Object.keys(contentItem).length === 0) { skipCount++; continue; }
             let primaryImageUrl = '';
-            if (contentItem.imageUrl) primaryImageUrl = convertToDirectUrl(contentItem.imageUrl);
+            const rawImageUrl = extractImageUrlFromCell(contentItem.imageUrl);
+            if (rawImageUrl) primaryImageUrl = convertToDirectUrl(rawImageUrl);
             else if (allMediaUrls) {
               const urls = allMediaUrls.split(',').map(u => u.trim());
               const imageUrl = urls.find(url =>
                 url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
-                (!url.includes('video') && !url.includes('.mp4') && (url.includes('drive.google.com') || url.includes('dropbox.com') || url.includes('imgur.com') || url.includes('cloudinary.com')))
+                (!url.includes('video') && !url.includes('.mp4') && (url.includes('drive.google.com') || url.includes('dropbox.com') || url.includes('imgur.com') || url.includes('cloudinary.com') || url.includes('googleusercontent.com')))
               );
               if (imageUrl) primaryImageUrl = convertToDirectUrl(imageUrl);
             }
@@ -954,56 +979,39 @@ const ContentCalendar = () => {
   };
 
   const parseDate = (value) => {
-    if (!value) {
-      console.log('    ⚠️ No date value provided, using current date');
+    if (value === undefined || value === null || String(value).trim() === '') {
       return new Date();
     }
-    
-    console.log('    🗓️ Parsing date:', value);
-    
+    const str = String(value).trim();
     try {
-      // Handle "Monday, October 20" format (add current year)
+      // MM/DD/YY or MM-DD-YY (e.g. 03/01/26, 3/2/26)
+      const shortDate = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+      if (shortDate) {
+        const [, mm, dd, yy] = shortDate;
+        const month = parseInt(mm, 10) - 1;
+        const day = parseInt(dd, 10);
+        const year = yy.length === 2 ? 2000 + parseInt(yy, 10) : parseInt(yy, 10);
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) return d;
+      }
+      // "Monday, October 20" style
       const dayMonthPattern = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+(\w+)\s+(\d+)$/i;
-      const match = value.match(dayMonthPattern);
+      const match = str.match(dayMonthPattern);
       if (match) {
         const [, , month, day] = match;
-        const currentYear = new Date().getFullYear();
-        const dateString = `${month} ${day}, ${currentYear}`;
-        const parsed = new Date(dateString);
-        if (!isNaN(parsed.getTime())) {
-          console.log('    ✅ Parsed day-month format with current year:', parsed);
-          return parsed;
-        }
+        const year = new Date().getFullYear();
+        const d = new Date(`${month} ${day}, ${year}`);
+        if (!isNaN(d.getTime())) return d;
       }
-      
-      // Try direct parsing
-      let date = new Date(value);
-      if (!isNaN(date.getTime())) {
-        console.log('    ✅ Parsed directly:', date);
-        return date;
-      }
-      
-      // Try replacing slashes with dashes
-      const withDashes = value.replace(/\//g, '-');
-      date = new Date(withDashes);
-      if (!isNaN(date.getTime())) {
-        console.log('    ✅ Parsed with dashes:', date);
-        return date;
-      }
-      
-      // Try adding current year to common formats
+      let date = new Date(str);
+      if (!isNaN(date.getTime())) return date;
+      date = new Date(str.replace(/\//g, '-'));
+      if (!isNaN(date.getTime())) return date;
       const currentYear = new Date().getFullYear();
-      date = new Date(`${value}, ${currentYear}`);
-      if (!isNaN(date.getTime())) {
-        console.log('    ✅ Parsed with added year:', date);
-        return date;
-      }
-      
-      // Fallback to current date
-      console.warn('    ⚠️ Could not parse date, using current date. Original value:', value);
+      date = new Date(`${str}, ${currentYear}`);
+      if (!isNaN(date.getTime())) return date;
       return new Date();
     } catch (error) {
-      console.error('    ❌ Error parsing date:', error);
       return new Date();
     }
   };
