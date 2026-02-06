@@ -188,53 +188,84 @@ class GoogleSheetsService {
   }
 
   /**
+   * List all sheets (tabs) in a spreadsheet
+   * @param {string} spreadsheetId - The spreadsheet ID or URL
+   * @returns {Promise<{ spreadsheetTitle: string, sheets: Array<{ title: string, sheetId: number }> }>}
+   */
+  async listSheets(spreadsheetId) {
+    if (!this.isAuthorized) {
+      throw new Error('Not authorized. Please call requestAuthorization() first.');
+    }
+    const sheetId = this.extractSpreadsheetId(spreadsheetId);
+    const metadataResponse = await window.gapi.client.sheets.spreadsheets.get({
+      spreadsheetId: sheetId,
+    });
+    const spreadsheetTitle = metadataResponse.result.properties?.title || 'Spreadsheet';
+    const sheets = (metadataResponse.result.sheets || []).map((s) => ({
+      title: s.properties?.title || 'Sheet',
+      sheetId: s.properties?.sheetId,
+    }));
+    return { spreadsheetTitle, spreadsheetId: sheetId, sheets };
+  }
+
+  /**
    * Fetch data from a Google Sheet
    * @param {string} spreadsheetId - The spreadsheet ID or URL
-   * @param {string} range - Optional range (e.g., 'Sheet1!A1:Z100'). Defaults to entire first sheet.
+   * @param {string} sheetTitleOrRange - Optional. Sheet tab title (e.g. "March 2026") or full range (e.g. "Sheet1!A1:Z100"). Defaults to first sheet.
    */
-  async fetchSheetData(spreadsheetId, range = null) {
-    console.log('📥 Fetching sheet data...', { spreadsheetId, range });
+  async fetchSheetData(spreadsheetId, sheetTitleOrRange = null) {
+    console.log('📥 Fetching sheet data...', { spreadsheetId, sheetTitleOrRange });
 
     if (!this.isAuthorized) {
       throw new Error('Not authorized. Please call requestAuthorization() first.');
     }
 
     try {
-      // Extract ID from URL if needed
       const sheetId = this.extractSpreadsheetId(spreadsheetId);
 
-      // Get the spreadsheet metadata to find the title and first sheet name
-      const metadataResponse = await window.gapi.client.sheets.spreadsheets.get({
-        spreadsheetId: sheetId,
-      });
-      
-      const spreadsheetTitle = metadataResponse.result.properties.title;
-      const firstSheet = metadataResponse.result.sheets[0];
-      const sheetTitle = firstSheet.properties.title;
-      
-      // If no range specified, use the first sheet
-      if (!range) {
-        range = `${sheetTitle}!A1:Z1000`; // Fetch first 1000 rows, columns A-Z
-        console.log('📋 Using first sheet:', sheetTitle);
+      let range = sheetTitleOrRange;
+      let sheetTitle = sheetTitleOrRange;
+      let spreadsheetTitle = '';
+
+      if (!range || !range.includes('!')) {
+        const metadataResponse = await window.gapi.client.sheets.spreadsheets.get({
+          spreadsheetId: sheetId,
+        });
+        spreadsheetTitle = metadataResponse.result.properties?.title || 'Spreadsheet';
+        const sheets = metadataResponse.result.sheets || [];
+        const target = sheetTitleOrRange
+          ? sheets.find((s) => (s.properties?.title || '') === sheetTitleOrRange)
+          : sheets[0];
+        if (!target) {
+          throw new Error(sheetTitleOrRange ? `Tab "${sheetTitleOrRange}" not found.` : 'Spreadsheet has no sheets.');
+        }
+        sheetTitle = target.properties.title;
+        range = `${sheetTitle}!A1:Z1000`;
+        console.log('📋 Using sheet:', sheetTitle);
       }
 
-      // Fetch the data
       const response = await window.gapi.client.sheets.spreadsheets.values.get({
         spreadsheetId: sheetId,
-        range: range,
+        range,
       });
 
       const values = response.result.values;
-      
+
       if (!values || values.length === 0) {
-        console.warn('⚠️ No data found in sheet');
+        if (!spreadsheetTitle) {
+          const meta = await this.listSheets(spreadsheetId);
+          spreadsheetTitle = meta.spreadsheetTitle;
+        }
         return { headers: [], rows: [], spreadsheetTitle, sheetTitle };
       }
 
       const headers = values[0];
       const rows = values.slice(1);
-
-      console.log('✅ Sheet data fetched:', { spreadsheetTitle, headers, rowCount: rows.length });
+      if (!spreadsheetTitle) {
+        const meta = await this.listSheets(spreadsheetId);
+        spreadsheetTitle = meta.spreadsheetTitle;
+      }
+      console.log('✅ Sheet data fetched:', { spreadsheetTitle, sheetTitle, rowCount: rows.length });
 
       return {
         headers,
@@ -244,7 +275,6 @@ class GoogleSheetsService {
         sheetTitle,
         range,
       };
-
     } catch (error) {
       console.error('❌ Error fetching sheet data:', error);
       throw error;

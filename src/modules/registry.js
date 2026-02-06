@@ -37,7 +37,7 @@ export const modules = {
     description: 'View your assigned clients and deliverables',
     icon: Users,
     routes: ['/my-clients'],
-    widgets: ['clientOverview', 'deliverablesDue'],
+    widgets: ['clientOverview', 'deliverablesDue', 'postsLogged'],
     navItem: {
       path: '/my-clients',
       section: 'SMM'
@@ -97,7 +97,7 @@ export const modules = {
     description: 'Manage posting packages for @luxury_listings features',
     icon: Briefcase,
     routes: ['/posting-packages'],
-    widgets: ['postsLogged'],
+    widgets: [],
     navItem: {
       path: '/posting-packages',
       section: 'Content Team'

@@ -69,19 +69,7 @@ const PostsLoggedWidget = () => {
       if (!effectiveUser?.email) return;
 
       try {
-        // Get logged posts from tasks with label 'client-post' completed today
-        const allTasks = await firestoreService.getTasksByUser(effectiveUser.email);
-        const today = format(new Date(), 'yyyy-MM-dd');
-        
-        const todaysPosts = allTasks.filter(task => {
-          const isClientPost = task.labels?.includes('client-post');
-          const completedToday = task.completed_date?.startsWith(today);
-          return isClientPost && task.status === 'completed' && completedToday;
-        });
-
-        setPostsToday(todaysPosts);
-
-        // Load clients for the log modal: only clients assigned to this user
+        // Load clients first: only clients assigned to this user (posts tally is scoped to these)
         const allClients = await firestoreService.getClients();
         const email = (effectiveUser?.email || '').trim().toLowerCase();
         const uid = (effectiveUser?.uid || '').trim().toLowerCase();
@@ -91,6 +79,20 @@ const PostsLoggedWidget = () => {
           return am === email || (uid && am === uid);
         });
         setClients(myClients);
+        const myClientIds = new Set(myClients.map(c => c.id));
+
+        // Get logged posts from tasks with label 'client-post' completed today — only for this person's clients
+        const allTasks = await firestoreService.getTasksByUser(effectiveUser.email);
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const todaysPosts = allTasks.filter(task => {
+          const isClientPost = task.labels?.includes('client-post');
+          const completedToday = task.completed_date?.startsWith(today);
+          if (!isClientPost || task.status !== 'completed' || !completedToday) return false;
+          const clientLabel = task.labels?.find(l => l.startsWith('client-') && l !== 'client-post');
+          const clientId = clientLabel ? clientLabel.replace('client-', '') : null;
+          return clientId && myClientIds.has(clientId);
+        });
+        setPostsToday(todaysPosts);
       } catch (error) {
         console.error('Error loading posts:', error);
       } finally {

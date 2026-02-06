@@ -54,6 +54,8 @@ const ContentCalendar = () => {
   const [isSheetsAuthorized, setIsSheetsAuthorized] = useState(false);
   const [enrichmentByRowIndex, setEnrichmentByRowIndex] = useState([]); // ChatGPT per-row suggestions
   const [isEnriching, setIsEnriching] = useState(false);
+  const [availableTabs, setAvailableTabs] = useState([]); // sheet tabs (e.g. months)
+  const [selectedTabTitle, setSelectedTabTitle] = useState('');
 
   // AI Caption Generation state
   const [showAICaptionModal, setShowAICaptionModal] = useState(false);
@@ -411,7 +413,7 @@ const ContentCalendar = () => {
     setLinkSheetUrl('');
   };
 
-  const handleRefreshCalendar = async (calendarId, calendarName, sheetUrl) => {
+  const handleRefreshCalendar = async (calendarId, calendarName, sheetUrl, sheetTitle = null) => {
     if (!sheetUrl) {
       toast.error('No sheet URL found for this calendar');
       return;
@@ -421,9 +423,7 @@ const ContentCalendar = () => {
     
     try {
       toast.loading('Refreshing from Google Sheets...', { id: 'refresh-cal' });
-      
-      // Fetch the sheet data
-      const data = await googleSheetsService.fetchSheetData(sheetUrl);
+      const data = await googleSheetsService.fetchSheetData(sheetUrl, sheetTitle || undefined);
       
       if (!data.headers || data.headers.length === 0) {
         toast.error('Sheet appears to be empty', { id: 'refresh-cal' });
@@ -450,7 +450,26 @@ const ContentCalendar = () => {
       // Delete existing content in this calendar
       setContentItems(prev => prev.filter(item => item.calendarId !== calendarId));
 
-      // Import new content
+      const convertToDirectUrl = (url) => {
+        if (!url) return '';
+        if (url.includes('dropbox.com')) {
+          if (url.includes('preview=')) return url.split('?')[0] + '?raw=1';
+          return url.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
+        }
+        if (url.includes('drive.google.com')) {
+          const match = url.match(/\/d\/([^\/\?]+)/);
+          if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+          if (url.includes('/folders/')) return '';
+        }
+        return url;
+      };
+
+      const imageUrlColIndices = Object.entries(aiMappings)
+        .filter(([, field]) => field === 'imageUrl')
+        .map(([col]) => parseInt(col, 10))
+        .sort((a, b) => a - b);
+      const multiPostPerRow = imageUrlColIndices.length >= 2;
+
       const importedContent = [];
       let successCount = 0;
       let skipCount = 0;
@@ -459,129 +478,72 @@ const ContentCalendar = () => {
         const row = data.rows[i];
         try {
           const contentItem = {};
-          
-          // Map columns to fields based on AI mappings
           Object.keys(aiMappings).forEach(colIndex => {
             const field = aiMappings[colIndex];
-            let value = row[parseInt(colIndex)];
-            
-            if (field !== 'unmapped' && value) {
-              // If this is a mediaUrls or imageUrl field and we already have one, append it
-              if ((field === 'mediaUrls' || field === 'imageUrl') && contentItem[field]) {
-                contentItem[field] = `${contentItem[field]}, ${value}`;
-              } else {
-                contentItem[field] = value;
-              }
+            const value = row[parseInt(colIndex)];
+            if (field === 'unmapped' || !value) return;
+            if (multiPostPerRow && field === 'imageUrl') return;
+            if ((field === 'mediaUrls' || field === 'imageUrl') && contentItem[field]) {
+              contentItem[field] = `${contentItem[field]}, ${value}`;
+            } else {
+              contentItem[field] = value;
             }
           });
 
-          // Skip completely empty rows
-          if (Object.keys(contentItem).length === 0) {
-            skipCount++;
-            continue;
-          }
-
-          // Parse and format the data
           const parsedDate = contentItem.postDate ? parseDate(contentItem.postDate) : addDays(new Date(), i);
           const normalizedPlatform = normalizePlatform(contentItem.platform) || 'instagram';
-          const defaultContentType = (contentItem.mediaUrls && 
-            (contentItem.mediaUrls.includes('video') || contentItem.mediaUrls.includes('.mp4'))) 
-            ? 'video' : 'image';
+          const defaultContentType = (contentItem.mediaUrls && (contentItem.mediaUrls.includes('video') || contentItem.mediaUrls.includes('.mp4'))) ? 'video' : 'image';
           const normalizedContentType = normalizeContentType(contentItem.contentType) || defaultContentType;
           const normalizedStatus = normalizeStatus(contentItem.status) || 'draft';
+          const allMediaUrls = contentItem.mediaUrls || '';
 
-          // Generate title
-          let title = 'Imported Post';
-          if (contentItem.caption) {
-            title = contentItem.caption.substring(0, 50);
-          } else if (contentItem.notes) {
-            title = contentItem.notes.substring(0, 50);
-          } else if (contentItem.assignedTo) {
-            title = `Post for ${contentItem.assignedTo}`;
-          }
-
-          // Handle URLs and convert cloud storage links
-          const convertToDirectUrl = (url) => {
-            if (!url) return '';
-            
-            // Dropbox: Convert viewer URL to raw/direct URL
-            if (url.includes('dropbox.com')) {
-              // If it has preview parameter, extract the file and convert to raw
-              if (url.includes('preview=')) {
-                const match = url.match(/preview=([^&]+)/);
-                if (match) {
-                  const filename = decodeURIComponent(match[1]);
-                  // For now, return the base URL with raw=1
-                  return url.split('?')[0] + '?raw=1';
-                }
-              }
-              // Otherwise just change dl=0 to raw=1
-              return url.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
-            }
-            
-            // Google Drive: Try to extract file ID and create direct link
-            if (url.includes('drive.google.com')) {
-              // If it's a file URL with /d/, extract ID
-              const match = url.match(/\/d\/([^\/\?]+)/);
-              if (match) {
-                return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-              }
-              // If it's a folder URL, we can't embed it directly
-              if (url.includes('/folders/')) {
-                console.warn('⚠️ Cannot embed Google Drive folder URL:', url);
-                return ''; // Return empty for folder URLs
-              }
-            }
-            
-            return url;
-          };
-          
-          // Get image URL from either imageUrl field or mediaUrls field
-          let primaryImageUrl = '';
-          let allMediaUrls = contentItem.mediaUrls || '';
-          
-          // If imageUrl field is explicitly set (from PHOTO LINK column)
-          if (contentItem.imageUrl) {
-            primaryImageUrl = convertToDirectUrl(contentItem.imageUrl);
-            console.log('🖼️ Using imageUrl field:', { original: contentItem.imageUrl, converted: primaryImageUrl });
-          }
-          // Otherwise try to extract from mediaUrls
-          else if (allMediaUrls) {
-            const urls = allMediaUrls.split(',').map(u => u.trim());
-            
-            // Look for image URLs (but prefer explicit image columns)
-            const imageUrl = urls.find(url => 
-              url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
-              (!url.includes('video') && !url.includes('.mp4') && 
-               (url.includes('drive.google.com') || url.includes('dropbox.com') || 
-                url.includes('imgur.com') || url.includes('cloudinary.com')))
-            );
-            
-            if (imageUrl) {
-              primaryImageUrl = convertToDirectUrl(imageUrl);
-              console.log('🖼️ Extracted from mediaUrls:', { original: imageUrl, converted: primaryImageUrl });
-            }
-          }
-
-          const newContent = {
-            id: Date.now() + Math.random(),
-            calendarId: calendarId,
-            title: title,
-            description: contentItem.caption || contentItem.notes || '',
-            platform: normalizedPlatform,
-            contentType: normalizedContentType,
-            scheduledDate: parsedDate,
-            status: normalizedStatus,
-            tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
-            imageUrl: primaryImageUrl,
-            videoUrl: allMediaUrls,
-            notes: contentItem.notes || '',
-            assignedTo: contentItem.assignedTo || '',
-            createdAt: new Date()
+          const buildOnePost = (primaryImageUrl, mediaUrlsForPost = allMediaUrls) => {
+            let title = 'Imported Post';
+            if (contentItem.caption) title = contentItem.caption.substring(0, 50);
+            else if (contentItem.notes) title = contentItem.notes.substring(0, 50);
+            else if (contentItem.assignedTo) title = `Post for ${contentItem.assignedTo}`;
+            return {
+              id: Date.now() + Math.random(),
+              calendarId,
+              title,
+              description: contentItem.caption || contentItem.notes || '',
+              platform: normalizedPlatform,
+              contentType: normalizedContentType,
+              scheduledDate: parsedDate,
+              status: normalizedStatus,
+              tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
+              imageUrl: primaryImageUrl,
+              videoUrl: mediaUrlsForPost,
+              notes: contentItem.notes || '',
+              assignedTo: contentItem.assignedTo || '',
+              createdAt: new Date()
+            };
           };
 
-          importedContent.push(newContent);
-          successCount++;
+          if (multiPostPerRow) {
+            for (const colIdx of imageUrlColIndices) {
+              const cellVal = row[colIdx];
+              if (!cellVal || String(cellVal).trim() === '') continue;
+              const primaryImageUrl = convertToDirectUrl(String(cellVal).trim());
+              importedContent.push(buildOnePost(primaryImageUrl, ''));
+              successCount++;
+            }
+            if (imageUrlColIndices.every((colIdx) => !row[colIdx] || String(row[colIdx]).trim() === '')) skipCount++;
+          } else {
+            if (Object.keys(contentItem).length === 0) { skipCount++; continue; }
+            let primaryImageUrl = '';
+            if (contentItem.imageUrl) primaryImageUrl = convertToDirectUrl(contentItem.imageUrl);
+            else if (allMediaUrls) {
+              const urls = allMediaUrls.split(',').map(u => u.trim());
+              const imageUrl = urls.find(url =>
+                url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
+                (!url.includes('video') && !url.includes('.mp4') && (url.includes('drive.google.com') || url.includes('dropbox.com') || url.includes('imgur.com') || url.includes('cloudinary.com')))
+              );
+              if (imageUrl) primaryImageUrl = convertToDirectUrl(imageUrl);
+            }
+            importedContent.push(buildOnePost(primaryImageUrl, allMediaUrls));
+            successCount++;
+          }
         } catch (rowError) {
           console.error('❌ Error processing row:', rowError, row);
           skipCount++;
@@ -671,31 +633,48 @@ const ContentCalendar = () => {
     }
 
     try {
-      toast.loading('Fetching sheet data...', { id: 'fetch-sheet' });
-      
-      // Fetch the sheet data
-      const data = await googleSheetsService.fetchSheetData(sheetUrl);
-      
+      const spreadsheetId = googleSheetsService.extractSpreadsheetId(sheetUrl);
+
+      // If we haven't loaded tabs yet, or user might have changed URL, list sheets first
+      if (availableTabs.length === 0) {
+        toast.loading('Loading spreadsheet tabs...', { id: 'fetch-sheet' });
+        const { sheets } = await googleSheetsService.listSheets(sheetUrl);
+        if (!sheets || sheets.length === 0) {
+          toast.error('No tabs found in this spreadsheet', { id: 'fetch-sheet' });
+          return;
+        }
+        setAvailableTabs(sheets);
+        setSelectedTabTitle(sheets[0].title);
+        toast.dismiss('fetch-sheet');
+        if (sheets.length > 1) {
+          toast.success(`Select which tab to import (e.g. month), then click Fetch.`);
+          return;
+        }
+      }
+
+      const tabToFetch = selectedTabTitle || availableTabs[0]?.title;
+      toast.loading(`Fetching "${tabToFetch}"...`, { id: 'fetch-sheet' });
+
+      const data = await googleSheetsService.fetchSheetData(sheetUrl, tabToFetch);
+
       if (!data.headers || data.headers.length === 0) {
-        toast.error('Sheet appears to be empty', { id: 'fetch-sheet' });
+        toast.error('This tab appears to be empty', { id: 'fetch-sheet' });
         return;
       }
 
       setSheetData(data);
-      
+
       console.log('📋 Sheet data received:', {
         spreadsheetTitle: data.spreadsheetTitle,
+        sheetTitle: data.sheetTitle,
         headers: data.headers,
         rowCount: data.rows.length,
         sampleRow: data.rows[0]
       });
-      
-      // Get sample rows for AI analysis
+
       const sampleRows = googleSheetsService.getSampleRows(data.rows, 5);
-      
-      toast.loading('AI is analyzing columns...', { id: 'fetch-sheet' });
-      
-      // Use AI to suggest mappings
+      toast.loading('ChatGPT is analyzing columns...', { id: 'fetch-sheet' });
+
       try {
         const aiResult = await openaiService.analyzeColumnMapping(data.headers, sampleRows);
         setColumnMappings(aiResult.mappings);
@@ -711,7 +690,7 @@ const ContentCalendar = () => {
         setMappingSuggestions(fallback.suggestions);
         toast.success('✅ Sheet fetched! Please review mappings.', { id: 'fetch-sheet' });
       }
-      
+
       setImportStep(3);
     } catch (error) {
       console.error('❌ Error fetching sheet:', error);
@@ -724,6 +703,28 @@ const ContentCalendar = () => {
       ...prev,
       [columnIndex]: newField
     }));
+  };
+
+  const handleEnrichWithChatGPT = async () => {
+    if (!sheetData?.rows?.length || !sheetData?.headers) return;
+    setIsEnriching(true);
+    try {
+      toast.loading('ChatGPT is analyzing rows to enrich your calendar...', { id: 'enrich' });
+      const enrichments = await openaiService.enrichSheetRowsForCalendar(
+        sheetData.headers,
+        sheetData.rows,
+        columnMappings,
+        25
+      );
+      setEnrichmentByRowIndex(enrichments);
+      const filled = enrichments.filter(e => e && Object.keys(e).length > 0).length;
+      toast.success(`ChatGPT suggested enrichments for ${filled} row(s). Import to apply.`, { id: 'enrich' });
+    } catch (err) {
+      console.warn('Enrichment failed:', err);
+      toast.error(err.message || 'Enrichment failed. You can still import without it.', { id: 'enrich' });
+    } finally {
+      setIsEnriching(false);
+    }
   };
 
   const handleImportContent = async () => {
@@ -747,7 +748,8 @@ const ContentCalendar = () => {
         const updated = [...prev, { 
           id: newCalendarId, 
           name: newCalendarName,
-          sheetUrl: sheetUrl, // Store the sheet URL for refresh
+          sheetUrl: sheetUrl,
+          sheetTitle: sheetData.sheetTitle, // tab (e.g. month) for refresh
           lastImported: new Date().toISOString()
         }];
         // Save to localStorage immediately
@@ -762,158 +764,107 @@ const ContentCalendar = () => {
       let successCount = 0;
       let skipCount = 0;
 
+      const convertToDirectUrl = (url) => {
+        if (!url) return '';
+        if (url.includes('dropbox.com')) {
+          if (url.includes('preview=')) return url.split('?')[0] + '?raw=1';
+          return url.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
+        }
+        if (url.includes('drive.google.com')) {
+          const match = url.match(/\/d\/([^\/\?]+)/);
+          if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+          if (url.includes('/folders/')) return '';
+        }
+        return url;
+      };
+
+      const imageUrlColIndices = Object.entries(columnMappings)
+        .filter(([, field]) => field === 'imageUrl')
+        .map(([col]) => parseInt(col, 10))
+        .sort((a, b) => a - b);
+      const multiPostPerRow = imageUrlColIndices.length >= 2;
+
       // Process each row
       for (let i = 0; i < sheetData.rows.length; i++) {
         const row = sheetData.rows[i];
         try {
-          console.log(`\n📝 Processing row ${i + 1}:`, row);
           const contentItem = {};
-          
-          // Map columns to fields based on mappings
           Object.keys(columnMappings).forEach(colIndex => {
             const field = columnMappings[colIndex];
-            let value = row[parseInt(colIndex)];
-            
-            if (field !== 'unmapped' && value) {
-              // If this is a mediaUrls or imageUrl field and we already have one, append it
-              if ((field === 'mediaUrls' || field === 'imageUrl') && contentItem[field]) {
-                contentItem[field] = `${contentItem[field]}, ${value}`;
-                console.log(`  ✓ Appended to ${field}: "${value}"`);
-              } else {
-                contentItem[field] = value;
-                console.log(`  ✓ Mapped column ${colIndex} (${sheetData.headers[colIndex]}) → ${field}: "${value}"`);
-              }
+            const value = row[parseInt(colIndex)];
+            if (field === 'unmapped' || !value) return;
+            if (multiPostPerRow && field === 'imageUrl') return;
+            if ((field === 'mediaUrls' || field === 'imageUrl') && contentItem[field]) {
+              contentItem[field] = `${contentItem[field]}, ${value}`;
+            } else {
+              contentItem[field] = value;
             }
           });
 
-          console.log('  📋 Parsed content item:', contentItem);
-
-          // Skip completely empty rows
-          if (Object.keys(contentItem).length === 0) {
-            console.warn('  ⚠️ Skipping empty row');
-            skipCount++;
-            continue;
+          const enrichment = enrichmentByRowIndex[i];
+          if (enrichment && typeof enrichment === 'object') {
+            ['platform', 'contentType', 'hashtags', 'postDate', 'caption', 'notes'].forEach(field => {
+              const v = enrichment[field];
+              if (v != null && v !== '' && (!contentItem[field] || String(contentItem[field]).trim() === '')) {
+                contentItem[field] = String(v).trim();
+              }
+            });
           }
 
-          // Parse and format the data
-          // If no date provided, use current date + row number to spread them out
           const parsedDate = contentItem.postDate ? parseDate(contentItem.postDate) : addDays(new Date(), i);
           const normalizedPlatform = normalizePlatform(contentItem.platform) || 'instagram';
-          // Default to 'video' if mediaUrls contains video-like content, otherwise 'image'
-          const defaultContentType = (contentItem.mediaUrls && 
-            (contentItem.mediaUrls.includes('video') || contentItem.mediaUrls.includes('.mp4'))) 
-            ? 'video' : 'image';
+          const defaultContentType = (contentItem.mediaUrls && (contentItem.mediaUrls.includes('video') || contentItem.mediaUrls.includes('.mp4'))) ? 'video' : 'image';
           const normalizedContentType = normalizeContentType(contentItem.contentType) || defaultContentType;
           const normalizedStatus = normalizeStatus(contentItem.status) || 'draft';
-          
-          if (!contentItem.postDate) {
-            console.log('  ℹ️ No date provided, using auto-generated date:', parsedDate);
-          }
-          
-          console.log('  🔄 Normalized values:', {
-            originalDate: contentItem.postDate,
-            parsedDate,
-            originalPlatform: contentItem.platform,
-            normalizedPlatform,
-            originalContentType: contentItem.contentType,
-            normalizedContentType,
-            originalStatus: contentItem.status,
-            normalizedStatus
-          });
+          const allMediaUrls = contentItem.mediaUrls || '';
 
-          // Generate a meaningful title from available data
-          let title = 'Imported Post';
-          if (contentItem.caption) {
-            title = contentItem.caption.substring(0, 50);
-          } else if (contentItem.notes) {
-            title = contentItem.notes.substring(0, 50);
-          } else if (contentItem.assignedTo) {
-            title = `Post for ${contentItem.assignedTo}`;
-          }
-
-          // Handle URLs and convert cloud storage links
-          const convertToDirectUrl = (url) => {
-            if (!url) return '';
-            
-            // Dropbox: Convert viewer URL to raw/direct URL
-            if (url.includes('dropbox.com')) {
-              // If it has preview parameter, extract the file and convert to raw
-              if (url.includes('preview=')) {
-                const match = url.match(/preview=([^&]+)/);
-                if (match) {
-                  const filename = decodeURIComponent(match[1]);
-                  // For now, return the base URL with raw=1
-                  return url.split('?')[0] + '?raw=1';
-                }
-              }
-              // Otherwise just change dl=0 to raw=1
-              return url.replace(/\?dl=0/g, '?raw=1').replace(/&dl=0/g, '&raw=1');
-            }
-            
-            // Google Drive: Try to extract file ID and create direct link
-            if (url.includes('drive.google.com')) {
-              // If it's a file URL with /d/, extract ID
-              const match = url.match(/\/d\/([^\/\?]+)/);
-              if (match) {
-                return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-              }
-              // If it's a folder URL, we can't embed it directly
-              if (url.includes('/folders/')) {
-                console.warn('⚠️ Cannot embed Google Drive folder URL:', url);
-                return ''; // Return empty for folder URLs
-              }
-            }
-            
-            return url;
-          };
-          
-          // Get image URL from either imageUrl field or mediaUrls field
-          let primaryImageUrl = '';
-          let allMediaUrls = contentItem.mediaUrls || '';
-          
-          // If imageUrl field is explicitly set (from PHOTO LINK column)
-          if (contentItem.imageUrl) {
-            primaryImageUrl = convertToDirectUrl(contentItem.imageUrl);
-            console.log('  🖼️ Using imageUrl field:', { original: contentItem.imageUrl, converted: primaryImageUrl });
-          }
-          // Otherwise try to extract from mediaUrls
-          else if (allMediaUrls) {
-            const urls = allMediaUrls.split(',').map(u => u.trim());
-            
-            // Look for image URLs (but prefer explicit image columns)
-            const imageUrl = urls.find(url => 
-              url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
-              (!url.includes('video') && !url.includes('.mp4') && 
-               (url.includes('drive.google.com') || url.includes('dropbox.com') || 
-                url.includes('imgur.com') || url.includes('cloudinary.com')))
-            );
-            
-            if (imageUrl) {
-              primaryImageUrl = convertToDirectUrl(imageUrl);
-              console.log('  🖼️ Extracted from mediaUrls:', { original: imageUrl, converted: primaryImageUrl });
-            }
-          }
-
-          const newContent = {
-            id: Date.now() + Math.random(),
-            calendarId: newCalendarId, // Use the new calendar
-            title: title,
-            description: contentItem.caption || contentItem.notes || '',
-            platform: normalizedPlatform,
-            contentType: normalizedContentType,
-            scheduledDate: parsedDate,
-            status: normalizedStatus,
-            tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
-            imageUrl: primaryImageUrl,
-            videoUrl: allMediaUrls,
-            notes: contentItem.notes || '',
-            assignedTo: contentItem.assignedTo || '',
-            createdAt: new Date()
+          const buildOnePost = (primaryImageUrl, mediaUrlsForPost = allMediaUrls) => {
+            let title = 'Imported Post';
+            if (contentItem.caption) title = contentItem.caption.substring(0, 50);
+            else if (contentItem.notes) title = contentItem.notes.substring(0, 50);
+            else if (contentItem.assignedTo) title = `Post for ${contentItem.assignedTo}`;
+            return {
+              id: Date.now() + Math.random(),
+              calendarId: newCalendarId,
+              title,
+              description: contentItem.caption || contentItem.notes || '',
+              platform: normalizedPlatform,
+              contentType: normalizedContentType,
+              scheduledDate: parsedDate,
+              status: normalizedStatus,
+              tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
+              imageUrl: primaryImageUrl,
+              videoUrl: mediaUrlsForPost,
+              notes: contentItem.notes || '',
+              assignedTo: contentItem.assignedTo || '',
+              createdAt: new Date()
+            };
           };
 
-          console.log('  ✅ Created content object:', newContent);
-          importedContent.push(newContent);
-          successCount++;
+          if (multiPostPerRow) {
+            for (const colIdx of imageUrlColIndices) {
+              const cellVal = row[colIdx];
+              if (!cellVal || String(cellVal).trim() === '') continue;
+              const primaryImageUrl = convertToDirectUrl(String(cellVal).trim());
+              importedContent.push(buildOnePost(primaryImageUrl, ''));
+              successCount++;
+            }
+            if (imageUrlColIndices.every((colIdx) => !row[colIdx] || String(row[colIdx]).trim() === '')) skipCount++;
+          } else {
+            if (Object.keys(contentItem).length === 0) { skipCount++; continue; }
+            let primaryImageUrl = '';
+            if (contentItem.imageUrl) primaryImageUrl = convertToDirectUrl(contentItem.imageUrl);
+            else if (allMediaUrls) {
+              const urls = allMediaUrls.split(',').map(u => u.trim());
+              const imageUrl = urls.find(url =>
+                url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
+                (!url.includes('video') && !url.includes('.mp4') && (url.includes('drive.google.com') || url.includes('dropbox.com') || url.includes('imgur.com') || url.includes('cloudinary.com')))
+              );
+              if (imageUrl) primaryImageUrl = convertToDirectUrl(imageUrl);
+            }
+            importedContent.push(buildOnePost(primaryImageUrl, allMediaUrls));
+            successCount++;
+          }
         } catch (rowError) {
           console.error('  ❌ Error processing row:', rowError, row);
           skipCount++;
@@ -1065,6 +1016,8 @@ const ContentCalendar = () => {
     setMappingConfidence({});
     setMappingSuggestions({});
     setEnrichmentByRowIndex([]);
+    setAvailableTabs([]);
+    setSelectedTabTitle('');
     setIsImporting(false);
     setIsEnriching(false);
   };
@@ -1077,7 +1030,8 @@ const ContentCalendar = () => {
     { value: 'status', label: 'Status' },
     { value: 'assignedTo', label: 'Assigned To' },
     { value: 'hashtags', label: 'Hashtags' },
-    { value: 'mediaUrls', label: 'Media URLs' },
+    { value: 'imageUrl', label: 'Image / Photo URL (one column = one post per row if multiple)' },
+    { value: 'mediaUrls', label: 'Media / Video URLs' },
     { value: 'notes', label: 'Notes' },
     { value: 'unmapped', label: '(Skip this column)' }
   ];
@@ -1219,7 +1173,7 @@ const ContentCalendar = () => {
                             <div className="flex gap-1 flex-shrink-0">
                               {cal.sheetUrl ? (
                                 <button
-                                  onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl)}
+                                  onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl, cal.sheetTitle)}
                                   disabled={refreshingCalendarId === cal.id}
                                   className={`p-1.5 hover:bg-[#34c759]/20 rounded-lg transition-colors ${
                                     refreshingCalendarId === cal.id ? 'animate-spin' : ''
@@ -1427,30 +1381,53 @@ const ContentCalendar = () => {
                     {format(date, 'd')}
                   </div>
                   <div className="space-y-1">
-                    {dayContent.slice(0, 2).map(content => (
-                      <div
-                        key={content.id}
-                        className={`text-[10px] p-1 rounded-md overflow-hidden ${getStatusColor(content.status)}`}
-                        title={`${content.title}${content.imageUrl ? '\n📎 ' + content.imageUrl.substring(0, 50) : ''}`}
-                      >
-                        {content.imageUrl && (
-                          <img 
-                            src={content.imageUrl} 
-                            alt={content.title}
-                            className="w-full h-10 object-cover rounded mb-1"
-                            onError={(e) => {
-                              console.warn('❌ Failed to load image:', content.imageUrl);
-                              e.target.style.display = 'none';
-                            }}
-                          />
+                    {dayContent.length >= 3 ? (
+                      <>
+                        <div className="flex flex-wrap gap-0.5" title={dayContent.map(c => c.title).join(' · ')}>
+                          {dayContent.slice(0, 5).map(content => (
+                            <div key={content.id} className="w-[22%] min-w-0 aspect-square rounded overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/10">
+                              {content.imageUrl ? (
+                                <img
+                                  src={content.imageUrl}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.remove('hidden'); }}
+                                />
+                              ) : null}
+                              <div className={`w-full h-full flex items-center justify-center text-[10px] font-medium text-[#86868b] ${content.imageUrl ? 'hidden' : ''}`}>
+                                <Image className="w-4 h-4 opacity-60" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="text-[10px] text-[#86868b] font-medium">{dayContent.length} posts</div>
+                      </>
+                    ) : (
+                      <>
+                        {dayContent.slice(0, 2).map(content => (
+                          <div
+                            key={content.id}
+                            className={`text-[10px] p-1 rounded-md overflow-hidden ${getStatusColor(content.status)}`}
+                            title={`${content.title}${content.imageUrl ? '\n📎 ' + content.imageUrl.substring(0, 50) : ''}`}
+                          >
+                            {content.imageUrl ? (
+                              <img
+                                src={content.imageUrl}
+                                alt={content.title}
+                                className="w-full h-10 object-cover rounded mb-1"
+                                onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.remove('hidden'); }}
+                              />
+                            ) : null}
+                            <div className={`w-full h-10 rounded mb-1 flex items-center justify-center bg-black/10 dark:bg-white/10 ${content.imageUrl ? 'hidden' : ''}`}>
+                              <Image className="w-5 h-5 text-[#86868b]" />
+                            </div>
+                            <div className="text-white truncate font-medium">{content.title}</div>
+                          </div>
+                        ))}
+                        {dayContent.length > 2 && (
+                          <div className="text-[10px] text-[#86868b] font-medium">+{dayContent.length - 2} more</div>
                         )}
-                        <div className="text-white truncate font-medium">{content.title}</div>
-                      </div>
-                    ))}
-                    {dayContent.length > 2 && (
-                      <div className="text-[10px] text-[#86868b] font-medium">
-                        +{dayContent.length - 2} more
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1976,11 +1953,33 @@ const ContentCalendar = () => {
                     <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Google Sheets URL or ID</label>
                     <input
                       value={sheetUrl}
-                      onChange={(e) => setSheetUrl(e.target.value)}
+                      onChange={(e) => {
+                        setSheetUrl(e.target.value);
+                        setAvailableTabs([]);
+                        setSelectedTabTitle('');
+                      }}
                       placeholder="https://docs.google.com/spreadsheets/d/..."
                       className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                     />
                   </div>
+
+                  {availableTabs.length > 1 && (
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Import from tab (e.g. month)</label>
+                      <select
+                        value={selectedTabTitle}
+                        onChange={(e) => setSelectedTabTitle(e.target.value)}
+                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      >
+                        {availableTabs.map((tab) => (
+                          <option key={tab.sheetId} value={tab.title}>
+                            {tab.title}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[12px] text-[#86868b] mt-1">Select the tab you want to import (e.g. March 2026).</p>
+                    </div>
+                  )}
 
                   <div className="bg-black/[0.02] dark:bg-white/5 rounded-xl p-4">
                     <h4 className="text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2 flex items-center gap-2">
@@ -2006,7 +2005,7 @@ const ContentCalendar = () => {
                       disabled={!sheetUrl.trim()}
                       className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Fetch Sheet Data
+                      {availableTabs.length > 1 ? `Fetch "${selectedTabTitle || availableTabs[0]?.title}"` : 'Fetch Sheet Data'}
                     </button>
                   </div>
                 </div>
@@ -2018,7 +2017,7 @@ const ContentCalendar = () => {
                   <div>
                     <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Review Column Mapping</h3>
                     <p className="text-[14px] text-[#86868b]">
-                      AI has analyzed your sheet. Review and adjust the mappings below.
+                      ChatGPT has analyzed your sheet. Review mappings below, then optionally enrich rows with AI suggestions before importing.
                     </p>
                   </div>
 
@@ -2030,7 +2029,7 @@ const ContentCalendar = () => {
                       💡 <strong>Tip:</strong> Post dates are optional. If you don't have dates, they'll be auto-generated starting from today.
                     </p>
                     <p className="text-[12px] text-[#34c759]/80">
-                      🖼️ <strong>Images:</strong> Columns with image URLs, Drive/Dropbox links, or thumbnails will show as previews in your calendar!
+                      🖼️ <strong>Images:</strong> Map photo columns to &quot;Image / Photo URL&quot;. If you map <strong>multiple</strong> columns to Image, each column becomes a <strong>separate post</strong> on the same day (one row = one day, one post per image column).
                     </p>
                   </div>
 
@@ -2089,12 +2088,27 @@ const ContentCalendar = () => {
                     })}
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+                  <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
                     <button
                       onClick={() => setImportStep(2)}
                       className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                     >
                       Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleEnrichWithChatGPT}
+                      disabled={isEnriching}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-60"
+                    >
+                      {isEnriching ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          Analyzing…
+                        </>
+                      ) : (
+                        <>Enrich with ChatGPT</>
+                      )}
                     </button>
                     <button 
                       onClick={handleImportContent}

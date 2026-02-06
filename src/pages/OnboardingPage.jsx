@@ -31,7 +31,7 @@ const MODULE_HOW_TO_USE = {
   'instagram-reports': 'Create and share Instagram analytics reports with clients.',
   'tasks': 'Manage your tasks, use filters and templates, and request tasks from teammates.',
   'clients': 'View and manage all clients, assign managers, and edit packages.',
-  'posting-packages': 'See posting packages and use the Posts Today tally to log completed posts.',
+  'posting-packages': 'See and manage posting packages for @luxury_listings.',
   'content-calendar': 'Plan and schedule content across channels.',
   'crm': 'Track leads and deals through the sales pipeline.',
   'team': 'Manage team members and roles.',
