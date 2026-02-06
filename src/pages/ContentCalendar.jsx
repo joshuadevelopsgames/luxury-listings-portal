@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -16,6 +16,7 @@ import { toast } from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { googleSheetsService } from '../services/googleSheetsService';
 import { openaiService } from '../services/openaiService';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ContentCalendar = () => {
   const { currentUser, hasPermission } = useAuth();
@@ -138,6 +139,9 @@ const ContentCalendar = () => {
     imageUrl: '',
     videoUrl: ''
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageDropActive, setImageDropActive] = useState(false);
+  const imageFileInputRef = useRef(null);
 
   const platforms = [
     { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
@@ -219,6 +223,45 @@ const ContentCalendar = () => {
       imageUrl: '',
       videoUrl: ''
     });
+    if (imageFileInputRef.current) imageFileInputRef.current.value = '';
+    setImageDropActive(false);
+  };
+
+  const uploadImageFile = async (file) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file (JPG, PNG, GIF, WebP)');
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const storage = getStorage();
+      const uid = currentUser?.uid || (currentUser?.email || 'anon').replace(/[^a-zA-Z0-9]/g, '_');
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `content-calendar/${uid}/${Date.now()}_${file.name.slice(0, 50)}.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setPostForm((prev) => ({ ...prev, imageUrl: url }));
+      toast.success('Image uploaded');
+    } catch (err) {
+      console.error(err);
+      toast.error('Upload failed');
+    } finally {
+      setUploadingImage(false);
+      if (imageFileInputRef.current) imageFileInputRef.current.value = '';
+    }
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImageFile(file);
+  };
+
+  const handleImageDrop = (e) => {
+    e.preventDefault();
+    setImageDropActive(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) uploadImageFile(file);
   };
 
   const handleEdit = (content) => {
@@ -984,6 +1027,12 @@ const ContentCalendar = () => {
     }
     const str = String(value).trim();
     try {
+      // Google Sheets/Excel serial date (e.g. 45357 for March 2, 2026) - API often returns number not string
+      const serial = typeof value === 'number' ? value : (/^\d+$/.test(str) ? parseInt(str, 10) : NaN);
+      if (!isNaN(serial) && serial > 1000 && serial < 1000000) {
+        const d = new Date((serial - 25569) * 86400 * 1000);
+        if (!isNaN(d.getTime())) return d;
+      }
       // MM/DD/YY or MM-DD-YY (e.g. 03/01/26, 3/2/26)
       const shortDate = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
       if (shortDate) {
@@ -1552,6 +1601,8 @@ const ContentCalendar = () => {
                     imageUrl: '',
                     videoUrl: ''
                   });
+                  if (imageFileInputRef.current) imageFileInputRef.current.value = '';
+                  setImageDropActive(false);
                 }}
                 className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               >
@@ -1658,13 +1709,51 @@ const ContentCalendar = () => {
 
               {postForm.contentType === 'image' && (
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Image URL</label>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Image</label>
                   <input
-                    value={postForm.imageUrl}
-                    onChange={(e) => setPostForm({...postForm, imageUrl: e.target.value})}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    ref={imageFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
                   />
+                  {postForm.imageUrl ? (
+                    <div className="relative rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
+                      <img src={postForm.imageUrl} alt="Upload preview" className="w-full max-h-48 object-contain" />
+                      <button
+                        type="button"
+                        onClick={() => setPostForm((prev) => ({ ...prev, imageUrl: '' }))}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setImageDropActive(true); }}
+                      onDragLeave={() => setImageDropActive(false)}
+                      onDrop={handleImageDrop}
+                      onClick={() => imageFileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                        imageDropActive
+                          ? 'border-[#0071e3] bg-[#0071e3]/10'
+                          : 'border-black/20 dark:border-white/20 hover:border-[#0071e3]/50 hover:bg-black/5 dark:hover:bg-white/5'
+                      } ${uploadingImage ? 'pointer-events-none opacity-70' : ''}`}
+                    >
+                      {uploadingImage ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+                          <p className="text-[13px] text-[#86868b]">Uploading…</p>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
+                          <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Click to upload or drag and drop</p>
+                          <p className="text-[11px] text-[#86868b] mt-1">JPG, PNG, GIF, WebP (max 10MB)</p>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1686,6 +1775,8 @@ const ContentCalendar = () => {
                   onClick={() => {
                     setShowAddModal(false);
                     setEditingContent(null);
+                    if (imageFileInputRef.current) imageFileInputRef.current.value = '';
+                    setImageDropActive(false);
                   }}
                   className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >

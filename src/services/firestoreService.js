@@ -826,12 +826,13 @@ class FirestoreService {
     }
   }
 
-  // Get employee by email
+  // Get employee by email (normalized to lowercase for Firestore rule consistency)
   async getEmployeeByEmail(email) {
     try {
+      const normalizedEmail = (email || '').toLowerCase().trim();
       const q = query(
         collection(db, this.collections.EMPLOYEES),
-        where('email', '==', email)
+        where('email', '==', normalizedEmail)
       );
       const snapshot = await getDocs(q);
       
@@ -866,11 +867,13 @@ class FirestoreService {
     }
   }
 
-  // Add new employee
+  // Add new employee (email normalized for Firestore rules)
   async addEmployee(employeeData) {
     try {
+      const normalized = { ...employeeData };
+      if (normalized.email != null) normalized.email = String(normalized.email).toLowerCase().trim();
       const sanitized = Object.fromEntries(
-        Object.entries({ ...employeeData, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }).filter(([, v]) => v !== undefined)
+        Object.entries({ ...normalized, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }).filter(([, v]) => v !== undefined)
       );
       const docRef = await addDoc(collection(db, this.collections.EMPLOYEES), sanitized);
       console.log('✅ Employee added:', docRef.id);

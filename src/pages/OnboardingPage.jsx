@@ -117,57 +117,49 @@ const OnboardingPage = () => {
   const handleCompleteOnboarding = async () => {
     console.log('🎯 Completing onboarding...');
     setCompleting(true);
+    const normalizedEmail = (currentUser?.email || '').toLowerCase().trim();
+    const completedAt = new Date().toISOString();
     try {
-      // Save profile data and mark onboarding as completed
+      // 1. Persist onboarding state first (approved_users) so user is never stuck
+      await firestoreService.updateApprovedUser(normalizedEmail, {
+        onboardingCompleted: true,
+        onboardingCompletedDate: completedAt
+      });
+      mergeCurrentUser({
+        onboardingCompleted: true,
+        onboardingCompletedDate: completedAt
+      });
+
+      // 2. Save profile/employee data (email normalized for Firestore rules)
       const employeeData = {
         ...profileData,
+        email: normalizedEmail,
         onboardingCompleted: true,
-        onboardingCompletedDate: new Date().toISOString(),
+        onboardingCompletedDate: completedAt,
         position: userData?.position ?? currentUser?.position ?? '',
         department: userData?.department ?? currentUser?.department ?? '',
         startDate: userData?.startDate ?? currentUser?.startDate ?? new Date().toISOString(),
         roles: currentUser?.roles ?? userData?.roles ?? []
       };
 
-      console.log('💾 Saving employee data:', employeeData);
-
-      // Check if employee exists, if not create new one
-      const existingEmployee = await firestoreService.getEmployeeByEmail(currentUser.email);
-      
+      const existingEmployee = await firestoreService.getEmployeeByEmail(normalizedEmail);
       if (existingEmployee) {
-        console.log('✏️ Updating existing employee:', existingEmployee.id);
         await firestoreService.updateEmployee(existingEmployee.id, employeeData);
       } else {
-        console.log('➕ Creating new employee');
         await firestoreService.addEmployee(employeeData);
       }
 
-      await firestoreService.updateApprovedUser(currentUser.email, {
-        onboardingCompleted: true,
-        onboardingCompletedDate: employeeData.onboardingCompletedDate
-      });
-
-      mergeCurrentUser({
-        onboardingCompleted: true,
-        onboardingCompletedDate: employeeData.onboardingCompletedDate
-      });
-
-      console.log('✅ Employee data saved successfully');
       toast.success('🎉 Welcome aboard! Let\'s get started!');
-      
-      // Navigate to dashboard immediately
-      console.log('🏠 Navigating to dashboard...');
       navigate('/dashboard');
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);
+      // Onboarding state may already be saved; only show error if we couldn't update approved_user
       toast.error('Failed to save onboarding progress. Trying to continue anyway...');
       mergeCurrentUser({
         onboardingCompleted: true,
-        onboardingCompletedDate: new Date().toISOString()
+        onboardingCompletedDate: completedAt
       });
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 2000);
+      setTimeout(() => navigate('/dashboard'), 2000);
     } finally {
       setCompleting(false);
     }
