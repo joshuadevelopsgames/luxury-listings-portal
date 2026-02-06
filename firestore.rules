@@ -38,10 +38,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Approved users - authenticated users can read; admins can write; users can update own profile (Gmail photo/name)
+    // Approved users - users can read; admins create/delete; users can create/update own doc (onboarding, My Profile)
     match /approved_users/{userEmail} {
       allow read: if isAuthenticated();
-      allow create, delete: if isAdmin();
+      allow create: if isAdmin() || (isAuthenticated() && request.auth.token.email == userEmail);
+      allow delete: if isAdmin();
       allow update: if isAdmin() ||
         (isAuthenticated() && request.auth.token.email == userEmail &&
          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
@@ -49,10 +50,12 @@ service cloud.firestore {
          ]));
     }
     
-    // Employees - authenticated users can read, admins can write
+    // Employees - users can create/update their own (onboarding); admins can do anything
     match /employees/{employeeId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.email == request.auth.token.email;
+      allow update: if isAuthenticated() && (resource.data.email == request.auth.token.email || isAdmin());
+      allow delete: if isAdmin();
     }
     
     // Tasks - authenticated users can read/write (team collaboration)

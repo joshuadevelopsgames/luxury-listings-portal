@@ -143,6 +143,100 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
   }
 
   /**
+   * Enrich sheet rows for content calendar: suggest platform, contentType, hashtags, postDate, caption for empty/missing fields.
+   * Processes in chunks to stay within token limits.
+   * @param {Array<string>} headers - Column headers
+   * @param {Array<Array>} rows - All data rows
+   * @param {Object} columnMappings - Map columnIndex (string) -> field name
+   * @param {number} maxRowsPerChunk - Max rows per API call (default 25)
+   * @returns {Promise<Array<Object>>} - Array of enrichment objects, one per row: { platform?, contentType?, hashtags?, postDate?, caption?, notes? }
+   */
+  async enrichSheetRowsForCalendar(headers, rows, columnMappings, maxRowsPerChunk = 25) {
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key is not configured. Add REACT_APP_OPENAI_API_KEY to use enrichment.');
+    }
+    if (!rows || rows.length === 0) return [];
+
+    const fieldToCol = {};
+    Object.entries(columnMappings).forEach(([colIndex, field]) => {
+      if (field !== 'unmapped') fieldToCol[field] = parseInt(colIndex, 10);
+    });
+
+    const enrichments = [];
+    for (let start = 0; start < rows.length; start += maxRowsPerChunk) {
+      const chunk = rows.slice(start, start + maxRowsPerChunk);
+      const chunkEnrichments = await this._enrichChunk(headers, chunk, fieldToCol);
+      enrichments.push(...chunkEnrichments);
+    }
+    return enrichments;
+  }
+
+  async _enrichChunk(headers, rows, fieldToCol) {
+    const rowSummaries = rows.map((row, i) => {
+      const parts = [];
+      ['postDate', 'platform', 'contentType', 'caption', 'notes', 'hashtags', 'status', 'assignedTo'].forEach(field => {
+        const col = fieldToCol[field];
+        if (col !== undefined && row[col]) parts.push(`${field}: ${String(row[col]).slice(0, 80)}`);
+      });
+      return `Row ${i}: ${parts.join(' | ') || '(empty)'}`;
+    });
+
+    const prompt = `You are helping build a content calendar from spreadsheet rows. For each row below, suggest values ONLY for fields that are empty or clearly wrong. Focus on: platform (instagram/facebook/linkedin/tiktok/youtube/twitter), contentType (image/video/reel/story/carousel/text), hashtags (comma-separated, relevant to luxury/social/content), postDate (ISO date or "Monday, Month Day" if inferrable from context). Keep suggestions short and actionable.
+
+ROWS (each line is one row; only non-empty mapped fields are shown):
+${rowSummaries.join('\n')}
+
+Return a JSON array with one object per row, in order. Each object may contain any of: platform, contentType, hashtags, postDate, caption, notes. Only include a key if you are suggesting a value for that row. Use null for missing. Example: [{"platform":"instagram","hashtags":"#luxury #realestate"},{}]
+Return ONLY the JSON array, no other text.`;
+
+    try {
+      const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'You output only valid JSON arrays. No markdown, no explanation.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.2
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'OpenAI API error');
+      }
+
+      const data = await response.json();
+      let content = data.choices[0].message.content;
+      if (typeof content !== 'string') return rows.map(() => ({}));
+      content = content.replace(/```\w*\n?/g, '').trim();
+      let arr = null;
+      try {
+        arr = JSON.parse(content);
+      } catch {
+        const match = content.match(/\[[\s\S]*\]/);
+        if (match) arr = JSON.parse(match[0]);
+      }
+      if (!Array.isArray(arr)) {
+        if (arr && typeof arr === 'object' && !Array.isArray(arr)) {
+          arr = Object.keys(arr).sort((a, b) => Number(a) - Number(b)).map(k => arr[k]);
+        } else {
+          return rows.map(() => ({}));
+        }
+      }
+      return arr.slice(0, rows.length).map(obj => (obj && typeof obj === 'object' ? obj : {}));
+    } catch (error) {
+      console.warn('Enrichment chunk failed:', error);
+      return rows.map(() => ({}));
+    }
+  }
+
+  /**
    * Fallback: Simple keyword-based mapping if AI fails
    */
   fallbackMapping(headers) {

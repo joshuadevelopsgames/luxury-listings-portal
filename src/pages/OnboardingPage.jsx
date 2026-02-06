@@ -63,10 +63,7 @@ const OnboardingPage = () => {
     phone: userData?.phone || '',
     city: userData?.city || '',
     state: userData?.state || '',
-    zipCode: userData?.zipCode || '',
-    emergencyContactName: userData?.emergencyContactName || '',
-    emergencyContactPhone: userData?.emergencyContactPhone || '',
-    emergencyContactRelation: userData?.emergencyContactRelation || ''
+    zipCode: userData?.zipCode || ''
   });
 
   const onboardingModules = useMemo(() => {
@@ -383,52 +380,6 @@ const OnboardingPage = () => {
                   onChange={(e) => handleProfileInputChange('zipCode', e.target.value)}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
                   placeholder="V6B 2W9"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pb-2 border-b-2 border-gray-200 pt-4">
-              <Phone className="w-5 h-5 text-blue-600" />
-              <h4 className="font-semibold text-lg text-gray-800">Emergency Contact</h4>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Contact Name
-                </label>
-                <input
-                  type="text"
-                  value={profileData.emergencyContactName}
-                  onChange={(e) => handleProfileInputChange('emergencyContactName', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="Jane Doe"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Contact Phone
-                </label>
-                <input
-                  type="tel"
-                  value={profileData.emergencyContactPhone}
-                  onChange={(e) => handleProfileInputChange('emergencyContactPhone', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="(555) 987-6543"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Relationship
-                </label>
-                <input
-                  type="text"
-                  value={profileData.emergencyContactRelation}
-                  onChange={(e) => handleProfileInputChange('emergencyContactRelation', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="Spouse, Parent, etc."
                 />
               </div>
             </div>

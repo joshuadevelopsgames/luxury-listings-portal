@@ -52,6 +52,8 @@ const ContentCalendar = () => {
   const [mappingSuggestions, setMappingSuggestions] = useState({});
   const [isImporting, setIsImporting] = useState(false);
   const [isSheetsAuthorized, setIsSheetsAuthorized] = useState(false);
+  const [enrichmentByRowIndex, setEnrichmentByRowIndex] = useState([]); // ChatGPT per-row suggestions
+  const [isEnriching, setIsEnriching] = useState(false);
 
   // AI Caption Generation state
   const [showAICaptionModal, setShowAICaptionModal] = useState(false);
@@ -1062,7 +1064,9 @@ const ContentCalendar = () => {
     setColumnMappings({});
     setMappingConfidence({});
     setMappingSuggestions({});
+    setEnrichmentByRowIndex([]);
     setIsImporting(false);
+    setIsEnriching(false);
   };
 
   const availableFields = [

@@ -291,7 +291,7 @@ class FirestoreService {
     }
   }
 
-  // Update approved user
+  // Update approved user (merge: true so system admins can create a profile doc if they don't have one)
   async updateApprovedUser(email, updates) {
     try {
       // Remove undefined values - Firestore doesn't allow undefined
@@ -307,12 +307,14 @@ class FirestoreService {
         console.log('⚠️ No valid updates to apply (all values were undefined)');
         return;
       }
-      
-      await updateDoc(doc(db, this.collections.APPROVED_USERS, email), {
+
+      const normalizedEmail = (email || '').toLowerCase().trim();
+      const docRef = doc(db, this.collections.APPROVED_USERS, normalizedEmail);
+      await setDoc(docRef, {
         ...cleanedUpdates,
         updatedAt: serverTimestamp()
-      });
-      console.log('✅ Approved user updated:', email);
+      }, { merge: true });
+      console.log('✅ Approved user updated:', normalizedEmail);
     } catch (error) {
       console.error('❌ Error updating approved user:', error);
       throw error;

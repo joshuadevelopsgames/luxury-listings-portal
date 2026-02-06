@@ -237,7 +237,7 @@ export function AuthProvider({ children }) {
   async function handleUserSignIn(firebaseUser) {
     const { uid, email, displayName, photoURL } = firebaseUser;
 
-    // System admin - full access
+    // System admin - full access; merge in saved profile from approved_users if present
     if (isSystemAdmin(email)) {
       let savedRole;
       try {
@@ -257,6 +257,7 @@ export function AuthProvider({ children }) {
         displayName: displayName || roleUserData.displayName,
         firstName: displayName?.split(' ')[0] || roleUserData.firstName,
         lastName: displayName?.split(' ').slice(1).join(' ') || roleUserData.lastName,
+        position: roleUserData.position,
         role: roleToUse,
         roles: Object.values(USER_ROLES), // Admin can access all roles
         primaryRole: USER_ROLES.ADMIN,
@@ -269,6 +270,17 @@ export function AuthProvider({ children }) {
         isApproved: true,
         onboardingCompleted: true
       };
+
+      // Persist: load saved profile from approved_users (My Profile writes here)
+      try {
+        const approved = await firestoreService.getApprovedUserByEmail(email);
+        if (approved?.displayName) adminUser.displayName = approved.displayName;
+        if (approved?.firstName != null) adminUser.firstName = approved.firstName;
+        if (approved?.lastName != null) adminUser.lastName = approved.lastName;
+        if (approved?.position != null) adminUser.position = approved.position;
+        if (approved?.department) adminUser.department = approved.department;
+        if (approved?.avatar) adminUser.avatar = approved.avatar;
+      } catch (e) { /* ignore */ }
       
       setCurrentRole(roleToUse);
       setCurrentUser(adminUser);
@@ -410,9 +422,9 @@ export function AuthProvider({ children }) {
     loadCurrentRole();
   }, [currentUser]);
 
-  // Listen for profile changes from Firestore (when admin updates user profile)
+  // Listen for profile changes from Firestore (My Profile writes to approved_users; applies to all users with a doc)
   useEffect(() => {
-    if (!currentUser?.email || isSystemAdmin(currentUser.email)) return;
+    if (!currentUser?.email) return;
 
     const unsubscribe = firestoreService.onApprovedUserChange(currentUser.email, (approvedUser) => {
       if (!approvedUser) return;
