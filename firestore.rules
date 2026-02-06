@@ -63,10 +63,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
-    // Task templates - authenticated users can read, admins can write
+    // Task templates - per-user: owner can read/write; shared users can read only
     match /task_templates/{templateId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if isAuthenticated() &&
+        (resource.data.ownerEmail == request.auth.token.email ||
+         ('sharedWith' in resource.data && request.auth.token.email in resource.data.sharedWith));
+      allow create: if isAuthenticated() && request.resource.data.ownerEmail == request.auth.token.email;
+      allow update, delete: if isAuthenticated() && resource.data.ownerEmail == request.auth.token.email;
     }
     
     // Smart filters - authenticated users can read/write

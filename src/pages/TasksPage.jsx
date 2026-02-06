@@ -1956,7 +1956,8 @@ const TasksPage = () => {
       {/* Template Editor Modal */}
       {showTemplateEditor && (
         <TemplateEditor 
-          onClose={() => setShowTemplateEditor(false)} 
+          onClose={() => setShowTemplateEditor(false)}
+          currentUser={currentUser}
         />
       )}
 

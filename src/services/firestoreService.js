@@ -2350,18 +2350,23 @@ class FirestoreService {
 
   // ===== TASK TEMPLATES MANAGEMENT =====
 
-  // Get all task templates
-  async getTaskTemplates() {
+  // Get task templates owned by or shared with the user (ownerEmail + sharedWith)
+  async getTaskTemplates(userEmail) {
+    const normalizedEmail = (userEmail || '').toLowerCase().trim();
+    if (!normalizedEmail) return [];
     try {
-      const querySnapshot = await getDocs(collection(db, this.collections.TASK_TEMPLATES));
-      const templates = [];
-      querySnapshot.forEach((doc) => {
-        templates.push({
-          id: doc.id,
-          ...doc.data()
-        });
+      const col = collection(db, this.collections.TASK_TEMPLATES);
+      const [ownedSnap, sharedSnap] = await Promise.all([
+        getDocs(query(col, where('ownerEmail', '==', normalizedEmail))),
+        getDocs(query(col, where('sharedWith', 'array-contains', normalizedEmail)))
+      ]);
+      const byId = new Map();
+      ownedSnap.forEach((d) => byId.set(d.id, { id: d.id, ...d.data(), isOwner: true }));
+      sharedSnap.forEach((d) => {
+        if (!byId.has(d.id)) byId.set(d.id, { id: d.id, ...d.data(), isOwner: false });
       });
-      console.log('✅ Retrieved task templates:', templates.length);
+      const templates = Array.from(byId.values());
+      console.log('✅ Retrieved task templates:', templates.length, '(owner + shared)');
       return templates;
     } catch (error) {
       console.error('❌ Error getting task templates:', error);
@@ -2369,7 +2374,7 @@ class FirestoreService {
     }
   }
 
-  // Get a single task template
+  // Get a single task template (caller must own or be in sharedWith - enforced by rules)
   async getTaskTemplate(templateId) {
     try {
       const docRef = doc(db, this.collections.TASK_TEMPLATES, templateId);
@@ -2390,14 +2395,12 @@ class FirestoreService {
     }
   }
 
-  // Create a new task template
+  // Create a new task template (ownerEmail must be set to current user)
   async createTaskTemplate(templateData) {
     try {
-      const docRef = await addDoc(collection(db, this.collections.TASK_TEMPLATES), {
-        ...templateData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      const ownerEmail = (templateData.ownerEmail || '').toLowerCase().trim();
+      const payload = { ...templateData, ownerEmail, sharedWith: templateData.sharedWith || [], createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+      const docRef = await addDoc(collection(db, this.collections.TASK_TEMPLATES), payload);
       console.log('✅ Task template created with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -2406,7 +2409,7 @@ class FirestoreService {
     }
   }
 
-  // Update a task template
+  // Update a task template (only owner can update)
   async updateTaskTemplate(templateId, updates) {
     try {
       const docRef = doc(db, this.collections.TASK_TEMPLATES, templateId);
@@ -2433,37 +2436,37 @@ class FirestoreService {
     }
   }
 
-  // Listen to template changes in real-time
-  onTaskTemplatesChange(callback) {
-    const q = query(
-      collection(db, this.collections.TASK_TEMPLATES),
-      orderBy('createdAt', 'desc')
-    );
-    
-    return onSnapshot(q, (snapshot) => {
-      const templates = [];
-      snapshot.forEach((doc) => {
-        templates.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      callback(templates);
-    });
+  // Listen to template changes for one user (owned + shared)
+  onTaskTemplatesChange(userEmail, callback) {
+    const normalizedEmail = (userEmail || '').toLowerCase().trim();
+    if (!normalizedEmail) {
+      callback([]);
+      return () => {};
+    }
+    const col = collection(db, this.collections.TASK_TEMPLATES);
+    const unsubOwned = onSnapshot(query(col, where('ownerEmail', '==', normalizedEmail)), () => {});
+    const unsubShared = onSnapshot(query(col, where('sharedWith', 'array-contains', normalizedEmail)), () => {});
+    const refresh = () => this.getTaskTemplates(normalizedEmail).then(callback);
+    refresh();
+    const interval = setInterval(refresh, 5000);
+    return () => {
+      unsubOwned();
+      unsubShared();
+      clearInterval(interval);
+    };
   }
 
-  // Initialize default templates if none exist
-  async initializeDefaultTemplates(defaultTemplates) {
+  // Initialize default templates for this user if they have none
+  async initializeDefaultTemplates(defaultTemplates, userEmail) {
+    const normalizedEmail = (userEmail || '').toLowerCase().trim();
+    if (!normalizedEmail) return;
     try {
-      const existingTemplates = await this.getTaskTemplates();
-      
+      const existingTemplates = await this.getTaskTemplates(normalizedEmail);
       if (existingTemplates.length === 0) {
-        console.log('📝 Initializing default task templates...');
-        
-        const promises = Object.values(defaultTemplates).map(template => {
-          return this.createTaskTemplate(template);
-        });
-        
+        console.log('📝 Initializing default task templates for user...');
+        const promises = Object.values(defaultTemplates).map((template) =>
+          this.createTaskTemplate({ ...template, ownerEmail: normalizedEmail })
+        );
         await Promise.all(promises);
         console.log('✅ Default templates initialized');
       }
@@ -2471,6 +2474,34 @@ class FirestoreService {
       console.error('❌ Error initializing default templates:', error);
       throw error;
     }
+  }
+
+  // Share a task template with another user (owner only). Sends notification to recipient.
+  async shareTaskTemplateWith(templateId, sharedWithEmail, ownerEmail) {
+    const toEmail = (sharedWithEmail || '').toLowerCase().trim();
+    const fromEmail = (ownerEmail || '').toLowerCase().trim();
+    if (!toEmail || !fromEmail) throw new Error('Email required');
+    if (toEmail === fromEmail) throw new Error('Cannot share with yourself');
+    const docRef = doc(db, this.collections.TASK_TEMPLATES, templateId);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) throw new Error('Template not found');
+    const data = snap.data();
+    if ((data.ownerEmail || '').toLowerCase() !== fromEmail) throw new Error('Only the owner can share this template');
+    const sharedWith = (data.sharedWith || []).map((e) => (e || '').toLowerCase().trim());
+    if (sharedWith.includes(toEmail)) return; // already shared
+    await updateDoc(docRef, {
+      sharedWith: arrayUnion(toEmail),
+      updatedAt: serverTimestamp()
+    });
+    await this.createNotification({
+      userEmail: toEmail,
+      type: 'task_template_shared',
+      title: 'Task template shared with you',
+      message: `${fromEmail} shared a task template "${data.name || 'Untitled'}" with you.`,
+      link: '/tasks',
+      read: false,
+      metadata: { templateId, sharedBy: fromEmail }
+    });
   }
 
   // ===== SMART FILTERS MANAGEMENT =====

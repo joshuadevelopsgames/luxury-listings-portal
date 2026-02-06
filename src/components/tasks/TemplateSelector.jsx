@@ -4,44 +4,38 @@ import { X, CheckCircle2, Sparkles, Edit } from 'lucide-react';
 import { TASK_TEMPLATES } from '../../data/taskTemplates';
 import { DailyTask } from '../../entities/DailyTask';
 import { firestoreService } from '../../services/firestoreService';
-import { PERMISSIONS } from '../../entities/Permissions';
-import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
 const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated }) => {
-  const { hasPermission } = useAuth();
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [creating, setCreating] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  const canEditTemplates = hasPermission(PERMISSIONS.EDIT_TASK_TEMPLATES);
+  const userEmail = (currentUser?.email || '').toLowerCase().trim();
 
-  // Load templates from Firestore on mount
+  // Load templates for this user (own + shared with them)
   useEffect(() => {
     const loadTemplates = async () => {
+      if (!userEmail) {
+        setLoading(false);
+        return;
+      }
       try {
-        const firestoreTemplates = await firestoreService.getTaskTemplates();
-        
-        // If no templates in Firestore, initialize with defaults
-        if (firestoreTemplates.length === 0) {
-          await firestoreService.initializeDefaultTemplates(TASK_TEMPLATES);
-          const newTemplates = await firestoreService.getTaskTemplates();
-          setTemplates(newTemplates);
-        } else {
-          setTemplates(firestoreTemplates);
+        let list = await firestoreService.getTaskTemplates(userEmail);
+        if (list.length === 0) {
+          await firestoreService.initializeDefaultTemplates(TASK_TEMPLATES, userEmail);
+          list = await firestoreService.getTaskTemplates(userEmail);
         }
+        setTemplates(list);
       } catch (error) {
         console.error('Error loading templates:', error);
-        // Fallback to default templates
-        setTemplates(Object.values(TASK_TEMPLATES));
+        setTemplates([]);
       } finally {
         setLoading(false);
       }
     };
-
     loadTemplates();
-  }, []);
+  }, [userEmail]);
 
   const handleApplyTemplate = async () => {
     if (!selectedTemplate) return;
@@ -106,14 +100,14 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated
             <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white">Task Templates</h2>
           </div>
           <div className="flex items-center gap-3">
-            {canEditTemplates && onEditTemplate && (
+            {onEditTemplate && (
               <button
                 type="button"
                 onClick={() => { onClose(); onEditTemplate(); }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 border border-black/10 dark:border-white/10"
               >
                 <Edit className="w-4 h-4" />
-                Edit Templates
+                My Templates
               </button>
             )}
             <button
@@ -128,10 +122,7 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated
 
         <div className="p-6 space-y-6">
           <p className="text-[14px] text-[#86868b]">
-            Choose a template to quickly create a set of related tasks
-            {canEditTemplates && (
-              <span className="ml-2 text-[#34c759] font-medium">• You can edit these templates</span>
-            )}
+            Choose a template to quickly create a set of related tasks. You see your own templates and any shared with you.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -153,6 +144,9 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated
                   )}
                 </div>
                 <h3 className="font-semibold text-[#1d1d1f] dark:text-white mb-2">{template.name}</h3>
+                {template.isOwner === false && template.ownerEmail && (
+                  <p className="text-[11px] text-[#0071e3] mb-1">Shared with you by {template.ownerEmail}</p>
+                )}
                 <p className="text-[13px] text-[#86868b] mb-3">{template.description}</p>
                 <span className="inline-block px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/10 text-[12px] text-[#86868b]">
                   {template.tasks.length} tasks
