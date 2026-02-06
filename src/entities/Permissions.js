@@ -263,7 +263,7 @@ export function getPermissionDescription(permission) {
     [PERMISSIONS.ASSIGN_TASKS]: 'Assign tasks to team members',
     [PERMISSIONS.VIEW_ALL_TASKS]: 'View all team tasks',
     [PERMISSIONS.DELETE_ANY_TASK]: 'Delete any task in the system',
-    [PERMISSIONS.EDIT_TASK_TEMPLATES]: 'Create and edit task templates for the team',
+    [PERMISSIONS.EDIT_TASK_TEMPLATES]: 'Create and edit their own task templates and share with others (Tasks UI does not gate on this; kept for role display).',
     
     [PERMISSIONS.MANAGE_LEAVE_REQUESTS]: 'View and manage all leave requests',
     [PERMISSIONS.APPROVE_LEAVE]: 'Approve or reject leave requests',

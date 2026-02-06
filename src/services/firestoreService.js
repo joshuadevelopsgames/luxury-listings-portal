@@ -2350,7 +2350,8 @@ class FirestoreService {
 
   // ===== TASK TEMPLATES MANAGEMENT =====
 
-  // Get task templates owned by or shared with the user (ownerEmail + sharedWith)
+  // Get task templates owned by or shared with the user (ownerEmail + sharedWith).
+  // Legacy docs without ownerEmail are not returned; migrate via Firebase Console or Admin SDK if needed.
   async getTaskTemplates(userEmail) {
     const normalizedEmail = (userEmail || '').toLowerCase().trim();
     if (!normalizedEmail) return [];
