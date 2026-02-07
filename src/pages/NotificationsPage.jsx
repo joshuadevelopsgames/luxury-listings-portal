@@ -64,7 +64,12 @@ const NotificationsPage = () => {
   };
 
   const handleMarkAllRead = async () => {
-    await firestoreService.markAllNotificationsRead(currentUser.email);
+    try {
+      await firestoreService.markAllNotificationsRead(currentUser.email);
+      if (unreadCount > 0) setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (e) {
+      console.error('Mark all read failed:', e);
+    }
   };
 
   const handleDeleteNotification = async (notificationId, e) => {

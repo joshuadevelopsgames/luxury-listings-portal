@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { 
@@ -17,6 +18,8 @@ import {
   CheckSquare,
   MessageSquare,
   Paperclip,
+  Send,
+  ImagePlus,
   MoreHorizontal
 } from 'lucide-react';
 import { DailyTask } from '../../entities/DailyTask';
@@ -38,11 +41,17 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     project: 'Inbox',
     labels: [],
     reminders: [],
-    subtasks: []
+    subtasks: [],
+    attachments: []
   });
   const [newSubtask, setNewSubtask] = useState('');
   const [newComment, setNewComment] = useState('');
   const [commentLink, setCommentLink] = useState('');
+  const [commentAttachmentUrls, setCommentAttachmentUrls] = useState([]);
+  const [commentUploading, setCommentUploading] = useState(false);
+  const [taskAttachmentUploading, setTaskAttachmentUploading] = useState(false);
+  const commentFileInputRef = useRef(null);
+  const taskFileInputRef = useRef(null);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -93,8 +102,10 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
         project: task.project || 'Inbox',
         labels: task.labels || [],
         reminders: task.reminders || [],
-        subtasks: task.subtasks || []
+        subtasks: task.subtasks || [],
+        attachments: task.attachments || []
       });
+      setCommentAttachmentUrls([]);
     }
   }, [task, isOpen]);
 
@@ -111,8 +122,67 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
       project: editForm.project || 'Inbox',
       labels: editForm.labels || [],
       reminders: editForm.reminders || [],
-      subtasks: editForm.subtasks || []
+      subtasks: editForm.subtasks || [],
+      attachments: editForm.attachments || []
     });
+  };
+
+  const uid = currentUser?.uid || (currentUser?.email || 'anon').replace(/[^a-zA-Z0-9]/g, '_');
+
+  const uploadTaskAttachment = async (file) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image (JPG, PNG, GIF, WebP)');
+      return;
+    }
+    setTaskAttachmentUploading(true);
+    try {
+      const storage = getStorage();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `task-attachments/${uid}/${task?.id || 'new'}/${Date.now()}_${file.name.slice(0, 40)}.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      const next = [...(editForm.attachments || []), url];
+      setEditForm(prev => ({ ...prev, attachments: next }));
+      if (task?.id) await DailyTask.update(task.id, { attachments: next });
+      toast.success('Photo attached');
+    } catch (err) {
+      console.error(err);
+      toast.error('Upload failed');
+    } finally {
+      setTaskAttachmentUploading(false);
+      if (taskFileInputRef.current) taskFileInputRef.current.value = '';
+    }
+  };
+
+  const removeTaskAttachment = async (url) => {
+    const next = (editForm.attachments || []).filter(u => u !== url);
+    setEditForm(prev => ({ ...prev, attachments: next }));
+    if (task?.id) await DailyTask.update(task.id, { attachments: next });
+  };
+
+  const uploadCommentAttachment = async (file) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image (JPG, PNG, GIF, WebP)');
+      return;
+    }
+    setCommentUploading(true);
+    try {
+      const storage = getStorage();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `task-attachments/${uid}/${task?.id || 'draft'}/comments/${Date.now()}_${file.name.slice(0, 40)}.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setCommentAttachmentUrls(prev => [...prev, url]);
+      toast.success('Photo attached to comment');
+    } catch (err) {
+      console.error(err);
+      toast.error('Upload failed');
+    } finally {
+      setCommentUploading(false);
+      if (commentFileInputRef.current) commentFileInputRef.current.value = '';
+    }
   };
 
   const handleDelete = async () => {
@@ -241,36 +311,30 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim() && !commentLink.trim()) return;
-    
-    const commentText = commentLink.trim() 
+    const commentText = commentLink.trim()
       ? `${newComment.trim()} ${commentLink.trim()}`.trim()
       : newComment.trim();
-    
-    if (!commentText) return;
-    
+    if (!commentText.trim() && commentAttachmentUrls.length === 0) return;
+
     const userName = currentUser?.firstName && currentUser?.lastName
       ? `${currentUser.firstName} ${currentUser.lastName}`
       : currentUser?.email || 'User';
-    
-    await task.addComment(currentUser?.email, userName, commentText);
-    
-    // Update local state
+
+    await task.addComment(currentUser?.email, userName, commentText.trim() || '(photo)', commentAttachmentUrls);
+
     const updatedComments = [...(task.comments || []), {
       id: Date.now().toString(),
       user: currentUser?.email,
-      userName: userName,
-      text: commentText,
-      timestamp: new Date().toISOString()
+      userName,
+      text: commentText.trim() || '(photo)',
+      timestamp: new Date().toISOString(),
+      attachmentUrls: commentAttachmentUrls
     }];
-    
-    setEditForm(prev => ({
-      ...prev,
-      comments: updatedComments
-    }));
-    
+
+    setEditForm(prev => ({ ...prev, comments: updatedComments }));
     setNewComment('');
     setCommentLink('');
+    setCommentAttachmentUrls([]);
   };
 
   const handleDeleteComment = async (commentId) => {
@@ -515,6 +579,53 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               </div>
             </div>
 
+            {/* Task attachments */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-[#e5e5e7]">Attachments</span>
+                <input
+                  type="file"
+                  ref={taskFileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTaskAttachment(f); }}
+                />
+                <button
+                  type="button"
+                  onClick={() => taskFileInputRef.current?.click()}
+                  disabled={taskAttachmentUploading}
+                  className="flex items-center gap-1.5 text-xs text-[#0071e3] dark:text-blue-400 hover:underline disabled:opacity-50"
+                >
+                  {taskAttachmentUploading ? (
+                    <span className="animate-pulse">Uploading…</span>
+                  ) : (
+                    <>
+                      <ImagePlus className="w-4 h-4" />
+                      Add photo
+                    </>
+                  )}
+                </button>
+              </div>
+              {(editForm.attachments || []).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {editForm.attachments.map((url) => (
+                    <div key={url} className="relative group">
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5">
+                        <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => removeTaskAttachment(url)}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Sub-tasks */}
             <div className="mb-6">
               {editForm.subtasks && editForm.subtasks.length > 0 && (
@@ -590,6 +701,15 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                           </button>
                         </div>
                         <p className="text-sm text-gray-700 dark:text-[#e5e5e7] whitespace-pre-wrap">{comment.text}</p>
+                        {comment.attachmentUrls && comment.attachmentUrls.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {comment.attachmentUrls.map((url) => (
+                              <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
+                                <img src={url} alt="Comment attachment" className="w-full h-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -610,22 +730,54 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                     placeholder="Comment"
                     className="w-full text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <input
                       type="url"
                       value={commentLink}
                       onChange={(e) => setCommentLink(e.target.value)}
                       placeholder="Add link or media URL"
-                      className="flex-1 text-xs border-none outline-none focus:ring-0 p-0 placeholder-gray-400 dark:placeholder-[#a1a1a6] text-blue-600 dark:text-blue-400 bg-transparent"
+                      className="flex-1 min-w-0 text-xs border-none outline-none focus:ring-0 p-0 placeholder-gray-400 dark:placeholder-[#a1a1a6] text-blue-600 dark:text-blue-400 bg-transparent"
+                    />
+                    <input
+                      type="file"
+                      ref={commentFileInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCommentAttachment(f); }}
                     />
                     <button
+                      type="button"
+                      onClick={() => commentFileInputRef.current?.click()}
+                      disabled={commentUploading}
+                      className="p-1.5 rounded-lg text-gray-500 dark:text-[#a1a1a6] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#0071e3] dark:hover:text-blue-400 disabled:opacity-50"
+                      title="Attach photo"
+                    >
+                      <ImagePlus className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={handleAddComment}
-                      disabled={!newComment.trim() && !commentLink.trim()}
+                      disabled={(!newComment.trim() && !commentLink.trim() && commentAttachmentUrls.length === 0) || commentUploading}
                       className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:text-gray-300 dark:disabled:text-[#a1a1a6] disabled:cursor-not-allowed"
                     >
-                      <Paperclip className="w-4 h-4" />
+                      <Send className="w-4 h-4" />
                     </button>
                   </div>
+                  {commentAttachmentUrls.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {commentAttachmentUrls.map((url) => (
+                        <div key={url} className="relative group">
+                          <img src={url} alt="Attach" className="w-12 h-12 rounded object-cover border border-gray-200 dark:border-white/10" />
+                          <button
+                            type="button"
+                            onClick={() => setCommentAttachmentUrls(prev => prev.filter(u => u !== url))}
+                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px]"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

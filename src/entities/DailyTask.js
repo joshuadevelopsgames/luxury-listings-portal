@@ -17,7 +17,8 @@ export class DailyTask {
     // New Todoist-like features
     this.labels = data.labels || []; // Array of label strings
     this.subtasks = data.subtasks || []; // Array of {id, text, completed, order}
-    this.comments = data.comments || []; // Array of {id, user, text, timestamp}
+    this.comments = data.comments || []; // Array of {id, user, userName, text, timestamp, attachmentUrls?}
+    this.attachments = data.attachments || []; // Array of image URLs attached to task
     this.project = data.project || null; // Project ID
     this.section = data.section || null; // Section within project
     this.parent_task = data.parent_task || null; // For subtask hierarchy
@@ -180,13 +181,14 @@ export class DailyTask {
 
   // ===== COMMENT METHODS =====
   
-  async addComment(userEmail, userName, commentText) {
+  async addComment(userEmail, userName, commentText, attachmentUrls = []) {
     const newComment = {
       id: Date.now().toString(),
       user: userEmail,
       userName: userName,
       text: commentText,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      ...(attachmentUrls?.length ? { attachmentUrls } : {})
     };
     const updatedComments = [...this.comments, newComment];
     await DailyTask.update(this.id, { comments: updatedComments });

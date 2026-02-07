@@ -2122,17 +2122,20 @@ class FirestoreService {
 
   // Mark all notifications as read for user
   async markAllNotificationsRead(userEmail) {
+    if (!userEmail || typeof userEmail !== 'string') {
+      console.warn('⚠️ markAllNotificationsRead: invalid userEmail');
+      return;
+    }
     try {
       const q = query(
         collection(db, this.collections.NOTIFICATIONS),
-        where('userEmail', '==', userEmail),
-        where('read', '==', false)
+        where('userEmail', '==', userEmail)
       );
-      
       const snapshot = await getDocs(q);
       const promises = [];
-      
       snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.read === true) return;
         promises.push(
           updateDoc(doc(db, this.collections.NOTIFICATIONS, docSnap.id), {
             read: true,
@@ -2140,8 +2143,7 @@ class FirestoreService {
           })
         );
       });
-
-      await Promise.all(promises);
+      if (promises.length) await Promise.all(promises);
       console.log('✅ All notifications marked as read');
     } catch (error) {
       console.error('❌ Error marking all notifications as read:', error);
@@ -2283,16 +2285,21 @@ class FirestoreService {
       });
 
       // Notify the requester that their request was accepted
-      const acceptLink = `/tasks?tab=outbox&requestId=${requestId}`;
-      await this.createNotification({
-        userEmail: requestData.fromUserEmail,
-        type: 'task_accepted',
-        title: 'Task request accepted',
-        message: `${requestData.toUserName} accepted your task request: ${requestData.taskTitle}`,
-        link: acceptLink,
-        taskRequestId: requestId,
-        read: false
-      });
+      const requesterEmail = requestData.fromUserEmail;
+      const accepterName = requestData.toUserName || requestData.toUserEmail || 'Someone';
+      const taskTitle = requestData.taskTitle || 'Your task request';
+      if (requesterEmail) {
+        const acceptLink = `/tasks?tab=outbox&requestId=${requestId}`;
+        await this.createNotification({
+          userEmail: requesterEmail,
+          type: 'task_accepted',
+          title: 'Task request accepted',
+          message: `${accepterName} accepted your task request: ${taskTitle}`,
+          link: acceptLink,
+          taskRequestId: requestId,
+          read: false
+        });
+      }
 
       return { success: true, taskId: taskRef.id };
     } catch (error) {
@@ -2312,16 +2319,21 @@ class FirestoreService {
       });
 
       // Notify the requester that their request was rejected
-      await this.createNotification({
-        userEmail: requestData.fromUserEmail,
-        type: 'task_rejected',
-        title: 'Task request declined',
-        message: rejectionReason 
-          ? `${requestData.toUserName} declined your task request: ${rejectionReason}`
-          : `${requestData.toUserName} declined your task request`,
-        link: '/tasks',
-        read: false
-      });
+      const requesterEmail = requestData.fromUserEmail;
+      if (requesterEmail) {
+        const declinerName = requestData.toUserName || requestData.toUserEmail || 'Someone';
+        await this.createNotification({
+          userEmail: requesterEmail,
+          type: 'task_rejected',
+          title: 'Task request declined',
+          message: rejectionReason
+            ? `${declinerName} declined your task request: ${rejectionReason}`
+            : `${declinerName} declined your task request`,
+          link: '/tasks?tab=outbox',
+          taskRequestId: requestId,
+          read: false
+        });
+      }
 
       return { success: true };
     } catch (error) {
