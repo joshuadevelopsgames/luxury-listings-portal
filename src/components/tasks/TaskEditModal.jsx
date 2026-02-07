@@ -484,7 +484,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 value={editForm.title}
                 onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
                 onBlur={handleSubmit}
-                className="flex-1 text-lg font-semibold border-none outline-none focus:ring-0 p-0"
+                className="flex-1 text-lg font-semibold border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                 placeholder="Task name"
               />
             </div>
@@ -508,7 +508,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   value={editForm.description}
                   onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                   onBlur={handleSubmit}
-                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 resize-none placeholder-gray-400"
+                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 resize-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                   placeholder="Description"
                   rows={3}
                 />
@@ -547,14 +547,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               )}
               
               <div className="flex items-center gap-2">
-                <Plus className="w-4 h-4 text-gray-400" />
+                <Plus className="w-4 h-4 text-gray-400 dark:text-[#a1a1a6]" />
                 <input
                   type="text"
                   value={newSubtask}
                   onChange={(e) => setNewSubtask(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddSubtask()}
                   placeholder="Add sub-task"
-                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
+                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                 />
               </div>
             </div>
@@ -566,7 +566,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 <div className="space-y-4 mb-4">
                   {task.comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3 group">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                         {comment.userName?.[0] || comment.user?.[0] || 'U'}
                       </div>
                       <div className="flex-1">
@@ -584,7 +584,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                           </span>
                           <button
                             onClick={() => handleDeleteComment(comment.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 ml-auto"
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-[#a1a1a6] hover:text-red-600 dark:hover:text-red-400 ml-auto"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -597,8 +597,8 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               )}
               
               {/* Comment Input */}
-              <div className="flex items-start gap-3 p-3 border border-gray-200 dark:border-white/10 rounded-lg">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+              <div className="flex items-start gap-3 p-3 border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5">
+                <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                   {currentUser?.firstName?.[0] || 'U'}
                 </div>
                 <div className="flex-1 space-y-2">
@@ -608,7 +608,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                     onChange={(e) => setNewComment(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
                     placeholder="Comment"
-                    className="w-full text-sm border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
+                    className="w-full text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                   />
                   <div className="flex items-center gap-2">
                     <input
@@ -616,7 +616,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       value={commentLink}
                       onChange={(e) => setCommentLink(e.target.value)}
                       placeholder="Add link or media URL"
-                      className="flex-1 text-xs border-none outline-none focus:ring-0 p-0 placeholder-gray-400 text-blue-600"
+                      className="flex-1 text-xs border-none outline-none focus:ring-0 p-0 placeholder-gray-400 dark:placeholder-[#a1a1a6] text-blue-600 dark:text-blue-400 bg-transparent"
                     />
                     <button
                       onClick={handleAddComment}
@@ -821,12 +821,12 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   {editForm.labels.map((label, idx) => (
                     <span 
                       key={idx} 
-                      className="group text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded flex items-center gap-1 hover:bg-purple-200"
+                      className="group text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-1 rounded flex items-center gap-1 hover:bg-purple-200 dark:hover:bg-purple-800/50"
                     >
                       {label}
                       <button
                         onClick={() => removeLabel(label)}
-                        className="opacity-0 group-hover:opacity-100 hover:text-purple-900 transition-opacity"
+                        className="opacity-0 group-hover:opacity-100 hover:text-purple-900 dark:hover:text-purple-200 transition-opacity"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -853,9 +853,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   {editForm.reminders.map((reminder) => (
                     <div
                       key={reminder.id}
-                      className="flex items-center justify-between px-2 py-1 bg-yellow-50 rounded text-xs"
+                      className="flex items-center justify-between px-2 py-1 bg-yellow-50 dark:bg-amber-900/30 rounded text-xs"
                     >
-                      <span className="text-yellow-800">{reminder.label}</span>
+                      <span className="text-yellow-800 dark:text-amber-200">{reminder.label}</span>
                       <button
                         onClick={() => handleRemoveReminder(reminder.id)}
                         className="text-gray-400 dark:text-[#a1a1a6] hover:text-red-600 dark:hover:text-red-400"
@@ -870,7 +870,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               {showReminderPicker && (
                 <div className="absolute top-full left-0 mt-1 w-72 bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-4 z-20">
                   <div className="mb-3">
-                    <p className="text-sm font-semibold mb-2">Reminders</p>
+                    <p className="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Reminders</p>
                   </div>
                   
                   {/* Relative reminders (if task has due date) */}
@@ -967,7 +967,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               <Button
                 onClick={handleDelete}
                 variant="ghost"
-                className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 justify-start"
+                className="w-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 justify-start"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete task

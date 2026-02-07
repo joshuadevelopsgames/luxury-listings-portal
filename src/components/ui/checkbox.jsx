@@ -39,8 +39,8 @@ const Checkbox = React.forwardRef(({ className, checked, onCheckedChange, disabl
               : 'cursor-pointer'
           } ${
             checked
-              ? 'bg-blue-600 border-blue-600'
-              : 'border-gray-300 hover:border-blue-400 bg-white'
+              ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500'
+              : 'border-gray-300 dark:border-white/40 hover:border-blue-400 dark:hover:border-blue-500 bg-white dark:bg-white/10'
           } ${
             isAnimating ? 'scale-125' : 'scale-100'
           } ${className || ''}`}
@@ -48,7 +48,7 @@ const Checkbox = React.forwardRef(({ className, checked, onCheckedChange, disabl
           {checked ? (
             <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
           ) : isHovered && !disabled ? (
-            <Check className="w-3.5 h-3.5 text-gray-300 stroke-[3]" />
+            <Check className="w-3.5 h-3.5 text-gray-300 dark:text-white/40 stroke-[3]" />
           ) : null}
         </div>
       </div>

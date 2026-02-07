@@ -713,13 +713,14 @@ const TasksPage = () => {
     return () => window.removeEventListener('create-smart-filter', handleCreateFilter);
   }, []);
 
-  // Outbox list with same smart filter as main list (filter by linked task when filter is active)
+  // Outbox list: exclude archived unless toggled; when smart filter is active, show requests with no linked task (pending) or whose task matches
   const displayedOutboxRequests = useMemo(() => {
     const base = showArchivedOutbox ? sentRequests : sentRequests.filter((r) => !archivedRequestIds.has(r.id));
     if (!activeSmartFilter?.criteria) return base;
     return base.filter((r) => {
       const task = outboxTaskMap[r.id];
-      return task && taskMatchesSmartFilter(task, activeSmartFilter.criteria);
+      if (!task) return true; // pending/declined or no taskId yet – always show
+      return taskMatchesSmartFilter(task, activeSmartFilter.criteria);
     });
   }, [sentRequests, showArchivedOutbox, archivedRequestIds, activeSmartFilter, outboxTaskMap]);
 
@@ -1407,8 +1408,23 @@ const TasksPage = () => {
             </div>
           ) : displayedOutboxRequests.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-[15px] text-[#86868b] font-medium">No outbox items match the current filter</p>
-              <p className="text-[13px] text-[#86868b] mt-1">Clear the filter or add requests that match</p>
+              {sentRequests.filter((r) => !archivedRequestIds.has(r.id)).length === 0 ? (
+                <>
+                  <p className="text-[15px] text-[#86868b] font-medium">All {sentRequests.length} outbox item{sentRequests.length !== 1 ? 's' : ''} {sentRequests.length !== 1 ? 'are' : 'is'} archived</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowArchivedOutbox(true)}
+                    className="mt-3 text-[14px] font-medium text-[#0071e3] hover:underline"
+                  >
+                    Show archived
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-[15px] text-[#86868b] font-medium">No outbox items match the current filter</p>
+                  <p className="text-[13px] text-[#86868b] mt-1">Clear the filter or add requests that match</p>
+                </>
+              )}
             </div>
           ) : (
             <>
