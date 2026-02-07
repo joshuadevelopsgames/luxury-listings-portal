@@ -23,9 +23,11 @@ service firebase.storage {
       allow read, write: if request.auth != null;
     }
     
-    // Task attachments (task body + comments) - authenticated users can read/write their own
+    // Task attachments (task body + comments). Read: any (download URLs used in img/src may not send auth).
+    // Write: authenticated only (upload in TaskEditModal).
     match /task-attachments/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     // Deny all other access by default

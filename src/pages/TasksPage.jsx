@@ -225,6 +225,7 @@ const TasksPage = () => {
   const [showArchivedTasks, setShowArchivedTasks] = useState(false);
   const [showArchivedOutbox, setShowArchivedOutbox] = useState(false);
   const outboxRequestRef = useRef(null);
+  const incomingRequestIdRef = useRef(null);
 
   // Toggle task selection
   const toggleTaskSelection = (taskId) => {
@@ -560,15 +561,17 @@ const TasksPage = () => {
     loadOutboxDetails();
   }, [effectiveUser?.email, activeFilter]);
 
-  // Sync URL ?tab=outbox&requestId= with activeFilter and scroll to request
+  // Sync URL ?tab=outbox&requestId= or ?requestId= (incoming task request) with UI
   useEffect(() => {
     const tab = searchParams.get('tab');
     const requestId = searchParams.get('requestId');
     if (tab === 'outbox') {
       setActiveFilter('outbox');
-    }
-    if (requestId && tab === 'outbox') {
-      outboxRequestRef.current = requestId;
+      if (requestId) outboxRequestRef.current = requestId;
+    } else if (requestId) {
+      // Incoming task request: open requests panel and scroll to this request
+      incomingRequestIdRef.current = requestId;
+      setShowRequestsPanel(true);
     }
   }, [searchParams]);
 
@@ -582,6 +585,17 @@ const TasksPage = () => {
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }, [activeFilter, sentRequests.length]);
+
+  // Scroll to incoming task request when requests panel is open and list is ready
+  useEffect(() => {
+    if (!showRequestsPanel || !incomingRequestIdRef.current || taskRequests.length === 0) return;
+    const id = incomingRequestIdRef.current;
+    incomingRequestIdRef.current = null;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`incoming-request-${id}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }, [showRequestsPanel, taskRequests.length]);
 
   // Load archived task and request ids (per-user, local)
   useEffect(() => {
@@ -1712,7 +1726,7 @@ const TasksPage = () => {
               ) : (
                 <div className="space-y-4">
                   {taskRequests.map((request) => (
-                    <div key={request.id} className="rounded-xl border border-[#0071e3]/20 bg-[#0071e3]/5 p-5">
+                    <div key={request.id} id={`incoming-request-${request.id}`} className="rounded-xl border border-[#0071e3]/20 bg-[#0071e3]/5 p-5">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{request.taskTitle}</h3>
                         <span className={`text-[11px] px-2 py-1 rounded-md font-medium ${

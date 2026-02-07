@@ -50,8 +50,29 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   const [commentAttachmentUrls, setCommentAttachmentUrls] = useState([]);
   const [commentUploading, setCommentUploading] = useState(false);
   const [taskAttachmentUploading, setTaskAttachmentUploading] = useState(false);
+  const [taskDropActive, setTaskDropActive] = useState(false);
+  const [commentDropActive, setCommentDropActive] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
   const commentFileInputRef = useRef(null);
   const taskFileInputRef = useRef(null);
+
+  const handleTaskDrop = (e) => {
+    e.preventDefault();
+    setTaskDropActive(false);
+    const files = e.dataTransfer?.files;
+    if (!files?.length) return;
+    const imageFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    imageFiles.forEach((file) => uploadTaskAttachment(file));
+  };
+
+  const handleCommentDrop = (e) => {
+    e.preventDefault();
+    setCommentDropActive(false);
+    const files = e.dataTransfer?.files;
+    if (!files?.length) return;
+    const imageFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    imageFiles.forEach((file) => uploadCommentAttachment(file));
+  };
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -64,6 +85,17 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   const priorityDropdownRef = useRef(null);
   const labelInputRef = useRef(null);
   const reminderPickerRef = useRef(null);
+
+  // Close image preview on Escape
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') setImagePreviewUrl(null);
+    };
+    if (imagePreviewUrl) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [imagePreviewUrl]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -416,6 +448,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   const currentPriority = priorities.find(p => p.value === editForm.priority) || priorities[2];
 
   return createPortal(
+    <>
     <div className="modal-overlay bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
         className="bg-white dark:bg-[#1d1d1f] w-full max-w-6xl shadow-2xl overflow-y-auto rounded-lg max-h-[90vh] border border-black/5 dark:border-white/10"
@@ -580,42 +613,56 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
             </div>
 
             {/* Task attachments */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-[#e5e5e7]">Attachments</span>
-                <input
-                  type="file"
-                  ref={taskFileInputRef}
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTaskAttachment(f); }}
-                />
-                <button
-                  type="button"
-                  onClick={() => taskFileInputRef.current?.click()}
-                  disabled={taskAttachmentUploading}
-                  className="flex items-center gap-1.5 text-xs text-[#0071e3] dark:text-blue-400 hover:underline disabled:opacity-50"
-                >
-                  {taskAttachmentUploading ? (
-                    <span className="animate-pulse">Uploading…</span>
-                  ) : (
-                    <>
-                      <ImagePlus className="w-4 h-4" />
-                      Add photo
-                    </>
-                  )}
-                </button>
-              </div>
+            <div
+              className={`mb-6 rounded-xl border-2 border-dashed transition-colors ${
+                taskDropActive
+                  ? 'border-[#0071e3] bg-[#0071e3]/5 dark:bg-[#0071e3]/10'
+                  : 'border-gray-200 dark:border-white/10'
+              } ${taskAttachmentUploading ? 'pointer-events-none opacity-70' : ''}`}
+              onDragOver={(e) => { e.preventDefault(); setTaskDropActive(true); }}
+              onDragLeave={() => setTaskDropActive(false)}
+              onDrop={handleTaskDrop}
+            >
+              <div className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-[#e5e5e7]">Attachments</span>
+                  <input
+                    type="file"
+                    ref={taskFileInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTaskAttachment(f); }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => taskFileInputRef.current?.click()}
+                    disabled={taskAttachmentUploading}
+                    className="flex items-center gap-1.5 text-xs text-[#0071e3] dark:text-blue-400 hover:underline disabled:opacity-50"
+                  >
+                    {taskAttachmentUploading ? (
+                      <span className="animate-pulse">Uploading…</span>
+                    ) : (
+                      <>
+                        <ImagePlus className="w-4 h-4" />
+                        Add photo or drag and drop
+                      </>
+                    )}
+                  </button>
+                </div>
               {(editForm.attachments || []).length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {editForm.attachments.map((url) => (
                     <div key={url} className="relative group">
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5">
-                        <img src={url} alt="Attachment" className="w-full h-full object-cover" />
-                      </a>
                       <button
                         type="button"
-                        onClick={() => removeTaskAttachment(url)}
+                        onClick={() => setImagePreviewUrl(url)}
+                        className="block w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      >
+                        <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); removeTaskAttachment(url); }}
                         className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="w-3 h-3" />
@@ -624,6 +671,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   ))}
                 </div>
               )}
+              </div>
             </div>
 
             {/* Sub-tasks */}
@@ -704,9 +752,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                         {comment.attachmentUrls && comment.attachmentUrls.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-2">
                             {comment.attachmentUrls.map((url) => (
-                              <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
+                              <button
+                                key={url}
+                                type="button"
+                                onClick={() => setImagePreviewUrl(url)}
+                                className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                              >
                                 <img src={url} alt="Comment attachment" className="w-full h-full object-cover" />
-                              </a>
+                              </button>
                             ))}
                           </div>
                         )}
@@ -717,7 +770,16 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               )}
               
               {/* Comment Input */}
-              <div className="flex items-start gap-3 p-3 border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5">
+              <div
+                className={`flex items-start gap-3 p-3 border-2 rounded-lg transition-colors ${
+                  commentDropActive
+                    ? 'border-[#0071e3] bg-[#0071e3]/5 dark:bg-[#0071e3]/10 border-dashed'
+                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5'
+                } ${commentUploading ? 'pointer-events-none opacity-70' : ''}`}
+                onDragOver={(e) => { e.preventDefault(); setCommentDropActive(true); }}
+                onDragLeave={() => setCommentDropActive(false)}
+                onDrop={handleCommentDrop}
+              >
                 <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                   {currentUser?.firstName?.[0] || 'U'}
                 </div>
@@ -1128,7 +1190,31 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
           </div>
         </div>
       </div>
-    </div>,
+    </div>
+
+    {/* Image preview lightbox */}
+    {imagePreviewUrl && (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+        onClick={() => setImagePreviewUrl(null)}
+      >
+        <button
+          type="button"
+          className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
+          onClick={() => setImagePreviewUrl(null)}
+          aria-label="Close"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        <img
+          src={imagePreviewUrl}
+          alt="Preview"
+          className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )}
+    </>,
     document.body
   );
 };

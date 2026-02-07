@@ -2183,13 +2183,13 @@ class FirestoreService {
       const docRef = await addDoc(collection(db, this.collections.TASK_REQUESTS), taskRequest);
       console.log('✅ Task request created:', docRef.id);
 
-      // Create notification for recipient
+      // Create notification for recipient (link opens Tasks and shows this request)
       await this.createNotification({
         userEmail: requestData.toUserEmail,
         type: 'task_request',
         title: 'New task request',
         message: `${requestData.fromUserName} requested you to do: ${requestData.taskTitle}`,
-        link: '/tasks',
+        link: `/tasks?requestId=${docRef.id}`,
         taskRequestId: docRef.id,
         read: false
       });
