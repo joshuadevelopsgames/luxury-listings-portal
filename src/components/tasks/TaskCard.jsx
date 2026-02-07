@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DailyTask } from '../../entities/DailyTask';
 import { 
   Clock, 
@@ -20,12 +20,15 @@ import {
   ArchiveRestore
 } from 'lucide-react';
 
+const COMPLETE_VISIBLE_MS = 450;
+
 const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canDelete = true, showArchiveButton = false, onArchive, onUnarchive, isArchived = false }) => {
   const [showActions, setShowActions] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
   const [editedDescription, setEditedDescription] = useState(task.description);
+  const [optimisticCompleted, setOptimisticCompleted] = useState(false);
 
   const handleTitleSave = async () => {
     if (editedTitle.trim() && editedTitle !== task.title) {
@@ -117,11 +120,29 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
     }
   };
 
+  const isCompleted = task.status === 'completed';
+  const showingCompleted = isCompleted || optimisticCompleted;
+
+  useEffect(() => {
+    if (task.status === 'completed') setOptimisticCompleted(false);
+  }, [task.status]);
+
   const handleStatusChange = (newStatus) => {
     onStatusChange(task.id, newStatus);
   };
 
-  const isCompleted = task.status === 'completed';
+  const handleCheckboxChange = (checked) => {
+    if (checked) {
+      setOptimisticCompleted(true);
+      setTimeout(() => {
+        onStatusChange(task.id, 'completed');
+        setOptimisticCompleted(false);
+      }, COMPLETE_VISIBLE_MS);
+    } else {
+      setOptimisticCompleted(false);
+      onStatusChange(task.id, 'pending');
+    }
+  };
   const isOverdue = task.due_date && isPastLocal(task.due_date) && !isTodayLocal(task.due_date) && task.status !== 'completed';
 
   return (
@@ -436,13 +457,13 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
           <div onClick={(e) => e.stopPropagation()}>
             <input
               type="checkbox"
-              checked={isCompleted}
-              onChange={(e) => handleStatusChange(e.target.checked ? 'completed' : 'pending')}
+              checked={showingCompleted}
+              onChange={(e) => handleCheckboxChange(e.target.checked)}
               className="h-4 w-4 rounded-md accent-[#0071e3] cursor-pointer"
             />
           </div>
           <span className="text-[12px] text-[#86868b]">
-            Mark as {isCompleted ? 'incomplete' : 'complete'}
+            Mark as {showingCompleted ? 'incomplete' : 'complete'}
           </span>
         </div>
       </div>

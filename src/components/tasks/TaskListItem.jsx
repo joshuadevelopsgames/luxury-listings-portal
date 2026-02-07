@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Flag,
   Calendar,
@@ -12,13 +12,34 @@ import {
   ArchiveRestore
 } from 'lucide-react';
 
+const COMPLETE_VISIBLE_MS = 450;
+
 const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect, bulkMode, showArchiveButton = false, onArchive, onUnarchive, isArchived = false }) => {
   const isCompleted = task.status === 'completed';
+  const [optimisticCompleted, setOptimisticCompleted] = useState(false);
+  const showingCompleted = isCompleted || optimisticCompleted;
+
+  useEffect(() => {
+    if (task.status === 'completed') setOptimisticCompleted(false);
+  }, [task.status]);
+
+  const handleCheckChange = (checked) => {
+    if (checked) {
+      setOptimisticCompleted(true);
+      setTimeout(() => {
+        onStatusChange(task.id, 'completed');
+        setOptimisticCompleted(false);
+      }, COMPLETE_VISIBLE_MS);
+    } else {
+      setOptimisticCompleted(false);
+      onStatusChange(task.id, 'pending');
+    }
+  };
 
   return (
     <div 
       className={`flex items-center gap-3 p-3 border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group cursor-pointer ${
-        isCompleted ? 'bg-[#34c759]/5' : ''
+        showingCompleted ? 'bg-[#34c759]/5' : ''
       }`}
       onClick={() => onEdit(task)}
     >
@@ -37,8 +58,8 @@ const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect
       <div onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
-          checked={isCompleted}
-          onChange={(e) => onStatusChange(task.id, e.target.checked ? 'completed' : 'pending')}
+          checked={showingCompleted}
+          onChange={(e) => handleCheckChange(e.target.checked)}
           className="h-5 w-5 rounded-full border-black/20 dark:border-white/20 accent-[#0071e3] cursor-pointer flex-shrink-0"
         />
       </div>
@@ -63,7 +84,7 @@ const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect
         <div className="flex items-center gap-2 mb-1">
           <h3 
             className={`font-medium text-[13px] truncate ${
-              isCompleted ? 'line-through text-[#86868b]' : 'text-[#1d1d1f] dark:text-white'
+              showingCompleted ? 'line-through text-[#86868b]' : 'text-[#1d1d1f] dark:text-white'
             }`}
             title={task.title}
           >

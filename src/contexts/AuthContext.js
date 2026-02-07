@@ -293,8 +293,10 @@ export function AuthProvider({ children }) {
     try {
       const approvedUsers = await firestoreService.getApprovedUsers();
       const emailLower = (email || '').toLowerCase();
-      const matched = approvedUsers.filter(u => (u.email || u.id || '').toLowerCase() === emailLower);
-      const approvedUser = matched.find(u => u.id === email) || matched[0];
+      const matched = approvedUsers.filter(u =>
+        (u.id || '').toLowerCase() === emailLower || (u.email || '').toLowerCase() === emailLower
+      );
+      const approvedUser = matched.find(u => (u.id || '').toLowerCase() === emailLower) || matched.find(u => (u.email || '').toLowerCase() === emailLower) || matched[0];
       
       if (approvedUser?.isApproved) {
         // Approved user
