@@ -250,13 +250,17 @@ class FirestoreService {
     }
   }
 
-  // Get one approved user by email (for fresh onboarding check)
+  // Get one approved user by email (for fresh onboarding check). Tries exact id then lowercase so we find doc regardless of casing.
   async getApprovedUserByEmail(email) {
     if (!email) return null;
     try {
-      const normalizedEmail = email.toLowerCase().trim();
-      const docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, normalizedEmail));
-      if (!docSnap.exists()) return null;
+      const trimmed = (email || '').trim();
+      let docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, trimmed));
+      if (!docSnap.exists()) {
+        const lower = trimmed.toLowerCase();
+        if (lower !== trimmed) docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, lower));
+      }
+      if (!docSnap?.exists()) return null;
       return { id: docSnap.id, ...docSnap.data() };
     } catch (error) {
       console.error('Error getting approved user:', error);
@@ -291,7 +295,8 @@ class FirestoreService {
     }
   }
 
-  // Update approved user (merge: true so system admins can create a profile doc if they don't have one)
+  // Update approved user (merge: true so system admins can create a profile doc if they don't have one).
+  // Use email as-is for doc path so request.auth.token.email == userEmail in rules.
   async updateApprovedUser(email, updates) {
     try {
       // Remove undefined values - Firestore doesn't allow undefined
@@ -308,27 +313,26 @@ class FirestoreService {
         return;
       }
 
-      const normalizedEmail = (email || '').toLowerCase().trim();
-      const docRef = doc(db, this.collections.APPROVED_USERS, normalizedEmail);
+      const emailKey = (email || '').trim();
+      const docRef = doc(db, this.collections.APPROVED_USERS, emailKey);
       await setDoc(docRef, {
         ...cleanedUpdates,
         updatedAt: serverTimestamp()
       }, { merge: true });
-      console.log('✅ Approved user updated:', normalizedEmail);
+      console.log('✅ Approved user updated:', emailKey);
     } catch (error) {
       console.error('❌ Error updating approved user:', error);
       throw error;
     }
   }
 
-  // Listen for changes to a specific approved user's profile
+  // Listen for changes to a specific approved user's profile. Use email as-is so we listen to doc at token path.
   onApprovedUserChange(email, callback) {
     if (!email) {
       return () => {}; // Return empty unsubscribe
     }
-    
-    const normalizedEmail = email.toLowerCase().trim();
-    const userDocRef = doc(db, this.collections.APPROVED_USERS, normalizedEmail);
+    const emailKey = (email || '').trim();
+    const userDocRef = doc(db, this.collections.APPROVED_USERS, emailKey);
     
     return onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -826,25 +830,19 @@ class FirestoreService {
     }
   }
 
-  // Get employee by email (normalized to lowercase for Firestore rule consistency)
+  // Get employee by email. Tries exact match then lowercase so we find existing docs regardless of casing.
   async getEmployeeByEmail(email) {
     try {
-      const normalizedEmail = (email || '').toLowerCase().trim();
-      const q = query(
-        collection(db, this.collections.EMPLOYEES),
-        where('email', '==', normalizedEmail)
-      );
-      const snapshot = await getDocs(q);
-      
-      if (snapshot.empty) {
-        return null;
+      const trimmed = (email || '').trim();
+      let q = query(collection(db, this.collections.EMPLOYEES), where('email', '==', trimmed));
+      let snapshot = await getDocs(q);
+      if (snapshot.empty && trimmed !== trimmed.toLowerCase()) {
+        q = query(collection(db, this.collections.EMPLOYEES), where('email', '==', trimmed.toLowerCase()));
+        snapshot = await getDocs(q);
       }
-      
+      if (snapshot.empty) return null;
       const doc = snapshot.docs[0];
-      return {
-        id: doc.id,
-        ...doc.data()
-      };
+      return { id: doc.id, ...doc.data() };
     } catch (error) {
       console.error('❌ Error fetching employee:', error);
       throw error;
@@ -867,11 +865,11 @@ class FirestoreService {
     }
   }
 
-  // Add new employee (email normalized for Firestore rules)
+  // Add new employee. Keep email as provided so Firestore rule (resource.data.email == request.auth.token.email) passes.
   async addEmployee(employeeData) {
     try {
       const normalized = { ...employeeData };
-      if (normalized.email != null) normalized.email = String(normalized.email).toLowerCase().trim();
+      if (normalized.email != null) normalized.email = String(normalized.email).trim();
       const sanitized = Object.fromEntries(
         Object.entries({ ...normalized, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }).filter(([, v]) => v !== undefined)
       );

@@ -117,11 +117,11 @@ const OnboardingPage = () => {
   const handleCompleteOnboarding = async () => {
     console.log('🎯 Completing onboarding...');
     setCompleting(true);
-    const normalizedEmail = (currentUser?.email || '').toLowerCase().trim();
+    const authEmail = (currentUser?.email || '').trim();
     const completedAt = new Date().toISOString();
     try {
-      // 1. Persist onboarding state first (approved_users) so user is never stuck
-      await firestoreService.updateApprovedUser(normalizedEmail, {
+      // 1. Persist onboarding state first (approved_users); use auth email as-is so Firestore rule matches
+      await firestoreService.updateApprovedUser(authEmail, {
         onboardingCompleted: true,
         onboardingCompletedDate: completedAt
       });
@@ -130,10 +130,10 @@ const OnboardingPage = () => {
         onboardingCompletedDate: completedAt
       });
 
-      // 2. Save profile/employee data (email normalized for Firestore rules)
+      // 2. Save profile/employee data; use auth email as-is so employees rule (resource.data.email == token) passes
       const employeeData = {
         ...profileData,
-        email: normalizedEmail,
+        email: authEmail,
         onboardingCompleted: true,
         onboardingCompletedDate: completedAt,
         position: userData?.position ?? currentUser?.position ?? '',
@@ -142,7 +142,7 @@ const OnboardingPage = () => {
         roles: currentUser?.roles ?? userData?.roles ?? []
       };
 
-      const existingEmployee = await firestoreService.getEmployeeByEmail(normalizedEmail);
+      const existingEmployee = await firestoreService.getEmployeeByEmail(authEmail);
       if (existingEmployee) {
         await firestoreService.updateEmployee(existingEmployee.id, employeeData);
       } else {

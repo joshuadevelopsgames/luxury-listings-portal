@@ -292,7 +292,9 @@ export function AuthProvider({ children }) {
     // Check if user is approved
     try {
       const approvedUsers = await firestoreService.getApprovedUsers();
-      const approvedUser = approvedUsers.find(u => u.email === email);
+      const emailLower = (email || '').toLowerCase();
+      const matched = approvedUsers.filter(u => (u.email || u.id || '').toLowerCase() === emailLower);
+      const approvedUser = matched.find(u => u.id === email) || matched[0];
       
       if (approvedUser?.isApproved) {
         // Approved user

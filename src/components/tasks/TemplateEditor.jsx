@@ -19,6 +19,8 @@ const TemplateEditor = ({ onClose, currentUser }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [shareModal, setShareModal] = useState(null);
   const [shareEmail, setShareEmail] = useState('');
+  const [shareableUsers, setShareableUsers] = useState([]);
+  const [shareUsersLoading, setShareUsersLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -37,6 +39,29 @@ const TemplateEditor = ({ onClose, currentUser }) => {
   useEffect(() => {
     loadTemplates();
   }, [userEmail]);
+
+  useEffect(() => {
+    if (!shareModal) {
+      setShareableUsers([]);
+      return;
+    }
+    let cancelled = false;
+    setShareUsersLoading(true);
+    setShareEmail('');
+    firestoreService.getApprovedUsers()
+      .then((users) => {
+        if (cancelled) return;
+        const alreadyShared = (shareModal.sharedWith || []).map((e) => String(e).toLowerCase().trim());
+        const list = users.filter((u) => {
+          const em = (u.email || u.id || '').toLowerCase().trim();
+          return em && em !== userEmail && !alreadyShared.includes(em);
+        });
+        setShareableUsers(list);
+      })
+      .catch(() => { if (!cancelled) setShareableUsers([]); })
+      .finally(() => { if (!cancelled) setShareUsersLoading(false); });
+    return () => { cancelled = true; };
+  }, [shareModal, userEmail]);
 
   const loadTemplates = async () => {
     if (!userEmail) {
@@ -96,13 +121,14 @@ const TemplateEditor = ({ onClose, currentUser }) => {
 
   const handleShareTemplate = async () => {
     if (!shareModal || !shareEmail.trim()) {
-      toast.error('Enter an email address');
+      toast.error('Select a user');
       return;
     }
+    const toEmail = shareEmail.trim();
     setSharing(true);
     try {
-      await firestoreService.shareTaskTemplateWith(shareModal.id, shareEmail.trim(), userEmail);
-      toast.success(`Template shared with ${shareEmail.trim()}. They'll get a notification.`);
+      await firestoreService.shareTaskTemplateWith(shareModal.id, toEmail, userEmail);
+      toast.success(`Template shared. They'll get a notification.`);
       setShareModal(null);
       setShareEmail('');
     } catch (error) {
@@ -344,13 +370,26 @@ const TemplateEditor = ({ onClose, currentUser }) => {
               <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-md border border-black/10 dark:border-white/10 shadow-2xl p-6">
                 <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Share template</h3>
                 <p className="text-[13px] text-[#86868b] mb-4">Send &quot;{shareModal.name}&quot; to a teammate. They will get a notification and see it in their templates.</p>
-                <input
-                  type="email"
-                  value={shareEmail}
-                  onChange={(e) => setShareEmail(e.target.value)}
-                  placeholder="teammate@example.com"
-                  className={`${inputClass} mb-4`}
-                />
+                {shareUsersLoading ? (
+                  <p className="text-[13px] text-[#86868b] mb-4">Loading users…</p>
+                ) : shareableUsers.length === 0 ? (
+                  <p className="text-[13px] text-[#86868b] mb-4">No other users to share with.</p>
+                ) : (
+                  <select
+                    value={shareEmail}
+                    onChange={(e) => setShareEmail(e.target.value)}
+                    className={`${inputClass} mb-4`}
+                  >
+                    <option value="">Select a user</option>
+                    {shareableUsers.map((u) => {
+                      const em = u.email || u.id;
+                      const label = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.displayName || em;
+                      return (
+                        <option key={em} value={em}>{label}</option>
+                      );
+                    })}
+                  </select>
+                )}
                 <div className="flex justify-end gap-3">
                   <button type="button" onClick={() => { setShareModal(null); setShareEmail(''); }} className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium">
                     Cancel
