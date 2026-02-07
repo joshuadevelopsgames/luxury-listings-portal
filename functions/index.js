@@ -8,6 +8,7 @@ const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https')
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
+const functionsV1 = require('firebase-functions');
 const vision = require('@google-cloud/vision');
 const nodemailer = require('nodemailer');
 
@@ -2308,4 +2309,28 @@ exports.syncCanvaTemplate = onRequest({
       error: `Sync failed: ${error.message}`,
     });
   }
+});
+
+// ============================================================================
+// AUTH: email_lower CUSTOM CLAIM (for task_templates shared case-insensitive read)
+// ============================================================================
+
+/** Set email_lower custom claim so Firestore rules can match sharedWith (stored lowercase). */
+async function setEmailLowerClaim(uid, email) {
+  if (!email) return;
+  const user = await admin.auth().getUser(uid);
+  const next = { ...(user.customClaims || {}), email_lower: String(email).toLowerCase().trim() };
+  await admin.auth().setCustomUserClaims(uid, next);
+}
+
+/** Callable: ensure current user has email_lower claim (for existing users). */
+exports.ensureEmailLowerClaim = onCall({ cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
+  await setEmailLowerClaim(request.auth.uid, request.auth.token.email);
+  return { ok: true };
+});
+
+/** New users get email_lower claim on create. */
+exports.setEmailLowerClaimOnCreate = functionsV1.auth.user().onCreate(async (user) => {
+  await setEmailLowerClaim(user.uid, user.email);
 });

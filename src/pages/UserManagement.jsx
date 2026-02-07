@@ -1517,13 +1517,13 @@ const UserManagement = () => {
 
       {/* Role Assignment Modal */}
       {showRoleAssignmentModal && selectedUserForRoles && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-md w-full mx-4 border border-black/5 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Assign Roles to {selectedUserForRoles.firstName} {selectedUserForRoles.lastName}</h2>
+              <h2 className="text-xl font-bold text-[#1d1d1f] dark:text-white">Assign Roles to {selectedUserForRoles.firstName} {selectedUserForRoles.lastName}</h2>
               <button 
                 onClick={() => setShowRoleAssignmentModal(false)} 
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-white"
                 disabled={isProcessing}
               >
                 <X className="w-6 h-6" />
@@ -1531,17 +1531,17 @@ const UserManagement = () => {
             </div>
             
             {/* Connection Status */}
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700/50 rounded-md">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-blue-700">Connected to Firestore</span>
+                <span className="text-sm text-blue-700 dark:text-blue-300">Connected to Firestore</span>
               </div>
             </div>
             
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7]">
                     Select Roles (First role will be primary)
                   </label>
                   {isSystemAdmin && (
@@ -1557,7 +1557,7 @@ const UserManagement = () => {
                 </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {/* Built-in Roles */}
-                  <div className="text-xs text-gray-500 font-medium mb-1">Built-in Roles</div>
+                  <div className="text-xs text-gray-500 dark:text-[#a1a1a6] font-medium mb-1">Built-in Roles</div>
                   {getAllRoles().filter(r => r.isBuiltIn).map((roleObj) => (
                     <label key={roleObj.id} className="flex items-center space-x-3 cursor-pointer">
                       <input
@@ -1577,7 +1577,7 @@ const UserManagement = () => {
                           {roleObj.displayName}
                         </Badge>
                         {selectedRoles.includes(roleObj.id) && selectedRoles.indexOf(roleObj.id) === 0 && (
-                          <span className="text-xs text-blue-600">⭐ Primary</span>
+                          <span className="text-xs text-blue-600 dark:text-blue-400">⭐ Primary</span>
                         )}
                       </div>
                     </label>
@@ -1586,7 +1586,7 @@ const UserManagement = () => {
                   {/* Custom Roles */}
                   {customRoles.length > 0 && (
                     <>
-                      <div className="text-xs text-gray-500 font-medium mt-3 mb-1">Custom Roles</div>
+                      <div className="text-xs text-gray-500 dark:text-[#a1a1a6] font-medium mt-3 mb-1">Custom Roles</div>
                       {getAllRoles().filter(r => !r.isBuiltIn).map((roleObj) => (
                         <label key={roleObj.id} className="flex items-center space-x-3 cursor-pointer">
                           <input
@@ -1606,7 +1606,7 @@ const UserManagement = () => {
                               {roleObj.icon || '👤'} {roleObj.displayName}
                             </Badge>
                             {selectedRoles.includes(roleObj.id) && selectedRoles.indexOf(roleObj.id) === 0 && (
-                              <span className="text-xs text-blue-600">⭐ Primary</span>
+                              <span className="text-xs text-blue-600 dark:text-blue-400">⭐ Primary</span>
                             )}
                           </div>
                         </label>
@@ -1668,8 +1668,8 @@ const UserManagement = () => {
 
       {/* Manage Permissions Modal */}
       {showPermissionsModal && selectedUserForPermissions && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -1788,8 +1788,8 @@ const UserManagement = () => {
 
       {/* Add New User Modal */}
       {showAddUserModal && createPortal(
-        <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Add New User</h2>
               <button 
@@ -1920,7 +1920,7 @@ const UserManagement = () => {
                     <p className="text-sm text-gray-600 mb-3">Select at least one role. The first role selected will be the primary role.</p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {/* Built-in Roles */}
-                      <div className="text-xs text-gray-500 font-medium mb-1">Built-in Roles</div>
+                      <div className="text-xs text-gray-500 dark:text-[#a1a1a6] font-medium mb-1">Built-in Roles</div>
                       {Object.entries(USER_ROLES)
                         .filter(([key, value]) => value !== 'pending')
                         .map(([key, role]) => (
@@ -1951,7 +1951,7 @@ const UserManagement = () => {
                       {/* Custom Roles */}
                       {customRoles.length > 0 && (
                         <>
-                          <div className="text-xs text-gray-500 font-medium mt-3 mb-1">Custom Roles</div>
+                          <div className="text-xs text-gray-500 dark:text-[#a1a1a6] font-medium mt-3 mb-1">Custom Roles</div>
                           {customRoles.map((role) => (
                             <label key={role.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
                               <input
@@ -2029,8 +2029,8 @@ const UserManagement = () => {
 
       {/* Unified Manage User Modal */}
       {showUnifiedManageModal && managedUser && typeof document !== 'undefined' && document.body && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">

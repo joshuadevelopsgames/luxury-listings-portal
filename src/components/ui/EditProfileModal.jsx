@@ -116,11 +116,11 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold">Edit Profile</h3>
-          <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-700">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white dark:bg-[#1d1d1f] rounded-lg shadow-xl w-full max-w-lg mx-4 border border-black/5 dark:border-white/10">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10">
+          <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-white">Edit Profile</h3>
+          <button onClick={onClose} className="p-2 text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -128,44 +128,44 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
           <div className="p-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">
+                <label className="block text-sm text-gray-600 dark:text-[#a1a1a6] mb-1">
                   First Name {!canEditAnyName && !canEditOwnName ? '(HR managed)' : ''}
                 </label>
                 <input 
                   name="firstName" 
                   value={form.firstName} 
                   onChange={handleChange} 
-                  className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500" 
+                  className="w-full border border-gray-300 dark:border-white/20 rounded-md px-3 py-2 bg-white dark:bg-white/5 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-white/5 disabled:text-gray-500 dark:disabled:text-[#a1a1a6]" 
                   disabled={!canEditAnyName && !canEditOwnName}
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">
+                <label className="block text-sm text-gray-600 dark:text-[#a1a1a6] mb-1">
                   Last Name {!canEditAnyName && !canEditOwnName ? '(HR managed)' : ''}
                 </label>
                 <input 
                   name="lastName" 
                   value={form.lastName} 
                   onChange={handleChange} 
-                  className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500" 
+                  className="w-full border border-gray-300 dark:border-white/20 rounded-md px-3 py-2 bg-white dark:bg-white/5 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-white/5 disabled:text-gray-500 dark:disabled:text-[#a1a1a6]" 
                   disabled={!canEditAnyName && !canEditOwnName}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Display Name</label>
-              <input name="displayName" value={form.displayName} onChange={handleChange} className="w-full border rounded-md px-3 py-2" />
+              <label className="block text-sm text-gray-600 dark:text-[#a1a1a6] mb-1">Display Name</label>
+              <input name="displayName" value={form.displayName} onChange={handleChange} className="w-full border border-gray-300 dark:border-white/20 rounded-md px-3 py-2 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Department {isAdmin ? '' : '(admin managed)'}</label>
+                <label className="block text-sm text-gray-600 dark:text-[#a1a1a6] mb-1">Department {isAdmin ? '' : '(admin managed)'}</label>
                 <select 
                   name="department" 
                   value={form.department} 
                   onChange={handleChange} 
-                  className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100" 
+                  className="w-full border border-gray-300 dark:border-white/20 rounded-md px-3 py-2 bg-white dark:bg-white/5 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-white/5" 
                   disabled={!isAdmin}
                 >
                   <option value="">Select department...</option>
@@ -175,28 +175,28 @@ export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSav
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Start Date {isAdmin ? '' : '(admin managed)'}</label>
-                <input type="date" name="startDate" value={form.startDate} onChange={handleChange} className="w-full border rounded-md px-3 py-2 disabled:bg-gray-100" disabled={!isAdmin} />
+                <label className="block text-sm text-gray-600 dark:text-[#a1a1a6] mb-1">Start Date {isAdmin ? '' : '(admin managed)'}</label>
+                <input type="date" name="startDate" value={form.startDate} onChange={handleChange} className="w-full border border-gray-300 dark:border-white/20 rounded-md px-3 py-2 bg-white dark:bg-white/5 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-white/5" disabled={!isAdmin} />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Phone</label>
-                <input name="phone" value={form.phone} onChange={handleChange} className="w-full border rounded-md px-3 py-2" />
+                <label className="block text-sm text-gray-600 dark:text-[#a1a1a6] mb-1">Phone</label>
+                <input name="phone" value={form.phone} onChange={handleChange} className="w-full border border-gray-300 dark:border-white/20 rounded-md px-3 py-2 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Location</label>
-                <input name="location" value={form.location} onChange={handleChange} className="w-full border rounded-md px-3 py-2" />
+                <label className="block text-sm text-gray-600 dark:text-[#a1a1a6] mb-1">Location</label>
+                <input name="location" value={form.location} onChange={handleChange} className="w-full border border-gray-300 dark:border-white/20 rounded-md px-3 py-2 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Avatar URL</label>
-              <input name="avatar" value={form.avatar} onChange={handleChange} className="w-full border rounded-md px-3 py-2" />
+              <label className="block text-sm text-gray-600 dark:text-[#a1a1a6] mb-1">Avatar URL</label>
+              <input name="avatar" value={form.avatar} onChange={handleChange} className="w-full border border-gray-300 dark:border-white/20 rounded-md px-3 py-2 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
             </div>
           </div>
-          <div className="flex items-center justify-end gap-2 p-4 border-t">
+          <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-200 dark:border-white/10">
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? (

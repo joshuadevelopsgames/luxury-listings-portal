@@ -20,27 +20,27 @@ const ConfirmModal = ({
   const variantStyles = {
     default: {
       icon: CheckCircle,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      confirmBtn: 'bg-blue-600 hover:bg-blue-700 text-white'
+      iconBg: 'bg-blue-100 dark:bg-blue-900/40',
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      confirmBtn: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white'
     },
     danger: {
       icon: Trash2,
-      iconBg: 'bg-red-100',
-      iconColor: 'text-red-600',
-      confirmBtn: 'bg-red-600 hover:bg-red-700 text-white'
+      iconBg: 'bg-red-100 dark:bg-red-900/40',
+      iconColor: 'text-red-600 dark:text-red-400',
+      confirmBtn: 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white'
     },
     warning: {
       icon: AlertTriangle,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
-      confirmBtn: 'bg-amber-600 hover:bg-amber-700 text-white'
+      iconBg: 'bg-amber-100 dark:bg-amber-900/40',
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      confirmBtn: 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 text-white'
     },
     info: {
       icon: Info,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
-      confirmBtn: 'bg-purple-600 hover:bg-purple-700 text-white'
+      iconBg: 'bg-purple-100 dark:bg-purple-900/40',
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      confirmBtn: 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white'
     }
   };
 
@@ -64,35 +64,35 @@ const ConfirmModal = ({
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-[#1d1d1f] rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-black/5 dark:border-white/10">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-full ${style.iconBg}`}>
               <IconComponent className={`w-5 h-5 ${style.iconColor}`} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
           </div>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-500 dark:text-[#a1a1a6]" />
           </button>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5">
-          <p className="text-gray-600 leading-relaxed">{message}</p>
+          <p className="text-gray-600 dark:text-[#a1a1a6] leading-relaxed">{message}</p>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 dark:bg-white/5 border-t border-gray-100 dark:border-white/10">
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg hover:bg-gray-50 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
           >
             {cancelText}
           </button>

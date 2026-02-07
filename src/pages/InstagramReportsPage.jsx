@@ -2060,9 +2060,9 @@ const ReportPreviewModal = ({ report, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col border border-black/5 dark:border-white/10">
         {/* Preview Header — type-specific colors */}
-        <div className={`px-6 py-3 border-b border-gray-200 flex items-center justify-between text-white ${
+        <div className={`px-6 py-3 border-b border-gray-200 dark:border-white/10 flex items-center justify-between text-white ${
           isYearly ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600' :
           isQuarterly ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500' :
           'bg-gradient-to-r from-purple-600 to-pink-600'
@@ -2083,10 +2083,10 @@ const ReportPreviewModal = ({ report, onClose }) => {
         </div>
 
         {/* Preview Content - Scrollable */}
-        <div className={`flex-1 overflow-y-auto ${
-          isYearly ? 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50' :
-          isQuarterly ? 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50' :
-          'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50'
+        <div className={`flex-1 overflow-y-auto text-[#1d1d1f] dark:text-[#e5e5e7] ${
+          isYearly ? 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-pink-950/30' :
+          isQuarterly ? 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-cyan-950/30' :
+          'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-purple-950/40 dark:via-pink-950/30 dark:to-orange-950/30'
         }`}>
           {/* Hero Section — type-specific gradient */}
           <div className="relative overflow-hidden">

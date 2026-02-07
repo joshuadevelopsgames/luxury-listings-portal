@@ -102,27 +102,27 @@ const MetaConnectionModal = ({ isOpen, onClose, userEmail, onConnectionSuccess }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-lg font-semibold">Connect Instagram & Facebook</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white dark:bg-[#1d1d1f] rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-white/10">
+          <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-white">Connect Instagram & Facebook</h3>
+          <button onClick={onClose} className="text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
           {/* App Configuration */}
-          <Card>
+          <Card className="dark:bg-white/5 dark:border-white/10">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
+              <CardTitle className="flex items-center space-x-2 text-[#1d1d1f] dark:text-white">
                 <Settings className="w-5 h-5" />
                 <span>Meta App Configuration</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Meta App ID</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-[#a1a1a6] mb-1">Meta App ID</label>
                 <Input
                   value={appConfig.appId}
                   onChange={(e) => setAppConfig({...appConfig, appId: e.target.value})}
@@ -130,7 +130,7 @@ const MetaConnectionModal = ({ isOpen, onClose, userEmail, onConnectionSuccess }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Meta App Secret</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-[#a1a1a6] mb-1">Meta App Secret</label>
                 <Input
                   type="password"
                   value={appConfig.appSecret}
@@ -146,9 +146,9 @@ const MetaConnectionModal = ({ isOpen, onClose, userEmail, onConnectionSuccess }
 
           {/* Connection Status */}
           {connectionStatus && (
-            <Card>
+            <Card className="dark:bg-white/5 dark:border-white/10">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
+                <CardTitle className="flex items-center space-x-2 text-[#1d1d1f] dark:text-white">
                   <Users className="w-5 h-5" />
                   <span>Connection Status</span>
                 </CardTitle>
@@ -156,39 +156,39 @@ const MetaConnectionModal = ({ isOpen, onClose, userEmail, onConnectionSuccess }
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Instagram</span>
+                    <span className="text-sm font-medium text-[#1d1d1f] dark:text-white">Instagram</span>
                     <div className="flex items-center space-x-2">
                       {connectionStatus.hasInstagram ? (
                         <>
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span className="text-sm text-green-600">{connectionStatus.instagramUsername}</span>
+                          <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400" />
+                          <span className="text-sm text-green-600 dark:text-green-400">{connectionStatus.instagramUsername}</span>
                         </>
                       ) : (
                         <>
-                          <AlertCircle className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-500">Not connected</span>
+                          <AlertCircle className="w-4 h-4 text-gray-400 dark:text-[#a1a1a6]" />
+                          <span className="text-sm text-gray-500 dark:text-[#a1a1a6]">Not connected</span>
                         </>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Facebook</span>
+                    <span className="text-sm font-medium text-[#1d1d1f] dark:text-white">Facebook</span>
                     <div className="flex items-center space-x-2">
                       {connectionStatus.hasFacebook ? (
                         <>
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span className="text-sm text-green-600">{connectionStatus.facebookPageName}</span>
+                          <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400" />
+                          <span className="text-sm text-green-600 dark:text-green-400">{connectionStatus.facebookPageName}</span>
                         </>
                       ) : (
                         <>
-                          <AlertCircle className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-500">Not connected</span>
+                          <AlertCircle className="w-4 h-4 text-gray-400 dark:text-[#a1a1a6]" />
+                          <span className="text-sm text-gray-500 dark:text-[#a1a1a6]">Not connected</span>
                         </>
                       )}
                     </div>
                   </div>
                   {connectionStatus.isConnected && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 dark:text-[#a1a1a6]">
                       Connected: {new Date(connectionStatus.connectedAt).toLocaleDateString()}
                     </div>
                   )}
@@ -213,7 +213,7 @@ const MetaConnectionModal = ({ isOpen, onClose, userEmail, onConnectionSuccess }
                   )}
                   {isConnecting ? 'Connecting...' : 'Connect Instagram & Facebook'}
                 </Button>
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-gray-500 dark:text-[#a1a1a6] text-center">
                   This will connect both Instagram and Facebook accounts linked to your Meta account
                 </p>
               </div>

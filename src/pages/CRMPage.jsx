@@ -1199,10 +1199,10 @@ const CRMPage = () => {
 
       {/* Add New Lead Modal */}
       {showAddModal && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Add New Lead</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add New Lead</h3>
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -1217,7 +1217,7 @@ const CRMPage = () => {
             <div className="space-y-4">
               {/* Tab Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Tabs to Add Lead To:</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-2">Select Tabs to Add Lead To:</label>
                 <div className="flex gap-4">
                   <label className="flex items-center">
                     <input
@@ -1226,7 +1226,7 @@ const CRMPage = () => {
                       onChange={(e) => setSelectedTabs(prev => ({ ...prev, warmLeads: e.target.checked }))}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Warm Leads</span>
+                    <span className="text-sm text-gray-700 dark:text-[#e5e5e7]">Warm Leads</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -1235,7 +1235,7 @@ const CRMPage = () => {
                       onChange={(e) => setSelectedTabs(prev => ({ ...prev, contactedClients: e.target.checked }))}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Contacted Clients</span>
+                    <span className="text-sm text-gray-700 dark:text-[#e5e5e7]">Contacted Clients</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -1244,7 +1244,7 @@ const CRMPage = () => {
                       onChange={(e) => setSelectedTabs(prev => ({ ...prev, coldLeads: e.target.checked }))}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Cold Leads</span>
+                    <span className="text-sm text-gray-700 dark:text-[#e5e5e7]">Cold Leads</span>
                   </label>
                 </div>
               </div>
@@ -1252,52 +1252,52 @@ const CRMPage = () => {
               {/* Form Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Contact Name *</label>
                   <input
                     type="text"
                     value={newLead.contactName}
                     onChange={(e) => setNewLead(prev => ({ ...prev, contactName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter contact name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Email *</label>
                   <input
                     type="email"
                     value={newLead.email}
                     onChange={(e) => setNewLead(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter email address"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Phone</label>
                   <input
                     type="tel"
                     value={newLead.phone}
                     onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter phone number"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Instagram</label>
                   <input
                     type="text"
                     value={newLead.instagram}
                     onChange={(e) => setNewLead(prev => ({ ...prev, instagram: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter Instagram handle"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Organization</label>
                   <input
                     type="text"
                     value={newLead.organization}
                     onChange={(e) => setNewLead(prev => ({ ...prev, organization: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter organization name"
                   />
                 </div>
@@ -1307,7 +1307,7 @@ const CRMPage = () => {
                     type="url"
                     value={newLead.website}
                     onChange={(e) => setNewLead(prev => ({ ...prev, website: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter website URL"
                   />
                 </div>
@@ -1318,7 +1318,7 @@ const CRMPage = () => {
                 <textarea
                   value={newLead.notes}
                   onChange={(e) => setNewLead(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows="3"
                   placeholder="Enter any additional notes"
                 />
@@ -1382,8 +1382,8 @@ const CRMPage = () => {
 
       {/* Edit Modal */}
       {showEditModal && editingClient && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 w-full max-w-md mx-4 border border-black/5 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Edit Lead</h3>
               <button
@@ -1403,7 +1403,7 @@ const CRMPage = () => {
                   type="text"
                   value={editForm.contactName}
                   onChange={(e) => setEditForm(prev => ({ ...prev, contactName: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -1416,7 +1416,7 @@ const CRMPage = () => {
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -1429,7 +1429,7 @@ const CRMPage = () => {
                   type="tel"
                   value={editForm.phone}
                   onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1441,7 +1441,7 @@ const CRMPage = () => {
                   type="text"
                   value={editForm.instagram}
                   onChange={(e) => setEditForm(prev => ({ ...prev, instagram: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1453,7 +1453,7 @@ const CRMPage = () => {
                   type="text"
                   value={editForm.organization}
                   onChange={(e) => setEditForm(prev => ({ ...prev, organization: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1465,7 +1465,7 @@ const CRMPage = () => {
                   type="url"
                   value={editForm.website}
                   onChange={(e) => setEditForm(prev => ({ ...prev, website: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -1476,7 +1476,7 @@ const CRMPage = () => {
                 <textarea
                   value={editForm.notes}
                   onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                 />
               </div>

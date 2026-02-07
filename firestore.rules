@@ -64,10 +64,14 @@ service cloud.firestore {
     }
     
     // Task templates - per-user: owner can read/write; shared users can read only
+    // sharedWith is stored lowercase; email_lower custom claim allows case-insensitive shared read
     match /task_templates/{templateId} {
       allow read: if isAuthenticated() &&
         (resource.data.ownerEmail == request.auth.token.email ||
-         ('sharedWith' in resource.data && request.auth.token.email in resource.data.sharedWith));
+         ('sharedWith' in resource.data && (
+           request.auth.token.email in resource.data.sharedWith ||
+           (request.auth.token.email_lower != null && request.auth.token.email_lower in resource.data.sharedWith)
+         )));
       allow create: if isAuthenticated() && request.resource.data.ownerEmail == request.auth.token.email;
       allow update, delete: if isAuthenticated() && resource.data.ownerEmail == request.auth.token.email;
     }

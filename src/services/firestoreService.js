@@ -17,8 +17,19 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { auth } from '../firebase'; // Added missing import for auth
+import { auth } from '../firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApiService } from './firebaseApiService';
+
+let ensureEmailLowerClaimFn = null;
+async function ensureEmailLowerClaimBeforeTemplates() {
+  if (!auth.currentUser?.email) return;
+  try {
+    if (!ensureEmailLowerClaimFn) ensureEmailLowerClaimFn = httpsCallable(getFunctions(), 'ensureEmailLowerClaim');
+    await ensureEmailLowerClaimFn();
+    await auth.currentUser.getIdToken(true);
+  } catch (_) { /* ignore */ }
+}
 
 class FirestoreService {
   constructor() {
@@ -2349,21 +2360,25 @@ class FirestoreService {
   // ===== TASK TEMPLATES MANAGEMENT =====
 
   // Get task templates owned by or shared with the user (ownerEmail + sharedWith).
-  // Legacy docs without ownerEmail are not returned; migrate via Firebase Console or Admin SDK if needed.
+  // Uses exact auth email for owner; sharedWith is stored lowercase so query by both for shared.
   async getTaskTemplates(userEmail) {
-    const normalizedEmail = (userEmail || '').toLowerCase().trim();
-    if (!normalizedEmail) return [];
+    const emailExact = (auth.currentUser?.email || userEmail || '').trim();
+    if (!emailExact) return [];
+    await ensureEmailLowerClaimBeforeTemplates();
     try {
       const col = collection(db, this.collections.TASK_TEMPLATES);
-      const [ownedSnap, sharedSnap] = await Promise.all([
-        getDocs(query(col, where('ownerEmail', '==', normalizedEmail))),
-        getDocs(query(col, where('sharedWith', 'array-contains', normalizedEmail)))
+      const emailLower = emailExact.toLowerCase();
+      const sharedQueries = [getDocs(query(col, where('sharedWith', 'array-contains', emailExact)))];
+      if (emailLower !== emailExact) sharedQueries.push(getDocs(query(col, where('sharedWith', 'array-contains', emailLower))));
+      const [ownedSnap, ...sharedSnaps] = await Promise.all([
+        getDocs(query(col, where('ownerEmail', '==', emailExact))),
+        ...sharedQueries
       ]);
       const byId = new Map();
       ownedSnap.forEach((d) => byId.set(d.id, { id: d.id, ...d.data(), isOwner: true }));
-      sharedSnap.forEach((d) => {
+      sharedSnaps.forEach((snap) => snap.forEach((d) => {
         if (!byId.has(d.id)) byId.set(d.id, { id: d.id, ...d.data(), isOwner: false });
-      });
+      }));
       const templates = Array.from(byId.values());
       console.log('✅ Retrieved task templates:', templates.length, '(owner + shared)');
       return templates;
@@ -2394,10 +2409,10 @@ class FirestoreService {
     }
   }
 
-  // Create a new task template (ownerEmail must be set to current user)
+  // Create a new task template (ownerEmail must match request.auth.token.email for rules)
   async createTaskTemplate(templateData) {
     try {
-      const ownerEmail = (templateData.ownerEmail || '').toLowerCase().trim();
+      const ownerEmail = (auth.currentUser?.email || templateData.ownerEmail || '').trim();
       const payload = { ...templateData, ownerEmail, sharedWith: templateData.sharedWith || [], createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
       const docRef = await addDoc(collection(db, this.collections.TASK_TEMPLATES), payload);
       console.log('✅ Task template created with ID:', docRef.id);
@@ -2437,34 +2452,40 @@ class FirestoreService {
 
   // Listen to template changes for one user (owned + shared)
   onTaskTemplatesChange(userEmail, callback) {
-    const normalizedEmail = (userEmail || '').toLowerCase().trim();
-    if (!normalizedEmail) {
+    const emailExact = (auth.currentUser?.email || userEmail || '').trim();
+    if (!emailExact) {
       callback([]);
       return () => {};
     }
     const col = collection(db, this.collections.TASK_TEMPLATES);
-    const unsubOwned = onSnapshot(query(col, where('ownerEmail', '==', normalizedEmail)), () => {});
-    const unsubShared = onSnapshot(query(col, where('sharedWith', 'array-contains', normalizedEmail)), () => {});
-    const refresh = () => this.getTaskTemplates(normalizedEmail).then(callback);
+    const emailLower = emailExact.toLowerCase();
+    const unsubOwned = onSnapshot(query(col, where('ownerEmail', '==', emailExact)), () => {});
+    const unsubShared1 = onSnapshot(query(col, where('sharedWith', 'array-contains', emailExact)), () => {});
+    const unsubShared2 = emailLower !== emailExact
+      ? onSnapshot(query(col, where('sharedWith', 'array-contains', emailLower)), () => {})
+      : () => {};
+    const refresh = () => this.getTaskTemplates(emailExact).then(callback);
     refresh();
     const interval = setInterval(refresh, 5000);
     return () => {
       unsubOwned();
-      unsubShared();
+      unsubShared1();
+      unsubShared2();
       clearInterval(interval);
     };
   }
 
   // Initialize default templates for this user if they have none
   async initializeDefaultTemplates(defaultTemplates, userEmail) {
-    const normalizedEmail = (userEmail || '').toLowerCase().trim();
-    if (!normalizedEmail) return;
+    const emailForQuery = (auth.currentUser?.email || userEmail || '').trim();
+    if (!emailForQuery) return;
+    await ensureEmailLowerClaimBeforeTemplates();
     try {
-      const existingTemplates = await this.getTaskTemplates(normalizedEmail);
+      const existingTemplates = await this.getTaskTemplates(emailForQuery);
       if (existingTemplates.length === 0) {
         console.log('📝 Initializing default task templates for user...');
         const promises = Object.values(defaultTemplates).map((template) =>
-          this.createTaskTemplate({ ...template, ownerEmail: normalizedEmail })
+          this.createTaskTemplate({ ...template, ownerEmail: emailForQuery })
         );
         await Promise.all(promises);
         console.log('✅ Default templates initialized');
