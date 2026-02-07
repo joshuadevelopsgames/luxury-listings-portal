@@ -2342,6 +2342,17 @@ class FirestoreService {
     }
   }
 
+  // Delete a task request (sender only - removes from outbox; assignee keeps the task if already accepted)
+  async deleteTaskRequest(requestId) {
+    try {
+      await deleteDoc(doc(db, this.collections.TASK_REQUESTS, requestId));
+      console.log('✅ Task request deleted:', requestId);
+    } catch (error) {
+      console.error('❌ Error deleting task request:', error);
+      throw error;
+    }
+  }
+
   // Get sent task requests (requests you sent to others)
   onSentTaskRequestsChange(userEmail, callback) {
     const q = query(

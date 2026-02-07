@@ -134,10 +134,7 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
   const handleCheckboxChange = (checked) => {
     if (checked) {
       setOptimisticCompleted(true);
-      setTimeout(() => {
-        onStatusChange(task.id, 'completed');
-        setOptimisticCompleted(false);
-      }, COMPLETE_VISIBLE_MS);
+      setTimeout(() => onStatusChange(task.id, 'completed'), COMPLETE_VISIBLE_MS);
     } else {
       setOptimisticCompleted(false);
       onStatusChange(task.id, 'pending');

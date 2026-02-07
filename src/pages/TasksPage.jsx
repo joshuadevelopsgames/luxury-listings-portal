@@ -1253,7 +1253,7 @@ const TasksPage = () => {
             { value: 'today', icon: Calendar, label: 'Today', count: counts.today },
             { value: 'upcoming', icon: Clock, label: 'Upcoming', count: counts.upcoming },
             { value: 'completed', icon: CheckCircle2, label: 'Completed', count: counts.completed },
-            { value: 'outbox', icon: Send, label: 'Outbox', count: sentRequests.length, badge: outboxUnreadCount }
+            { value: 'outbox', icon: Send, label: 'Outbox', count: sentRequests.filter((r) => !archivedRequestIds.has(r.id)).length, badge: outboxUnreadCount }
           ].map(tab => (
             <button
               key={tab.value}
@@ -1461,13 +1461,21 @@ const TasksPage = () => {
                 const statusColor = req.status === 'pending' ? 'text-[#ff9500]' : req.status === 'accepted' ? (task?.status === 'completed' ? 'text-[#34c759]' : 'text-[#0071e3]') : 'text-[#ff3b30]';
                 const isArchived = archivedRequestIds.has(req.id);
                 const canOpenTask = task && (req.status === 'accepted');
+                const handleRowClick = () => {
+                  if (canOpenTask) {
+                    setEditingTask(task);
+                    setShowEditModal(true);
+                  }
+                };
                 return (
                   <li
                     key={req.id}
                     id={`outbox-request-${req.id}`}
-                    role={canOpenTask ? 'button' : undefined}
-                    onClick={canOpenTask ? () => { setEditingTask(task); setShowEditModal(true); } : undefined}
-                    className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${canOpenTask ? 'cursor-pointer hover:bg-black/[0.04] dark:hover:bg-white/[0.06]' : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'} transition-colors`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleRowClick}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick(); } }}
+                    className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors ${canOpenTask ? '' : 'opacity-90'}`}
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-[#1d1d1f] dark:text-white">{req.taskTitle}</p>
@@ -1485,6 +1493,26 @@ const TasksPage = () => {
                         title={isArchived ? 'Restore from archive' : 'Archive (only you)'}
                       >
                         {isArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const confirmed = await confirm({ title: 'Remove from outbox', message: 'Remove this request? The assignee will keep the task if it was already accepted.', confirmText: 'Remove', variant: 'danger' });
+                          if (!confirmed) return;
+                          try {
+                            await firestoreService.deleteTaskRequest(req.id);
+                            setArchivedRequestIds((prev) => { const n = new Set(prev); n.delete(req.id); return n; });
+                            toast.success('Request removed');
+                          } catch (err) {
+                            console.error(err);
+                            toast.error('Failed to remove request');
+                          }
+                        }}
+                        className="p-1.5 rounded-lg text-[#86868b] hover:bg-[#ff3b30]/10 hover:text-[#ff3b30]"
+                        title="Remove from outbox"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </li>

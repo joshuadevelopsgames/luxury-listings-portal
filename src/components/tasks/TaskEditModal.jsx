@@ -53,8 +53,10 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   const [taskDropActive, setTaskDropActive] = useState(false);
   const [commentDropActive, setCommentDropActive] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+  const [showPaperclipMenu, setShowPaperclipMenu] = useState(false);
   const commentFileInputRef = useRef(null);
   const taskFileInputRef = useRef(null);
+  const paperclipMenuRef = useRef(null);
 
   const handleTaskDrop = (e) => {
     e.preventDefault();
@@ -105,6 +107,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
       const clickedInsidePriority = priorityDropdownRef.current?.contains(event.target);
       const clickedInsideLabel = labelInputRef.current?.contains(event.target);
       const clickedInsideReminder = reminderPickerRef.current?.contains(event.target);
+      const clickedInsidePaperclip = paperclipMenuRef.current?.contains(event.target);
       
       if (!clickedInsideProject && !clickedInsideDate && !clickedInsidePriority && !clickedInsideLabel && !clickedInsideReminder) {
         setShowProjectDropdown(false);
@@ -113,6 +116,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
         setShowLabelInput(false);
         setShowReminderPicker(false);
       }
+      if (!clickedInsidePaperclip) setShowPaperclipMenu(false);
     };
 
     if (isOpen) {
@@ -370,14 +374,21 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   };
 
   const handleDeleteComment = async (commentId) => {
+    const confirmed = await confirm({
+      title: 'Delete comment',
+      message: 'Remove this comment?',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
     await task.deleteComment(commentId);
-    
-    // Update local state
     const updatedComments = (task.comments || []).filter(c => c.id !== commentId);
-    setEditForm(prev => ({
-      ...prev,
-      comments: updatedComments
-    }));
+    setEditForm(prev => ({ ...prev, comments: updatedComments }));
+  };
+
+  const isOwnComment = (comment) => {
+    if (!currentUser?.email || !comment?.user) return false;
+    return String(comment.user).toLowerCase().trim() === String(currentUser.email).toLowerCase().trim();
   };
 
   // Navigate to next task
@@ -741,12 +752,16 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                               minute: '2-digit'
                             })}
                           </span>
-                          <button
-                            onClick={() => handleDeleteComment(comment.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-[#a1a1a6] hover:text-red-600 dark:hover:text-red-400 ml-auto"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                          {isOwnComment(comment) && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteComment(comment.id)}
+                              className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-[#a1a1a6] hover:text-red-600 dark:hover:text-red-400 ml-auto"
+                              title="Delete comment"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                         <p className="text-sm text-gray-700 dark:text-[#e5e5e7] whitespace-pre-wrap">{comment.text}</p>
                         {comment.attachmentUrls && comment.attachmentUrls.length > 0 && (
@@ -784,21 +799,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   {currentUser?.firstName?.[0] || 'U'}
                 </div>
                 <div className="flex-1 space-y-2">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
-                    placeholder="Comment"
-                    className="w-full text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
-                  />
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
                     <input
-                      type="url"
-                      value={commentLink}
-                      onChange={(e) => setCommentLink(e.target.value)}
-                      placeholder="Add link or media URL"
-                      className="flex-1 min-w-0 text-xs border-none outline-none focus:ring-0 p-0 placeholder-gray-400 dark:placeholder-[#a1a1a6] text-blue-600 dark:text-blue-400 bg-transparent"
+                      type="text"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
+                      placeholder="Comment"
+                      className="flex-1 min-w-0 text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                     />
                     <input
                       type="file"
@@ -816,10 +824,34 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                     >
                       <ImagePlus className="w-4 h-4" />
                     </button>
+                    <div className="relative" ref={paperclipMenuRef}>
+                      <button
+                        type="button"
+                        onClick={() => setShowPaperclipMenu((v) => !v)}
+                        className="p-1.5 rounded-lg text-gray-500 dark:text-[#a1a1a6] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#0071e3] dark:hover:text-blue-400"
+                        title="Add link"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                      </button>
+                      {showPaperclipMenu && (
+                        <div className="absolute right-0 bottom-full mb-1 w-64 p-2 bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 z-20">
+                          <label className="text-xs font-medium text-gray-500 dark:text-[#a1a1a6] block mb-1">Link or media URL</label>
+                          <input
+                            type="url"
+                            value={commentLink}
+                            onChange={(e) => setCommentLink(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                            autoFocus
+                          />
+                        </div>
+                      )}
+                    </div>
                     <button
                       onClick={handleAddComment}
                       disabled={(!newComment.trim() && !commentLink.trim() && commentAttachmentUrls.length === 0) || commentUploading}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:text-gray-300 dark:disabled:text-[#a1a1a6] disabled:cursor-not-allowed"
+                      className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-black/5 dark:hover:bg-white/10 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Send"
                     >
                       <Send className="w-4 h-4" />
                     </button>

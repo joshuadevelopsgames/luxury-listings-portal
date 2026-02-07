@@ -26,10 +26,7 @@ const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect
   const handleCheckChange = (checked) => {
     if (checked) {
       setOptimisticCompleted(true);
-      setTimeout(() => {
-        onStatusChange(task.id, 'completed');
-        setOptimisticCompleted(false);
-      }, COMPLETE_VISIBLE_MS);
+      setTimeout(() => onStatusChange(task.id, 'completed'), COMPLETE_VISIBLE_MS);
     } else {
       setOptimisticCompleted(false);
       onStatusChange(task.id, 'pending');
