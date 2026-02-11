@@ -139,7 +139,8 @@ const PostsLoggedWidget = () => {
       created_date: now.toISOString(),
       completed_date: now.toISOString(),
       labels: ['client-post', `client-${client.id}`, platform],
-      task_type: 'post_log'
+      task_type: 'post_log',
+      clientId: client.id
     };
     const taskId = await firestoreService.addTask(taskData);
     const newPostsUsed = (client.postsUsed || 0) + 1;

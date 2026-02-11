@@ -102,6 +102,11 @@ const NotificationsCenter = () => {
       // Instagram reports
       case 'instagram_report_reminder':
         return <Instagram className="w-4 h-4 text-pink-500" />;
+      // Post logging (SMM)
+      case 'post_log_reminder_week':
+        return <AlertCircle className="w-4 h-4 text-amber-500" />;
+      case 'team_post_log_support':
+        return <AlertCircle className="w-4 h-4 text-amber-500" />;
       // Feedback & Support
       case 'bug_report':
         return <Bug className="w-4 h-4 text-[#ff3b30]" />;

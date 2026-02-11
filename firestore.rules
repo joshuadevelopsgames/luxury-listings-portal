@@ -89,6 +89,12 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
+    // System doc for monthly posts reset (last year-month). Read: any authenticated; write: admin only.
+    match /system/posts_reset {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
     // Client movements (deletions, reassignments, added) - for HR analytics. Read: any authenticated (page is permission-gated).
     match /client_movements/{movementId} {
       allow create: if isAuthenticated();
@@ -220,6 +226,13 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && 
         resource.data.created_by == request.auth.token.email;
+    }
+    
+    // Usage analytics - any authenticated user can log; only admins can read (System Admin page)
+    match /usage_events/{eventId} {
+      allow create: if isAuthenticated();
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
     
     // Note: The catch-all rule below is commented out to maintain current functionality

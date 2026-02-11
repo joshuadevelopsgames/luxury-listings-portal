@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getRemoteConfig, fetchAndActivate, getValue } from 'firebase/remote-config';
+import { getAnalytics, logEvent } from 'firebase/analytics';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -55,6 +56,18 @@ remoteConfig.defaultConfig = {
 
 // Export Remote Config functions
 export { fetchAndActivate, getValue } from 'firebase/remote-config';
+
+// Analytics: init in browser only (non-blocking; events batched in background)
+let analytics = null;
+if (typeof window !== 'undefined') {
+  try {
+    analytics = getAnalytics(app);
+  } catch (_) {}
+}
+export function getAppAnalytics() {
+  return analytics;
+}
+export { logEvent };
 
 export default app;
 

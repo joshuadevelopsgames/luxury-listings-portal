@@ -66,7 +66,9 @@ class FirestoreService {
     PROJECT_REQUESTS: 'project_requests',
     FEEDBACK: 'feedback',
     FEEDBACK_CHATS: 'feedback_chats',
-    CUSTOM_ROLES: 'custom_roles'
+    CUSTOM_ROLES: 'custom_roles',
+    SYSTEM: 'system',
+    USAGE_EVENTS: 'usage_events'
   };
 
   // Test connection method
@@ -440,6 +442,60 @@ class FirestoreService {
       console.error('❌ Error getting user tasks:', error);
       throw error;
     }
+  }
+
+  // Get post_log tasks for a client (for history). Uses clientId on task; newer logs have it set.
+  async getPostLogTasksByClient(clientId, options = {}) {
+    const { limit: max = 200 } = options;
+    try {
+      if (!clientId) return [];
+      const q = query(
+        collection(db, this.collections.TASKS),
+        where('task_type', '==', 'post_log'),
+        where('clientId', '==', clientId),
+        orderBy('completed_date', 'desc'),
+        firestoreLimit(max)
+      );
+      const snapshot = await getDocs(q);
+      const tasks = [];
+      snapshot.forEach((docSnap) => {
+        tasks.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      return tasks;
+    } catch (error) {
+      // Index may not exist yet; fallback: no history
+      console.warn('getPostLogTasksByClient:', error?.message || error);
+      return [];
+    }
+  }
+
+  // Last month we ran the monthly posts reset (year-month string e.g. "2025-02")
+  async getLastPostsResetMonth() {
+    try {
+      const ref = doc(db, this.collections.SYSTEM, 'posts_reset');
+      const snap = await getDoc(ref);
+      return snap.exists() ? (snap.data().lastYearMonth || null) : null;
+    } catch (e) {
+      console.warn('getLastPostsResetMonth:', e?.message);
+      return null;
+    }
+  }
+
+  // Run monthly posts reset: set all clients to postsUsed 0, postsRemaining = packageSize. Updates system doc. Call when current month > last reset. History is preserved in post_log tasks.
+  async runMonthlyPostsReset() {
+    const now = new Date();
+    const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const last = await this.getLastPostsResetMonth();
+    if (last && last >= currentYearMonth) return { didReset: false, reason: 'already reset this month' };
+    const clients = await this.getClients();
+    for (const c of clients) {
+      const packageSize = Math.max(0, Number(c.packageSize) ?? 0);
+      await this.updateClient(c.id, { postsUsed: 0, postsRemaining: packageSize });
+    }
+    const ref = doc(db, this.collections.SYSTEM, 'posts_reset');
+    await setDoc(ref, { lastYearMonth: currentYearMonth, updatedAt: serverTimestamp() }, { merge: true });
+    console.log(`✅ Monthly posts reset: ${clients.length} clients renewed for ${currentYearMonth}`);
+    return { didReset: true, clientCount: clients.length, yearMonth: currentYearMonth };
   }
 
   // Update task
@@ -4032,7 +4088,33 @@ class FirestoreService {
       return feedback;
     } catch (error) {
       console.error('❌ Error getting feedback:', error);
-      throw error;
+      return [];
+    }
+  }
+
+  /**
+   * Get usage analytics events (for system admin). Optional: sinceTimestamp (Firestore Timestamp).
+   * Returns list of { page_path, event_type, value?, timestamp }.
+   */
+  async getUsageAnalytics() {
+    try {
+      const coll = collection(db, this.collections.USAGE_EVENTS);
+      const q = query(coll, orderBy('timestamp', 'desc'), firestoreLimit(5000));
+      const snapshot = await getDocs(q);
+      const events = [];
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        events.push({
+          page_path: d.page_path,
+          event_type: d.event_type,
+          value: d.value,
+          timestamp: d.timestamp
+        });
+      });
+      return events;
+    } catch (error) {
+      console.error('❌ Error getting usage analytics:', error);
+      return [];
     }
   }
 

@@ -9,6 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { firestoreService } from "../services/firestoreService";
 import { remoteConfigService } from "../services/remoteConfigService";
 import { instagramReportReminderService } from "../services/instagramReportReminderService";
+import { postLogReminderService } from "../services/postLogReminderService";
 
 import { 
   CheckCircle2, 
@@ -36,6 +37,7 @@ import TodaysTasks from "../components/dashboard/TodaysTasks";
 import NextTutorials from "../components/dashboard/NextTutorials";
 import HRQuickActions from "../components/dashboard/HRQuickActions";
 import TimeOffWidget from "../components/dashboard/TimeOffWidget";
+import PostLogReminderBanner from "../components/dashboard/PostLogReminderBanner";
 
 export default function Dashboard() {
   const { currentUser, currentRole, getCurrentRolePermissions } = useAuth();
@@ -44,6 +46,7 @@ export default function Dashboard() {
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [postLogBanner, setPostLogBanner] = useState({ show: false, clientNames: [] });
   const [adminStats, setAdminStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -118,6 +121,36 @@ export default function Dashboard() {
     const timeoutId = setTimeout(checkReminders, 2000);
     return () => clearTimeout(timeoutId);
   }, [currentUser?.email, currentUser?.uid]);
+
+  // Friday: post-log reminder banner for SMMs + optional in-app notification
+  useEffect(() => {
+    if (!currentUser?.email || !postLogReminderService.isFriday()) return;
+    const run = async () => {
+      try {
+        const banner = await postLogReminderService.getBannerState(currentUser.email, currentUser.uid);
+        setPostLogBanner({ show: banner.show, clientNames: banner.clientNames });
+        await postLogReminderService.checkAndSendUserReminder(currentUser.email, currentUser.uid);
+      } catch (e) {
+        console.warn('Post log reminder check failed', e);
+      }
+    };
+    const t = setTimeout(run, 1500);
+    return () => clearTimeout(t);
+  }, [currentUser?.email, currentUser?.uid]);
+
+  // Admin: notify admins when team members need support (Friday or last week of month)
+  useEffect(() => {
+    if (currentRole !== 'admin') return;
+    const run = async () => {
+      try {
+        await postLogReminderService.checkAndSendAdminReminders();
+      } catch (e) {
+        console.warn('Post log admin reminder check failed', e);
+      }
+    };
+    const t = setTimeout(run, 2000);
+    return () => clearTimeout(t);
+  }, [currentRole]);
 
   const loadDashboardData = async () => {
     try {
@@ -291,6 +324,10 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
       <WelcomeCard user={currentUser} overallProgress={getOverallProgress()} currentRole={currentRole} systemUptime={adminStats.systemUptime} adminStats={adminStats} />
+
+      {postLogBanner.show && (
+        <PostLogReminderBanner clientNames={postLogBanner.clientNames} onDismiss={() => setPostLogBanner(prev => ({ ...prev, show: false }))} />
+      )}
       
       {/* Admin Note - Only show for admin users */}
       {currentRole === 'admin' && (

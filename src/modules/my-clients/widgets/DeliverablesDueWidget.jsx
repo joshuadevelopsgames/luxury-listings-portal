@@ -2,16 +2,18 @@
  * DeliverablesDueWidget - Dashboard widget showing upcoming deliverables
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Calendar, AlertCircle } from 'lucide-react';
+import { FileText, AlertCircle, Pencil } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
+import EditPostsLoggedModal from '../../../components/ui/EditPostsLoggedModal';
 
 const DeliverablesDueWidget = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { clients: allClients, loading: clientsLoading } = useClients();
+  const [editClient, setEditClient] = useState(null);
 
   const isAssignedToMe = (client) => {
     const am = (client.assignedManager || '').trim().toLowerCase();
@@ -81,31 +83,54 @@ const DeliverablesDueWidget = () => {
         </div>
       ) : (
         <div className="space-y-2">
-          {deliverables.map((item) => (
-            <div 
-              key={item.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
-              onClick={() => navigate('/my-clients')}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                {item.status === 'urgent' && (
-                  <AlertCircle className="w-4 h-4 text-[#ff3b30] shrink-0" strokeWidth={1.5} />
-                )}
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
-                    {item.clientName}
-                  </p>
-                  <p className="text-[11px] text-[#86868b]">
-                    {item.remaining} {item.type.toLowerCase()} remaining
-                  </p>
+          {deliverables.map((item) => {
+            const fullClient = myClients.find(c => c.id === item.id);
+            return (
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors"
+              >
+                <div
+                  className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                  onClick={() => navigate('/my-clients')}
+                >
+                  {item.status === 'urgent' && (
+                    <AlertCircle className="w-4 h-4 text-[#ff3b30] shrink-0" strokeWidth={1.5} />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                      {item.clientName}
+                    </p>
+                    <p className="text-[11px] text-[#86868b]">
+                      {item.remaining} {item.type.toLowerCase()} remaining
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className={`text-[11px] font-medium px-2 py-1 rounded-full ${getStatusStyle(item.status)}`}>
+                    {item.status === 'urgent' ? 'Urgent' : 'On Track'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); if (fullClient) setEditClient(fullClient); }}
+                    className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                    title="Edit posts logged"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-              <span className={`text-[11px] font-medium px-2 py-1 rounded-full ${getStatusStyle(item.status)}`}>
-                {item.status === 'urgent' ? 'Urgent' : 'On Track'}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
+      )}
+
+      {editClient && (
+        <EditPostsLoggedModal
+          client={editClient}
+          onClose={() => setEditClient(null)}
+          onSaved={() => setEditClient(null)}
+        />
       )}
     </div>
   );

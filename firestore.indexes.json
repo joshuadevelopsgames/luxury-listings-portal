@@ -1,6 +1,22 @@
 {
   "indexes": [
     {
+      "collectionGroup": "usage_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "task_type", "order": "ASCENDING" },
+        { "fieldPath": "clientId", "order": "ASCENDING" },
+        { "fieldPath": "completed_date", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "instagram_reports",
       "queryScope": "COLLECTION",
       "fields": [

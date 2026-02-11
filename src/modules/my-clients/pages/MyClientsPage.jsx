@@ -11,13 +11,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, parseISO, startOfMonth } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
+import { usePermissions } from '../../../contexts/PermissionsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import { openaiService } from '../../../services/openaiService';
 import PlatformIcons from '../../../components/PlatformIcons';
 import ClientLink from '../../../components/ui/ClientLink';
+import EditPostsLoggedModal from '../../../components/ui/EditPostsLoggedModal';
+import PostLogReminderBanner from '../../../components/dashboard/PostLogReminderBanner';
+import { postLogReminderService } from '../../../services/postLogReminderService';
 import { toast } from 'react-hot-toast';
 import { 
   Users, 
@@ -48,20 +52,30 @@ import {
   Linkedin,
   RefreshCw,
   Sparkles,
-  Info
+  Info,
+  Pencil,
+  History,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const MyClientsPage = () => {
   const navigate = useNavigate();
   const { currentUser, isViewingAs } = useAuth();
+  const { isSystemAdmin } = usePermissions();
   const { clients: allClients, loading: clientsLoading, getClientById } = useClients();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedClient, setSelectedClient] = useState(null);
   const [detailClientId, setDetailClientId] = useState(null); // For detail modal – id so modal gets live data from context
+  const [showEditPostsModal, setShowEditPostsModal] = useState(false);
+  const [postLogHistory, setPostLogHistory] = useState([]);
+  const [postLogHistoryLoading, setPostLogHistoryLoading] = useState(false);
+  const [expandedHistoryMonth, setExpandedHistoryMonth] = useState(null);
   const [logPostClient, setLogPostClient] = useState(null);
   const [logPlatform, setLogPlatform] = useState('instagram');
   const [logSaving, setLogSaving] = useState(false);
+  const [postLogBanner, setPostLogBanner] = useState({ show: false, clientNames: [] });
 
   // AI Health Prediction state
   const [aiHealthPredictions, setAiHealthPredictions] = useState({}); // { clientId: { status, churnRisk, reason, action, timestamp } }
@@ -84,6 +98,14 @@ const MyClientsPage = () => {
   );
   const detailClient = detailClientId ? getClientById(detailClientId) : null;
 
+  // Friday: post-log reminder banner (SMM)
+  useEffect(() => {
+    if (!currentUser?.email || !postLogReminderService.isFriday()) return;
+    postLogReminderService.getBannerState(currentUser.email, currentUser.uid).then((b) => {
+      setPostLogBanner({ show: b.show, clientNames: b.clientNames });
+    }).catch(() => {});
+  }, [currentUser?.email, currentUser?.uid]);
+
   useEffect(() => {
     const loadSnapshots = async () => {
       if (!currentUser?.email && !currentUser?.uid) return;
@@ -97,6 +119,37 @@ const MyClientsPage = () => {
     };
     loadSnapshots();
   }, [currentUser?.email, currentUser?.uid, isViewingAs]);
+
+  useEffect(() => {
+    if (!detailClientId || !isSystemAdmin) {
+      setPostLogHistory([]);
+      return;
+    }
+    let cancelled = false;
+    setPostLogHistoryLoading(true);
+    firestoreService.getPostLogTasksByClient(detailClientId, { limit: 500 })
+      .then((tasks) => {
+        if (cancelled) return;
+        setPostLogHistory(tasks);
+      })
+      .catch(() => { if (!cancelled) setPostLogHistory([]); })
+      .finally(() => { if (!cancelled) setPostLogHistoryLoading(false); });
+    return () => { cancelled = true; };
+  }, [detailClientId, isSystemAdmin]);
+
+  const postLogByMonth = useMemo(() => {
+    const byMonth = new Map();
+    postLogHistory.forEach((task) => {
+      const raw = task.completed_date || task.created_date || '';
+      const date = raw ? (raw.slice ? parseISO(raw.split('T')[0]) : new Date(raw)) : null;
+      const key = date ? format(startOfMonth(date), 'yyyy-MM') : 'unknown';
+      if (!byMonth.has(key)) byMonth.set(key, { label: date ? format(date, 'MMMM yyyy') : 'Unknown', tasks: [] });
+      byMonth.get(key).tasks.push(task);
+    });
+    return Array.from(byMonth.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([key, { label, tasks }]) => ({ key, label, tasks }));
+  }, [postLogHistory]);
 
   const getHealthStatus = (client) => {
     const postsRemaining = client.postsRemaining || 0;
@@ -259,7 +312,8 @@ const MyClientsPage = () => {
         created_date: now.toISOString(),
         completed_date: now.toISOString(),
         labels: ['client-post', `client-${logPostClient.id}`, logPlatform],
-        task_type: 'post_log'
+        task_type: 'post_log',
+        clientId: logPostClient.id
       };
       await firestoreService.addTask(taskData);
       const newPostsUsed = (logPostClient.postsUsed || 0) + 1;
@@ -328,6 +382,10 @@ const MyClientsPage = () => {
           </p>
         </div>
       </div>
+
+      {postLogBanner.show && (
+        <PostLogReminderBanner clientNames={postLogBanner.clientNames} onDismiss={() => setPostLogBanner(prev => ({ ...prev, show: false }))} />
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -632,7 +690,7 @@ const MyClientsPage = () => {
       {detailClient && createPortal(
         <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setDetailClientId(null)}
+          onClick={() => { setDetailClientId(null); setShowEditPostsModal(false); }}
         >
           <div 
             className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
@@ -656,8 +714,8 @@ const MyClientsPage = () => {
                 </div>
               </div>
               <button
-                onClick={() => setDetailClientId(null)}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+onClick={() => { setDetailClientId(null); setShowEditPostsModal(false); }}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-white" />
               </button>
@@ -720,7 +778,18 @@ const MyClientsPage = () => {
 
               {/* Package Info */}
               <div>
-                <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3">Package Information</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide">Package Information</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPostsModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[12px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit posts logged
+                  </button>
+                </div>
+                <p className="text-[11px] text-[#86868b] mb-2">Posts used = total logged this month. &quot;Posts today&quot; in the widget is only today.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-3 rounded-xl bg-[#0071e3]/5">
                     <p className="text-[11px] text-[#86868b] mb-1">Package Type</p>
@@ -766,6 +835,51 @@ const MyClientsPage = () => {
                 </div>
               )}
 
+              {/* Post log history (admins) */}
+              {isSystemAdmin && (
+                <div>
+                  <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <History className="w-4 h-4" />
+                    Post log history
+                  </h3>
+                  {postLogHistoryLoading ? (
+                    <p className="text-[13px] text-[#86868b]">Loading...</p>
+                  ) : postLogByMonth.length === 0 ? (
+                    <p className="text-[13px] text-[#86868b]">No logged post history for this client yet.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {postLogByMonth.map(({ key, label, tasks }) => {
+                        const isExpanded = expandedHistoryMonth === key;
+                        const platformLabel = (t) => (t.labels && t.labels.find(l => ['instagram','facebook','linkedin','youtube','tiktok','x'].includes(l))) || 'post';
+                        return (
+                          <div key={key} className="rounded-xl bg-black/[0.02] dark:bg-white/5 overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedHistoryMonth(isExpanded ? null : key)}
+                              className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.05] transition-colors"
+                            >
+                              <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{label}</span>
+                              <span className="text-[12px] text-[#86868b]">{tasks.length} logged</span>
+                              {isExpanded ? <ChevronUp className="w-4 h-4 text-[#86868b]" /> : <ChevronDown className="w-4 h-4 text-[#86868b]" />}
+                            </button>
+                            {isExpanded && (
+                              <div className="px-3 pb-2 pt-0 space-y-1 border-t border-black/5 dark:border-white/5">
+                                {tasks.map((t) => (
+                                  <div key={t.id} className="flex items-center justify-between text-[12px] text-[#86868b]">
+                                    <span className="capitalize">{platformLabel(t)}</span>
+                                    <span>{t.completed_date ? format(parseISO(t.completed_date.split('T')[0]), 'MMM d, yyyy') : '—'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Quick Actions */}
               <div className="flex flex-wrap gap-2 pt-2">
                 {detailClient.clientEmail && (
@@ -790,6 +904,7 @@ const MyClientsPage = () => {
                   onClick={() => {
                     navigate(`/instagram-reports`);
                     setDetailClientId(null);
+                    setShowEditPostsModal(false);
                   }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#833AB4] to-[#E1306C] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
                 >
@@ -800,6 +915,15 @@ const MyClientsPage = () => {
             </div>
           </div>
         </div>,
+        document.body
+      )}
+
+      {detailClient && showEditPostsModal && createPortal(
+        <EditPostsLoggedModal
+          client={detailClient}
+          onClose={() => setShowEditPostsModal(false)}
+          onSaved={() => setShowEditPostsModal(false)}
+        />,
         document.body
       )}
     </div>

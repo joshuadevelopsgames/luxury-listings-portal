@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
@@ -40,7 +40,8 @@ import {
   Palette,
   Sparkles,
   Bug,
-  Activity
+  Activity,
+  ShieldCheck
 } from 'lucide-react';
 
 /**
@@ -55,6 +56,21 @@ const V3Layout = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Monthly posts reset: when an admin loads, if we're in a new month run reset (renew posts for all clients; history stays in post_log tasks)
+  const hasCheckedMonthlyReset = useRef(false);
+  useEffect(() => {
+    if (!isSystemAdmin || !currentUser?.email || hasCheckedMonthlyReset.current) return;
+    hasCheckedMonthlyReset.current = true;
+    const now = new Date();
+    const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    firestoreService.getLastPostsResetMonth().then((last) => {
+      if (last && last >= currentYearMonth) return;
+      firestoreService.runMonthlyPostsReset().then((r) => {
+        if (r.didReset) console.log(`📅 Monthly posts renewed for ${r.yearMonth} (${r.clientCount} clients)`);
+      });
+    });
+  }, [isSystemAdmin, currentUser?.email]);
 
   // On load/refresh: use Firestore (not cache) so onboarding shows when server says not completed
   useEffect(() => {
@@ -212,6 +228,7 @@ const V3Layout = () => {
     'team': { name: 'Team Management', icon: Users, path: '/team' },
     'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
     'client-health': { name: 'Client Health', icon: Activity, path: '/client-health' },
+    'system-admin': { name: 'System Admin', icon: ShieldCheck, path: '/system-admin' },
     'permissions': { name: 'Users & Permissions', icon: Settings, path: '/permissions' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'tutorials': { name: 'Tutorials', icon: BookOpen, path: '/tutorials' },
@@ -289,17 +306,14 @@ const V3Layout = () => {
         }
       }
       
-      // Add permissions to Admin section
+      // Add system-admin and permissions to Admin section (system-admin first)
       const adminSection = sections.find(s => s.title === 'Admin');
+      const adminItems = ['system-admin', 'permissions'];
       if (adminSection) {
-        if (!adminSection.items.includes('permissions')) {
-          adminSection.items.unshift('permissions');
-        }
+        const rest = adminSection.items.filter(id => !adminItems.includes(id));
+        adminSection.items = [...adminItems, ...rest];
       } else {
-        sections.push({
-          title: 'Admin',
-          items: ['permissions']
-        });
+        sections.push({ title: 'Admin', items: [...adminItems] });
       }
     }
     

@@ -8,6 +8,7 @@ import { ClientsProvider } from './contexts/ClientsContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
 import { Toaster } from 'react-hot-toast';
 import { setNavigate } from './utils/navigation';
+import { useAnalyticsTracker } from './utils/analyticsTracker';
 import MobileInstallPrompt from './components/MobileInstallPrompt';
 import NewVersionNotifier from './components/NewVersionNotifier';
 
@@ -25,6 +26,7 @@ import V3Login from './v3-app/components/Login';
 import V3Dashboard from './v3-app/components/Dashboard';
 import PermissionRoute from './v3-app/components/PermissionRoute';
 import PermissionsManager from './v3-app/pages/PermissionsManager';
+import SystemAdminPage from './pages/SystemAdminPage';
 
 // V3 Styles
 import './v3-app/styles/globals.css';
@@ -105,6 +107,7 @@ function NavigateSetter() {
 // ROOT LAYOUT - Wraps all routes, sets up navigation
 // ============================================================================
 function RootLayout() {
+  useAnalyticsTracker();
   return (
     <>
       <NavigateSetter />
@@ -250,6 +253,7 @@ const router = createBrowserRouter([
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
 
           // Admin pages - system admin only
+          { path: 'system-admin', element: <SystemAdminPage /> },
 
           // Profile pages - always accessible when logged in
           { path: 'my-time-off', element: <MyTimeOff /> },
