@@ -21,6 +21,7 @@ import {
   CalendarDays,
   Plane,
   Heart,
+  Laptop,
   Info,
   X,
   ChevronDown,
@@ -90,6 +91,12 @@ const MyTimeOff = () => {
       used: 0,
       remaining: 0,
       pending: 0
+    },
+    remote: {
+      total: 0,
+      used: 0,
+      remaining: 0,
+      pending: 0
     }
   });
 
@@ -143,25 +150,22 @@ const MyTimeOff = () => {
         const storedBalances = await firestoreService.getUserLeaveBalances(currentUser.email);
         
         // Calculate pending from current requests
-        const pendingCounts = { vacation: 0, sick: 0 };
+        const pendingCounts = { vacation: 0, sick: 0, remote: 0 };
         myRequests.forEach(request => {
           if (request.status === 'pending' && pendingCounts[request.type] !== undefined) {
             pendingCounts[request.type] += request.days || 1;
           }
         });
         
-        // Merge stored balances with pending counts
+        const mergeBalance = (key) => ({
+          ...(storedBalances[key] || { total: 0, used: 0 }),
+          remaining: (storedBalances[key]?.total ?? 0) - (storedBalances[key]?.used ?? 0),
+          pending: pendingCounts[key] ?? 0
+        });
         const balances = {
-          vacation: { 
-            ...storedBalances.vacation,
-            remaining: storedBalances.vacation.total - storedBalances.vacation.used,
-            pending: pendingCounts.vacation 
-          },
-          sick: { 
-            ...storedBalances.sick,
-            remaining: storedBalances.sick.total - storedBalances.sick.used,
-            pending: pendingCounts.sick 
-          }
+          vacation: mergeBalance('vacation'),
+          sick: mergeBalance('sick'),
+          remote: mergeBalance('remote')
         };
         
         setLeaveBalances(balances);
@@ -216,6 +220,13 @@ const MyTimeOff = () => {
       icon: Heart,
       dotColor: 'bg-[#ff3b30]',
       description: 'For illness, injury, or medical appointments'
+    },
+    remote: { 
+      label: 'Remote', 
+      color: 'bg-[#34c759]/10 text-[#34c759]', 
+      icon: Laptop,
+      dotColor: 'bg-[#34c759]',
+      description: 'Working from a remote location'
     }
   };
 
@@ -439,6 +450,7 @@ const MyTimeOff = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {Object.entries(leaveBalances).map(([key, balance]) => {
           const type = leaveTypes[key];
+          if (!type) return null;
           const Icon = type.icon;
           const usagePercent = balance.total > 0 ? (balance.used / balance.total) * 100 : 0;
           

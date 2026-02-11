@@ -595,6 +595,7 @@ class GoogleCalendarService {
     const colors = {
       vacation: '9',    // Blue
       sick: '11',       // Red
+      remote: '10',     // Green
       bereavement: '8', // Gray
       other: '5',       // Yellow
     };

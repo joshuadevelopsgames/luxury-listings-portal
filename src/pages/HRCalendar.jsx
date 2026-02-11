@@ -28,6 +28,7 @@ import {
   Tag,
   Plane,
   Heart,
+  Laptop,
   ListFilter,
   Check,
   Edit,
@@ -183,6 +184,7 @@ const HRCalendar = () => {
   const leaveTypes = {
     vacation: { label: 'Vacation', color: 'bg-blue-100 text-blue-800', dotColor: 'bg-blue-500' },
     sick: { label: 'Sick Leave', color: 'bg-red-100 text-red-800', dotColor: 'bg-red-500' },
+    remote: { label: 'Remote', color: 'bg-green-100 text-green-800', dotColor: 'bg-green-500' },
     bereavement: { label: 'Bereavement', color: 'bg-gray-100 text-gray-800', dotColor: 'bg-gray-500' },
     other: { label: 'Other', color: 'bg-indigo-100 text-indigo-800', dotColor: 'bg-indigo-500' }
   };
@@ -960,6 +962,17 @@ const HRCalendar = () => {
               <Heart className="w-3.5 h-3.5" />
               Sick
             </button>
+            <button 
+              onClick={() => setFilterType('remote')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                filterType === 'remote' 
+                  ? 'bg-[#34c759] text-white' 
+                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+              }`}
+            >
+              <Laptop className="w-3.5 h-3.5" />
+              Remote
+            </button>
           </div>
 
           {filteredRequests.length === 0 ? (
@@ -984,12 +997,16 @@ const HRCalendar = () => {
                         ? 'bg-[#0071e3]/10' 
                         : request.type === 'sick' 
                           ? 'bg-[#ff3b30]/10' 
-                          : 'bg-[#86868b]/10'
+                          : request.type === 'remote'
+                            ? 'bg-[#34c759]/10'
+                            : 'bg-[#86868b]/10'
                     }`}>
                       {request.type === 'vacation' 
                         ? <Plane className="w-5 h-5 text-[#0071e3]" /> 
                         : request.type === 'sick' 
-                          ? <Heart className="w-5 h-5 text-[#ff3b30]" /> 
+                          ? <Heart className="w-5 h-5 text-[#ff3b30]" />
+                          : request.type === 'remote'
+                            ? <Laptop className="w-5 h-5 text-[#34c759]" /> 
                           : <CalendarIcon className="w-5 h-5 text-[#86868b]" />
                       }
                     </div>
@@ -1210,11 +1227,19 @@ const HRCalendar = () => {
                             <div className={`p-2 rounded-lg ${
                               request.type === 'vacation' 
                                 ? 'bg-[#0071e3]/10' 
-                                : 'bg-[#ff3b30]/10'
+                                : request.type === 'sick'
+                                  ? 'bg-[#ff3b30]/10'
+                                  : request.type === 'remote'
+                                    ? 'bg-[#34c759]/10'
+                                    : 'bg-[#86868b]/10'
                             }`}>
                               {request.type === 'vacation' 
                                 ? <Plane className="w-4 h-4 text-[#0071e3]" />
-                                : <Heart className="w-4 h-4 text-[#ff3b30]" />
+                                : request.type === 'sick'
+                                  ? <Heart className="w-4 h-4 text-[#ff3b30]" />
+                                  : request.type === 'remote'
+                                    ? <Laptop className="w-4 h-4 text-[#34c759]" />
+                                    : <CalendarIcon className="w-4 h-4 text-[#86868b]" />
                               }
                             </div>
                             <div>

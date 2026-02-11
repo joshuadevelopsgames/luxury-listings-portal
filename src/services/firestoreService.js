@@ -1175,13 +1175,17 @@ class FirestoreService {
     const def = (val, fallback) => (val !== undefined && val !== null && val !== '') ? Number(val) : fallback;
     const vac = raw?.vacation || {};
     const sick = raw?.sick || {};
+    const remote = raw?.remote || {};
     const vTotal = def(vac.total, 15);
     const vUsed = def(vac.used, 0);
     const sTotal = def(sick.total, 3);
     const sUsed = def(sick.used, 0);
+    const rTotal = def(remote.total, 0);
+    const rUsed = def(remote.used, 0);
     return {
       vacation: { total: vTotal, used: vUsed, remaining: Math.max(0, vTotal - vUsed) },
-      sick: { total: sTotal, used: sUsed, remaining: Math.max(0, sTotal - sUsed) }
+      sick: { total: sTotal, used: sUsed, remaining: Math.max(0, sTotal - sUsed) },
+      remote: { total: rTotal, used: rUsed, remaining: Math.max(0, rTotal - rUsed) }
     };
   }
 
@@ -1212,7 +1216,8 @@ class FirestoreService {
     }
     const toStore = {
       vacation: { total: Number(balances.vacation?.total) ?? 0, used: Number(balances.vacation?.used) ?? 0 },
-      sick: { total: Number(balances.sick?.total) ?? 0, used: Number(balances.sick?.used) ?? 0 }
+      sick: { total: Number(balances.sick?.total) ?? 0, used: Number(balances.sick?.used) ?? 0 },
+      remote: { total: Number(balances.remote?.total) ?? 0, used: Number(balances.remote?.used) ?? 0 }
     };
     try {
       const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
@@ -1501,7 +1506,7 @@ class FirestoreService {
       return { success: false, error: 'Invalid user email' };
     }
     
-    if (!leaveType || !['vacation', 'sick'].includes(leaveType)) {
+    if (!leaveType || !['vacation', 'sick', 'remote'].includes(leaveType)) {
       console.warn('⚠️ deductLeaveBalance called with invalid leave type:', leaveType);
       return { success: false, error: 'Invalid leave type' };
     }

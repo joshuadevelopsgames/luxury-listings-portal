@@ -103,7 +103,8 @@ export const getDaysUntil = (targetDate) => {
 const MIN_NOTICE_DAYS = {
   vacation: 14,    // 2 weeks notice for vacation
   sick: 0,         // Same day OK for sick
-  travel: 14       // 2 weeks for travel
+  travel: 14,      // 2 weeks for travel
+  remote: 0        // Same day OK for remote
 };
 
 /**
@@ -140,21 +141,21 @@ export const validateLeaveRequest = (request, userBalances, existingRequests = [
     errors.push('End date must be after start date');
   }
   
-  // Past date check (except for sick leave)
-  if (startDate < today && request.type !== 'sick') {
+  // Past date check (except for sick and remote)
+  if (startDate < today && request.type !== 'sick' && request.type !== 'remote') {
     errors.push('Start date cannot be in the past');
   }
   
   // Calculate requested days
   const requestedDays = calculateBusinessDays(request.startDate, request.endDate);
   
-  // Balance check
+  // Balance check (skip for remote when no balance or unlimited)
   const leaveType = request.type;
   if (userBalances && userBalances[leaveType]) {
     const balance = userBalances[leaveType];
     const remaining = balance.remaining ?? (balance.total - balance.used);
-    
-    if (requestedDays > remaining) {
+    const isUnlimitedRemote = leaveType === 'remote' && (balance.total == null || balance.total === 0);
+    if (!isUnlimitedRemote && requestedDays > remaining) {
       errors.push(
         `Insufficient ${leaveType} balance. You have ${remaining} days remaining but requested ${requestedDays} days.`
       );
@@ -261,7 +262,8 @@ export const getLeaveTypeInfo = (type) => {
   const types = {
     vacation: { label: 'Vacation', icon: '🏖️', color: 'text-[#0071e3]' },
     sick: { label: 'Sick Leave', icon: '🏥', color: 'text-[#ff3b30]' },
-    travel: { label: 'Business Travel', icon: '✈️', color: 'text-[#ff9500]' }
+    travel: { label: 'Business Travel', icon: '✈️', color: 'text-[#ff9500]' },
+    remote: { label: 'Remote', icon: '💻', color: 'text-[#34c759]' }
   };
   return types[type] || { label: type, icon: '📅', color: 'text-[#86868b]' };
 };
