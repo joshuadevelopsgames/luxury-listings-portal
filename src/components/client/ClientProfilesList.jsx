@@ -81,7 +81,8 @@ const ClientProfilesList = () => {
     packageSize: 12,
     postsRemaining: 10,
     paymentStatus: 'Pending',
-    platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+    platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
+    isInternal: false
   });
   const [adding, setAdding] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -281,6 +282,7 @@ const ClientProfilesList = () => {
         postsRemaining: addForm.postsRemaining,
         paymentStatus: addForm.paymentStatus,
         platforms: addForm.platforms,
+        isInternal: !!addForm.isInternal,
         approvalStatus: 'Approved',
         status: 'active',
         startDate: new Date().toISOString().split('T')[0],
@@ -300,7 +302,8 @@ const ClientProfilesList = () => {
         packageSize: 12,
         postsRemaining: 10,
         paymentStatus: 'Pending',
-        platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+        platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
+        isInternal: false
       });
       await loadData();
     } catch (error) {
@@ -1456,7 +1459,8 @@ const ClientProfilesList = () => {
                     packageSize: 12,
                     postsRemaining: 10,
                     paymentStatus: 'Pending',
-                    platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+                    platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
+                    isInternal: false
                   });
                 }}
                 className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
@@ -1505,6 +1509,17 @@ const ClientProfilesList = () => {
                     className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                   />
                 </div>
+
+                {/* Internal Account */}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!addForm.isInternal}
+                    onChange={(e) => setAddForm({ ...addForm, isInternal: e.target.checked })}
+                    className="w-4 h-4 rounded border-black/20 dark:border-white/20 text-[#0071e3] focus:ring-[#0071e3]"
+                  />
+                  <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Internal account (our company page)</span>
+                </label>
 
                 {/* Package Type & Size */}
                 <div className="grid grid-cols-2 gap-3">
@@ -1617,7 +1632,8 @@ const ClientProfilesList = () => {
                       packageSize: 12,
                       postsRemaining: 10,
                       paymentStatus: 'Pending',
-                      platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+                      platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
+                      isInternal: false
                     });
                   }}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"

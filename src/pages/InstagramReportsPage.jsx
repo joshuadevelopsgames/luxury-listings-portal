@@ -100,7 +100,7 @@ const groupReportsByYearMonth = (reportList) => {
 };
 
 // Admins see all Instagram reports (must match PermissionsContext + Firestore rules)
-const INSTAGRAM_ADMIN_EMAILS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+const INSTAGRAM_ADMIN_EMAILS = ['jrsschroeder@gmail.com'];
 
 const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
@@ -169,6 +169,9 @@ const InstagramReportsPage = () => {
     }
     return allClients.filter(isAssignedToMe);
   }, [allClients, currentUser?.email, currentUser?.uid, effectiveIsAdmin]);
+
+  const myClientsOnly = useMemo(() => myClients.filter(c => !c.isInternal), [myClients]);
+  const myInternalAccounts = useMemo(() => myClients.filter(c => c.isInternal), [myClients]);
 
   // Group reports by client
   const clientsWithReports = useMemo(() => {
@@ -510,13 +513,20 @@ const InstagramReportsPage = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2 mb-1">
             <Building2 className="w-4 h-4 text-[#0071e3]" />
             <span className="text-[11px] sm:text-[12px] text-[#86868b]">Clients</span>
           </div>
-          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{myClients.length}</p>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{myClientsOnly.length}</p>
+        </div>
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2 mb-1">
+            <FolderOpen className="w-4 h-4 text-[#8e8e93]" />
+            <span className="text-[11px] sm:text-[12px] text-[#86868b]">Internal Accounts</span>
+          </div>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{myInternalAccounts.length}</p>
         </div>
         <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2 mb-1">
