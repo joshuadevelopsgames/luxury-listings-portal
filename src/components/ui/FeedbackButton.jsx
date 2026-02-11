@@ -25,8 +25,18 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-// Developer email for notifications
-const DEVELOPER_EMAIL = 'joshua@smmluxurylistings.com';
+// Developer emails (last message from any of these = "developer replied" for unread badge)
+const DEVELOPER_EMAILS = ['joshua@smmluxurylistings.com', 'jrsschroeder@gmail.com'].map(e => e.toLowerCase());
+
+function hasUnread(chat, currentUserEmail) {
+  if (!chat?.messages?.length || !currentUserEmail) return false;
+  const last = chat.messages[chat.messages.length - 1];
+  const fromDeveloper = last.senderEmail && DEVELOPER_EMAILS.includes(String(last.senderEmail).toLowerCase());
+  if (!fromDeveloper) return false;
+  const lastRead = chat.userLastReadAt?.toDate?.() ?? (chat.userLastReadAt ? new Date(chat.userLastReadAt) : null);
+  if (!lastRead) return true;
+  return new Date(last.timestamp) > lastRead;
+}
 
 export default function FeedbackButton() {
   const { currentUser } = useAuth();
@@ -48,7 +58,7 @@ export default function FeedbackButton() {
     // Check if there was an active chat on page load
     return localStorage.getItem('feedbackActiveChatId') !== null;
   });
-  const chatPollRef = useRef(null);
+  const chatUnsubscribeRef = useRef(null);
   const hasRestoredChat = useRef(false);
 
   // Element inspection states
@@ -265,11 +275,20 @@ export default function FeedbackButton() {
   };
 
   // Load chat detail with messages
-  const loadChatDetail = async (chatId) => {
+  const loadChatDetail = async (chatId, markRead = false) => {
     try {
       const chat = await firestoreService.getFeedbackChatById(chatId);
       setSelectedChat(chat);
       setActiveChat(chat);
+      if (markRead) {
+        try {
+          await firestoreService.updateFeedbackChatUserLastRead(chatId);
+          const updated = await firestoreService.getFeedbackChatById(chatId);
+          setSelectedChat(updated);
+          setActiveChat(updated);
+          setMyChats(prev => prev.map(c => c.id === chatId ? updated : c));
+        } catch {}
+      }
       return chat;
     } catch (error) {
       console.error('Error loading chat:', error);
@@ -287,10 +306,10 @@ export default function FeedbackButton() {
       const openChat = chats?.find(c => c.status === 'open');
       
       if (openChat) {
-        // Open existing chat
-        const chat = await loadChatDetail(openChat.id);
+        // Open existing chat and mark as read
+        await loadChatDetail(openChat.id, true);
         setView('chat-detail');
-        startChatPolling(openChat.id);
+        startChatSubscription(openChat.id);
       } else {
         // Go to new chat form
         setView('chat');
@@ -303,40 +322,33 @@ export default function FeedbackButton() {
     }
   };
 
-  // Start polling for chat updates
-  const startChatPolling = (chatId) => {
-    if (chatPollRef.current) clearInterval(chatPollRef.current);
-    
-    chatPollRef.current = setInterval(async () => {
-      try {
-        const chat = await firestoreService.getFeedbackChatById(chatId);
-        if (chat) {
-          setSelectedChat(chat);
-          setActiveChat(chat);
-          // Check if chat was closed by developer
-          if (chat.status === 'closed' || chat.status === 'archived') {
-            stopChatPolling();
-            localStorage.removeItem('feedbackActiveChatId');
-            setIsMinimized(false);
-          }
-        }
-      } catch (error) {
-        console.error('Error polling chat:', error);
+  // Real-time subscription to chat updates
+  const startChatSubscription = (chatId) => {
+    if (chatUnsubscribeRef.current) {
+      chatUnsubscribeRef.current();
+      chatUnsubscribeRef.current = null;
+    }
+    chatUnsubscribeRef.current = firestoreService.subscribeToFeedbackChat(chatId, (chat) => {
+      if (!chat) return;
+      setSelectedChat(chat);
+      setActiveChat(chat);
+      if (chat.status === 'closed' || chat.status === 'archived') {
+        stopChatSubscription();
+        localStorage.removeItem('feedbackActiveChatId');
+        setIsMinimized(false);
       }
-    }, 5000); // Poll every 5 seconds
+    });
   };
 
-  // Stop polling
-  const stopChatPolling = () => {
-    if (chatPollRef.current) {
-      clearInterval(chatPollRef.current);
-      chatPollRef.current = null;
+  const stopChatSubscription = () => {
+    if (chatUnsubscribeRef.current) {
+      chatUnsubscribeRef.current();
+      chatUnsubscribeRef.current = null;
     }
   };
 
-  // Cleanup polling on unmount
   useEffect(() => {
-    return () => stopChatPolling();
+    return () => stopChatSubscription();
   }, []);
 
   // Persist active chat ID to localStorage
@@ -360,8 +372,8 @@ export default function FeedbackButton() {
           if (chat && chat.status === 'open') {
             setActiveChat(chat);
             setSelectedChat(chat);
-            // Start polling in background
-            startChatPolling(savedChatId);
+            // Start real-time subscription
+            startChatSubscription(savedChatId);
           } else {
             // Chat was closed, clear localStorage
             localStorage.removeItem('feedbackActiveChatId');
@@ -376,15 +388,28 @@ export default function FeedbackButton() {
     }
   }, [currentUser?.email]);
 
+  // Load myChats in background so unread badge can show (e.g. when minimized)
+  useEffect(() => {
+    if (!currentUser?.email) return;
+    firestoreService.getFeedbackChats(currentUser.email).then(setMyChats).catch(() => {});
+  }, [currentUser?.email]);
+
   // Handle opening the panel
   const handleOpen = () => {
     setIsOpen(true);
     setIsMinimized(false);
-    // If there's an active chat, restore it
+    // If there's an active chat, restore it and mark as read
     if (activeChat && activeChat.status === 'open') {
       setSelectedChat(activeChat);
       setView('chat-detail');
-      startChatPolling(activeChat.id);
+      startChatSubscription(activeChat.id);
+      firestoreService.updateFeedbackChatUserLastRead(activeChat.id).then(() => {
+        firestoreService.getFeedbackChatById(activeChat.id).then((updated) => {
+          setSelectedChat(updated);
+          setActiveChat(updated);
+          setMyChats(prev => prev.map(c => c.id === activeChat.id ? updated : c));
+        });
+      }).catch(() => {});
     } else {
       setView('menu');
     }
@@ -396,7 +421,7 @@ export default function FeedbackButton() {
     if (view === 'chat-detail' && selectedChat && selectedChat.status === 'open') {
       setIsOpen(false);
       setIsMinimized(true);
-      // Keep polling in background
+      // Keep real-time subscription active
     } else {
       setIsOpen(false);
       setIsMinimized(false);
@@ -406,7 +431,7 @@ export default function FeedbackButton() {
       setChatMessage('');
       setSelectedChat(null);
       setSelectedElement(null);
-      stopChatPolling();
+      stopChatSubscription();
       setActiveChat(null);
     }
   };
@@ -419,7 +444,7 @@ export default function FeedbackButton() {
     setChatMessage('');
     setSelectedChat(null);
     setActiveChat(null);
-    stopChatPolling();
+    stopChatSubscription();
     localStorage.removeItem('feedbackActiveChatId');
   };
 
@@ -543,7 +568,7 @@ export default function FeedbackButton() {
       const chat = await loadChatDetail(chatId);
       if (chat) {
         setView('chat-detail');
-        startChatPolling(chatId);
+        startChatSubscription(chatId);
       }
     } catch (error) {
       console.error('Error starting chat:', error);
@@ -603,15 +628,17 @@ export default function FeedbackButton() {
     }
   ];
 
+  const showUnreadBadge = (activeChat && hasUnread(activeChat, currentUser?.email)) || (myChats.length > 0 && myChats.some(c => hasUnread(c, currentUser?.email)));
+
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Button - Apple-esque blue gradient */}
       <button
         onClick={handleOpen}
-        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center z-40 ${
+        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] flex items-center justify-center z-40 ${
           isMinimized && activeChat?.status === 'open'
-            ? 'bg-[#34c759] shadow-[#34c759]/30 hover:shadow-[#34c759]/40 animate-pulse'
-            : 'bg-gradient-to-br from-[#0071e3] to-[#5856d6] shadow-[#0071e3]/30 hover:shadow-[#0071e3]/40'
+            ? 'bg-gradient-to-br from-[#34c759] to-[#30d158] shadow-[#34c759]/35 hover:shadow-[#34c759]/45'
+            : 'bg-gradient-to-br from-[#0077ed] via-[#0071e3] to-[#5856d6] shadow-[0 4px 14px rgba(0,113,237,0.4)] hover:shadow-[0 6px 20px rgba(0,113,237,0.45)]'
         }`}
         title={isMinimized ? 'Return to chat' : 'Feedback & Support'}
       >
@@ -620,7 +647,10 @@ export default function FeedbackButton() {
         ) : (
           <MessageCircle className="w-6 h-6" />
         )}
-        {isMinimized && activeChat?.status === 'open' && (
+        {showUnreadBadge && (
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#ff3b30] rounded-full border-2 border-white dark:border-[#1c1c1e]" aria-label="New message" />
+        )}
+        {isMinimized && activeChat?.status === 'open' && !showUnreadBadge && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
             <span className="w-2 h-2 bg-[#34c759] rounded-full animate-ping" />
           </span>
@@ -917,9 +947,10 @@ export default function FeedbackButton() {
                     {myChats.map(chat => (
                       <button
                         key={chat.id}
-                        onClick={() => {
-                          loadChatDetail(chat.id);
+                        onClick={async () => {
+                          await loadChatDetail(chat.id, true);
                           setView('chat-detail');
+                          if (chat.status === 'open') startChatSubscription(chat.id);
                         }}
                         className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
                       >
@@ -932,13 +963,16 @@ export default function FeedbackButton() {
                             <Clock className="w-5 h-5 text-[#34c759]" />
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 relative">
                           <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
                             {chat.lastMessage || 'Chat'}
                           </p>
                           <p className="text-[11px] text-[#86868b]">
                             {chat.status === 'closed' ? 'Closed' : 'Open'} • {chat.messageCount || 0} messages
                           </p>
+                          {chat.status === 'open' && hasUnread(chat, currentUser?.email) && (
+                            <span className="absolute top-0 right-0 w-2 h-2 bg-[#ff3b30] rounded-full" />
+                          )}
                         </div>
                         <ChevronRight className="w-4 h-4 text-[#86868b]" />
                       </button>
@@ -1042,18 +1076,20 @@ export default function FeedbackButton() {
                 ) : (
                   <div className="text-center py-4 rounded-xl bg-[#86868b]/10">
                     <CheckCircle2 className="w-6 h-6 text-[#86868b] mx-auto mb-2" />
-                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Chat Ended</p>
-                    <p className="text-[12px] text-[#86868b] mt-1">This conversation has been closed by the developer.</p>
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Chat ended</p>
+                    <p className="text-[12px] text-[#86868b] mt-1">This conversation was closed. Start a new chat to message again (you’ll be notified).</p>
                     <button
                       onClick={() => {
                         setActiveChat(null);
                         setSelectedChat(null);
-                        setView('menu');
+                        setView('chat');
+                        setChatMessage('');
                         localStorage.removeItem('feedbackActiveChatId');
+                        stopChatSubscription();
                       }}
-                      className="mt-3 px-4 py-2 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
+                      className="mt-3 px-4 py-2 rounded-lg bg-gradient-to-br from-[#0077ed] to-[#5856d6] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
                     >
-                      Start New Chat
+                      Start new chat
                     </button>
                   </div>
                 )}

@@ -968,10 +968,17 @@ const ITSupportPage = () => {
                             <button
                               key={c.id}
                               type="button"
-                              onClick={() => setPageSelectedChat(c)}
+                              onClick={async () => {
+                                const chat = await firestoreService.getFeedbackChatById(c.id);
+                                setPageSelectedChat(chat);
+                                if (chat.status === 'open') {
+                                  firestoreService.updateFeedbackChatUserLastRead(c.id).catch(() => {});
+                                }
+                              }}
                               className="w-full text-left px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15"
                             >
-                              {c.lastMessage?.substring(0, 60)}…
+                              <span className={c.status === 'closed' ? 'text-[#86868b]' : ''}>{c.lastMessage?.substring(0, 60)}…</span>
+                              {c.status === 'closed' && <span className="text-[11px] text-[#86868b] ml-1">(closed)</span>}
                             </button>
                           ))}
                         </div>
@@ -995,24 +1002,37 @@ const ITSupportPage = () => {
                         </div>
                       ))}
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Type a message…"
-                        value={pageChatMessage}
-                        onChange={(e) => setPageChatMessage(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handlePageSendMessage()}
-                        className="flex-1 h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                      />
-                      <button
-                        type="button"
-                        onClick={handlePageSendMessage}
-                        disabled={pageSubmitting}
-                        className="px-5 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium disabled:opacity-50"
-                      >
-                        Send
-                      </button>
-                    </div>
+                    {pageSelectedChat.status === 'open' ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Type a message…"
+                          value={pageChatMessage}
+                          onChange={(e) => setPageChatMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handlePageSendMessage()}
+                          className="flex-1 h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handlePageSendMessage}
+                          disabled={pageSubmitting}
+                          className="px-5 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium disabled:opacity-50"
+                        >
+                          Send
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="pt-3 border-t border-black/5 dark:border-white/10 text-center">
+                        <p className="text-[13px] text-[#86868b]">This chat was closed. Start a new chat to message again.</p>
+                        <button
+                          type="button"
+                          onClick={() => { setPageSelectedChat(null); setPageChatMessage(''); }}
+                          className="mt-2 px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed]"
+                        >
+                          Start new chat
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

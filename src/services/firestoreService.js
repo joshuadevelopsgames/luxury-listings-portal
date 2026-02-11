@@ -4286,6 +4286,23 @@ class FirestoreService {
   }
 
   /**
+   * Subscribe to a feedback chat in real time (onSnapshot). Returns unsubscribe function.
+   */
+  subscribeToFeedbackChat(chatId, callback) {
+    if (!chatId || typeof callback !== 'function') return () => {};
+    const docRef = doc(db, this.collections.FEEDBACK_CHATS, chatId);
+    return onSnapshot(docRef, (docSnap) => {
+      if (!docSnap.exists()) {
+        callback(null);
+        return;
+      }
+      callback({ id: docSnap.id, ...docSnap.data() });
+    }, (error) => {
+      console.error('❌ Feedback chat subscription error:', error);
+    });
+  }
+
+  /**
    * Add message to feedback chat
    */
   async addFeedbackChatMessage(chatId, messageData) {
@@ -4332,6 +4349,21 @@ class FirestoreService {
       console.log('✅ Feedback chat closed:', chatId);
     } catch (error) {
       console.error('❌ Error closing feedback chat:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mark feedback chat as read by the user (clears unread badge when user views the conversation)
+   */
+  async updateFeedbackChatUserLastRead(chatId) {
+    try {
+      await updateDoc(doc(db, this.collections.FEEDBACK_CHATS, chatId), {
+        userLastReadAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('❌ Error updating chat user last read:', error);
       throw error;
     }
   }
