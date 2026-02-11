@@ -25,7 +25,8 @@ import {
   Youtube,
   Upload,
   Camera,
-  Loader2
+  Loader2,
+  Archive
 } from 'lucide-react';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestoreService } from '../../services/firestoreService';
@@ -152,36 +153,38 @@ const ClientProfilesList = ({ internalOnly = false }) => {
     [clients, internalOnly]
   );
 
-  // Calculate stats from displayed list
+  const isPaused = (c) => c.approvalStatus === 'Paused' || c.approvalStatus === 'Pending';
+  const isCancelled = (c) => c.approvalStatus === 'Cancelled' || c.approvalStatus === 'Rejected';
+
+  // Calculate stats from displayed list (cancelled = archived, not counted in total/active)
+  const nonArchived = displayClients.filter(c => !isCancelled(c));
   const stats = {
-    total: displayClients.length,
-    withManager: displayClients.filter(c => getAssignedManager(c)).length,
-    withoutManager: displayClients.filter(c => !getAssignedManager(c)).length,
+    total: nonArchived.length,
+    withManager: nonArchived.filter(c => getAssignedManager(c)).length,
+    withoutManager: nonArchived.filter(c => !getAssignedManager(c)).length,
     active: displayClients.filter(c => c.approvalStatus === 'Approved').length,
-    pending: displayClients.filter(c => c.approvalStatus === 'Pending').length
+    paused: displayClients.filter(c => isPaused(c)).length,
+    archived: displayClients.filter(c => isCancelled(c)).length
   };
 
   const filteredClients = displayClients.filter(client => {
-    // Search filter
+    const statusNorm = client.approvalStatus?.toLowerCase();
+    const isArchived = statusNorm === 'cancelled' || statusNorm === 'rejected';
+    if (statusFilter === 'all' && isArchived) return false;
+    if (statusFilter === 'cancelled') return isArchived;
+    if (statusFilter === 'approved' && statusNorm !== 'approved') return false;
+    if (statusFilter === 'paused' && statusNorm !== 'paused' && statusNorm !== 'pending') return false;
+
     const matchesSearch = 
       client.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.clientEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.packageType?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Manager filter
     const matchesManager = managerFilter === 'all' || 
       (managerFilter === 'unassigned' && !getAssignedManager(client)) ||
       (managerFilter !== 'unassigned' && getAssignedManager(client)?.email === managerFilter);
-    
-    // Package filter
     const matchesPackage = packageFilter === 'all' || 
       client.packageType?.toLowerCase() === packageFilter.toLowerCase();
-    
-    // Status filter
-    const matchesStatus = statusFilter === 'all' ||
-      client.approvalStatus?.toLowerCase() === statusFilter.toLowerCase();
-    
-    return matchesSearch && matchesManager && matchesPackage && matchesStatus;
+    return matchesSearch && matchesManager && matchesPackage;
   }).sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
 
   const handleAssignManager = async (clientId, managerEmail) => {
@@ -366,7 +369,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
 
       {/* Stats Cards */}
       {displayClients.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -414,11 +417,22 @@ const ClientProfilesList = ({ internalOnly = false }) => {
           <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium text-[#86868b]">Pending</p>
-                <p className="text-[28px] font-semibold text-[#ff9500] mt-1">{stats.pending}</p>
+                <p className="text-[12px] font-medium text-[#86868b]">Paused</p>
+                <p className="text-[28px] font-semibold text-[#ff9500] mt-1">{stats.paused}</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-[#ff9500]/10 flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-[#ff9500]" />
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[12px] font-medium text-[#86868b]">Archived</p>
+                <p className="text-[28px] font-semibold text-[#86868b] mt-1">{stats.archived}</p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-[#86868b]/10 flex items-center justify-center">
+                <Archive className="w-5 h-5 text-[#86868b]" />
               </div>
             </div>
           </div>
@@ -472,8 +486,8 @@ const ClientProfilesList = ({ internalOnly = false }) => {
               >
                 <option value="all">All Status</option>
                 <option value="approved">Approved</option>
-                <option value="pending">Pending</option>
-                <option value="rejected">Rejected</option>
+                <option value="paused">Paused</option>
+                <option value="cancelled">Archived (Cancelled)</option>
               </select>
 
               {/* View Toggle */}
@@ -589,10 +603,11 @@ const ClientProfilesList = ({ internalOnly = false }) => {
           <div className="divide-y divide-black/5 dark:divide-white/5">
             {filteredClients.map((client) => {
               const manager = getAssignedManager(client);
+              const paused = isPaused(client);
               return (
                 <div 
                   key={client.id} 
-                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 py-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer group items-center"
+                  className={`grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 py-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer group items-center ${paused ? 'opacity-60 bg-black/[0.02] dark:bg-white/[0.02]' : ''}`}
                   onClick={() => setSelectedClient(client)}
                 >
                   {/* Client Info */}
@@ -675,10 +690,11 @@ const ClientProfilesList = ({ internalOnly = false }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => {
             const manager = getAssignedManager(client);
+            const paused = isPaused(client);
             return (
               <div 
                 key={client.id} 
-                className="relative rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all cursor-pointer group"
+                className={`relative rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all cursor-pointer group ${paused ? 'opacity-60' : ''}`}
                 onClick={() => setSelectedClient(client)}
               >
                 {/* Edit/Delete buttons at top right */}
@@ -698,7 +714,8 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                           postsUsed: client.postsUsed || 0,
                           postsRemaining: client.postsRemaining || 0,
                           paymentStatus: client.paymentStatus || 'Pending',
-                          platforms: client.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false }
+                          platforms: client.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
+                          approvalStatus: client.approvalStatus === 'Pending' ? 'Paused' : client.approvalStatus === 'Rejected' ? 'Cancelled' : (client.approvalStatus || 'Approved')
                         });
                         setShowEditModal(true);
                       }}
@@ -885,7 +902,8 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                           postsRemaining: selectedClient.postsRemaining || 0,
                           paymentStatus: selectedClient.paymentStatus || 'Pending',
                           platforms: selectedClient.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
-                          profilePhoto: selectedClient.profilePhoto || ''
+                          profilePhoto: selectedClient.profilePhoto || '',
+                          approvalStatus: selectedClient.approvalStatus === 'Pending' ? 'Paused' : selectedClient.approvalStatus === 'Rejected' ? 'Cancelled' : (selectedClient.approvalStatus || 'Approved')
                         });
                         setShowEditModal(true);
                       }}
@@ -986,9 +1004,13 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                       </span>
                     </div>
                     <div className="p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                      <p className="text-[11px] text-[#86868b] mb-1">Approval Status</p>
-                      <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${selectedClient.approvalStatus === 'Approved' ? 'bg-[#34c759]/10 text-[#34c759]' : 'bg-[#ff9500]/10 text-[#ff9500]'}`}>
-                        {selectedClient.approvalStatus || 'Unknown'}
+                      <p className="text-[11px] text-[#86868b] mb-1">Status</p>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
+                        selectedClient.approvalStatus === 'Approved' ? 'bg-[#34c759]/10 text-[#34c759]' :
+                        selectedClient.approvalStatus === 'Paused' || selectedClient.approvalStatus === 'Pending' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
+                        selectedClient.approvalStatus === 'Cancelled' || selectedClient.approvalStatus === 'Rejected' ? 'bg-[#86868b]/10 text-[#86868b]' : 'bg-[#0071e3]/10 text-[#0071e3]'
+                      }`}>
+                        {selectedClient.approvalStatus === 'Pending' ? 'Paused' : selectedClient.approvalStatus === 'Rejected' ? 'Cancelled (Archived)' : (selectedClient.approvalStatus || 'Approved')}
                       </span>
                     </div>
                   </div>
@@ -1348,6 +1370,21 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                         <option value="Paid">Paid</option>
                         <option value="Overdue">Overdue</option>
                         <option value="Partial">Partial</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={editForm.approvalStatus || 'Approved'}
+                        onChange={(e) => setEditForm({...editForm, approvalStatus: e.target.value})}
+                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      >
+                        <option value="Approved">Approved (Active)</option>
+                        <option value="Paused">Paused</option>
+                        <option value="Cancelled">Cancelled (Archived)</option>
                       </select>
                     </div>
 
