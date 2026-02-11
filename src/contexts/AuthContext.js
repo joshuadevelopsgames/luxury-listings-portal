@@ -289,15 +289,17 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Check if user is approved
+    // Check if user is approved (direct lookup first so admin-added members are found regardless of doc id casing)
     try {
-      const approvedUsers = await firestoreService.getApprovedUsers();
-      const emailLower = (email || '').toLowerCase();
-      const matched = approvedUsers.filter(u =>
-        (u.id || '').toLowerCase() === emailLower || (u.email || '').toLowerCase() === emailLower
-      );
-      const approvedUser = matched.find(u => (u.id || '').toLowerCase() === emailLower) || matched.find(u => (u.email || '').toLowerCase() === emailLower) || matched[0];
-      
+      let approvedUser = await firestoreService.getApprovedUserByEmail(email);
+      if (!approvedUser) {
+        const approvedUsers = await firestoreService.getApprovedUsers();
+        const emailLower = (email || '').toLowerCase();
+        const matched = approvedUsers.filter(u =>
+          (u.id || '').toLowerCase() === emailLower || (u.email || '').toLowerCase() === emailLower
+        );
+        approvedUser = matched[0];
+      }
       if (approvedUser?.isApproved) {
         // Approved user
         const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];

@@ -101,7 +101,7 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative group">
+    <div ref={setNodeRef} style={style} className="relative group">
       {bulkMode && (
         <div className="absolute top-2 left-2 z-10">
           <input
@@ -113,7 +113,9 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
           />
         </div>
       )}
-      
+      <div ref={setActivatorNodeRef} {...attributes} {...listeners} className="absolute top-2 right-2 z-10 p-1 rounded cursor-grab active:cursor-grabbing touch-none text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10">
+        <GripVertical className="w-4 h-4" />
+      </div>
       <TaskCard task={task} {...props} />
     </div>
   );
@@ -138,14 +140,19 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative group">
-      <TaskListItem 
-        task={task} 
-        isSelected={isSelected}
-        onToggleSelect={onToggleSelect}
-        bulkMode={bulkMode}
-        {...props} 
-      />
+    <div ref={setNodeRef} style={style} className="relative group">
+      <div ref={setActivatorNodeRef} {...attributes} {...listeners} className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-1 pr-0.5 cursor-grab active:cursor-grabbing touch-none text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10">
+        <GripVertical className="w-4 h-4" />
+      </div>
+      <div className="pl-6">
+        <TaskListItem 
+          task={task} 
+          isSelected={isSelected}
+          onToggleSelect={onToggleSelect}
+          bulkMode={bulkMode}
+          {...props} 
+        />
+      </div>
     </div>
   );
 };
@@ -707,6 +714,23 @@ const TasksPage = () => {
       return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
     }));
   }, [activeFilter, tasks, activeSmartFilter, timeTick, archivedTaskIds, showArchivedTasks]);
+
+  const overdueTasks = useMemo(() =>
+    tasks.filter(t => t.status !== 'completed' && isOverdue(t)),
+    [tasks]
+  );
+
+  const renewAllOverdue = async () => {
+    if (overdueTasks.length === 0) return;
+    const today = format(new Date(), 'yyyy-MM-dd');
+    try {
+      await Promise.all(overdueTasks.map(t => DailyTask.update(t.id, { due_date: today })));
+      await refreshTasks();
+      toast.success('All overdue tasks set to today');
+    } catch (e) {
+      toast.error(e?.message || 'Failed to renew');
+    }
+  };
 
   const applySmartFilter = (filter) => {
     if (filter === null) {
@@ -1392,6 +1416,7 @@ const TasksPage = () => {
         onDelete={handleDeleteTask}
         tasks={activeFilter === 'outbox' ? Object.values(outboxTaskMap) : filteredTasks}
         onNavigate={(newTask) => setEditingTask(newTask)}
+        onTaskCreated={refreshTasks}
       />
 
       {/* Outbox: tasks you requested others to do */}
@@ -1556,6 +1581,13 @@ const TasksPage = () => {
             </div>
           ) : (
             <>
+              {overdueTasks.length > 0 && activeFilter !== 'outbox' && (
+                <div className="mb-2 text-[13px] text-[#86868b]">
+                  <button type="button" onClick={renewAllOverdue} className="text-[#0071e3] hover:underline">
+                    Renew all overdue?
+                  </button>
+                </div>
+              )}
               {activeFilter === 'completed' && tasks.some((t) => t.status === 'completed' && archivedTaskIds.has(t.id)) && (
                 <div className="mb-3 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-between">
                   <span className="text-[12px] text-[#86868b]">Archived is local to you</span>

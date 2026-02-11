@@ -26,7 +26,7 @@ import { DailyTask } from '../../entities/DailyTask';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
-const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], onNavigate }) => {
+const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], onNavigate, onTaskCreated }) => {
   const { currentUser } = useAuth();
   const { confirm } = useConfirm();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -438,6 +438,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
       const newTask = await DailyTask.create(duplicatedTask);
       console.log('✅ Task duplicated successfully:', newTask);
       toast.success('Task duplicated successfully!');
+      onTaskCreated?.();
       setShowMoreMenu(false);
     } catch (error) {
       console.error('❌ Error duplicating task:', error);

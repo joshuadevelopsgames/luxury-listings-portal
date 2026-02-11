@@ -32,10 +32,11 @@ service cloud.firestore {
       allow write: if isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Pending users - authenticated users can read, admins can write
+    // Pending users - authenticated users can read; users can create only their own (so they appear for approval), admins can update/delete
     match /pending_users/{document=**} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.email == request.auth.token.email;
+      allow update, delete: if isAdmin();
     }
     
     // Approved users - users can read; admins create/delete; users can create/update own doc (onboarding, My Profile)

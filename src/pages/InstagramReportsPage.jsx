@@ -753,6 +753,7 @@ const InstagramReportsPage = () => {
         <ReportModal
           report={editingReport}
           preSelectedClientId={preSelectedClientId}
+          clientList={myClients}
           onClose={() => {
             setShowCreateModal(false);
             setEditingReport(null);
@@ -867,7 +868,7 @@ const InstagramReportsPage = () => {
 };
 
 // Report Create/Edit Modal Component
-const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
+const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave }) => {
   // Parse existing dates if editing
   const parseExistingDate = (dateField) => {
     if (!dateField) return '';
@@ -928,22 +929,29 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
     }
   };
 
-  // Load clients for dropdown
+  // Load clients for dropdown: use clientList (filtered by assignment for non-admins) when provided
   useEffect(() => {
+    if (clientList !== undefined) {
+      const sorted = [...(clientList || [])].sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
+      setClients(sorted);
+      setLoadingClients(false);
+      if (preSelectedClientId && !formData.clientName) {
+        const selectedClient = sorted.find(c => c.id === preSelectedClientId);
+        if (selectedClient) {
+          setFormData(prev => ({ ...prev, clientName: selectedClient.clientName || selectedClient.name || '' }));
+        }
+      }
+      return;
+    }
     const loadClients = async () => {
       try {
         const clientsList = await firestoreService.getClients();
         const sortedClients = clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
         setClients(sortedClients);
-        
-        // If preSelectedClientId is set, update clientName
         if (preSelectedClientId && !formData.clientName) {
           const selectedClient = sortedClients.find(c => c.id === preSelectedClientId);
           if (selectedClient) {
-            setFormData(prev => ({
-              ...prev,
-              clientName: selectedClient.clientName || selectedClient.name || ''
-            }));
+            setFormData(prev => ({ ...prev, clientName: selectedClient.clientName || selectedClient.name || '' }));
           }
         }
       } catch (error) {
@@ -953,7 +961,7 @@ const ReportModal = ({ report, preSelectedClientId, onClose, onSave }) => {
       }
     };
     loadClients();
-  }, [preSelectedClientId]);
+  }, [preSelectedClientId, clientList]);
 
   // Auto-generate dateRange string when dates change
   useEffect(() => {

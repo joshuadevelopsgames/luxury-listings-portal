@@ -200,12 +200,13 @@ class FirestoreService {
     }
   }
 
-  // Approve a user (move from pending to approved)
+  // Approve a user (move from pending to approved). Doc id = lowercase email for consistent lookup.
   async approveUser(userId, userData) {
     try {
-      // Add to approved users
-      await setDoc(doc(db, this.collections.APPROVED_USERS, userData.email), {
+      const emailKey = (userData.email || '').trim().toLowerCase();
+      await setDoc(doc(db, this.collections.APPROVED_USERS, emailKey), {
         ...userData,
+        email: userData.email?.trim() || emailKey,
         approvedAt: serverTimestamp(),
         isApproved: true
       });
@@ -261,29 +262,33 @@ class FirestoreService {
     }
   }
 
-  // Get one approved user by email (for fresh onboarding check). Tries exact id then lowercase so we find doc regardless of casing.
+  // Get one approved user by email. Tries exact id, then lowercase; if still not found, finds by case-insensitive match (handles admin-added docs with different casing).
   async getApprovedUserByEmail(email) {
     if (!email) return null;
     try {
       const trimmed = (email || '').trim();
+      const lower = trimmed.toLowerCase();
       let docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, trimmed));
-      if (!docSnap.exists()) {
-        const lower = trimmed.toLowerCase();
-        if (lower !== trimmed) docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, lower));
-      }
-      if (!docSnap?.exists()) return null;
-      return { id: docSnap.id, ...docSnap.data() };
+      if (!docSnap.exists() && lower !== trimmed)
+        docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, lower));
+      if (docSnap?.exists())
+        return { id: docSnap.id, ...docSnap.data() };
+      const snapshot = await getDocs(collection(db, this.collections.APPROVED_USERS));
+      const found = snapshot.docs.find(d => (d.id || '').toLowerCase() === lower);
+      return found ? { id: found.id, ...found.data() } : null;
     } catch (error) {
       console.error('Error getting approved user:', error);
       return null;
     }
   }
 
-  // Add approved user
+  // Add approved user (doc id = lowercase email so sign-in lookup always finds them)
   async addApprovedUser(userData) {
     try {
-      await setDoc(doc(db, this.collections.APPROVED_USERS, userData.email), {
+      const emailKey = (userData.email || '').trim().toLowerCase();
+      await setDoc(doc(db, this.collections.APPROVED_USERS, emailKey), {
         ...userData,
+        email: userData.email?.trim() || emailKey,
         createdAt: serverTimestamp(),
         isApproved: true
       });

@@ -507,6 +507,28 @@ const HRCalendar = () => {
   // Filter requests based on archive status
   const activeRequests = leaveRequests.filter(r => !r.archived);
   const archivedRequests = leaveRequests.filter(r => r.archived);
+
+  const handleExport = () => {
+    const rows = leaveRequests.map(r => ({
+      Employee: (r.employeeName || '').replace(/"/g, '""'),
+      Type: leaveTypes[r.type]?.label || r.type,
+      'Start Date': r.startDate,
+      'End Date': r.endDate,
+      Days: r.days ?? '',
+      Status: r.status,
+      Reason: (r.reason || r.description || '').replace(/"/g, '""')
+    }));
+    const headers = ['Employee', 'Type', 'Start Date', 'End Date', 'Days', 'Status', 'Reason'];
+    const csv = [headers.join(','), ...rows.map(r => headers.map(h => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hr-calendar-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Export downloaded');
+  };
   const displayRequests = showArchived ? archivedRequests : activeRequests;
 
   // Form handling functions
@@ -731,7 +753,10 @@ const HRCalendar = () => {
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Filter</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+          >
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export</span>
           </button>
