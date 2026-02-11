@@ -8,11 +8,12 @@
  * - Quick actions
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useClients } from '../../../contexts/ClientsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import { openaiService } from '../../../services/openaiService';
 import PlatformIcons from '../../../components/PlatformIcons';
@@ -53,12 +54,11 @@ import {
 const MyClientsPage = () => {
   const navigate = useNavigate();
   const { currentUser, isViewingAs } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [clients, setClients] = useState([]);
+  const { clients: allClients, loading: clientsLoading, getClientById } = useClients();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedClient, setSelectedClient] = useState(null);
-  const [detailClient, setDetailClient] = useState(null); // For detail modal
+  const [detailClientId, setDetailClientId] = useState(null); // For detail modal – id so modal gets live data from context
   const [logPostClient, setLogPostClient] = useState(null);
   const [logPlatform, setLogPlatform] = useState('instagram');
   const [logSaving, setLogSaving] = useState(false);
@@ -78,25 +78,24 @@ const MyClientsPage = () => {
     return am === email || (uid && am === uid);
   };
 
-  useEffect(() => {
-    const loadClients = async () => {
-      if (!currentUser?.email && !currentUser?.uid) return;
+  const clients = useMemo(
+    () => allClients.filter(isAssignedToMe),
+    [allClients, currentUser?.email, currentUser?.uid]
+  );
+  const detailClient = detailClientId ? getClientById(detailClientId) : null;
 
+  useEffect(() => {
+    const loadSnapshots = async () => {
+      if (!currentUser?.email && !currentUser?.uid) return;
       try {
-        const allClients = await firestoreService.getClients();
-        const myClients = allClients.filter(isAssignedToMe);
-        setClients(myClients);
         const snapshots = await firestoreService.getClientHealthSnapshots();
         setClientHealthSnapshots(snapshots);
-        console.log(`📋 Loaded ${myClients.length} clients for ${currentUser?.email}${isViewingAs ? ' (View As mode)' : ''}`);
+        console.log(`📋 Loaded health snapshots for ${currentUser?.email}${isViewingAs ? ' (View As mode)' : ''}`);
       } catch (error) {
-        console.error('Error loading clients:', error);
-      } finally {
-        setLoading(false);
+        console.error('Error loading health snapshots:', error);
       }
     };
-
-    loadClients();
+    loadSnapshots();
   }, [currentUser?.email, currentUser?.uid, isViewingAs]);
 
   const getHealthStatus = (client) => {
@@ -266,7 +265,6 @@ const MyClientsPage = () => {
       const newPostsUsed = (logPostClient.postsUsed || 0) + 1;
       const newPostsRemaining = Math.max((logPostClient.postsRemaining || 0) - 1, 0);
       await firestoreService.updateClient(logPostClient.id, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
-      setClients(prev => prev.map(c => c.id === logPostClient.id ? { ...c, postsUsed: newPostsUsed, postsRemaining: newPostsRemaining } : c));
       toast.success(`Post logged for ${logPostClient.clientName}`);
       setLogPostClient(null);
       setLogPlatform('instagram');
@@ -299,7 +297,7 @@ const MyClientsPage = () => {
     postsUsed: clients.reduce((sum, c) => sum + (c.postsUsed || 0), 0)
   };
 
-  if (loading) {
+  if (clientsLoading) {
     return (
       <div className="space-y-6">
         <div className="h-8 w-48 bg-black/5 dark:bg-white/5 rounded animate-pulse" />
@@ -572,7 +570,7 @@ const MyClientsPage = () => {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          setDetailClient(client);
+                          setDetailClientId(client.id);
                         }}
                         className="flex-1 px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
                       >
@@ -634,7 +632,7 @@ const MyClientsPage = () => {
       {detailClient && createPortal(
         <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setDetailClient(null)}
+          onClick={() => setDetailClientId(null)}
         >
           <div 
             className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
@@ -658,7 +656,7 @@ const MyClientsPage = () => {
                 </div>
               </div>
               <button
-                onClick={() => setDetailClient(null)}
+                onClick={() => setDetailClientId(null)}
                 className="p-2 hover:bg-white/20 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-white" />
@@ -791,7 +789,7 @@ const MyClientsPage = () => {
                 <button
                   onClick={() => {
                     navigate(`/instagram-reports`);
-                    setDetailClient(null);
+                    setDetailClientId(null);
                   }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#833AB4] to-[#E1306C] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
                 >

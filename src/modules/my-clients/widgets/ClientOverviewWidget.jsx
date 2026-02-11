@@ -2,18 +2,17 @@
  * ClientOverviewWidget - Dashboard widget showing assigned clients overview
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { firestoreService } from '../../../services/firestoreService';
+import { useClients } from '../../../contexts/ClientsContext';
 import ClientLink from '../../../components/ui/ClientLink';
 
 const ClientOverviewWidget = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [clients, setClients] = useState([]);
+  const { clients: allClients, loading } = useClients();
 
   const isAssignedToMe = (client) => {
     const am = (client.assignedManager || '').trim().toLowerCase();
@@ -22,23 +21,10 @@ const ClientOverviewWidget = () => {
     return am === email || (uid && am === uid.toLowerCase());
   };
 
-  useEffect(() => {
-    const loadClients = async () => {
-      if (!currentUser?.email && !currentUser?.uid) return;
-
-      try {
-        const allClients = await firestoreService.getClients();
-        const myClients = allClients.filter(isAssignedToMe).slice(0, 4);
-        setClients(myClients);
-      } catch (error) {
-        console.error('Error loading clients:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadClients();
-  }, [currentUser?.email, currentUser?.uid]);
+  const clients = useMemo(
+    () => allClients.filter(isAssignedToMe).slice(0, 4),
+    [allClients, currentUser?.email, currentUser?.uid]
+  );
 
   const getHealthStatus = (client) => {
     const postsRemaining = client.postsRemaining || 0;

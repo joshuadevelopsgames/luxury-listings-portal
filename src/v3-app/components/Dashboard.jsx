@@ -5,6 +5,7 @@ import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@d
 import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
+import { useClients } from '../../contexts/ClientsContext';
 import { firestoreService } from '../../services/firestoreService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';
 import ClientLink from '../../components/ui/ClientLink';
@@ -100,25 +101,7 @@ const V3Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [clientsLoading, setClientsLoading] = useState(true);
-
-  // Fetch clients from Firestore
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        setClientsLoading(true);
-        const clientsData = await firestoreService.getClients();
-        setClients(clientsData || []);
-      } catch (error) {
-        console.error('Error fetching clients:', error);
-        setClients([]);
-      } finally {
-        setClientsLoading(false);
-      }
-    };
-    fetchClients();
-  }, []);
+  const { clients, loading: clientsLoading } = useClients();
 
   // Clients to display: all if full access, else only those assigned to effective user
   const displayClients = hasFullClientAccess

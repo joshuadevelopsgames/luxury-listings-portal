@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Mail, Phone, MapPin, MoreHorizontal, Eye, Edit, RefreshCw } from 'lucide-react';
-import { firestoreService } from '../../services/firestoreService';
+import React, { useState } from 'react';
+import { Plus, Search, Mail, Phone, MapPin, MoreHorizontal, Eye, Edit } from 'lucide-react';
+import { useClients } from '../../contexts/ClientsContext';
 import ClientLink from '../../components/ui/ClientLink';
 
 /**
- * V3 Clients - Real Data from Firestore
+ * V3 Clients - Real Data from Firestore (via ClientsContext for live updates)
  */
 const V3Clients = () => {
   const [view, setView] = useState('grid');
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { clients, loading } = useClients();
 
   const gradients = [
     'from-[#0071e3] to-[#5856d6]',
@@ -20,24 +19,6 @@ const V3Clients = () => {
     'from-[#5856d6] to-[#0071e3]',
     'from-[#ff2d55] to-[#ff9500]',
   ];
-
-  // Load clients from Firestore
-  useEffect(() => {
-    loadClients();
-  }, []);
-
-  const loadClients = async () => {
-    try {
-      setLoading(true);
-      const clientsData = await firestoreService.getClients();
-      setClients(clientsData || []);
-    } catch (error) {
-      console.error('Error loading clients:', error);
-      setClients([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Filter clients based on search
   const filteredClients = clients.filter(client => {
@@ -98,13 +79,6 @@ const V3Clients = () => {
           <p className="text-[17px] text-[#86868b]">Manage your client relationships.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button 
-            onClick={loadClients}
-            className="h-10 px-4 rounded-full bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-all flex items-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" strokeWidth={2} />
-            Refresh
-          </button>
           <button className="flex items-center gap-2 h-10 px-5 rounded-full bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] active:scale-[0.98] transition-all">
             <Plus className="w-4 h-4" strokeWidth={2} />
             Add Client

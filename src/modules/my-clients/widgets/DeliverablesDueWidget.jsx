@@ -2,17 +2,16 @@
  * DeliverablesDueWidget - Dashboard widget showing upcoming deliverables
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Calendar, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { firestoreService } from '../../../services/firestoreService';
+import { useClients } from '../../../contexts/ClientsContext';
 
 const DeliverablesDueWidget = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [deliverables, setDeliverables] = useState([]);
+  const { clients: allClients, loading: clientsLoading } = useClients();
 
   const isAssignedToMe = (client) => {
     const am = (client.assignedManager || '').trim().toLowerCase();
@@ -21,38 +20,28 @@ const DeliverablesDueWidget = () => {
     return am === email || (uid && am === uid.toLowerCase());
   };
 
-  useEffect(() => {
-    const loadDeliverables = async () => {
-      if (!currentUser?.email && !currentUser?.uid) return;
+  const myClients = useMemo(
+    () => allClients.filter(isAssignedToMe),
+    [allClients, currentUser?.email, currentUser?.uid]
+  );
 
-      try {
-        const allClients = await firestoreService.getClients();
-        const myClients = allClients.filter(isAssignedToMe);
-        
-        // Create deliverables from client data
-        // In a full implementation, this would come from client_contracts
-        const upcomingDeliverables = myClients
-          .filter(c => c.postsRemaining > 0)
-          .map(client => ({
-            id: client.id,
-            clientName: client.clientName,
-            type: 'Posts',
-            remaining: client.postsRemaining,
-            dueDate: client.nextDeliveryDate || null,
-            status: client.postsRemaining <= 2 ? 'urgent' : 'normal'
-          }))
-          .slice(0, 5);
-        
-        setDeliverables(upcomingDeliverables);
-      } catch (error) {
-        console.error('Error loading deliverables:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const deliverables = useMemo(
+    () =>
+      myClients
+        .filter(c => (c.postsRemaining || 0) > 0)
+        .map(client => ({
+          id: client.id,
+          clientName: client.clientName,
+          type: 'Posts',
+          remaining: client.postsRemaining,
+          dueDate: client.nextDeliveryDate || null,
+          status: (client.postsRemaining || 0) <= 2 ? 'urgent' : 'normal'
+        }))
+        .slice(0, 5),
+    [myClients]
+  );
 
-    loadDeliverables();
-  }, [currentUser?.email, currentUser?.uid]);
+  const loadingWidget = clientsLoading;
 
   const getStatusStyle = (status) => {
     if (status === 'urgent') {
@@ -61,7 +50,7 @@ const DeliverablesDueWidget = () => {
     return 'text-[#34c759] bg-[#34c759]/10';
   };
 
-  if (loading) {
+  if (loadingWidget) {
     return (
       <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />

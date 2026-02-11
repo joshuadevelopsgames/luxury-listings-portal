@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useClients } from '../../../contexts/ClientsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -57,31 +58,27 @@ const getAssignedPlatforms = (client) =>
 
 const PostsLoggedWidget = () => {
   const { currentUser } = useAuth();
+  const { clients: allClients, loading: clientsContextLoading } = useClients();
   const [loading, setLoading] = useState(true);
   const [postsToday, setPostsToday] = useState([]);
   const [showLogModal, setShowLogModal] = useState(false);
-  const [clients, setClients] = useState([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('instagram');
   const [logging, setLogging] = useState(false);
 
+  const email = (currentUser?.email || '').trim().toLowerCase();
+  const uid = (currentUser?.uid || '').trim().toLowerCase();
+  const clients = useMemo(() => allClients.filter(c => {
+    const am = (c.assignedManager || '').trim().toLowerCase();
+    if (!am) return false;
+    return am === email || (uid && am === uid);
+  }), [allClients, email, uid]);
+
   useEffect(() => {
     const loadPostsToday = async () => {
       if (!currentUser?.email) return;
-
+      const myClientIds = new Set(clients.map(c => c.id));
       try {
-        const allClients = await firestoreService.getClients();
-        const email = (currentUser?.email || '').trim().toLowerCase();
-        const uid = (currentUser?.uid || '').trim().toLowerCase();
-        const myClients = allClients.filter(c => {
-          const am = (c.assignedManager || '').trim().toLowerCase();
-          if (!am) return false;
-          return am === email || (uid && am === uid);
-        });
-        setClients(myClients);
-        const myClientIds = new Set(myClients.map(c => c.id));
-
-        // Get logged posts from tasks with label 'client-post' completed today — only for this person's clients
         const allTasks = await firestoreService.getTasksByUser(currentUser.email);
         const today = format(new Date(), 'yyyy-MM-dd');
         const todaysPosts = allTasks.filter(task => {
@@ -99,9 +96,10 @@ const PostsLoggedWidget = () => {
         setLoading(false);
       }
     };
-
     loadPostsToday();
-  }, [currentUser?.email, currentUser?.uid]);
+  }, [currentUser?.email, clients]);
+
+  const loadingWidget = clientsContextLoading || loading;
 
   const postsByClient = useMemo(() => {
     const map = {};
@@ -148,7 +146,6 @@ const PostsLoggedWidget = () => {
     const newPostsRemaining = Math.max((client.postsRemaining || 0) - 1, 0);
     await firestoreService.updateClient(client.id, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
     setPostsToday(prev => [...prev, { ...taskData, id: taskId }]);
-    setClients(prev => prev.map(c => c.id === client.id ? { ...c, postsUsed: newPostsUsed, postsRemaining: newPostsRemaining } : c));
     return client.clientName;
   };
 
@@ -166,7 +163,6 @@ const PostsLoggedWidget = () => {
       const newPostsRemaining = (client.postsRemaining || 0) + 1;
       await firestoreService.updateClient(clientId, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
       setPostsToday(prev => prev.filter(t => t.id !== task.id));
-      setClients(prev => prev.map(c => c.id === clientId ? { ...c, postsUsed: newPostsUsed, postsRemaining: newPostsRemaining } : c));
       toast.success(`Removed 1 ${platform} post for ${client.clientName}`);
     } catch (error) {
       console.error('Error removing post:', error);
@@ -213,7 +209,7 @@ const PostsLoggedWidget = () => {
     }
   };
 
-  if (loading) {
+  if (loadingWidget) {
     return (
       <div className="min-h-[320px] sm:min-h-[380px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
