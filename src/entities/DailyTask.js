@@ -350,7 +350,15 @@ export class DailyTask {
   get formattedDueDate() {
     if (!this.due_date) return null;
 
-    const dueDate = new Date(this.due_date);
+    // Parse as local date so "yyyy-MM-dd" is not interpreted as UTC (which shows as yesterday in many timezones)
+    let dueDate;
+    if (typeof this.due_date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(this.due_date)) {
+      const [y, m, d] = this.due_date.split('-').map(Number);
+      dueDate = new Date(y, m - 1, d);
+    } else {
+      const raw = this.due_date?.toDate?.() ?? new Date(this.due_date);
+      dueDate = new Date(raw.getFullYear(), raw.getMonth(), raw.getDate());
+    }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
