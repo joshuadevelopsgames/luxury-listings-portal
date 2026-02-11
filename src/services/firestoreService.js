@@ -1672,6 +1672,7 @@ class FirestoreService {
       const docRef = await addDoc(collection(db, this.collections.CLIENTS), {
         ...clientData,
         clientNumber,
+        isInternal: clientData.isInternal === true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -3158,7 +3159,7 @@ class FirestoreService {
       if (!uid) throw new Error('You must be signed in to update a report');
       
       // System admins can edit any report
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
       const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
       
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
@@ -3236,7 +3237,7 @@ class FirestoreService {
       if (!uid) throw new Error('You must be signed in to delete a report');
       
       // System admins can delete any report
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
       const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
       
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
@@ -3634,7 +3635,7 @@ class FirestoreService {
   async createCustomRole(roleData) {
     try {
       const email = auth.currentUser?.email;
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
       if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
         throw new Error('Only system administrators can create custom roles');
       }
@@ -3665,7 +3666,7 @@ class FirestoreService {
   async updateCustomRole(roleId, updates) {
     try {
       const email = auth.currentUser?.email;
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
       if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
         throw new Error('Only system administrators can update custom roles');
       }
@@ -3691,7 +3692,7 @@ class FirestoreService {
   async deleteCustomRole(roleId) {
     try {
       const email = auth.currentUser?.email;
-      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
       if (!SYSTEM_ADMINS.includes(email?.toLowerCase())) {
         throw new Error('Only system administrators can delete custom roles');
       }
@@ -4094,7 +4095,7 @@ class FirestoreService {
 
   /**
    * Get usage analytics events (for system admin). Optional: sinceTimestamp (Firestore Timestamp).
-   * Returns list of { page_path, event_type, value?, timestamp }.
+   * Returns list of { page_path, event_type, value?, timestamp, user_email? }.
    */
   async getUsageAnalytics() {
     try {
@@ -4108,7 +4109,8 @@ class FirestoreService {
           page_path: d.page_path,
           event_type: d.event_type,
           value: d.value,
-          timestamp: d.timestamp
+          timestamp: d.timestamp,
+          user_email: d.user_email || null
         });
       });
       return events;

@@ -1,27 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ClientProfilesList from '../components/client/ClientProfilesList';
-import PendingClients from './PendingClients';
-import { Users, Clock, Plus } from 'lucide-react';
+import { Users, FolderOpen, Plus } from 'lucide-react';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 
 const ClientsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabParam === 'pending' ? 'pending' : 'profiles');
+  const [activeTab, setActiveTab] = useState(tabParam === 'internal' ? 'internal' : 'profiles');
   const { hasFeaturePermission } = usePermissions();
   const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
 
-  // Sync URL with tab (e.g. /clients?tab=pending)
+  // Sync URL with tab (e.g. /clients?tab=internal)
   useEffect(() => {
-    if (tabParam === 'pending' && activeTab !== 'pending') setActiveTab('pending');
-    if (tabParam !== 'pending' && activeTab === 'pending' && !tabParam) setActiveTab('profiles');
+    if (tabParam === 'internal' && activeTab !== 'internal') setActiveTab('internal');
+    if (tabParam !== 'internal' && activeTab === 'internal' && !tabParam) setActiveTab('profiles');
   }, [tabParam]);
 
   const handleTabChange = (value) => {
     setActiveTab(value);
-    if (value === 'pending') {
-      setSearchParams({ tab: 'pending' });
+    if (value === 'internal') {
+      setSearchParams({ tab: 'internal' });
     } else {
       setSearchParams({});
     }
@@ -44,7 +43,7 @@ const ClientsPage = () => {
           Clients List
         </h1>
         <p className="text-[15px] sm:text-[17px] text-[#86868b]">
-          Manage SMM client profiles and pending approvals
+          Manage SMM client profiles and internal accounts
         </p>
       </div>
       
@@ -63,19 +62,19 @@ const ClientsPage = () => {
             Client Profiles
           </button>
           <button
-            onClick={() => handleTabChange('pending')}
+            onClick={() => handleTabChange('internal')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
-              activeTab === 'pending'
+              activeTab === 'internal'
                 ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
                 : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
-            <Clock className="w-4 h-4" />
-            Pending Approvals
+            <FolderOpen className="w-4 h-4" />
+            Internal Accounts
           </button>
         </div>
 
-        {/* Add Client Button */}
+        {/* Add Client / Add Internal Account Button */}
         {canManageClients && activeTab === 'profiles' && (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('openAddClientModal'))}
@@ -85,11 +84,20 @@ const ClientsPage = () => {
             Add Client
           </button>
         )}
+        {canManageClients && activeTab === 'internal' && (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('openAddClientModal', { detail: { isInternal: true } }))}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Internal Account
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
       {activeTab === 'profiles' && <ClientProfilesList />}
-      {activeTab === 'pending' && <PendingClients />}
+      {activeTab === 'internal' && <ClientProfilesList internalOnly />}
     </div>
   );
 };

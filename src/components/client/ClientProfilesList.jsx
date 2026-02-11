@@ -50,7 +50,7 @@ const XIcon = ({ className }) => (
   </svg>
 );
 
-const ClientProfilesList = () => {
+const ClientProfilesList = ({ internalOnly = false }) => {
   const { currentUser } = useAuth();
   const { hasFeaturePermission } = usePermissions();
   const [clients, setClients] = useState([]);
@@ -100,7 +100,12 @@ const ClientProfilesList = () => {
 
   // Listen for add client modal trigger from parent
   useEffect(() => {
-    const handleOpenAddModal = () => setShowAddModal(true);
+    const handleOpenAddModal = (e) => {
+      setShowAddModal(true);
+      if (e.detail?.isInternal) {
+        setAddForm(prev => ({ ...prev, isInternal: true }));
+      }
+    };
     window.addEventListener('openAddClientModal', handleOpenAddModal);
     return () => window.removeEventListener('openAddClientModal', handleOpenAddModal);
   }, []);
@@ -142,16 +147,21 @@ const ClientProfilesList = () => {
     return null;
   };
 
-  // Calculate stats
+  const displayClients = React.useMemo(
+    () => (internalOnly ? clients.filter(c => c.isInternal === true) : clients.filter(c => c.isInternal !== true)),
+    [clients, internalOnly]
+  );
+
+  // Calculate stats from displayed list
   const stats = {
-    total: clients.length,
-    withManager: clients.filter(c => getAssignedManager(c)).length,
-    withoutManager: clients.filter(c => !getAssignedManager(c)).length,
-    active: clients.filter(c => c.approvalStatus === 'Approved').length,
-    pending: clients.filter(c => c.approvalStatus === 'Pending').length
+    total: displayClients.length,
+    withManager: displayClients.filter(c => getAssignedManager(c)).length,
+    withoutManager: displayClients.filter(c => !getAssignedManager(c)).length,
+    active: displayClients.filter(c => c.approvalStatus === 'Approved').length,
+    pending: displayClients.filter(c => c.approvalStatus === 'Pending').length
   };
 
-  const filteredClients = clients.filter(client => {
+  const filteredClients = displayClients.filter(client => {
     // Search filter
     const matchesSearch = 
       client.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -326,7 +336,7 @@ const ClientProfilesList = () => {
   return (
     <div className="space-y-6">
       {/* Header Actions */}
-      {clients.length === 0 && (
+      {displayClients.length === 0 && (
         <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -355,7 +365,7 @@ const ClientProfilesList = () => {
       )}
 
       {/* Stats Cards */}
-      {clients.length > 0 && (
+      {displayClients.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
             <div className="flex items-center justify-between">
@@ -416,7 +426,7 @@ const ClientProfilesList = () => {
       )}
 
       {/* Filters and Search */}
-      {clients.length > 0 && (
+      {displayClients.length > 0 && (
         <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div className="relative flex-1 w-full sm:w-auto min-w-[250px]">
@@ -450,7 +460,7 @@ const ClientProfilesList = () => {
                 className="h-10 px-3 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
               >
                 <option value="all">All Packages</option>
-                {[...new Set(clients.map(c => c.packageType).filter(Boolean))].map(pkg => (
+                {[...new Set(displayClients.map(c => c.packageType).filter(Boolean))].map(pkg => (
                   <option key={pkg} value={pkg}>{pkg}</option>
                 ))}
               </select>
@@ -500,19 +510,21 @@ const ClientProfilesList = () => {
           <p className="text-[14px] text-[#86868b] mb-6">
             {searchTerm || managerFilter !== 'all' || packageFilter !== 'all' || statusFilter !== 'all' 
               ? 'Try adjusting your search or filters' 
-              : 'Clients will appear here once they are added or approved from pending sign-ups'}
+              : (internalOnly ? 'Internal accounts will appear here once added.' : 'Clients will appear here once they are added.')}
           </p>
           {!searchTerm && managerFilter === 'all' && packageFilter === 'all' && statusFilter === 'all' && (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={() => {
-                  const event = new CustomEvent('switchTab', { detail: 'pending' });
-                  window.dispatchEvent(event);
-                }}
-                className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-              >
-                Check Pending Approvals
-              </button>
+              {!internalOnly && (
+                <button
+                  onClick={() => {
+                    const event = new CustomEvent('switchTab', { detail: 'internal' });
+                    window.dispatchEvent(event);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                >
+                  View Internal Accounts
+                </button>
+              )}
               <button
                 onClick={async () => {
                   try {
@@ -1446,7 +1458,7 @@ const ClientProfilesList = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
             <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between z-10">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Add New Client</h2>
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">{internalOnly ? 'Add Internal Account' : 'Add New Client'}</h2>
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -1616,7 +1628,7 @@ const ClientProfilesList = () => {
                   ) : (
                     <>
                       <Plus className="w-4 h-4" />
-                      Add Client
+                      {internalOnly ? 'Add Internal Account' : 'Add Client'}
                     </>
                   )}
                 </button>
