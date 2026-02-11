@@ -78,7 +78,7 @@ const MyTimeOff = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
-  // Leave balances - loaded from Firestore
+  // Leave balances - loaded from Firestore (only vacation and sick have balances; remote is type-only)
   const [leaveBalances, setLeaveBalances] = useState({
     vacation: {
       total: 0,
@@ -87,12 +87,6 @@ const MyTimeOff = () => {
       pending: 0
     },
     sick: {
-      total: 0,
-      used: 0,
-      remaining: 0,
-      pending: 0
-    },
-    remote: {
       total: 0,
       used: 0,
       remaining: 0,
@@ -150,22 +144,24 @@ const MyTimeOff = () => {
         const storedBalances = await firestoreService.getUserLeaveBalances(currentUser.email);
         
         // Calculate pending from current requests
-        const pendingCounts = { vacation: 0, sick: 0, remote: 0 };
+        const pendingCounts = { vacation: 0, sick: 0 };
         myRequests.forEach(request => {
           if (request.status === 'pending' && pendingCounts[request.type] !== undefined) {
             pendingCounts[request.type] += request.days || 1;
           }
         });
         
-        const mergeBalance = (key) => ({
-          ...(storedBalances[key] || { total: 0, used: 0 }),
-          remaining: (storedBalances[key]?.total ?? 0) - (storedBalances[key]?.used ?? 0),
-          pending: pendingCounts[key] ?? 0
-        });
         const balances = {
-          vacation: mergeBalance('vacation'),
-          sick: mergeBalance('sick'),
-          remote: mergeBalance('remote')
+          vacation: { 
+            ...storedBalances.vacation,
+            remaining: storedBalances.vacation.total - storedBalances.vacation.used,
+            pending: pendingCounts.vacation 
+          },
+          sick: { 
+            ...storedBalances.sick,
+            remaining: storedBalances.sick.total - storedBalances.sick.used,
+            pending: pendingCounts.sick 
+          }
         };
         
         setLeaveBalances(balances);
