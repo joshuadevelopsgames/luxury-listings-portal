@@ -674,14 +674,17 @@ const PermissionsManager = () => {
                               <Shield className="w-4 h-4 text-[#34c759]" />
                               <div>
                                 <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Admin permissions</span>
-                                <p className="text-[11px] text-[#86868b]">All feature permissions except View Financial Data</p>
+                                <p className="text-[11px] text-[#86868b]">All feature permissions except View Financial Data and Manage Users</p>
                               </div>
                             </div>
                             <button
                               type="button"
                               role="switch"
                               aria-checked={!!userAdminPermissions[email]}
-                              onClick={() => setAdminPermissions(email, !userAdminPermissions[email])}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAdminPermissions(email, !userAdminPermissions[email]);
+                              }}
                               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:ring-offset-2 ${
                                 userAdminPermissions[email]
                                   ? 'bg-[#34c759]'
@@ -689,10 +692,10 @@ const PermissionsManager = () => {
                               }`}
                             >
                               <span
-                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
-                                  userAdminPermissions[email] ? 'translate-x-5' : 'translate-x-0.5'
+                                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow ring-0 transition-[transform] duration-200 ease-out ${
+                                  userAdminPermissions[email] ? 'left-[22px]' : 'left-0.5'
                                 }`}
-                                style={{ marginTop: 2 }}
+                                style={{ width: 20 }}
                               />
                             </button>
                           </div>

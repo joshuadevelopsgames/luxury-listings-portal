@@ -3261,9 +3261,9 @@ class FirestoreService {
 
   // ===== PAGE PERMISSIONS MANAGEMENT =====
 
-  // All feature permission ids except view_financials (admin permissions switch grants these)
+  // Feature permission ids granted by admin permissions switch (excludes view_financials and manage_users)
   _adminFeaturePermissions() {
-    return ['manage_users', 'approve_time_off', 'view_analytics', 'manage_clients', 'assign_client_managers', 'edit_client_packages'];
+    return ['approve_time_off', 'view_analytics', 'manage_clients', 'assign_client_managers', 'edit_client_packages'];
   }
 
   // Get user's full permissions (pages, features, adminPermissions)
