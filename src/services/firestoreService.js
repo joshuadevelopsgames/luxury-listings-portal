@@ -2899,12 +2899,16 @@ class FirestoreService {
       let startDateTimestamp = null;
       let endDateTimestamp = null;
       
+      let reportYear = null;
+      let reportMonth = null; // 1-12
       if (reportData.startDate) {
         const startDate = reportData.startDate instanceof Date 
           ? reportData.startDate 
           : new Date(reportData.startDate);
         if (!isNaN(startDate.getTime())) {
           startDateTimestamp = Timestamp.fromDate(startDate);
+          reportYear = startDate.getFullYear();
+          reportMonth = startDate.getMonth() + 1;
         }
       }
       
@@ -2937,6 +2941,8 @@ class FirestoreService {
         ...sanitized,
         startDate: startDateTimestamp,  // Structured date for queries
         endDate: endDateTimestamp,      // Structured date for queries
+        year: reportYear,               // From report date (user input) for filtering/grouping
+        month: reportMonth,             // 1-12 from report date (user input)
         userId: uid,
         publicLinkId,
         createdAt: serverTimestamp(),
@@ -3127,12 +3133,16 @@ class FirestoreService {
       if ('startDate' in updates && updates.startDate !== undefined) {
         if (updates.startDate === null) {
           processedUpdates.startDate = null;
+          processedUpdates.year = null;
+          processedUpdates.month = null;
         } else {
           const startDate = updates.startDate instanceof Date 
             ? updates.startDate 
             : new Date(updates.startDate);
           if (!isNaN(startDate.getTime())) {
             processedUpdates.startDate = Timestamp.fromDate(startDate);
+            processedUpdates.year = startDate.getFullYear();
+            processedUpdates.month = startDate.getMonth() + 1;
           }
         }
       }

@@ -49,7 +49,7 @@ import {
   CalendarDays,
   FileBarChart
 } from 'lucide-react';
-import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, parseISO, isWithinInterval } from 'date-fns';
+import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, getMonth, parseISO, isWithinInterval } from 'date-fns';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
 import ClientLink from '../components/ui/ClientLink';
 
@@ -69,6 +69,34 @@ const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
   if (stored != null && stored <= 100 && !Number.isNaN(stored)) return formatPercent(stored);
   if (followers != null && !Number.isNaN(followers)) return formatPercent(100 - followers);
   return formatPercent(stored);
+};
+
+// Year/month from report date (user input). Uses stored year/month if present, else derives from startDate/createdAt.
+const getReportYear = (report) => {
+  if (report.year != null && !Number.isNaN(Number(report.year))) return Number(report.year);
+  const d = report.startDate?.toDate?.() || report.createdAt?.toDate?.();
+  return d ? getYear(d) : 0;
+};
+const getReportMonth = (report) => {
+  if (report.month != null && report.month >= 1 && report.month <= 12) return report.month;
+  const d = report.startDate?.toDate?.() || report.createdAt?.toDate?.();
+  return d ? getMonth(d) + 1 : 0;
+};
+
+// Group reports by year then month. Returns { year, month, reports }[] sorted year desc, month desc.
+const groupReportsByYearMonth = (reportList) => {
+  const byYearMonth = new Map();
+  reportList.forEach((r) => {
+    const y = getReportYear(r);
+    const m = getReportMonth(r);
+    const key = `${y}-${String(m).padStart(2, '0')}`;
+    if (!byYearMonth.has(key)) byYearMonth.set(key, { year: y, month: m, reports: [] });
+    byYearMonth.get(key).reports.push(r);
+  });
+  return Array.from(byYearMonth.values()).sort((a, b) => {
+    if (a.year !== b.year) return b.year - a.year;
+    return b.month - a.month;
+  });
 };
 
 // Admins see all Instagram reports (must match PermissionsContext + Firestore rules)
@@ -655,48 +683,67 @@ const InstagramReportsPage = () => {
                         </div>
                       ) : (
                         <>
-                          {/* Yearly Reports */}
+                          {/* Yearly Reports – grouped by year */}
                           {yearlyReports.length > 0 && (
                             <div>
                               <h4 className="text-[12px] font-semibold text-[#5856d6] uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                 <FileBarChart className="w-3.5 h-3.5" />
                                 Annual Reports ({yearlyReports.length})
                               </h4>
-                              <div className="space-y-2">
-                                {yearlyReports.map(report => (
-                                  <ReportCard key={report.id} report={report} compact />
-                                ))}
-                              </div>
+                              {groupReportsByYearMonth(yearlyReports).map(({ year, month, reports: groupReports }) => (
+                                <div key={`y-${year}-${month}`} className="mb-4">
+                                  <p className="text-[11px] font-medium text-[#86868b] mb-1.5">{year}</p>
+                                  <div className="space-y-2">
+                                    {groupReports.map(report => (
+                                      <ReportCard key={report.id} report={report} compact />
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           )}
                           
-                          {/* Quarterly Reports */}
+                          {/* Quarterly Reports – grouped by year then month */}
                           {quarterlyReports.length > 0 && (
                             <div>
                               <h4 className="text-[12px] font-semibold text-[#34c759] uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                 <CalendarDays className="w-3.5 h-3.5" />
                                 Quarterly Reports ({quarterlyReports.length})
                               </h4>
-                              <div className="space-y-2">
-                                {quarterlyReports.map(report => (
-                                  <ReportCard key={report.id} report={report} compact />
-                                ))}
-                              </div>
+                              {groupReportsByYearMonth(quarterlyReports).map(({ year, month, reports: groupReports }) => (
+                                <div key={`q-${year}-${month}`} className="mb-4">
+                                  <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
+                                    {format(new Date(year, month - 1, 1), 'MMMM yyyy')}
+                                  </p>
+                                  <div className="space-y-2">
+                                    {groupReports.map(report => (
+                                      <ReportCard key={report.id} report={report} compact />
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           )}
                           
-                          {/* Monthly Reports */}
+                          {/* Monthly Reports – grouped by year then month */}
                           {monthlyReports.length > 0 && (
                             <div>
                               <h4 className="text-[12px] font-semibold text-[#E1306C] uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                 <BarChart3 className="w-3.5 h-3.5" />
                                 Monthly Reports ({monthlyReports.length})
                               </h4>
-                              <div className="space-y-2">
-                                {monthlyReports.map(report => (
-                                  <ReportCard key={report.id} report={report} compact />
-                                ))}
-                              </div>
+                              {groupReportsByYearMonth(monthlyReports).map(({ year, month, reports: groupReports }) => (
+                                <div key={`m-${year}-${month}`} className="mb-4">
+                                  <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
+                                    {format(new Date(year, month - 1, 1), 'MMMM yyyy')}
+                                  </p>
+                                  <div className="space-y-2">
+                                    {groupReports.map(report => (
+                                      <ReportCard key={report.id} report={report} compact />
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           )}
                         </>
