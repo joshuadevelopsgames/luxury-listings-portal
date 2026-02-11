@@ -232,7 +232,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
         navigate('/team');
         break;
       case 'Training Modules':
-        navigate('/tutorials');
+        navigate('/features#tutorials');
         break;
       default:
         console.log('Action not implemented:', actionText);

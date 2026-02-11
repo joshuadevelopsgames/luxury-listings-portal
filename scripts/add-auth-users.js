@@ -17,7 +17,7 @@ if (emails.length === 0) {
 }
 
 const BASE_MODULE_IDS = ['time-off', 'my-clients', 'instagram-reports'];
-const DEFAULT_PAGES = ['dashboard', 'tasks', 'resources', 'features', 'tutorials', ...BASE_MODULE_IDS];
+const DEFAULT_PAGES = ['dashboard', 'tasks', 'resources', 'features', ...BASE_MODULE_IDS];
 
 function randomPassword() {
   return crypto.randomBytes(8).toString('base64').replace(/[+/=]/g, (c) => ({ '+': 'x', '/': 'y', '=': '' }[c] || ''));

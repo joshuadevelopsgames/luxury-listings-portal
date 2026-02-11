@@ -39,7 +39,6 @@ const MODULE_HOW_TO_USE = {
   'hr-analytics': 'See team analytics and insights.',
   'client-health': 'Review AI-powered client health and risk overview.',
   'it-support': 'Submit and track support tickets.',
-  'tutorials': 'Work through step-by-step guides and training.',
   'resources': 'Access company docs and resources.',
   'features': 'Browse add-ons available to quote.',
   'workload': 'View team capacity and how clients are distributed.',

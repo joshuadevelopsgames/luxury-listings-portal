@@ -21,7 +21,6 @@ import {
   Target,
   TrendingUp,
   Wrench,
-  BookOpen,
   FileText,
   Briefcase,
   AlertCircle,
@@ -105,7 +104,6 @@ const ALL_PAGES = {
   'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, description: 'HR metrics and reports' },
   'client-health': { name: 'Client Health', icon: Activity, description: 'AI health overview for all clients (admin)' },
   'it-support': { name: 'IT Support', icon: Wrench, description: 'Manage support tickets and help team members' },
-  'tutorials': { name: 'Tutorials', icon: BookOpen, description: 'Training materials' },
   'resources': { name: 'Resources', icon: FileText, description: 'Company resources' },
   'features': { name: 'Add-ons', icon: Sparkles, description: 'Add-ons available to quote' },
   'workload': { name: 'Team Workload', icon: BarChart3, description: 'Team capacity and client distribution' },
@@ -116,7 +114,7 @@ const ALL_PAGES = {
 const BASE_MODULE_IDS = getBaseModuleIds();
 
 // Default pages for new users (clients and other pages are hidden by default; enable per user in Permissions)
-const DEFAULT_PAGES = ['dashboard', 'tasks', 'resources', 'features', 'tutorials', ...BASE_MODULE_IDS];
+const DEFAULT_PAGES = ['dashboard', 'tasks', 'resources', 'features', ...BASE_MODULE_IDS];
 
 // Department options
 const DEPARTMENTS = [

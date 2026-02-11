@@ -16,7 +16,7 @@ if (emails.length === 0) {
 
 // Default pages for new users (base modules + common; match PermissionsManager DEFAULT_PAGES)
 const BASE_MODULE_IDS = ['time-off', 'my-clients', 'instagram-reports'];
-const DEFAULT_PAGES = ['dashboard', 'tasks', 'resources', 'features', 'tutorials', ...BASE_MODULE_IDS];
+const DEFAULT_PAGES = ['dashboard', 'tasks', 'resources', 'features', ...BASE_MODULE_IDS];
 
 admin.initializeApp({ projectId: 'luxury-listings-portal-e56de' });
 const db = admin.firestore();

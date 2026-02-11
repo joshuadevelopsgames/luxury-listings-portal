@@ -43,7 +43,6 @@ import HRAnalytics from './pages/HRAnalytics';
 import ClientHealthPage from './pages/ClientHealthPage';
 import ITSupportPage from './pages/ITSupportPage';
 import FeedbackSupportPage from './pages/FeedbackSupportPage';
-import TutorialsPage from './pages/TutorialsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import FeaturesPage from './pages/FeaturesPage';
 import MyTimeOff from './pages/MyTimeOff';
@@ -246,7 +245,7 @@ const router = createBrowserRouter([
           { path: 'hr-analytics', element: <PermissionRoute pageId="hr-analytics" pageName="HR Analytics"><HRAnalytics /></PermissionRoute> },
           { path: 'client-health', element: <PermissionRoute pageId="client-health" pageName="Client Health"><ClientHealthPage /></PermissionRoute> },
           { path: 'it-support', element: <ITSupportPage /> },
-          { path: 'tutorials', element: <PermissionRoute pageId="tutorials" pageName="Tutorials"><TutorialsPage /></PermissionRoute> },
+          { path: 'tutorials', element: <Navigate to="/features#tutorials" replace /> },
           { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
           { path: 'features', element: <PermissionRoute pageId="features" pageName="Add-ons"><FeaturesPage /></PermissionRoute> },
           { path: 'workload', element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },

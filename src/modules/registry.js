@@ -6,7 +6,7 @@
  * it's included in the base package or requires upgrade.
  */
 
-import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, BookOpen, FileText, Briefcase, BarChart3, User, Palette, Bug, MessageSquare, Sparkles, Activity } from 'lucide-react';
+import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, FileText, Briefcase, BarChart3, User, Palette, Bug, MessageSquare, Sparkles, Activity } from 'lucide-react';
 
 // ============================================================================
 // MODULE DEFINITIONS
@@ -199,20 +199,6 @@ export const modules = {
     navItem: {
       path: '/it-support',
       section: 'Admin'
-    },
-    baseModule: false
-  },
-
-  'tutorials': {
-    id: 'tutorials',
-    name: 'Tutorials',
-    description: 'Learning resources and guides',
-    icon: BookOpen,
-    routes: ['/tutorials'],
-    widgets: [],
-    navItem: {
-      path: '/tutorials',
-      section: 'Resources'
     },
     baseModule: false
   },

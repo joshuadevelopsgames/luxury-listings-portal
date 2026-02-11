@@ -632,26 +632,30 @@ export default function FeedbackButton() {
 
   return (
     <>
-      {/* Floating Button - Apple-esque blue gradient */}
+      {/* Floating Button - Apple-style gradient + gloss */}
       <button
         onClick={handleOpen}
-        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] flex items-center justify-center z-40 ${
+        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full overflow-hidden transition-all duration-200 flex items-center justify-center z-40 group ${
           isMinimized && activeChat?.status === 'open'
-            ? 'bg-gradient-to-br from-[#34c759] to-[#30d158] shadow-[#34c759]/35 hover:shadow-[#34c759]/45'
-            : 'bg-gradient-to-br from-[#0077ed] via-[#0071e3] to-[#5856d6] shadow-[0 4px 14px rgba(0,113,237,0.4)] hover:shadow-[0 6px 20px rgba(0,113,237,0.45)]'
+            ? 'bg-gradient-to-b from-[#34c759] to-[#28a745] shadow-[0_4px_20px_rgba(52,199,89,0.4),0_0_0_1px_rgba(255,255,255,0.15)_inset] hover:shadow-[0_8px_28px_rgba(52,199,89,0.45),0_0_0_1px_rgba(255,255,255,0.2)_inset] hover:scale-[1.04] active:scale-[0.98]'
+            : 'bg-gradient-to-b from-[#007aff] via-[#0066e6] to-[#5856d6] shadow-[0_4px_24px_rgba(0,122,255,0.38),0_0_0_1px_rgba(255,255,255,0.12)_inset] hover:shadow-[0_8px_32px_rgba(0,122,255,0.45),0_0_0_1px_rgba(255,255,255,0.18)_inset] hover:scale-[1.04] active:scale-[0.98]'
         }`}
         title={isMinimized ? 'Return to chat' : 'Feedback & Support'}
       >
-        {isMinimized && activeChat?.status === 'open' ? (
-          <MessageSquare className="w-6 h-6" />
-        ) : (
-          <MessageCircle className="w-6 h-6" />
-        )}
+        {/* Top gloss highlight */}
+        <span className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 via-white/5 to-transparent pointer-events-none" aria-hidden />
+        <span className="relative z-10 text-white drop-shadow-sm">
+          {isMinimized && activeChat?.status === 'open' ? (
+            <MessageSquare className="w-6 h-6" />
+          ) : (
+            <MessageCircle className="w-6 h-6" />
+          )}
+        </span>
         {showUnreadBadge && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#ff3b30] rounded-full border-2 border-white dark:border-[#1c1c1e]" aria-label="New message" />
+          <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 bg-[#ff3b30] rounded-full border-2 border-white dark:border-[#1c1c1e] shadow-sm" aria-label="New message" />
         )}
         {isMinimized && activeChat?.status === 'open' && !showUnreadBadge && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center z-20">
             <span className="w-2 h-2 bg-[#34c759] rounded-full animate-ping" />
           </span>
         )}

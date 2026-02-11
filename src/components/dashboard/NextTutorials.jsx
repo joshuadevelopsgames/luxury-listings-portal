@@ -178,7 +178,7 @@ const NextTutorials = ({ tutorials }) => {
                         )}
                         
                         {isAvailable ? (
-                          <Button size="sm" className="h-8 px-3" onClick={() => navigate(`/tutorials/${tutorial.id}`)}>
+                          <Button size="sm" className="h-8 px-3" onClick={() => navigate(`/features?tutorial=${tutorial.id}`)}>
                             <Play className="w-3 h-3 mr-1" />
                             Start
                           </Button>
@@ -212,7 +212,7 @@ const NextTutorials = ({ tutorials }) => {
               <span className="font-medium">Content Leadership Path</span>
               <p className="text-xs mt-1">Follow the recommended order for luxury content mastery</p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => navigate('/tutorials')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/features#tutorials')}>
               View All Tutorials
               <ArrowRight className="w-3 h-3 ml-1" />
             </Button>

@@ -60,7 +60,7 @@ const resources = [
     description: "Step-by-step guides and video tutorials for all roles",
     type: "internal",
     category: "training",
-    internalPath: "/tutorials",
+    internalPath: "/features#tutorials",
     important: true,
     featured: true
   },

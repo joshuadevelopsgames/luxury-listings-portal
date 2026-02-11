@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sparkles,
@@ -22,7 +22,28 @@ import {
   Send,
   Palette,
   FolderOpen,
+  BookOpen,
+  Trophy,
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { User } from '../entities/User';
+import { Tutorial, TutorialProgress } from '../entities/index';
+import TutorialCard from '../components/tutorials/TutorialCard';
+import TutorialViewer from '../components/tutorials/TutorialViewer';
+
+const categoryColors = {
+  strategy: 'bg-[#0071e3]/10 text-[#0071e3]',
+  'content-creation': 'bg-[#af52de]/10 text-[#af52de]',
+  platforms: 'bg-[#34c759]/10 text-[#34c759]',
+  community: 'bg-[#ff9500]/10 text-[#ff9500]',
+  advertising: 'bg-[#ff3b30]/10 text-[#ff3b30]',
+  analytics: 'bg-[#5856d6]/10 text-[#5856d6]',
+  'influencer-marketing': 'bg-[#ff2d55]/10 text-[#ff2d55]',
+  'crisis-management': 'bg-[#ffcc00]/10 text-[#ffcc00]',
+  tools: 'bg-[#30b0c7]/10 text-[#30b0c7]',
+  trends: 'bg-[#64d2ff]/10 text-[#64d2ff]',
+  'admin-portal': 'bg-[#ff3b30]/10 text-[#ff3b30]',
+};
 
 const salesCrmFeatures = [
   {
@@ -129,6 +150,111 @@ const contentCollaborationFeatures = [
 ];
 
 export default function FeaturesPage() {
+  const { currentRole } = useAuth();
+  const [user, setUser] = useState(null);
+  const [tutorials, setTutorials] = useState([]);
+  const [progress, setProgress] = useState([]);
+  const [selectedTutorial, setSelectedTutorial] = useState(null);
+  const [tutorialsLoading, setTutorialsLoading] = useState(true);
+  const [initialTutorialId, setInitialTutorialId] = useState(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tutorialId = urlParams.get('tutorial');
+    if (tutorialId) setInitialTutorialId(tutorialId);
+    loadTutorials();
+  }, []);
+
+  useEffect(() => {
+    if (initialTutorialId && tutorials.length > 0) {
+      const tutorial = tutorials.find((t) => t.id === initialTutorialId);
+      if (tutorial) {
+        setSelectedTutorial(tutorial);
+        setInitialTutorialId(null);
+      }
+    }
+  }, [initialTutorialId, tutorials]);
+
+  const loadTutorials = async () => {
+    try {
+      const currentUser = await User.me();
+      setUser(currentUser);
+      const [tutorialsData, progressData] = await Promise.all([
+        Tutorial.list('order_index', currentRole),
+        TutorialProgress.filter({ user_email: currentUser.email }),
+      ]);
+      setTutorials(tutorialsData);
+      setProgress(progressData);
+    } catch (e) {
+      console.error('Error loading tutorials:', e);
+    } finally {
+      setTutorialsLoading(false);
+    }
+  };
+
+  const getTutorialProgress = (tutorialId) =>
+    progress.find((p) => p.tutorial_id === tutorialId) || {
+      status: 'not_started',
+      tutorial_id: tutorialId,
+      user_email: user?.email,
+    };
+
+  const startTutorial = async (tutorial) => {
+    const existing = getTutorialProgress(tutorial.id);
+    if (existing.status === 'not_started') {
+      await TutorialProgress.create({
+        user_email: user.email,
+        tutorial_id: tutorial.id,
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+      });
+      await loadTutorials();
+    }
+    setSelectedTutorial(tutorial);
+  };
+
+  const completeTutorial = async (tutorialId) => {
+    const existing = getTutorialProgress(tutorialId);
+    if (existing.id) {
+      await TutorialProgress.update(existing.id, {
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+      });
+    } else {
+      await TutorialProgress.create({
+        user_email: user.email,
+        tutorial_id: tutorialId,
+        status: 'completed',
+        started_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+      });
+    }
+    await loadTutorials();
+    setSelectedTutorial(null);
+  };
+
+  const getOverallProgress = () => {
+    const completed = progress.filter((p) => p.status === 'completed').length;
+    return tutorials.length > 0 ? Math.round((completed / tutorials.length) * 100) : 0;
+  };
+
+  const groupedTutorials = tutorials.reduce((acc, t) => {
+    if (!acc[t.category]) acc[t.category] = [];
+    acc[t.category].push(t);
+    return acc;
+  }, {});
+
+  if (selectedTutorial) {
+    return (
+      <TutorialViewer
+        tutorial={selectedTutorial}
+        progress={getTutorialProgress(selectedTutorial.id)}
+        onComplete={() => completeTutorial(selectedTutorial.id)}
+        onBack={() => setSelectedTutorial(null)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen relative">
       {/* Full-viewport gradient (fixed so it fills the whole content area) */}
@@ -229,6 +355,64 @@ export default function FeaturesPage() {
               );
             })}
           </div>
+        </section>
+
+        <section id="tutorials" className="mt-16">
+          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-2">
+            Tutorials & Training
+          </h2>
+          <p className="text-[15px] text-[#86868b] mb-6">Step-by-step guides to get up to speed with our systems.</p>
+          {tutorialsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-48 bg-white/50 dark:bg-white/5 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : tutorials.length === 0 ? (
+            <p className="text-[14px] text-[#86868b]">No tutorials available yet.</p>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-2xl p-4 mb-6 w-fit">
+                <Trophy className="w-6 h-6 text-[#ffcc00]" />
+                <div>
+                  <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Overall Progress</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-24 h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#34c759] rounded-full transition-all"
+                        style={{ width: `${getOverallProgress()}%` }}
+                      />
+                    </div>
+                    <span className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">{getOverallProgress()}%</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-8">
+                {Object.entries(groupedTutorials).map(([category, categoryTutorials]) => (
+                  <div key={category}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className={`text-[12px] px-3 py-1 rounded-lg font-medium ${categoryColors[category] || 'bg-black/10 text-[#1d1d1f]'}`}>
+                        {category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ')}
+                      </span>
+                      <span className="text-[13px] text-[#86868b]">
+                        {categoryTutorials.length} tutorial{categoryTutorials.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {categoryTutorials.map((tutorial) => (
+                        <TutorialCard
+                          key={tutorial.id}
+                          tutorial={tutorial}
+                          progress={getTutorialProgress(tutorial.id)}
+                          onStart={() => startTutorial(tutorial)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </section>
 
         <div className="mt-16 text-center">
