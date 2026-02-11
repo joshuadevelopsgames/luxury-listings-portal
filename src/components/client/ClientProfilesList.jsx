@@ -603,11 +603,11 @@ const ClientProfilesList = ({ internalOnly = false }) => {
           <div className="divide-y divide-black/5 dark:divide-white/5">
             {filteredClients.map((client) => {
               const manager = getAssignedManager(client);
-              const paused = isPaused(client);
+              const greyOut = isPaused(client) || isCancelled(client);
               return (
                 <div 
                   key={client.id} 
-                  className={`grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 py-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer group items-center ${paused ? 'opacity-60 bg-black/[0.02] dark:bg-white/[0.02]' : ''}`}
+                  className={`grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 py-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer group items-center ${greyOut ? 'opacity-60 bg-black/[0.02] dark:bg-white/[0.02]' : ''}`}
                   onClick={() => setSelectedClient(client)}
                 >
                   {/* Client Info */}
@@ -690,11 +690,11 @@ const ClientProfilesList = ({ internalOnly = false }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => {
             const manager = getAssignedManager(client);
-            const paused = isPaused(client);
+            const greyOut = isPaused(client) || isCancelled(client);
             return (
               <div 
                 key={client.id} 
-                className={`relative rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all cursor-pointer group ${paused ? 'opacity-60' : ''}`}
+                className={`relative rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all cursor-pointer group ${greyOut ? 'opacity-60' : ''}`}
                 onClick={() => setSelectedClient(client)}
               >
                 {/* Edit/Delete buttons at top right */}
