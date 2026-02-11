@@ -685,17 +685,16 @@ const PermissionsManager = () => {
                                 e.stopPropagation();
                                 setAdminPermissions(email, !userAdminPermissions[email]);
                               }}
-                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:ring-offset-2 ${
+                              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:ring-offset-2 dark:focus:ring-offset-[#2c2c2e] ${
                                 userAdminPermissions[email]
                                   ? 'bg-[#34c759]'
                                   : 'bg-black/20 dark:bg-white/20'
                               }`}
                             >
                               <span
-                                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow ring-0 transition-[transform] duration-200 ease-out ${
-                                  userAdminPermissions[email] ? 'left-[22px]' : 'left-0.5'
+                                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-out ${
+                                  userAdminPermissions[email] ? 'translate-x-6' : 'translate-x-0'
                                 }`}
-                                style={{ width: 20 }}
                               />
                             </button>
                           </div>

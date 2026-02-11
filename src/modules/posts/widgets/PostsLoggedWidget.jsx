@@ -7,6 +7,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   CheckCircle2, 
   Plus, 
+  Minus,
   Instagram, 
   Youtube, 
   Facebook, 
@@ -48,6 +49,11 @@ const platformColors = {
   tiktok: '#000000',
   x: '#000000'
 };
+
+const PLATFORM_KEYS = ['instagram', 'facebook', 'linkedin', 'youtube', 'tiktok', 'x'];
+
+const getAssignedPlatforms = (client) =>
+  PLATFORM_KEYS.filter(p => client.platforms?.[p]);
 
 const PostsLoggedWidget = () => {
   const { currentUser } = useAuth();
@@ -107,6 +113,21 @@ const PostsLoggedWidget = () => {
     return map;
   }, [postsToday]);
 
+  const postsByClientPlatform = useMemo(() => {
+    const map = {};
+    postsToday.forEach(task => {
+      const clientLabel = task.labels?.find(l => l.startsWith('client-') && l !== 'client-post');
+      const clientId = clientLabel ? clientLabel.replace('client-', '') : null;
+      const platform = task.labels?.find(l => PLATFORM_KEYS.includes(l));
+      if (clientId && platform) {
+        const key = `${clientId}|${platform}`;
+        if (!map[key]) map[key] = [];
+        map[key].push(task);
+      }
+    });
+    return map;
+  }, [postsToday]);
+
   const doLogPost = async (client, platform) => {
     const now = new Date();
     const taskData = {
@@ -122,21 +143,46 @@ const PostsLoggedWidget = () => {
       labels: ['client-post', `client-${client.id}`, platform],
       task_type: 'post_log'
     };
-    await firestoreService.addTask(taskData);
+    const taskId = await firestoreService.addTask(taskData);
     const newPostsUsed = (client.postsUsed || 0) + 1;
     const newPostsRemaining = Math.max((client.postsRemaining || 0) - 1, 0);
     await firestoreService.updateClient(client.id, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
-    setPostsToday(prev => [...prev, { ...taskData, id: Date.now().toString(), clientName: client.clientName }]);
+    setPostsToday(prev => [...prev, { ...taskData, id: taskId }]);
+    setClients(prev => prev.map(c => c.id === client.id ? { ...c, postsUsed: newPostsUsed, postsRemaining: newPostsRemaining } : c));
     return client.clientName;
   };
 
-  const handleQuickLog = async (clientId, platform = 'instagram') => {
+  const handleRemovePost = async (clientId, platform) => {
+    const key = `${clientId}|${platform}`;
+    const tasks = postsByClientPlatform[key] || [];
+    const task = tasks[0];
+    if (!task?.id) return;
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+    setLogging(true);
+    try {
+      await firestoreService.deleteTask(task.id);
+      const newPostsUsed = Math.max((client.postsUsed || 0) - 1, 0);
+      const newPostsRemaining = (client.postsRemaining || 0) + 1;
+      await firestoreService.updateClient(clientId, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
+      setPostsToday(prev => prev.filter(t => t.id !== task.id));
+      setClients(prev => prev.map(c => c.id === clientId ? { ...c, postsUsed: newPostsUsed, postsRemaining: newPostsRemaining } : c));
+      toast.success(`Removed 1 ${platform} post for ${client.clientName}`);
+    } catch (error) {
+      console.error('Error removing post:', error);
+      toast.error('Failed to remove post');
+    } finally {
+      setLogging(false);
+    }
+  };
+
+  const handleQuickLog = async (clientId, platform) => {
     const client = clients.find(c => c.id === clientId);
     if (!client) return;
     setLogging(true);
     try {
       const name = await doLogPost(client, platform);
-      toast.success(`+1 for ${name}`);
+      toast.success(`+1 ${platform} for ${name}`);
     } catch (error) {
       console.error('Error logging post:', error);
       toast.error('Failed to log post');
@@ -203,34 +249,76 @@ const PostsLoggedWidget = () => {
           </button>
         </div>
 
-        {/* Tally by client: name | count | + */}
-        <div className="space-y-1">
-          <p className="text-[11px] font-medium text-[#86868b] uppercase tracking-wide mb-2">By client</p>
+        {/* Per client: only assigned platforms, round − and + per platform */}
+        <div className="space-y-3">
+          <p className="text-[11px] font-medium text-[#86868b] uppercase tracking-wide mb-2">By client & platform</p>
           {clients.length === 0 ? (
             <p className="text-[13px] text-[#86868b]">No clients assigned</p>
           ) : (
             clients.map(client => {
-              const count = postsByClient[client.id] || 0;
+              const assigned = getAssignedPlatforms(client);
+              if (assigned.length === 0) {
+                return (
+                  <div
+                    key={client.id}
+                    className="flex items-center gap-3 py-2 px-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]"
+                  >
+                    <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate flex-1">
+                      {client.clientName}
+                    </span>
+                    <span className="text-[11px] text-[#86868b]">No platforms assigned</span>
+                  </div>
+                );
+              }
               return (
                 <div
                   key={client.id}
-                  className="flex items-center gap-3 py-2 px-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
+                  className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] overflow-hidden"
                 >
-                  <span className="flex-1 min-w-0 text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
-                    {client.clientName}
-                  </span>
-                  <span className="tabular-nums text-[15px] font-semibold text-[#1d1d1f] dark:text-white w-8 text-right">
-                    {count}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickLog(client.id)}
-                    disabled={logging}
-                    className="w-8 h-8 rounded-lg bg-[#34c759] text-white flex items-center justify-center hover:bg-[#30d158] transition-colors disabled:opacity-50"
-                    title="Log 1 post (Instagram)"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  <div className="px-3 py-2 border-b border-black/5 dark:border-white/5">
+                    <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                      {client.clientName}
+                    </span>
+                  </div>
+                  <div className="p-2 flex flex-wrap gap-2">
+                    {assigned.map(platform => {
+                      const key = `${client.id}|${platform}`;
+                      const tasks = postsByClientPlatform[key] || [];
+                      const count = tasks.length;
+                      const Icon = platformIcons[platform];
+                      const color = platformColors[platform] || '#666';
+                      return (
+                        <div
+                          key={platform}
+                          className="flex items-center gap-1.5 px-2 py-1.5 rounded-full bg-white dark:bg-white/10 border border-black/10 dark:border-white/10 shadow-sm"
+                        >
+                          <Icon className="w-4 h-4 shrink-0" style={{ color }} />
+                          <span className="tabular-nums text-[12px] font-medium text-[#1d1d1f] dark:text-white min-w-[1rem] text-center">
+                            {count}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePost(client.id, platform)}
+                            disabled={logging || count === 0}
+                            className="w-7 h-7 rounded-full bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white flex items-center justify-center hover:bg-black/20 dark:hover:bg-white/20 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                            title={`Remove 1 ${platform} post`}
+                          >
+                            <Minus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleQuickLog(client.id, platform)}
+                            disabled={logging}
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-white transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                            style={{ backgroundColor: color }}
+                            title={`Log 1 ${platform} post`}
+                          >
+                            <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })
@@ -272,26 +360,36 @@ const PostsLoggedWidget = () => {
                 </select>
               </div>
 
-              {/* Platform Select */}
+              {/* Platform Select: only assigned when client selected */}
               <div>
                 <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                   Platform
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {Object.entries(platformIcons).map(([platform, Icon]) => (
-                    <button
-                      key={platform}
-                      onClick={() => setSelectedPlatform(platform)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-                        selectedPlatform === platform
-                          ? 'bg-[#0071e3] text-white'
-                          : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="capitalize">{platform}</span>
-                    </button>
-                  ))}
+                  {(selectedClient
+                    ? (() => {
+                        const c = clients.find(x => x.id === selectedClient);
+                        const a = c ? getAssignedPlatforms(c) : [];
+                        return a.length ? a : PLATFORM_KEYS;
+                      })()
+                    : PLATFORM_KEYS
+                  ).map(platform => {
+                    const Icon = platformIcons[platform];
+                    return (
+                      <button
+                        key={platform}
+                        onClick={() => setSelectedPlatform(platform)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+                          selectedPlatform === platform
+                            ? 'bg-[#0071e3] text-white'
+                            : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span className="capitalize">{platform}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
