@@ -364,96 +364,66 @@ const CRMPage = () => {
 
     setIsAddingLead(true);
 
+    const selectedTabKeys = Object.entries(selectedTabs)
+      .filter(([key, value]) => value)
+      .map(([key]) => key);
+
+    const newLeadData = {
+      id: Date.now() + Math.random(),
+      contactName: newLead.contactName || '',
+      email: newLead.email || '',
+      phone: newLead.phone || '',
+      instagram: newLead.instagram || '',
+      organization: newLead.organization || '',
+      website: newLead.website || '',
+      notes: newLead.notes || '',
+      status: 'New Lead',
+      lastContact: new Date().toISOString(),
+      category: selectedTabKeys[0]
+    };
+
     try {
-      // Load service account credentials for write operations
       const credentials = await loadServiceAccountCredentials();
-      if (!credentials) {
-        throw new Error('Service account credentials not found. Please set up Google Sheets integration first.');
+
+      if (credentials) {
+        const service = new CRMGoogleSheetsService();
+        service.setServiceAccountCredentials(credentials);
+
+        const results = await Promise.allSettled(
+          selectedTabKeys.map(tabKey =>
+            service.addNewLead(newLead, { [tabKey]: true })
+          )
+        );
+
+        results.forEach((result, index) => {
+          if (result.status !== 'fulfilled') {
+            console.error(`❌ Failed to add to ${selectedTabKeys[index]}:`, result.reason);
+          }
+        });
       }
 
-      console.log('🔐 Service account credentials loaded:', credentials.client_email);
-
-      // Create a new service instance with credentials
-      const service = new CRMGoogleSheetsService();
-      service.setServiceAccountCredentials(credentials);
-
-      console.log('🔐 Service instance created with credentials');
-      console.log('➕ Adding new lead to Google Sheets:', newLead);
-      console.log('📋 Selected tabs:', selectedTabs);
-
-      // Add lead to each selected tab
-      const selectedTabKeys = Object.entries(selectedTabs)
-        .filter(([key, value]) => value)
-        .map(([key]) => key);
-      
-      console.log('📋 Processing selected tab keys:', selectedTabKeys);
-      
-      const results = await Promise.allSettled(
-        selectedTabKeys.map(tabKey => 
-          service.addNewLead(newLead, { [tabKey]: true })
-        )
-      );
-
-      // Check results
-      const successfulTabs = [];
-      const failedTabs = [];
-
-      results.forEach((result, index) => {
-        const tabKey = selectedTabKeys[index];
-        if (result.status === 'fulfilled') {
-          successfulTabs.push(tabKey);
-        } else {
-          failedTabs.push(tabKey);
-          console.error(`❌ Failed to add to ${tabKey}:`, result.reason);
-        }
-      });
-
-      if (successfulTabs.length > 0) {
-        // Create new lead data object
-        const newLeadData = {
-          id: Date.now() + Math.random(), // Generate unique ID
-          contactName: newLead.contactName || '',
-          email: newLead.email || '',
-          phone: newLead.phone || '',
-          instagram: newLead.instagram || '',
-          organization: newLead.organization || '',
-          website: newLead.website || '',
-          notes: newLead.notes || '',
-          status: 'New Lead',
-          lastContact: new Date().toISOString(),
-          category: successfulTabs[0] // Use first successful tab as category
-        };
-
-        // Add to ALL selected tabs (not just the first one)
-        if (successfulTabs.includes('warmLeads')) {
-          setWarmLeads(prev => [newLeadData, ...prev]);
-        }
-        if (successfulTabs.includes('contactedClients')) {
-          setContactedClients(prev => [newLeadData, ...prev]);
-        }
-        if (successfulTabs.includes('coldLeads')) {
-          setColdLeads(prev => [newLeadData, ...prev]);
-        }
-
-        // Debug: Log the newLeadData to see what's in it
-        console.log('🔍 New lead data being added to state:', newLeadData);
-
-        // Save to Firebase
-        await saveCRMDataToFirebase();
-
-        showToast(`✅ Lead added successfully to ${successfulTabs.length} tab(s): ${successfulTabs.join(', ')}`);
-        
-        // Reset form and close modal
-        resetNewLeadForm();
-        setShowAddModal(false);
-        setIsAddingLead(false);
-      } else {
-        throw new Error('Failed to add lead to any tabs');
+      // Add to local state (always: either after Sheets success or when no Sheets)
+      if (selectedTabKeys.includes('warmLeads')) {
+        setWarmLeads(prev => [newLeadData, ...prev]);
+      }
+      if (selectedTabKeys.includes('contactedClients')) {
+        setContactedClients(prev => [newLeadData, ...prev]);
+      }
+      if (selectedTabKeys.includes('coldLeads')) {
+        setColdLeads(prev => [newLeadData, ...prev]);
       }
 
-      if (failedTabs.length > 0) {
-        console.warn(`⚠️ Failed to add to ${failedTabs.length} tab(s): ${failedTabs.join(', ')}`);
-      }
+      // Persist to Firebase with updated arrays (state may not have flushed)
+      const nextWarm = selectedTabKeys.includes('warmLeads') ? [newLeadData, ...warmLeads] : warmLeads;
+      const nextContacted = selectedTabKeys.includes('contactedClients') ? [newLeadData, ...contactedClients] : contactedClients;
+      const nextCold = selectedTabKeys.includes('coldLeads') ? [newLeadData, ...coldLeads] : coldLeads;
+      await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
+
+      showToast(credentials
+        ? `✅ Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`
+        : `✅ Lead added locally (connect Google Sheets in settings to sync).`);
+      resetNewLeadForm();
+      setShowAddModal(false);
 
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
@@ -463,17 +433,20 @@ const CRMPage = () => {
     }
   };
 
-  // Save CRM data to Firebase
-  const saveCRMDataToFirebase = async () => {
+  // Save CRM data to Firebase (optional override when state may not have flushed yet)
+  const saveCRMDataToFirebase = async (override) => {
     if (!currentUser?.uid) return;
 
     try {
       const userDocRef = doc(db, 'users', currentUser.uid);
+      const data = override || {
+        warmLeads,
+        contactedClients,
+        coldLeads
+      };
       await setDoc(userDocRef, {
         crmData: {
-          warmLeads,
-          contactedClients,
-          coldLeads,
+          ...data,
           lastSyncTime: new Date().toLocaleString()
         }
       }, { merge: true });
