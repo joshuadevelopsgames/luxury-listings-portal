@@ -632,18 +632,18 @@ export default function FeedbackButton() {
 
   return (
     <>
-      {/* Floating Button - Apple-style gradient + gloss */}
+      {/* Floating Button - Apple-style gradient + gloss (no overflow-hidden so badge can sit on top) */}
       <button
         onClick={handleOpen}
-        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full overflow-hidden transition-all duration-200 flex items-center justify-center z-40 group ${
+        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full transition-all duration-200 flex items-center justify-center z-40 group ${
           isMinimized && activeChat?.status === 'open'
             ? 'bg-gradient-to-b from-[#34c759] to-[#28a745] shadow-[0_4px_20px_rgba(52,199,89,0.4),0_0_0_1px_rgba(255,255,255,0.15)_inset] hover:shadow-[0_8px_28px_rgba(52,199,89,0.45),0_0_0_1px_rgba(255,255,255,0.2)_inset] hover:scale-[1.04] active:scale-[0.98]'
             : 'bg-gradient-to-b from-[#007aff] via-[#0066e6] to-[#5856d6] shadow-[0_4px_24px_rgba(0,122,255,0.38),0_0_0_1px_rgba(255,255,255,0.12)_inset] hover:shadow-[0_8px_32px_rgba(0,122,255,0.45),0_0_0_1px_rgba(255,255,255,0.18)_inset] hover:scale-[1.04] active:scale-[0.98]'
         }`}
         title={isMinimized ? 'Return to chat' : 'Feedback & Support'}
       >
-        {/* Top gloss highlight */}
-        <span className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 via-white/5 to-transparent pointer-events-none" aria-hidden />
+        {/* Top gloss highlight - clipped to circle */}
+        <span className="absolute inset-0 rounded-full overflow-hidden bg-gradient-to-b from-white/30 via-white/5 to-transparent pointer-events-none" aria-hidden />
         <span className="relative z-10 text-white drop-shadow-sm">
           {isMinimized && activeChat?.status === 'open' ? (
             <MessageSquare className="w-6 h-6" />
@@ -652,7 +652,7 @@ export default function FeedbackButton() {
           )}
         </span>
         {showUnreadBadge && (
-          <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 bg-[#ff3b30] rounded-full border-2 border-white dark:border-[#1c1c1e] shadow-sm" aria-label="New message" />
+          <span className="absolute -top-1 -right-1 z-20 w-5 h-5 bg-[#ff3b30] rounded-full border-2 border-white dark:border-[#1c1c1e] shadow-md pointer-events-none" aria-label="New message" />
         )}
         {isMinimized && activeChat?.status === 'open' && !showUnreadBadge && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center z-20">
@@ -690,10 +690,10 @@ export default function FeedbackButton() {
               : 'bg-gradient-to-r from-[#0071e3]/5 to-[#5856d6]/5'
           }`}>
             <div className="flex items-center gap-3">
-              {view !== 'menu' && view !== 'chat-list' && view !== 'chat-detail' && (
+              {view !== 'menu' && view !== 'chat-list' && view !== 'chat' && view !== 'chat-detail' && (
                 <button
                   onClick={() => {
-                    // Return to active chat if exists, otherwise menu
+                    // Return to active chat if exists, otherwise menu (bug/feature only)
                     if (activeChat && activeChat.status === 'open') {
                       setSelectedChat(activeChat);
                       setView('chat-detail');
