@@ -3198,8 +3198,9 @@ class FirestoreService {
   }
 
   // Listen to Instagram reports changes. If loadAll=true (for admins), loads all reports.
-  onInstagramReportsChange(callback, { loadAll = false } = {}) {
-    const uid = auth.currentUser?.uid;
+  // Pass userId when "View As" is active so reports for that user are loaded.
+  onInstagramReportsChange(callback, { loadAll = false, userId = null } = {}) {
+    const uid = userId || auth.currentUser?.uid;
     if (!uid) {
       callback([]);
       return () => {}; // Return empty unsubscribe function

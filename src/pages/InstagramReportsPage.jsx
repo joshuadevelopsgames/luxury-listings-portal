@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { useViewAs } from '../contexts/ViewAsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { firestoreService } from '../services/firestoreService';
@@ -76,15 +75,13 @@ const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
 const INSTAGRAM_ADMIN_EMAILS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
 
 const InstagramReportsPage = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, realUser, isViewingAs } = useAuth();
   const { isSystemAdmin } = usePermissions();
-  const { isViewingAs, viewingAsUser } = useViewAs();
   const { confirm } = useConfirm();
-  
-  // Get effective user (View As support)
-  const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
-  // System admins always see all reports. Use email check so demo sees all even if PermissionsContext is slow.
-  const effectiveIsAdmin = isSystemAdmin || INSTAGRAM_ADMIN_EMAILS.includes((currentUser?.email || '').toLowerCase());
+  // currentUser is effective user (viewed user when View As); use their admin status for client list
+  const effectiveIsAdmin = isViewingAs
+    ? INSTAGRAM_ADMIN_EMAILS.includes((currentUser?.email || '').toLowerCase())
+    : (isSystemAdmin || INSTAGRAM_ADMIN_EMAILS.includes((realUser?.email || '').toLowerCase()));
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
@@ -101,9 +98,10 @@ const InstagramReportsPage = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedQuarter, setSelectedQuarter] = useState(getQuarter(new Date()));
 
-  // Load reports - admins see all reports, others see only their own. Re-subscribe when auth is ready.
+  // Load reports - admins see all, others see only their own; when View As, load by effective user.
   useEffect(() => {
-    if (!currentUser?.uid) {
+    const uid = currentUser?.uid;
+    if (!uid) {
       setReports([]);
       setLoading(false);
       return () => {};
@@ -111,9 +109,9 @@ const InstagramReportsPage = () => {
     const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
       setReports(data);
       setLoading(false);
-    }, { loadAll: effectiveIsAdmin });
+    }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined });
     return () => unsubscribe();
-  }, [currentUser?.uid, effectiveIsAdmin]);
+  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs]);
 
   // Load clients
   useEffect(() => {
@@ -128,12 +126,12 @@ const InstagramReportsPage = () => {
     loadClients();
   }, []);
 
-  // Filter clients: admins see all, others see only assigned clients
+  // Filter clients: admins see all, others see only assigned clients (currentUser is effective when View As)
   const isAssignedToMe = (client) => {
     const am = (client.assignedManager || '').trim().toLowerCase();
     if (!am) return false;
-    const email = (effectiveUser?.email || '').trim().toLowerCase();
-    const uid = (effectiveUser?.uid || '').trim().toLowerCase();
+    const email = (currentUser?.email || '').trim().toLowerCase();
+    const uid = (currentUser?.uid || '').trim().toLowerCase();
     return am === email || (uid && am === uid);
   };
 
@@ -142,7 +140,7 @@ const InstagramReportsPage = () => {
       return allClients;
     }
     return allClients.filter(isAssignedToMe);
-  }, [allClients, effectiveUser?.email, effectiveUser?.uid, effectiveIsAdmin]);
+  }, [allClients, currentUser?.email, currentUser?.uid, effectiveIsAdmin]);
 
   // Group reports by client
   const clientsWithReports = useMemo(() => {

@@ -494,22 +494,36 @@ export function AuthProvider({ children }) {
     });
   };
 
+  const viewAs = useViewAs();
+  const isViewingAs = viewAs?.isViewingAs && viewAs?.viewingAsUser;
+  const effectiveUser = isViewingAs ? viewAs.viewingAsUser : currentUser;
+  const effectiveRole = isViewingAs && viewAs.viewAsRole ? viewAs.viewAsRole : currentRole;
+  const viewAsPagePerms = viewAs?.viewAsPermissions || [];
+  const viewAsRolePerms = getRolePermissions(effectiveRole)?.permissions;
+
   const value = {
-    currentUser,
-    userData,
-    currentRole,
+    currentUser: effectiveUser,
+    userData: effectiveUser ?? userData,
+    currentRole: effectiveRole,
     loading,
     switchRole,
-    getCurrentRolePermissions,
-    hasPermission,
+    getCurrentRolePermissions: () => getRolePermissions(effectiveRole),
+    hasPermission: (permission) => {
+      if (isViewingAs) {
+        const custom = effectiveUser?.customPermissions || [];
+        return viewAsPagePerms.includes(permission) || (viewAsRolePerms && viewAsRolePerms[permission]) || custom.includes(permission);
+      }
+      return hasPermission(permission);
+    },
     signInWithGoogle,
     signInWithEmail,
     logout,
     chatbotResetTrigger,
     mergeCurrentUser,
-    // For View As feature - real user is always available
     realUser: currentUser,
     isSystemAdmin: isSystemAdmin(currentUser?.email),
+    isViewingAs: !!isViewingAs,
+    viewingAsUser: viewAs?.viewingAsUser ?? null,
   };
 
   return (

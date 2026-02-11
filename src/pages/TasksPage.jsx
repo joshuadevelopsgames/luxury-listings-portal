@@ -30,7 +30,6 @@ import CalendarView from '../components/tasks/CalendarView';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
-import { useViewAs } from '../contexts/ViewAsContext';
 import { toast } from 'react-hot-toast';
 import { DailyTask } from '../entities/DailyTask';
 import { firestoreService } from '../services/firestoreService';
@@ -161,11 +160,8 @@ const TasksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser, hasPermission, getCurrentRolePermissions } = useAuth();
   const { confirm } = useConfirm();
-  const { isViewingAs, viewingAsUser } = useViewAs();
   const rolePerms = getCurrentRolePermissions?.()?.permissions || {};
-  
-  // Get effective user - when viewing as another user, show their tasks
-  const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
+  // currentUser is effective user (viewed user when View As)
   
   // If user can access the Tasks page (module enabled), they can create tasks
   // No separate feature permission needed - module access = full access
@@ -535,18 +531,18 @@ const TasksPage = () => {
 
   // Load sent request count for Outbox tab (lightweight)
   useEffect(() => {
-    if (!effectiveUser?.email) return;
-    firestoreService.getSentTaskRequests(effectiveUser.email).then((r) => setSentRequests(r || []));
-  }, [effectiveUser?.email]);
+    if (!currentUser?.email) return;
+    firestoreService.getSentTaskRequests(currentUser.email).then((r) => setSentRequests(r || []));
+  }, [currentUser?.email]);
 
   // Load full outbox (sent requests + task statuses) when user opens Outbox tab
   useEffect(() => {
-    if (!effectiveUser?.email || activeFilter !== 'outbox') return;
+    if (!currentUser?.email || activeFilter !== 'outbox') return;
 
     const loadOutboxDetails = async () => {
       setOutboxLoading(true);
       try {
-        const requests = await firestoreService.getSentTaskRequests(effectiveUser.email);
+        const requests = await firestoreService.getSentTaskRequests(currentUser.email);
         setSentRequests(requests || []);
         const map = {};
         await Promise.all(
@@ -566,7 +562,7 @@ const TasksPage = () => {
     };
 
     loadOutboxDetails();
-  }, [effectiveUser?.email, activeFilter]);
+  }, [currentUser?.email, activeFilter]);
 
   // Sync URL ?tab=outbox&requestId= or ?requestId= (incoming task request) with UI
   useEffect(() => {
@@ -606,15 +602,15 @@ const TasksPage = () => {
 
   // Load archived task and request ids (per-user, local)
   useEffect(() => {
-    if (!effectiveUser?.email) return;
+    if (!currentUser?.email) return;
     Promise.all([
-      firestoreService.getArchivedTaskIds(effectiveUser.email),
-      firestoreService.getArchivedRequestIds(effectiveUser.email)
+      firestoreService.getArchivedTaskIds(currentUser.email),
+      firestoreService.getArchivedRequestIds(currentUser.email)
     ]).then(([taskIds, requestIds]) => {
       setArchivedTaskIds(new Set(taskIds || []));
       setArchivedRequestIds(new Set(requestIds || []));
     });
-  }, [effectiveUser?.email]);
+  }, [currentUser?.email]);
 
   // Unread count for outbox-related notifications (task_accepted, task_completed)
   useEffect(() => {
@@ -641,7 +637,7 @@ const TasksPage = () => {
   // Refresh tasks function - call after create/edit/delete actions
   const refreshTasks = async () => {
     try {
-      const tasksData = await DailyTask.filter({ assigned_to: effectiveUser.email }, '-due_date');
+      const tasksData = await DailyTask.filter({ assigned_to: currentUser.email }, '-due_date');
       setTasks(tasksData);
     } catch (error) {
       console.error('Error refreshing tasks:', error);
@@ -653,7 +649,7 @@ const TasksPage = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const tasksData = await DailyTask.filter({ assigned_to: effectiveUser.email }, '-due_date');
+        const tasksData = await DailyTask.filter({ assigned_to: currentUser.email }, '-due_date');
         setTasks(tasksData);
       } catch (error) {
         console.error('Error loading tasks:', error);
@@ -663,7 +659,7 @@ const TasksPage = () => {
     };
 
     loadData();
-  }, [effectiveUser?.email]);
+  }, [currentUser?.email]);
 
   // Force re-filter every minute to auto-hide tasks that pass 24-hour mark
   const [timeTick, setTimeTick] = useState(0);
@@ -916,8 +912,8 @@ const TasksPage = () => {
       setEditingTask(null);
 
       // If this task is linked to an outbox request, refresh outbox so sender sees updated status
-      if (updatedTask.taskRequestId && effectiveUser?.email) {
-        const requests = await firestoreService.getSentTaskRequests(effectiveUser.email);
+      if (updatedTask.taskRequestId && currentUser?.email) {
+        const requests = await firestoreService.getSentTaskRequests(currentUser.email);
         setSentRequests(requests || []);
         const map = {};
         await Promise.all(
@@ -1031,9 +1027,9 @@ const TasksPage = () => {
   };
 
   const handleArchiveTask = async (taskId) => {
-    if (!effectiveUser?.email) return;
+    if (!currentUser?.email) return;
     try {
-      await firestoreService.archiveTaskForUser(effectiveUser.email, taskId);
+      await firestoreService.archiveTaskForUser(currentUser.email, taskId);
       setArchivedTaskIds((prev) => new Set([...prev, taskId]));
       toast.success('Task archived');
     } catch (error) {
@@ -1043,9 +1039,9 @@ const TasksPage = () => {
   };
 
   const handleUnarchiveTask = async (taskId) => {
-    if (!effectiveUser?.email) return;
+    if (!currentUser?.email) return;
     try {
-      await firestoreService.unarchiveTaskForUser(effectiveUser.email, taskId);
+      await firestoreService.unarchiveTaskForUser(currentUser.email, taskId);
       setArchivedTaskIds((prev) => {
         const next = new Set(prev);
         next.delete(taskId);
@@ -1059,9 +1055,9 @@ const TasksPage = () => {
   };
 
   const handleArchiveRequest = async (requestId) => {
-    if (!effectiveUser?.email) return;
+    if (!currentUser?.email) return;
     try {
-      await firestoreService.archiveRequestForUser(effectiveUser.email, requestId);
+      await firestoreService.archiveRequestForUser(currentUser.email, requestId);
       setArchivedRequestIds((prev) => new Set([...prev, requestId]));
       toast.success('Request archived');
     } catch (error) {
@@ -1071,15 +1067,15 @@ const TasksPage = () => {
   };
 
   const handleUnarchiveRequest = async (requestId) => {
-    if (!effectiveUser?.email) return;
+    if (!currentUser?.email) return;
     try {
-      await firestoreService.unarchiveRequestForUser(effectiveUser.email, requestId);
+      await firestoreService.unarchiveRequestForUser(currentUser.email, requestId);
       setArchivedRequestIds((prev) => {
         const next = new Set(prev);
         next.delete(requestId);
         return next;
       });
-      const requests = await firestoreService.getSentTaskRequests(effectiveUser.email);
+      const requests = await firestoreService.getSentTaskRequests(currentUser.email);
       setSentRequests(requests || []);
       toast.success('Request restored from archive');
     } catch (error) {

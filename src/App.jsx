@@ -287,10 +287,10 @@ const router = createBrowserRouter([
 function App() {
   return (
     <PendingUsersProvider>
-      <AuthProvider>
-        <PermissionsProvider>
-          <ClientsProvider>
-            <ViewAsProvider>
+      <ViewAsProvider>
+        <AuthProvider>
+          <PermissionsProvider>
+            <ClientsProvider>
               <ConfirmProvider>
                 <RouterProvider router={router} />
                 <MobileInstallPrompt />
@@ -313,10 +313,10 @@ function App() {
                   }}
                 />
               </ConfirmProvider>
-            </ViewAsProvider>
-          </ClientsProvider>
-        </PermissionsProvider>
-      </AuthProvider>
+            </ClientsProvider>
+          </PermissionsProvider>
+        </AuthProvider>
+      </ViewAsProvider>
     </PendingUsersProvider>
   );
 }

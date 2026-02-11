@@ -5,7 +5,6 @@ import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@d
 import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
-import { useViewAs } from '../../contexts/ViewAsContext';
 import { firestoreService } from '../../services/firestoreService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';
 import ClientLink from '../../components/ui/ClientLink';
@@ -71,21 +70,18 @@ function SortableMainBlock({ id, span, isEditMode, renderBlock }) {
 }
 
 const V3Dashboard = () => {
-  const { currentUser, currentRole } = useAuth();
+  const { currentUser, isViewingAs } = useAuth();
   const { permissions, isSystemAdmin } = usePermissions();
-  const { isViewingAs, viewingAsUser, viewAsPermissions } = useViewAs();
   const [loading, setLoading] = useState(true);
 
-  // Edit Dashboard: drag-and-drop reorder; prefs loaded/saved by current user (not view-as)
   const [isEditMode, setIsEditMode] = useState(false);
   const [mainContentOrder, setMainContentOrder] = useState(DEFAULT_MAIN_CONTENT_BLOCK_ORDER);
-  const [widgetOrder, setWidgetOrder] = useState(null); // null = use registry default order
+  const [widgetOrder, setWidgetOrder] = useState(null);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
 
-  // Get effective user - when viewing as, use that user's data
-  const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
-  const effectivePermissions = isViewingAs ? viewAsPermissions : permissions;
-  const effectiveIsSystemAdmin = isViewingAs ? false : isSystemAdmin; // When viewing as, don't use admin privileges
+  // currentUser is effective user when View As; use real user for prefs load/save
+  const effectivePermissions = permissions;
+  const effectiveIsSystemAdmin = isViewingAs ? false : isSystemAdmin;
   
   // Get enabled modules: merge base (always) with user permissions so "Your Modules" and nav stay in sync
   const baseModuleIds = getBaseModuleIds();
@@ -129,8 +125,8 @@ const V3Dashboard = () => {
     ? clients
     : clients.filter((c) => {
         const am = (c.assignedManager || '').trim().toLowerCase();
-        const email = (effectiveUser?.email || '').trim().toLowerCase();
-        const uid = effectiveUser?.uid || '';
+        const email = (currentUser?.email || '').trim().toLowerCase();
+        const uid = currentUser?.uid || '';
         return am === email || (uid && am === uid.toLowerCase());
       });
   const clientCountForDisplay = displayClients.length;
@@ -207,10 +203,10 @@ const V3Dashboard = () => {
         // Get all tasks (or tasks assigned to effective user - respects View As mode)
         let allTasks = [];
         
-        if (effectiveUser?.email) {
+        if (currentUser?.email) {
           // Try to get user's tasks first
           try {
-            allTasks = await firestoreService.getTasksByUser(effectiveUser.email);
+            allTasks = await firestoreService.getTasksByUser(currentUser.email);
           } catch (e) {
             // Fallback to all tasks
             allTasks = await firestoreService.getTasks();
@@ -271,7 +267,7 @@ const V3Dashboard = () => {
     };
 
     fetchTasks();
-  }, [effectiveUser?.email]);
+  }, [currentUser?.email]);
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -590,9 +586,9 @@ const V3Dashboard = () => {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-[24px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1 flex items-center gap-2 sm:gap-3">
-            {greeting()}, {effectiveUser?.displayName?.split(' ')[0] || effectiveUser?.firstName || 'there'}
+            {greeting()}, {currentUser?.displayName?.split(' ')[0] || currentUser?.firstName || 'there'}
             {/* Michelle's special cat icon - different for light/dark mode */}
-            {effectiveUser?.email?.toLowerCase() === 'michelle@luxury-listings.com' && (
+            {currentUser?.email?.toLowerCase() === 'michelle@luxury-listings.com' && (
               <>
                 <img 
                   src="/michelle-cat.png" 

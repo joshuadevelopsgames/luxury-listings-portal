@@ -14,7 +14,6 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useViewAs } from '../../../contexts/ViewAsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -52,7 +51,6 @@ const platformColors = {
 
 const PostsLoggedWidget = () => {
   const { currentUser } = useAuth();
-  const { isViewingAs, viewingAsUser } = useViewAs();
   const [loading, setLoading] = useState(true);
   const [postsToday, setPostsToday] = useState([]);
   const [showLogModal, setShowLogModal] = useState(false);
@@ -61,18 +59,14 @@ const PostsLoggedWidget = () => {
   const [selectedPlatform, setSelectedPlatform] = useState('instagram');
   const [logging, setLogging] = useState(false);
 
-  const effectiveUser = isViewingAs && viewingAsUser ? viewingAsUser : currentUser;
-
-  // Load today's logged posts
   useEffect(() => {
     const loadPostsToday = async () => {
-      if (!effectiveUser?.email) return;
+      if (!currentUser?.email) return;
 
       try {
-        // Load clients first: only clients assigned to this user (posts tally is scoped to these)
         const allClients = await firestoreService.getClients();
-        const email = (effectiveUser?.email || '').trim().toLowerCase();
-        const uid = (effectiveUser?.uid || '').trim().toLowerCase();
+        const email = (currentUser?.email || '').trim().toLowerCase();
+        const uid = (currentUser?.uid || '').trim().toLowerCase();
         const myClients = allClients.filter(c => {
           const am = (c.assignedManager || '').trim().toLowerCase();
           if (!am) return false;
@@ -82,7 +76,7 @@ const PostsLoggedWidget = () => {
         const myClientIds = new Set(myClients.map(c => c.id));
 
         // Get logged posts from tasks with label 'client-post' completed today — only for this person's clients
-        const allTasks = await firestoreService.getTasksByUser(effectiveUser.email);
+        const allTasks = await firestoreService.getTasksByUser(currentUser.email);
         const today = format(new Date(), 'yyyy-MM-dd');
         const todaysPosts = allTasks.filter(task => {
           const isClientPost = task.labels?.includes('client-post');
@@ -101,7 +95,7 @@ const PostsLoggedWidget = () => {
     };
 
     loadPostsToday();
-  }, [effectiveUser?.email, effectiveUser?.uid]);
+  }, [currentUser?.email, currentUser?.uid]);
 
   const postsByClient = useMemo(() => {
     const map = {};
@@ -118,8 +112,8 @@ const PostsLoggedWidget = () => {
     const taskData = {
       title: `Post for ${client.clientName}`,
       description: `${platform.charAt(0).toUpperCase() + platform.slice(1)} post completed`,
-      assigned_to: effectiveUser.email,
-      assignedBy: effectiveUser.email,
+      assigned_to: currentUser.email,
+      assignedBy: currentUser.email,
       status: 'completed',
       priority: 'medium',
       due_date: format(now, 'yyyy-MM-dd'),

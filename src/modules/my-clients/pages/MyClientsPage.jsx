@@ -13,7 +13,6 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useViewAs } from '../../../contexts/ViewAsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import { openaiService } from '../../../services/openaiService';
 import PlatformIcons from '../../../components/PlatformIcons';
@@ -53,8 +52,7 @@ import {
 
 const MyClientsPage = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const { isViewingAs, viewingAsUser, getEffectiveUser } = useViewAs();
+  const { currentUser, isViewingAs } = useAuth();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,21 +69,18 @@ const MyClientsPage = () => {
   const [loadingAiHealth, setLoadingAiHealth] = useState({}); // { clientId: boolean }
   const [showAiTooltip, setShowAiTooltip] = useState(null); // clientId to show tooltip for
 
-  // Get the effective user (viewed-as user or current user)
-  const effectiveUser = getEffectiveUser(currentUser);
-
-  // Match client to effective user: assignedManager can be email or uid (normalize and trim)
+  // currentUser is effective user (viewed-as when View As)
   const isAssignedToMe = (client) => {
     const am = (client.assignedManager || '').trim().toLowerCase();
     if (!am) return false;
-    const email = (effectiveUser?.email || '').trim().toLowerCase();
-    const uid = (effectiveUser?.uid || '').trim().toLowerCase();
+    const email = (currentUser?.email || '').trim().toLowerCase();
+    const uid = (currentUser?.uid || '').trim().toLowerCase();
     return am === email || (uid && am === uid);
   };
 
   useEffect(() => {
     const loadClients = async () => {
-      if (!effectiveUser?.email && !effectiveUser?.uid) return;
+      if (!currentUser?.email && !currentUser?.uid) return;
 
       try {
         const allClients = await firestoreService.getClients();
@@ -93,7 +88,7 @@ const MyClientsPage = () => {
         setClients(myClients);
         const snapshots = await firestoreService.getClientHealthSnapshots();
         setClientHealthSnapshots(snapshots);
-        console.log(`📋 Loaded ${myClients.length} clients for ${effectiveUser?.email}${isViewingAs ? ' (View As mode)' : ''}`);
+        console.log(`📋 Loaded ${myClients.length} clients for ${currentUser?.email}${isViewingAs ? ' (View As mode)' : ''}`);
       } catch (error) {
         console.error('Error loading clients:', error);
       } finally {
@@ -102,7 +97,7 @@ const MyClientsPage = () => {
     };
 
     loadClients();
-  }, [effectiveUser?.email, effectiveUser?.uid, isViewingAs]);
+  }, [currentUser?.email, currentUser?.uid, isViewingAs]);
 
   const getHealthStatus = (client) => {
     const postsRemaining = client.postsRemaining || 0;
@@ -250,15 +245,15 @@ const MyClientsPage = () => {
   const logPostPlatformIcons = { instagram: Instagram, youtube: Youtube, facebook: Facebook, linkedin: Linkedin };
 
   const handleLogPostForClient = async () => {
-    if (!logPostClient || !effectiveUser?.email) return;
+    if (!logPostClient || !currentUser?.email) return;
     setLogSaving(true);
     try {
       const now = new Date();
       const taskData = {
         title: `Post for ${logPostClient.clientName}`,
         description: `${logPlatform.charAt(0).toUpperCase() + logPlatform.slice(1)} post completed`,
-        assigned_to: effectiveUser.email,
-        assignedBy: effectiveUser.email,
+        assigned_to: currentUser.email,
+        assignedBy: currentUser.email,
         status: 'completed',
         priority: 'medium',
         due_date: format(now, 'yyyy-MM-dd'),
