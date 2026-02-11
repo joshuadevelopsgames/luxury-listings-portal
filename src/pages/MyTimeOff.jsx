@@ -771,6 +771,7 @@ const MyTimeOff = () => {
                   {Object.entries(leaveTypes).map(([key, type]) => {
                     const Icon = type.icon;
                     const balance = leaveBalances[key];
+                    const daysLabel = balance != null ? `${balance.remaining} days available` : 'No balance tracking';
                     
                     return (
                       <button
@@ -789,7 +790,7 @@ const MyTimeOff = () => {
                         </div>
                         <p className="text-[11px] text-[#86868b] mb-2">{type.description}</p>
                         <p className={`text-[12px] font-medium ${leaveForm.type === key ? 'text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white'}`}>
-                          {balance.remaining} days available
+                          {daysLabel}
                         </p>
                       </button>
                     );
