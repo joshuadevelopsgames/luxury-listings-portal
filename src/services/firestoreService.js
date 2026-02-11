@@ -3261,35 +3261,43 @@ class FirestoreService {
 
   // ===== PAGE PERMISSIONS MANAGEMENT =====
 
-  // Get user's full permissions (pages and features)
+  // All feature permission ids except view_financials (admin permissions switch grants these)
+  _adminFeaturePermissions() {
+    return ['manage_users', 'approve_time_off', 'view_analytics', 'manage_clients', 'assign_client_managers', 'edit_client_packages'];
+  }
+
+  // Get user's full permissions (pages, features, adminPermissions)
   async getUserPermissions(userEmail) {
     try {
       const normalizedEmail = userEmail.toLowerCase().trim();
       const userRef = doc(db, this.collections.APPROVED_USERS, normalizedEmail);
       const userSnap = await getDoc(userRef);
       
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
+      const mapResult = (userData) => {
+        const adminPermissions = !!userData.adminPermissions;
+        const features = adminPermissions
+          ? this._adminFeaturePermissions()
+          : (userData.featurePermissions || []);
         return {
           pages: userData.pagePermissions || [],
-          features: userData.featurePermissions || []
+          features,
+          adminPermissions
         };
+      };
+
+      if (userSnap.exists()) {
+        return mapResult(userSnap.data());
       }
       
-      // If document doesn't exist with normalized email, try original email
       if (normalizedEmail !== userEmail) {
         const altRef = doc(db, this.collections.APPROVED_USERS, userEmail);
         const altSnap = await getDoc(altRef);
         if (altSnap.exists()) {
-          const userData = altSnap.data();
-          return {
-            pages: userData.pagePermissions || [],
-            features: userData.featurePermissions || []
-          };
+          return mapResult(altSnap.data());
         }
       }
       
-      return { pages: [], features: [] };
+      return { pages: [], features: [], adminPermissions: false };
     } catch (error) {
       console.error('❌ Error getting user permissions:', error);
       throw error;
@@ -3390,8 +3398,8 @@ class FirestoreService {
     }
   }
 
-  // Set both page and feature permissions at once
-  async setUserFullPermissions(userEmail, { pages = [], features = [] }) {
+  // Set both page and feature permissions at once (adminPermissions = grant all features except view_financials)
+  async setUserFullPermissions(userEmail, { pages = [], features = [], adminPermissions = false } = {}) {
     try {
       const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
       const userSnap = await getDoc(userRef);
@@ -3399,21 +3407,23 @@ class FirestoreService {
       console.log('📝 Setting full permissions for user:', userEmail);
       console.log('📝 Page permissions:', pages);
       console.log('📝 Feature permissions:', features);
+      console.log('📝 Admin permissions:', adminPermissions);
+
+      const payload = {
+        pagePermissions: pages,
+        featurePermissions: features,
+        adminPermissions: !!adminPermissions,
+        permissionsUpdatedAt: serverTimestamp()
+      };
 
       if (!userSnap.exists()) {
         await setDoc(userRef, {
           email: userEmail,
-          pagePermissions: pages,
-          featurePermissions: features,
-          permissionsUpdatedAt: serverTimestamp(),
+          ...payload,
           createdAt: serverTimestamp()
         }, { merge: true });
       } else {
-        await updateDoc(userRef, {
-          pagePermissions: pages,
-          featurePermissions: features,
-          permissionsUpdatedAt: serverTimestamp()
-        });
+        await updateDoc(userRef, payload);
       }
       
       console.log('✅ Full permissions saved for:', userEmail);
