@@ -795,28 +795,19 @@ const ContentCalendar = () => {
     setImportStep(4);
     
     try {
-      // Create a new calendar based on the sheet title
-      const newCalendarId = `cal-${Date.now()}`;
       const newCalendarName = sheetData.spreadsheetTitle || 'Imported Calendar';
-      
       console.log('📅 Creating new calendar:', newCalendarName);
-      
-      // Add the new calendar with sheet URL for refresh
-      setCalendars(prev => {
-        const updated = [...prev, { 
-          id: newCalendarId, 
-          name: newCalendarName,
-          sheetUrl: sheetUrl,
-          sheetTitle: sheetData.sheetTitle, // tab (e.g. month) for refresh
-          lastImported: new Date().toISOString()
-        }];
-        // Save to localStorage immediately
-        if (currentUser?.email) {
-          const calendarsStorageKey = `calendars_${currentUser.email}`;
-          localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
-        }
-        return updated;
-      });
+
+      let newCalendarId;
+      if (currentUser?.email) {
+        const res = await firestoreService.createContentCalendar({ userEmail: currentUser.email, name: newCalendarName });
+        newCalendarId = res.id;
+        const refetchedCals = await firestoreService.getContentCalendars(currentUser.email);
+        setCalendars(refetchedCals);
+      } else {
+        newCalendarId = `cal-${Date.now()}`;
+        setCalendars(prev => [...prev, { id: newCalendarId, name: newCalendarName }]);
+      }
 
       const importedContent = [];
       let successCount = 0;

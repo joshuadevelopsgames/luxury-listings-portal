@@ -2508,14 +2508,20 @@ class FirestoreService {
     }
   }
 
-  async getContentItems(userEmail) {
+  async getContentItems(userEmail, options = {}) {
     if (!userEmail) return [];
     try {
-      const q = query(
+      let q = query(
         collection(db, this.collections.CONTENT_ITEMS),
         where('userEmail', '==', userEmail),
         orderBy('scheduledDate', 'asc')
       );
+      if (options.calendarId) {
+        q = query(q, where('calendarId', '==', options.calendarId));
+      }
+      if (options.status) {
+        q = query(q, where('status', '==', options.status));
+      }
       const snapshot = await getDocs(q);
       const list = [];
       snapshot.forEach((docSnap) => list.push(this._normalizeContentItem(docSnap)));
