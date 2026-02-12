@@ -25,8 +25,6 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 import { firestoreService } from '../services/firestoreService';
 import PlatformIcons from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
@@ -34,7 +32,7 @@ import ClientDetailModal from '../components/client/ClientDetailModal';
 import { useOpenClientCard } from '../hooks/useOpenClientCard';
 import { Camera } from 'lucide-react';
 import { openEmailInGmail } from '../utils/gmailCompose';
-import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../services/crmService';
+import { addContactToCRM, getCrmLeadsForCurrentUser, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../services/crmService';
 
 // Posts per page: 4 columns for reporting (backward compat: client.postedOn can still be a summary string from Sheets)
 const POST_PAGES = [
@@ -152,34 +150,7 @@ export default function PostingPackages() {
       setCrmLeads([]);
       return;
     }
-    getDoc(doc(db, 'users', currentUser.uid))
-      .then((snap) => {
-        if (!snap.exists()) {
-          setCrmLeads([]);
-          return;
-        }
-        const data = snap.data().crmData || {};
-        const warm = (data.warmLeads || []).map((c, i) => ({
-          id: `lead-warm-${i}`,
-          clientName: c.contactName || c.clientName || c.name || '',
-          clientEmail: c.email || c.clientEmail || '',
-          source: 'lead'
-        }));
-        const contacted = (data.contactedClients || []).map((c, i) => ({
-          id: `lead-contacted-${i}`,
-          clientName: c.contactName || c.clientName || c.name || '',
-          clientEmail: c.email || c.clientEmail || '',
-          source: 'lead'
-        }));
-        const cold = (data.coldLeads || []).map((c, i) => ({
-          id: `lead-cold-${i}`,
-          clientName: c.contactName || c.clientName || c.name || '',
-          clientEmail: c.email || c.clientEmail || '',
-          source: 'lead'
-        }));
-        setCrmLeads([...warm, ...contacted, ...cold]);
-      })
-      .catch(() => setCrmLeads([]));
+    getCrmLeadsForCurrentUser().then(setCrmLeads).catch(() => setCrmLeads([]));
   }, [currentUser?.uid]);
 
   // Test function to verify the script is working

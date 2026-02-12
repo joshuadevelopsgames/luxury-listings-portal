@@ -26,6 +26,44 @@ export const CLIENT_TYPE_OPTIONS = [
 const DEFAULT_TAB = 'warmLeads';
 
 /**
+ * Get CRM leads for the current user (Firebase users/{uid}.crmData).
+ * Returns a single array of { id, clientName, clientEmail, source: 'lead' } for use in pickers.
+ * @returns {Promise<Array<{ id: string, clientName: string, clientEmail: string, source: string }>>}
+ */
+export async function getCrmLeadsForCurrentUser() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return [];
+
+  try {
+    const userRef = doc(db, 'users', uid);
+    const snap = await getDoc(userRef);
+    const data = snap.exists() ? snap.data().crmData || {} : {};
+    const warm = (data.warmLeads || []).map((c, i) => ({
+      id: c.id || `lead-warm-${i}`,
+      clientName: c.contactName || c.clientName || c.name || '',
+      clientEmail: c.email || c.clientEmail || '',
+      source: 'lead'
+    }));
+    const contacted = (data.contactedClients || []).map((c, i) => ({
+      id: c.id || `lead-contacted-${i}`,
+      clientName: c.contactName || c.clientName || c.name || '',
+      clientEmail: c.email || c.clientEmail || '',
+      source: 'lead'
+    }));
+    const cold = (data.coldLeads || []).map((c, i) => ({
+      id: c.id || `lead-cold-${i}`,
+      clientName: c.contactName || c.clientName || c.name || '',
+      clientEmail: c.email || c.clientEmail || '',
+      source: 'lead'
+    }));
+    return [...warm, ...contacted, ...cold];
+  } catch (err) {
+    console.error('CRM getCrmLeadsForCurrentUser error:', err);
+    return [];
+  }
+}
+
+/**
  * Add a contact to the current user's CRM (Firebase users/{uid}.crmData).
  * Requires: contactName (or clientName), email, type (SMM | PP | BOTH | N/A).
  * Automatically sets addedToCrmAt (ISO timestamp).
