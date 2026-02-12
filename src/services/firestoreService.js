@@ -71,7 +71,8 @@ class FirestoreService {
     POST_LOG_MONTHLY: 'post_log_monthly',
     USAGE_EVENTS: 'usage_events',
     CONTENT_CALENDARS: 'content_calendars',
-    CONTENT_ITEMS: 'content_items'
+    CONTENT_ITEMS: 'content_items',
+    CANVASES: 'canvases'
   };
 
   // Test connection method
@@ -4830,6 +4831,64 @@ class FirestoreService {
       console.error('❌ Error updating chat user last read:', error);
       throw error;
     }
+  }
+
+  // ===== CANVASES (per-user block-based documents) =====
+  // Block shape: { id, type, content, caption?, checked? }. types: text|h1|h2|h3|bullet|ordered|checklist|quote|code|callout|divider|image|video
+  async getCanvases(userId) {
+    if (!userId) return [];
+    const q = query(
+      collection(db, this.collections.CANVASES),
+      where('userId', '==', userId),
+      orderBy('updated', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => {
+      const data = d.data();
+      let blocks = data.blocks;
+      if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
+        const legacyContent = data.content || '';
+        blocks = [{ id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type: 'text', content: legacyContent }];
+      }
+      return {
+        id: d.id,
+        title: data.title || 'Untitled Canvas',
+        emoji: data.emoji || '📄',
+        blocks,
+        created: data.created?.toMillis?.() ?? data.created ?? Date.now(),
+        updated: data.updated?.toMillis?.() ?? data.updated ?? Date.now(),
+      };
+    });
+  }
+
+  async createCanvas(userId, canvas) {
+    if (!userId) throw new Error('userId required');
+    const ref = doc(db, this.collections.CANVASES, canvas.id);
+    const blocks = canvas.blocks && canvas.blocks.length ? canvas.blocks : [{ id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type: 'text', content: '' }];
+    await setDoc(ref, {
+      userId,
+      title: canvas.title,
+      emoji: canvas.emoji,
+      blocks,
+      created: serverTimestamp(),
+      updated: serverTimestamp(),
+    });
+    return { id: canvas.id, title: canvas.title, emoji: canvas.emoji, blocks, created: Date.now(), updated: Date.now() };
+  }
+
+  async updateCanvas(userId, canvasId, patch) {
+    if (!userId) throw new Error('userId required');
+    const ref = doc(db, this.collections.CANVASES, canvasId);
+    const data = { updated: serverTimestamp() };
+    if (patch.title !== undefined) data.title = patch.title;
+    if (patch.emoji !== undefined) data.emoji = patch.emoji;
+    if (patch.blocks !== undefined) data.blocks = patch.blocks;
+    await updateDoc(ref, data);
+  }
+
+  async deleteCanvas(userId, canvasId) {
+    if (!userId) throw new Error('userId required');
+    await deleteDoc(doc(db, this.collections.CANVASES, canvasId));
   }
 
   /**

@@ -220,6 +220,7 @@ const V3Layout = () => {
     'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, path: '/instagram-reports' },
     // Upgrade modules
     'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
+    'canvas': { name: 'Canvas', icon: FileText, path: '/canvas' },
     'clients': { name: 'Clients List', icon: User, path: '/clients' },
     'posting-packages': { name: 'Posting Packages', icon: Briefcase, path: '/posting-packages' },
     'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
@@ -258,6 +259,10 @@ const V3Layout = () => {
     } else {
       // No permissions - show nothing
       enabledModules = [];
+    }
+    // Canvas is available to all logged-in users
+    if (!isViewingAs && !enabledModules.includes('canvas')) {
+      enabledModules = ['canvas', ...enabledModules];
     }
 
     // Get navigation items grouped by section from the registry

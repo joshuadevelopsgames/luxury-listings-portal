@@ -6,7 +6,7 @@
  * it's included in the base package or requires upgrade.
  */
 
-import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, FileText, Briefcase, BarChart3, User, Palette, Bug, MessageSquare, Sparkles, Activity } from 'lucide-react';
+import { Calendar, Users, Instagram, CheckSquare, Target, TrendingUp, Wrench, FileText, Briefcase, BarChart3, User, Palette, Bug, MessageSquare, Sparkles, Activity, PencilRuler } from 'lucide-react';
 
 // ============================================================================
 // MODULE DEFINITIONS
@@ -55,6 +55,20 @@ export const modules = {
     navItem: {
       path: '/instagram-reports',
       section: 'SMM'
+    },
+    baseModule: true
+  },
+
+  'canvas': {
+    id: 'canvas',
+    name: 'Canvas',
+    description: 'Rich documents with formatting, checklists, and slash commands',
+    icon: PencilRuler,
+    routes: ['/canvas'],
+    widgets: [],
+    navItem: {
+      path: '/canvas',
+      section: 'Main'
     },
     baseModule: true
   },

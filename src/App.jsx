@@ -70,6 +70,7 @@ import WorkloadPage from './pages/WorkloadPage';
 import TeamDirectoryPage from './pages/TeamDirectoryPage';
 import SlackCallback from './pages/SlackCallback';
 import GraphicProjectTracker from './pages/GraphicProjectTracker';
+import CanvasPage from './pages/CanvasPage';
 
 // Module Pages
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
@@ -252,6 +253,7 @@ const router = createBrowserRouter([
           { path: 'features', element: <PermissionRoute pageId="features" pageName="Add-ons"><FeaturesPage /></PermissionRoute> },
           { path: 'workload', element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
+          { path: 'canvas', element: <CanvasPage /> },
 
           // Admin pages - system admin only
           { path: 'system-admin', element: <SystemAdminPage /> },
