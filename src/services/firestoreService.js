@@ -1820,7 +1820,8 @@ class FirestoreService {
   // Update client information
   async updateClient(clientId, clientData) {
     try {
-      const docRef = doc(db, this.collections.CLIENTS, clientId);
+      const id = clientId != null ? String(clientId) : '';
+      const docRef = doc(db, this.collections.CLIENTS, id);
       await updateDoc(docRef, {
         ...clientData,
         updatedAt: serverTimestamp()
