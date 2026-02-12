@@ -1078,7 +1078,7 @@ export default function PostingPackages() {
 
   const handleAddSubmit = async () => {
     if (addForm.selectedCrmClientId !== 'new' && !addForm.selectedCrmClientId) {
-      toast.error('Please select a client from the CRM or choose Add new client');
+      toast.error('Please select a client or lead from the CRM, or choose Add new client');
       return;
     }
     if (addForm.selectedCrmClientId === 'new' && !addForm.clientName.trim()) {
@@ -2577,7 +2577,7 @@ export default function PostingPackages() {
                     <Users className="w-4 h-4 text-[#0071e3]" />
                     <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Client</h4>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-0.5">Select from CRM or add a new client</p>
+                  <p className="text-[11px] text-[#86868b] mt-0.5">Select a client or lead from CRM, or add a new client</p>
                 </div>
                 <div className="p-4 space-y-3">
                   <input
