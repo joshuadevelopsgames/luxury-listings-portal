@@ -122,6 +122,7 @@ const ClientHealthPage = () => {
         ...prev,
         [client.id]: {
           ...prediction,
+          healthScore: prediction.healthScore ?? (prediction.churnRisk != null ? Math.round(100 - prediction.churnRisk) : undefined),
           clientName: client.clientName,
           assignedManager: client.assignedManager,
           timestamp: new Date().toISOString()
@@ -156,7 +157,7 @@ const ClientHealthPage = () => {
             Client Health Overview
           </h1>
           <p className="text-[15px] text-[#86868b] mt-1">
-            AI health status for all clients. Runs automatically 3 days before month end; you can run manually below.
+            Score out of 100 per client (100 = doing exceptionally well), from insights reports and deliverables. Runs automatically 3 days before month end; you can run manually below.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -210,7 +211,7 @@ const ClientHealthPage = () => {
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Client</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Manager</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Status</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Churn risk</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Score</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Insight</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">As of</th>
                   <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Actions</th>
@@ -252,8 +253,8 @@ const ClientHealthPage = () => {
                           <span className="text-[11px] text-[#86868b]">No snapshot</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-[12px] text-[#1d1d1f] dark:text-white">
-                        {snap?.churnRisk != null ? `${snap.churnRisk}%` : '—'}
+                      <td className="py-3 px-4 text-[12px] text-[#1d1d1f] dark:text-white font-medium">
+                        {snap?.healthScore != null ? `${snap.healthScore}/100` : '—'}
                       </td>
                       <td className="py-3 px-4 text-[12px] text-[#1d1d1f] dark:text-white max-w-[200px] truncate" title={snap?.reason}>
                         {snap?.reason || '—'}
@@ -348,9 +349,9 @@ const ClientHealthPage = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[#86868b] mb-0.5">Churn risk</p>
+                  <p className="text-[#86868b] mb-0.5">Score</p>
                   <p className="font-medium text-[#1d1d1f] dark:text-white">
-                    {reportClient.snap?.churnRisk != null ? `${reportClient.snap.churnRisk}%` : '—'}
+                    {reportClient.snap?.healthScore != null ? `${reportClient.snap.healthScore}/100` : '—'}
                   </p>
                 </div>
                 <div>

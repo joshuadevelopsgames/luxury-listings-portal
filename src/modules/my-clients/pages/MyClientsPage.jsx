@@ -294,6 +294,7 @@ const MyClientsPage = () => {
         label: source.status === 'good' ? 'Healthy' : source.status === 'warning' ? 'Watch' : 'At Risk',
         aiEnhanced: true,
         churnRisk: source.churnRisk,
+        healthScore: source.healthScore,
         reason: source.reason,
         action: source.action
       };
@@ -565,8 +566,8 @@ const MyClientsPage = () => {
                           <div className="space-y-2 text-[11px]">
                             <div className="flex items-center justify-between">
                               <span className="text-[#86868b]">Churn Risk</span>
-                              <span className={`font-medium ${health.churnRisk > 60 ? 'text-[#ff3b30]' : health.churnRisk > 30 ? 'text-[#ff9500]' : 'text-[#34c759]'}`}>
-                                {health.churnRisk}%
+                              <span className={`font-medium ${(health.healthScore ?? (100 - (health.churnRisk ?? 50))) < 40 ? 'text-[#ff3b30]' : (health.healthScore ?? (100 - (health.churnRisk ?? 50))) < 70 ? 'text-[#ff9500]' : 'text-[#34c759]'}`}>
+                                {health.healthScore != null ? `${health.healthScore}/100` : `${health.churnRisk}% risk`}
                               </span>
                             </div>
                             {health.reason && (

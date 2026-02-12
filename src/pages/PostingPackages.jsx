@@ -112,7 +112,7 @@ export default function PostingPackages() {
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState({});
   const [deleteArchivedLoading, setDeleteArchivedLoading] = useState({});
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [toastState, setToastState] = useState({ show: false, message: '', type: 'success' });
   const [autoResetChecked, setAutoResetChecked] = useState(false);
 
   // Google Sheets API configuration (using secure config)
@@ -130,9 +130,9 @@ export default function PostingPackages() {
 
   // Toast notification helper
   const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
+    setToastState({ show: true, message, type });
     // Auto-hide after 3 seconds
-    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    setTimeout(() => setToastState({ show: false, message: '', type: 'success' }), 3000);
   };
 
   useEffect(() => {
@@ -150,8 +150,15 @@ export default function PostingPackages() {
       setCrmLeads([]);
       return;
     }
-    getCrmLeadsForCurrentUser().then(setCrmLeads).catch(() => setCrmLeads([]));
+    getCrmLeadsForCurrentUser(currentUser.uid).then(setCrmLeads).catch(() => setCrmLeads([]));
   }, [currentUser?.uid]);
+
+  // Refetch CRM leads whenever Add Client modal opens so dropdown always has fresh data
+  useEffect(() => {
+    if (showAddModal && currentUser?.uid) {
+      getCrmLeadsForCurrentUser(currentUser.uid).then(setCrmLeads).catch(() => setCrmLeads([]));
+    }
+  }, [showAddModal, currentUser?.uid]);
 
   // Test function to verify the script is working
   const testGoogleAppsScript = async () => {
@@ -962,34 +969,43 @@ export default function PostingPackages() {
       }
       
       const editPostedSummary = getPostsPerPageSummary(editForm);
-      setClients(prevClients =>
-        prevClients.map(client =>
-          client.id === editingClient.id
-            ? {
-                ...client,
-                clientEmail: editForm.clientEmail,
-                profilePhoto: editForm.profilePhoto || client.profilePhoto,
-                brokerage: editForm.brokerage || client.brokerage,
-                platforms: editForm.platforms || client.platforms,
-                packageType: editForm.packageType,
-                packageSize: editForm.packageSize,
-                postsUsed: editForm.postsUsed,
-                postsRemaining: editForm.postsRemaining,
-                postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
-                postsIgMansions: editForm.postsIgMansions ?? 0,
-                postsIgInteriors: editForm.postsIgInteriors ?? 0,
-                postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
-                postedOn: editPostedSummary,
-                paymentStatus: editForm.paymentStatus,
-                notes: editForm.notes,
-                lastContact: editForm.lastContact ?? client.lastContact,
-                customPrice: editForm.customPrice || 0,
-                overduePosts: editForm.overduePosts ?? 0,
-                status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
-              }
-            : client
-        )
-      );
+      const wasMonthly = String(editingClient.id).startsWith('monthly-');
+      const isMonthly = editForm.packageType === 'Monthly';
+      const updated = {
+        ...editingClient,
+        clientEmail: editForm.clientEmail,
+        profilePhoto: editForm.profilePhoto || editingClient.profilePhoto,
+        brokerage: editForm.brokerage || editingClient.brokerage,
+        platforms: editForm.platforms || editingClient.platforms,
+        packageType: editForm.packageType,
+        packageSize: editForm.packageSize,
+        postsUsed: editForm.postsUsed,
+        postsRemaining: editForm.postsRemaining,
+        postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
+        postsIgMansions: editForm.postsIgMansions ?? 0,
+        postsIgInteriors: editForm.postsIgInteriors ?? 0,
+        postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
+        postedOn: editPostedSummary,
+        paymentStatus: editForm.paymentStatus,
+        notes: editForm.notes,
+        lastContact: editForm.lastContact ?? editingClient.lastContact,
+        customPrice: editForm.customPrice || 0,
+        overduePosts: editForm.overduePosts ?? 0,
+        status: determineStatus(editingClient.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
+      };
+      if (wasMonthly && !isMonthly) {
+        setMonthlyClients(prev => prev.filter(c => c.id !== editingClient.id));
+        setClients(prev => [...prev, { ...updated, id: updated.id.startsWith('monthly-') ? `local-${Date.now()}` : updated.id }]);
+        setActiveTab('clients');
+      } else if (!wasMonthly && isMonthly) {
+        setClients(prev => prev.filter(c => c.id !== editingClient.id));
+        setMonthlyClients(prev => [...prev, { ...updated, id: `monthly-${Date.now()}` }]);
+        setActiveTab('monthly');
+      } else if (wasMonthly && isMonthly) {
+        setMonthlyClients(prev => prev.map(c => c.id === editingClient.id ? updated : c));
+      } else {
+        setClients(prev => prev.map(c => c.id === editingClient.id ? updated : c));
+      }
       setShowEditModal(false);
       setEditingClient(null);
       setEditForm({});
@@ -1072,7 +1088,8 @@ export default function PostingPackages() {
 
     try {
       const postedOnSummary = getPostsPerPageSummary(addForm);
-      const newId = `local-${Date.now()}`;
+      const isMonthly = addForm.packageType === 'Monthly';
+      const newId = isMonthly ? `monthly-${Date.now()}` : `local-${Date.now()}`;
       const newClient = {
         id: newId,
         clientName: addForm.clientName,
@@ -1098,7 +1115,12 @@ export default function PostingPackages() {
         overduePosts: addForm.overduePosts || 0,
         status: determineStatus(addForm.approvalStatus, addForm.paymentStatus, addForm.postsRemaining)
       };
-      setClients(prev => [...prev, newClient]);
+      if (isMonthly) {
+        setMonthlyClients(prev => [...prev, newClient]);
+        setActiveTab('monthly');
+      } else {
+        setClients(prev => [...prev, newClient]);
+      }
       if (addForm.selectedCrmClientId === 'new') {
         await addContactToCRM({
           clientName: addForm.clientName,
@@ -1121,7 +1143,7 @@ export default function PostingPackages() {
   };
 
   const handleMonthlyReset = async (clientId) => {
-    const client = clients.find(c => c.id === clientId);
+    const client = clients.find(c => c.id === clientId) ?? monthlyClients.find(c => c.id === clientId);
     if (!client || client.packageType !== 'Monthly') {
       toast.error('This function is only available for Monthly packages');
       return;
@@ -1138,18 +1160,12 @@ export default function PostingPackages() {
     setApprovalLoading({ ...approvalLoading, [clientId]: true });
     try {
       const newOverduePosts = (client.overduePosts || 0) + client.postsRemaining;
-      setClients(prev =>
-        prev.map(c =>
-          c.id === clientId
-            ? {
-                ...c,
-                postsUsed: 0,
-                postsRemaining: c.packageSize,
-                overduePosts: newOverduePosts
-              }
-            : c
-        )
-      );
+      const update = { postsUsed: 0, postsRemaining: client.packageSize, overduePosts: newOverduePosts };
+      if (String(clientId).startsWith('monthly-')) {
+        setMonthlyClients(prev => prev.map(c => c.id === clientId ? { ...c, ...update } : c));
+      } else {
+        setClients(prev => prev.map(c => c.id === clientId ? { ...c, ...update } : c));
+      }
       toast.success(`Monthly reset successful for ${client.clientName}`);
     } catch (error) {
       console.error('❌ Error resetting monthly posts:', error);
@@ -2961,17 +2977,17 @@ export default function PostingPackages() {
       )}
 
       {/* Toast Notification */}
-      {toast.show && (
+      {toastState.show && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 backdrop-blur-xl ${
-          toast.type === 'success' 
+          toastState.type === 'success' 
             ? 'bg-[#34c759] text-white' 
-            : toast.type === 'error' 
+            : toastState.type === 'error' 
             ? 'bg-[#ff3b30] text-white' 
             : 'bg-[#0071e3] text-white'
         }`}>
           <div className="flex items-center gap-2">
-            <span className="text-base">{toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}</span>
-            <span className="text-[14px] font-medium">{toast.message}</span>
+            <span className="text-base">{toastState.type === 'success' ? '✓' : toastState.type === 'error' ? '✕' : 'ℹ'}</span>
+            <span className="text-[14px] font-medium">{toastState.message}</span>
           </div>
         </div>
       )}

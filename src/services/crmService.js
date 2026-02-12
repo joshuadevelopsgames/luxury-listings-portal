@@ -26,34 +26,35 @@ export const CLIENT_TYPE_OPTIONS = [
 const DEFAULT_TAB = 'warmLeads';
 
 /**
- * Get CRM leads for the current user (Firebase users/{uid}.crmData).
+ * Get CRM leads for a user (Firebase users/{uid}.crmData).
  * Returns a single array of { id, clientName, clientEmail, source: 'lead' } for use in pickers.
+ * @param {string} [uid] - Optional. If provided, uses this uid; otherwise uses auth.currentUser.uid.
  * @returns {Promise<Array<{ id: string, clientName: string, clientEmail: string, source: string }>>}
  */
-export async function getCrmLeadsForCurrentUser() {
-  const uid = auth.currentUser?.uid;
-  if (!uid) return [];
+export async function getCrmLeadsForCurrentUser(uid) {
+  const resolvedUid = uid ?? auth.currentUser?.uid;
+  if (!resolvedUid) return [];
 
   try {
-    const userRef = doc(db, 'users', uid);
+    const userRef = doc(db, 'users', resolvedUid);
     const snap = await getDoc(userRef);
     const data = snap.exists() ? snap.data().crmData || {} : {};
     const warm = (data.warmLeads || []).map((c, i) => ({
-      id: c.id || `lead-warm-${i}`,
-      clientName: c.contactName || c.clientName || c.name || '',
-      clientEmail: c.email || c.clientEmail || '',
+      id: String(c.id ?? `lead-warm-${i}`),
+      clientName: (c.contactName || c.clientName || c.name || '').trim() || '—',
+      clientEmail: (c.email || c.clientEmail || '').trim() || '',
       source: 'lead'
     }));
     const contacted = (data.contactedClients || []).map((c, i) => ({
-      id: c.id || `lead-contacted-${i}`,
-      clientName: c.contactName || c.clientName || c.name || '',
-      clientEmail: c.email || c.clientEmail || '',
+      id: String(c.id ?? `lead-contacted-${i}`),
+      clientName: (c.contactName || c.clientName || c.name || '').trim() || '—',
+      clientEmail: (c.email || c.clientEmail || '').trim() || '',
       source: 'lead'
     }));
     const cold = (data.coldLeads || []).map((c, i) => ({
-      id: c.id || `lead-cold-${i}`,
-      clientName: c.contactName || c.clientName || c.name || '',
-      clientEmail: c.email || c.clientEmail || '',
+      id: String(c.id ?? `lead-cold-${i}`),
+      clientName: (c.contactName || c.clientName || c.name || '').trim() || '—',
+      clientEmail: (c.email || c.clientEmail || '').trim() || '',
       source: 'lead'
     }));
     return [...warm, ...contacted, ...cold];

@@ -664,8 +664,56 @@ Do not include # symbols in the hashtags array. Do not include any markdown or e
 });
 
 /**
+ * Compute deterministic health score 0-100 (100 = doing exceptionally well).
+ * - Insights (80%): growth/decay from report history (views, followers, engagement).
+ * - Deliverables (20%): meeting monthly deliverables (0 remaining = full points).
+ */
+function computeHealthScore(reportHistory, clientData) {
+  const reports = Array.isArray(reportHistory) ? reportHistory : [];
+  let insightsScore = 50; // neutral when no or little data
+  if (reports.length >= 2) {
+    const latest = reports[0]?.metrics || {};
+    const oldest = reports[reports.length - 1]?.metrics || {};
+    const growthRates = [];
+    if (latest.followers != null && oldest.followers != null && oldest.followers > 0) {
+      growthRates.push((latest.followers - oldest.followers) / oldest.followers * 100);
+    }
+    if (latest.views != null && oldest.views != null && oldest.views > 0) {
+      growthRates.push((latest.views - oldest.views) / oldest.views * 100);
+    }
+    const engagement = latest.interactions != null ? latest.interactions : latest.likes;
+    const oldEngagement = oldest.interactions != null ? oldest.interactions : oldest.likes;
+    if (engagement != null && oldEngagement != null && oldEngagement > 0) {
+      growthRates.push((engagement - oldEngagement) / oldEngagement * 100);
+    }
+    if (growthRates.length > 0) {
+      const avgGrowth = growthRates.reduce((a, b) => a + b, 0) / growthRates.length;
+      // Map avgGrowth (e.g. -30 to +30) to 0-100: 20%+ => 100, -20% => 0
+      insightsScore = Math.round(50 + Math.min(50, Math.max(-50, avgGrowth * 2.5)));
+    }
+  } else if (reports.length === 1 && (reports[0].metrics?.followers != null || reports[0].metrics?.views != null)) {
+    insightsScore = 55; // single report = slight positive
+  }
+
+  let deliverablesScore = 50; // neutral if no package
+  const packageSize = Number(clientData.packageSize) || 0;
+  const postsRemaining = Number(clientData.postsRemaining) ?? 0;
+  if (packageSize > 0) {
+    if (postsRemaining <= 0) {
+      deliverablesScore = 100;
+    } else {
+      const used = packageSize - postsRemaining;
+      deliverablesScore = Math.round(100 * Math.max(0, used) / packageSize);
+    }
+  }
+
+  const score = Math.round(0.8 * insightsScore + 0.2 * deliverablesScore);
+  return Math.min(100, Math.max(0, score));
+}
+
+/**
  * Core health prediction logic (shared by onCall and bulk/scheduled run).
- * Returns { status, churnRisk, reason, action, tokensUsed }.
+ * Returns { status, churnRisk, reason, action, tokensUsed, healthScore }.
  */
 async function computeHealthPrediction(clientData, reportHistory) {
   const openRouterKey = process.env.OPENROUTER_API_KEY;
@@ -843,11 +891,14 @@ Guidelines:
       provider
     });
 
-    console.log(`✅ Health predicted for ${clientName}: ${result.status} (${result.churnRisk}% risk)`);
+    const healthScore = computeHealthScore(reportHistory, clientData);
+
+    console.log(`✅ Health predicted for ${clientName}: ${result.status} (${result.churnRisk}% risk, score ${healthScore}/100)`);
 
     return {
       success: true,
       ...result,
+      healthScore,
       rateLimitRemaining: rateLimit.remaining
     };
   } catch (error) {
@@ -965,11 +1016,13 @@ async function doBulkHealthPrediction() {
       const result = JSON.parse(content);
       const status = ['good', 'warning', 'critical'].includes(result.status) ? result.status : 'warning';
       const churnRisk = typeof result.churnRisk === 'number' && result.churnRisk >= 0 && result.churnRisk <= 100 ? result.churnRisk : 50;
+      const healthScore = computeHealthScore(reportHistory, clientData);
       await snapshotsCol.doc(client.id).set({
         clientName: clientData.clientName,
         assignedManager: client.assignedManager || null,
         status,
         churnRisk,
+        healthScore,
         reason: result.reason || '',
         action: result.action || '',
         timestamp: new Date().toISOString()
