@@ -10,6 +10,7 @@ import ClientDetailModal from '../../../components/client/ClientDetailModal';
 import { useOpenClientCard } from '../../../hooks/useOpenClientCard';
 import EditPostsLoggedModal from '../../../components/ui/EditPostsLoggedModal';
 import { firestoreService } from '../../../services/firestoreService';
+import { getPostsRemaining } from '../../../utils/clientPostsUtils';
 
 const DeliverablesDueWidget = () => {
   const { currentUser } = useAuth();
@@ -39,15 +40,18 @@ const DeliverablesDueWidget = () => {
   const deliverables = useMemo(
     () =>
       myClients
-        .filter(c => (c.postsRemaining || 0) > 0)
-        .map(client => ({
-          id: client.id,
-          clientName: client.clientName,
-          type: 'Posts',
-          remaining: client.postsRemaining,
-          dueDate: client.nextDeliveryDate || null,
-          status: (client.postsRemaining || 0) <= 2 ? 'urgent' : 'normal'
-        }))
+        .filter(c => getPostsRemaining(c) > 0)
+        .map(client => {
+          const remaining = getPostsRemaining(client);
+          return {
+            id: client.id,
+            clientName: client.clientName,
+            type: 'Posts',
+            remaining,
+            dueDate: client.nextDeliveryDate || null,
+            status: remaining <= 2 ? 'urgent' : 'normal'
+          };
+        })
         .slice(0, 5),
     [myClients]
   );

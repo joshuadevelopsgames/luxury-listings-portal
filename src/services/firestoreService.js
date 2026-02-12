@@ -68,6 +68,7 @@ class FirestoreService {
     FEEDBACK_CHATS: 'feedback_chats',
     CUSTOM_ROLES: 'custom_roles',
     SYSTEM: 'system',
+    POST_LOG_MONTHLY: 'post_log_monthly',
     USAGE_EVENTS: 'usage_events',
     CONTENT_CALENDARS: 'content_calendars',
     CONTENT_ITEMS: 'content_items'
@@ -471,6 +472,29 @@ class FirestoreService {
     }
   }
 
+  // Get monthly post log history for a client (snapshots saved at each runMonthlyPostsReset). Returns entries newest first.
+  async getPostLogMonthlyHistory(clientId, options = {}) {
+    const { limit: max = 24 } = options;
+    try {
+      if (!clientId) return [];
+      const q = query(
+        collection(db, this.collections.POST_LOG_MONTHLY),
+        where('clientId', '==', clientId),
+        orderBy('yearMonth', 'desc'),
+        firestoreLimit(max)
+      );
+      const snapshot = await getDocs(q);
+      const out = [];
+      snapshot.forEach((docSnap) => {
+        out.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      return out;
+    } catch (e) {
+      console.warn('getPostLogMonthlyHistory:', e?.message || e);
+      return [];
+    }
+  }
+
   // Last month we ran the monthly posts reset (year-month string e.g. "2025-02")
   async getLastPostsResetMonth() {
     try {
@@ -483,21 +507,53 @@ class FirestoreService {
     }
   }
 
-  // Run monthly posts reset: set all clients to postsUsed 0, postsRemaining = packageSize. Updates system doc. Call when current month > last reset. History is preserved in post_log tasks.
+  // Run monthly posts reset: set all clients to postsUsed 0, postsRemaining = packageSize. Before reset, snapshot each client's postsUsed (and postsUsedByPlatform if set) into post_log_monthly for the month just ended. History is also in post_log tasks.
   async runMonthlyPostsReset() {
     const now = new Date();
     const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const last = await this.getLastPostsResetMonth();
     if (last && last >= currentYearMonth) return { didReset: false, reason: 'already reset this month' };
     const clients = await this.getClients();
+    const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const previousYearMonth = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}`;
+    const col = this.collections.POST_LOG_MONTHLY;
     for (const c of clients) {
       const packageSize = Math.max(0, Number(c.packageSize) ?? 0);
-      await this.updateClient(c.id, { postsUsed: 0, postsRemaining: packageSize });
+      const postsLogged = Math.max(0, Number(c.postsUsed) ?? 0);
+      const snapshotData = {
+        clientId: c.id,
+        yearMonth: previousYearMonth,
+        postsLogged,
+        clientName: c.clientName || null
+      };
+      if (c.postsUsedByPlatform && typeof c.postsUsedByPlatform === 'object') {
+        snapshotData.postsByPlatform = { ...c.postsUsedByPlatform };
+      }
+      const snapId = `${c.id}_${previousYearMonth}`;
+      await setDoc(doc(db, col, snapId), snapshotData, { merge: true });
+      const platforms = c.platforms && typeof c.platforms === 'object' ? c.platforms : {};
+      const enabled = Object.keys(platforms).filter((k) => platforms[k]);
+      if (enabled.length > 0) {
+        const perPlatform = Math.floor(packageSize / enabled.length);
+        let remainder = packageSize - perPlatform * enabled.length;
+        const postsRemainingByPlatform = {};
+        const postsUsedByPlatform = {};
+        enabled.forEach((key) => {
+          const add = remainder > 0 ? 1 : 0;
+          remainder -= add;
+          postsRemainingByPlatform[key] = perPlatform + add;
+          postsUsedByPlatform[key] = 0;
+        });
+        await this.updateClient(c.id, { postsUsed: 0, postsRemaining: packageSize, postsRemainingByPlatform, postsUsedByPlatform });
+      } else {
+        await this.updateClient(c.id, { postsUsed: 0, postsRemaining: packageSize });
+      }
     }
     const ref = doc(db, this.collections.SYSTEM, 'posts_reset');
     await setDoc(ref, { lastYearMonth: currentYearMonth, updatedAt: serverTimestamp() }, { merge: true });
-    console.log(`✅ Monthly posts reset: ${clients.length} clients renewed for ${currentYearMonth}`);
-    return { didReset: true, clientCount: clients.length, yearMonth: currentYearMonth };
+    console.log(`✅ Monthly posts reset: ${clients.length} clients renewed for ${currentYearMonth}; snapshots saved for ${previousYearMonth}`);
+    return { didReset: true, clientCount: clients.length, yearMonth: currentYearMonth, snapshotMonth: previousYearMonth };
   }
 
   // Update task
@@ -2372,6 +2428,235 @@ class FirestoreService {
       console.error('❌ Error deleting notification:', error);
       throw error;
     }
+  }
+
+  // ===== CONTENT CALENDAR =====
+
+  /** Normalize content item from Firestore: media array, legacy imageUrl/videoUrl, dates */
+  _normalizeContentItem(docSnap) {
+    const data = docSnap.data();
+    let media = Array.isArray(data.media) ? data.media : [];
+    if (media.length === 0 && (data.imageUrl || data.videoUrl)) {
+      if (data.imageUrl) media = [{ type: 'image', url: data.imageUrl }];
+      else if (data.videoUrl) media = [{ type: 'video', url: data.videoUrl }];
+    }
+    const scheduledDate = data.scheduledDate;
+    const scheduledDateDate = typeof scheduledDate === 'string'
+      ? new Date(scheduledDate + 'T12:00:00')
+      : (scheduledDate?.toDate ? scheduledDate.toDate() : new Date(scheduledDate));
+    return {
+      id: docSnap.id,
+      userEmail: data.userEmail,
+      calendarId: data.calendarId,
+      title: data.title || '',
+      description: data.description || '',
+      platform: data.platform || 'instagram',
+      contentType: data.contentType || 'image',
+      scheduledDate: scheduledDateDate,
+      status: data.status || 'draft',
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      media,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : new Date())
+    };
+  }
+
+  async getContentCalendars(userEmail) {
+    if (!userEmail) return [];
+    try {
+      const q = query(
+        collection(db, this.collections.CONTENT_CALENDARS),
+        where('userEmail', '==', userEmail)
+      );
+      const snapshot = await getDocs(q);
+      const list = [];
+      snapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+        list.push({
+          id: docSnap.id,
+          userEmail: d.userEmail,
+          name: d.name || 'Calendar',
+          description: d.description,
+          color: d.color,
+          createdAt: d.createdAt?.toDate ? d.createdAt.toDate() : (d.createdAt ? new Date(d.createdAt) : null)
+        });
+      });
+      return list;
+    } catch (error) {
+      console.error('❌ Error getting content calendars:', error);
+      return [];
+    }
+  }
+
+  async getContentItems(userEmail) {
+    if (!userEmail) return [];
+    try {
+      const q = query(
+        collection(db, this.collections.CONTENT_ITEMS),
+        where('userEmail', '==', userEmail),
+        orderBy('scheduledDate', 'asc')
+      );
+      const snapshot = await getDocs(q);
+      const list = [];
+      snapshot.forEach((docSnap) => list.push(this._normalizeContentItem(docSnap)));
+      return list;
+    } catch (error) {
+      console.error('❌ Error getting content items:', error);
+      return [];
+    }
+  }
+
+  async getContentItem(id) {
+    if (!id) return null;
+    try {
+      const docSnap = await getDoc(doc(db, this.collections.CONTENT_ITEMS, id));
+      if (!docSnap.exists()) return null;
+      return this._normalizeContentItem(docSnap);
+    } catch (error) {
+      console.error('❌ Error getting content item:', error);
+      return null;
+    }
+  }
+
+  async createContentCalendar(data) {
+    try {
+      const payload = {
+        userEmail: data.userEmail,
+        name: data.name || 'Calendar',
+        description: data.description || null,
+        color: data.color || null,
+        createdAt: serverTimestamp()
+      };
+      const docRef = await addDoc(collection(db, this.collections.CONTENT_CALENDARS), payload);
+      return { id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error creating content calendar:', error);
+      throw error;
+    }
+  }
+
+  async updateContentCalendar(id, data) {
+    try {
+      const payload = {};
+      if (data.name !== undefined) payload.name = data.name;
+      if (data.description !== undefined) payload.description = data.description;
+      if (data.color !== undefined) payload.color = data.color;
+      if (Object.keys(payload).length === 0) return;
+      await updateDoc(doc(db, this.collections.CONTENT_CALENDARS, id), payload);
+    } catch (error) {
+      console.error('❌ Error updating content calendar:', error);
+      throw error;
+    }
+  }
+
+  async deleteContentCalendar(id) {
+    try {
+      await deleteDoc(doc(db, this.collections.CONTENT_CALENDARS, id));
+    } catch (error) {
+      console.error('❌ Error deleting content calendar:', error);
+      throw error;
+    }
+  }
+
+  /** scheduledDate stored as ISO date string YYYY-MM-DD for "due today" queries */
+  _toScheduledDateString(date) {
+    const d = date instanceof Date ? date : new Date(date);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  async createContentItem(data) {
+    try {
+      const media = Array.isArray(data.media) ? data.media.slice(0, 15) : [];
+      const payload = {
+        userEmail: data.userEmail,
+        calendarId: data.calendarId || 'default',
+        title: data.title || '',
+        description: data.description || '',
+        platform: data.platform || 'instagram',
+        contentType: data.contentType || 'image',
+        scheduledDate: this._toScheduledDateString(data.scheduledDate),
+        status: data.status || 'draft',
+        tags: Array.isArray(data.tags) ? data.tags : (data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : []),
+        media,
+        createdAt: serverTimestamp()
+      };
+      const docRef = await addDoc(collection(db, this.collections.CONTENT_ITEMS), payload);
+      return { id: docRef.id };
+    } catch (error) {
+      console.error('❌ Error creating content item:', error);
+      throw error;
+    }
+  }
+
+  async updateContentItem(id, data) {
+    try {
+      const payload = {};
+      if (data.calendarId !== undefined) payload.calendarId = data.calendarId;
+      if (data.title !== undefined) payload.title = data.title;
+      if (data.description !== undefined) payload.description = data.description;
+      if (data.platform !== undefined) payload.platform = data.platform;
+      if (data.contentType !== undefined) payload.contentType = data.contentType;
+      if (data.scheduledDate !== undefined) payload.scheduledDate = this._toScheduledDateString(data.scheduledDate);
+      if (data.status !== undefined) payload.status = data.status;
+      if (data.tags !== undefined) payload.tags = Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : []);
+      if (data.media !== undefined) payload.media = Array.isArray(data.media) ? data.media.slice(0, 15) : [];
+      if (Object.keys(payload).length === 0) return;
+      await updateDoc(doc(db, this.collections.CONTENT_ITEMS, id), payload);
+    } catch (error) {
+      console.error('❌ Error updating content item:', error);
+      throw error;
+    }
+  }
+
+  async deleteContentItem(id) {
+    try {
+      await deleteDoc(doc(db, this.collections.CONTENT_ITEMS, id));
+    } catch (error) {
+      console.error('❌ Error deleting content item:', error);
+      throw error;
+    }
+  }
+
+  /** One-time: migrate from localStorage (run in browser). Call after getContentItems returns empty if desired. */
+  async migrateContentCalendarFromLocalStorage(userEmail, localStorageItems, localStorageCalendars) {
+    if (!userEmail || !localStorageCalendars?.length) return { calendarsCreated: 0, itemsCreated: 0 };
+    const nameToId = {};
+    let calendarsCreated = 0;
+    for (const cal of localStorageCalendars) {
+      const existing = await this.getContentCalendars(userEmail);
+      const byName = existing.find(c => c.name === cal.name);
+      if (byName) {
+        nameToId[cal.id] = byName.id;
+      } else {
+        const res = await this.createContentCalendar({ userEmail, name: cal.name, description: cal.description, color: cal.color });
+        nameToId[cal.id] = res.id;
+        calendarsCreated++;
+      }
+    }
+    if (!localStorageItems?.length) return { calendarsCreated, itemsCreated: 0 };
+    let itemsCreated = 0;
+    for (const item of localStorageItems) {
+      const media = [];
+      if (item.imageUrl) media.push({ type: 'image', url: item.imageUrl });
+      if (item.videoUrl) media.push({ type: 'video', url: item.videoUrl });
+      const scheduledDate = item.scheduledDate instanceof Date ? item.scheduledDate : new Date(item.scheduledDate);
+      await this.createContentItem({
+        userEmail,
+        calendarId: nameToId[item.calendarId] || item.calendarId || 'default',
+        title: item.title || '',
+        description: item.description || '',
+        platform: item.platform || 'instagram',
+        contentType: item.contentType || 'image',
+        scheduledDate,
+        status: item.status || 'draft',
+        tags: Array.isArray(item.tags) ? item.tags : [],
+        media
+      });
+      itemsCreated++;
+    }
+    return { calendarsCreated, itemsCreated };
   }
 
   // ===== TASK REQUESTS / DELEGATION =====

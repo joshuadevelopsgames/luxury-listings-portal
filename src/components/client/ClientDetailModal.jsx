@@ -32,8 +32,12 @@ import { getGmailComposeUrl } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
+import { CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../../services/crmService';
 import { toast } from 'react-hot-toast';
 import PlatformIcons from '../PlatformIcons';
+import { getPostsRemaining, getEnabledPlatforms } from '../../utils/clientPostsUtils';
+
+const PLATFORM_LABELS = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', youtube: 'YouTube', tiktok: 'TikTok', x: 'X' };
 
 const ClientDetailModal = ({
   client,
@@ -77,15 +81,22 @@ const ClientDetailModal = ({
   };
 
   const startEditing = () => {
+    const enabled = getEnabledPlatforms(localClient);
+    const existingByPlatform = localClient.postsRemainingByPlatform || {};
+    const postsRemainingByPlatform = enabled.length
+      ? Object.fromEntries(enabled.map((key) => [key, existingByPlatform[key] ?? 0]))
+      : null;
     setEditForm({
       clientName: localClient.clientName || '',
       clientEmail: localClient.clientEmail || '',
+      clientType: localClient.clientType || localClient.type || CLIENT_TYPE.NA,
       phone: localClient.phone || '',
       website: localClient.website || '',
       instagramHandle: localClient.instagramHandle || '',
       packageType: localClient.packageType || 'Standard',
       packageSize: localClient.packageSize || 12,
-      postsRemaining: localClient.postsRemaining || 0,
+      postsRemaining: localClient.postsRemaining ?? 0,
+      postsRemainingByPlatform,
       paymentStatus: localClient.paymentStatus || 'Pending',
       notes: localClient.notes || '',
       profilePhoto: localClient.profilePhoto || ''
@@ -125,10 +136,15 @@ const ClientDetailModal = ({
       return;
     }
 
+    const payload = { ...editForm };
+    if (payload.postsRemainingByPlatform && Object.keys(payload.postsRemainingByPlatform).length > 0) {
+      payload.postsRemaining = Object.values(payload.postsRemainingByPlatform).reduce((s, n) => s + (Number(n) || 0), 0);
+    }
+
     setSaving(true);
     try {
-      await firestoreService.updateClient(localClient.id, editForm);
-      const updatedClient = { ...localClient, ...editForm };
+      await firestoreService.updateClient(localClient.id, payload);
+      const updatedClient = { ...localClient, ...payload };
       setLocalClient(updatedClient);
       if (onClientUpdate) onClientUpdate(updatedClient);
       toast.success('Client updated');
@@ -248,6 +264,18 @@ const ClientDetailModal = ({
                   />
                 </div>
                 <div>
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Type</label>
+                  <select
+                    value={editForm.clientType || CLIENT_TYPE.NA}
+                    onChange={(e) => setEditForm({ ...editForm, clientType: e.target.value })}
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                  >
+                    {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Phone</label>
                   <input
                     type="tel"
@@ -281,16 +309,42 @@ const ClientDetailModal = ({
                     <option value="Monthly">Monthly</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Posts Remaining</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editForm.postsRemaining}
-                    onChange={(e) => setEditForm({ ...editForm, postsRemaining: parseInt(e.target.value) || 0 })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
-                  />
-                </div>
+                {editForm.postsRemainingByPlatform && Object.keys(editForm.postsRemainingByPlatform).length > 0 ? (
+                  <div className="col-span-full space-y-2">
+                    <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Posts Remaining by Platform</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.entries(editForm.postsRemainingByPlatform).map(([platformKey, value]) => (
+                        <div key={platformKey}>
+                          <label className="text-[10px] text-[#86868b] block mb-1">{PLATFORM_LABELS[platformKey] || platformKey}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={value}
+                            onChange={(e) => {
+                              const next = { ...editForm.postsRemainingByPlatform, [platformKey]: parseInt(e.target.value) || 0 };
+                              setEditForm({ ...editForm, postsRemainingByPlatform: next });
+                            }}
+                            className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[12px] text-[#86868b]">
+                      Total: {Object.values(editForm.postsRemainingByPlatform).reduce((s, n) => s + (Number(n) || 0), 0)} posts
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Posts Remaining</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editForm.postsRemaining}
+                      onChange={(e) => setEditForm({ ...editForm, postsRemaining: parseInt(e.target.value) || 0 })}
+                      className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Payment Status</label>
                   <select
@@ -519,7 +573,12 @@ const ClientDetailModal = ({
                   </div>
                   <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
                     <p className="text-[11px] text-[#86868b] mb-1">Posts Remaining</p>
-                    <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{localClient.postsRemaining || 0}</p>
+                    <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{getPostsRemaining(localClient)}</p>
+                    {localClient.postsRemainingByPlatform && Object.keys(localClient.postsRemainingByPlatform).length > 0 && (
+                      <p className="text-[11px] text-[#86868b] mt-1">
+                        {Object.entries(localClient.postsRemainingByPlatform).map(([k, v]) => `${PLATFORM_LABELS[k] || k}: ${v}`).join(', ')}
+                      </p>
+                    )}
                   </div>
                   <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
                     <p className="text-[11px] text-[#86868b] mb-1">Payment Status</p>

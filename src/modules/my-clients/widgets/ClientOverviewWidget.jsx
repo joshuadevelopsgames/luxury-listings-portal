@@ -8,6 +8,7 @@ import { Users, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
 import ClientLink from '../../../components/ui/ClientLink';
+import { getPostsRemaining, getPostsUsed } from '../../../utils/clientPostsUtils';
 
 const ClientOverviewWidget = () => {
   const navigate = useNavigate();
@@ -27,9 +28,9 @@ const ClientOverviewWidget = () => {
   );
 
   const getHealthStatus = (client) => {
-    const postsRemaining = client.postsRemaining || 0;
+    const postsRemaining = getPostsRemaining(client);
     const packageSize = client.packageSize || 12;
-    const percentage = (postsRemaining / packageSize) * 100;
+    const percentage = packageSize ? (postsRemaining / packageSize) * 100 : 0;
     
     if (percentage <= 20) return { color: 'bg-[#ff3b30]', label: 'Low' };
     if (percentage <= 50) return { color: 'bg-[#ff9500]', label: 'Medium' };
@@ -76,9 +77,9 @@ const ClientOverviewWidget = () => {
         <div className="space-y-3">
           {clients.map((client) => {
             const health = getHealthStatus(client);
-            const postsUsed = client.postsUsed || 0;
+            const postsUsed = getPostsUsed(client);
             const packageSize = client.packageSize || 12;
-            const progress = (postsUsed / packageSize) * 100;
+            const progress = packageSize ? (postsUsed / packageSize) * 100 : 0;
             
             return (
               <div 

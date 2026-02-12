@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
+import { getPostsUsed } from '../../utils/clientPostsUtils';
 import { toast } from 'react-hot-toast';
 
 export default function EditPostsLoggedModal({ client, onClose, onSaved }) {
@@ -14,9 +15,9 @@ export default function EditPostsLoggedModal({ client, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const used = Math.max(0, Math.min(packageSize, Number(client?.postsUsed) ?? 0));
+    const used = Math.max(0, Math.min(packageSize, getPostsUsed(client) ?? 0));
     setPostsUsed(used);
-  }, [client?.id, client?.postsUsed, packageSize]);
+  }, [client?.id, client?.postsUsed, client?.postsUsedByPlatform, packageSize]);
 
   const postsRemaining = Math.max(0, packageSize - postsUsed);
   const valid = packageSize > 0 && postsUsed >= 0 && postsUsed <= packageSize;
@@ -25,10 +26,12 @@ export default function EditPostsLoggedModal({ client, onClose, onSaved }) {
     if (!client?.id || !valid) return;
     setSaving(true);
     try {
-      await firestoreService.updateClient(client.id, {
-        postsUsed: postsUsed,
-        postsRemaining: postsRemaining
-      });
+      const updates = { postsUsed, postsRemaining: postsRemaining };
+      if (client.postsRemainingByPlatform || client.postsUsedByPlatform) {
+        updates.postsRemainingByPlatform = null;
+        updates.postsUsedByPlatform = null;
+      }
+      await firestoreService.updateClient(client.id, updates);
       toast.success(`Updated posts logged for ${client.clientName || 'client'}`);
       onSaved?.();
       onClose();

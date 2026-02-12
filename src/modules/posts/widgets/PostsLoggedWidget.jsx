@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
 import { firestoreService } from '../../../services/firestoreService';
+import { getPostLogUpdate, getPostsRemaining } from '../../../utils/clientPostsUtils';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 
@@ -143,9 +144,8 @@ const PostsLoggedWidget = () => {
       clientId: client.id
     };
     const taskId = await firestoreService.addTask(taskData);
-    const newPostsUsed = (client.postsUsed || 0) + 1;
-    const newPostsRemaining = Math.max((client.postsRemaining || 0) - 1, 0);
-    await firestoreService.updateClient(client.id, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
+    const update = getPostLogUpdate(client, platform, 1);
+    await firestoreService.updateClient(client.id, update);
     setPostsToday(prev => [...prev, { ...taskData, id: taskId }]);
     return client.clientName;
   };
@@ -160,9 +160,8 @@ const PostsLoggedWidget = () => {
     setLogging(true);
     try {
       await firestoreService.deleteTask(task.id);
-      const newPostsUsed = Math.max((client.postsUsed || 0) - 1, 0);
-      const newPostsRemaining = (client.postsRemaining || 0) + 1;
-      await firestoreService.updateClient(clientId, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
+      const update = getPostLogUpdate(client, platform, -1);
+      await firestoreService.updateClient(clientId, update);
       setPostsToday(prev => prev.filter(t => t.id !== task.id));
       toast.success(`Removed 1 ${platform} post for ${client.clientName}`);
     } catch (error) {
@@ -351,7 +350,7 @@ const PostsLoggedWidget = () => {
                   <option value="">Select a client...</option>
                   {clients.map(client => (
                     <option key={client.id} value={client.id}>
-                      {client.clientName} ({client.postsRemaining || 0} remaining)
+                      {client.clientName} ({getPostsRemaining(client)} remaining)
                     </option>
                   ))}
                 </select>

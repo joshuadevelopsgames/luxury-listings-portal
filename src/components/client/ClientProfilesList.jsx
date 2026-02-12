@@ -43,6 +43,7 @@ import { useOpenClientCard } from '../../hooks/useOpenClientCard';
 import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../../services/crmService';
 import { findPotentialDuplicateGroups, findPotentialMatchesForContact } from '../../services/clientDuplicateService';
 import { useConfirm } from '../../contexts/ConfirmContext';
+import { getPostsRemaining, getEnabledPlatforms } from '../../utils/clientPostsUtils';
 
 // Custom icons for platforms not in lucide-react
 const TikTokIcon = ({ className }) => (
@@ -214,6 +215,22 @@ const ClientProfilesList = ({ internalOnly = false }) => {
   };
 
   const doAddClient = async () => {
+    const totalRemaining = addForm.postsRemaining ?? addForm.packageSize ?? 12;
+    const enabled = getEnabledPlatforms({ platforms: addForm.platforms });
+    let postsRemainingByPlatform = null;
+    let postsUsedByPlatform = null;
+    if (enabled.length > 0) {
+      const perPlatform = Math.floor(totalRemaining / enabled.length);
+      let remainder = totalRemaining - perPlatform * enabled.length;
+      postsRemainingByPlatform = {};
+      postsUsedByPlatform = {};
+      enabled.forEach((key) => {
+        const add = remainder > 0 ? 1 : 0;
+        remainder -= add;
+        postsRemainingByPlatform[key] = perPlatform + add;
+        postsUsedByPlatform[key] = 0;
+      });
+    }
     const newClient = {
       clientName: addForm.clientName.trim(),
       clientEmail: addForm.clientEmail.trim(),
@@ -223,7 +240,8 @@ const ClientProfilesList = ({ internalOnly = false }) => {
       packageType: addForm.packageType,
       packageSize: addForm.packageSize,
       postsUsed: 0,
-      postsRemaining: addForm.postsRemaining,
+      postsRemaining: totalRemaining,
+      ...(postsRemainingByPlatform && { postsRemainingByPlatform, postsUsedByPlatform }),
       paymentStatus: addForm.paymentStatus,
       platforms: addForm.platforms,
       isInternal: !!addForm.isInternal,
@@ -642,7 +660,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                   {/* Posts */}
                   <div className="col-span-2 flex items-center">
                     <span className="text-[12px] text-[#86868b]">
-                      {client.postsRemaining !== undefined ? `${client.postsRemaining} remaining` : '—'}
+                      {`${getPostsRemaining(client)} remaining`}
                     </span>
                   </div>
 
@@ -792,14 +810,12 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                     </div>
                   )}
 
-                  {client.postsRemaining !== undefined && (
-                    <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
-                      <div className="h-5 w-5 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                        <Package className="w-3 h-3" />
-                      </div>
-                      <span>{client.postsRemaining} posts remaining</span>
+                  <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
+                    <div className="h-5 w-5 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <Package className="w-3 h-3" />
                     </div>
-                  )}
+                    <span>{getPostsRemaining(client)} posts remaining</span>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 pt-4 border-t border-black/5 dark:border-white/10">

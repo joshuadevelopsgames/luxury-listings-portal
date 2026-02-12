@@ -25,6 +25,7 @@ import EditPostsLoggedModal from '../../../components/ui/EditPostsLoggedModal';
 import PostLogReminderBanner from '../../../components/dashboard/PostLogReminderBanner';
 import { postLogReminderService } from '../../../services/postLogReminderService';
 import { getGmailComposeUrl } from '../../../utils/gmailCompose';
+import { getPostsRemaining, getPostsUsed, getPostLogUpdate } from '../../../utils/clientPostsUtils';
 import { toast } from 'react-hot-toast';
 import { 
   Users, 
@@ -159,9 +160,9 @@ const MyClientsPage = () => {
   }, [postLogHistory]);
 
   const getHealthStatus = (client) => {
-    const postsRemaining = client.postsRemaining || 0;
+    const postsRemaining = getPostsRemaining(client);
     const packageSize = client.packageSize || 12;
-    const percentage = (postsRemaining / packageSize) * 100;
+    const percentage = packageSize ? (postsRemaining / packageSize) * 100 : 0;
     
     if (percentage <= 20) return { status: 'critical', color: 'text-[#ff3b30]', bgColor: 'bg-[#ff3b30]/10', label: 'Low Posts' };
     if (percentage <= 50) return { status: 'warning', color: 'text-[#ff9500]', bgColor: 'bg-[#ff9500]/10', label: 'Medium' };
@@ -210,9 +211,9 @@ const MyClientsPage = () => {
 
       const clientData = {
         clientName: client.clientName || 'Unknown',
-        postsRemaining: client.postsRemaining || 0,
+        postsRemaining: getPostsRemaining(client),
         packageSize: client.packageSize || 12,
-        postsUsed: client.postsUsed || 0,
+        postsUsed: getPostsUsed(client),
         paymentStatus: client.paymentStatus || 'unknown',
         packageType: client.packageType || 'Standard',
         daysSinceContact: lastContact ? differenceInDays(now, lastContact) : null,
@@ -323,9 +324,8 @@ const MyClientsPage = () => {
         clientId: logPostClient.id
       };
       await firestoreService.addTask(taskData);
-      const newPostsUsed = (logPostClient.postsUsed || 0) + 1;
-      const newPostsRemaining = Math.max((logPostClient.postsRemaining || 0) - 1, 0);
-      await firestoreService.updateClient(logPostClient.id, { postsUsed: newPostsUsed, postsRemaining: newPostsRemaining });
+      const update = getPostLogUpdate(logPostClient, logPlatform, 1);
+      await firestoreService.updateClient(logPostClient.id, update);
       toast.success(`Post logged for ${logPostClient.clientName}`);
       setLogPostClient(null);
       setLogPlatform('instagram');
@@ -355,7 +355,7 @@ const MyClientsPage = () => {
     onTrack: clients.filter(c => getHealthStatus(c).status === 'good').length,
     needsAttention: clients.filter(c => getHealthStatus(c).status !== 'good').length,
     totalPosts: clients.reduce((sum, c) => sum + (c.packageSize || 0), 0),
-    postsUsed: clients.reduce((sum, c) => sum + (c.postsUsed || 0), 0)
+    postsUsed: clients.reduce((sum, c) => sum + getPostsUsed(c), 0)
   };
 
   if (clientsLoading) {
@@ -486,9 +486,9 @@ const MyClientsPage = () => {
           {filteredClients.map((client) => {
             const health = getEnhancedHealthStatus(client);
             const isLoadingAi = loadingAiHealth[client.id];
-            const postsUsed = client.postsUsed || 0;
+            const postsUsed = getPostsUsed(client);
             const packageSize = client.packageSize || 12;
-            const progress = (postsUsed / packageSize) * 100;
+            const progress = packageSize ? (postsUsed / packageSize) * 100 : 0;
 
             return (
               <div
