@@ -38,6 +38,7 @@ import {
 import { firestoreService } from '../services/firestoreService';
 import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
 import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
+import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
@@ -85,6 +86,7 @@ const CRMPage = () => {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [exportingCrm, setExportingCrm] = useState(false);
   const [importingCrm, setImportingCrm] = useState(false);
+  const [mergingDuplicates, setMergingDuplicates] = useState(false);
   const importFileRef = React.useRef(null);
 
   // Toast notification helper
@@ -789,6 +791,30 @@ const CRMPage = () => {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#af52de]/10 text-[#af52de] text-[13px] font-medium hover:bg-[#af52de]/20 transition-colors disabled:opacity-50"
           >
             {importingCrm ? 'Importing…' : 'Import from xlsx'}
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              setMergingDuplicates(true);
+              try {
+                const { warmLeads: w, contactedClients: c, coldLeads: cold, mergedCount } = mergeCrmDuplicates(warmLeads, contactedClients, coldLeads);
+                setWarmLeads(w);
+                setContactedClients(c);
+                setColdLeads(cold);
+                await saveCRMDataToFirebase({ warmLeads: w, contactedClients: c, coldLeads: cold });
+                if (mergedCount > 0) showToast(`Merged ${mergedCount} duplicate${mergedCount !== 1 ? 's' : ''}`);
+                else showToast('No duplicates found');
+              } catch (err) {
+                console.error(err);
+                showToast('Merge failed', 'error');
+              } finally {
+                setMergingDuplicates(false);
+              }
+            }}
+            disabled={mergingDuplicates}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[13px] font-medium hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+          >
+            {mergingDuplicates ? 'Merging…' : 'Merge duplicates'}
           </button>
           <button
             onClick={() => {
