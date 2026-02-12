@@ -293,23 +293,21 @@ const CRMPage = () => {
   const saveCRMDataToFirebase = async (override) => {
     if (!currentUser?.uid) return;
 
-    try {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      const data = override || {
-        warmLeads,
-        contactedClients,
-        coldLeads
-      };
-      await setDoc(userDocRef, {
-        crmData: {
-          ...data,
-          lastSyncTime: new Date().toLocaleString()
-        }
-      }, { merge: true });
-      console.log('💾 CRM data saved to Firebase');
-    } catch (error) {
-      console.error('Error saving CRM data to Firebase:', error);
-    }
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    const data = override ?? {
+      warmLeads,
+      contactedClients,
+      coldLeads
+    };
+    await setDoc(userDocRef, {
+      crmData: {
+        warmLeads: data.warmLeads ?? [],
+        contactedClients: data.contactedClients ?? [],
+        coldLeads: data.coldLeads ?? [],
+        lastSyncTime: new Date().toISOString()
+      }
+    }, { merge: true });
+    console.log('💾 CRM data saved to Firebase');
   };
 
   // Reset new lead form
