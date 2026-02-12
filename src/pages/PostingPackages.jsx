@@ -837,75 +837,22 @@ export default function PostingPackages() {
     setApprovalLoading({ ...approvalLoading, [selectedClient.id]: true });
     
     try {
-      // Calculate the row number in Google Sheets
-      const rowNumber = selectedClient.id + 1;
-      
-      // Get current row data to preserve other fields
-      const currentRow = [
-        selectedClient.clientName,     // Client Name (A)
-        selectedClient.packageType,    // Package Type (B)
-        selectedClient.packageSize,    // Package Size (C)
-        selectedClient.postsUsed,      // Posts Used (D)
-        selectedClient.postsRemaining, // Posts Remaining (E)
-        selectedClient.postedOn,       // Posted On (F)
-        selectedClient.paymentStatus,  // Payment Status (G)
-        approved ? 'Approved' : 'Rejected', // Approval Status (H) - UPDATE THIS
-        selectedClient.notes || '',    // Notes (I)
-        selectedClient.startDate,      // Start Date (J)
-        selectedClient.lastContact     // Last Contact (K)
-      ];
-      
-      // Update Google Sheets using Google Apps Script with GET request
-      const params = new URLSearchParams({
-        action: 'approve',
-        clientData: JSON.stringify({
-          id: selectedClient.id,
-          approved: approved
-        })
-      });
-      
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
-        method: 'GET'
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to update Google Sheets: ${response.status} - ${errorText}`);
-      }
-      
-      const result = await response.json();
-      console.log('Google Apps Script approval result:', result);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Approval failed');
-      }
-      
-      // Update local state
-      setClients(prevClients => 
-        prevClients.map(client => 
-          client.id === selectedClient.id 
-            ? { 
-                ...client, 
-                approvalStatus: approved ? 'Approved' : 'Rejected',
-                status: determineStatus(
-                  approved ? 'Approved' : 'Rejected',
-                  client.paymentStatus,
-                  client.postsRemaining
-                )
+      const newStatus = approved ? 'Approved' : 'Rejected';
+      setClients(prevClients =>
+        prevClients.map(client =>
+          client.id === selectedClient.id
+            ? {
+                ...client,
+                approvalStatus: newStatus,
+                status: determineStatus(newStatus, client.paymentStatus, client.postsRemaining)
               }
             : client
         )
       );
-      
       setShowApprovalModal(false);
       setSelectedClient(null);
       setApprovalNotes('');
-      
-      showToast(`Package ${approved ? 'approved' : 'rejected'} for ${selectedClient.clientName} in Google Sheets!`);
-      
-    } catch (error) {
-      console.error('Error updating approval status in Google Sheets:', error);
-      toast.error(`Error updating Google Sheets: ${error.message}`);
+      showToast(`Package ${approved ? 'approved' : 'rejected'} for ${selectedClient.clientName}`);
     } finally {
       setApprovalLoading({ ...approvalLoading, [selectedClient.id]: false });
     }
@@ -923,46 +870,9 @@ export default function PostingPackages() {
     if (!confirmed) return;
     
     setArchiveLoading({ ...archiveLoading, [client.id]: true });
-    
     try {
-      // Send archive request to Google Apps Script
-      const requestBody = {
-        action: 'archive',
-        clientData: {
-          clientName: client.clientName
-        }
-      };
-      
-      console.log('📦 Sending archive request to Google Apps Script:', requestBody);
-      
-      // Use GET with URL parameters to avoid CORS issues
-      const params = new URLSearchParams({
-        action: requestBody.action,
-        clientData: JSON.stringify(requestBody.clientData)
-      });
-      
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?${params}`;
-      console.log('🔗 Archive URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET'
-      });
-      
-      console.log('📊 Archive response status:', response.status);
-      const result = await response.json();
-      console.log('📊 Archive response:', result);
-      
-      if (result.success) {
-        // Remove from active clients list
-        setClients(prevClients => prevClients.filter(c => c.id !== client.id));
-        showToast(`${client.clientName} has been archived successfully!`);
-      } else {
-        throw new Error(result.error || 'Archive failed');
-      }
-      
-    } catch (error) {
-      console.error('Error archiving package:', error);
-      toast.error(`Error archiving package: ${error.message}`);
+      setClients(prevClients => prevClients.filter(c => c.id !== client.id));
+      showToast(`${client.clientName} has been archived successfully!`);
     } finally {
       setArchiveLoading({ ...archiveLoading, [client.id]: false });
     }
@@ -980,52 +890,9 @@ export default function PostingPackages() {
     if (!confirmed) return;
     
     setDeleteLoading({ ...deleteLoading, [client.id]: true });
-    
     try {
-      // Send delete request to Google Apps Script
-      const requestBody = {
-        action: 'delete',
-        clientData: {
-          clientName: client.clientName
-        }
-      };
-      
-      console.log('🗑️ Sending delete request to Google Apps Script:', requestBody);
-      
-      // Use GET with URL parameters to avoid CORS issues
-      const params = new URLSearchParams({
-        action: requestBody.action,
-        clientData: JSON.stringify(requestBody.clientData)
-      });
-      
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?${params}`;
-      console.log('🔗 Delete URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET'
-      });
-      
-      console.log('📊 Delete response status:', response.status);
-      const result = await response.json();
-      console.log('📊 Delete response:', result);
-      console.log('📊 Delete response error:', result.error);
-      console.log('📊 Delete response success:', result.success);
-      
-      if (result.success) {
-        // Remove from active clients list
-        setClients(prevClients => prevClients.filter(c => c.id !== client.id));
-        showToast(`${client.clientName} has been deleted successfully!`);
-      } else {
-        // Handle specific error cases
-        if (result.error && result.error.includes('not found')) {
-          // Client not found in sheet, remove from local state anyway
-          setClients(prevClients => prevClients.filter(c => c.id !== client.id));
-          toast(`${client.clientName} was not found in Google Sheets but has been removed from the local list.`, { icon: '⚠️' });
-        } else {
-          throw new Error(result.error || 'Delete failed');
-        }
-      }
-      
+      setClients(prevClients => prevClients.filter(c => c.id !== client.id));
+      showToast(`${client.clientName} has been deleted successfully!`);
     } catch (error) {
       console.error('Error deleting client:', error);
       toast.error(`Error deleting client: ${error.message}`);
@@ -1046,58 +913,11 @@ export default function PostingPackages() {
     if (!confirmed) return;
     
     setRestoreLoading({ ...restoreLoading, [archivedClient.id]: true });
-    
     try {
-      // Send restore request to Google Apps Script
-      const requestBody = {
-        action: 'restore',
-        clientData: {
-          clientName: archivedClient.clientName,
-          packageType: archivedClient.packageType,
-          packageSize: archivedClient.packageSize,
-          postsUsed: archivedClient.postsUsed,
-          postsRemaining: archivedClient.postsRemaining,
-          postedOn: archivedClient.postedOn,
-          paymentStatus: archivedClient.paymentStatus,
-          approvalStatus: archivedClient.approvalStatus,
-          notes: archivedClient.notes,
-          startDate: archivedClient.startDate,
-          statusChangeDate: archivedClient.statusChangeDate
-        }
-      };
-      
-      console.log('🔄 Sending restore request to Google Apps Script:', requestBody);
-      
-      // Use GET with URL parameters to avoid CORS issues
-      const params = new URLSearchParams({
-        action: requestBody.action,
-        clientData: JSON.stringify(requestBody.clientData)
-      });
-      
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?${params}`;
-      console.log('🔗 Restore URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET'
-      });
-      
-      console.log('📊 Restore response status:', response.status);
-      const result = await response.json();
-      console.log('📊 Restore response:', result);
-      
-      if (result.success) {
-        // Remove from archived clients list
-        setArchivedClients(prevArchived => prevArchived.filter(c => c.id !== archivedClient.id));
-        
-        // Refresh both lists to get the latest data from Google Sheets
-        fetchClients(false);
-        fetchArchivedClients();
-        
-        showToast(`${archivedClient.clientName} has been restored successfully!`);
-      } else {
-        throw new Error(result.error || 'Restore failed');
-      }
-      
+      const restored = { ...archivedClient, status: determineStatus(archivedClient.approvalStatus, archivedClient.paymentStatus, archivedClient.postsRemaining ?? 0) };
+      setArchivedClients(prev => prev.filter(c => c.id !== archivedClient.id));
+      setClients(prev => [...prev, restored]);
+      showToast(`${archivedClient.clientName} has been restored successfully!`);
     } catch (error) {
       console.error('Error restoring client:', error);
       toast.error(`Error restoring client: ${error.message}`);
@@ -1118,43 +938,9 @@ export default function PostingPackages() {
     if (!confirmed) return;
     
     setDeleteArchivedLoading({ ...deleteArchivedLoading, [archivedClient.id]: true });
-    
     try {
-      // Send delete archived request to Google Apps Script
-      const requestBody = {
-        action: 'deleteArchived',
-        clientData: {
-          clientName: archivedClient.clientName
-        }
-      };
-      
-      console.log('🗑️ Sending delete archived request to Google Apps Script:', requestBody);
-      
-      // Use GET with URL parameters to avoid CORS issues
-      const params = new URLSearchParams({
-        action: requestBody.action,
-        clientData: JSON.stringify(requestBody.clientData)
-      });
-      
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?${params}`;
-      console.log('🔗 Delete Archived URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET'
-      });
-      
-      console.log('📊 Delete Archived response status:', response.status);
-      const result = await response.json();
-      console.log('📊 Delete Archived response:', result);
-      
-      if (result.success) {
-        // Remove from archived clients list
-        setArchivedClients(prevArchived => prevArchived.filter(c => c.id !== archivedClient.id));
-        showToast(`${archivedClient.clientName} has been permanently deleted from the archive!`);
-      } else {
-        throw new Error(result.error || 'Delete archived failed');
-      }
-      
+      setArchivedClients(prev => prev.filter(c => c.id !== archivedClient.id));
+      showToast(`${archivedClient.clientName} has been permanently deleted from the archive!`);
     } catch (error) {
       console.error('Error deleting archived client:', error);
       toast.error(`Error deleting archived client: ${error.message}`);
@@ -1204,225 +990,43 @@ export default function PostingPackages() {
         return;
       }
       
-      // Calculate the row number in Google Sheets (add 2 for header row + 0-based index)
-      const rowNumber = editingClient.id + 1;
-      
       const editPostedSummary = getPostsPerPageSummary(editForm);
-      const updatedRow = [
-        editingClient.clientName,
-        editForm.packageType,
-        editForm.packageSize,
-        editForm.postsUsed,
-        editForm.postsRemaining,
-        editPostedSummary,
-        editForm.paymentStatus,
-        editingClient.approvalStatus,
-        editForm.notes,
-        editingClient.startDate,
-        editingClient.lastContact
-      ];
-      
-      const requestBody = {
-        action: 'update',
-        clientData: {
-          id: editingClient.id,
-          clientName: editingClient.clientName,
-          clientEmail: editForm.clientEmail,
-          profilePhoto: editForm.profilePhoto || '',
-          brokerage: editForm.brokerage || '',
-          platforms: editForm.platforms || {},
-          packageType: editForm.packageType,
-          packageSize: editForm.packageSize,
-          postsUsed: editForm.postsUsed,
-          postsRemaining: editForm.postsRemaining,
-          postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
-          postsIgMansions: editForm.postsIgMansions ?? 0,
-          postsIgInteriors: editForm.postsIgInteriors ?? 0,
-          postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
-          postedOn: editPostedSummary,
-          paymentStatus: editForm.paymentStatus,
-          approvalStatus: editingClient.approvalStatus,
-          notes: editForm.notes,
-          startDate: editingClient.startDate,
-          lastContact: editingClient.lastContact,
-          customPrice: editForm.customPrice || 0,
-          overduePosts: editForm.overduePosts || 0
-        }
-      };
-      
-      console.log('🔄 Sending update request to Google Apps Script:', requestBody);
-      
-      // Use GET with URL parameters to avoid CORS issues
-      const params = new URLSearchParams({
-        action: requestBody.action,
-        clientData: JSON.stringify(requestBody.clientData)
-      });
-      
-      let result;
-      try {
-        const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
-          method: 'GET'
-        });
-        
-        console.log('📊 Update response status:', response.status);
-        console.log('📊 Update response headers:', response.headers);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Update failed - Response text:', errorText);
-          throw new Error(`Failed to update Google Sheets: ${response.status} - ${errorText}`);
-        }
-        
-        result = await response.json();
-        console.log('Google Apps Script update result:', result);
-        
-        if (!result.success) {
-          console.error('❌ Google Apps Script returned error:', result);
-          throw new Error(result.error || 'Update failed');
-        }
-        
-        console.log('✅ Google Apps Script update successful:', result);
-      } catch (fetchError) {
-        console.error('Fetch error:', fetchError);
-        
-        // If it's a CORS error or network issue, try using image request fallback
-        if (fetchError.message.includes('CORS') || fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
-          console.log('🔄 Trying image request fallback for update...');
-          
-          // Try using a simple image request to trigger the action
-          const img = new Image();
-          img.onload = async () => {
-            console.log('✅ Update request sent successfully via image method');
-            // Refresh the client list after a short delay
-            setTimeout(async () => {
-              await fetchClients(false);
-              
-              // Update local state
-              setClients(prevClients => 
-                prevClients.map(client => 
-                  client.id === editingClient.id 
-                    ? { 
-                        ...client, 
-                        clientEmail: editForm.clientEmail,
-                        packageType: editForm.packageType,
-                        packageSize: editForm.packageSize,
-                        postsUsed: editForm.postsUsed,
-                        postsRemaining: editForm.postsRemaining,
-                        notes: editForm.notes,
-                        postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
-                        postsIgMansions: editForm.postsIgMansions ?? 0,
-                        postsIgInteriors: editForm.postsIgInteriors ?? 0,
-                        postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
-                        paymentStatus: editForm.paymentStatus,
-                        customPrice: editForm.customPrice || 0,
-                        status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
-                      }
-                    : client
-                )
-              );
-              
-              // Close modal and reset state
-              setShowEditModal(false);
-              setEditingClient(null);
-              setEditForm({});
-              
-              showToast(`Package for ${editingClient.clientName} has been updated in Google Sheets!`);
-            }, 1000);
-          };
-          img.onerror = async () => {
-            console.log('✅ Update request sent successfully via image method (error expected)');
-            // Refresh the client list after a short delay
-            setTimeout(async () => {
-              await fetchClients(false);
-              
-              // Update local state
-              setClients(prevClients => 
-                prevClients.map(client => 
-                  client.id === editingClient.id 
-                    ? { 
-                        ...client, 
-                        clientEmail: editForm.clientEmail,
-                        packageType: editForm.packageType,
-                        packageSize: editForm.packageSize,
-                        postsUsed: editForm.postsUsed,
-                        postsRemaining: editForm.postsRemaining,
-                        notes: editForm.notes,
-                        postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
-                        postsIgMansions: editForm.postsIgMansions ?? 0,
-                        postsIgInteriors: editForm.postsIgInteriors ?? 0,
-                        postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
-                        paymentStatus: editForm.paymentStatus,
-                        customPrice: editForm.customPrice || 0,
-                        status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
-                      }
-                    : client
-                )
-              );
-              
-              // Close modal and reset state
-              setShowEditModal(false);
-              setEditingClient(null);
-              setEditForm({});
-              
-              showToast(`Package for ${editingClient.clientName} has been updated in Google Sheets!`);
-            }, 1000);
-          };
-          img.src = `${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`;
-          
-          setApprovalLoading({ ...approvalLoading, [editingClient.id]: false });
-          return; // Exit early since we're handling it asynchronously
-        } else {
-          throw fetchError; // Re-throw if it's not a CORS/network error
-        }
-      }
-      
-      // Update local state
-      setClients(prevClients => 
-        prevClients.map(client => 
-          client.id === editingClient.id 
-            ? { 
-                ...client, 
+      setClients(prevClients =>
+        prevClients.map(client =>
+          client.id === editingClient.id
+            ? {
+                ...client,
                 clientEmail: editForm.clientEmail,
+                profilePhoto: editForm.profilePhoto || client.profilePhoto,
+                brokerage: editForm.brokerage || client.brokerage,
+                platforms: editForm.platforms || client.platforms,
                 packageType: editForm.packageType,
                 packageSize: editForm.packageSize,
                 postsUsed: editForm.postsUsed,
                 postsRemaining: editForm.postsRemaining,
-                notes: editForm.notes,
                 postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
                 postsIgMansions: editForm.postsIgMansions ?? 0,
                 postsIgInteriors: editForm.postsIgInteriors ?? 0,
                 postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
+                postedOn: editPostedSummary,
                 paymentStatus: editForm.paymentStatus,
+                notes: editForm.notes,
+                lastContact: editForm.lastContact ?? client.lastContact,
                 customPrice: editForm.customPrice || 0,
-                // Update status based on new data
+                overduePosts: editForm.overduePosts ?? 0,
                 status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
               }
             : client
         )
       );
-      
-      // Close modal and reset state
       setShowEditModal(false);
       setEditingClient(null);
       setEditForm({});
-      
-      // Show success message
-              showToast(`Package for ${editingClient.clientName} has been updated in Google Sheets!`);
-      
+      showToast(`Package for ${editingClient.clientName} has been updated.`);
     } catch (error) {
-      console.error('Error updating Google Sheets:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        editingClient: editingClient ? editingClient.clientName : 'unknown'
-      });
-      
-      showToast(`❌ Error updating Google Sheets: ${error.message}`, 'error');
-      
-      // Still close the modal but show error
-      setTimeout(() => {
-        toast.error(`Error updating package for ${editingClient.clientName}: ${error.message}`);
-      }, 100);
+      console.error('Error updating package:', error);
+      showToast(`❌ Error: ${error.message}`, 'error');
+      toast.error(`Error updating package for ${editingClient.clientName}: ${error.message}`);
     } finally {
       setApprovalLoading({ ...approvalLoading, [editingClient.id]: false });
     }
@@ -1497,174 +1101,49 @@ export default function PostingPackages() {
 
     try {
       const postedOnSummary = getPostsPerPageSummary(addForm);
-      const newRow = [
-        addForm.clientName,
-        addForm.packageType,
-        addForm.packageSize,
-        addForm.postsUsed,
-        addForm.postsRemaining,
-        postedOnSummary,
-        addForm.paymentStatus,
-        addForm.approvalStatus,
-        addForm.notes,
-        addForm.startDate,
-        addForm.lastContact
-      ];
-
-      const params = new URLSearchParams({
-        action: 'add',
-        clientData: JSON.stringify({
-          clientName: addForm.clientName,
-          clientEmail: addForm.clientEmail,
-          profilePhoto: addForm.profilePhoto,
-          brokerage: addForm.brokerage,
-          platforms: addForm.platforms,
-          packageType: addForm.packageType,
-          packageSize: addForm.packageSize,
-          postsUsed: addForm.postsUsed,
-          postsRemaining: addForm.postsRemaining,
-          postsLuxuryListings: addForm.postsLuxuryListings ?? 0,
-          postsIgMansions: addForm.postsIgMansions ?? 0,
-          postsIgInteriors: addForm.postsIgInteriors ?? 0,
-          postsLuxuryHomes: addForm.postsLuxuryHomes ?? 0,
-          postedOn: postedOnSummary,
-          paymentStatus: addForm.paymentStatus,
-          approvalStatus: addForm.approvalStatus,
-          notes: addForm.notes,
-          startDate: addForm.startDate,
-          lastContact: addForm.lastContact,
-          customPrice: addForm.customPrice,
-          overduePosts: addForm.overduePosts
-        })
-      });
-      
-      // Try to fetch with error handling for CORS
-      let result;
-      try {
-        const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
-          method: 'GET'
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to add to Google Sheets: ${response.status} - ${errorText}`);
-        }
-
-        result = await response.json();
-        console.log('Google Apps Script add result:', result);
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Add failed');
-        }
-      } catch (fetchError) {
-        console.error('Fetch error:', fetchError);
-        
-        // If it's a CORS error, try using a different approach
-        if (fetchError.message.includes('CORS') || fetchError.message.includes('Failed to fetch')) {
-          // Try using a simple image request to trigger the action
-          const img = new Image();
-          img.onload = async () => {
-            console.log('✅ Add request sent successfully via image method');
-            // Refresh the client list after a short delay
-            setTimeout(async () => {
-              await fetchClients(false);
-              let crmSheetsResult = { success: true };
-              if (addForm.selectedCrmClientId === 'new') {
-                crmSheetsResult = await addClientToCRMSheets({
-                  clientName: addForm.clientName,
-                  clientEmail: addForm.clientEmail,
-                  packageType: addForm.packageType,
-                  notes: addForm.notes
-                });
-                await addContactToCRM({
-                  clientName: addForm.clientName,
-                  clientEmail: addForm.clientEmail,
-                  type: addForm.clientType || CLIENT_TYPE.NA,
-                  notes: addForm.notes
-                }, 'warmLeads');
-              }
-              setAddForm(prev => ({ ...prev, selectedCrmClientId: null, clientSearchFilter: '', clientName: '', clientEmail: '', clientType: CLIENT_TYPE.NA, profilePhoto: '', brokerage: '', platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false }, packageType: 'Standard', packageSize: 1, postsUsed: 0, postsRemaining: 1, postsLuxuryListings: 0, postsIgMansions: 0, postsIgInteriors: 0, postsLuxuryHomes: 0, paymentStatus: 'Pending', approvalStatus: 'Pending', notes: '', startDate: new Date().toISOString().split('T')[0], lastContact: new Date().toISOString().split('T')[0], customPrice: 0, overduePosts: 0 }));
-              setShowAddModal(false);
-              if (addForm.selectedCrmClientId === 'new') {
-                if (crmSheetsResult.success) {
-                  showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
-                } else {
-                  showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
-                }
-              } else {
-                showToast(`Package added for ${addForm.clientName}`);
-              }
-            }, 1000);
-          };
-          img.onerror = async () => {
-            console.log('✅ Add request sent successfully via image method (error expected)');
-            setTimeout(async () => {
-              await fetchClients(false);
-              let crmSheetsResult = { success: true };
-              if (addForm.selectedCrmClientId === 'new') {
-                crmSheetsResult = await addClientToCRMSheets({
-                  clientName: addForm.clientName,
-                  clientEmail: addForm.clientEmail,
-                  packageType: addForm.packageType,
-                  notes: addForm.notes
-                });
-                await addContactToCRM({
-                  clientName: addForm.clientName,
-                  clientEmail: addForm.clientEmail,
-                  type: addForm.clientType || CLIENT_TYPE.NA,
-                  notes: addForm.notes
-                }, 'warmLeads');
-              }
-              setAddForm(prev => ({ ...prev, selectedCrmClientId: null, clientSearchFilter: '', clientName: '', clientEmail: '', clientType: CLIENT_TYPE.NA, profilePhoto: '', brokerage: '', platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false }, packageType: 'Standard', packageSize: 1, postsUsed: 0, postsRemaining: 1, postsLuxuryListings: 0, postsIgMansions: 0, postsIgInteriors: 0, postsLuxuryHomes: 0, paymentStatus: 'Pending', approvalStatus: 'Pending', notes: '', startDate: new Date().toISOString().split('T')[0], lastContact: new Date().toISOString().split('T')[0], customPrice: 0, overduePosts: 0 }));
-              setShowAddModal(false);
-              if (addForm.selectedCrmClientId === 'new') {
-                if (crmSheetsResult.success) {
-                  showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
-                } else {
-                  showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
-                }
-              } else {
-                showToast(`Package added for ${addForm.clientName}`);
-              }
-            }, 1000);
-          };
-          img.src = `${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`;
-          return; // Exit early since we're handling it asynchronously
-        } else {
-          throw fetchError; // Re-throw if it's not a CORS error
-        }
-      }
-
-      await fetchClients(false);
-
+      const newId = `local-${Date.now()}`;
+      const newClient = {
+        id: newId,
+        clientName: addForm.clientName,
+        clientEmail: addForm.clientEmail || '',
+        profilePhoto: addForm.profilePhoto || '',
+        brokerage: addForm.brokerage || '',
+        platforms: addForm.platforms || {},
+        packageType: addForm.packageType,
+        packageSize: addForm.packageSize,
+        postsUsed: addForm.postsUsed,
+        postsRemaining: addForm.postsRemaining,
+        postsLuxuryListings: addForm.postsLuxuryListings ?? 0,
+        postsIgMansions: addForm.postsIgMansions ?? 0,
+        postsIgInteriors: addForm.postsIgInteriors ?? 0,
+        postsLuxuryHomes: addForm.postsLuxuryHomes ?? 0,
+        postedOn: postedOnSummary,
+        paymentStatus: addForm.paymentStatus,
+        approvalStatus: addForm.approvalStatus,
+        notes: addForm.notes || '',
+        startDate: addForm.startDate,
+        lastContact: addForm.lastContact,
+        customPrice: addForm.customPrice || 0,
+        overduePosts: addForm.overduePosts || 0,
+        status: determineStatus(addForm.approvalStatus, addForm.paymentStatus, addForm.postsRemaining)
+      };
+      setClients(prev => [...prev, newClient]);
       if (addForm.selectedCrmClientId === 'new') {
-        const crmSheetsResult = await addClientToCRMSheets({
-          clientName: addForm.clientName,
-          clientEmail: addForm.clientEmail,
-          packageType: addForm.packageType,
-          notes: addForm.notes
-        });
         await addContactToCRM({
           clientName: addForm.clientName,
           clientEmail: addForm.clientEmail,
           type: addForm.clientType || CLIENT_TYPE.NA,
           notes: addForm.notes
         }, 'warmLeads');
-        if (crmSheetsResult.success) {
-          showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
-        } else {
-          showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
-        }
+        showToast(`New client "${addForm.clientName}" has been added to CRM!`);
       } else {
         showToast(`Package added for ${addForm.clientName}`);
       }
-
       setAddForm(prev => ({ ...prev, selectedCrmClientId: null, clientSearchFilter: '', clientName: '', clientEmail: '', clientType: CLIENT_TYPE.NA, profilePhoto: '', brokerage: '', platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false }, packageType: 'Standard', packageSize: 1, postsUsed: 0, postsRemaining: 1, postsLuxuryListings: 0, postsIgMansions: 0, postsIgInteriors: 0, postsLuxuryHomes: 0, paymentStatus: 'Pending', approvalStatus: 'Pending', notes: '', startDate: new Date().toISOString().split('T')[0], lastContact: new Date().toISOString().split('T')[0], customPrice: 0, overduePosts: 0 }));
       setShowAddModal(false);
-
     } catch (error) {
-      console.error('Error adding client to Google Sheets:', error);
-      toast.error(`Error adding to Google Sheets: ${error.message}`);
+      console.error('Error adding client:', error);
+      toast.error(`Error adding client: ${error.message}`);
     } finally {
       setApprovalLoading({ ...approvalLoading, 'new': false });
     }
@@ -1686,58 +1165,21 @@ export default function PostingPackages() {
     if (!confirmed) return;
 
     setApprovalLoading({ ...approvalLoading, [clientId]: true });
-
     try {
-      // Calculate new values
       const newOverduePosts = (client.overduePosts || 0) + client.postsRemaining;
-      const newPostsUsed = 0;
-      const newPostsRemaining = client.packageSize;
-
-      // Update the client data
-      const requestBody = {
-        action: 'update',
-        clientData: {
-          id: clientId,
-          clientName: client.clientName,
-          clientEmail: client.clientEmail,
-          packageType: client.packageType,
-          packageSize: client.packageSize,
-          postsUsed: newPostsUsed,
-          postsRemaining: newPostsRemaining,
-          postedOn: getPostsPerPageSummary(client),
-          paymentStatus: client.paymentStatus,
-          approvalStatus: client.approvalStatus,
-          notes: client.notes,
-          startDate: client.startDate,
-          lastContact: client.lastContact,
-          customPrice: client.customPrice || 0,
-          overduePosts: newOverduePosts
-        }
-      };
-
-      const params = new URLSearchParams({
-        action: 'update',
-        clientData: JSON.stringify(requestBody.clientData)
-      });
-
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
-        method: 'GET'
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to reset monthly posts: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        // Refresh the clients list
-        await fetchClients(false);
-        toast.success(`Monthly reset successful for ${client.clientName}`);
-      } else {
-        toast.error(`Failed to reset monthly posts: ${result.error}`);
-      }
+      setClients(prev =>
+        prev.map(c =>
+          c.id === clientId
+            ? {
+                ...c,
+                postsUsed: 0,
+                postsRemaining: c.packageSize,
+                overduePosts: newOverduePosts
+              }
+            : c
+        )
+      );
+      toast.success(`Monthly reset successful for ${client.clientName}`);
     } catch (error) {
       console.error('❌ Error resetting monthly posts:', error);
       toast.error('Failed to reset monthly posts. Please try again.');
@@ -1789,73 +1231,20 @@ export default function PostingPackages() {
       return;
     }
 
-    // Auto-reset all Monthly packages
-    let resetCount = 0;
-    let errorCount = 0;
-
-    for (const client of monthlyPackages) {
-      try {
-        // Calculate new values
-        const newOverduePosts = (client.overduePosts || 0) + client.postsRemaining;
-        const newPostsUsed = 0;
-        const newPostsRemaining = client.packageSize;
-
-        // Update the client data
-        const requestBody = {
-          action: 'update',
-          clientData: {
-            id: client.id,
-            clientName: client.clientName,
-            clientEmail: client.clientEmail,
-            packageType: client.packageType,
-            packageSize: client.packageSize,
-            postsUsed: newPostsUsed,
-            postsRemaining: newPostsRemaining,
-            postedOn: getPostsPerPageSummary(client),
-            paymentStatus: client.paymentStatus,
-            approvalStatus: client.approvalStatus,
-            notes: client.notes,
-            startDate: client.startDate,
-            lastContact: client.lastContact,
-            customPrice: client.customPrice || 0,
-            overduePosts: newOverduePosts
-          }
+    // Auto-reset all Monthly packages (local state only)
+    setClients(prev =>
+      prev.map(c => {
+        if (c.packageType !== 'Monthly' || (c.postsUsed <= 0 && c.postsRemaining >= c.packageSize)) return c;
+        const newOverduePosts = (c.overduePosts || 0) + c.postsRemaining;
+        return {
+          ...c,
+          postsUsed: 0,
+          postsRemaining: c.packageSize,
+          overduePosts: newOverduePosts
         };
-
-        const params = new URLSearchParams({
-          action: 'update',
-          clientData: JSON.stringify(requestBody.clientData)
-        });
-
-        const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
-          method: 'GET'
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            resetCount++;
-          } else {
-            errorCount++;
-          }
-        } else {
-          errorCount++;
-        }
-      } catch (error) {
-        console.error(`❌ Error auto-resetting ${client.clientName}:`, error);
-        errorCount++;
-      }
-    }
-
-    // Refresh the clients list
-    await fetchClients(false);
-    
-    // Show results
-    if (resetCount > 0) {
-      showToast(`✅ Auto-reset complete! ${resetCount} Monthly package(s) reset successfully.${errorCount > 0 ? ` (${errorCount} failed)` : ''}`, 'success');
-    } else if (errorCount > 0) {
-      showToast(`❌ Auto-reset failed for all ${errorCount} package(s). Please try manual reset.`, 'error');
-    }
+      })
+    );
+    showToast(`✅ Auto-reset complete! ${monthlyPackages.length} Monthly package(s) reset successfully.`, 'success');
 
     // Mark as checked for today
     setAutoResetChecked(true);
@@ -1895,37 +1284,6 @@ export default function PostingPackages() {
     const newRemaining = client.packageSize - newUsed;
     setApprovalLoading((prev) => ({ ...prev, [client.id]: true }));
     try {
-      const params = new URLSearchParams({
-        action: 'update',
-        clientData: JSON.stringify({
-          id: client.id,
-          clientName: client.clientName,
-          clientEmail: client.clientEmail || '',
-          profilePhoto: client.profilePhoto || '',
-          brokerage: client.brokerage || '',
-          platforms: client.platforms || {},
-          packageType: client.packageType,
-          packageSize: client.packageSize,
-          postsUsed: newUsed,
-          postsRemaining: newRemaining,
-          postsLuxuryListings: client.postsLuxuryListings ?? 0,
-          postsIgMansions: client.postsIgMansions ?? 0,
-          postsIgInteriors: client.postsIgInteriors ?? 0,
-          postsLuxuryHomes: client.postsLuxuryHomes ?? 0,
-          postedOn: getPostsPerPageSummary(client),
-          paymentStatus: client.paymentStatus,
-          approvalStatus: client.approvalStatus,
-          notes: client.notes || '',
-          startDate: client.startDate,
-          lastContact: client.lastContact,
-          customPrice: client.customPrice || 0,
-          overduePosts: client.overduePosts || 0
-        })
-      });
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, { method: 'GET' });
-      if (!response.ok) throw new Error('Update failed');
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error || 'Update failed');
       setClients((prev) =>
         prev.map((c) =>
           c.id === client.id
@@ -3237,7 +2595,7 @@ export default function PostingPackages() {
                     >
                       ＋ Add new client
                     </button>
-                    {[...crmClients, ...crmLeads]
+                    {[...crmLeads, ...crmClients]
                       .filter(c => {
                         const q = (addForm.clientSearchFilter || '').toLowerCase();
                         if (!q) return true;
@@ -3260,6 +2618,7 @@ export default function PostingPackages() {
                         >
                           <span className="font-medium">{c.clientName || c.name || '—'}</span>
                           {(c.clientEmail || c.email) && <span className="text-[#86868b] ml-2">{c.clientEmail || c.email}</span>}
+                          {c.source === 'lead' && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400">Lead</span>}
                         </button>
                       ))}
                   </div>
