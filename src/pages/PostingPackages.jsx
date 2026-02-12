@@ -1688,7 +1688,7 @@ export default function PostingPackages() {
                     
                     <button 
                       className="h-9 px-3 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                      onClick={() => openClientCard(client)}
+                      onClick={() => openEditModal(client)}
                       disabled={approvalLoading[client.id]}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1955,7 +1955,7 @@ export default function PostingPackages() {
                           
                           <button 
                             className="h-9 px-3 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[12px] font-medium hover:bg-[#5856d6]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                            onClick={() => openClientCard(client)}
+                            onClick={() => openEditModal(client)}
                             disabled={approvalLoading[client.id]}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -2218,7 +2218,7 @@ export default function PostingPackages() {
             <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-shrink-0">
               <div>
                 <h3 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white">
-                  Edit Client
+                  Edit Package
                 </h3>
                 <p className="text-[13px] text-[#86868b] mt-0.5">{editingClient.clientName}</p>
               </div>
