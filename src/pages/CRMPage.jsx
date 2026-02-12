@@ -69,6 +69,7 @@ const CRMPage = () => {
   );
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedItemType, setSelectedItemType] = useState(null); // 'client' or 'lead'
+  const [clientModalEmployees, setClientModalEmployees] = useState([]);
   const [existingClients, setExistingClients] = useState([]);
   const [loadingExistingClients, setLoadingExistingClients] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -203,6 +204,16 @@ const CRMPage = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  // Load employees when client detail modal opens (for manager assignment, same as ClientLink)
+  useEffect(() => {
+    if (selectedClient && selectedItemType === 'client' && clientModalEmployees.length === 0) {
+      firestoreService.getApprovedUsers().then(setClientModalEmployees).catch(console.error);
+    }
+    if (!selectedClient || selectedItemType !== 'client') {
+      setClientModalEmployees([]);
+    }
+  }, [selectedClient, selectedItemType]);
 
   // Load service account credentials for write operations
   const loadServiceAccountCredentials = async () => {
@@ -1378,7 +1389,7 @@ const CRMPage = () => {
         document.body
       )}
 
-      {/* Client Detail Modal - for existing clients */}
+      {/* Client Detail Modal - for existing clients (same as ClientLink modal: employees + manager assignment) */}
       {selectedClient && selectedItemType === 'client' && (
         <ClientDetailModal
           client={selectedClient}
@@ -1391,7 +1402,8 @@ const CRMPage = () => {
               prev.map(c => c.id === updatedClient.id ? updatedClient : c)
             );
           }}
-          showManagerAssignment={false}
+          employees={clientModalEmployees}
+          showManagerAssignment={true}
         />
       )}
 
