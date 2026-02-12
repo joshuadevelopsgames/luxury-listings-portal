@@ -33,6 +33,22 @@ import { Camera } from 'lucide-react';
 import { openEmailInGmail } from '../utils/gmailCompose';
 import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../services/crmService';
 
+// Posts per page: 4 columns for reporting (backward compat: client.postedOn can still be a summary string from Sheets)
+const POST_PAGES = [
+  { key: 'postsLuxuryListings', label: 'Luxury Listings' },
+  { key: 'postsIgMansions', label: 'IG Mansions' },
+  { key: 'postsIgInteriors', label: 'IG Interiors' },
+  { key: 'postsLuxuryHomes', label: 'Luxury Homes' }
+];
+function getPostsPerPageSummary(c) {
+  if (!c) return '—';
+  const a = POST_PAGES.map(({ key, label }) => {
+    const n = c[key] != null ? Number(c[key]) : 0;
+    return n ? `${n} ${label.replace(/^IG /, '')}` : null;
+  }).filter(Boolean);
+  return a.length ? a.join(', ') : (c.postedOn || '—');
+}
+
 export default function PostingPackages() {
   const [searchParams] = useSearchParams();
   const { hasPermission } = useAuth();
@@ -54,8 +70,11 @@ export default function PostingPackages() {
   const [editForm, setEditForm] = useState({});
   const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();
   const [employees, setEmployees] = useState([]);
+  const [crmClients, setCrmClients] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
+    selectedCrmClientId: null,
+    clientSearchFilter: '',
     clientName: '',
     clientEmail: '',
     clientType: CLIENT_TYPE.NA,
@@ -66,7 +85,10 @@ export default function PostingPackages() {
     packageSize: 1,
     postsUsed: 0,
     postsRemaining: 1,
-    postedOn: 'Luxury Listings',
+    postsLuxuryListings: 0,
+    postsIgMansions: 0,
+    postsIgInteriors: 0,
+    postsLuxuryHomes: 0,
     paymentStatus: 'Pending',
     approvalStatus: 'Pending',
     notes: '',
@@ -116,6 +138,10 @@ export default function PostingPackages() {
       firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
     }
   }, [clientForModal]);
+
+  useEffect(() => {
+    firestoreService.getClients().then(setCrmClients).catch(() => setCrmClients([]));
+  }, []);
 
   // Test function to verify the script is working
   const testGoogleAppsScript = async () => {
@@ -343,6 +369,10 @@ export default function PostingPackages() {
         else if (headerLower.includes('posts') && headerLower.includes('used')) columnMap.postsUsed = index;
         else if (headerLower.includes('posts') && headerLower.includes('remaining')) columnMap.postsRemaining = index;
         else if (headerLower.includes('posted') && headerLower.includes('page')) columnMap.postedOn = index;
+        else if ((headerLower.includes('posts') || headerLower.includes('luxury')) && headerLower.includes('listings')) columnMap.postsLuxuryListings = index;
+        else if ((headerLower.includes('posts') || headerLower.includes('ig')) && headerLower.includes('mansions')) columnMap.postsIgMansions = index;
+        else if ((headerLower.includes('posts') || headerLower.includes('ig')) && headerLower.includes('interiors')) columnMap.postsIgInteriors = index;
+        else if ((headerLower.includes('posts') || headerLower.includes('luxury')) && headerLower.includes('homes')) columnMap.postsLuxuryHomes = index;
         else if (headerLower.includes('payment') && headerLower.includes('status')) columnMap.paymentStatus = index;
         else if (headerLower.includes('approval') && headerLower.includes('status')) columnMap.approvalStatus = index;
         else if (headerLower.includes('notes')) columnMap.notes = index;
@@ -361,6 +391,11 @@ export default function PostingPackages() {
         .filter(row => row.length > 0 && row[0]) // Filter out empty rows
         .map((row, index) => {
           // Create a dynamic mapping based on your actual sheet structure
+          const postsLL = columnMap.postsLuxuryListings != null ? parseInt(row[columnMap.postsLuxuryListings]) || 0 : 0;
+          const postsM = columnMap.postsIgMansions != null ? parseInt(row[columnMap.postsIgMansions]) || 0 : 0;
+          const postsI = columnMap.postsIgInteriors != null ? parseInt(row[columnMap.postsIgInteriors]) || 0 : 0;
+          const postsH = columnMap.postsLuxuryHomes != null ? parseInt(row[columnMap.postsLuxuryHomes]) || 0 : 0;
+          const hasPostsPerPage = columnMap.postsLuxuryListings != null || columnMap.postsIgMansions != null || columnMap.postsIgInteriors != null || columnMap.postsLuxuryHomes != null;
           const client = {
             id: index + 1,
             clientName: row[columnMap.clientName] || 'Unknown Client',
@@ -369,7 +404,11 @@ export default function PostingPackages() {
             packageSize: parseInt(row[columnMap.packageSize]) || 0,
             postsUsed: parseInt(row[columnMap.postsUsed]) || 0,
             postsRemaining: parseInt(row[columnMap.postsRemaining]) || 0,
-            postedOn: row[columnMap.postedOn] || 'Luxury Listings',
+            postsLuxuryListings: hasPostsPerPage ? postsLL : 0,
+            postsIgMansions: hasPostsPerPage ? postsM : 0,
+            postsIgInteriors: hasPostsPerPage ? postsI : 0,
+            postsLuxuryHomes: hasPostsPerPage ? postsH : 0,
+            postedOn: hasPostsPerPage ? null : (row[columnMap.postedOn] || 'Luxury Listings'),
             paymentStatus: row[columnMap.paymentStatus] || 'Pending',
             approvalStatus: row[columnMap.approvalStatus] || 'Pending',
             notes: row[columnMap.notes] || '',
@@ -416,6 +455,10 @@ export default function PostingPackages() {
           packageSize: 6,
           postsUsed: 2,
           postsRemaining: 4,
+          postsLuxuryListings: 0,
+          postsIgMansions: 0,
+          postsIgInteriors: 0,
+          postsLuxuryHomes: 0,
           postedOn: "Luxury Listings",
           paymentStatus: "Paid",
           approvalStatus: "Approved",
@@ -431,6 +474,10 @@ export default function PostingPackages() {
           packageSize: 3,
           postsUsed: 3,
           postsRemaining: 0,
+          postsLuxuryListings: 0,
+          postsIgMansions: 0,
+          postsIgInteriors: 0,
+          postsLuxuryHomes: 0,
           postedOn: "Mansions",
           paymentStatus: "Paid",
           approvalStatus: "Approved",
@@ -1089,7 +1136,10 @@ export default function PostingPackages() {
       postsUsed: client.postsUsed,
       postsRemaining: client.postsRemaining,
       notes: client.notes || '',
-      postedOn: client.postedOn,
+      postsLuxuryListings: client.postsLuxuryListings ?? 0,
+      postsIgMansions: client.postsIgMansions ?? 0,
+      postsIgInteriors: client.postsIgInteriors ?? 0,
+      postsLuxuryHomes: client.postsLuxuryHomes ?? 0,
       paymentStatus: client.paymentStatus,
       customPrice: client.customPrice || 0,
       overduePosts: client.overduePosts || 0
@@ -1118,22 +1168,21 @@ export default function PostingPackages() {
       // Calculate the row number in Google Sheets (add 2 for header row + 0-based index)
       const rowNumber = editingClient.id + 1;
       
-      // Prepare the updated row data
+      const editPostedSummary = getPostsPerPageSummary(editForm);
       const updatedRow = [
-        editingClient.clientName, // Client Name (A)
-        editForm.packageType,     // Package Type (B)
-        editForm.packageSize,     // Package Size (C)
-        editForm.postsUsed,       // Posts Used (D)
-        editForm.postsRemaining,  // Posts Remaining (E)
-        editForm.postedOn,        // Posted On (F)
-        editForm.paymentStatus,   // Payment Status (G)
-        editingClient.approvalStatus, // Approval Status (H) - keep existing
-        editForm.notes,           // Notes (I)
-        editingClient.startDate,  // Start Date (J) - keep existing
-        editingClient.lastContact // Last Contact (K) - keep existing
+        editingClient.clientName,
+        editForm.packageType,
+        editForm.packageSize,
+        editForm.postsUsed,
+        editForm.postsRemaining,
+        editPostedSummary,
+        editForm.paymentStatus,
+        editingClient.approvalStatus,
+        editForm.notes,
+        editingClient.startDate,
+        editingClient.lastContact
       ];
       
-      // Update Google Sheets using Google Apps Script
       const requestBody = {
         action: 'update',
         clientData: {
@@ -1147,7 +1196,11 @@ export default function PostingPackages() {
           packageSize: editForm.packageSize,
           postsUsed: editForm.postsUsed,
           postsRemaining: editForm.postsRemaining,
-          postedOn: editForm.postedOn,
+          postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
+          postsIgMansions: editForm.postsIgMansions ?? 0,
+          postsIgInteriors: editForm.postsIgInteriors ?? 0,
+          postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
+          postedOn: editPostedSummary,
           paymentStatus: editForm.paymentStatus,
           approvalStatus: editingClient.approvalStatus,
           notes: editForm.notes,
@@ -1217,7 +1270,10 @@ export default function PostingPackages() {
                         postsUsed: editForm.postsUsed,
                         postsRemaining: editForm.postsRemaining,
                         notes: editForm.notes,
-                        postedOn: editForm.postedOn,
+                        postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
+                        postsIgMansions: editForm.postsIgMansions ?? 0,
+                        postsIgInteriors: editForm.postsIgInteriors ?? 0,
+                        postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
                         paymentStatus: editForm.paymentStatus,
                         customPrice: editForm.customPrice || 0,
                         status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
@@ -1252,7 +1308,10 @@ export default function PostingPackages() {
                         postsUsed: editForm.postsUsed,
                         postsRemaining: editForm.postsRemaining,
                         notes: editForm.notes,
-                        postedOn: editForm.postedOn,
+                        postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
+                        postsIgMansions: editForm.postsIgMansions ?? 0,
+                        postsIgInteriors: editForm.postsIgInteriors ?? 0,
+                        postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
                         paymentStatus: editForm.paymentStatus,
                         customPrice: editForm.customPrice || 0,
                         status: determineStatus(client.approvalStatus, editForm.paymentStatus, editForm.postsRemaining)
@@ -1290,7 +1349,10 @@ export default function PostingPackages() {
                 postsUsed: editForm.postsUsed,
                 postsRemaining: editForm.postsRemaining,
                 notes: editForm.notes,
-                postedOn: editForm.postedOn,
+                postsLuxuryListings: editForm.postsLuxuryListings ?? 0,
+                postsIgMansions: editForm.postsIgMansions ?? 0,
+                postsIgInteriors: editForm.postsIgInteriors ?? 0,
+                postsLuxuryHomes: editForm.postsLuxuryHomes ?? 0,
                 paymentStatus: editForm.paymentStatus,
                 customPrice: editForm.customPrice || 0,
                 // Update status based on new data
@@ -1372,7 +1434,11 @@ export default function PostingPackages() {
   };
 
   const handleAddSubmit = async () => {
-    if (!addForm.clientName.trim()) {
+    if (addForm.selectedCrmClientId !== 'new' && !addForm.selectedCrmClientId) {
+      toast.error('Please select a client from the CRM or choose Add new client');
+      return;
+    }
+    if (addForm.selectedCrmClientId === 'new' && !addForm.clientName.trim()) {
       toast.error('Please enter a client name');
       return;
     }
@@ -1391,14 +1457,14 @@ export default function PostingPackages() {
     setApprovalLoading({ ...approvalLoading, 'new': true });
 
     try {
-      // Prepare the new row data
+      const postedOnSummary = getPostsPerPageSummary(addForm);
       const newRow = [
         addForm.clientName,
         addForm.packageType,
         addForm.packageSize,
         addForm.postsUsed,
         addForm.postsRemaining,
-        addForm.postedOn,
+        postedOnSummary,
         addForm.paymentStatus,
         addForm.approvalStatus,
         addForm.notes,
@@ -1406,7 +1472,6 @@ export default function PostingPackages() {
         addForm.lastContact
       ];
 
-      // Add to Google Sheets using Google Apps Script with GET request
       const params = new URLSearchParams({
         action: 'add',
         clientData: JSON.stringify({
@@ -1419,7 +1484,11 @@ export default function PostingPackages() {
           packageSize: addForm.packageSize,
           postsUsed: addForm.postsUsed,
           postsRemaining: addForm.postsRemaining,
-          postedOn: addForm.postedOn,
+          postsLuxuryListings: addForm.postsLuxuryListings ?? 0,
+          postsIgMansions: addForm.postsIgMansions ?? 0,
+          postsIgInteriors: addForm.postsIgInteriors ?? 0,
+          postsLuxuryHomes: addForm.postsLuxuryHomes ?? 0,
+          postedOn: postedOnSummary,
           paymentStatus: addForm.paymentStatus,
           approvalStatus: addForm.approvalStatus,
           notes: addForm.notes,
@@ -1460,42 +1529,31 @@ export default function PostingPackages() {
             // Refresh the client list after a short delay
             setTimeout(async () => {
               await fetchClients(false);
-              
-              const crmSheetsResult = await addClientToCRMSheets({
-                clientName: addForm.clientName,
-                clientEmail: addForm.clientEmail,
-                packageType: addForm.packageType,
-                notes: addForm.notes
-              });
-              await addContactToCRM({
-                clientName: addForm.clientName,
-                clientEmail: addForm.clientEmail,
-                type: addForm.clientType || CLIENT_TYPE.NA,
-                notes: addForm.notes
-              }, 'warmLeads');
-              setAddForm({
-                clientName: '',
-                clientEmail: '',
-                clientType: CLIENT_TYPE.NA,
-                profilePhoto: '',
-                brokerage: '',
-                platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
-                packageType: 'Standard',
-                packageSize: 1,
-                postsUsed: 0,
-                postsRemaining: 1,
-                postedOn: 'Luxury Listings',
-                paymentStatus: 'Pending',
-                approvalStatus: 'Pending',
-                notes: '',
-                startDate: new Date().toISOString().split('T')[0],
-                lastContact: new Date().toISOString().split('T')[0]
-              });
+              let crmSheetsResult = { success: true };
+              if (addForm.selectedCrmClientId === 'new') {
+                crmSheetsResult = await addClientToCRMSheets({
+                  clientName: addForm.clientName,
+                  clientEmail: addForm.clientEmail,
+                  packageType: addForm.packageType,
+                  notes: addForm.notes
+                });
+                await addContactToCRM({
+                  clientName: addForm.clientName,
+                  clientEmail: addForm.clientEmail,
+                  type: addForm.clientType || CLIENT_TYPE.NA,
+                  notes: addForm.notes
+                }, 'warmLeads');
+              }
+              setAddForm(prev => ({ ...prev, selectedCrmClientId: null, clientSearchFilter: '', clientName: '', clientEmail: '', clientType: CLIENT_TYPE.NA, profilePhoto: '', brokerage: '', platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false }, packageType: 'Standard', packageSize: 1, postsUsed: 0, postsRemaining: 1, postsLuxuryListings: 0, postsIgMansions: 0, postsIgInteriors: 0, postsLuxuryHomes: 0, paymentStatus: 'Pending', approvalStatus: 'Pending', notes: '', startDate: new Date().toISOString().split('T')[0], lastContact: new Date().toISOString().split('T')[0], customPrice: 0, overduePosts: 0 }));
               setShowAddModal(false);
-              if (crmSheetsResult.success) {
-                showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+              if (addForm.selectedCrmClientId === 'new') {
+                if (crmSheetsResult.success) {
+                  showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+                } else {
+                  showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
+                }
               } else {
-                showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
+                showToast(`Package added for ${addForm.clientName}`);
               }
             }, 1000);
           };
@@ -1503,41 +1561,31 @@ export default function PostingPackages() {
             console.log('✅ Add request sent successfully via image method (error expected)');
             setTimeout(async () => {
               await fetchClients(false);
-              const crmSheetsResult = await addClientToCRMSheets({
-                clientName: addForm.clientName,
-                clientEmail: addForm.clientEmail,
-                packageType: addForm.packageType,
-                notes: addForm.notes
-              });
-              await addContactToCRM({
-                clientName: addForm.clientName,
-                clientEmail: addForm.clientEmail,
-                type: addForm.clientType || CLIENT_TYPE.NA,
-                notes: addForm.notes
-              }, 'warmLeads');
-              setAddForm({
-                clientName: '',
-                clientEmail: '',
-                clientType: CLIENT_TYPE.NA,
-                profilePhoto: '',
-                brokerage: '',
-                platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
-                packageType: 'Standard',
-                packageSize: 1,
-                postsUsed: 0,
-                postsRemaining: 1,
-                postedOn: 'Luxury Listings',
-                paymentStatus: 'Pending',
-                approvalStatus: 'Pending',
-                notes: '',
-                startDate: new Date().toISOString().split('T')[0],
-                lastContact: new Date().toISOString().split('T')[0]
-              });
+              let crmSheetsResult = { success: true };
+              if (addForm.selectedCrmClientId === 'new') {
+                crmSheetsResult = await addClientToCRMSheets({
+                  clientName: addForm.clientName,
+                  clientEmail: addForm.clientEmail,
+                  packageType: addForm.packageType,
+                  notes: addForm.notes
+                });
+                await addContactToCRM({
+                  clientName: addForm.clientName,
+                  clientEmail: addForm.clientEmail,
+                  type: addForm.clientType || CLIENT_TYPE.NA,
+                  notes: addForm.notes
+                }, 'warmLeads');
+              }
+              setAddForm(prev => ({ ...prev, selectedCrmClientId: null, clientSearchFilter: '', clientName: '', clientEmail: '', clientType: CLIENT_TYPE.NA, profilePhoto: '', brokerage: '', platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false }, packageType: 'Standard', packageSize: 1, postsUsed: 0, postsRemaining: 1, postsLuxuryListings: 0, postsIgMansions: 0, postsIgInteriors: 0, postsLuxuryHomes: 0, paymentStatus: 'Pending', approvalStatus: 'Pending', notes: '', startDate: new Date().toISOString().split('T')[0], lastContact: new Date().toISOString().split('T')[0], customPrice: 0, overduePosts: 0 }));
               setShowAddModal(false);
-              if (crmSheetsResult.success) {
-                showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+              if (addForm.selectedCrmClientId === 'new') {
+                if (crmSheetsResult.success) {
+                  showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+                } else {
+                  showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
+                }
               } else {
-                showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
+                showToast(`Package added for ${addForm.clientName}`);
               }
             }, 1000);
           };
@@ -1548,49 +1596,32 @@ export default function PostingPackages() {
         }
       }
 
-      // Refresh the client list to get the updated data
       await fetchClients(false);
 
-      const crmSheetsResult = await addClientToCRMSheets({
-        clientName: addForm.clientName,
-        clientEmail: addForm.clientEmail,
-        packageType: addForm.packageType,
-        notes: addForm.notes
-      });
-      await addContactToCRM({
-        clientName: addForm.clientName,
-        clientEmail: addForm.clientEmail,
-        type: addForm.clientType || CLIENT_TYPE.NA,
-        notes: addForm.notes
-      }, 'warmLeads');
-
-      setAddForm({
-        clientName: '',
-        clientEmail: '',
-        clientType: CLIENT_TYPE.NA,
-        profilePhoto: '',
-        brokerage: '',
-        platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
-        packageType: 'Standard',
-        packageSize: 1,
-        postsUsed: 0,
-        postsRemaining: 1,
-        postedOn: 'Luxury Listings',
-        paymentStatus: 'Pending',
-        approvalStatus: 'Pending',
-        notes: '',
-        startDate: new Date().toISOString().split('T')[0],
-        lastContact: new Date().toISOString().split('T')[0],
-        customPrice: 0,
-        overduePosts: 0
-      });
-      setShowAddModal(false);
-
-      if (crmSheetsResult.success) {
-        showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+      if (addForm.selectedCrmClientId === 'new') {
+        const crmSheetsResult = await addClientToCRMSheets({
+          clientName: addForm.clientName,
+          clientEmail: addForm.clientEmail,
+          packageType: addForm.packageType,
+          notes: addForm.notes
+        });
+        await addContactToCRM({
+          clientName: addForm.clientName,
+          clientEmail: addForm.clientEmail,
+          type: addForm.clientType || CLIENT_TYPE.NA,
+          notes: addForm.notes
+        }, 'warmLeads');
+        if (crmSheetsResult.success) {
+          showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
+        } else {
+          showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
+        }
       } else {
-        showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
+        showToast(`Package added for ${addForm.clientName}`);
       }
+
+      setAddForm(prev => ({ ...prev, selectedCrmClientId: null, clientSearchFilter: '', clientName: '', clientEmail: '', clientType: CLIENT_TYPE.NA, profilePhoto: '', brokerage: '', platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false }, packageType: 'Standard', packageSize: 1, postsUsed: 0, postsRemaining: 1, postsLuxuryListings: 0, postsIgMansions: 0, postsIgInteriors: 0, postsLuxuryHomes: 0, paymentStatus: 'Pending', approvalStatus: 'Pending', notes: '', startDate: new Date().toISOString().split('T')[0], lastContact: new Date().toISOString().split('T')[0], customPrice: 0, overduePosts: 0 }));
+      setShowAddModal(false);
 
     } catch (error) {
       console.error('Error adding client to Google Sheets:', error);
@@ -1634,7 +1665,7 @@ export default function PostingPackages() {
           packageSize: client.packageSize,
           postsUsed: newPostsUsed,
           postsRemaining: newPostsRemaining,
-          postedOn: client.postedOn,
+          postedOn: getPostsPerPageSummary(client),
           paymentStatus: client.paymentStatus,
           approvalStatus: client.approvalStatus,
           notes: client.notes,
@@ -1741,7 +1772,7 @@ export default function PostingPackages() {
             packageSize: client.packageSize,
             postsUsed: newPostsUsed,
             postsRemaining: newPostsRemaining,
-            postedOn: client.postedOn,
+            postedOn: getPostsPerPageSummary(client),
             paymentStatus: client.paymentStatus,
             approvalStatus: client.approvalStatus,
             notes: client.notes,
@@ -1823,8 +1854,11 @@ export default function PostingPackages() {
   const handleAddCancel = () => {
     setShowAddModal(false);
     setAddForm({
+      selectedCrmClientId: null,
+      clientSearchFilter: '',
       clientName: '',
       clientEmail: '',
+      clientType: CLIENT_TYPE.NA,
       profilePhoto: '',
       brokerage: '',
       platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
@@ -1832,7 +1866,10 @@ export default function PostingPackages() {
       packageSize: 1,
       postsUsed: 0,
       postsRemaining: 1,
-      postedOn: 'Luxury Listings',
+      postsLuxuryListings: 0,
+      postsIgMansions: 0,
+      postsIgInteriors: 0,
+      postsLuxuryHomes: 0,
       paymentStatus: 'Pending',
       approvalStatus: 'Pending',
       notes: '',
@@ -2123,7 +2160,7 @@ export default function PostingPackages() {
                   </div>
                   <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
                     <div className="text-[11px] text-[#86868b] mb-0.5">Posted On</div>
-                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">{client.postedOn}</div>
+                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">{getPostsPerPageSummary(client)}</div>
                   </div>
                   <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
                     <div className="text-[11px] text-[#86868b] mb-0.5">Start Date</div>
@@ -2552,7 +2589,7 @@ export default function PostingPackages() {
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
                           <div className="text-[11px] text-[#86868b] mb-0.5">Posted On</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">{client.postedOn}</div>
+                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">{getPostsPerPageSummary(client)}</div>
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
                           <div className="text-[11px] text-[#86868b] mb-0.5">Start Date</div>
@@ -2885,40 +2922,40 @@ export default function PostingPackages() {
                     </div>
                   </div>
 
-                  {/* Posted On & Payment Row */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
-                        Posted On
-                      </label>
-                      <select
-                        value={editForm.postedOn}
-                        onChange={(e) => setEditForm({...editForm, postedOn: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
-                      >
-                        <option value="Luxury Listings">Luxury Listings</option>
-                        <option value="Mansions">Mansions</option>
-                        <option value="Homes">Homes</option>
-                        <option value="All Pages">All Pages</option>
-                        <option value="4 Luxury Listings + 3 on Mansions">4 LL + 3 Mansions</option>
-                        <option value="Custom">Custom</option>
-                      </select>
+                  {/* Posts per page */}
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      Posts per page
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {POST_PAGES.map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-[11px] text-[#86868b] mb-0.5">{label}</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={editForm[key] ?? 0}
+                            onChange={(e) => setEditForm({ ...editForm, [key]: parseInt(e.target.value, 10) || 0 })}
+                            className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
-                        Payment Status
-                      </label>
-                      <select
-                        value={editForm.paymentStatus}
-                        onChange={(e) => setEditForm({...editForm, paymentStatus: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Partial">Partial</option>
-                        <option value="Overdue">Overdue</option>
-                      </select>
-                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      Payment Status
+                    </label>
+                    <select
+                      value={editForm.paymentStatus}
+                      onChange={(e) => setEditForm({...editForm, paymentStatus: e.target.value})}
+                      className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Partial">Partial</option>
+                      <option value="Overdue">Overdue</option>
+                    </select>
                   </div>
 
                   {/* Custom/Monthly Price */}
@@ -3031,13 +3068,76 @@ export default function PostingPackages() {
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
               
               {/* ═══════════════════════════════════════════════════════════════ */}
-              {/* CLIENT PROFILE SECTION */}
+              {/* SELECT CLIENT (CRM) or ADD NEW */}
               {/* ═══════════════════════════════════════════════════════════════ */}
               <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-[#0071e3]" />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Client Profile</h4>
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Client</h4>
+                  </div>
+                  <p className="text-[11px] text-[#86868b] mt-0.5">Select from CRM or add a new client</p>
+                </div>
+                <div className="p-4 space-y-3">
+                  <input
+                    type="text"
+                    value={addForm.clientSearchFilter}
+                    onChange={(e) => setAddForm({ ...addForm, clientSearchFilter: e.target.value })}
+                    placeholder="Search by name or email..."
+                    className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                  <div className="max-h-44 overflow-y-auto rounded-lg border border-black/10 dark:border-white/10 divide-y divide-black/5 dark:divide-white/5">
+                    {crmClients
+                      .filter(c => {
+                        const q = (addForm.clientSearchFilter || '').toLowerCase();
+                        if (!q) return true;
+                        const name = (c.clientName || c.name || '').toLowerCase();
+                        const email = (c.clientEmail || c.email || '').toLowerCase();
+                        return name.includes(q) || email.includes(q);
+                      })
+                      .map(c => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setAddForm({
+                            ...addForm,
+                            selectedCrmClientId: c.id,
+                            clientName: c.clientName || c.name || '',
+                            clientEmail: c.clientEmail || c.email || '',
+                            clientSearchFilter: ''
+                          })}
+                          className={`w-full text-left px-3 py-2.5 text-[13px] transition-colors ${addForm.selectedCrmClientId === c.id ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5'}`}
+                        >
+                          <span className="font-medium">{c.clientName || c.name || '—'}</span>
+                          {(c.clientEmail || c.email) && <span className="text-[#86868b] ml-2">{c.clientEmail || c.email}</span>}
+                        </button>
+                      ))}
+                    <button
+                      type="button"
+                      onClick={() => setAddForm({ ...addForm, selectedCrmClientId: 'new', clientSearchFilter: '', clientName: '', clientEmail: '' })}
+                      className={`w-full text-left px-3 py-2.5 text-[13px] font-medium transition-colors ${addForm.selectedCrmClientId === 'new' ? 'bg-[#34c759]/10 text-[#34c759]' : 'text-[#0071e3] hover:bg-[#0071e3]/10'}`}
+                    >
+                      ＋ Add new client
+                    </button>
+                  </div>
+                  {addForm.selectedCrmClientId && addForm.selectedCrmClientId !== 'new' && (
+                    <p className="text-[12px] text-[#86868b]">
+                      Selected: <span className="font-medium text-[#1d1d1f] dark:text-white">{addForm.clientName}</span>
+                      <button type="button" onClick={() => setAddForm({ ...addForm, selectedCrmClientId: null, clientName: '', clientEmail: '' })} className="ml-2 text-[#0071e3] hover:underline">Change</button>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              {/* CLIENT PROFILE SECTION (only when Add new client) */}
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              {addForm.selectedCrmClientId === 'new' && (
+              <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[#0071e3]" />
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">New Client Profile</h4>
                   </div>
                   <p className="text-[11px] text-[#86868b] mt-0.5">Basic client information</p>
                 </div>
@@ -3140,6 +3240,7 @@ export default function PostingPackages() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* ═══════════════════════════════════════════════════════════════ */}
               {/* PACKAGE DETAILS SECTION */}
@@ -3238,40 +3339,40 @@ export default function PostingPackages() {
                     </div>
                   </div>
 
-                  {/* Posted On & Payment Row */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
-                        Posted On
-                      </label>
-                      <select
-                        value={addForm.postedOn}
-                        onChange={(e) => setAddForm({...addForm, postedOn: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
-                      >
-                        <option value="Luxury Listings">Luxury Listings</option>
-                        <option value="Mansions">Mansions</option>
-                        <option value="Homes">Homes</option>
-                        <option value="All Pages">All Pages</option>
-                        <option value="4 Luxury Listings + 3 on Mansions">4 LL + 3 Mansions</option>
-                        <option value="Custom">Custom</option>
-                      </select>
+                  {/* Posts per page (Luxury Listings, IG Mansions, IG Interiors, Luxury Homes) */}
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      Posts per page
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {POST_PAGES.map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-[11px] text-[#86868b] mb-0.5">{label}</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={addForm[key] ?? 0}
+                            onChange={(e) => setAddForm({ ...addForm, [key]: parseInt(e.target.value, 10) || 0 })}
+                            className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
-                        Payment Status
-                      </label>
-                      <select
-                        value={addForm.paymentStatus}
-                        onChange={(e) => setAddForm({...addForm, paymentStatus: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Partial">Partial</option>
-                        <option value="Overdue">Overdue</option>
-                      </select>
-                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      Payment Status
+                    </label>
+                    <select
+                      value={addForm.paymentStatus}
+                      onChange={(e) => setAddForm({...addForm, paymentStatus: e.target.value})}
+                      className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Partial">Partial</option>
+                      <option value="Overdue">Overdue</option>
+                    </select>
                   </div>
 
                   {/* Approval & Start Date Row */}
@@ -3369,9 +3470,10 @@ export default function PostingPackages() {
               <button
                 onClick={handleAddSubmit}
                 disabled={
-                  approvalLoading['new'] || 
-                  addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize || 
-                  !addForm.clientName.trim() ||
+                  approvalLoading['new'] ||
+                  !addForm.selectedCrmClientId ||
+                  (addForm.selectedCrmClientId === 'new' && !addForm.clientName.trim()) ||
+                  addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize ||
                   ((addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0))
                 }
                 className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
