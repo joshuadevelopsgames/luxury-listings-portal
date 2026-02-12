@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
@@ -33,11 +33,11 @@ import {
   X,
   List,
   LayoutGrid,
-  UserCheck
+  UserCheck,
+  Download
 } from 'lucide-react';
-import CRMGoogleSheetsSetup from '../components/CRMGoogleSheetsSetup';
-import { CRMGoogleSheetsService } from '../services/crmGoogleSheetsService';
 import { firestoreService } from '../services/firestoreService';
+import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
@@ -50,19 +50,18 @@ import ClientDetailModal from '../components/client/ClientDetailModal';
 import LeadDetailModal from '../components/crm/LeadDetailModal';
 
 const CRMPage = () => {
+  const navigate = useNavigate();
   const { currentUser, currentRole, hasPermission } = useAuth();
   const { confirm } = useConfirm();
-  
-  // Initialize CRM service instance
-  const crmService = new CRMGoogleSheetsService();
   
   // Check permissions
   const canManageCRM = hasPermission(PERMISSIONS.MANAGE_CRM);
   const canManageLeads = hasPermission(PERMISSIONS.MANAGE_LEADS);
   const canViewLeads = hasPermission(PERMISSIONS.VIEW_LEADS);
   const canDeleteClients = hasPermission(PERMISSIONS.DELETE_CLIENTS);
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'warm' | 'cold' | 'contacted' | 'clients'
+  const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'SMM' | 'PP' | 'BOTH' | 'N/A'
   // Default to card view on mobile, list on desktop
   const [viewMode, setViewMode] = useState(() => 
@@ -84,6 +83,7 @@ const CRMPage = () => {
     notes: ''
   });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [exportingCrm, setExportingCrm] = useState(false);
 
   // Toast notification helper
   const showToast = (message, type = 'success') => {
@@ -91,11 +91,6 @@ const CRMPage = () => {
     // Auto-hide after 3 seconds
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
-
-  const [showGoogleSheetsSetup, setShowGoogleSheetsSetup] = useState(false);
-  const [isConnectedToGoogleSheets, setIsConnectedToGoogleSheets] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Graduate lead → client: after creating client, require day-one screenshot
   const [graduateScreenshotModal, setGraduateScreenshotModal] = useState({
@@ -216,154 +211,10 @@ const CRMPage = () => {
     }
   }, [selectedClient, selectedItemType]);
 
-  // Load service account credentials for write operations
-  const loadServiceAccountCredentials = async () => {
-    try {
-      console.log('🔍 Attempting to load service account credentials...');
-      const docRef = doc(db, 'crm_config', 'google_sheets');
-      const docSnap = await getDoc(docRef);
-      
-      console.log('🔍 Firestore document exists:', docSnap.exists());
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        console.log('🔍 Firestore document data:', data);
-        console.log('🔍 Has serviceAccountCredentials:', !!data.serviceAccountCredentials);
-        
-        if (data.serviceAccountCredentials) {
-          const credentials = data.serviceAccountCredentials;
-          console.log('🔐 Loaded service account credentials:', credentials.client_email);
-          return credentials;
-        } else {
-          console.log('🔐 No serviceAccountCredentials field in document');
-          return null;
-        }
-      } else {
-        console.log('🔐 No crm_config document found');
-        return null;
-      }
-    } catch (error) {
-      console.error('Error loading service account credentials:', error);
-      return null;
-    }
-  };
-
   // Load data on component mount
   useEffect(() => {
     loadStoredData();
   }, [currentUser?.uid]);
-
-  // Auto-sync on page refresh if connected to Google Sheets
-  useEffect(() => {
-    // Auto-sync should run when component mounts and user is authenticated
-    if (currentUser?.uid && !isLoading) {
-      const autoSync = async () => {
-        console.log('🔄 Auto-syncing CRM data on page refresh...');
-        try {
-          const service = new CRMGoogleSheetsService();
-          const data = await service.fetchCRMData();
-          await handleGoogleSheetsDataLoaded(data);
-          console.log('✅ Auto-sync completed successfully');
-        } catch (error) {
-          console.error('❌ Auto-sync failed:', error);
-          // Don't show error to user for auto-sync, but log it
-          console.log('📱 Auto-sync failed, using stored data');
-        }
-      };
-
-      // Small delay to ensure component is fully loaded
-      const timer = setTimeout(autoSync, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [currentUser?.uid, isLoading]); // Removed isConnectedToGoogleSheets dependency
-
-  // Handle Google Sheets data loading
-  const handleGoogleSheetsDataLoaded = async (data) => {
-    if (data && typeof data === 'object') {
-      // Update the leads state with the fetched data
-      setWarmLeads(data.warmLeads || []);
-      setContactedClients(data.contactedClients || []);
-      setColdLeads(data.coldLeads || []);
-      
-      // Update connection status
-      setIsConnectedToGoogleSheets(true);
-      const syncTime = new Date().toLocaleString();
-      setLastSyncTime(syncTime);
-      
-      // Save data to local storage for persistence
-      try {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        await setDoc(userDocRef, {
-          warmLeads: data.warmLeads || [],
-          contactedClients: data.contactedClients || [],
-          coldLeads: data.coldLeads || [],
-          lastSyncTime: syncTime,
-          isConnectedToGoogleSheets: true
-        });
-        console.log('💾 CRM data saved to Firebase for user:', currentUser.uid);
-      } catch (error) {
-        console.error('❌ Error saving CRM data to Firebase:', error);
-      }
-      
-      console.log('✅ CRM data loaded from Google Sheets:', {
-        warmLeads: data.warmLeads?.length || 0,
-        contactedClients: data.contactedClients?.length || 0,
-        coldLeads: data.coldLeads?.length || 0
-      });
-    }
-  };
-
-  const handleConnectionStatusChange = (isConnected) => {
-    setIsConnectedToGoogleSheets(isConnected);
-    if (!isConnected) {
-      setLastSyncTime(null);
-      // Clear Firebase CRM data when disconnecting
-      clearFirebaseCRMData();
-    }
-    console.log('🔄 CRM connection status changed:', isConnected);
-  };
-
-  // Clear Firebase CRM data
-  const clearFirebaseCRMData = async () => {
-    try {
-      if (currentUser?.uid) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        await setDoc(userDocRef, {
-          warmLeads: [],
-          contactedClients: [],
-          coldLeads: [],
-          lastSyncTime: null,
-          isConnectedToGoogleSheets: false
-        }, { merge: true });
-        console.log('🗑️ Cleared Firebase CRM data for user:', currentUser.uid);
-      }
-    } catch (error) {
-      console.error('❌ Error clearing Firebase CRM data:', error);
-    }
-  };
-
-  // Manual sync with Google Sheets
-  const handleManualSync = async () => {
-    if (!isConnectedToGoogleSheets) {
-      setShowGoogleSheetsSetup(true);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const service = new CRMGoogleSheetsService();
-      const data = await service.fetchCRMData();
-      handleGoogleSheetsDataLoaded(data);
-      setLastSyncTime(new Date().toLocaleString());
-    } catch (error) {
-      console.error('❌ Manual sync failed:', error);
-      // Start with empty arrays on error
-      setWarmLeads([]);
-      setContactedClients([]);
-      setColdLeads([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const fullContactsList = [
     ...warmLeads.map(c => ({ ...c, isExisting: false })),
@@ -391,19 +242,6 @@ const CRMPage = () => {
       lastContact: new Date().toISOString(),
       category: selectedTabKeys[0]
     };
-    const credentials = await loadServiceAccountCredentials();
-    if (credentials) {
-      const service = new CRMGoogleSheetsService();
-      service.setServiceAccountCredentials(credentials);
-      const results = await Promise.allSettled(
-        selectedTabKeys.map(tabKey => service.addNewLead(newLead, { [tabKey]: true }))
-      );
-      results.forEach((result, index) => {
-        if (result.status !== 'fulfilled') {
-          console.error(`❌ Failed to add to ${selectedTabKeys[index]}:`, result.reason);
-        }
-      });
-    }
     if (selectedTabKeys.includes('warmLeads')) setWarmLeads(prev => [newLeadData, ...prev]);
     if (selectedTabKeys.includes('contactedClients')) setContactedClients(prev => [newLeadData, ...prev]);
     if (selectedTabKeys.includes('coldLeads')) setColdLeads(prev => [newLeadData, ...prev]);
@@ -411,9 +249,7 @@ const CRMPage = () => {
     const nextContacted = selectedTabKeys.includes('contactedClients') ? [newLeadData, ...contactedClients] : contactedClients;
     const nextCold = selectedTabKeys.includes('coldLeads') ? [newLeadData, ...coldLeads] : coldLeads;
     await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
-    showToast(credentials
-      ? `✅ Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`
-      : `✅ Lead added locally (connect Google Sheets in settings to sync).`);
+    showToast(`✅ Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`);
     resetNewLeadForm();
     setShowAddModal(false);
     setPossibleExistingMatches([]);
@@ -497,39 +333,13 @@ const CRMPage = () => {
     if (!updatedLead?.id) return;
 
     try {
-      // Update the client data in Google Sheets via Google Apps Script
-      const params = new URLSearchParams({
-        action: 'updateLead',
-        leadData: JSON.stringify({
-          id: updatedLead.id,
-          contactName: updatedLead.contactName,
-          email: updatedLead.email,
-          type: updatedLead.type || CLIENT_TYPE.NA,
-          phone: updatedLead.phone,
-          instagram: updatedLead.instagram,
-          organization: updatedLead.organization,
-          website: updatedLead.website,
-          notes: updatedLead.notes,
-          status: updatedLead.status
-        })
-      });
-
-      if (crmService.config?.scriptUrl) {
-        await fetch(`${crmService.config.scriptUrl}?${params.toString()}`);
-      }
-
-      // Update in local arrays
       const updateClientInArray = (arr, setArr) => {
         setArr(prev => prev.map(c => c.id === updatedLead.id ? { ...c, ...updatedLead } : c));
       };
-
       updateClientInArray(warmLeads, setWarmLeads);
       updateClientInArray(contactedClients, setContactedClients);
       updateClientInArray(coldLeads, setColdLeads);
-
-      // Save to Firebase
       await saveCRMDataToFirebase();
-
       showToast(`✅ Lead "${updatedLead.contactName}" updated successfully!`);
     } catch (error) {
       console.error('Error updating lead:', error);
@@ -551,39 +361,11 @@ const CRMPage = () => {
     if (!confirmed) return;
 
     try {
-      // Delete from Google Sheets via Google Apps Script
-      const params = new URLSearchParams({
-        action: 'deleteLead',
-        leadData: JSON.stringify({
-          id: client.id,
-          contactName: client.contactName
-        })
-      });
-
-      const response = await fetch(`${crmService.googleAppsScriptUrl}?${params.toString()}`, {
-        method: 'GET'
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete lead: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Delete failed');
-      }
-
-      // Remove from all local arrays
       setWarmLeads(prev => prev.filter(c => c.id !== client.id));
       setContactedClients(prev => prev.filter(c => c.id !== client.id));
       setColdLeads(prev => prev.filter(c => c.id !== client.id));
-
-      // Save to Firebase
       await saveCRMDataToFirebase();
-
       showToast(`✅ Lead "${client.contactName}" deleted successfully!`);
-
     } catch (error) {
       console.error('Error deleting lead:', error);
       showToast(`❌ Error deleting lead: ${error.message}`, 'error');
@@ -967,46 +749,40 @@ const CRMPage = () => {
         <div>
           <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">CRM Dashboard</h1>
           <p className="text-[15px] text-[#86868b] mt-1">Manage your leads and client relationships</p>
-          {isConnectedToGoogleSheets && (
-            <div className="flex items-center gap-2 mt-2">
-              <CheckCircle className="w-4 h-4 text-[#34c759]" />
-              <span className="text-[13px] text-[#34c759]">Connected to Google Sheets</span>
-              {lastSyncTime && (
-                <span className="text-[11px] text-[#86868b]">
-                  • Last synced: {lastSyncTime}
-                </span>
-              )}
-            </div>
-          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => window.open('https://docs.google.com/spreadsheets/d/1wM8g4bPituJoJFVp_Ndlv7o4p3NZMNEM2-WwuUnGvyE/edit', '_blank')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+            onClick={() => {
+              setExportingCrm(true);
+              try {
+                exportCrmToXlsx({ warmLeads, contactedClients, coldLeads, existingClients });
+                showToast('CRM exported to spreadsheet');
+              } catch (e) {
+                console.error(e);
+                showToast('Export failed', 'error');
+              } finally {
+                setExportingCrm(false);
+              }
+            }}
+            disabled={exportingCrm}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors disabled:opacity-50"
           >
-            📊 Open Sheets
+            <Download className="w-4 h-4" />
+            {exportingCrm ? 'Exporting…' : 'Export to spreadsheet'}
           </button>
-          <Link
-            to="/clients"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+          <button
+            onClick={() => navigate('/clients?openAdd=1')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
           >
-            <UserCheck className="w-4 h-4" />
-            Add Client
-          </Link>
+            <Plus className="w-4 h-4" />
+            + Add Client
+          </button>
           <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors">
             <Plus className="w-4 h-4" />
             Add Lead
           </button>
         </div>
       </div>
-
-      {/* Google Sheets Setup */}
-      {showGoogleSheetsSetup && (
-        <CRMGoogleSheetsSetup
-          onDataLoaded={handleGoogleSheetsDataLoaded}
-          onConnectionStatusChange={handleConnectionStatusChange}
-        />
-      )}
 
       {/* Key Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -1215,164 +991,112 @@ const CRMPage = () => {
 
       {/* Add New Lead Modal */}
       {showAddModal && createPortal(
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add New Lead</h3>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-shrink-0">
+              <div>
+                <h3 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white">Add New Lead</h3>
+                <p className="text-[13px] text-[#86868b] mt-0.5">Lead will be added to your CRM and the date recorded</p>
+              </div>
               <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  resetNewLeadForm();
-                }}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#86868b] transition-colors"
+                onClick={() => { setShowAddModal(false); resetNewLeadForm(); }}
+                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-[13px] text-[#86868b] mb-4">
-              This is the same process used across the site. This lead will automatically be added to your CRM and the date will be recorded.
-            </p>
-            
-            <div className="space-y-4">
-              {/* Tab Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-2">Select Tabs to Add Lead To:</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedTabs.warmLeads}
-                      onChange={(e) => setSelectedTabs(prev => ({ ...prev, warmLeads: e.target.checked }))}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-[#e5e5e7]">Warm Leads</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedTabs.contactedClients}
-                      onChange={(e) => setSelectedTabs(prev => ({ ...prev, contactedClients: e.target.checked }))}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-[#e5e5e7]">Contacted Clients</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedTabs.coldLeads}
-                      onChange={(e) => setSelectedTabs(prev => ({ ...prev, coldLeads: e.target.checked }))}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-[#e5e5e7]">Cold Leads</span>
-                  </label>
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              {/* Type & Tabs */}
+              <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-[#0071e3]" />
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Type & list</h4>
+                  </div>
+                  <p className="text-[11px] text-[#86868b] mt-0.5">Choose type and which tab(s) to add this lead to</p>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Type *</label>
+                    <select
+                      value={newLead.type || CLIENT_TYPE.NA}
+                      onChange={(e) => setNewLead(prev => ({ ...prev, type: e.target.value }))}
+                      className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    >
+                      {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to tab(s)</label>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={selectedTabs.warmLeads} onChange={(e) => setSelectedTabs(prev => ({ ...prev, warmLeads: e.target.checked }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Warm Leads</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={selectedTabs.contactedClients} onChange={(e) => setSelectedTabs(prev => ({ ...prev, contactedClients: e.target.checked }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Contacted Clients</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={selectedTabs.coldLeads} onChange={(e) => setSelectedTabs(prev => ({ ...prev, coldLeads: e.target.checked }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Cold Leads</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Type - required */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Type *</label>
-                <select
-                  value={newLead.type || CLIENT_TYPE.NA}
-                  onChange={(e) => setNewLead(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
+              {/* Contact details */}
+              <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-[#0071e3]" />
+                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Contact details</h4>
+                  </div>
+                  <p className="text-[11px] text-[#86868b] mt-0.5">Name and email required</p>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Contact name *</label>
+                      <input type="text" value={newLead.contactName} onChange={(e) => setNewLead(prev => ({ ...prev, contactName: e.target.value }))} placeholder="Enter contact name" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Email *</label>
+                      <input type="email" value={newLead.email} onChange={(e) => setNewLead(prev => ({ ...prev, email: e.target.value }))} placeholder="email@example.com" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Phone</label>
+                      <input type="tel" value={newLead.phone} onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Instagram</label>
+                      <input type="text" value={newLead.instagram} onChange={(e) => setNewLead(prev => ({ ...prev, instagram: e.target.value }))} placeholder="@handle" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Organization</label>
+                      <input type="text" value={newLead.organization} onChange={(e) => setNewLead(prev => ({ ...prev, organization: e.target.value }))} placeholder="Company or brand" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                    <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Website</label>
+                      <input type="url" value={newLead.website} onChange={(e) => setNewLead(prev => ({ ...prev, website: e.target.value }))} placeholder="https://…" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Notes</label>
+                    <textarea value={newLead.notes} onChange={(e) => setNewLead(prev => ({ ...prev, notes: e.target.value }))} rows={3} placeholder="Additional notes" className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none" />
+                  </div>
+                </div>
               </div>
 
-              {/* Form Fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Contact Name *</label>
-                  <input
-                    type="text"
-                    value={newLead.contactName}
-                    onChange={(e) => setNewLead(prev => ({ ...prev, contactName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter contact name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Email *</label>
-                  <input
-                    type="email"
-                    value={newLead.email}
-                    onChange={(e) => setNewLead(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter email address"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={newLead.phone}
-                    onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Instagram</label>
-                  <input
-                    type="text"
-                    value={newLead.instagram}
-                    onChange={(e) => setNewLead(prev => ({ ...prev, instagram: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter Instagram handle"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Organization</label>
-                  <input
-                    type="text"
-                    value={newLead.organization}
-                    onChange={(e) => setNewLead(prev => ({ ...prev, organization: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter organization name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                  <input
-                    type="url"
-                    value={newLead.website}
-                    onChange={(e) => setNewLead(prev => ({ ...prev, website: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter website URL"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea
-                  value={newLead.notes}
-                  onChange={(e) => setNewLead(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="3"
-                  placeholder="Enter any additional notes"
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-4">
-                <button 
-                  onClick={handleAddNewLead}
-                  disabled={isAddingLead}
-                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
-                >
-                  {isAddingLead ? 'Adding...' : 'Add Lead'}
+              <div className="flex items-center gap-2 pt-2">
+                <button onClick={handleAddNewLead} disabled={isAddingLead} className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  {isAddingLead ? 'Adding…' : 'Add Lead'}
                 </button>
-                <button 
-                  onClick={() => {
-                    setShowAddModal(false);
-                    resetNewLeadForm();
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
+                <button onClick={() => { setShowAddModal(false); resetNewLeadForm(); }} className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
                   Cancel
                 </button>
               </div>
