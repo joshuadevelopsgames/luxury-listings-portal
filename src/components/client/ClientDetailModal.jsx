@@ -28,6 +28,7 @@ import {
   Camera
 } from 'lucide-react';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getGmailComposeUrl } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
@@ -459,6 +460,55 @@ const ClientDetailModal = ({
                 </div>
               )}
 
+              {/* Day-one & additional screenshots */}
+              {(localClient.signupScreenshotUrl || (localClient.additionalScreenshots && localClient.additionalScreenshots.length > 0)) && (
+                <div className="border-t border-black/5 dark:border-white/5 pt-6">
+                  <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Screenshots</h3>
+                  <div className="space-y-3">
+                    {localClient.signupScreenshotUrl && (
+                      <div>
+                        <p className="text-[11px] text-[#86868b] mb-1.5">Day-one (signup)</p>
+                        <a
+                          href={localClient.signupScreenshotUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block rounded-xl overflow-hidden border border-black/10 dark:border-white/10 max-w-xs"
+                        >
+                          <img
+                            src={localClient.signupScreenshotUrl}
+                            alt="Day-one screenshot"
+                            className="w-full h-auto max-h-48 object-cover"
+                          />
+                        </a>
+                        {localClient.signupScreenshotUploadedAt && (
+                          <p className="text-[11px] text-[#86868b] mt-1">
+                            Uploaded {format(new Date(localClient.signupScreenshotUploadedAt), 'MMM d, yyyy')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {localClient.additionalScreenshots && localClient.additionalScreenshots.length > 0 && (
+                      <div>
+                        <p className="text-[11px] text-[#86868b] mb-1.5">Additional screenshots</p>
+                        <div className="flex flex-wrap gap-2">
+                          {localClient.additionalScreenshots.map((s, i) => (
+                            <a
+                              key={i}
+                              href={s.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-lg overflow-hidden border border-black/10 dark:border-white/10 w-24 h-24 flex-shrink-0"
+                            >
+                              <img src={s.url} alt={`Screenshot ${i + 1}`} className="w-full h-full object-cover" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Package Details */}
               <div className="border-t border-black/5 dark:border-white/5 pt-6">
                 <h3 className="text-[12px] font-semibold text-[#86868b] mb-4 uppercase tracking-wide">Package Details</h3>
@@ -566,7 +616,9 @@ const ClientDetailModal = ({
               )}
               {localClient.clientEmail && (
                 <a
-                  href={`mailto:${localClient.clientEmail}`}
+                  href={getGmailComposeUrl(localClient.clientEmail)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex-1 min-w-[140px] h-11 flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />

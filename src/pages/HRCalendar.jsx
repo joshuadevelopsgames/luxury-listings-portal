@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { PERMISSIONS } from '../entities/Permissions';
 import { firestoreService } from '../services/firestoreService';
 import { timeOffNotifications } from '../services/timeOffNotificationService';
-import { calculateBusinessDays } from '../utils/timeOffHelpers';
+import { calculateBusinessDays, getLeaveTypeDisplayLabel } from '../utils/timeOffHelpers';
 import { LEAVE_CALENDAR_SYNC_EMAILS } from '../utils/vancouverTime';
 import { 
   Calendar as CalendarIcon, 
@@ -75,7 +75,7 @@ const HRCalendar = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditLeaveModal, setShowEditLeaveModal] = useState(false);
   const [editingLeaveRequest, setEditingLeaveRequest] = useState(null);
-  const [editLeaveForm, setEditLeaveForm] = useState({ startDate: '', endDate: '', days: 0, type: 'vacation', reason: '', notes: '', managerNotes: '' });
+  const [editLeaveForm, setEditLeaveForm] = useState({ startDate: '', endDate: '', days: 0, type: 'vacation', reason: '', notes: '', managerNotes: '', otherSubType: '', otherCustomLabel: '' });
   const [savingEditLeave, setSavingEditLeave] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [googleEvents, setGoogleEvents] = useState([]);
@@ -177,7 +177,9 @@ const HRCalendar = () => {
     recurrence: 'none',
     recurrenceEndDate: '',
     tags: [],
-    priority: 'medium'
+    priority: 'medium',
+    otherSubType: '',
+    otherCustomLabel: ''
   });
 
   // Leave requests state - loaded from Firestore
@@ -186,13 +188,17 @@ const HRCalendar = () => {
   // Team members state - loaded from Firestore
   const [teamMembers, setTeamMembers] = useState([]);
 
-  // Leave type definitions with colors
+  // Leave type definitions with colors (Other includes Bereavement, Maternity, Custom via otherSubType)
   const leaveTypes = {
     vacation: { label: 'Vacation', color: 'bg-blue-100 text-blue-800', dotColor: 'bg-blue-500' },
     sick: { label: 'Sick Leave', color: 'bg-red-100 text-red-800', dotColor: 'bg-red-500' },
     remote: { label: 'Remote', color: 'bg-green-100 text-green-800', dotColor: 'bg-green-500' },
-    bereavement: { label: 'Bereavement', color: 'bg-gray-100 text-gray-800', dotColor: 'bg-gray-500' },
     other: { label: 'Other', color: 'bg-indigo-100 text-indigo-800', dotColor: 'bg-indigo-500' }
+  };
+
+  const getLeaveTypeLabel = (request) => {
+    if (request?.type === 'other') return getLeaveTypeDisplayLabel(request) || leaveTypes.other.label;
+    return leaveTypes[request?.type]?.label || request?.type || 'Leave';
   };
 
   // Priority levels
@@ -225,7 +231,7 @@ const HRCalendar = () => {
   const allEvents = [
     ...leaveRequests.map(request => ({
       id: `leave-${request.id}`,
-      title: `${request.employeeName} - ${leaveTypes[request.type]?.label || request.type}`,
+      title: `${request.employeeName} - ${getLeaveTypeLabel(request)}`,
       description: request.description || request.reason,
       start: new Date(request.startDate + 'T' + request.startTime),
       end: new Date(request.endDate + 'T' + request.endTime),
@@ -277,7 +283,9 @@ const HRCalendar = () => {
             priority: req.priority || 'medium',
             requesterCalendarEventId: req.requesterCalendarEventId,
             calendarEventIdsByEmail: req.calendarEventIdsByEmail || {},
-            archived: req.archived
+            archived: req.archived,
+            otherSubType: req.otherSubType,
+            otherCustomLabel: req.otherCustomLabel
           }));
           setLeaveRequests(prev => [...formattedRequests, ...prev.filter(r => !requests.find(fr => fr.id === r.id))]);
         }
@@ -371,10 +379,10 @@ const HRCalendar = () => {
         console.warn('⚠️ Could not send notification:', notifError);
       }
       
-      // Add to Google Calendar only for vacation/sick, and only when approver is Michelle or Matthew (or requester)
-      const isVacationOrSick = request.type === 'vacation' || request.type === 'sick';
+      // Add to Google Calendar for vacation/sick/other, when approver is Michelle or Matthew (or requester)
+      const syncsToCalendar = request.type === 'vacation' || request.type === 'sick' || request.type === 'other';
       const approverGetsCalendarSync = currentUser?.email && LEAVE_CALENDAR_SYNC_EMAILS.includes(currentUser.email.toLowerCase());
-      if (isGoogleConnected && isVacationOrSick && approverGetsCalendarSync) {
+      if (isGoogleConnected && syncsToCalendar && approverGetsCalendarSync) {
         try {
           const result = await googleCalendarService.createLeaveEvent(request);
           if (result?.id) {
@@ -529,7 +537,9 @@ const HRCalendar = () => {
       type: request.type || 'vacation',
       reason: request.reason || '',
       notes: request.description || request.notes || '',
-      managerNotes: request.managerNotes || ''
+      managerNotes: request.managerNotes || '',
+      otherSubType: request.otherSubType || '',
+      otherCustomLabel: request.otherCustomLabel || ''
     });
     setShowEditLeaveModal(true);
   };
@@ -537,6 +547,10 @@ const HRCalendar = () => {
   const handleEditLeaveFormChange = (field, value) => {
     setEditLeaveForm((prev) => {
       const next = { ...prev, [field]: value };
+      if (field === 'type' && value !== 'other') {
+        next.otherSubType = '';
+        next.otherCustomLabel = '';
+      }
       if ((field === 'startDate' || field === 'endDate') && next.startDate && next.endDate) {
         next.days = calculateBusinessDays(next.startDate, next.endDate);
       }
@@ -558,7 +572,7 @@ const HRCalendar = () => {
       await timeOffNotifications.notifyLeaveRequestEdited(updatedRequest, currentUser.email, 'Dates or details were changed.');
       // Update Google Calendar event for this admin (Michelle/Matthew) if they have one
       const eventId = (editingLeaveRequest.calendarEventIdsByEmail || {})[currentUser.email];
-      if (eventId && LEAVE_CALENDAR_SYNC_EMAILS.includes(currentUser.email.toLowerCase()) && (updatedRequest.type === 'vacation' || updatedRequest.type === 'sick')) {
+      if (eventId && LEAVE_CALENDAR_SYNC_EMAILS.includes(currentUser.email.toLowerCase()) && (updatedRequest.type === 'vacation' || updatedRequest.type === 'sick' || updatedRequest.type === 'other')) {
         try {
           if (googleCalendarService.getConnectionStatus().isConnected) {
             await googleCalendarService.updateLeaveEvent(updatedRequest, eventId);
@@ -588,7 +602,7 @@ const HRCalendar = () => {
   const handleExport = () => {
     const rows = leaveRequests.map(r => ({
       Employee: (r.employeeName || '').replace(/"/g, '""'),
-      Type: leaveTypes[r.type]?.label || r.type,
+      Type: getLeaveTypeLabel(r),
       'Start Date': r.startDate,
       'End Date': r.endDate,
       Days: r.days ?? '',
@@ -658,7 +672,9 @@ const HRCalendar = () => {
       recurrence: 'none',
       recurrenceEndDate: '',
       tags: [],
-      priority: 'medium'
+      priority: 'medium',
+      otherSubType: '',
+      otherCustomLabel: ''
     });
   };
 
@@ -1048,6 +1064,17 @@ const HRCalendar = () => {
               <Laptop className="w-3.5 h-3.5" />
               Remote
             </button>
+            <button 
+              onClick={() => setFilterType('other')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                filterType === 'other' 
+                  ? 'bg-indigo-500 text-white' 
+                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+              }`}
+            >
+              <Tag className="w-3.5 h-3.5" />
+              Other
+            </button>
           </div>
 
           {filteredRequests.length === 0 ? (
@@ -1074,21 +1101,25 @@ const HRCalendar = () => {
                           ? 'bg-[#ff3b30]/10' 
                           : request.type === 'remote'
                             ? 'bg-[#34c759]/10'
-                            : 'bg-[#86868b]/10'
+                            : request.type === 'other'
+                              ? 'bg-indigo-500/10'
+                              : 'bg-[#86868b]/10'
                     }`}>
                       {request.type === 'vacation' 
                         ? <Plane className="w-5 h-5 text-[#0071e3]" /> 
                         : request.type === 'sick' 
                           ? <Heart className="w-5 h-5 text-[#ff3b30]" />
                           : request.type === 'remote'
-                            ? <Laptop className="w-5 h-5 text-[#34c759]" /> 
-                          : <CalendarIcon className="w-5 h-5 text-[#86868b]" />
+                            ? <Laptop className="w-5 h-5 text-[#34c759]" />
+                            : request.type === 'other'
+                              ? <Tag className="w-5 h-5 text-indigo-500" />
+                              : <CalendarIcon className="w-5 h-5 text-[#86868b]" />
                       }
                     </div>
                     <div>
                       <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{request.employeeName}</p>
                       <p className="text-[12px] text-[#86868b]">
-                        {request.startDate} - {request.endDate} ({request.days} days)
+                        {getLeaveTypeLabel(request)} · {request.startDate} - {request.endDate} ({request.days} days)
                       </p>
                       {request.reason && <p className="text-[12px] text-[#86868b] mt-0.5">{request.reason}</p>}
                     </div>
@@ -1116,8 +1147,8 @@ const HRCalendar = () => {
                         </button>
                       </div>
                     )}
-                    {/* Edit approved (any admin) */}
-                    {request.status === 'approved' && isTimeOffAdmin && (
+                    {/* Edit approved (anyone who can manage leave) */}
+                    {request.status === 'approved' && canManageLeave && (
                       <button
                         onClick={() => openEditLeaveModal(request)}
                         className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors"
@@ -1241,6 +1272,7 @@ const HRCalendar = () => {
                     <option value="vacation">Vacation</option>
                     <option value="sick">Sick</option>
                     <option value="remote">Remote</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
                 <div>
@@ -1248,6 +1280,20 @@ const HRCalendar = () => {
                   <p className="h-11 flex items-center text-[14px] font-medium text-[#0071e3]">{editLeaveForm.days}</p>
                 </div>
               </div>
+              {editLeaveForm.type === 'other' && (
+                <div className="space-y-2">
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white">Kind of leave</label>
+                  <select value={editLeaveForm.otherSubType} onChange={(e) => handleEditLeaveFormChange('otherSubType', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]">
+                    <option value="">Select...</option>
+                    <option value="bereavement">Bereavement</option>
+                    <option value="maternity">Maternity Leave</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                  {editLeaveForm.otherSubType === 'custom' && (
+                    <input type="text" value={editLeaveForm.otherCustomLabel} onChange={(e) => handleEditLeaveFormChange('otherCustomLabel', e.target.value)} placeholder="Custom label (optional)" className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" />
+                  )}
+                </div>
+              )}
               <div>
                 <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Reason</label>
                 <input type="text" value={editLeaveForm.reason} onChange={(e) => handleEditLeaveFormChange('reason', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" placeholder="Reason" />
@@ -1373,7 +1419,9 @@ const HRCalendar = () => {
                                   ? 'bg-[#ff3b30]/10'
                                   : request.type === 'remote'
                                     ? 'bg-[#34c759]/10'
-                                    : 'bg-[#86868b]/10'
+                                    : request.type === 'other'
+                                      ? 'bg-indigo-500/10'
+                                      : 'bg-[#86868b]/10'
                             }`}>
                               {request.type === 'vacation' 
                                 ? <Plane className="w-4 h-4 text-[#0071e3]" />
@@ -1381,11 +1429,13 @@ const HRCalendar = () => {
                                   ? <Heart className="w-4 h-4 text-[#ff3b30]" />
                                   : request.type === 'remote'
                                     ? <Laptop className="w-4 h-4 text-[#34c759]" />
-                                    : <CalendarIcon className="w-4 h-4 text-[#86868b]" />
+                                    : request.type === 'other'
+                                      ? <Tag className="w-4 h-4 text-indigo-500" />
+                                      : <CalendarIcon className="w-4 h-4 text-[#86868b]" />
                               }
                             </div>
                             <div>
-                              <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white capitalize">{request.type}</p>
+                              <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{getLeaveTypeLabel(request)}</p>
                               <p className="text-[12px] text-[#86868b]">
                                 {request.startDate} - {request.endDate} ({request.days} days)
                               </p>
@@ -1811,6 +1861,26 @@ const HRCalendar = () => {
                   </select>
                 </div>
               </div>
+
+              {leaveForm.type === 'other' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kind of leave</label>
+                    <select value={leaveForm.otherSubType} onChange={(e) => handleFormChange('otherSubType', e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/10 text-[#1d1d1f] dark:text-white">
+                      <option value="">Select...</option>
+                      <option value="bereavement">Bereavement</option>
+                      <option value="maternity">Maternity Leave</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                  {leaveForm.otherSubType === 'custom' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom label</label>
+                      <input type="text" value={leaveForm.otherCustomLabel} onChange={(e) => handleFormChange('otherCustomLabel', e.target.value)} placeholder="e.g. Jury duty" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/10 text-[#1d1d1f] dark:text-white" />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Date and Time */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

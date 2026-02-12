@@ -6,6 +6,7 @@ import { firestoreService } from '../services/firestoreService';
 import { auth } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { createTestClient } from '../utils/createTestClient';
+import { getGmailComposeUrl } from '../utils/gmailCompose';
 
 const ClientLogin = () => {
   const [email, setEmail] = useState('');
@@ -377,7 +378,7 @@ const ClientLogin = () => {
           <div className="mt-6 text-center">
             <p className="text-[13px] text-[#86868b]">
               Need help?{' '}
-              <a href="mailto:support@luxury-listings.com" className="text-[#0071e3] hover:text-[#0077ed] font-medium">
+              <a href={getGmailComposeUrl('support@luxury-listings.com')} target="_blank" rel="noopener noreferrer" className="text-[#0071e3] hover:text-[#0077ed] font-medium">
                 Contact Support
               </a>
             </p>

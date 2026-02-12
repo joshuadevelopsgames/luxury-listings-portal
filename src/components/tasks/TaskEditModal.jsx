@@ -25,6 +25,7 @@ import {
 import { DailyTask } from '../../entities/DailyTask';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
+import { openEmailInGmail } from '../../utils/gmailCompose';
 
 const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], onNavigate, onTaskCreated }) => {
   const { currentUser } = useAuth();
@@ -534,7 +535,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(`mailto:?subject=${encodeURIComponent(editForm.title)}&body=${encodeURIComponent(editForm.description)}`, '_blank');
+                      openEmailInGmail('', { subject: editForm.title, body: editForm.description });
                       setShowMoreMenu(false);
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/10 text-sm text-left text-gray-900 dark:text-white"

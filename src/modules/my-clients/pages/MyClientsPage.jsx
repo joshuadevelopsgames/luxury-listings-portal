@@ -19,9 +19,12 @@ import { firestoreService } from '../../../services/firestoreService';
 import { openaiService } from '../../../services/openaiService';
 import PlatformIcons from '../../../components/PlatformIcons';
 import ClientLink from '../../../components/ui/ClientLink';
+import ClientDetailModal from '../../../components/client/ClientDetailModal';
+import { useOpenClientCard } from '../../../hooks/useOpenClientCard';
 import EditPostsLoggedModal from '../../../components/ui/EditPostsLoggedModal';
 import PostLogReminderBanner from '../../../components/dashboard/PostLogReminderBanner';
 import { postLogReminderService } from '../../../services/postLogReminderService';
+import { getGmailComposeUrl } from '../../../utils/gmailCompose';
 import { toast } from 'react-hot-toast';
 import { 
   Users, 
@@ -66,9 +69,10 @@ const MyClientsPage = () => {
   const { clients: allClients, loading: clientsLoading, getClientById } = useClients();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [detailClientId, setDetailClientId] = useState(null); // For detail modal – id so modal gets live data from context
+  const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();
   const [showEditPostsModal, setShowEditPostsModal] = useState(false);
+  const [editPostsClient, setEditPostsClient] = useState(null);
+  const [employees, setEmployees] = useState([]);
   const [postLogHistory, setPostLogHistory] = useState([]);
   const [postLogHistoryLoading, setPostLogHistoryLoading] = useState(false);
   const [expandedHistoryMonth, setExpandedHistoryMonth] = useState(null);
@@ -96,7 +100,6 @@ const MyClientsPage = () => {
     () => allClients.filter(isAssignedToMe),
     [allClients, currentUser?.email, currentUser?.uid]
   );
-  const detailClient = detailClientId ? getClientById(detailClientId) : null;
 
   // Friday: post-log reminder banner (SMM)
   useEffect(() => {
@@ -121,13 +124,17 @@ const MyClientsPage = () => {
   }, [currentUser?.email, currentUser?.uid, isViewingAs]);
 
   useEffect(() => {
-    if (!detailClientId || !isSystemAdmin) {
+    firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!editPostsClient?.id || !isSystemAdmin) {
       setPostLogHistory([]);
       return;
     }
     let cancelled = false;
     setPostLogHistoryLoading(true);
-    firestoreService.getPostLogTasksByClient(detailClientId, { limit: 500 })
+    firestoreService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 })
       .then((tasks) => {
         if (cancelled) return;
         setPostLogHistory(tasks);
@@ -135,7 +142,7 @@ const MyClientsPage = () => {
       .catch(() => { if (!cancelled) setPostLogHistory([]); })
       .finally(() => { if (!cancelled) setPostLogHistoryLoading(false); });
     return () => { cancelled = true; };
-  }, [detailClientId, isSystemAdmin]);
+  }, [editPostsClient?.id, isSystemAdmin]);
 
   const postLogByMonth = useMemo(() => {
     const byMonth = new Map();
@@ -487,7 +494,7 @@ const MyClientsPage = () => {
               <div
                 key={client.id}
                 className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-black/5 dark:border-white/10 hover:shadow-lg transition-all cursor-pointer group"
-                onClick={() => setSelectedClient(selectedClient?.id === client.id ? null : client)}
+                onClick={() => openClientCard(client)}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -520,6 +527,15 @@ const MyClientsPage = () => {
                       <Plus className="w-3.5 h-3.5" strokeWidth={2} />
                       Log post
                     </button>
+                    {isSystemAdmin && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditPostsClient(client); setShowEditPostsModal(true); }}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15 text-[11px] font-medium transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" strokeWidth={2} />
+                        Edit posts
+                      </button>
+                    )}
                     <div className="relative">
                       <button
                         onClick={(e) => {
@@ -615,34 +631,6 @@ const MyClientsPage = () => {
                   )}
                 </div>
 
-                {/* Expanded Details */}
-                {selectedClient?.id === client.id && (
-                  <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5 space-y-3">
-                    {client.notes && (
-                      <div className="text-[12px] text-[#86868b]">
-                        <p className="font-medium text-[#1d1d1f] dark:text-white mb-1">Notes</p>
-                        <p>{client.notes}</p>
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDetailClientId(client.id);
-                        }}
-                        className="flex-1 px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
-                      >
-                        View Details
-                      </button>
-                      <button 
-                        onClick={(e) => e.stopPropagation()}
-                        className="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                      >
-                        <MoreHorizontal className="w-4 h-4" strokeWidth={1.5} />
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -686,243 +674,22 @@ const MyClientsPage = () => {
         document.body
       )}
 
-      {/* Client Detail Modal */}
-      {detailClient && createPortal(
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => { setDetailClientId(null); setShowEditPostsModal(false); }}
-        >
-          <div 
-            className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between bg-gradient-to-r from-[#0071e3] to-[#5856d6]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center">
-                  {detailClient.logo ? (
-                    <img src={detailClient.logo} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <Building2 className="w-5 h-5 text-white" />
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">
-                    {detailClient.clientName || 'Unnamed Client'}
-                  </h2>
-                  <p className="text-sm text-white/70">Client Details</p>
-                </div>
-              </div>
-              <button
-onClick={() => { setDetailClientId(null); setShowEditPostsModal(false); }}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)] space-y-6">
-              {/* Contact Info */}
-              <div>
-                <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3">Contact Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {detailClient.clientEmail && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5">
-                      <Mail className="w-4 h-4 text-[#0071e3]" />
-                      <div>
-                        <p className="text-[11px] text-[#86868b]">Email</p>
-                        <a href={`mailto:${detailClient.clientEmail}`} className="text-[13px] text-[#1d1d1f] dark:text-white hover:text-[#0071e3]">
-                          {detailClient.clientEmail}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {detailClient.phone && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5">
-                      <Phone className="w-4 h-4 text-[#34c759]" />
-                      <div>
-                        <p className="text-[11px] text-[#86868b]">Phone</p>
-                        <a href={`tel:${detailClient.phone}`} className="text-[13px] text-[#1d1d1f] dark:text-white hover:text-[#0071e3]">
-                          {detailClient.phone}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {detailClient.website && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5">
-                      <Globe className="w-4 h-4 text-[#5856d6]" />
-                      <div>
-                        <p className="text-[11px] text-[#86868b]">Website</p>
-                        <a href={detailClient.website} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#0071e3] hover:underline flex items-center gap-1">
-                          {detailClient.website.replace(/^https?:\/\//, '')}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {detailClient.instagramHandle && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5">
-                      <Instagram className="w-4 h-4 text-[#E1306C]" />
-                      <div>
-                        <p className="text-[11px] text-[#86868b]">Instagram</p>
-                        <a href={`https://instagram.com/${detailClient.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#E1306C] hover:underline flex items-center gap-1">
-                          @{detailClient.instagramHandle}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Package Info */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide">Package Information</h3>
-                  <button
-                    type="button"
-                    onClick={() => setShowEditPostsModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[12px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Edit posts logged
-                  </button>
-                </div>
-                <p className="text-[11px] text-[#86868b] mb-2">Posts used = total logged this month. &quot;Posts today&quot; in the widget is only today.</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-xl bg-[#0071e3]/5">
-                    <p className="text-[11px] text-[#86868b] mb-1">Package Type</p>
-                    <p className="text-[15px] font-semibold text-[#0071e3]">{detailClient.packageType || '—'}</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#34c759]/5">
-                    <p className="text-[11px] text-[#86868b] mb-1">Package Size</p>
-                    <p className="text-[15px] font-semibold text-[#34c759]">{detailClient.packageSize || 0} posts</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#ff9500]/5">
-                    <p className="text-[11px] text-[#86868b] mb-1">Posts Remaining</p>
-                    <p className="text-[15px] font-semibold text-[#ff9500]">{detailClient.postsRemaining ?? detailClient.packageSize ?? 0}</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#5856d6]/5">
-                    <p className="text-[11px] text-[#86868b] mb-1">Payment Status</p>
-                    <p className={`text-[15px] font-semibold ${
-                      detailClient.paymentStatus === 'Paid' ? 'text-[#34c759]' : 
-                      detailClient.paymentStatus === 'Pending' ? 'text-[#ff9500]' : 'text-[#86868b]'
-                    }`}>
-                      {detailClient.paymentStatus || '—'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Platforms */}
-              {detailClient.platforms && Object.values(detailClient.platforms).some(v => v) && (
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3">Active Platforms</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <PlatformIcons platforms={detailClient.platforms} size="md" showLabels />
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              {detailClient.notes && (
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3">Notes</h3>
-                  <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/5">
-                    <p className="text-[13px] text-[#1d1d1f] dark:text-white whitespace-pre-wrap">{detailClient.notes}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Post log history (admins) */}
-              {isSystemAdmin && (
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <History className="w-4 h-4" />
-                    Post log history
-                  </h3>
-                  {postLogHistoryLoading ? (
-                    <p className="text-[13px] text-[#86868b]">Loading...</p>
-                  ) : postLogByMonth.length === 0 ? (
-                    <p className="text-[13px] text-[#86868b]">No logged post history for this client yet.</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {postLogByMonth.map(({ key, label, tasks }) => {
-                        const isExpanded = expandedHistoryMonth === key;
-                        const platformLabel = (t) => (t.labels && t.labels.find(l => ['instagram','facebook','linkedin','youtube','tiktok','x'].includes(l))) || 'post';
-                        return (
-                          <div key={key} className="rounded-xl bg-black/[0.02] dark:bg-white/5 overflow-hidden">
-                            <button
-                              type="button"
-                              onClick={() => setExpandedHistoryMonth(isExpanded ? null : key)}
-                              className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.05] transition-colors"
-                            >
-                              <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{label}</span>
-                              <span className="text-[12px] text-[#86868b]">{tasks.length} logged</span>
-                              {isExpanded ? <ChevronUp className="w-4 h-4 text-[#86868b]" /> : <ChevronDown className="w-4 h-4 text-[#86868b]" />}
-                            </button>
-                            {isExpanded && (
-                              <div className="px-3 pb-2 pt-0 space-y-1 border-t border-black/5 dark:border-white/5">
-                                {tasks.map((t) => (
-                                  <div key={t.id} className="flex items-center justify-between text-[12px] text-[#86868b]">
-                                    <span className="capitalize">{platformLabel(t)}</span>
-                                    <span>{t.completed_date ? format(parseISO(t.completed_date.split('T')[0]), 'MMM d, yyyy') : '—'}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Quick Actions */}
-              <div className="flex flex-wrap gap-2 pt-2">
-                {detailClient.clientEmail && (
-                  <a
-                    href={`mailto:${detailClient.clientEmail}`}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
-                  >
-                    <Mail className="w-4 h-4" />
-                    Send Email
-                  </a>
-                )}
-                {detailClient.phone && (
-                  <a
-                    href={`tel:${detailClient.phone}`}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#30d158] transition-colors"
-                  >
-                    <Phone className="w-4 h-4" />
-                    Call
-                  </a>
-                )}
-                <button
-                  onClick={() => {
-                    navigate(`/instagram-reports`);
-                    setDetailClientId(null);
-                    setShowEditPostsModal(false);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#833AB4] to-[#E1306C] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
-                >
-                  <Instagram className="w-4 h-4" />
-                  View Analytics
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
+      {/* Unified client card modal */}
+      {clientForModal && (
+        <ClientDetailModal
+          client={clientForModal}
+          onClose={closeClientCard}
+          onClientUpdate={() => {}}
+          employees={employees}
+          showManagerAssignment={true}
+        />
       )}
 
-      {detailClient && showEditPostsModal && createPortal(
+      {editPostsClient && showEditPostsModal && createPortal(
         <EditPostsLoggedModal
-          client={detailClient}
-          onClose={() => setShowEditPostsModal(false)}
-          onSaved={() => setShowEditPostsModal(false)}
+          client={editPostsClient}
+          onClose={() => { setShowEditPostsModal(false); setEditPostsClient(null); }}
+          onSaved={() => { setShowEditPostsModal(false); setEditPostsClient(null); }}
         />,
         document.body
       )}

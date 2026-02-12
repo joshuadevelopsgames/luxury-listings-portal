@@ -8,7 +8,8 @@ import {
   validateLeaveRequest, 
   calculateBusinessDays,
   canCancelRequest,
-  formatDateRange
+  formatDateRange,
+  getLeaveTypeDisplayLabel
 } from '../utils/timeOffHelpers';
 import { 
   Calendar, 
@@ -22,6 +23,7 @@ import {
   Plane,
   Heart,
   Laptop,
+  MoreHorizontal,
   Info,
   X,
   ChevronDown,
@@ -62,7 +64,10 @@ const MyTimeOff = () => {
     isTravel: false,
     destination: '',
     travelPurpose: '',
-    estimatedExpenses: ''
+    estimatedExpenses: '',
+    // Other type sub-type (when type === 'other')
+    otherSubType: '',
+    otherCustomLabel: ''
   });
 
   // Validation state
@@ -203,11 +208,11 @@ const MyTimeOff = () => {
     return () => clearTimeout(timeoutId);
   }, [leaveForm.startDate, leaveForm.endDate, currentUser?.email]);
 
-  // Auto-sync approved vacation/sick to requester's Google Calendar when they have a stored token (no popup)
+  // Auto-sync approved vacation/sick/other to requester's Google Calendar when they have a stored token (no popup)
   useEffect(() => {
     if (!currentUser?.email || !myRequests.length) return;
     const approved = myRequests.filter(
-      (r) => !r.archived && r.status === 'approved' && (r.type === 'vacation' || r.type === 'sick')
+      (r) => !r.archived && r.status === 'approved' && (r.type === 'vacation' || r.type === 'sick' || r.type === 'other')
     );
     if (approved.length === 0) return;
 
@@ -255,8 +260,21 @@ const MyTimeOff = () => {
       icon: Laptop,
       dotColor: 'bg-[#34c759]',
       description: 'Working from a remote location'
+    },
+    other: { 
+      label: 'Other', 
+      color: 'bg-indigo-100/80 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300', 
+      icon: MoreHorizontal,
+      dotColor: 'bg-indigo-500',
+      description: 'Bereavement, maternity leave, or other'
     }
   };
+
+  const otherSubTypeOptions = [
+    { value: 'bereavement', label: 'Bereavement' },
+    { value: 'maternity', label: 'Maternity Leave' },
+    { value: 'custom', label: 'Custom' }
+  ];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -277,7 +295,14 @@ const MyTimeOff = () => {
   };
 
   const handleFormChange = (field, value) => {
-    setLeaveForm(prev => ({ ...prev, [field]: value }));
+    setLeaveForm(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === 'type' && value !== 'other') {
+        next.otherSubType = '';
+        next.otherCustomLabel = '';
+      }
+      return next;
+    });
   };
 
   const calculateDays = () => {
@@ -316,7 +341,12 @@ const MyTimeOff = () => {
         isTravel: leaveForm.isTravel,
         destination: leaveForm.destination,
         travelPurpose: leaveForm.travelPurpose,
-        estimatedExpenses: leaveForm.estimatedExpenses ? parseFloat(leaveForm.estimatedExpenses) : 0
+        estimatedExpenses: leaveForm.estimatedExpenses ? parseFloat(leaveForm.estimatedExpenses) : 0,
+        // Other sub-type (when type === 'other')
+        ...(leaveForm.type === 'other' && {
+          otherSubType: leaveForm.otherSubType || 'custom',
+          otherCustomLabel: leaveForm.otherSubType === 'custom' ? (leaveForm.otherCustomLabel || '').trim() : ''
+        })
       };
 
       // Use enhanced submission with history tracking
@@ -399,9 +429,9 @@ const MyTimeOff = () => {
 
   const archivedCount = myRequests.filter(r => r.archived).length;
 
-  // Approved vacation/sick: add new to calendar or update existing so calendar matches program
+  // Approved vacation/sick/other: add new to calendar or update existing so calendar matches program
   const approvedToSync = myRequests.filter(
-    (r) => !r.archived && r.status === 'approved' && (r.type === 'vacation' || r.type === 'sick')
+    (r) => !r.archived && r.status === 'approved' && (r.type === 'vacation' || r.type === 'sick' || r.type === 'other')
   );
 
   const handleSyncToGoogleCalendar = async () => {
@@ -454,7 +484,9 @@ const MyTimeOff = () => {
       isTravel: false,
       destination: '',
       travelPurpose: '',
-      estimatedExpenses: ''
+      estimatedExpenses: '',
+      otherSubType: '',
+      otherCustomLabel: ''
     });
     setValidationErrors([]);
     setValidationWarnings([]);
@@ -502,7 +534,7 @@ const MyTimeOff = () => {
             <button
               onClick={handleSyncToGoogleCalendar}
               disabled={syncingCalendar}
-              title="Add or update approved vacation/sick leave on your Google Calendar"
+              title="Add or update approved leave on your Google Calendar"
               className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors disabled:opacity-50"
             >
               {syncingCalendar ? (
@@ -673,7 +705,9 @@ const MyTimeOff = () => {
                         </div>
                         <div>
                           <div className="flex items-center flex-wrap gap-2 mb-1">
-                            <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{type.label}</p>
+                            <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">
+                              {request.type === 'other' ? (getLeaveTypeDisplayLabel(request) || type.label) : type.label}
+                            </p>
                             {request.isTravel && (
                               <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#ff9500]/10 text-[#ff9500] font-medium flex items-center gap-1">
                                 <Plane className="w-3 h-3" />
@@ -885,6 +919,34 @@ const MyTimeOff = () => {
                   })}
                 </div>
               </div>
+
+              {/* Other sub-type (when type is Other) */}
+              {leaveForm.type === 'other' && (
+                <div className="space-y-3 p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                    Kind of leave *
+                  </label>
+                  <select
+                    value={leaveForm.otherSubType}
+                    onChange={(e) => handleFormChange('otherSubType', e.target.value)}
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-white dark:bg-white/10 border border-indigo-200/50 dark:border-indigo-500/30 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">Select...</option>
+                    {otherSubTypeOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  {leaveForm.otherSubType === 'custom' && (
+                    <input
+                      type="text"
+                      value={leaveForm.otherCustomLabel}
+                      onChange={(e) => handleFormChange('otherCustomLabel', e.target.value)}
+                      placeholder="e.g. Jury duty, Parental leave"
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-white dark:bg-white/10 border border-indigo-200/50 dark:border-indigo-500/30 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  )}
+                </div>
+              )}
 
               {/* Dates */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1156,7 +1218,9 @@ const MyTimeOff = () => {
                     {React.createElement(leaveTypes[selectedRequest.type].icon, { className: "w-6 h-6" })}
                   </div>
                   <div>
-                    <p className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{leaveTypes[selectedRequest.type].label}</p>
+                    <p className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+                      {selectedRequest.type === 'other' ? (getLeaveTypeDisplayLabel(selectedRequest) || leaveTypes.other?.label) : leaveTypes[selectedRequest.type]?.label}
+                    </p>
                     <p className="text-[12px] text-[#86868b]">{selectedRequest.days} days</p>
                   </div>
                 </div>

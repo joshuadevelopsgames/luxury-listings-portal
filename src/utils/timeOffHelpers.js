@@ -76,7 +76,8 @@ const MIN_NOTICE_DAYS = {
   vacation: 21,    // 3 weeks notice for vacation
   sick: 0,         // Same day OK for sick
   travel: 21,      // 3 weeks for travel
-  remote: 0        // Same day OK for remote
+  remote: 0,       // Same day OK for remote
+  other: 0         // Same day OK for other (bereavement, maternity, custom)
 };
 
 /**
@@ -97,6 +98,9 @@ export const validateLeaveRequest = (request, userBalances, existingRequests = [
   if (!request.type) {
     errors.push('Leave type is required');
   }
+  if (request.type === 'other' && !request.otherSubType) {
+    errors.push('Please select the kind of leave (Bereavement, Maternity Leave, or Custom).');
+  }
   
   // If basic fields missing, return early
   if (errors.length > 0) {
@@ -113,8 +117,8 @@ export const validateLeaveRequest = (request, userBalances, existingRequests = [
     errors.push('End date must be after start date');
   }
   
-  // Past date check (except for sick and remote)
-  if (startDate < today && request.type !== 'sick' && request.type !== 'remote') {
+  // Past date check (except for sick, remote, and other)
+  if (startDate < today && request.type !== 'sick' && request.type !== 'remote' && request.type !== 'other') {
     errors.push('Start date cannot be in the past');
   }
   
@@ -138,7 +142,7 @@ export const validateLeaveRequest = (request, userBalances, existingRequests = [
   const daysUntilStart = getDaysUntil(request.startDate);
   const minNotice = MIN_NOTICE_DAYS[leaveType] || 0;
   
-  if (daysUntilStart < minNotice && request.type !== 'sick') {
+  if (daysUntilStart < minNotice && request.type !== 'sick' && request.type !== 'other') {
     errors.push(
       `${leaveType.charAt(0).toUpperCase() + leaveType.slice(1)} requests require at least ${minNotice} days (3 weeks) notice. You're requesting with ${daysUntilStart} days notice.`
     );
@@ -235,9 +239,21 @@ export const getLeaveTypeInfo = (type) => {
     vacation: { label: 'Vacation', icon: '🏖️', color: 'text-[#0071e3]' },
     sick: { label: 'Sick Leave', icon: '🏥', color: 'text-[#ff3b30]' },
     travel: { label: 'Business Travel', icon: '✈️', color: 'text-[#ff9500]' },
-    remote: { label: 'Remote', icon: '💻', color: 'text-[#34c759]' }
+    remote: { label: 'Remote', icon: '💻', color: 'text-[#34c759]' },
+    other: { label: 'Other', icon: '📋', color: 'text-[#5856d6]' }
   };
   return types[type] || { label: type, icon: '📅', color: 'text-[#86868b]' };
+};
+
+/** Display label for a request (handles type=other with otherSubType/otherCustomLabel). */
+export const getLeaveTypeDisplayLabel = (request) => {
+  if (!request || request.type !== 'other') return null;
+  const sub = request.otherSubType;
+  if (sub === 'custom' && request.otherCustomLabel) return `Other (${request.otherCustomLabel})`;
+  if (sub === 'bereavement') return 'Other (Bereavement)';
+  if (sub === 'maternity') return 'Other (Maternity Leave)';
+  if (sub === 'custom') return 'Other (Custom)';
+  return 'Other';
 };
 
 export default {
@@ -250,5 +266,6 @@ export default {
   validateLeaveRequest,
   formatDateRange,
   getStatusColor,
-  getLeaveTypeInfo
+  getLeaveTypeInfo,
+  getLeaveTypeDisplayLabel
 };

@@ -415,7 +415,11 @@ const TeamManagement = () => {
             </thead>
             <tbody>
               {filteredTeamMembers.map((member) => (
-                <tr key={member.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/5 transition-colors">
+                <tr
+                  key={member.id}
+                  className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  onClick={() => openEmployeeModal(member)}
+                >
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center text-white text-[13px] font-medium">
@@ -492,7 +496,7 @@ const TeamManagement = () => {
                     </span>
                   </td>
                   
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-1.5">
                       <button 
                         onClick={() => openEmployeeModal(member)}

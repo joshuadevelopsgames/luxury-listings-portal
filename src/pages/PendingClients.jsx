@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import { addContactToCRM, CLIENT_TYPE } from '../services/crmService';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -69,7 +70,13 @@ const PendingClients = () => {
 
       await firestoreService.addClient(clientData);
       await firestoreService.removePendingClient(pendingClient.id);
-      
+      await addContactToCRM({
+        clientName: clientData.clientName,
+        clientEmail: clientData.clientEmail,
+        type: CLIENT_TYPE.NA,
+        notes: clientData.notes
+      }, 'warmLeads');
+
       toast.success(`${pendingClient.email} approved and added as client!`);
     } catch (error) {
       console.error('Error approving client:', error);

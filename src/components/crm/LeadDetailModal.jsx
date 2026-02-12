@@ -23,15 +23,19 @@ import {
   ExternalLink,
   MessageSquare,
   FileText,
-  Trash2
+  Trash2,
+  UserCheck
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getGmailComposeUrl } from '../../utils/gmailCompose';
+import { CLIENT_TYPE_OPTIONS } from '../../services/crmService';
 
 const LeadDetailModal = ({
   lead,
   onClose,
   onEdit = null,
   onDelete = null,
+  onGraduate = null,
   onLeadUpdate = null,
   canEdit = true
 }) => {
@@ -52,6 +56,7 @@ const LeadDetailModal = ({
     setEditForm({
       contactName: lead.contactName || '',
       email: lead.email || '',
+      type: lead.type || 'N/A',
       phone: lead.phone || '',
       instagram: lead.instagram || '',
       organization: lead.organization || '',
@@ -141,6 +146,15 @@ const LeadDetailModal = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {canEdit && onGraduate && !isEditing && (
+                <button
+                  onClick={() => onGraduate(lead)}
+                  className="p-2 rounded-xl bg-[#34c759]/10 hover:bg-[#34c759]/20 transition-colors"
+                  title="Graduate to client"
+                >
+                  <UserCheck className="w-4 h-4 text-[#34c759]" />
+                </button>
+              )}
               {canEdit && !isEditing && (
                 <button
                   onClick={startEditing}
@@ -192,6 +206,18 @@ const LeadDetailModal = ({
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                     className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
                   />
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Type</label>
+                  <select
+                    value={editForm.type || 'N/A'}
+                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                  >
+                    {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Phone</label>
@@ -269,7 +295,9 @@ const LeadDetailModal = ({
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] text-[#86868b]">Email</p>
                         <a 
-                          href={`mailto:${lead.email}`}
+                          href={getGmailComposeUrl(lead.email)}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:text-[#0071e3] truncate block"
                         >
                           {lead.email}
@@ -421,7 +449,9 @@ const LeadDetailModal = ({
               )}
               {lead.email && (
                 <a
-                  href={`mailto:${lead.email}`}
+                  href={getGmailComposeUrl(lead.email)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex-1 min-w-[120px] h-11 flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />

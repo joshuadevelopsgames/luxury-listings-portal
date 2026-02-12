@@ -1,5 +1,7 @@
 // Google Calendar Integration Service
 // Using Google Identity Services (GIS) - Modern Authentication
+import { formatDateInVancouver, nextDayVancouver } from '../utils/vancouverTime';
+
 class GoogleCalendarService {
   constructor() {
     this.apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
@@ -506,6 +508,30 @@ class GoogleCalendarService {
     }
   }
 
+  /** Label for calendar event summary (handles type=other with otherSubType/otherCustomLabel). */
+  _getLeaveSummaryTypeLabel(leaveRequest) {
+    const type = leaveRequest?.type || 'leave';
+    if (type !== 'other') return type.charAt(0).toUpperCase() + type.slice(1);
+    const sub = leaveRequest.otherSubType;
+    if (sub === 'custom' && leaveRequest.otherCustomLabel) return `Other (${leaveRequest.otherCustomLabel})`;
+    if (sub === 'bereavement') return 'Other (Bereavement)';
+    if (sub === 'maternity') return 'Other (Maternity Leave)';
+    if (sub === 'custom') return 'Other (Custom)';
+    return 'Other';
+  }
+
+  /** Normalize leave request date (Firestore Timestamp, Date, or YYYY-MM-DD string) to YYYY-MM-DD in Vancouver. */
+  _leaveDateToYYYYMMDD(value) {
+    if (value == null || value === '') return null;
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    let d;
+    if (typeof value?.toDate === 'function') d = value.toDate();
+    else if (value instanceof Date) d = value;
+    else d = new Date(value);
+    if (!d || isNaN(d.getTime())) return null;
+    return formatDateInVancouver(d);
+  }
+
   // Create leave request event in Google Calendar
   async createLeaveEvent(leaveRequest) {
     // Try to ensure we have a valid connection
@@ -537,19 +563,19 @@ class GoogleCalendarService {
       throw new Error('Google Calendar session expired. Please reconnect your calendar.');
     }
 
-    const startDate = new Date(leaveRequest.startDate);
-    const endDate = new Date(leaveRequest.endDate);
-    // Add one day to end date for all-day events
-    endDate.setDate(endDate.getDate() + 1);
+    const startStr = this._leaveDateToYYYYMMDD(leaveRequest.startDate);
+    const endStr = this._leaveDateToYYYYMMDD(leaveRequest.endDate) || startStr;
+    const endExclusive = nextDayVancouver(endStr) || nextDayVancouver(startStr); // Google all-day: end is exclusive so last day is blocked
 
+    const typeLabel = this._getLeaveSummaryTypeLabel(leaveRequest);
     const event = {
-      summary: `${leaveRequest.employeeName || 'Team Member'} - ${leaveRequest.type?.charAt(0).toUpperCase() + leaveRequest.type?.slice(1) || 'Leave'}`,
-      description: `Leave Type: ${leaveRequest.type || 'Other'}\nReason: ${leaveRequest.reason || 'N/A'}\nStatus: Approved\n\nThis event was automatically created from the Leave Management System.`,
+      summary: `${leaveRequest.employeeName || 'Team Member'} - ${typeLabel}`,
+      description: `Leave Type: ${typeLabel}\nReason: ${leaveRequest.reason || 'N/A'}\nStatus: Approved\n\nThis event was automatically created from the Leave Management System.`,
       start: {
-        date: startDate.toISOString().split('T')[0], // All-day event
+        date: startStr,
       },
       end: {
-        date: endDate.toISOString().split('T')[0],
+        date: endExclusive,
       },
       colorId: this.getLeaveColorId(leaveRequest.type),
       reminders: {
@@ -605,15 +631,16 @@ class GoogleCalendarService {
       throw new Error('Google Calendar session expired. Please reconnect your calendar.');
     }
 
-    const startDate = new Date(leaveRequest.startDate);
-    const endDate = new Date(leaveRequest.endDate);
-    endDate.setDate(endDate.getDate() + 1);
+    const startStr = this._leaveDateToYYYYMMDD(leaveRequest.startDate);
+    const endStr = this._leaveDateToYYYYMMDD(leaveRequest.endDate) || startStr;
+    const endExclusive = nextDayVancouver(endStr) || nextDayVancouver(startStr);
 
+    const typeLabel = this._getLeaveSummaryTypeLabel(leaveRequest);
     const event = {
-      summary: `${leaveRequest.employeeName || 'Team Member'} - ${(leaveRequest.type || 'leave').charAt(0).toUpperCase() + (leaveRequest.type || 'leave').slice(1)}`,
-      description: `Leave Type: ${leaveRequest.type || 'Other'}\nReason: ${leaveRequest.reason || 'N/A'}\nStatus: Approved\n\nThis event was automatically created from the Leave Management System.`,
-      start: { date: startDate.toISOString().split('T')[0] },
-      end: { date: endDate.toISOString().split('T')[0] },
+      summary: `${leaveRequest.employeeName || 'Team Member'} - ${typeLabel}`,
+      description: `Leave Type: ${typeLabel}\nReason: ${leaveRequest.reason || 'N/A'}\nStatus: Approved\n\nThis event was automatically created from the Leave Management System.`,
+      start: { date: startStr },
+      end: { date: endExclusive },
       colorId: this.getLeaveColorId(leaveRequest.type),
       reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 1440 }] },
     };

@@ -28,7 +28,10 @@ import {
   Archive
 } from 'lucide-react';
 import { GOOGLE_SHEETS_CONFIG, GOOGLE_SHEETS_API } from '../../config/googleSheets';
+import { firestoreService } from '../../services/firestoreService';
 import ClientLink from '../ui/ClientLink';
+import ClientDetailModal from '../client/ClientDetailModal';
+import { useOpenClientCard } from '../../hooks/useOpenClientCard';
 
 const ClientCheckIn = () => {
   const [clients, setClients] = useState([]);
@@ -42,6 +45,8 @@ const ClientCheckIn = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();
+  const [employees, setEmployees] = useState([]);
 
   // Google Sheets API configuration
   const { SPREADSHEET_ID, SHEET_NAME, API_KEY } = GOOGLE_SHEETS_CONFIG;
@@ -52,6 +57,12 @@ const ClientCheckIn = () => {
     setClients([]);
     setLastSync(new Date());
   }, []);
+
+  useEffect(() => {
+    if (clientForModal && employees.length === 0) {
+      firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
+    }
+  }, [clientForModal]);
 
   const syncWithGoogleSheets = async () => {
     setLoading(true);
@@ -516,7 +527,7 @@ Joshua@luxury-listings.com`);
                         size="sm" 
                         variant="outline" 
                         className="text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-                        onClick={() => openEditModal(client)}
+                        onClick={() => openClientCard(client)}
                         disabled={approvalLoading[client.id]}
                       >
                         <Edit3 className="w-3 h-3 mr-1" />
@@ -656,6 +667,17 @@ Joshua@luxury-listings.com`);
             </div>
           </div>
         </div>
+      )}
+
+      {/* Unified client card modal */}
+      {clientForModal && (
+        <ClientDetailModal
+          client={clientForModal}
+          onClose={closeClientCard}
+          onClientUpdate={() => {}}
+          employees={employees}
+          showManagerAssignment={true}
+        />
       )}
       
       {/* Edit Package Modal */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Mail, Search, RefreshCw, Building } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import EmployeeLink from '../components/ui/EmployeeLink';
+import { getGmailComposeUrl } from '../utils/gmailCompose';
 
 const ROLE_DISPLAY = {
   admin: 'Administrator',
@@ -174,7 +175,9 @@ export default function TeamDirectoryPage() {
                   <div className="flex items-center gap-2.5 text-[13px] text-[#86868b]">
                     <Mail className="w-3.5 h-3.5 shrink-0" />
                     <a
-                      href={`mailto:${member.email}`}
+                      href={getGmailComposeUrl(member.email)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="truncate text-[#0071e3] hover:underline"
                     >
                       {member.email}

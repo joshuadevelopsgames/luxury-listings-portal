@@ -68,7 +68,9 @@ class FirestoreService {
     FEEDBACK_CHATS: 'feedback_chats',
     CUSTOM_ROLES: 'custom_roles',
     SYSTEM: 'system',
-    USAGE_EVENTS: 'usage_events'
+    USAGE_EVENTS: 'usage_events',
+    CONTENT_CALENDARS: 'content_calendars',
+    CONTENT_ITEMS: 'content_items'
   };
 
   // Test connection method
@@ -1516,7 +1518,7 @@ class FirestoreService {
         notes: 'Admin updated request details'
       };
 
-      const allowed = ['startDate', 'endDate', 'days', 'type', 'reason', 'notes', 'managerNotes'];
+      const allowed = ['startDate', 'endDate', 'days', 'type', 'reason', 'notes', 'managerNotes', 'otherSubType', 'otherCustomLabel'];
       const toUpdate = {};
       allowed.forEach((k) => {
         if (updates[k] !== undefined) toUpdate[k] = updates[k];
@@ -1795,6 +1797,82 @@ class FirestoreService {
     } catch (error) {
       console.error('❌ Error deleting client:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Merge mergeFromId into keepId: combine profile data (keep wins, fill blanks from mergeFrom),
+   * reassign all references (tasks, messages, reports, contracts, instagram_reports) to keepId,
+   * then delete mergeFrom client. Use for fixing duplicate clients.
+   * @param {string} keepId - Client to keep
+   * @param {string} mergeFromId - Client to merge in and then delete
+   * @returns {Promise<{ success: boolean, error?: string }>}
+   */
+  async mergeClientInto(keepId, mergeFromId) {
+    if (keepId === mergeFromId) {
+      return { success: false, error: 'Cannot merge a client into itself' };
+    }
+    try {
+      const [keep, mergeFrom] = await Promise.all([
+        this.getClientById(keepId),
+        this.getClientById(mergeFromId)
+      ]);
+      if (!keep) return { success: false, error: 'Keep client not found' };
+      if (!mergeFrom) return { success: false, error: 'Merge-from client not found' };
+
+      const mergeFields = [
+        'clientName', 'clientEmail', 'clientType', 'phone', 'notes', 'website', 'instagramHandle',
+        'packageType', 'packageSize', 'postsUsed', 'postsRemaining', 'paymentStatus', 'approvalStatus',
+        'status', 'postedOn', 'profilePhoto', 'brokerage', 'platforms', 'startDate', 'lastContact',
+        'customPrice', 'overduePosts', 'assignedManager', 'signupScreenshotUrl', 'signupScreenshotUploadedAt'
+      ];
+      const merged = { ...keep };
+      for (const key of mergeFields) {
+        const keepVal = keep[key];
+        const fromVal = mergeFrom[key];
+        if (keepVal !== undefined && keepVal !== null && keepVal !== '') continue;
+        if (fromVal !== undefined && fromVal !== null) merged[key] = fromVal;
+      }
+      if (Array.isArray(mergeFrom.additionalScreenshots) && mergeFrom.additionalScreenshots.length > 0) {
+        const existing = Array.isArray(merged.additionalScreenshots) ? merged.additionalScreenshots : [];
+        merged.additionalScreenshots = [...existing, ...mergeFrom.additionalScreenshots];
+      }
+
+      await this.updateClient(keepId, merged);
+
+      const collectionsWithClientId = [
+        this.collections.TASKS,
+        this.collections.CLIENT_MESSAGES,
+        this.collections.CLIENT_REPORTS,
+        this.collections.CLIENT_CONTRACTS,
+        this.collections.INSTAGRAM_REPORTS
+      ];
+      for (const colName of collectionsWithClientId) {
+        const q = query(
+          collection(db, colName),
+          where('clientId', '==', mergeFromId)
+        );
+        const snapshot = await getDocs(q);
+        for (const docSnap of snapshot.docs) {
+          await updateDoc(doc(db, colName, docSnap.id), { clientId: keepId });
+        }
+      }
+
+      await this.logClientMovement({
+        type: 'client_merged',
+        clientId: keepId,
+        clientName: keep.clientName || keep.name || 'Unknown',
+        details: { mergedFromId, mergedFromName: mergeFrom.clientName || mergeFrom.name || 'Unknown' },
+        performedBy: auth.currentUser?.email || auth.currentUser?.uid || null,
+        timestamp: new Date()
+      });
+
+      await deleteDoc(doc(db, this.collections.CLIENTS, mergeFromId));
+      console.log('✅ Merged client', mergeFromId, 'into', keepId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error merging client:', error);
+      return { success: false, error: error.message };
     }
   }
 

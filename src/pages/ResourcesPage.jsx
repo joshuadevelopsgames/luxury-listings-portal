@@ -21,6 +21,7 @@ import {
   BookOpen,
   Settings
 } from "lucide-react";
+import { getGmailComposeUrl } from "../utils/gmailCompose";
 
 // Role to message page mapping
 const roleMessagePages = {
@@ -302,7 +303,7 @@ export default function ResourcesPage() {
                   </div>
                   <div>
                     <p className="text-[12px] text-white/70">HR Support</p>
-                    <a href="mailto:matthew@luxury-listings.com" className="text-[14px] font-medium hover:underline block">matthew@luxury-listings.com</a>
+                    <a href={getGmailComposeUrl('matthew@luxury-listings.com')} target="_blank" rel="noopener noreferrer" className="text-[14px] font-medium hover:underline block">matthew@luxury-listings.com</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -320,7 +321,7 @@ export default function ResourcesPage() {
                   </div>
                   <div>
                     <p className="text-[12px] text-white/70">Manager</p>
-                    <a href="mailto:michelle@luxury-listings.com" className="text-[14px] font-medium hover:underline block">michelle@luxury-listings.com</a>
+                    <a href={getGmailComposeUrl('michelle@luxury-listings.com')} target="_blank" rel="noopener noreferrer" className="text-[14px] font-medium hover:underline block">michelle@luxury-listings.com</a>
                   </div>
                 </div>
               </div>

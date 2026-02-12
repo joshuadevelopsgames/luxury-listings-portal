@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle, RefreshCw, Home, ChevronDown, Bug, Send, CheckCircle, Mail } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { getCapturedLogs, getLogsAsString, getSystemInfo } from '../utils/consoleCapture';
+import { openEmailInGmail } from '../utils/gmailCompose';
 
 // Developer email for reports
 const DEVELOPER_EMAIL = 'jrsschroeder@gmail.com';
@@ -172,9 +173,8 @@ class ErrorBoundary extends React.Component {
   handleEmailFallback = () => {
     const { error, errorInfo } = this.state;
     const systemInfo = getSystemInfo();
-    
-    const subject = encodeURIComponent(`Error Report: ${error?.message?.substring(0, 50) || 'Unknown error'}`);
-    const body = encodeURIComponent(
+    const subject = `Error Report: ${error?.message?.substring(0, 50) || 'Unknown error'}`;
+    const body =
       `Error Report\n` +
       `============\n\n` +
       `Error: ${error?.message || 'Unknown'}\n\n` +
@@ -182,10 +182,8 @@ class ErrorBoundary extends React.Component {
       `Time: ${systemInfo.timestamp}\n` +
       `Browser: ${systemInfo.userAgent}\n\n` +
       `Stack Trace:\n${error?.stack || 'N/A'}\n\n` +
-      `Please describe what you were doing when this error occurred:\n\n`
-    );
-    
-    window.open(`mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`, '_blank');
+      `Please describe what you were doing when this error occurred:\n\n`;
+    openEmailInGmail(DEVELOPER_EMAIL, { subject, body });
   };
 
   render() {
@@ -464,19 +462,16 @@ export function RouteErrorPage() {
 
   const handleEmailFallback = () => {
     const systemInfo = getSystemInfo();
-    
-    const subject = encodeURIComponent(`Error Report: Page failed to load`);
-    const body = encodeURIComponent(
+    const subject = 'Error Report: Page failed to load';
+    const body =
       `Error Report\n` +
       `============\n\n` +
       `Error: Route/Page failed to load\n\n` +
       `URL: ${systemInfo.url}\n` +
       `Time: ${systemInfo.timestamp}\n` +
       `Browser: ${systemInfo.userAgent}\n\n` +
-      `Please describe what you were doing when this error occurred:\n\n`
-    );
-    
-    window.open(`mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`, '_blank');
+      `Please describe what you were doing when this error occurred:\n\n`;
+    openEmailInGmail(DEVELOPER_EMAIL, { subject, body });
   };
 
   return (

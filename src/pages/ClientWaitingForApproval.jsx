@@ -3,6 +3,7 @@ import { Mail, Clock, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
+import { getGmailComposeUrl } from '../utils/gmailCompose';
 
 const ClientWaitingForApproval = () => {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ const ClientWaitingForApproval = () => {
                 </p>
                 <p className="text-[11px] text-[#86868b]">
                   Contact your media manager or{' '}
-                  <a href="mailto:support@luxury-listings.com" className="text-[#0071e3] hover:text-[#0077ed]">
+                  <a href={getGmailComposeUrl('support@luxury-listings.com')} target="_blank" rel="noopener noreferrer" className="text-[#0071e3] hover:text-[#0077ed]">
                     support@luxury-listings.com
                   </a>
                 </p>

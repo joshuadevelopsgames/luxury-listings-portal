@@ -9,13 +9,23 @@ export const VANCOUVER_TZ = 'America/Vancouver';
  * Get the current date in Vancouver as yyyy-MM-dd
  */
 export function getVancouverToday() {
+  return formatDateInVancouver(new Date());
+}
+
+/**
+ * Format a Date (or timestamp) as yyyy-MM-dd in Vancouver timezone.
+ * Use for consistent calendar-day interpretation (e.g. leave request dates, Google Calendar events).
+ */
+export function formatDateInVancouver(dateValue) {
+  const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
   const dtf = new Intl.DateTimeFormat('en-CA', {
     timeZone: VANCOUVER_TZ,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   });
-  const parts = dtf.formatToParts(new Date());
+  const parts = dtf.formatToParts(date);
   const obj = Object.fromEntries(parts.map((p) => [p.type, p.value]));
   return `${obj.year}-${obj.month}-${obj.day}`;
 }
@@ -126,6 +136,17 @@ export function getVancouverMonthKey() {
   const parts = dtf.formatToParts(new Date());
   const obj = Object.fromEntries(parts.map((p) => [p.type, p.value]));
   return `${obj.year}-${obj.month}`;
+}
+
+/**
+ * Return the calendar day after a given YYYY-MM-DD (Vancouver), as YYYY-MM-DD.
+ * Used for Google Calendar all-day end date (exclusive): so the event blocks start through end inclusive.
+ */
+export function nextDayVancouver(dateStr) {
+  const d = parseDateStringVancouver(dateStr);
+  if (!d) return null;
+  const next = new Date(d.getTime() + 24 * 60 * 60 * 1000);
+  return formatDateInVancouver(next);
 }
 
 // ============================================================================

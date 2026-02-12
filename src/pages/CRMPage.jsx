@@ -38,8 +38,11 @@ import CRMGoogleSheetsSetup from '../components/CRMGoogleSheetsSetup';
 import { CRMGoogleSheetsService } from '../services/crmGoogleSheetsService';
 import { firestoreService } from '../services/firestoreService';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
 import { PERMISSIONS } from '../entities/Permissions';
+import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../services/crmService';
+import { findPotentialMatchesForContact } from '../services/clientDuplicateService';
 import ClientLink from '../components/ui/ClientLink';
 import LeadLink from '../components/crm/LeadLink';
 import ClientDetailModal from '../components/client/ClientDetailModal';
@@ -59,6 +62,7 @@ const CRMPage = () => {
   const canDeleteClients = hasPermission(PERMISSIONS.DELETE_CLIENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'warm' | 'cold' | 'contacted' | 'clients'
+  const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'SMM' | 'PP' | 'BOTH' | 'N/A'
   // Default to card view on mobile, list on desktop
   const [viewMode, setViewMode] = useState(() => 
     typeof window !== 'undefined' && window.innerWidth < 640 ? 'card' : 'list'
@@ -85,6 +89,7 @@ const CRMPage = () => {
   const [editForm, setEditForm] = useState({
     contactName: '',
     email: '',
+    type: CLIENT_TYPE.NA,
     phone: '',
     instagram: '',
     organization: '',
@@ -104,10 +109,21 @@ const CRMPage = () => {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Graduate lead → client: after creating client, require day-one screenshot
+  const [graduateScreenshotModal, setGraduateScreenshotModal] = useState({
+    show: false,
+    clientId: null,
+    clientName: '',
+    leadId: null
+  });
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
+  const [possibleExistingMatches, setPossibleExistingMatches] = useState([]);
+
   // Add New Lead modal state
   const [newLead, setNewLead] = useState({
     contactName: '',
     email: '',
+    type: CLIENT_TYPE.NA,
     phone: '',
     instagram: '',
     organization: '',
@@ -132,6 +148,7 @@ const CRMPage = () => {
     ...c,
     contactName: c.clientName || c.contactName || c.clientEmail?.split('@')[0] || '—',
     email: c.clientEmail || c.email || '',
+    type: c.clientType || c.type || CLIENT_TYPE.NA,
     status: c.approvalStatus || c.status || 'client',
     lastContact: c.lastContact || '—',
     organization: c.organization || '',
@@ -350,28 +367,23 @@ const CRMPage = () => {
     }
   };
 
-  // Add new lead to Google Sheets
-  const handleAddNewLead = async () => {
-    if (!newLead.contactName || !newLead.email) {
-      toast.error('Please fill in at least Contact Name and Email');
-      return;
-    }
+  const fullContactsList = [
+    ...warmLeads.map(c => ({ ...c, isExisting: false })),
+    ...contactedClients.map(c => ({ ...c, isExisting: false })),
+    ...coldLeads.map(c => ({ ...c, isExisting: false })),
+    ...existingClients.map(c => ({ ...c, isExisting: true }))
+  ];
 
-    if (Object.values(selectedTabs).filter(Boolean).length === 0) {
-      toast.error('Please select at least one tab to add the lead to');
-      return;
-    }
-
-    setIsAddingLead(true);
-
+  const doAddNewLead = async () => {
     const selectedTabKeys = Object.entries(selectedTabs)
       .filter(([key, value]) => value)
       .map(([key]) => key);
-
     const newLeadData = {
       id: Date.now() + Math.random(),
       contactName: newLead.contactName || '',
       email: newLead.email || '',
+      type: newLead.type || CLIENT_TYPE.NA,
+      addedToCrmAt: new Date().toISOString(),
       phone: newLead.phone || '',
       instagram: newLead.instagram || '',
       organization: newLead.organization || '',
@@ -381,50 +393,57 @@ const CRMPage = () => {
       lastContact: new Date().toISOString(),
       category: selectedTabKeys[0]
     };
+    const credentials = await loadServiceAccountCredentials();
+    if (credentials) {
+      const service = new CRMGoogleSheetsService();
+      service.setServiceAccountCredentials(credentials);
+      const results = await Promise.allSettled(
+        selectedTabKeys.map(tabKey => service.addNewLead(newLead, { [tabKey]: true }))
+      );
+      results.forEach((result, index) => {
+        if (result.status !== 'fulfilled') {
+          console.error(`❌ Failed to add to ${selectedTabKeys[index]}:`, result.reason);
+        }
+      });
+    }
+    if (selectedTabKeys.includes('warmLeads')) setWarmLeads(prev => [newLeadData, ...prev]);
+    if (selectedTabKeys.includes('contactedClients')) setContactedClients(prev => [newLeadData, ...prev]);
+    if (selectedTabKeys.includes('coldLeads')) setColdLeads(prev => [newLeadData, ...prev]);
+    const nextWarm = selectedTabKeys.includes('warmLeads') ? [newLeadData, ...warmLeads] : warmLeads;
+    const nextContacted = selectedTabKeys.includes('contactedClients') ? [newLeadData, ...contactedClients] : contactedClients;
+    const nextCold = selectedTabKeys.includes('coldLeads') ? [newLeadData, ...coldLeads] : coldLeads;
+    await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
+    showToast(credentials
+      ? `✅ Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`
+      : `✅ Lead added locally (connect Google Sheets in settings to sync).`);
+    resetNewLeadForm();
+    setShowAddModal(false);
+    setPossibleExistingMatches([]);
+  };
 
+  // Add new lead to Google Sheets
+  const handleAddNewLead = async () => {
+    if (!newLead.contactName || !newLead.email) {
+      toast.error('Please fill in at least Contact Name and Email');
+      return;
+    }
+    if (Object.values(selectedTabs).filter(Boolean).length === 0) {
+      toast.error('Please select at least one tab to add the lead to');
+      return;
+    }
+
+    const matches = findPotentialMatchesForContact(fullContactsList, {
+      name: newLead.contactName,
+      email: newLead.email
+    });
+    if (matches.length > 0) {
+      setPossibleExistingMatches(matches);
+      return;
+    }
+
+    setIsAddingLead(true);
     try {
-      const credentials = await loadServiceAccountCredentials();
-
-      if (credentials) {
-        const service = new CRMGoogleSheetsService();
-        service.setServiceAccountCredentials(credentials);
-
-        const results = await Promise.allSettled(
-          selectedTabKeys.map(tabKey =>
-            service.addNewLead(newLead, { [tabKey]: true })
-          )
-        );
-
-        results.forEach((result, index) => {
-          if (result.status !== 'fulfilled') {
-            console.error(`❌ Failed to add to ${selectedTabKeys[index]}:`, result.reason);
-          }
-        });
-      }
-
-      // Add to local state (always: either after Sheets success or when no Sheets)
-      if (selectedTabKeys.includes('warmLeads')) {
-        setWarmLeads(prev => [newLeadData, ...prev]);
-      }
-      if (selectedTabKeys.includes('contactedClients')) {
-        setContactedClients(prev => [newLeadData, ...prev]);
-      }
-      if (selectedTabKeys.includes('coldLeads')) {
-        setColdLeads(prev => [newLeadData, ...prev]);
-      }
-
-      // Persist to Firebase with updated arrays (state may not have flushed)
-      const nextWarm = selectedTabKeys.includes('warmLeads') ? [newLeadData, ...warmLeads] : warmLeads;
-      const nextContacted = selectedTabKeys.includes('contactedClients') ? [newLeadData, ...contactedClients] : contactedClients;
-      const nextCold = selectedTabKeys.includes('coldLeads') ? [newLeadData, ...coldLeads] : coldLeads;
-      await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
-
-      showToast(credentials
-        ? `✅ Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`
-        : `✅ Lead added locally (connect Google Sheets in settings to sync).`);
-      resetNewLeadForm();
-      setShowAddModal(false);
-
+      await doAddNewLead();
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
       showToast(`❌ Error adding lead: ${error.message}`, 'error');
@@ -461,6 +480,7 @@ const CRMPage = () => {
     setNewLead({
       contactName: '',
       email: '',
+      type: CLIENT_TYPE.NA,
       phone: '',
       instagram: '',
       organization: '',
@@ -480,6 +500,7 @@ const CRMPage = () => {
     setEditForm({
       contactName: client.contactName || '',
       email: client.email || '',
+      type: client.type || CLIENT_TYPE.NA,
       phone: client.phone || '',
       instagram: client.instagram || '',
       organization: client.organization || '',
@@ -501,6 +522,7 @@ const CRMPage = () => {
           id: editingClient.id,
           contactName: editForm.contactName,
           email: editForm.email,
+          type: editForm.type || CLIENT_TYPE.NA,
           phone: editForm.phone,
           instagram: editForm.instagram,
           organization: editForm.organization,
@@ -588,6 +610,7 @@ const CRMPage = () => {
           id: updatedLead.id,
           contactName: updatedLead.contactName,
           email: updatedLead.email,
+          type: updatedLead.type || CLIENT_TYPE.NA,
           phone: updatedLead.phone,
           instagram: updatedLead.instagram,
           organization: updatedLead.organization,
@@ -679,6 +702,91 @@ const CRMPage = () => {
     }
   };
 
+  // Graduate lead to client: create Firestore client then require day-one screenshot
+  const handleGraduateLead = async (lead) => {
+    if (!lead?.email) {
+      toast.error('Lead must have an email to graduate');
+      return;
+    }
+    const confirmed = await confirm({
+      title: 'Graduate to Client',
+      message: `Create a client from "${lead.contactName || lead.email}"? You will be asked to upload a day-one social screenshot (required) next.`,
+      confirmText: 'Continue',
+      variant: 'default'
+    });
+    if (!confirmed) return;
+
+    try {
+      const clientData = {
+        clientName: lead.contactName || lead.name || lead.email.split('@')[0] || 'Unknown',
+        clientEmail: lead.email,
+        clientType: lead.type || CLIENT_TYPE.NA,
+        phone: lead.phone || '',
+        notes: lead.notes || '',
+        packageType: 'Standard',
+        packageSize: 1,
+        postsUsed: 0,
+        postsRemaining: 1,
+        postedOn: 'Luxury Listings',
+        paymentStatus: 'Pending',
+        approvalStatus: 'Approved',
+        startDate: new Date().toISOString().split('T')[0],
+        lastContact: new Date().toISOString().split('T')[0],
+        customPrice: 0,
+        overduePosts: 0
+      };
+      const result = await firestoreService.addClient(clientData);
+      if (!result?.id) throw new Error('Failed to create client');
+      setSelectedClient(null);
+      setSelectedItemType(null);
+      setGraduateScreenshotModal({
+        show: true,
+        clientId: result.id,
+        clientName: clientData.clientName,
+        leadId: lead.id
+      });
+      showToast(`Client created. Please upload day-one screenshot.`);
+    } catch (error) {
+      console.error('Error graduating lead:', error);
+      showToast(`❌ ${error.message}`, 'error');
+    }
+  };
+
+  const handleSignupScreenshotUpload = async (file) => {
+    if (!file || !graduateScreenshotModal.clientId) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+    setUploadingScreenshot(true);
+    try {
+      const storage = getStorage();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `client-screenshots/${graduateScreenshotModal.clientId}/signup_${Date.now()}.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      const uploadedAt = new Date().toISOString();
+      await firestoreService.updateClient(graduateScreenshotModal.clientId, {
+        signupScreenshotUrl: url,
+        signupScreenshotUploadedAt: uploadedAt
+      });
+      if (graduateScreenshotModal.leadId) {
+        await removeLeadFromCRM(graduateScreenshotModal.leadId);
+        setWarmLeads(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
+        setContactedClients(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
+        setColdLeads(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
+      }
+      setGraduateScreenshotModal({ show: false, clientId: null, clientName: '', leadId: null });
+      showToast(`✅ Day-one screenshot saved. Lead graduated to client.`);
+    } catch (error) {
+      console.error('Screenshot upload error:', error);
+      showToast(`❌ Upload failed: ${error.message}`, 'error');
+    } finally {
+      setUploadingScreenshot(false);
+    }
+  };
+
   const deleteExistingClient = async (client) => {
     if (!client || !canDeleteClients) return;
     const name = client.clientName || client.name || 'this client';
@@ -710,9 +818,22 @@ const CRMPage = () => {
       contacted: '!bg-purple-100 !text-purple-800 dark:!bg-purple-900/30 dark:!text-purple-300',
       cold: '!bg-blue-100 !text-blue-600 dark:!bg-blue-900/30 dark:!text-blue-300',
       client: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+      approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      paused: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+      cancelled: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
+      rejected: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400'
     };
     return colors[s] || colors.cold;
+  };
+
+  // For existing clients: show "Previous client" when status is paused/cancelled/rejected
+  const getClientStatusLabel = (status, isExisting) => {
+    const s = (status || '').toLowerCase();
+    if (!isExisting) return status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : '—';
+    if (s === 'paused') return 'Previous client (Paused)';
+    if (s === 'cancelled' || s === 'rejected') return 'Previous client (Cancelled)';
+    return status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : 'Active';
   };
 
   const getStatusIcon = (status) => {
@@ -743,10 +864,11 @@ const CRMPage = () => {
     ...warmLeads.map(c => ({ ...c, _type: 'warm', isExisting: false })),
     ...contactedClients.map(c => ({ ...c, _type: 'contacted', isExisting: false })),
     ...coldLeads.map(c => ({ ...c, _type: 'cold', isExisting: false })),
-    ...existingClients.map(c => ({ ...c, _type: 'clients', isExisting: true }))
+    ...existingClients.map(c => ({ ...c, _type: 'clients', isExisting: true, type: c.clientType || c.type || CLIENT_TYPE.NA }))
   ]
     .filter(c => matchesSearch(c, c.isExisting))
     .filter(c => statusFilter === 'all' || c._type === statusFilter)
+    .filter(c => typeFilter === 'all' || (c.type || CLIENT_TYPE.NA) === typeFilter)
     .sort((a, b) => {
       const nameA = (a.contactName || a.clientName || a.email || '').toLowerCase();
       const nameB = (b.contactName || b.clientName || b.email || '').toLowerCase();
@@ -809,9 +931,14 @@ const CRMPage = () => {
               </div>
             )}
           </div>
-          <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
-            {client.status ? client.status.charAt(0).toUpperCase() + client.status.slice(1) : 'Unknown'}
-          </span>
+          <div className="flex flex-col items-end gap-1">
+            <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
+              {getClientStatusLabel(client.status, isExisting)}
+            </span>
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium">
+              Type: {client.type || CLIENT_TYPE.NA}
+            </span>
+          </div>
         </div>
         
         <div className="space-y-3 mb-5">
@@ -886,10 +1013,15 @@ const CRMPage = () => {
         )}
       </td>
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.email}</td>
+      <td className="py-3 px-4">
+        <span className="text-[11px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium">
+          {client.type || CLIENT_TYPE.NA}
+        </span>
+      </td>
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.phone || '—'}</td>
       <td className="py-3 px-4">
         <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
-          {client.status ? String(client.status).charAt(0).toUpperCase() + String(client.status).slice(1) : '—'}
+          {getClientStatusLabel(client.status, isExisting)}
         </span>
       </td>
       <td className="py-3 px-4">
@@ -925,6 +1057,7 @@ const CRMPage = () => {
           <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
             <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Name</th>
             <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Email</th>
+            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Type</th>
             <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Phone</th>
             <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Status</th>
             <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Actions</th>
@@ -1151,6 +1284,34 @@ const CRMPage = () => {
         </button>
       </div>
 
+      {/* Type filter: SMM, PP, BOTH, N/A */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[13px] text-[#86868b] mr-1">Type:</span>
+        <button
+          onClick={() => setTypeFilter('all')}
+          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+            typeFilter === 'all'
+              ? 'bg-[#0071e3] text-white'
+              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+          }`}
+        >
+          All
+        </button>
+        {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => setTypeFilter(value)}
+            className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+              typeFilter === value
+                ? 'bg-[#5856d6] text-white'
+                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Single list: A–Z by name */}
       <div className="space-y-4">
         <p className="text-[13px] text-[#86868b]">
@@ -1170,6 +1331,68 @@ const CRMPage = () => {
         )}
       </div>
 
+      {/* Possible existing contact (CRM) – open or add anyway */}
+      {possibleExistingMatches.length > 0 && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl">
+            <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Possible existing contact</h3>
+            <p className="text-[13px] text-[#86868b] mb-4">
+              A lead or client with the same or similar name/email may already exist. Open existing or add as new?
+            </p>
+            <ul className="space-y-2 mb-4 max-h-40 overflow-y-auto">
+              {possibleExistingMatches.map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-black/5 dark:bg-white/5">
+                  <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                    {c.clientName || c.contactName || '—'}
+                  </span>
+                  <span className="text-[12px] text-[#86868b] truncate">{c.clientEmail || c.email || ''}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setPossibleExistingMatches([]);
+                      setSelectedClient(c);
+                      setSelectedItemType(c.isExisting ? 'client' : 'lead');
+                    }}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed]"
+                  >
+                    Open
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsAddingLead(true);
+                  try {
+                    await doAddNewLead();
+                  } catch (error) {
+                    console.error('❌ Error adding new lead:', error);
+                    showToast(`❌ Error adding lead: ${error.message}`, 'error');
+                  } finally {
+                    setIsAddingLead(false);
+                  }
+                }}
+                disabled={isAddingLead}
+                className="flex-1 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
+              >
+                {isAddingLead ? 'Adding…' : 'Add as new anyway'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPossibleExistingMatches([])}
+                className="flex-1 py-2.5 rounded-xl border border-black/10 dark:border-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Add New Lead Modal */}
       {showAddModal && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -1186,6 +1409,9 @@ const CRMPage = () => {
                 ✕
               </button>
             </div>
+            <p className="text-[13px] text-[#86868b] mb-4">
+              This is the same process used across the site. This lead will automatically be added to your CRM and the date will be recorded.
+            </p>
             
             <div className="space-y-4">
               {/* Tab Selection */}
@@ -1220,6 +1446,20 @@ const CRMPage = () => {
                     <span className="text-sm text-gray-700 dark:text-[#e5e5e7]">Cold Leads</span>
                   </label>
                 </div>
+              </div>
+
+              {/* Type - required */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-[#e5e5e7] mb-1">Type *</label>
+                <select
+                  value={newLead.type || CLIENT_TYPE.NA}
+                  onChange={(e) => setNewLead(prev => ({ ...prev, type: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Form Fields */}
@@ -1349,8 +1589,39 @@ const CRMPage = () => {
           }}
           onEdit={handleEditLead}
           onDelete={deleteLead}
+          onGraduate={handleGraduateLead}
           canEdit={true}
         />
+      )}
+
+      {/* Graduate: required day-one screenshot upload */}
+      {graduateScreenshotModal.show && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl">
+            <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-white mb-1">Day-one screenshot (required)</h3>
+            <p className="text-[13px] text-[#86868b] mb-4">
+              Upload a screenshot of followers/insights for {graduateScreenshotModal.clientName}. This completes the graduate flow.
+            </p>
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#86868b]/30 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingScreenshot}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleSignupScreenshotUpload(f);
+                  e.target.value = '';
+                }}
+              />
+              {uploadingScreenshot ? (
+                <span className="text-[#0071e3]">Uploading…</span>
+              ) : (
+                <span className="text-[13px] text-[#86868b]">Click or drop image</span>
+              )}
+            </label>
+          </div>
+        </div>
       )}
 
       {/* Edit Modal */}
@@ -1392,6 +1663,19 @@ const CRMPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <select
+                  value={editForm.type || CLIENT_TYPE.NA}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, type: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

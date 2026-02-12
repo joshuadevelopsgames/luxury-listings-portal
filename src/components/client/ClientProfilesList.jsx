@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { openEmailInGmail } from '../../utils/gmailCompose';
 import { 
   Users, 
   Mail, 
@@ -37,6 +38,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import PlatformIcons from '../PlatformIcons';
 import ClientLink from '../ui/ClientLink';
+import ClientDetailModal from './ClientDetailModal';
+import { useOpenClientCard } from '../../hooks/useOpenClientCard';
+import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../../services/crmService';
+import { findPotentialDuplicateGroups, findPotentialMatchesForContact } from '../../services/clientDuplicateService';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 // Custom icons for platforms not in lucide-react
 const TikTokIcon = ({ className }) => (
@@ -54,18 +60,15 @@ const XIcon = ({ className }) => (
 const ClientProfilesList = ({ internalOnly = false }) => {
   const { currentUser } = useAuth();
   const { hasFeaturePermission } = usePermissions();
+  const { confirm } = useConfirm();
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClient, setSelectedClient] = useState(null);
+  const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();
   const [managerFilter, setManagerFilter] = useState('all');
   const [packageFilter, setPackageFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showManagerAssignModal, setShowManagerAssignModal] = useState(false);
-  const [assigningManager, setAssigningManager] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
   // Default to card view on mobile, list on desktop
@@ -76,6 +79,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
   const [addForm, setAddForm] = useState({
     clientName: '',
     clientEmail: '',
+    clientType: CLIENT_TYPE.NA,
     phone: '',
     notes: '',
     packageType: 'Standard',
@@ -88,6 +92,11 @@ const ClientProfilesList = ({ internalOnly = false }) => {
   const [adding, setAdding] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = React.useRef(null);
+  const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
+  const [duplicateGroups, setDuplicateGroups] = useState([]);
+  const [mergeChoice, setMergeChoice] = useState(null);
+  const [merging, setMerging] = useState(false);
+  const [possibleExistingMatches, setPossibleExistingMatches] = useState([]);
 
   // Permissions
   const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
@@ -118,9 +127,8 @@ const ClientProfilesList = ({ internalOnly = false }) => {
         firestoreService.getClients(),
         firestoreService.getApprovedUsers()
       ]);
-      
-      setClients(clientsData || []);
-      // Filter to social media managers + specific allowed users (Michelle, Matthew)
+      const list = clientsData || [];
+      setClients(list);
       const allowedManagers = (employeesData || []).filter(emp => {
         const name = (emp.displayName || emp.firstName || '').toLowerCase();
         const isSMM = emp.role === 'social_media_manager' || emp.roles?.includes('social_media_manager');
@@ -128,8 +136,10 @@ const ClientProfilesList = ({ internalOnly = false }) => {
         return isSMM || isAllowedUser;
       });
       setEmployees(allowedManagers);
+      return list;
     } catch (error) {
       console.error('Error loading data:', error);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -187,86 +197,13 @@ const ClientProfilesList = ({ internalOnly = false }) => {
     return matchesSearch && matchesManager && matchesPackage;
   }).sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
 
-  const handleAssignManager = async (clientId, managerEmail) => {
-    try {
-      setAssigningManager(true);
-      const previousManager = selectedClient?.id === clientId ? selectedClient.assignedManager : null;
-      const clientName = selectedClient?.id === clientId ? (selectedClient.clientName || selectedClient.name) : null;
-      const updateData = managerEmail 
-        ? { assignedManager: managerEmail }
-        : { assignedManager: null };
-      
-      await firestoreService.updateClient(clientId, updateData);
-      await firestoreService.logClientReassignment(clientId, clientName, previousManager, managerEmail || null, currentUser?.email);
-      toast.success(managerEmail ? 'Manager assigned successfully' : 'Manager unassigned');
-      setShowManagerAssignModal(false);
-      await loadData();
-      // Update selected client if it's the one being updated
-      if (selectedClient && selectedClient.id === clientId) {
-        const updated = await firestoreService.getClients();
-        const updatedClient = updated.find(c => c.id === clientId);
-        if (updatedClient) setSelectedClient(updatedClient);
-      }
-    } catch (error) {
-      console.error('Error assigning manager:', error);
-      toast.error('Failed to assign manager');
-    } finally {
-      setAssigningManager(false);
-    }
-  };
-
-  const handleUpdateClient = async () => {
-    if (!selectedClient) return;
-    
-    try {
-      await firestoreService.updateClient(selectedClient.id, editForm);
-      toast.success('Client updated successfully');
-      setShowEditModal(false);
-      setEditForm({});
-      loadData();
-      // Reload selected client
-      const updated = await firestoreService.getClients();
-      const updatedClient = updated.find(c => c.id === selectedClient.id);
-      if (updatedClient) setSelectedClient(updatedClient);
-    } catch (error) {
-      console.error('Error updating client:', error);
-      toast.error('Failed to update client');
-    }
-  };
-
-  const handleProfilePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedClient?.id) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please choose an image file');
-      return;
-    }
-    setUploadingPhoto(true);
-    try {
-      const storage = getStorage();
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `client-photos/${selectedClient.id}/profile_${Date.now()}.${ext}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setEditForm(prev => ({ ...prev, profilePhoto: url }));
-      toast.success('Photo uploaded');
-    } catch (err) {
-      console.error(err);
-      toast.error('Upload failed');
-    } finally {
-      setUploadingPhoto(false);
-      e.target.value = '';
-    }
-  };
-
   const handleDeleteClient = async (clientId) => {
     try {
       setDeleting(true);
       await firestoreService.deleteClient(clientId);
       toast.success('Client removed successfully');
       setShowDeleteConfirm(null);
-      setSelectedClient(null);
+      if (clientForModal?.id === clientId) closeClientCard();
       await loadData();
     } catch (error) {
       console.error('Error deleting client:', error);
@@ -276,49 +213,87 @@ const ClientProfilesList = ({ internalOnly = false }) => {
     }
   };
 
+  const doAddClient = async () => {
+    const newClient = {
+      clientName: addForm.clientName.trim(),
+      clientEmail: addForm.clientEmail.trim(),
+      clientType: addForm.clientType || CLIENT_TYPE.NA,
+      phone: addForm.phone.trim(),
+      notes: addForm.notes.trim(),
+      packageType: addForm.packageType,
+      packageSize: addForm.packageSize,
+      postsUsed: 0,
+      postsRemaining: addForm.postsRemaining,
+      paymentStatus: addForm.paymentStatus,
+      platforms: addForm.platforms,
+      isInternal: !!addForm.isInternal,
+      approvalStatus: 'Approved',
+      status: 'active',
+      startDate: new Date().toISOString().split('T')[0],
+      lastContact: new Date().toISOString().split('T')[0],
+      postedOn: 'Luxury Listings'
+    };
+    await firestoreService.addClient(newClient);
+    await addContactToCRM({
+      clientName: newClient.clientName,
+      clientEmail: newClient.clientEmail,
+      type: newClient.clientType,
+      phone: newClient.phone,
+      notes: newClient.notes
+    }, 'warmLeads');
+    toast.success('Client added successfully and added to CRM.');
+    setShowAddModal(false);
+    setPossibleExistingMatches([]);
+    setAddForm({
+      clientName: '',
+      clientEmail: '',
+      clientType: CLIENT_TYPE.NA,
+      phone: '',
+      notes: '',
+      packageType: 'Standard',
+      packageSize: 12,
+      postsRemaining: 10,
+      paymentStatus: 'Pending',
+      platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
+      isInternal: false
+    });
+    await loadData();
+  };
+
   const handleAddClient = async () => {
     if (!addForm.clientName.trim()) {
       toast.error('Please enter a client name');
       return;
     }
+    if (!addForm.clientEmail?.trim()) {
+      toast.error('Please enter a client email');
+      return;
+    }
+
+    const matches = findPotentialMatchesForContact(displayClients, {
+      name: addForm.clientName,
+      email: addForm.clientEmail
+    });
+    if (matches.length > 0) {
+      setPossibleExistingMatches(matches);
+      return;
+    }
 
     try {
       setAdding(true);
-      const newClient = {
-        clientName: addForm.clientName.trim(),
-        clientEmail: addForm.clientEmail.trim(),
-        phone: addForm.phone.trim(),
-        notes: addForm.notes.trim(),
-        packageType: addForm.packageType,
-        packageSize: addForm.packageSize,
-        postsUsed: 0,
-        postsRemaining: addForm.postsRemaining,
-        paymentStatus: addForm.paymentStatus,
-        platforms: addForm.platforms,
-        isInternal: !!addForm.isInternal,
-        approvalStatus: 'Approved',
-        status: 'active',
-        startDate: new Date().toISOString().split('T')[0],
-        lastContact: new Date().toISOString().split('T')[0],
-        postedOn: 'Luxury Listings'
-      };
+      await doAddClient();
+    } catch (error) {
+      console.error('Error adding client:', error);
+      toast.error('Failed to add client');
+    } finally {
+      setAdding(false);
+    }
+  };
 
-      await firestoreService.addClient(newClient);
-      toast.success('Client added successfully');
-      setShowAddModal(false);
-      setAddForm({
-        clientName: '',
-        clientEmail: '',
-        phone: '',
-        notes: '',
-        packageType: 'Standard',
-        packageSize: 12,
-        postsRemaining: 10,
-        paymentStatus: 'Pending',
-        platforms: { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
-        isInternal: false
-      });
-      await loadData();
+  const handleAddAsNewAnyway = async () => {
+    try {
+      setAdding(true);
+      await doAddClient();
     } catch (error) {
       console.error('Error adding client:', error);
       toast.error('Failed to add client');
@@ -507,6 +482,21 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
+
+              {canManageClients && !internalOnly && (
+                <button
+                  onClick={() => {
+                    const groups = findPotentialDuplicateGroups(displayClients);
+                    setDuplicateGroups(groups);
+                    setMergeChoice(null);
+                    setShowDuplicatesModal(true);
+                  }}
+                  className="h-10 px-3 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[13px] font-medium hover:bg-amber-500/20 transition-colors"
+                  title="Find clients that may be duplicates (same name/email)"
+                >
+                  Find duplicates
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -608,7 +598,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                 <div 
                   key={client.id} 
                   className={`grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 py-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer group items-center ${greyOut ? 'opacity-60 bg-black/[0.02] dark:bg-white/[0.02]' : ''}`}
-                  onClick={() => setSelectedClient(client)}
+                  onClick={() => openClientCard(client)}
                 >
                   {/* Client Info */}
                   <div className="col-span-4 flex items-center gap-3 min-w-0">
@@ -695,30 +685,13 @@ const ClientProfilesList = ({ internalOnly = false }) => {
               <div 
                 key={client.id} 
                 className={`relative rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all cursor-pointer group ${greyOut ? 'opacity-60' : ''}`}
-                onClick={() => setSelectedClient(client)}
+                onClick={() => openClientCard(client)}
               >
                 {/* Edit/Delete buttons at top right */}
                 <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   {(canManageClients || canEditPackages) && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedClient(client);
-                        setEditForm({
-                          clientName: client.clientName || '',
-                          clientEmail: client.clientEmail || '',
-                          phone: client.phone || '',
-                          notes: client.notes || '',
-                          packageType: client.packageType || 'Standard',
-                          packageSize: client.packageSize || 12,
-                          postsUsed: client.postsUsed || 0,
-                          postsRemaining: client.postsRemaining || 0,
-                          paymentStatus: client.paymentStatus || 'Pending',
-                          platforms: client.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
-                          approvalStatus: client.approvalStatus === 'Pending' ? 'Paused' : client.approvalStatus === 'Rejected' ? 'Cancelled' : (client.approvalStatus || 'Approved')
-                        });
-                        setShowEditModal(true);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); openClientCard(client); }}
                       className="p-2 rounded-lg bg-white dark:bg-[#2c2c2e] shadow-sm border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                       title="Edit client"
                     >
@@ -847,7 +820,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.location.href = `mailto:${client.clientEmail}`;
+                      openEmailInGmail(client.clientEmail);
                     }}
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
@@ -860,594 +833,17 @@ const ClientProfilesList = ({ internalOnly = false }) => {
         </div>
       )}
 
-      {/* Client Detail Modal */}
-      {selectedClient && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 z-10">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
-                    {selectedClient.profilePhoto ? (
-                      <img src={selectedClient.profilePhoto} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
-                        <span className="text-white font-semibold text-xl">
-                          {selectedClient.clientName ? selectedClient.clientName.charAt(0).toUpperCase() : 'C'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h2 className="text-[20px] font-semibold mb-1">
-                      <ClientLink client={selectedClient} showId />
-                    </h2>
-                    <span className="text-[12px] px-2 py-1 rounded-md bg-[#0071e3]/10 text-[#0071e3] font-medium">
-                      {selectedClient.packageType || 'Standard'} Package
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {(canManageClients || canEditPackages) && (
-                    <button
-                      onClick={() => {
-                        setEditForm({
-                          clientName: selectedClient.clientName || '',
-                          clientEmail: selectedClient.clientEmail || '',
-                          phone: selectedClient.phone || '',
-                          notes: selectedClient.notes || '',
-                          packageType: selectedClient.packageType || 'Standard',
-                          packageSize: selectedClient.packageSize || 12,
-                          postsUsed: selectedClient.postsUsed || 0,
-                          postsRemaining: selectedClient.postsRemaining || 0,
-                          paymentStatus: selectedClient.paymentStatus || 'Pending',
-                          platforms: selectedClient.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
-                          profilePhoto: selectedClient.profilePhoto || '',
-                          approvalStatus: selectedClient.approvalStatus === 'Pending' ? 'Paused' : selectedClient.approvalStatus === 'Rejected' ? 'Cancelled' : (selectedClient.approvalStatus || 'Approved')
-                        });
-                        setShowEditModal(true);
-                      }}
-                      className="p-2 rounded-lg bg-[#0071e3]/10 hover:bg-[#0071e3]/20 transition-colors"
-                      title="Edit client"
-                    >
-                      <Pencil className="w-4 h-4 text-[#0071e3]" />
-                    </button>
-                  )}
-                  {canManageClients && (
-                    <button
-                      onClick={() => setShowDeleteConfirm(selectedClient)}
-                      className="p-2 rounded-lg hover:bg-[#ff3b30]/10 transition-colors"
-                      title="Remove client"
-                    >
-                      <Trash2 className="w-4 h-4 text-[#ff3b30]" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setSelectedClient(null)}
-                    className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                  >
-                    <X className="w-5 h-5 text-[#86868b]" />
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="p-6">
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Contact Information</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center">
-                          <Mail className="w-4 h-4 text-[#86868b]" />
-                        </div>
-                        <div>
-                          <p className="text-[11px] text-[#86868b]">Email</p>
-                          <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{selectedClient.clientEmail || 'No email'}</p>
-                        </div>
-                      </div>
-                      {selectedClient.phone && (
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center">
-                            <Phone className="w-4 h-4 text-[#86868b]" />
-                          </div>
-                          <div>
-                            <p className="text-[11px] text-[#86868b]">Phone</p>
-                            <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{selectedClient.phone}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Assigned Manager</h3>
-                    {getAssignedManager(selectedClient) ? (
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-[#34c759]/10 flex items-center justify-center">
-                          <User className="w-4 h-4 text-[#34c759]" />
-                        </div>
-                        <div>
-                          <p className="text-[11px] text-[#86868b]">Social Media Manager</p>
-                          <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
-                            {getAssignedManager(selectedClient).displayName || getAssignedManager(selectedClient).email}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-[#ff9500]/10 flex items-center justify-center">
-                          <AlertCircle className="w-4 h-4 text-[#ff9500]" />
-                        </div>
-                        <p className="text-[13px] text-[#ff9500]">No manager assigned</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t border-black/5 dark:border-white/10 pt-6">
-                  <h3 className="text-[12px] font-semibold text-[#86868b] mb-4 uppercase tracking-wide">Package Details</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                      <p className="text-[11px] text-[#86868b] mb-1">Package Type</p>
-                      <p className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">{selectedClient.packageType || 'Standard'}</p>
-                    </div>
-                    <div className="p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                      <p className="text-[11px] text-[#86868b] mb-1">Posts Remaining</p>
-                      <p className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">{selectedClient.postsRemaining || 0}</p>
-                    </div>
-                    <div className="p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                      <p className="text-[11px] text-[#86868b] mb-1">Payment Status</p>
-                      <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${selectedClient.paymentStatus === 'Paid' ? 'bg-[#34c759]/10 text-[#34c759]' : 'bg-[#ff9500]/10 text-[#ff9500]'}`}>
-                        {selectedClient.paymentStatus || 'Unknown'}
-                      </span>
-                    </div>
-                    <div className="p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                      <p className="text-[11px] text-[#86868b] mb-1">Status</p>
-                      <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
-                        selectedClient.approvalStatus === 'Approved' ? 'bg-[#34c759]/10 text-[#34c759]' :
-                        selectedClient.approvalStatus === 'Paused' || selectedClient.approvalStatus === 'Pending' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                        selectedClient.approvalStatus === 'Cancelled' || selectedClient.approvalStatus === 'Rejected' ? 'bg-[#86868b]/10 text-[#86868b]' : 'bg-[#0071e3]/10 text-[#0071e3]'
-                      }`}>
-                        {selectedClient.approvalStatus === 'Pending' ? 'Paused' : selectedClient.approvalStatus === 'Rejected' ? 'Cancelled (Archived)' : (selectedClient.approvalStatus || 'Approved')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedClient.startDate && (
-                  <div className="border-t border-black/5 dark:border-white/10 pt-6">
-                    <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Account Information</h3>
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-[#86868b]" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-[#86868b]">Client Since</p>
-                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
-                          {format(new Date(selectedClient.startDate), 'MMMM d, yyyy')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedClient.notes && (
-                  <div className="border-t border-black/5 dark:border-white/10 pt-6">
-                    <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Notes</h3>
-                    <div className="p-4 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                      <p className="text-[13px] text-[#1d1d1f] dark:text-white whitespace-pre-wrap">{selectedClient.notes}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Contracts Section */}
-              <div className="border-t border-black/5 dark:border-white/10 pt-6 mt-6">
-                <ClientContractsSection client={selectedClient} />
-              </div>
-
-              <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-black/5 dark:border-white/10">
-                {canAssignManagers && (
-                  <button
-                    onClick={() => {
-                      setShowManagerAssignModal(true);
-                    }}
-                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    {getAssignedManager(selectedClient) ? 'Reassign Manager' : 'Assign Manager'}
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    window.location.href = `mailto:${selectedClient.clientEmail}`;
-                  }}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  Send Email
-                </button>
-                <button
-                  onClick={() => setSelectedClient(null)}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Manager Assignment Modal */}
-      {showManagerAssignModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Assign Manager</h2>
-              <button
-                onClick={() => setShowManagerAssignModal(false)}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              >
-                <X className="w-5 h-5 text-[#86868b]" />
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-[14px] text-[#86868b] mb-4">
-                Select a social media manager for <span className="font-medium text-[#1d1d1f] dark:text-white">{selectedClient?.clientName || 'this client'}</span>
-              </p>
-              
-              <div className="space-y-2 mb-6 max-h-60 overflow-y-auto">
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
-                    getAssignedManager(selectedClient) === null 
-                      ? 'bg-[#0071e3] text-white' 
-                      : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                  }`}
-                  onClick={() => handleAssignManager(selectedClient.id, null)}
-                  disabled={assigningManager}
-                >
-                  <X className="w-4 h-4" />
-                  <span className="text-[13px] font-medium">Unassign Manager</span>
-                </button>
-                {employees.map(emp => (
-                  <button
-                    key={emp.email}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
-                      getAssignedManager(selectedClient)?.email === emp.email 
-                        ? 'bg-[#0071e3] text-white' 
-                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                    }`}
-                    onClick={() => handleAssignManager(selectedClient.id, emp.email)}
-                    disabled={assigningManager}
-                  >
-                    <User className="w-4 h-4" />
-                    <div>
-                      <div className="text-[13px] font-medium">{emp.displayName || emp.email}</div>
-                      {emp.displayName && emp.email && (
-                        <div className={`text-[11px] ${getAssignedManager(selectedClient)?.email === emp.email ? 'text-white/70' : 'text-[#86868b]'}`}>{emp.email}</div>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-              
-              <button
-                onClick={() => setShowManagerAssignModal(false)}
-                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Client Modal */}
-      {showEditModal && selectedClient && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between z-10">
-              <div className="flex items-center gap-3">
-                {/* Profile Photo */}
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                  {selectedClient.profilePhoto ? (
-                    <img src={selectedClient.profilePhoto} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
-                      <span className="text-white font-semibold text-sm">
-                        {selectedClient.clientName ? selectedClient.clientName.charAt(0).toUpperCase() : 'C'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
-                  {canManageClients && canEditPackages ? 'Edit Client' : canEditPackages ? 'Edit Package Details' : 'Edit Client Information'}
-                </h2>
-              </div>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditForm({});
-                }}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              >
-                <X className="w-5 h-5 text-[#86868b]" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                {/* Basic Client Info - requires MANAGE_CLIENTS */}
-                {canManageClients && (
-                  <>
-                    <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                        Client Name
-                      </label>
-                      <input
-                        value={editForm.clientName || ''}
-                        onChange={(e) => setEditForm({...editForm, clientName: e.target.value})}
-                        placeholder="Client name"
-                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={editForm.clientEmail || ''}
-                        onChange={(e) => setEditForm({...editForm, clientEmail: e.target.value})}
-                        placeholder="client@example.com"
-                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                        Phone
-                      </label>
-                      <input
-                        value={editForm.phone || ''}
-                        onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                        placeholder="+1 (555) 123-4567"
-                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                      />
-                    </div>
-                  </>
-                )}
-                
-                {canManageClients && (
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                      Notes
-                    </label>
-                    <textarea
-                      value={editForm.notes || ''}
-                      onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-                      placeholder="Additional notes..."
-                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
-                      rows={3}
-                    />
-                  </div>
-                )}
-
-                {canManageClients && (
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                      Profile Photo
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex-shrink-0">
-                        {editForm.profilePhoto ? (
-                          <img src={editForm.profilePhoto} alt="Profile" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[#86868b]">
-                            <Camera className="w-6 h-6" strokeWidth={1.5} />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <input
-                          ref={photoInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleProfilePhotoUpload}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => photoInputRef.current?.click()}
-                          disabled={uploadingPhoto}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors disabled:opacity-50"
-                        >
-                          {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                          {uploadingPhoto ? 'Uploading...' : 'Upload photo'}
-                        </button>
-                        {editForm.profilePhoto && (
-                          <button
-                            type="button"
-                            onClick={() => setEditForm(prev => ({ ...prev, profilePhoto: '' }))}
-                            className="block text-[12px] text-[#86868b] hover:text-[#ff3b30]"
-                          >
-                            Remove photo
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-[#86868b] mt-2">Or paste URL:</p>
-                    <input
-                      type="text"
-                      value={editForm.profilePhoto || ''}
-                      onChange={(e) => setEditForm({...editForm, profilePhoto: e.target.value})}
-                      placeholder="https://..."
-                      className="mt-1 w-full h-9 px-3 text-[13px] rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    />
-                  </div>
-                )}
-
-                {/* Package Details - Admin Only */}
-                {canEditPackages && (
-                  <>
-                    <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                      <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide flex items-center gap-2">
-                        <Package className="w-3.5 h-3.5" />
-                        Package Details
-                      </h3>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                          Package Type
-                        </label>
-                        <select
-                          value={editForm.packageType || 'Standard'}
-                          onChange={(e) => setEditForm({...editForm, packageType: e.target.value})}
-                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                        >
-                          <option value="Standard">Standard</option>
-                          <option value="Bundled">Bundled</option>
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                          Package Size
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={editForm.packageSize || 0}
-                          onChange={(e) => setEditForm({...editForm, packageSize: parseInt(e.target.value) || 0})}
-                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                          Posts Used
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={editForm.postsUsed || 0}
-                          onChange={(e) => setEditForm({...editForm, postsUsed: parseInt(e.target.value) || 0})}
-                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                          Posts Remaining
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={editForm.postsRemaining || 0}
-                          onChange={(e) => setEditForm({...editForm, postsRemaining: parseInt(e.target.value) || 0})}
-                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                        Payment Status
-                      </label>
-                      <select
-                        value={editForm.paymentStatus || 'Pending'}
-                        onChange={(e) => setEditForm({...editForm, paymentStatus: e.target.value})}
-                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Overdue">Overdue</option>
-                        <option value="Partial">Partial</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                        Status
-                      </label>
-                      <select
-                        value={editForm.approvalStatus || 'Approved'}
-                        onChange={(e) => setEditForm({...editForm, approvalStatus: e.target.value})}
-                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                      >
-                        <option value="Approved">Approved (Active)</option>
-                        <option value="Paused">Paused</option>
-                        <option value="Cancelled">Cancelled (Archived)</option>
-                      </select>
-                    </div>
-
-                    {/* Social Media Platforms */}
-                    <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-3">
-                        Social Media Platforms
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { key: 'instagram', label: 'Instagram', icon: Instagram },
-                          { key: 'facebook', label: 'Facebook', icon: Facebook },
-                          { key: 'linkedin', label: 'LinkedIn', icon: Linkedin },
-                          { key: 'youtube', label: 'YouTube', icon: Youtube },
-                          { key: 'tiktok', label: 'TikTok', icon: TikTokIcon },
-                          { key: 'x', label: 'X', icon: XIcon }
-                        ].map(({ key, label, icon: Icon }) => (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => setEditForm({
-                              ...editForm,
-                              platforms: {
-                                ...(editForm.platforms || {}),
-                                [key]: !(editForm.platforms?.[key])
-                              }
-                            })}
-                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors ${
-                              editForm.platforms?.[key]
-                                ? 'bg-[#0071e3] text-white'
-                                : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
-                            }`}
-                          >
-                            {Icon && <Icon className="w-3.5 h-3.5" />}
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-              
-              <div className="flex gap-3 mt-6 pt-6 border-t border-black/5 dark:border-white/10">
-                <button
-                  onClick={handleUpdateClient}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
-                >
-                  Save Changes
-                </button>
-                <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditForm({});
-                  }}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Unified client card modal */}
+      {clientForModal && (
+        <ClientDetailModal
+          client={clientForModal}
+          onClose={closeClientCard}
+          onClientUpdate={(updated) => {
+            setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
+          }}
+          employees={employees}
+          showManagerAssignment={true}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
@@ -1490,6 +886,143 @@ const ClientProfilesList = ({ internalOnly = false }) => {
         </div>
       )}
 
+      {/* Potential duplicates modal */}
+      {showDuplicatesModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[85vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl flex flex-col">
+            <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
+              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Potential duplicates</h2>
+              <button onClick={() => { setShowDuplicatesModal(false); setDuplicateGroups([]); setMergeChoice(null); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+                <X className="w-5 h-5 text-[#86868b]" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {duplicateGroups.length === 0 ? (
+                <p className="text-[14px] text-[#86868b]">No potential duplicates found. Names and emails are compared to detect possible duplicates.</p>
+              ) : (
+                <p className="text-[13px] text-[#86868b] mb-4">These groups look like the same person (matching name and/or email). Pick which record to keep, then merge the others into it.</p>
+              )}
+              {duplicateGroups.map((group, groupIndex) => {
+                const keepId = mergeChoice?.groupIndex === groupIndex ? mergeChoice.keepId : null;
+                return (
+                  <div key={groupIndex} className="mb-6 last:mb-0 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                    <div className="text-[12px] font-semibold text-[#86868b] uppercase tracking-wide mb-2">Group {groupIndex + 1}</div>
+                    <ul className="space-y-2 mb-3">
+                      {group.map((c) => (
+                        <li key={c.id} className="flex items-center justify-between gap-2 text-[14px]">
+                          <span className="text-[#1d1d1f] dark:text-white font-medium">{c.clientName || c.contactName || '—'}</span>
+                          <span className="text-[#86868b] truncate">{c.clientEmail || c.email || 'No email'}</span>
+                          {canManageClients && (
+                            <button
+                              onClick={() => setMergeChoice({ groupIndex, keepId: c.id })}
+                              className={`flex-shrink-0 px-2 py-1 rounded-lg text-[12px] font-medium ${keepId === c.id ? 'bg-[#34c759] text-white' : 'bg-black/10 dark:bg-white/10 text-[#86868b] hover:bg-black/15 dark:hover:bg-white/15'}`}
+                            >
+                              {keepId === c.id ? 'Keep' : 'Keep this one'}
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {canManageClients && (
+                      <button
+                        disabled={!keepId || merging}
+                        onClick={async () => {
+                          if (!keepId) return;
+                          const keepClient = group.find((c) => c.id === keepId);
+                          const others = group.filter((c) => c.id !== keepId);
+                          const names = others.map((c) => c.clientName || c.contactName || '—').join(', ');
+                          const confirmed = await confirm({
+                            title: 'Confirm merge',
+                            message: `Merge ${others.length} duplicate(s) (${names}) into "${keepClient?.clientName || keepClient?.contactName || 'this client'}"? Their data will be combined and the duplicate records removed.`,
+                            confirmText: 'Merge',
+                            variant: 'default'
+                          });
+                          if (!confirmed) return;
+                          setMerging(true);
+                          try {
+                            for (const other of others) {
+                              const result = await firestoreService.mergeClientInto(keepId, other.id);
+                              if (!result.success) {
+                                toast.error(`Merge failed: ${result.error}`);
+                                break;
+                              }
+                            }
+                            toast.success('Duplicates merged.');
+                            const nextClients = await loadData();
+                            const display = internalOnly ? nextClients.filter(c => c.isInternal === true) : nextClients.filter(c => c.isInternal !== true);
+                            const groups = findPotentialDuplicateGroups(display);
+                            setDuplicateGroups(groups);
+                            setMergeChoice(null);
+                            if (groups.length === 0) setShowDuplicatesModal(false);
+                          } catch (e) {
+                            toast.error(e.message || 'Merge failed');
+                          } finally {
+                            setMerging(false);
+                          }
+                        }}
+                        className="w-full py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        {merging ? 'Merging…' : `Merge ${group.length - 1} into kept record`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Possible existing client – prompt to open or add anyway */}
+      {possibleExistingMatches.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl">
+            <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Possible existing client</h3>
+            <p className="text-[13px] text-[#86868b] mb-4">
+              A client with the same or similar name/email may already exist. Open existing or add as new?
+            </p>
+            <ul className="space-y-2 mb-4 max-h-40 overflow-y-auto">
+              {possibleExistingMatches.map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-black/5 dark:bg-white/5">
+                  <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                    {c.clientName || c.contactName || '—'}
+                  </span>
+                  <span className="text-[12px] text-[#86868b] truncate">{c.clientEmail || c.email || ''}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setPossibleExistingMatches([]);
+                      openClientCard(c);
+                    }}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed]"
+                  >
+                    Open
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleAddAsNewAnyway}
+                disabled={adding}
+                className="flex-1 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
+              >
+                {adding ? 'Adding…' : 'Add as new anyway'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPossibleExistingMatches([])}
+                className="flex-1 py-2.5 rounded-xl border border-black/10 dark:border-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Client Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1502,6 +1035,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                   setAddForm({
                     clientName: '',
                     clientEmail: '',
+                    clientType: CLIENT_TYPE.NA,
                     phone: '',
                     notes: '',
                     packageType: 'Standard',
@@ -1518,6 +1052,11 @@ const ClientProfilesList = ({ internalOnly = false }) => {
               </button>
             </div>
             <div className="p-6">
+              {!internalOnly && (
+                <p className="text-[13px] text-[#86868b] mb-4">
+                  This will add the client to your CRM and record today&apos;s date.
+                </p>
+              )}
               <div className="space-y-4">
                 {/* Client Name */}
                 <div>
@@ -1535,7 +1074,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                 {/* Email */}
                 <div>
                   <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Email
+                    Email *
                   </label>
                   <input
                     type="email"
@@ -1545,6 +1084,23 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                     className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                   />
                 </div>
+
+                {!internalOnly && (
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      Type *
+                    </label>
+                    <select
+                      value={addForm.clientType || CLIENT_TYPE.NA}
+                      onChange={(e) => setAddForm({...addForm, clientType: e.target.value})}
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    >
+                      {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Phone */}
                 <div>
@@ -1654,7 +1210,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
               <div className="flex gap-3 mt-6 pt-6 border-t border-black/5 dark:border-white/10">
                 <button
                   onClick={handleAddClient}
-                  disabled={adding || !addForm.clientName.trim()}
+                  disabled={adding || !addForm.clientName.trim() || (!internalOnly && !addForm.clientEmail?.trim())}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
                 >
                   {adding ? (
@@ -1675,6 +1231,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
                     setAddForm({
                       clientName: '',
                       clientEmail: '',
+                      clientType: CLIENT_TYPE.NA,
                       phone: '',
                       notes: '',
                       packageType: 'Standard',

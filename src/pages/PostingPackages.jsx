@@ -24,9 +24,14 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
+import { firestoreService } from '../services/firestoreService';
 import PlatformIcons from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
+import ClientDetailModal from '../components/client/ClientDetailModal';
+import { useOpenClientCard } from '../hooks/useOpenClientCard';
 import { Camera } from 'lucide-react';
+import { openEmailInGmail } from '../utils/gmailCompose';
+import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../services/crmService';
 
 export default function PostingPackages() {
   const [searchParams] = useSearchParams();
@@ -47,10 +52,13 @@ export default function PostingPackages() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();
+  const [employees, setEmployees] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
     clientName: '',
     clientEmail: '',
+    clientType: CLIENT_TYPE.NA,
     profilePhoto: '',
     brokerage: '',
     platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
@@ -102,6 +110,12 @@ export default function PostingPackages() {
     // Auto-hide after 3 seconds
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
+
+  useEffect(() => {
+    if (clientForModal && employees.length === 0) {
+      firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
+    }
+  }, [clientForModal]);
 
   // Test function to verify the script is working
   const testGoogleAppsScript = async () => {
@@ -1323,53 +1337,36 @@ export default function PostingPackages() {
     setShowAddModal(true);
   };
 
-  // Add client to CRM when new package is added
-  const addClientToCRM = async (clientData) => {
+  // Add client to CRM (Sheets) when new package is added
+  const addClientToCRMSheets = async (clientData) => {
     try {
-      console.log('🔄 Adding client to CRM:', clientData);
-      
-      // Prepare lead data for CRM
+      console.log('🔄 Adding client to CRM (Sheets):', clientData);
       const leadData = {
         contactName: clientData.clientName,
         email: clientData.clientEmail || '',
-        organization: '', // Will be empty for now
-        phone: '', // Will be empty for now
-        instagram: '', // Will be empty for now
-        website: '', // Will be empty for now
+        organization: '',
+        phone: '',
+        instagram: '',
+        website: '',
         notes: `New ${clientData.packageType} package client - ${clientData.notes || 'No additional notes'}`
       };
-      
-      // Default to adding to "Warm Leads" tab
-      const selectedTabs = {
-        warmLeads: true,
-        contactedClients: false,
-        coldLeads: false
-      };
-      
-      // Use the same Google Apps Script URL but with addLead action
+      const selectedTabs = { warmLeads: true, contactedClients: false, coldLeads: false };
       const params = new URLSearchParams({
         action: 'addLead',
         leadData: JSON.stringify(leadData),
         selectedTabs: JSON.stringify(selectedTabs)
       });
-      
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, {
-        method: 'GET'
-      });
-      
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, { method: 'GET' });
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ CRM add failed:', errorText);
+        console.error('❌ CRM (Sheets) add failed:', errorText);
         return { success: false, error: errorText };
       }
-      
       const result = await response.json();
-      console.log('✅ CRM add result:', result);
-      
+      console.log('✅ CRM (Sheets) add result:', result);
       return result;
-      
     } catch (error) {
-      console.error('❌ Error adding client to CRM:', error);
+      console.error('❌ Error adding client to CRM (Sheets):', error);
       return { success: false, error: error.message };
     }
   };
@@ -1464,18 +1461,22 @@ export default function PostingPackages() {
             setTimeout(async () => {
               await fetchClients(false);
               
-              // Add client to CRM
-              const crmResult = await addClientToCRM({
+              const crmSheetsResult = await addClientToCRMSheets({
                 clientName: addForm.clientName,
                 clientEmail: addForm.clientEmail,
                 packageType: addForm.packageType,
                 notes: addForm.notes
               });
-              
-              // Reset form and close modal
+              await addContactToCRM({
+                clientName: addForm.clientName,
+                clientEmail: addForm.clientEmail,
+                type: addForm.clientType || CLIENT_TYPE.NA,
+                notes: addForm.notes
+              }, 'warmLeads');
               setAddForm({
                 clientName: '',
                 clientEmail: '',
+                clientType: CLIENT_TYPE.NA,
                 profilePhoto: '',
                 brokerage: '',
                 platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
@@ -1491,32 +1492,33 @@ export default function PostingPackages() {
                 lastContact: new Date().toISOString().split('T')[0]
               });
               setShowAddModal(false);
-              
-              if (crmResult.success) {
+              if (crmSheetsResult.success) {
                 showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
               } else {
-                showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmResult.error})`);
+                showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
               }
             }, 1000);
           };
           img.onerror = async () => {
             console.log('✅ Add request sent successfully via image method (error expected)');
-            // Refresh the client list after a short delay
             setTimeout(async () => {
               await fetchClients(false);
-              
-              // Add client to CRM
-              const crmResult = await addClientToCRM({
+              const crmSheetsResult = await addClientToCRMSheets({
                 clientName: addForm.clientName,
                 clientEmail: addForm.clientEmail,
                 packageType: addForm.packageType,
                 notes: addForm.notes
               });
-              
-              // Reset form and close modal
+              await addContactToCRM({
+                clientName: addForm.clientName,
+                clientEmail: addForm.clientEmail,
+                type: addForm.clientType || CLIENT_TYPE.NA,
+                notes: addForm.notes
+              }, 'warmLeads');
               setAddForm({
                 clientName: '',
                 clientEmail: '',
+                clientType: CLIENT_TYPE.NA,
                 profilePhoto: '',
                 brokerage: '',
                 platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
@@ -1532,11 +1534,10 @@ export default function PostingPackages() {
                 lastContact: new Date().toISOString().split('T')[0]
               });
               setShowAddModal(false);
-              
-              if (crmResult.success) {
+              if (crmSheetsResult.success) {
                 showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
               } else {
-                showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmResult.error})`);
+                showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
               }
             }, 1000);
           };
@@ -1550,18 +1551,26 @@ export default function PostingPackages() {
       // Refresh the client list to get the updated data
       await fetchClients(false);
 
-      // Add client to CRM
-      const crmResult = await addClientToCRM({
+      const crmSheetsResult = await addClientToCRMSheets({
         clientName: addForm.clientName,
         clientEmail: addForm.clientEmail,
         packageType: addForm.packageType,
         notes: addForm.notes
       });
+      await addContactToCRM({
+        clientName: addForm.clientName,
+        clientEmail: addForm.clientEmail,
+        type: addForm.clientType || CLIENT_TYPE.NA,
+        notes: addForm.notes
+      }, 'warmLeads');
 
-      // Reset form and close modal
       setAddForm({
         clientName: '',
         clientEmail: '',
+        clientType: CLIENT_TYPE.NA,
+        profilePhoto: '',
+        brokerage: '',
+        platforms: { instagram: false, youtube: false, tiktok: false, facebook: false, x: false, other: false },
         packageType: 'Standard',
         packageSize: 1,
         postsUsed: 0,
@@ -1571,15 +1580,16 @@ export default function PostingPackages() {
         approvalStatus: 'Pending',
         notes: '',
         startDate: new Date().toISOString().split('T')[0],
-        lastContact: new Date().toISOString().split('T')[0]
+        lastContact: new Date().toISOString().split('T')[0],
+        customPrice: 0,
+        overduePosts: 0
       });
       setShowAddModal(false);
 
-      // Show success message with CRM status
-      if (crmResult.success) {
+      if (crmSheetsResult.success) {
         showToast(`New client "${addForm.clientName}" has been added to Google Sheets and CRM!`);
       } else {
-        showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmResult.error})`);
+        showToast(`New client "${addForm.clientName}" has been added to Google Sheets! (CRM add failed: ${crmSheetsResult.error})`);
       }
 
     } catch (error) {
@@ -1837,8 +1847,7 @@ export default function PostingPackages() {
     const subject = `Follow-up: ${client.packageType} Package - ${client.clientName}`;
     const body = `Hi ${client.clientName},\n\nI hope this email finds you well. I wanted to follow up on your ${client.packageType} package.\n\nCurrent Status:\n- Package: ${client.packageType} (${client.packageSize} posts)\n- Posts Used: ${client.postsUsed}\n- Posts Remaining: ${client.postsRemaining}\n- Payment Status: ${client.paymentStatus}\n\n${client.notes ? `Notes: ${client.notes}\n\n` : ''}Please let me know if you have any questions or if there's anything else I can assist you with.\n\nBest regards,\n[Your Name]\nLuxury Listings Team`;
     
-    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoUrl);
+    openEmailInGmail(client.clientEmail, { subject, body });
   };
 
   const filteredClients = clients.filter(client => {
@@ -2161,7 +2170,7 @@ export default function PostingPackages() {
                     
                     <button 
                       className="h-9 px-3 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                      onClick={() => openEditModal(client)}
+                      onClick={() => openClientCard(client)}
                       disabled={approvalLoading[client.id]}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -2408,7 +2417,7 @@ export default function PostingPackages() {
                           
                           <button 
                             className="h-9 px-3 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[12px] font-medium hover:bg-[#5856d6]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                            onClick={() => openEditModal(client)}
+                            onClick={() => openClientCard(client)}
                             disabled={approvalLoading[client.id]}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -2597,6 +2606,17 @@ export default function PostingPackages() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Unified client card modal */}
+      {clientForModal && (
+        <ClientDetailModal
+          client={clientForModal}
+          onClose={closeClientCard}
+          onClientUpdate={() => {}}
+          employees={employees}
+          showManagerAssignment={true}
+        />
       )}
 
       {/* Approval Modal */}
@@ -3091,6 +3111,20 @@ export default function PostingPackages() {
                         placeholder="e.g. RE/MAX, Sotheby's"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Type *</label>
+                    <select
+                      value={addForm.clientType || CLIENT_TYPE.NA}
+                      onChange={(e) => setAddForm({...addForm, clientType: e.target.value})}
+                      className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                    >
+                      {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-[#86868b] mt-1">This will add the client to your CRM and record today&apos;s date.</p>
                   </div>
 
                   {/* Platforms Managed */}

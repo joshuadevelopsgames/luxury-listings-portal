@@ -31,6 +31,7 @@ export const formatDate = (date, format = 'MMM d, yyyy') => {
 };
 
 export { getVancouverToday, formatInVancouver } from './vancouverTime';
+export { getGmailComposeUrl, openEmailInGmail } from './gmailCompose';
 
 export const formatTime = (minutes) => {
   if (!minutes) return 'N/A';

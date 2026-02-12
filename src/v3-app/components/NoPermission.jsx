@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldOff, ArrowLeft, Home, Mail } from 'lucide-react';
+import { getGmailComposeUrl } from '../../utils/gmailCompose';
 
 /**
  * NoPermission - Apple-styled access denied page
@@ -53,7 +54,9 @@ const NoPermission = ({ pageName = 'this page' }) => {
             Need access to this page?
           </p>
           <a
-            href="mailto:admin@luxury-listings.com?subject=Page Access Request"
+            href={getGmailComposeUrl('admin@luxury-listings.com', { subject: 'Page Access Request' })}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-[#0071e3] text-[13px] font-medium hover:underline"
           >
             <Mail className="w-4 h-4" />

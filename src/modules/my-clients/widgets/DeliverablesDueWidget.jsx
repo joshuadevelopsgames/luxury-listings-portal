@@ -3,17 +3,26 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { FileText, AlertCircle, Pencil } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
+import ClientDetailModal from '../../../components/client/ClientDetailModal';
+import { useOpenClientCard } from '../../../hooks/useOpenClientCard';
 import EditPostsLoggedModal from '../../../components/ui/EditPostsLoggedModal';
+import { firestoreService } from '../../../services/firestoreService';
 
 const DeliverablesDueWidget = () => {
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { clients: allClients, loading: clientsLoading } = useClients();
+  const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();
+  const [employees, setEmployees] = useState([]);
   const [editClient, setEditClient] = useState(null);
+
+  React.useEffect(() => {
+    if (clientForModal && employees.length === 0) {
+      firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
+    }
+  }, [clientForModal]);
 
   const isAssignedToMe = (client) => {
     const am = (client.assignedManager || '').trim().toLowerCase();
@@ -92,7 +101,7 @@ const DeliverablesDueWidget = () => {
               >
                 <div
                   className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
-                  onClick={() => navigate('/my-clients')}
+                  onClick={() => fullClient && openClientCard(fullClient)}
                 >
                   {item.status === 'urgent' && (
                     <AlertCircle className="w-4 h-4 text-[#ff3b30] shrink-0" strokeWidth={1.5} />
@@ -125,6 +134,15 @@ const DeliverablesDueWidget = () => {
         </div>
       )}
 
+      {clientForModal && (
+        <ClientDetailModal
+          client={clientForModal}
+          onClose={closeClientCard}
+          onClientUpdate={() => {}}
+          employees={employees}
+          showManagerAssignment={true}
+        />
+      )}
       {editClient && (
         <EditPostsLoggedModal
           client={editClient}
