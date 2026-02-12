@@ -585,7 +585,7 @@ const CRMPage = () => {
       return;
     }
     const confirmed = await confirm({
-      title: 'Graduate to Client',
+      title: 'Promote to Client',
       message: `Create a client from "${lead.contactName || lead.email}"? You will be asked to upload a day-one social screenshot (required) next.`,
       confirmText: 'Continue',
       variant: 'default'
@@ -654,7 +654,7 @@ const CRMPage = () => {
         setColdLeads(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
       }
       setGraduateScreenshotModal({ show: false, clientId: null, clientName: '', leadId: null });
-      showToast(`✅ Day-one screenshot saved. Lead graduated to client.`);
+      showToast(`✅ Day-one screenshot saved. Lead promoted to client.`);
     } catch (error) {
       console.error('Screenshot upload error:', error);
       showToast(`❌ Upload failed: ${error.message}`, 'error');
@@ -1416,7 +1416,7 @@ const CRMPage = () => {
           <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl">
             <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-white mb-1">Day-one screenshot (required)</h3>
             <p className="text-[13px] text-[#86868b] mb-4">
-              Upload a screenshot of followers/insights for {graduateScreenshotModal.clientName}. This completes the graduate flow.
+              Upload a screenshot of followers/insights for {graduateScreenshotModal.clientName}. This completes promoting the lead to a client.
             </p>
             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#86868b]/30 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
               <input

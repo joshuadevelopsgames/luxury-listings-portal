@@ -149,10 +149,11 @@ const LeadDetailModal = ({
               {canEdit && onGraduate && !isEditing && (
                 <button
                   onClick={() => onGraduate(lead)}
-                  className="p-2 rounded-xl bg-[#34c759]/10 hover:bg-[#34c759]/20 transition-colors"
-                  title="Graduate to client"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#34c759] hover:bg-[#30b350] text-white text-[13px] font-medium transition-colors shadow-sm"
+                  title="Add this lead as a client; you'll be asked to upload a day-one screenshot"
                 >
-                  <UserCheck className="w-4 h-4 text-[#34c759]" />
+                  <UserCheck className="w-4 h-4" />
+                  Promote to Client
                 </button>
               )}
               {canEdit && !isEditing && (
@@ -283,6 +284,23 @@ const LeadDetailModal = ({
           ) : (
             /* View Mode */
             <div className="space-y-6">
+              {/* Promote to Client – prominent CTA */}
+              {canEdit && onGraduate && (
+                <div className="rounded-xl border-2 border-[#34c759]/30 bg-[#34c759]/5 dark:bg-[#34c759]/10 p-4">
+                  <p className="text-[13px] text-[#1d1d1f] dark:text-white font-medium mb-1">Add this lead as a client</p>
+                  <p className="text-[12px] text-[#86868b] mb-3">
+                    Promote to Client creates a client record in the system. You&apos;ll then be asked to upload a day-one social screenshot (required).
+                  </p>
+                  <button
+                    onClick={() => onGraduate(lead)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] hover:bg-[#30b350] text-white text-[13px] font-medium transition-colors"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    Promote to Client
+                  </button>
+                </div>
+              )}
+
               {/* Contact Info */}
               <div>
                 <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Contact Information</h3>
