@@ -28,7 +28,7 @@ import {
   Camera
 } from 'lucide-react';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { getGmailComposeUrl } from '../../utils/gmailCompose';
+import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
@@ -441,9 +441,13 @@ const ClientDetailModal = ({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] text-[#86868b]">Email</p>
-                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                        <button
+                          type="button"
+                          onClick={() => localClient.clientEmail && openGmailWithComposeTo(localClient.clientEmail)}
+                          className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate block text-left hover:text-[#0071e3]"
+                        >
                           {localClient.clientEmail || 'No email'}
-                        </p>
+                        </button>
                       </div>
                     </div>
                     {localClient.phone && (
@@ -462,7 +466,7 @@ const ClientDetailModal = ({
 
                 <div>
                   <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Assigned Manager</h3>
-                  {manager ? (
+                  {localClient.assignedManager ? (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
                       <div className="w-9 h-9 rounded-lg bg-[#34c759]/10 flex items-center justify-center flex-shrink-0">
                         <User className="w-4 h-4 text-[#34c759]" />
@@ -470,7 +474,7 @@ const ClientDetailModal = ({
                       <div>
                         <p className="text-[11px] text-[#86868b]">Social Media Manager</p>
                         <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
-                          {manager.displayName || manager.email}
+                          {manager ? (manager.displayName || manager.email) : localClient.assignedManager}
                         </p>
                       </div>
                     </div>
@@ -680,15 +684,14 @@ const ClientDetailModal = ({
                 </button>
               )}
               {localClient.clientEmail && (
-                <a
-                  href={getGmailComposeUrl(localClient.clientEmail)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => openGmailWithComposeTo(localClient.clientEmail)}
                   className="flex-1 min-w-[140px] h-11 flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />
                   Send Email
-                </a>
+                </button>
               )}
               <button
                 onClick={onClose}

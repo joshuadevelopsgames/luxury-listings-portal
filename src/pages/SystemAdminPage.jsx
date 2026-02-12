@@ -16,7 +16,6 @@ export default function SystemAdminPage() {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (isSystemAdmin === false) {
       navigate('/dashboard', { replace: true });

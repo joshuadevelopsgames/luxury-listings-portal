@@ -27,7 +27,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getGmailComposeUrl } from '../../utils/gmailCompose';
+import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { CLIENT_TYPE_OPTIONS } from '../../services/crmService';
 
 const LeadDetailModal = ({
@@ -323,14 +323,13 @@ const LeadDetailModal = ({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] text-[#86868b]">Email</p>
-                        <a 
-                          href={getGmailComposeUrl(lead.email)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:text-[#0071e3] truncate block"
+                        <button
+                          type="button"
+                          onClick={() => openGmailWithComposeTo(lead.email)}
+                          className="text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:text-[#0071e3] truncate block text-left"
                         >
                           {lead.email}
-                        </a>
+                        </button>
                       </div>
                     </div>
                   )}
@@ -477,15 +476,14 @@ const LeadDetailModal = ({
                 </a>
               )}
               {lead.email && (
-                <a
-                  href={getGmailComposeUrl(lead.email)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => openGmailWithComposeTo(lead.email)}
                   className="flex-1 min-w-[120px] h-11 flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />
                   Email
-                </a>
+                </button>
               )}
               <button
                 onClick={onClose}
