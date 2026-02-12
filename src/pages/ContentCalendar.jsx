@@ -17,6 +17,10 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { googleSheetsService } from '../services/googleSheetsService';
 import { openaiService } from '../services/openaiService';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { firestoreService } from '../services/firestoreService';
+import PostPreviewCard from '../components/content/PostPreviewCard';
+
+const MAX_MEDIA_PER_POST = 15;
 
 const ContentCalendar = () => {
   const { currentUser, hasPermission } = useAuth();
@@ -64,69 +68,63 @@ const ContentCalendar = () => {
   const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
   const [generatedCaption, setGeneratedCaption] = useState(null);
 
-  // Load user-specific content and calendars from localStorage
+  // Load content and calendars from Firestore (with one-time localStorage migration)
   useEffect(() => {
     if (!currentUser?.email) return;
 
-    // Clear previous user's data first
+    let cancelled = false;
     setContentItems([]);
     setCalendars([]);
     setEditingContent(null);
-    setSelectedCalendarId('default');
 
-    const userStorageKey = `content_items_${currentUser.email}`;
-    const calendarsStorageKey = `calendars_${currentUser.email}`;
-    
-    console.log('📅 Loading calendar data for:', currentUser.email);
-    
-    // Load content items
-    const stored = localStorage.getItem(userStorageKey);
-    if (stored) {
-      const parsedItems = JSON.parse(stored);
-      // Convert date strings back to Date objects
-      const itemsWithDates = parsedItems.map(item => ({
-        ...item,
-        scheduledDate: new Date(item.scheduledDate)
-      }));
-      setContentItems(itemsWithDates);
-      console.log('✅ Loaded', itemsWithDates.length, 'content items');
-    } else {
-      console.log('ℹ️ No content items found for this user');
-    }
-
-    // Load calendars
-    const storedCalendars = localStorage.getItem(calendarsStorageKey);
-    if (storedCalendars) {
-      setCalendars(JSON.parse(storedCalendars));
-      console.log('✅ Loaded calendars');
-    } else {
-      // Set default calendars for new users
-      const defaultCalendars = [
-        { id: 'default', name: 'My Calendar' },
-        { id: 'client-ll', name: 'Luxury Listings' }
-      ];
-      setCalendars(defaultCalendars);
-      localStorage.setItem(calendarsStorageKey, JSON.stringify(defaultCalendars));
-      console.log('ℹ️ Created default calendars for new user');
-    }
+    const load = async () => {
+      const email = currentUser.email;
+      const [cals, items] = await Promise.all([
+        firestoreService.getContentCalendars(email),
+        firestoreService.getContentItems(email)
+      ]);
+      if (cancelled) return;
+      if (cals.length === 0) {
+        const defaultNames = [
+          { id: 'default', name: 'My Calendar' },
+          { id: 'client-ll', name: 'Luxury Listings' }
+        ];
+        for (const def of defaultNames) {
+          const res = await firestoreService.createContentCalendar({ userEmail: email, name: def.name });
+          cals.push({ id: res.id, name: def.name });
+        }
+        const refetched = await firestoreService.getContentCalendars(email);
+        if (!cancelled) {
+          setCalendars(refetched);
+          setSelectedCalendarId(refetched[0]?.id ?? 'default');
+        }
+      } else {
+        setCalendars(cals);
+        setSelectedCalendarId(cals[0]?.id ?? 'default');
+      }
+      if (items.length === 0) {
+        const storedItems = localStorage.getItem(`content_items_${email}`);
+        const storedCals = localStorage.getItem(`calendars_${email}`);
+        let parsedItems = [];
+        let parsedCals = [];
+        try {
+          if (storedCals) parsedCals = JSON.parse(storedCals);
+          if (storedItems) parsedItems = JSON.parse(storedItems);
+        } catch (_) {}
+        if (parsedCals.length || parsedItems.length) {
+          await firestoreService.migrateContentCalendarFromLocalStorage(email, parsedItems, parsedCals);
+          const refetchedItems = await firestoreService.getContentItems(email);
+          if (!cancelled) setContentItems(refetchedItems);
+        } else {
+          setContentItems([]);
+        }
+      } else {
+        setContentItems(items);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
   }, [currentUser?.email]);
-
-  // Save content items to localStorage whenever they change
-  useEffect(() => {
-    if (!currentUser?.email) return;
-
-    const userStorageKey = `content_items_${currentUser.email}`;
-    localStorage.setItem(userStorageKey, JSON.stringify(contentItems));
-    console.log('💾 Saved', contentItems.length, 'content items to localStorage');
-  }, [contentItems, currentUser?.email]);
-
-  // Save calendars to localStorage whenever they change
-  useEffect(() => {
-    if (!currentUser?.email || calendars.length === 0) return;
-
-    const calendarsStorageKey = `calendars_${currentUser.email}`;
-    localStorage.setItem(calendarsStorageKey, JSON.stringify(calendars));
-  }, [calendars, currentUser?.email]);
 
   const [postForm, setPostForm] = useState({
     title: '',
@@ -136,12 +134,11 @@ const ContentCalendar = () => {
     scheduledDate: new Date(),
     status: 'draft',
     tags: '',
-    imageUrl: '',
-    videoUrl: ''
+    media: []
   });
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [imageDropActive, setImageDropActive] = useState(false);
-  const imageFileInputRef = useRef(null);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [mediaDropActive, setMediaDropActive] = useState(false);
+  const mediaFileInputRef = useRef(null);
 
   const platforms = [
     { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
@@ -183,6 +180,11 @@ const ContentCalendar = () => {
     return status ? status.color : 'bg-gray-500';
   };
 
+  const getContentThumbUrl = (content) => {
+    if (content.media?.length) return content.media[0].url;
+    return content.imageUrl || content.videoUrl || null;
+  };
+
   const handleDateDoubleClick = (date) => {
     setSelectedDate(date);
     setPostForm({
@@ -192,23 +194,42 @@ const ContentCalendar = () => {
     setShowAddModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newContent = {
-      id: editingContent ? editingContent.id : Date.now(),
-      calendarId: editingContent?.calendarId ?? selectedCalendarId,
-      ...postForm,
-      tags: postForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      createdAt: editingContent?.createdAt ?? new Date()
-    };
+    if (!currentUser?.email) return;
+    const tags = postForm.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+    const media = (postForm.media || []).slice(0, MAX_MEDIA_PER_POST);
 
     if (editingContent) {
-      setContentItems(prev => prev.map(item => 
-        item.id === editingContent.id ? newContent : item
-      ));
+      await firestoreService.updateContentItem(editingContent.id, {
+        calendarId: selectedCalendarId,
+        title: postForm.title,
+        description: postForm.description,
+        platform: postForm.platform,
+        contentType: postForm.contentType,
+        scheduledDate: postForm.scheduledDate,
+        status: postForm.status,
+        tags,
+        media
+      });
+      const updated = await firestoreService.getContentItems(currentUser.email);
+      setContentItems(updated);
       setEditingContent(null);
     } else {
-      setContentItems(prev => [...prev, newContent]);
+      const { id } = await firestoreService.createContentItem({
+        userEmail: currentUser.email,
+        calendarId: selectedCalendarId,
+        title: postForm.title,
+        description: postForm.description,
+        platform: postForm.platform,
+        contentType: postForm.contentType,
+        scheduledDate: postForm.scheduledDate,
+        status: postForm.status,
+        tags,
+        media
+      });
+      const updated = await firestoreService.getContentItems(currentUser.email);
+      setContentItems(updated);
     }
 
     setShowAddModal(false);
@@ -220,48 +241,71 @@ const ContentCalendar = () => {
       scheduledDate: new Date(),
       status: 'draft',
       tags: '',
-      imageUrl: '',
-      videoUrl: ''
+      media: []
     });
-    if (imageFileInputRef.current) imageFileInputRef.current.value = '';
-    setImageDropActive(false);
+    if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
+    setMediaDropActive(false);
   };
 
-  const uploadImageFile = async (file) => {
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please choose an image file (JPG, PNG, GIF, WebP)');
+  const uploadMediaFiles = async (files) => {
+    const accepted = Array.from(files).filter(f =>
+      f.type.startsWith('image/') || f.type.startsWith('video/')
+    );
+    if (accepted.length === 0) {
+      toast.error('Please choose image or video files');
       return;
     }
-    setUploadingImage(true);
+    const currentLen = (postForm.media || []).length;
+    if (currentLen + accepted.length > MAX_MEDIA_PER_POST) {
+      toast.error(`Max ${MAX_MEDIA_PER_POST} media per post`);
+      return;
+    }
+    setUploadingMedia(true);
+    const storage = getStorage();
+    const uid = currentUser?.uid || (currentUser?.email || 'anon').replace(/[^a-zA-Z0-9]/g, '_');
+    const itemId = editingContent?.id || `draft-${Date.now()}`;
+    const newEntries = [];
     try {
-      const storage = getStorage();
-      const uid = currentUser?.uid || (currentUser?.email || 'anon').replace(/[^a-zA-Z0-9]/g, '_');
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `content-calendar/${uid}/${Date.now()}_${file.name.slice(0, 50)}.${ext}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setPostForm((prev) => ({ ...prev, imageUrl: url }));
-      toast.success('Image uploaded');
+      for (let i = 0; i < accepted.length; i++) {
+        const file = accepted[i];
+        const ext = file.name.split('.').pop() || (file.type.startsWith('video') ? 'mp4' : 'jpg');
+        const path = `content-calendar/${uid}/${itemId}/${(postForm.media?.length || 0) + i}_${file.name.slice(0, 40)}.${ext}`;
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        newEntries.push({ type: file.type.startsWith('video/') ? 'video' : 'image', url });
+      }
+      setPostForm(prev => ({
+        ...prev,
+        media: [...(prev.media || []), ...newEntries]
+      }));
+      toast.success(`${newEntries.length} file(s) uploaded`);
     } catch (err) {
       console.error(err);
       toast.error('Upload failed');
     } finally {
-      setUploadingImage(false);
-      if (imageFileInputRef.current) imageFileInputRef.current.value = '';
+      setUploadingMedia(false);
+      if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
     }
   };
 
-  const handleImageFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) uploadImageFile(file);
+  const removeMediaAt = (index) => {
+    setPostForm(prev => ({
+      ...prev,
+      media: (prev.media || []).filter((_, i) => i !== index)
+    }));
   };
 
-  const handleImageDrop = (e) => {
+  const handleMediaFileChange = (e) => {
+    const files = e.target.files;
+    if (files?.length) uploadMediaFiles(files);
+  };
+
+  const handleMediaDrop = (e) => {
     e.preventDefault();
-    setImageDropActive(false);
-    const file = e.dataTransfer?.files?.[0];
-    if (file) uploadImageFile(file);
+    setMediaDropActive(false);
+    const files = e.dataTransfer?.files;
+    if (files?.length) uploadMediaFiles(files);
   };
 
   const handleEdit = (content) => {
@@ -272,24 +316,27 @@ const ContentCalendar = () => {
     setEditingContent(content);
     setPostForm({
       title: content.title,
-      description: content.description,
+      description: content.description || '',
       platform: content.platform,
       contentType: content.contentType,
-      scheduledDate: content.scheduledDate,
+      scheduledDate: content.scheduledDate instanceof Date ? content.scheduledDate : new Date(content.scheduledDate),
       status: content.status,
-      tags: content.tags.join(', '),
-      imageUrl: content.imageUrl || '',
-      videoUrl: content.videoUrl || ''
+      tags: Array.isArray(content.tags) ? content.tags.join(', ') : '',
+      media: content.media && content.media.length ? content.media : []
     });
     setShowAddModal(true);
   };
 
-  const handleDelete = (contentId) => {
+  const handleDelete = async (contentId) => {
     if (!canDeleteContent) {
       toast.error('You need DELETE_CONTENT permission to delete content');
       return;
     }
-    setContentItems(prev => prev.filter(item => item.id !== contentId));
+    await firestoreService.deleteContentItem(contentId);
+    if (currentUser?.email) {
+      const updated = await firestoreService.getContentItems(currentUser.email);
+      setContentItems(updated);
+    }
   };
 
   const getCalendarDays = () => {
@@ -337,28 +384,16 @@ const ContentCalendar = () => {
     setEditingCalendarName(currentName);
   };
 
-  const handleSaveCalendarName = () => {
+  const handleSaveCalendarName = async () => {
     if (!editingCalendarName.trim()) {
       toast.error('Calendar name cannot be empty');
       return;
     }
-
-    setCalendars(prev => {
-      const updated = prev.map(cal => 
-        cal.id === editingCalendarId 
-          ? { ...cal, name: editingCalendarName.trim() }
-          : cal
-      );
-      
-      // Save to localStorage
-      if (currentUser?.email) {
-        const calendarsStorageKey = `calendars_${currentUser.email}`;
-        localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
-      }
-      
-      return updated;
-    });
-
+    await firestoreService.updateContentCalendar(editingCalendarId, { name: editingCalendarName.trim() });
+    if (currentUser?.email) {
+      const refetched = await firestoreService.getContentCalendars(currentUser.email);
+      setCalendars(refetched);
+    }
     toast.success('Calendar renamed!');
     setEditingCalendarId(null);
     setEditingCalendarName('');
@@ -370,13 +405,6 @@ const ContentCalendar = () => {
   };
 
   const handleDeleteCalendar = async (calendarId, calendarName) => {
-    // Prevent deleting default calendars
-    if (calendarId === 'default' || calendarId === 'client-ll') {
-      toast.error('Cannot delete default calendars');
-      return;
-    }
-
-    // Show confirmation
     const confirmed = await confirm({
       title: 'Delete Calendar',
       message: `Delete "${calendarName}"? All content in this calendar will also be deleted. This cannot be undone.`,
@@ -385,37 +413,22 @@ const ContentCalendar = () => {
     });
     if (!confirmed) return;
 
-    // Delete calendar
-    setCalendars(prev => {
-      const updated = prev.filter(cal => cal.id !== calendarId);
-      
-      // Save to localStorage
-      if (currentUser?.email) {
-        const calendarsStorageKey = `calendars_${currentUser.email}`;
-        localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
-      }
-      
-      return updated;
-    });
-
-    // Delete all content items in this calendar
-    setContentItems(prev => {
-      const updated = prev.filter(item => item.calendarId !== calendarId);
-      
-      // Save to localStorage
-      if (currentUser?.email) {
-        const userStorageKey = `content_items_${currentUser.email}`;
-        localStorage.setItem(userStorageKey, JSON.stringify(updated));
-      }
-      
-      return updated;
-    });
-
-    // Switch to default calendar if we deleted the selected one
-    if (selectedCalendarId === calendarId) {
-      setSelectedCalendarId('default');
+    const itemsInCalendar = contentItems.filter(item => item.calendarId === calendarId);
+    for (const item of itemsInCalendar) {
+      await firestoreService.deleteContentItem(item.id);
     }
-
+    await firestoreService.deleteContentCalendar(calendarId);
+    if (currentUser?.email) {
+      const [refetchedCals, refetchedItems] = await Promise.all([
+        firestoreService.getContentCalendars(currentUser.email),
+        firestoreService.getContentItems(currentUser.email)
+      ]);
+      setCalendars(refetchedCals);
+      setContentItems(refetchedItems);
+      if (selectedCalendarId === calendarId && refetchedCals.length) {
+        setSelectedCalendarId(refetchedCals.find(c => c.id !== calendarId)?.id ?? refetchedCals[0]?.id ?? 'default');
+      }
+    }
     toast.success(`Deleted "${calendarName}"`);
   };
 
@@ -429,23 +442,11 @@ const ContentCalendar = () => {
       toast.error('Please enter a Google Sheets URL');
       return;
     }
-
-    setCalendars(prev => {
-      const updated = prev.map(cal => 
-        cal.id === linkingCalendarId 
-          ? { ...cal, sheetUrl: linkSheetUrl.trim(), lastImported: new Date().toISOString() }
-          : cal
-      );
-      
-      // Save to localStorage
-      if (currentUser?.email) {
-        const calendarsStorageKey = `calendars_${currentUser.email}`;
-        localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
-      }
-      
-      return updated;
-    });
-
+    setCalendars(prev => prev.map(cal =>
+      cal.id === linkingCalendarId
+        ? { ...cal, sheetUrl: linkSheetUrl.trim(), lastImported: new Date().toISOString() }
+        : cal
+    ));
     toast.success('Sheet linked! You can now use the refresh button.');
     setLinkingCalendarId(null);
     setLinkSheetUrl('');
@@ -556,6 +557,12 @@ const ContentCalendar = () => {
             if (contentItem.caption) title = contentItem.caption.substring(0, 50);
             else if (contentItem.notes) title = contentItem.notes.substring(0, 50);
             else if (contentItem.assignedTo) title = `Post for ${contentItem.assignedTo}`;
+            const media = [];
+            if (primaryImageUrl) media.push({ type: 'image', url: primaryImageUrl });
+            const extraUrls = (typeof mediaUrlsForPost === 'string' ? mediaUrlsForPost.split(',').map(u => u.trim()).filter(Boolean) : []);
+            extraUrls.slice(0, MAX_MEDIA_PER_POST - media.length).forEach(url => {
+              media.push({ type: url.match(/\.(mp4|webm|mov)$/i) ? 'video' : 'image', url });
+            });
             return {
               id: Date.now() + Math.random(),
               calendarId,
@@ -566,8 +573,7 @@ const ContentCalendar = () => {
               scheduledDate: parsedDate,
               status: normalizedStatus,
               tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
-              imageUrl: primaryImageUrl,
-              videoUrl: mediaUrlsForPost,
+              media,
               notes: contentItem.notes || '',
               assignedTo: contentItem.assignedTo || '',
               createdAt: new Date()
@@ -605,29 +611,26 @@ const ContentCalendar = () => {
         }
       }
 
-      // Add imported content
-      setContentItems(prev => {
-        const updated = [...prev, ...importedContent];
-        if (currentUser?.email) {
-          const userStorageKey = `content_items_${currentUser.email}`;
-          localStorage.setItem(userStorageKey, JSON.stringify(updated));
+      if (currentUser?.email && importedContent.length) {
+        for (const item of importedContent) {
+          await firestoreService.createContentItem({
+            userEmail: currentUser.email,
+            calendarId: item.calendarId,
+            title: item.title,
+            description: item.description,
+            platform: item.platform,
+            contentType: item.contentType,
+            scheduledDate: item.scheduledDate,
+            status: item.status,
+            tags: item.tags,
+            media: item.media || []
+          });
         }
-        return updated;
-      });
-
-      // Update calendar last imported time
-      setCalendars(prev => {
-        const updated = prev.map(cal => 
-          cal.id === calendarId 
-            ? { ...cal, lastImported: new Date().toISOString() }
-            : cal
-        );
-        if (currentUser?.email) {
-          const calendarsStorageKey = `calendars_${currentUser.email}`;
-          localStorage.setItem(calendarsStorageKey, JSON.stringify(updated));
-        }
-        return updated;
-      });
+        const updated = await firestoreService.getContentItems(currentUser.email);
+        setContentItems(updated);
+      } else if (importedContent.length) {
+        setContentItems(prev => [...prev, ...importedContent]);
+      }
 
       toast.success(`✅ Refreshed "${calendarName}" with ${successCount} posts!`, { id: 'refresh-cal' });
 
@@ -889,6 +892,12 @@ const ContentCalendar = () => {
             if (contentItem.caption) title = contentItem.caption.substring(0, 50);
             else if (contentItem.notes) title = contentItem.notes.substring(0, 50);
             else if (contentItem.assignedTo) title = `Post for ${contentItem.assignedTo}`;
+            const media = [];
+            if (primaryImageUrl) media.push({ type: 'image', url: primaryImageUrl });
+            const extraUrls = (typeof mediaUrlsForPost === 'string' ? mediaUrlsForPost.split(',').map(u => u.trim()).filter(Boolean) : []);
+            extraUrls.slice(0, MAX_MEDIA_PER_POST - media.length).forEach(url => {
+              media.push({ type: url.match(/\.(mp4|webm|mov)$/i) ? 'video' : 'image', url });
+            });
             return {
               id: Date.now() + Math.random(),
               calendarId: newCalendarId,
@@ -899,8 +908,7 @@ const ContentCalendar = () => {
               scheduledDate: parsedDate,
               status: normalizedStatus,
               tags: contentItem.hashtags ? contentItem.hashtags.split(/[,\s#]+/).filter(t => t) : [],
-              imageUrl: primaryImageUrl,
-              videoUrl: mediaUrlsForPost,
+              media,
               notes: contentItem.notes || '',
               assignedTo: contentItem.assignedTo || '',
               createdAt: new Date()
@@ -949,28 +957,27 @@ const ContentCalendar = () => {
       console.log('\n📦 Total imported content:', importedContent);
       console.log(`📦 Importing ${importedContent.length} items to calendar: ${newCalendarName}`);
 
-      // Add imported content to the calendar
-      setContentItems(prev => {
-        console.log('  📋 Previous content items:', prev.length);
-        const updated = [...prev, ...importedContent];
-        console.log('  📋 Updated content items:', updated.length);
-        
-        // Save to localStorage immediately
-        if (currentUser?.email) {
-          const userStorageKey = `content_items_${currentUser.email}`;
-          localStorage.setItem(userStorageKey, JSON.stringify(updated));
-          console.log('  💾 Saved to localStorage:', userStorageKey);
-          
-          // Verify it was saved
-          const verification = localStorage.getItem(userStorageKey);
-          const parsed = JSON.parse(verification);
-          console.log('  ✅ Verification - items in localStorage:', parsed.length);
+      if (currentUser?.email && importedContent.length) {
+        for (const item of importedContent) {
+          await firestoreService.createContentItem({
+            userEmail: currentUser.email,
+            calendarId: item.calendarId,
+            title: item.title,
+            description: item.description,
+            platform: item.platform,
+            contentType: item.contentType,
+            scheduledDate: item.scheduledDate,
+            status: item.status,
+            tags: item.tags,
+            media: item.media || []
+          });
         }
-        return updated;
-      });
+        const updated = await firestoreService.getContentItems(currentUser.email);
+        setContentItems(updated);
+      } else if (importedContent.length) {
+        setContentItems(prev => [...prev, ...importedContent]);
+      }
 
-      // Switch to the new calendar
-      console.log('📅 Switching to new calendar:', newCalendarId);
       setSelectedCalendarId(newCalendarId);
 
       toast.success(`✅ Created "${newCalendarName}" with ${successCount} posts! ${skipCount > 0 ? `(${skipCount} skipped)` : ''}`);
@@ -1317,74 +1324,39 @@ const ContentCalendar = () => {
 
         {/* Right: Main content */}
         <div className="space-y-6">
-          {/* Filters */}
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-[#86868b]" />
-                <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Filters</span>
-              </div>
-              
-              {/* Platform Filters */}
-              <div>
-                <span className="text-[12px] font-medium text-[#86868b] mb-2 block">Platform</span>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setFilterPlatform('all')}
-                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
-                      filterPlatform === 'all' 
-                        ? 'bg-[#0071e3] text-white' 
-                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                    }`}
-                  >
-                    All Platforms
-                  </button>
+          {/* Top bar: filters as dropdowns */}
+          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 px-5 py-3 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-[#86868b]" />
+              <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Filters</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2">
+                <span className="text-[12px] text-[#86868b] whitespace-nowrap">Platform</span>
+                <select
+                  value={filterPlatform}
+                  onChange={(e) => setFilterPlatform(e.target.value)}
+                  className="h-9 min-w-[140px] px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none"
+                >
+                  <option value="all">All Platforms</option>
                   {platforms.map(platform => (
-                    <button
-                      key={platform.id}
-                      onClick={() => setFilterPlatform(platform.id)}
-                      className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all flex items-center gap-1.5 ${
-                        filterPlatform === platform.id 
-                          ? `${platform.color} text-white` 
-                          : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                      }`}
-                    >
-                      <platform.icon className="w-3.5 h-3.5" isSelected={filterPlatform === platform.id} />
-                      {platform.name}
-                    </button>
+                    <option key={platform.id} value={platform.id}>{platform.name}</option>
                   ))}
-                </div>
-              </div>
-
-              {/* Status Filters */}
-              <div>
-                <span className="text-[12px] font-medium text-[#86868b] mb-2 block">Status</span>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setFilterStatus('all')}
-                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
-                      filterStatus === 'all' 
-                        ? 'bg-[#0071e3] text-white' 
-                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                    }`}
-                  >
-                    All Status
-                  </button>
+                </select>
+              </label>
+              <label className="flex items-center gap-2">
+                <span className="text-[12px] text-[#86868b] whitespace-nowrap">Status</span>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="h-9 min-w-[120px] px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none"
+                >
+                  <option value="all">All Status</option>
                   {statuses.map(status => (
-                    <button
-                      key={status.id}
-                      onClick={() => setFilterStatus(status.id)}
-                      className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
-                        filterStatus === status.id 
-                          ? `${status.color} text-white` 
-                          : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                      }`}
-                    >
-                      {status.name}
-                    </button>
+                    <option key={status.id} value={status.id}>{status.name}</option>
                   ))}
-                </div>
-              </div>
+                </select>
+              </label>
             </div>
           </div>
 
@@ -1443,15 +1415,15 @@ const ContentCalendar = () => {
                         <div className="flex flex-wrap gap-0.5" title={dayContent.map(c => c.title).join(' · ')}>
                           {dayContent.slice(0, 5).map(content => (
                             <div key={content.id} className="w-[22%] min-w-0 aspect-square rounded overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/10">
-                              {content.imageUrl ? (
+                              {getContentThumbUrl(content) ? (
                                 <img
-                                  src={content.imageUrl}
+                                  src={getContentThumbUrl(content)}
                                   alt=""
                                   className="w-full h-full object-cover"
                                   onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.remove('hidden'); }}
                                 />
                               ) : null}
-                              <div className={`w-full h-full flex items-center justify-center text-[10px] font-medium text-[#86868b] ${content.imageUrl ? 'hidden' : ''}`}>
+                              <div className={`w-full h-full flex items-center justify-center text-[10px] font-medium text-[#86868b] ${getContentThumbUrl(content) ? 'hidden' : ''}`}>
                                 <Image className="w-4 h-4 opacity-60" />
                               </div>
                             </div>
@@ -1465,17 +1437,17 @@ const ContentCalendar = () => {
                           <div
                             key={content.id}
                             className={`text-[10px] p-1 rounded-md overflow-hidden ${getStatusColor(content.status)}`}
-                            title={`${content.title}${content.imageUrl ? '\n📎 ' + content.imageUrl.substring(0, 50) : ''}`}
+title={`${content.title}${getContentThumbUrl(content) ? '\n📎 ' + (getContentThumbUrl(content) || '').substring(0, 50) : ''}`}
                           >
-                            {content.imageUrl ? (
+                            {getContentThumbUrl(content) ? (
                               <img
-                                src={content.imageUrl}
+                                  src={getContentThumbUrl(content)}
                                 alt={content.title}
                                 className="w-full h-10 object-cover rounded mb-1"
                                 onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.remove('hidden'); }}
                               />
                             ) : null}
-                            <div className={`w-full h-10 rounded mb-1 flex items-center justify-center bg-black/10 dark:bg-white/10 ${content.imageUrl ? 'hidden' : ''}`}>
+                            <div className={`w-full h-10 rounded mb-1 flex items-center justify-center bg-black/10 dark:bg-white/10 ${getContentThumbUrl(content) ? 'hidden' : ''}`}>
                               <Image className="w-5 h-5 text-[#86868b]" />
                             </div>
                             <div className="text-white truncate font-medium">{content.title}</div>
@@ -1516,10 +1488,10 @@ const ContentCalendar = () => {
                   <div key={content.id} className="flex items-center justify-between p-4 rounded-xl border border-black/5 dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/5 transition-colors">
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                       {/* Image Preview */}
-                      {content.imageUrl && (
+                      {getContentThumbUrl(content) && (
                         <div className="flex-shrink-0">
                           <img 
-                            src={content.imageUrl} 
+                            src={getContentThumbUrl(content)} 
                             alt={content.title}
                             className="w-20 h-20 object-cover rounded-xl border border-black/5 dark:border-white/10"
                             onError={(e) => e.target.style.display = 'none'}
@@ -1598,11 +1570,10 @@ const ContentCalendar = () => {
                     scheduledDate: new Date(),
                     status: 'draft',
                     tags: '',
-                    imageUrl: '',
-                    videoUrl: ''
+                    media: []
                   });
-                  if (imageFileInputRef.current) imageFileInputRef.current.value = '';
-                  setImageDropActive(false);
+                  if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
+                  setMediaDropActive(false);
                 }}
                 className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               >
@@ -1707,65 +1678,74 @@ const ContentCalendar = () => {
                 </div>
               </div>
 
-              {postForm.contentType === 'image' && (
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Image</label>
-                  <input
-                    ref={imageFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileChange}
-                    className="hidden"
-                  />
-                  {postForm.imageUrl ? (
-                    <div className="relative rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
-                      <img src={postForm.imageUrl} alt="Upload preview" className="w-full max-h-48 object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => setPostForm((prev) => ({ ...prev, imageUrl: '' }))}
-                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onDragOver={(e) => { e.preventDefault(); setImageDropActive(true); }}
-                      onDragLeave={() => setImageDropActive(false)}
-                      onDrop={handleImageDrop}
-                      onClick={() => imageFileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        imageDropActive
-                          ? 'border-[#0071e3] bg-[#0071e3]/10'
-                          : 'border-black/20 dark:border-white/20 hover:border-[#0071e3]/50 hover:bg-black/5 dark:hover:bg-white/5'
-                      } ${uploadingImage ? 'pointer-events-none opacity-70' : ''}`}
-                    >
-                      {uploadingImage ? (
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
-                          <p className="text-[13px] text-[#86868b]">Uploading…</p>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
-                          <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Click to upload or drag and drop</p>
-                          <p className="text-[11px] text-[#86868b] mt-1">JPG, PNG, GIF, WebP (max 10MB)</p>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Photos / videos (up to {MAX_MEDIA_PER_POST})</label>
+                <input
+                  ref={mediaFileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  onChange={handleMediaFileChange}
+                  className="hidden"
+                />
+                {(postForm.media?.length || 0) > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {(postForm.media || []).map((m, i) => (
+                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-black/10 dark:border-white/10 bg-black/5">
+                        {m.type === 'video' ? (
+                          <video src={m.url} className="w-full h-full object-cover" muted playsInline />
+                        ) : (
+                          <img src={m.url} alt="" className="w-full h-full object-cover" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeMediaAt(i)}
+                          className="absolute top-0.5 right-0.5 p-1 rounded bg-black/60 text-white hover:bg-black/80"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(postForm.media?.length || 0) < MAX_MEDIA_PER_POST && (
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setMediaDropActive(true); }}
+                    onDragLeave={() => setMediaDropActive(false)}
+                    onDrop={handleMediaDrop}
+                    onClick={() => mediaFileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                      mediaDropActive ? 'border-[#0071e3] bg-[#0071e3]/10' : 'border-black/20 dark:border-white/20 hover:border-[#0071e3]/50 hover:bg-black/5 dark:hover:bg-white/5'
+                    } ${uploadingMedia ? 'pointer-events-none opacity-70' : ''}`}
+                  >
+                    {uploadingMedia ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+                        <p className="text-[13px] text-[#86868b]">Uploading…</p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
+                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Click or drag to add photos/videos</p>
+                        <p className="text-[11px] text-[#86868b] mt-1">Up to {MAX_MEDIA_PER_POST} files</p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
-              {postForm.contentType === 'video' && (
+              {(postForm.media?.length > 0 || postForm.description) && (
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Video URL</label>
-                  <input
-                    value={postForm.videoUrl}
-                    onChange={(e) => setPostForm({...postForm, videoUrl: e.target.value})}
-                    placeholder="https://example.com/video.mp4"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                  />
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Preview</label>
+                  <div className="flex justify-center">
+                    <PostPreviewCard
+                      item={{
+                        ...postForm,
+                        tags: postForm.tags ? postForm.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+                      }}
+                      variant={postForm.platform}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -1775,8 +1755,8 @@ const ContentCalendar = () => {
                   onClick={() => {
                     setShowAddModal(false);
                     setEditingContent(null);
-                    if (imageFileInputRef.current) imageFileInputRef.current.value = '';
-                    setImageDropActive(false);
+                    if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
+                    setMediaDropActive(false);
                   }}
                   className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                 >

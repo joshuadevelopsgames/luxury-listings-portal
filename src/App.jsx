@@ -36,6 +36,7 @@ import TasksPage from './pages/TasksPage';
 import ClientsPage from './pages/ClientsPage';
 import PostingPackages from './pages/PostingPackages';
 import ContentCalendar from './pages/ContentCalendar';
+import ContentCalendarPostDue from './pages/ContentCalendarPostDue';
 import CRMPage from './pages/CRMPage';
 import TeamManagement from './pages/TeamManagement';
 import HRCalendar from './pages/HRCalendar';
@@ -239,6 +240,7 @@ const router = createBrowserRouter([
           { path: 'posting-packages', element: <PermissionRoute pageId="posting-packages" pageName="Posting Packages"><PostingPackages /></PermissionRoute> },
           { path: 'pending-clients', element: <Navigate to="/clients?tab=pending" replace /> },
           { path: 'content-calendar', element: <PermissionRoute pageId="content-calendar" pageName="Content Calendar"><ContentCalendar /></PermissionRoute> },
+          { path: 'content-calendar/post-due/:id', element: <PermissionRoute pageId="content-calendar" pageName="Content Calendar"><ContentCalendarPostDue /></PermissionRoute> },
           { path: 'crm', element: <PermissionRoute pageId="crm" pageName="CRM"><CRMPage /></PermissionRoute> },
           { path: 'team', element: <PermissionRoute pageId="team" pageName="Team Management"><TeamManagement /></PermissionRoute> },
           { path: 'hr-calendar', element: <PermissionRoute pageId="hr-calendar" pageName="HR Calendar"><HRCalendar /></PermissionRoute> },

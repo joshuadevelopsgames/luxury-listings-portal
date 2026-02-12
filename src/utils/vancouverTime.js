@@ -1,6 +1,8 @@
 /**
- * Site-wide timezone: Vancouver, Canada (America/Vancouver).
- * All "today", date comparisons, and displayed dates/times use Vancouver time.
+ * Vancouver timezone – the app is fully geared to Vancouver, Canada (America/Vancouver).
+ * Leave requests, business-day counts, "today", and date comparisons all use Vancouver time.
+ * BC statutory holidays (Vancouver) drive work-day logic. Use this module for any date/time that
+ * should be consistent with the rest of the system.
  */
 
 export const VANCOUVER_TZ = 'America/Vancouver';
@@ -175,14 +177,18 @@ export function parseDateStringVancouver(dateString) {
 }
 
 /**
- * Calendar days between start and end (inclusive). Uses Vancouver date interpretation.
+ * Calendar days between start and end (inclusive). First and last day both count.
+ * Uses date-only arithmetic so DST/timezone cannot drop the last day.
  */
 export function calendarDaysBetweenVancouver(startDateStr, endDateStr) {
-  const start = parseDateStringVancouver(startDateStr);
-  const end = parseDateStringVancouver(endDateStr);
-  if (!start || !end || end < start) return 0;
+  if (!startDateStr || !endDateStr || !/^\d{4}-\d{2}-\d{2}/.test(startDateStr) || !/^\d{4}-\d{2}-\d{2}/.test(endDateStr)) return 0;
+  const [sy, sm, sd] = startDateStr.split('-').map(Number);
+  const [ey, em, ed] = endDateStr.split('-').map(Number);
+  const startUtc = Date.UTC(sy, sm - 1, sd);
+  const endUtc = Date.UTC(ey, em - 1, ed);
+  if (endUtc < startUtc) return 0;
   const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.round((end - start) / msPerDay) + 1;
+  return Math.floor((endUtc - startUtc) / msPerDay) + 1;
 }
 
 /**

@@ -110,6 +110,9 @@ const NotificationsPage = () => {
         return <Bell className="w-5 h-5 text-red-600" />;
       case 'error_report':
         return <AlertCircle className="w-5 h-5 text-[#ff3b30]" />;
+      case 'post_due':
+      case 'task_reminder':
+        return <Calendar className="w-5 h-5 text-[#0071e3]" />;
       default:
         return <Bell className="w-5 h-5 text-[#86868b]" />;
     }

@@ -83,20 +83,6 @@ const CRMPage = () => {
   });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  // Edit modal state
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingClient, setEditingClient] = useState(null);
-  const [editForm, setEditForm] = useState({
-    contactName: '',
-    email: '',
-    type: CLIENT_TYPE.NA,
-    phone: '',
-    instagram: '',
-    organization: '',
-    website: '',
-    notes: ''
-  });
-
   // Toast notification helper
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -494,110 +480,6 @@ const CRMPage = () => {
     });
   };
 
-  // Open edit modal
-  const openEditModal = (client) => {
-    setEditingClient(client);
-    setEditForm({
-      contactName: client.contactName || '',
-      email: client.email || '',
-      type: client.type || CLIENT_TYPE.NA,
-      phone: client.phone || '',
-      instagram: client.instagram || '',
-      organization: client.organization || '',
-      website: client.website || '',
-      notes: client.notes || ''
-    });
-    setShowEditModal(true);
-  };
-
-  // Handle edit submit
-  const handleEditSubmit = async () => {
-    if (!editingClient) return;
-
-    try {
-      // Update the client data in Google Sheets via Google Apps Script
-      const params = new URLSearchParams({
-        action: 'updateLead',
-        leadData: JSON.stringify({
-          id: editingClient.id,
-          contactName: editForm.contactName,
-          email: editForm.email,
-          type: editForm.type || CLIENT_TYPE.NA,
-          phone: editForm.phone,
-          instagram: editForm.instagram,
-          organization: editForm.organization,
-          website: editForm.website,
-          notes: editForm.notes
-        })
-      });
-
-      const response = await fetch(`${crmService.googleAppsScriptUrl}?${params.toString()}`, {
-        method: 'GET'
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update lead: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Update failed');
-      }
-
-      // Update local state
-      const updateClientInArray = (array, setArray) => {
-        setArray(prev => prev.map(client => 
-          client.id === editingClient.id 
-            ? { ...client, ...editForm }
-            : client
-        ));
-      };
-
-      // Update in all arrays (in case the lead is in multiple tabs)
-      updateClientInArray(warmLeads, setWarmLeads);
-      updateClientInArray(contactedClients, setContactedClients);
-      updateClientInArray(coldLeads, setColdLeads);
-
-      // Save to Firebase
-      await saveCRMDataToFirebase();
-
-      showToast(`✅ Lead "${editForm.contactName}" updated successfully!`);
-      
-      // Close modal and reset state
-      setShowEditModal(false);
-      setEditingClient(null);
-      setEditForm({
-        contactName: '',
-        email: '',
-        phone: '',
-        instagram: '',
-        organization: '',
-        website: '',
-        notes: ''
-      });
-
-    } catch (error) {
-      console.error('Error updating lead:', error);
-      showToast(`❌ Error updating lead: ${error.message}`, 'error');
-    }
-  };
-
-  // Handle edit cancel
-  const handleEditCancel = () => {
-    setShowEditModal(false);
-    setEditingClient(null);
-    setEditForm({
-      contactName: '',
-      email: '',
-      phone: '',
-      instagram: '',
-      organization: '',
-      website: '',
-      notes: ''
-    });
-  };
-
   // Handle edit from LeadDetailModal
   const handleEditLead = async (updatedLead) => {
     if (!updatedLead?.id) return;
@@ -689,12 +571,6 @@ const CRMPage = () => {
       await saveCRMDataToFirebase();
 
       showToast(`✅ Lead "${client.contactName}" deleted successfully!`);
-      
-      // Close modal if it was open
-      if (showEditModal && editingClient?.id === client.id) {
-        setShowEditModal(false);
-        setEditingClient(null);
-      }
 
     } catch (error) {
       console.error('Error deleting lead:', error);
@@ -973,17 +849,18 @@ const CRMPage = () => {
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
-            View Details
+            View
           </button>
-          {!isExisting && (
-            <button 
-              onClick={() => openEditModal(client)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-            >
-              <Edit className="w-3.5 h-3.5" />
-              Edit
-            </button>
-          )}
+          <button
+            onClick={() => {
+              setSelectedClient(client);
+              setSelectedItemType(isExisting ? 'client' : 'lead');
+            }}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Edit
+          </button>
         </div>
       </div>
     </div>
@@ -1036,15 +913,16 @@ const CRMPage = () => {
             <Eye className="w-3.5 h-3.5" />
             View
           </button>
-          {!isExisting && (
-            <button
-              onClick={() => openEditModal(client)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-            >
-              <Edit className="w-3.5 h-3.5" />
-              Edit
-            </button>
-          )}
+          <button
+            onClick={() => {
+              setSelectedClient(client);
+              setSelectedItemType(isExisting ? 'client' : 'lead');
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Edit
+          </button>
         </div>
       </td>
     </tr>
@@ -1189,25 +1067,46 @@ const CRMPage = () => {
         </div>
       </div>
 
-      {/* Search and view toggle */}
-      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
-        <div className="flex-1 relative max-w-xl">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4" />
+      {/* Search, filters, and view in one bar */}
+      <div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+        <div className="flex-1 min-w-[200px] relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4 pointer-events-none" />
           <input
             type="text"
             placeholder="Search leads and clients..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+            className="w-full h-10 pl-9 pr-3 text-[14px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
           />
         </div>
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-10 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 min-w-[140px]"
+        >
+          <option value="all">All</option>
+          <option value="warm">Warm leads ({totalWarmLeads})</option>
+          <option value="cold">Cold leads ({totalColdLeads})</option>
+          <option value="contacted">Contacted ({totalContacted})</option>
+          <option value="clients">Existing clients ({totalExistingClients})</option>
+        </select>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="h-10 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 min-w-[160px]"
+        >
+          <option value="all">All types</option>
+          {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10">
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
               viewMode === 'list'
-                ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+                ? 'bg-[#0071e3] text-white'
                 : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
@@ -1217,9 +1116,9 @@ const CRMPage = () => {
           <button
             type="button"
             onClick={() => setViewMode('card')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
               viewMode === 'card'
-                ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
+                ? 'bg-[#0071e3] text-white'
                 : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
@@ -1227,89 +1126,6 @@ const CRMPage = () => {
             Card
           </button>
         </div>
-      </div>
-
-      {/* Filter: single list, filter by type */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-[13px] text-[#86868b] mr-1">Filter:</span>
-        <button
-          onClick={() => setStatusFilter('all')}
-          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-            statusFilter === 'all'
-              ? 'bg-[#0071e3] text-white'
-              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setStatusFilter('warm')}
-          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-            statusFilter === 'warm'
-              ? 'bg-[#34c759] text-white'
-              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-          }`}
-        >
-          Warm leads ({totalWarmLeads})
-        </button>
-        <button
-          onClick={() => setStatusFilter('cold')}
-          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-            statusFilter === 'cold'
-              ? 'bg-[#86868b] text-white'
-              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-          }`}
-        >
-          Cold leads ({totalColdLeads})
-        </button>
-        <button
-          onClick={() => setStatusFilter('contacted')}
-          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-            statusFilter === 'contacted'
-              ? 'bg-[#0071e3] text-white'
-              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-          }`}
-        >
-          Contacted ({totalContacted})
-        </button>
-        <button
-          onClick={() => setStatusFilter('clients')}
-          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-            statusFilter === 'clients'
-              ? 'bg-[#5856d6] text-white'
-              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-          }`}
-        >
-          Existing clients ({totalExistingClients})
-        </button>
-      </div>
-
-      {/* Type filter: SMM, PP, BOTH, N/A */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-[13px] text-[#86868b] mr-1">Type:</span>
-        <button
-          onClick={() => setTypeFilter('all')}
-          className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-            typeFilter === 'all'
-              ? 'bg-[#0071e3] text-white'
-              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-          }`}
-        >
-          All
-        </button>
-        {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setTypeFilter(value)}
-            className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-              typeFilter === value
-                ? 'bg-[#5856d6] text-white'
-                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
       </div>
 
       {/* Single list: A–Z by name */}
@@ -1622,152 +1438,6 @@ const CRMPage = () => {
             </label>
           </div>
         </div>
-      )}
-
-      {/* Edit Modal */}
-      {showEditModal && editingClient && createPortal(
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 w-full max-w-md mx-4 border border-black/5 dark:border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Edit Lead</h3>
-              <button
-                onClick={handleEditCancel}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#86868b] transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Name *
-                </label>
-                <input
-                  type="text"
-                  value={editForm.contactName}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, contactName: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
-                <select
-                  value={editForm.type || CLIENT_TYPE.NA}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Instagram
-                </label>
-                <input
-                  type="text"
-                  value={editForm.instagram}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, instagram: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Organization
-                </label>
-                <input
-                  type="text"
-                  value={editForm.organization}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, organization: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Website
-                </label>
-                <input
-                  type="url"
-                  value={editForm.website}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, website: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  value={editForm.notes}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-md bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 mt-6">
-              <button
-                onClick={handleEditSubmit}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
-              >
-                <Save className="w-4 h-4" />
-                Save Changes
-              </button>
-              <button
-                onClick={handleEditCancel}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-
-            {/* Delete Button */}
-            <div className="mt-4 pt-4 border-t">
-              <button
-                onClick={() => deleteLead(editingClient)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e5342b] transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Lead
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
       )}
 
       {/* Toast Notification */}

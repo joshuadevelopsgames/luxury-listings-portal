@@ -9,6 +9,7 @@ const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const functionsV1 = require('firebase-functions');
+const { auth: authV1 } = require('firebase-functions/v1');
 const vision = require('@google-cloud/vision');
 const nodemailer = require('nodemailer');
 
@@ -2401,6 +2402,56 @@ exports.ensureEmailLowerClaim = onCall({ cors: true }, async (request) => {
 });
 
 /** New users get email_lower claim on create. */
-exports.setEmailLowerClaimOnCreate = functionsV1.auth.user().onCreate(async (user) => {
+exports.setEmailLowerClaimOnCreate = authV1.user().onCreate(async (user) => {
   await setEmailLowerClaim(user.uid, user.email);
 });
+
+// ========== CONTENT CALENDAR POST-DUE REMINDERS ==========
+/** Vancouver today as YYYY-MM-DD (for scheduledDate comparison). */
+function getVancouverTodayDateString() {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Vancouver', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const parts = formatter.formatToParts(now);
+  const y = parts.find(p => p.type === 'year').value;
+  const m = parts.find(p => p.type === 'month').value;
+  const d = parts.find(p => p.type === 'day').value;
+  return `${y}-${m}-${d}`;
+}
+
+/** Every 15 minutes: find content_items due today (Vancouver), create notification, mark reminderSent. */
+exports.contentCalendarPostDueReminders = onSchedule(
+  { schedule: 'every 15 minutes', timeZone: 'America/Vancouver' },
+  async () => {
+    const db = admin.firestore();
+    const todayStr = getVancouverTodayDateString();
+    const snapshot = await db.collection('content_items')
+      .where('scheduledDate', '==', todayStr)
+      .where('status', '==', 'scheduled')
+      .get();
+    let sent = 0;
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      if (data.reminderSent === true) continue;
+      const userEmail = data.userEmail;
+      if (!userEmail) continue;
+      const title = (data.title || 'Post').slice(0, 50);
+      await db.collection('notifications').add({
+        userEmail,
+        type: 'post_due',
+        title: 'Post due today',
+        message: `"${title}" is scheduled for today. Open the app to copy the caption and post.`,
+        link: `/content-calendar/post-due/${doc.id}`,
+        read: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      await doc.ref.update({
+        reminderSent: true,
+        reminderSentAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      sent++;
+    }
+    if (sent > 0) {
+      console.log('Content calendar: sent', sent, 'post-due reminder(s) for', todayStr);
+    }
+  }
+);

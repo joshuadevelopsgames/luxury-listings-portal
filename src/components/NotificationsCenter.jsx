@@ -114,6 +114,9 @@ const NotificationsCenter = () => {
         return <Lightbulb className="w-4 h-4 text-[#ff9500]" />;
       case 'chat_started':
         return <MessageSquare className="w-4 h-4 text-[#5856d6]" />;
+      case 'post_due':
+      case 'task_reminder':
+        return <Calendar className="w-4 h-4 text-[#0071e3]" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-600" />;
     }

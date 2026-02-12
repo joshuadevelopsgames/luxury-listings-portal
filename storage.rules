@@ -18,8 +18,8 @@ service firebase.storage {
       allow read, write: if request.auth != null;
     }
     
-    // Content calendar uploads - authenticated users can read/write their own
-    match /content-calendar/{userId}/{fileName} {
+    // Content calendar uploads - authenticated users can read/write their own (nested: userId/itemId/file)
+    match /content-calendar/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null;
     }
     
