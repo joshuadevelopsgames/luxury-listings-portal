@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { firestoreService } from '../services/firestoreService';
-import { Shield, Settings, MessageSquare, ArrowRight, BarChart3, Clock, RefreshCw } from 'lucide-react';
+import { Shield, Settings, MessageSquare, ArrowRight, BarChart3, Clock, RefreshCw, Users } from 'lucide-react';
 
 const DAYS = 30;
 
@@ -38,15 +38,21 @@ export default function SystemAdminPage() {
     return d.getTime();
   }, []);
 
-  const { byViews, byAvgTime } = useMemo(() => {
+  const { byViews, byAvgTime, byUniqueUsers } = useMemo(() => {
     const views = {};
     const time = {}; // page_path -> { totalSec, count }
+    const uniqueUsers = {}; // page_path -> Set of user_email (page_view only)
     for (const e of events) {
       const ts = e.timestamp?.toMillis?.() ?? e.timestamp?.seconds * 1000 ?? 0;
       if (ts < since) continue;
       const path = e.page_path || '/';
       if (e.event_type === 'page_view') {
         views[path] = (views[path] || 0) + 1;
+        const u = (e.user_email || e.user_id || '').toString().trim();
+        if (u) {
+          if (!uniqueUsers[path]) uniqueUsers[path] = new Set();
+          uniqueUsers[path].add(u);
+        }
       } else if (e.event_type === 'time_on_page' && typeof e.value === 'number') {
         if (!time[path]) time[path] = { totalSec: 0, count: 0 };
         time[path].totalSec += e.value;
@@ -54,7 +60,7 @@ export default function SystemAdminPage() {
       }
     }
     const byViews = Object.entries(views)
-      .map(([path, count]) => ({ path, count }))
+      .map(([path, count]) => ({ path, count, unique: (uniqueUsers[path]?.size ?? 0) }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 15);
     const byAvgTime = Object.entries(time)
@@ -62,7 +68,11 @@ export default function SystemAdminPage() {
       .map(([path, v]) => ({ path, avgSec: Math.round(v.totalSec / v.count), sessions: v.count }))
       .sort((a, b) => b.avgSec - a.avgSec)
       .slice(0, 15);
-    return { byViews, byAvgTime };
+    const byUniqueUsers = Object.entries(uniqueUsers)
+      .map(([path, set]) => ({ path, count: set.size }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 15);
+    return { byViews, byAvgTime, byUniqueUsers };
   }, [events, since]);
 
   if (isSystemAdmin === false) return null;
@@ -111,16 +121,18 @@ export default function SystemAdminPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-black/5 dark:border-white/10 bg-[#ffffff] dark:bg-white/5 overflow-hidden">
               <div className="px-4 py-3 border-b border-black/5 dark:border-white/10 flex items-center gap-2 text-[#86868b] text-[12px] font-medium uppercase tracking-wide">
-                <BarChart3 className="w-4 h-4" /> Most viewed pages
+                <BarChart3 className="w-4 h-4" /> Most viewed pages <span className="font-normal normal-case text-[11px]">(views · unique users)</span>
               </div>
               <ul className="divide-y divide-black/5 dark:divide-white/10">
                 {byViews.length === 0 ? (
                   <li className="px-4 py-6 text-[13px] text-[#86868b]">No page views in the last {DAYS} days.</li>
                 ) : (
-                  byViews.map(({ path, count }) => (
-                    <li key={path} className="flex items-center justify-between px-4 py-2.5">
+                  byViews.map(({ path, count, unique }) => (
+                    <li key={path} className="flex items-center justify-between px-4 py-2.5 gap-2">
                       <span className="text-[13px] text-[#1d1d1f] dark:text-white truncate">{formatPath(path)}</span>
-                      <span className="text-[13px] font-medium text-[#0071e3] tabular-nums">{count}</span>
+                      <span className="text-[13px] font-medium text-[#0071e3] tabular-nums shrink-0">
+                        {count} · {unique > 0 ? unique : '—'} users
+                      </span>
                     </li>
                   ))
                 )}
@@ -141,6 +153,23 @@ export default function SystemAdminPage() {
                         {avgSec >= 60 ? `${Math.floor(avgSec / 60)}m ${avgSec % 60}s` : `${avgSec}s`}
                         <span className="text-[11px] text-[#86868b] font-normal ml-1">({sessions})</span>
                       </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-black/5 dark:border-white/10 bg-[#ffffff] dark:bg-white/5 overflow-hidden sm:col-span-2">
+              <div className="px-4 py-3 border-b border-black/5 dark:border-white/10 flex items-center gap-2 text-[#86868b] text-[12px] font-medium uppercase tracking-wide">
+                <Users className="w-4 h-4" /> Unique users per page
+              </div>
+              <ul className="divide-y divide-black/5 dark:divide-white/10">
+                {byUniqueUsers.length === 0 ? (
+                  <li className="px-4 py-6 text-[13px] text-[#86868b]">No user data (events from before user tracking show no unique count).</li>
+                ) : (
+                  byUniqueUsers.map(({ path, count }) => (
+                    <li key={path} className="flex items-center justify-between px-4 py-2.5">
+                      <span className="text-[13px] text-[#1d1d1f] dark:text-white truncate">{formatPath(path)}</span>
+                      <span className="text-[13px] font-medium text-[#0071e3] tabular-nums">{count}</span>
                     </li>
                   ))
                 )}

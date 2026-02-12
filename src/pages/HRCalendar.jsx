@@ -7,6 +7,8 @@ import { toast } from 'react-hot-toast';
 import { PERMISSIONS } from '../entities/Permissions';
 import { firestoreService } from '../services/firestoreService';
 import { timeOffNotifications } from '../services/timeOffNotificationService';
+import { calculateBusinessDays } from '../utils/timeOffHelpers';
+import { LEAVE_CALENDAR_SYNC_EMAILS } from '../utils/vancouverTime';
 import { 
   Calendar as CalendarIcon, 
   Plus, 
@@ -71,6 +73,10 @@ const HRCalendar = () => {
   const [savingBalances, setSavingBalances] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditLeaveModal, setShowEditLeaveModal] = useState(false);
+  const [editingLeaveRequest, setEditingLeaveRequest] = useState(null);
+  const [editLeaveForm, setEditLeaveForm] = useState({ startDate: '', endDate: '', days: 0, type: 'vacation', reason: '', notes: '', managerNotes: '' });
+  const [savingEditLeave, setSavingEditLeave] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [googleEvents, setGoogleEvents] = useState([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
@@ -268,7 +274,10 @@ const HRCalendar = () => {
             reminders: req.reminders || ['15'],
             recurrence: req.recurrence || 'none',
             tags: req.tags || [],
-            priority: req.priority || 'medium'
+            priority: req.priority || 'medium',
+            requesterCalendarEventId: req.requesterCalendarEventId,
+            calendarEventIdsByEmail: req.calendarEventIdsByEmail || {},
+            archived: req.archived
           }));
           setLeaveRequests(prev => [...formattedRequests, ...prev.filter(r => !requests.find(fr => fr.id === r.id))]);
         }
@@ -362,17 +371,20 @@ const HRCalendar = () => {
         console.warn('⚠️ Could not send notification:', notifError);
       }
       
-      // Auto-sync to Google Calendar if connected
-      if (isGoogleConnected) {
+      // Add to Google Calendar only for vacation/sick, and only when approver is Michelle or Matthew (or requester)
+      const isVacationOrSick = request.type === 'vacation' || request.type === 'sick';
+      const approverGetsCalendarSync = currentUser?.email && LEAVE_CALENDAR_SYNC_EMAILS.includes(currentUser.email.toLowerCase());
+      if (isGoogleConnected && isVacationOrSick && approverGetsCalendarSync) {
         try {
-          await googleCalendarService.createLeaveEvent(request);
+          const result = await googleCalendarService.createLeaveEvent(request);
+          if (result?.id) {
+            await firestoreService.setLeaveRequestCalendarEventIdForEmail(requestId, currentUser.email, result.id);
+          }
           toast.dismiss('approve-request');
-          toast.success('Leave approved & added to Google Calendar!');
+          toast.success('Leave approved & added to your Google Calendar!');
         } catch (calError) {
           console.warn('⚠️ Failed to sync to Google Calendar:', calError);
           toast.dismiss('approve-request');
-          
-          // Check if it's an auth issue
           if (calError.message?.includes('expired') || calError.message?.includes('reconnect')) {
             setIsGoogleConnected(false);
             toast.success('Leave approved! (Calendar session expired - please reconnect)');
@@ -503,6 +515,69 @@ const HRCalendar = () => {
       toast.error('Failed to delete request');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  // Open edit modal for an approved request (any admin)
+  const openEditLeaveModal = (request) => {
+    if (request.status !== 'approved') return;
+    setEditingLeaveRequest(request);
+    setEditLeaveForm({
+      startDate: request.startDate || '',
+      endDate: request.endDate || '',
+      days: request.days ?? calculateBusinessDays(request.startDate, request.endDate),
+      type: request.type || 'vacation',
+      reason: request.reason || '',
+      notes: request.description || request.notes || '',
+      managerNotes: request.managerNotes || ''
+    });
+    setShowEditLeaveModal(true);
+  };
+
+  const handleEditLeaveFormChange = (field, value) => {
+    setEditLeaveForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if ((field === 'startDate' || field === 'endDate') && next.startDate && next.endDate) {
+        next.days = calculateBusinessDays(next.startDate, next.endDate);
+      }
+      return next;
+    });
+  };
+
+  const handleSaveEditLeave = async () => {
+    if (!editingLeaveRequest?.id || !currentUser?.email) return;
+    setSavingEditLeave(true);
+    try {
+      const days = editLeaveForm.days ?? calculateBusinessDays(editLeaveForm.startDate, editLeaveForm.endDate);
+      await firestoreService.updateLeaveRequestApproved(
+        editingLeaveRequest.id,
+        { ...editLeaveForm, days },
+        currentUser.email
+      );
+      const updatedRequest = { ...editingLeaveRequest, ...editLeaveForm, days };
+      await timeOffNotifications.notifyLeaveRequestEdited(updatedRequest, currentUser.email, 'Dates or details were changed.');
+      // Update Google Calendar event for this admin (Michelle/Matthew) if they have one
+      const eventId = (editingLeaveRequest.calendarEventIdsByEmail || {})[currentUser.email];
+      if (eventId && LEAVE_CALENDAR_SYNC_EMAILS.includes(currentUser.email.toLowerCase()) && (updatedRequest.type === 'vacation' || updatedRequest.type === 'sick')) {
+        try {
+          if (googleCalendarService.getConnectionStatus().isConnected) {
+            await googleCalendarService.updateLeaveEvent(updatedRequest, eventId);
+          }
+        } catch (calErr) {
+          console.warn('Calendar event update failed:', calErr);
+        }
+      }
+      setLeaveRequests((prev) =>
+        prev.map((r) => (r.id === editingLeaveRequest.id ? { ...r, ...editLeaveForm, days } : r))
+      );
+      toast.success('Leave request updated. Requester will be notified.');
+      setShowEditLeaveModal(false);
+      setEditingLeaveRequest(null);
+    } catch (error) {
+      console.error('Error saving leave edit:', error);
+      toast.error(error.message || 'Failed to update request');
+    } finally {
+      setSavingEditLeave(false);
     }
   };
 
@@ -1041,6 +1116,17 @@ const HRCalendar = () => {
                         </button>
                       </div>
                     )}
+                    {/* Edit approved (any admin) */}
+                    {request.status === 'approved' && isTimeOffAdmin && (
+                      <button
+                        onClick={() => openEditLeaveModal(request)}
+                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+                        title="Edit request"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                    )}
                     {/* Archive/Unarchive Button */}
                     {request.status !== 'pending' && (
                       <button 
@@ -1117,6 +1203,62 @@ const HRCalendar = () => {
                 >
                   {deleting ? 'Deleting...' : 'Delete Permanently'}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Approved Leave Modal */}
+      {showEditLeaveModal && editingLeaveRequest && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-lg border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Edit Leave Request</h2>
+                <button onClick={() => { setShowEditLeaveModal(false); setEditingLeaveRequest(null); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                  <XCircle className="w-5 h-5 text-[#86868b]" />
+                </button>
+              </div>
+              <p className="text-[13px] text-[#86868b] mt-1">{editingLeaveRequest.employeeName}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Start Date</label>
+                  <input type="date" value={editLeaveForm.startDate} onChange={(e) => handleEditLeaveFormChange('startDate', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">End Date</label>
+                  <input type="date" value={editLeaveForm.endDate} onChange={(e) => handleEditLeaveFormChange('endDate', e.target.value)} min={editLeaveForm.startDate} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" />
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Type</label>
+                  <select value={editLeaveForm.type} onChange={(e) => handleEditLeaveFormChange('type', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]">
+                    <option value="vacation">Vacation</option>
+                    <option value="sick">Sick</option>
+                    <option value="remote">Remote</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Work days</label>
+                  <p className="h-11 flex items-center text-[14px] font-medium text-[#0071e3]">{editLeaveForm.days}</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Reason</label>
+                <input type="text" value={editLeaveForm.reason} onChange={(e) => handleEditLeaveFormChange('reason', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" placeholder="Reason" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Notes / Manager notes</label>
+                <textarea value={editLeaveForm.managerNotes || editLeaveForm.notes} onChange={(e) => { handleEditLeaveFormChange('managerNotes', e.target.value); handleEditLeaveFormChange('notes', e.target.value); }} rows={2} className="w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px] resize-none" placeholder="Optional" />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => { setShowEditLeaveModal(false); setEditingLeaveRequest(null); }} className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium">Cancel</button>
+                <button type="button" onClick={handleSaveEditLeave} disabled={savingEditLeave} className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50">{savingEditLeave ? 'Saving...' : 'Save & notify requester'}</button>
               </div>
             </div>
           </div>

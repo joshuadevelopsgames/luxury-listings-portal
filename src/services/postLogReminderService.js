@@ -1,30 +1,28 @@
 /**
  * Post Log Reminder Service (SMM post logging)
- *
+ * All dates/times: Vancouver, Canada (America/Vancouver).
  * Weekly target = monthly posts remaining / 4 (required posts this week).
  * - User: On Friday, remind SMMs when they haven’t met the weekly target (posts this week < required).
  * - Admin: (A) <50% of weekly target logged; (B) last week of month and ≤30% of monthly posts logged (70%+ not logged).
  */
 
-import { startOfWeek, endOfWeek, getDay, endOfMonth, differenceInDays } from 'date-fns';
 import { firestoreService } from './firestoreService';
+import { getVancouverWeekBounds, getVancouverMonthKey, isVancouverFriday, isVancouverLastWeekOfMonth } from '../utils/vancouverTime';
 
 const USER_REMINDER_STORAGE_KEY = 'post_log_reminder_week_sent';
 const ADMIN_REMINDER_STORAGE_KEY = 'post_log_admin_reminder_week_sent';
 const ADMIN_MONTH_KEY = 'post_log_admin_reminder_month_sent';
-const WEEK_STARTS_ON = 1; // Monday
 
-function getWeekKey(date = new Date()) {
-  const start = startOfWeek(date, { weekStartsOn: WEEK_STARTS_ON });
+function getWeekKey() {
+  const { start } = getVancouverWeekBounds();
   const y = start.getFullYear();
   const m = String(start.getMonth() + 1).padStart(2, '0');
   const d = String(start.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 
-function getMonthKey(date = new Date()) {
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+function getMonthKey() {
+  return getVancouverMonthKey();
 }
 
 function parseCompletedDate(completedDate) {
@@ -43,20 +41,15 @@ class PostLogReminderService {
   }
 
   isFriday() {
-    return getDay(new Date()) === 5;
+    return isVancouverFriday();
   }
 
   isLastWeekOfMonth() {
-    const now = new Date();
-    const lastDay = endOfMonth(now);
-    return differenceInDays(lastDay, now) <= 6;
+    return isVancouverLastWeekOfMonth();
   }
 
-  getWeekBounds(date = new Date()) {
-    return {
-      start: startOfWeek(date, { weekStartsOn: WEEK_STARTS_ON }),
-      end: endOfWeek(date, { weekStartsOn: WEEK_STARTS_ON })
-    };
+  getWeekBounds() {
+    return getVancouverWeekBounds();
   }
 
   async getAssignedClients(userEmail, userId) {

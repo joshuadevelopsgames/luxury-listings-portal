@@ -1,10 +1,10 @@
 /**
  * Safe Date Formatting Utilities
- * 
- * Prevents "Invalid time value" errors by validating dates before formatting.
+ * Site-wide timezone: Vancouver, Canada (America/Vancouver).
  */
 
 import { format, parseISO, isValid } from 'date-fns';
+import { formatInVancouver, getVancouverToday } from './vancouverTime';
 
 /**
  * Safely parse a date from various input types
@@ -55,19 +55,18 @@ export function safeParseDate(dateValue) {
 }
 
 /**
- * Safely format a date with fallback
+ * Safely format a date with fallback (displayed in Vancouver timezone)
  * @param {any} dateValue - The date value to format
- * @param {string} formatString - date-fns format string
+ * @param {string} formatString - date-fns format string (used as hint; output is Vancouver)
  * @param {string} fallback - Fallback string if date is invalid (default: 'N/A')
  * @returns {string} - Formatted date or fallback
  */
 export function safeFormatDate(dateValue, formatString = 'MMM d, yyyy', fallback = 'N/A') {
   const date = safeParseDate(dateValue);
-  
   if (!date) return fallback;
-  
   try {
-    return format(date, formatString);
+    const hasTime = /HH|hh|h:mm|a/i.test(formatString);
+    return formatInVancouver(date, hasTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' });
   } catch (error) {
     console.warn('Failed to format date:', dateValue, formatString, error);
     return fallback;
@@ -101,6 +100,8 @@ export function safeFormatDateRange(startDate, endDate, formatString = 'MMM d, y
 export function isValidDate(dateValue) {
   return safeParseDate(dateValue) !== null;
 }
+
+export { getVancouverToday, formatInVancouver } from './vancouverTime';
 
 export default {
   safeParseDate,

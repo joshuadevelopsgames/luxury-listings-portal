@@ -1498,6 +1498,73 @@ class FirestoreService {
     }
   }
 
+  /**
+   * Update an approved leave request (any time-off admin). Notifies requester (in-app + email via trigger).
+   */
+  async updateLeaveRequestApproved(requestId, updates, editedBy) {
+    try {
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) throw new Error('Leave request not found');
+      const data = snap.data();
+      if (data.status !== 'approved') throw new Error('Only approved requests can be edited');
+
+      const historyEntry = {
+        action: 'edited',
+        by: editedBy,
+        timestamp: new Date().toISOString(),
+        notes: 'Admin updated request details'
+      };
+
+      const allowed = ['startDate', 'endDate', 'days', 'type', 'reason', 'notes', 'managerNotes'];
+      const toUpdate = {};
+      allowed.forEach((k) => {
+        if (updates[k] !== undefined) toUpdate[k] = updates[k];
+      });
+      toUpdate.updatedAt = serverTimestamp();
+      toUpdate.history = arrayUnion(historyEntry);
+
+      await updateDoc(docRef, toUpdate);
+      console.log('✅ Leave request edited:', requestId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error editing leave request:', error);
+      throw error;
+    }
+  }
+
+  /** Store requester's Google Calendar event ID so we don't create duplicate events. */
+  async setLeaveRequestRequesterCalendarEventId(requestId, eventId) {
+    try {
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      await updateDoc(docRef, {
+        requesterCalendarEventId: eventId,
+        updatedAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error setting requester calendar event id:', error);
+      throw error;
+    }
+  }
+
+  /** Store calendar event ID for a given email (Michelle/Matthew when they approve). Used to update event when leave is edited. */
+  async setLeaveRequestCalendarEventIdForEmail(requestId, email, eventId) {
+    try {
+      const docRef = doc(db, this.collections.LEAVE_REQUESTS, requestId);
+      const snap = await getDoc(docRef);
+      const existing = (snap.exists() && snap.data().calendarEventIdsByEmail) || {};
+      await updateDoc(docRef, {
+        calendarEventIdsByEmail: { ...existing, [email]: eventId },
+        updatedAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error setting calendar event id for email:', error);
+      throw error;
+    }
+  }
+
   // Deduct from user's leave balance after approval
   async deductLeaveBalance(userEmail, leaveType, days, requestId) {
     // Validate inputs

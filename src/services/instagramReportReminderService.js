@@ -1,11 +1,11 @@
 /**
  * Instagram Report Reminder Service
- * 
- * On the 1st of each month, checks if users have created reports for their clients.
- * Sends a single grouped notification for all clients that need reports.
+ * All dates: Vancouver, Canada (America/Vancouver).
+ * On the 1st of each month (Vancouver), checks if users have created reports for their clients.
  */
 
 import { firestoreService } from './firestoreService';
+import { getVancouverMonthKey, getVancouverToday } from '../utils/vancouverTime';
 
 const REMINDER_STORAGE_KEY = 'instagram_report_reminder_sent';
 
@@ -14,21 +14,13 @@ class InstagramReportReminderService {
     this.hasCheckedThisSession = false;
   }
 
-  /**
-   * Check if today is the 1st of the month
-   */
   isFirstOfMonth() {
-    return new Date().getDate() === 1;
+    const today = getVancouverToday();
+    return today.endsWith('-01');
   }
 
-  /**
-   * Get the current month key (e.g., "2026-02" for February 2026)
-   */
   getCurrentMonthKey() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    return `${year}-${month}`;
+    return getVancouverMonthKey();
   }
 
   /**

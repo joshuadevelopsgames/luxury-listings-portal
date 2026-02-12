@@ -5,7 +5,7 @@
  */
 
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const functionsV1 = require('firebase-functions');
@@ -1938,13 +1938,11 @@ exports.sendTimeOffRequestEmail = onDocumentCreated(
     if (request.status !== 'pending') return;
 
     const db = admin.firestore();
-    const adminsSnap = await db.collection('approved_users')
-      .where('isTimeOffAdmin', '==', true)
-      .get();
-
-    const adminEmails = adminsSnap.docs.map(d => d.id).filter(Boolean);
+    // Only Michelle and Matthew get leave request emails (and in-app is filtered client-side)
+    const LEAVE_REQUEST_EMAIL_TO = ['michelle@luxury-listings.com', 'matthew@luxury-listings.com'].map(e => e.toLowerCase());
+    const adminEmails = LEAVE_REQUEST_EMAIL_TO;
     if (adminEmails.length === 0) {
-      console.log('📧 No time off admins to email for leave request:', requestId);
+      console.log('📧 No leave request email recipients configured');
       return;
     }
 
@@ -1999,6 +1997,78 @@ exports.sendTimeOffRequestEmail = onDocumentCreated(
       console.log('✅ Time off request email sent to', adminEmails.length, 'admin(s)');
     } catch (error) {
       console.error('❌ Failed to send time off request email:', error);
+    }
+  }
+);
+
+/**
+ * When an approved leave request is updated (admin edit), email the requester.
+ */
+const LEAVE_EDIT_FIELDS = ['startDate', 'endDate', 'days', 'type', 'reason', 'notes', 'managerNotes'];
+exports.sendLeaveRequestEditedEmail = onDocumentUpdated(
+  {
+    document: 'leave_requests/{requestId}',
+    region: 'us-central1',
+    secrets: ['EMAIL_PASS'],
+  },
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+    const requestId = event.params.requestId;
+
+    if (after.status !== 'approved') return;
+    const changed = LEAVE_EDIT_FIELDS.some((f) => before[f] !== after[f]);
+    if (!changed) return;
+
+    const to = after.employeeEmail;
+    if (!to) return;
+
+    const employeeName = after.employeeName || to;
+    const editedBy = (after.history && Array.isArray(after.history)) ? (after.history[after.history.length - 1]?.by || 'An administrator') : 'An administrator';
+    const days = after.days != null ? after.days : '?';
+    const leaveType = (after.type || 'time off').replace(/^\w/, (c) => c.toUpperCase());
+    const startDate = after.startDate || '—';
+    const endDate = after.endDate || '—';
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER || 'jrsschroeder@gmail.com',
+        pass: process.env.EMAIL_PASS || '',
+      },
+    });
+
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #ff9500, #ff6b00); padding: 20px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">📝 Leave Request Updated</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0;">Luxury Listings Portal</p>
+        </div>
+        <div style="background: #f5f5f7; padding: 20px; border-radius: 0 0 12px 12px;">
+          <p style="color: #1d1d1f; margin: 0 0 12px 0;">Your approved leave request was updated by ${editedBy}.</p>
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <p style="margin: 5px 0;"><strong>Type:</strong> ${leaveType}</p>
+            <p style="margin: 5px 0;"><strong>Days:</strong> ${days}</p>
+            <p style="margin: 5px 0;"><strong>Start:</strong> ${startDate}</p>
+            <p style="margin: 5px 0;"><strong>End:</strong> ${endDate}</p>
+          </div>
+          <p style="margin: 0;"><a href="https://luxury-listings-portal.web.app/my-time-off" style="color: #0071e3;">View your time off →</a></p>
+        </div>
+      </div>
+    `;
+
+    const subject = `📝 Your leave request was updated – ${leaveType} (${days} days)`;
+    try {
+      if (!process.env.EMAIL_PASS) return;
+      await transporter.sendMail({
+        from: '"Luxury Listings Portal" <jrsschroeder@gmail.com>',
+        to,
+        subject,
+        html: emailHtml,
+      });
+      console.log('✅ Leave request edited email sent to requester:', to);
+    } catch (error) {
+      console.error('❌ Failed to send leave request edited email:', error);
     }
   }
 );

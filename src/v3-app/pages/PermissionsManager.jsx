@@ -130,11 +130,8 @@ const DEPARTMENTS = [
   'General'
 ];
 
-// System admins (for full access display)
-const SYSTEM_ADMINS = [
-  'jrsschroeder@gmail.com',
-  'demo@luxurylistings.app'
-];
+// System admins (for full access display); demo is view-only, not an admin
+const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
 
 // Protected admins that cannot be removed
 const PROTECTED_ADMINS = [
@@ -191,7 +188,7 @@ const PermissionsManager = () => {
           .filter(email => !existingEmails.has(email.toLowerCase()))
           .map(email => ({
             email,
-            displayName: email === 'demo@luxurylistings.app' ? 'Demo Admin' : 'System Admin',
+            displayName: 'System Admin',
             role: 'admin',
             primaryRole: 'admin',
             roles: ['admin'],

@@ -37,6 +37,7 @@ import { reminderService } from '../services/reminderService';
 import { format } from 'date-fns';
 import { PERMISSIONS } from '../entities/Permissions';
 import { parseNaturalLanguageDate } from '../utils/dateParser';
+import { getVancouverToday, getVancouverTodayMidnight } from '../utils/vancouverTime';
 
 // Shared: parse YYYY-MM-DD for filter logic (module-level to avoid stale closure)
 const parseLocalDateForFilter = (dateString) => {
@@ -64,7 +65,7 @@ const taskMatchesSmartFilter = (task, criteria) => {
   if (criteria.dueWithinDays) {
     if (!task.due_date) return false;
     const due = parseLocalDateForFilter(task.due_date);
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = getVancouverTodayMidnight();
     const max = new Date(today); max.setDate(today.getDate() + criteria.dueWithinDays);
     if (!due || due > max || due < today) return false;
   }
@@ -386,32 +387,26 @@ const TasksPage = () => {
     return new Date(year, month - 1, day); // month is 0-indexed
   };
   
-  // Helper function to check if date is today (local date comparison)
+  // Vancouver timezone: "today" and past/future are based on Vancouver date
   const isTodayLocal = (dateString) => {
     if (!dateString) return false;
     const taskDate = parseLocalDate(dateString);
-    const today = new Date();
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayOnly = getVancouverTodayMidnight();
     return taskDate.getTime() === todayOnly.getTime();
   };
-  
-  // Helper function to check if date is tomorrow (local date comparison)
+
   const isTomorrowLocal = (dateString) => {
-    console.log('🔍 isTomorrowLocal called with:', dateString); // Debug log
     if (!dateString) return false;
     const taskDate = parseLocalDate(dateString);
-    const tomorrow = new Date();
+    const tomorrow = new Date(getVancouverTodayMidnight());
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowOnly = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
-    return taskDate.getTime() === tomorrowOnly.getTime();
+    return taskDate.getTime() === tomorrow.getTime();
   };
-  
-  // Helper function to check if date is in the past (local date comparison)
+
   const isPastLocal = (dateString) => {
     if (!dateString) return false;
     const taskDate = parseLocalDate(dateString);
-    const today = new Date();
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayOnly = getVancouverTodayMidnight();
     return taskDate < todayOnly;
   };
 
@@ -443,41 +438,37 @@ const TasksPage = () => {
     return taskDate;
   };
 
-  // Helper function to check if task is due today (considering time)
+  // Vancouver timezone: today = Vancouver today
   const isDueToday = (task) => {
     if (!task.due_date) return false;
-    
+    const vancouverToday = getVancouverToday();
+    if (task.due_date !== vancouverToday) return false;
     const taskDateTime = getTaskDateTime(task);
-    if (!taskDateTime) return false;
-    
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    
+    if (!taskDateTime) return true;
+    const todayStart = getVancouverTodayMidnight();
+    const todayEnd = new Date(todayStart);
+    todayEnd.setHours(23, 59, 59, 999);
     return taskDateTime >= todayStart && taskDateTime <= todayEnd;
   };
 
-  // Helper function to check if task is overdue (considering time)
   const isOverdue = (task) => {
     if (!task.due_date) return false;
     if (task.status === 'completed') return false;
-    
+    const vancouverToday = getVancouverToday();
+    if (task.due_date < vancouverToday) return true;
+    if (task.due_date > vancouverToday) return false;
     const taskDateTime = getTaskDateTime(task);
     if (!taskDateTime) return false;
-    
-    const now = new Date();
-    return taskDateTime < now;
+    return taskDateTime < new Date();
   };
 
-  // Helper function to check if task is due in the future (considering time)
   const isDueInFuture = (task) => {
     if (!task.due_date) return false;
-    
+    if (task.due_date > getVancouverToday()) return true;
+    if (task.due_date < getVancouverToday()) return false;
     const taskDateTime = getTaskDateTime(task);
     if (!taskDateTime) return false;
-    
-    const now = new Date();
-    return taskDateTime > now;
+    return taskDateTime > new Date();
   };
 
   // Load available users (use same source as User Management)
@@ -718,7 +709,7 @@ const TasksPage = () => {
 
   const renewAllOverdue = async () => {
     if (overdueTasks.length === 0) return;
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const today = getVancouverToday();
     try {
       await Promise.all(overdueTasks.map(t => DailyTask.update(t.id, { due_date: today })));
       await refreshTasks();

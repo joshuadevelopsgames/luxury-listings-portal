@@ -1,4 +1,5 @@
 import { firestoreService } from '../services/firestoreService';
+import { getVancouverTodayMidnight, vancouverDateToLocalMidnight } from '../utils/vancouverTime';
 
 export class DailyTask {
   constructor(data) {
@@ -346,28 +347,23 @@ export class DailyTask {
     }
   }
 
-  // Contextual date formatting (Todoist-style)
+  // Contextual date formatting (Todoist-style). All dates in Vancouver time.
   get formattedDueDate() {
     if (!this.due_date) return null;
 
-    // Parse as local date so "yyyy-MM-dd" is not interpreted as UTC (which shows as yesterday in many timezones)
     let dueDate;
     if (typeof this.due_date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(this.due_date)) {
-      const [y, m, d] = this.due_date.split('-').map(Number);
-      dueDate = new Date(y, m - 1, d);
+      dueDate = vancouverDateToLocalMidnight(this.due_date);
     } else {
       const raw = this.due_date?.toDate?.() ?? new Date(this.due_date);
       dueDate = new Date(raw.getFullYear(), raw.getMonth(), raw.getDate());
     }
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
+    if (!dueDate) return null;
+    const today = getVancouverTodayMidnight();
     const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
+    tomorrow.setDate(today.getDate() + 1);
     const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
+    yesterday.setDate(today.getDate() - 1);
     dueDate.setHours(0, 0, 0, 0);
 
     if (dueDate.getTime() === today.getTime()) {

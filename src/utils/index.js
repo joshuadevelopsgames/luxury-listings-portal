@@ -17,24 +17,20 @@ export const createPageUrl = (path, params = {}) => {
   return url;
 };
 
+import { formatInVancouver } from './vancouverTime';
+
 export const formatDate = (date, format = 'MMM d, yyyy') => {
   if (!date) return '';
-  
   try {
     const dateObj = new Date(date);
     if (isNaN(dateObj.getTime())) return '';
-    
-    // Simple date formatting - you can use date-fns or similar for more options
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const month = months[dateObj.getMonth()];
-    const day = dateObj.getDate();
-    const year = dateObj.getFullYear();
-    
-    return `${month} ${day}, ${year}`;
+    return formatInVancouver(dateObj, { dateStyle: 'medium' });
   } catch (error) {
     return '';
   }
 };
+
+export { getVancouverToday, formatInVancouver } from './vancouverTime';
 
 export const formatTime = (minutes) => {
   if (!minutes) return 'N/A';

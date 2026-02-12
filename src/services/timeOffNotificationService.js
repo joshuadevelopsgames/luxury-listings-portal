@@ -1,21 +1,24 @@
 /**
  * Time Off Notification Service
- * 
- * Sends notifications for time off request events using the existing
- * notification system (firestoreService.createNotification + NotificationsCenter).
+ *
+ * New leave requests notify only Michelle and Matthew (email + in-app).
  */
 
 import { firestoreService } from './firestoreService';
+import { LEAVE_REQUEST_NOTIFY_ADMIN_EMAILS } from '../utils/vancouverTime';
 
 export const timeOffNotifications = {
   /**
-   * Notify all admins when a new time off request is submitted
+   * Notify only Michelle and Matthew when a new time off request is submitted (in-app).
+   * Email to same two is handled by cloud function sendTimeOffRequestEmail.
    */
   async notifyNewRequest(request) {
     try {
       const admins = await firestoreService.getTimeOffAdmins();
-      
-      const promises = admins.map(admin => 
+      const notifyEmails = new Set(LEAVE_REQUEST_NOTIFY_ADMIN_EMAILS);
+      const recipients = admins.filter((a) => notifyEmails.has((a.email || a.id || '').toLowerCase()));
+
+      const promises = recipients.map((admin) =>
         firestoreService.createNotification({
           userEmail: admin.email || admin.id,
           type: 'time_off_request',
@@ -32,10 +35,10 @@ export const timeOffNotifications = {
           }
         })
       );
-      
+
       await Promise.all(promises);
-      console.log('✅ Notified', admins.length, 'admins of new request');
-      return { success: true, notifiedCount: admins.length };
+      console.log('✅ Notified', recipients.length, 'leave admins (Michelle & Matthew) of new request');
+      return { success: true, notifiedCount: recipients.length };
     } catch (error) {
       console.error('❌ Error notifying admins:', error);
       return { success: false, error };
@@ -132,6 +135,36 @@ export const timeOffNotifications = {
       return { success: true };
     } catch (error) {
       console.error('❌ Error notifying employee of cancellation:', error);
+      return { success: false, error };
+    }
+  },
+
+  /**
+   * Notify requester when their approved leave request is edited by an admin (in-app).
+   * Email is sent by cloud function on leave_requests document update.
+   */
+  async notifyLeaveRequestEdited(request, editedBy, changesSummary = '') {
+    try {
+      await firestoreService.createNotification({
+        userEmail: request.employeeEmail,
+        type: 'time_off_edited',
+        title: 'Leave Request Updated',
+        message: `Your approved leave request was updated by an administrator.${changesSummary ? ` ${changesSummary}` : ''}`,
+        link: '/my-time-off',
+        read: false,
+        metadata: {
+          requestId: request.id,
+          editedBy,
+          requestType: request.type,
+          startDate: request.startDate,
+          endDate: request.endDate,
+          days: request.days
+        }
+      });
+      console.log('✅ Notified employee of leave request edit:', request.employeeEmail);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error notifying employee of edit:', error);
       return { success: false, error };
     }
   },

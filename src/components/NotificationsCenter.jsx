@@ -143,8 +143,8 @@ const NotificationsCenter = () => {
             onClick={() => setIsOpen(false)}
           />
           
-          {/* Dropdown Panel */}
-          <div className="absolute right-0 mt-2 w-96 bg-[#ffffff] dark:bg-[#2c2c2e] rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 z-50 max-h-[600px] flex flex-col">
+          {/* Dropdown Panel: on mobile fixed and centered; on desktop absolute under bell */}
+          <div className="fixed left-4 right-4 top-14 z-50 max-h-[600px] flex flex-col w-[calc(100vw-2rem)] max-w-96 mx-auto sm:absolute sm:right-0 sm:left-auto sm:top-auto sm:mt-2 sm:w-96 sm:max-w-none sm:mx-0 bg-[#ffffff] dark:bg-[#2c2c2e] rounded-xl shadow-2xl border border-gray-200 dark:border-white/10">
             {/* Header */}
             <div className="p-4 border-b border-gray-200 dark:border-white/5 flex items-center justify-between">
               <div>

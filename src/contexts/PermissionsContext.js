@@ -5,11 +5,8 @@ import { firestoreService } from '../services/firestoreService';
 
 const PermissionsContext = createContext();
 
-// System admins always have full access
-const SYSTEM_ADMINS = [
-  'jrsschroeder@gmail.com',
-  'demo@luxurylistings.app'
-];
+// System admins always have full access (demo is view-only, not here)
+const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
 
 // Feature permissions - granular access within pages
 export const FEATURE_PERMISSIONS = {
@@ -41,7 +38,7 @@ export function PermissionsProvider({ children }) {
 
   // Refresh permissions on demand (e.g., after admin changes)
   const refreshPermissions = useCallback(async () => {
-    if (!currentUser?.email || isSystemAdmin) return;
+    if (!currentUser?.email || isSystemAdmin || currentUser?.isDemoViewOnly) return;
     
     try {
       const result = await firestoreService.getUserPermissions(currentUser.email);
@@ -61,6 +58,16 @@ export function PermissionsProvider({ children }) {
       setFeaturePermissions([]);
       setLoading(false);
       setIsSystemAdmin(false);
+      return;
+    }
+
+    // Demo view-only: see all pages, no feature (edit) permissions
+    const isDemoViewOnly = !!currentUser.isDemoViewOnly;
+    if (isDemoViewOnly) {
+      setIsSystemAdmin(false);
+      setPermissions([]); // hasPermission will return true for all when isDemoViewOnly
+      setFeaturePermissions([]);
+      setLoading(false);
       return;
     }
 
@@ -109,8 +116,13 @@ export function PermissionsProvider({ children }) {
     };
   }, [currentUser?.email]);
 
+  // Demo view-only: see all pages, no edit (handled in state: permissions/featurePermissions empty, isDemoViewOnly set in AuthContext)
+  const isDemoViewOnly = !!currentUser?.isDemoViewOnly;
+
   // Check if user has permission for a specific page
   const hasPermission = (pageId) => {
+    // Demo view-only can see everything (all pages)
+    if (isDemoViewOnly) return true;
     // System admins have access to everything
     if (isSystemAdmin) return true;
     
@@ -124,6 +136,8 @@ export function PermissionsProvider({ children }) {
 
   // Check if user has a specific feature permission (granular access)
   const hasFeaturePermission = (featureId) => {
+    // Demo view-only: no edit/manage features
+    if (isDemoViewOnly) return false;
     // System admins have access to all features
     if (isSystemAdmin) return true;
     
@@ -136,6 +150,7 @@ export function PermissionsProvider({ children }) {
     featurePermissions,
     loading,
     isSystemAdmin,
+    isDemoViewOnly,
     hasPermission,
     hasFeaturePermission,
     refreshPermissions // Expose for manual refresh when needed

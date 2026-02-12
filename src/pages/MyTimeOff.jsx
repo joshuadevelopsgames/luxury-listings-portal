@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
+import { googleCalendarService } from '../services/googleCalendarService';
 import { timeOffNotifications } from '../services/timeOffNotificationService';
 import { 
   validateLeaveRequest, 
   calculateBusinessDays,
   canCancelRequest,
-  getStatusColor as getStatusColorHelper,
   formatDateRange
 } from '../utils/timeOffHelpers';
 import { 
@@ -36,7 +36,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { safeFormatDate } from '../utils/dateUtils';
 import { toast } from 'react-hot-toast';
 
@@ -77,6 +77,7 @@ const MyTimeOff = () => {
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [syncingCalendar, setSyncingCalendar] = useState(false);
 
   // Leave balances - loaded from Firestore (only vacation and sick have balances; remote is type-only)
   const [leaveBalances, setLeaveBalances] = useState({
@@ -202,6 +203,37 @@ const MyTimeOff = () => {
     return () => clearTimeout(timeoutId);
   }, [leaveForm.startDate, leaveForm.endDate, currentUser?.email]);
 
+  // Auto-sync approved vacation/sick to requester's Google Calendar when they have a stored token (no popup)
+  useEffect(() => {
+    if (!currentUser?.email || !myRequests.length) return;
+    const approved = myRequests.filter(
+      (r) => !r.archived && r.status === 'approved' && (r.type === 'vacation' || r.type === 'sick')
+    );
+    if (approved.length === 0) return;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const reconnected = await googleCalendarService.tryAutoReconnect(currentUser.email);
+        if (!reconnected && !googleCalendarService.getConnectionStatus().isConnected) return;
+        for (const request of approved) {
+          try {
+            if (request.requesterCalendarEventId) {
+              await googleCalendarService.updateLeaveEvent(request, request.requesterCalendarEventId);
+            } else {
+              const result = await googleCalendarService.createLeaveEvent(request);
+              if (result?.id) {
+                await firestoreService.setLeaveRequestRequesterCalendarEventId(request.id, result.id);
+              }
+            }
+          } catch (_) {}
+        }
+        // Silent auto-sync; manual "Sync to Google Calendar" still shows toast
+      } catch (_) {}
+    }, 1500);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentUser?.email, myRequests]);
+
   const leaveTypes = {
     vacation: { 
       label: 'Vacation', 
@@ -250,7 +282,7 @@ const MyTimeOff = () => {
 
   const calculateDays = () => {
     if (leaveForm.startDate && leaveForm.endDate) {
-      return differenceInDays(new Date(leaveForm.endDate), new Date(leaveForm.startDate)) + 1;
+      return calculateBusinessDays(leaveForm.startDate, leaveForm.endDate);
     }
     return 0;
   };
@@ -367,6 +399,48 @@ const MyTimeOff = () => {
 
   const archivedCount = myRequests.filter(r => r.archived).length;
 
+  // Approved vacation/sick: add new to calendar or update existing so calendar matches program
+  const approvedToSync = myRequests.filter(
+    (r) => !r.archived && r.status === 'approved' && (r.type === 'vacation' || r.type === 'sick')
+  );
+
+  const handleSyncToGoogleCalendar = async () => {
+    if (!currentUser?.email || approvedToSync.length === 0 || syncingCalendar) return;
+    setSyncingCalendar(true);
+    try {
+      await googleCalendarService.initialize(currentUser.email);
+      let added = 0;
+      let updated = 0;
+      for (const request of approvedToSync) {
+        try {
+          if (request.requesterCalendarEventId) {
+            await googleCalendarService.updateLeaveEvent(request, request.requesterCalendarEventId);
+            updated++;
+          } else {
+            const result = await googleCalendarService.createLeaveEvent(request);
+            if (result?.id) {
+              await firestoreService.setLeaveRequestRequesterCalendarEventId(request.id, result.id);
+              added++;
+            }
+          }
+        } catch (err) {
+          console.warn('Calendar sync for one request failed:', err);
+        }
+      }
+      if (added > 0 || updated > 0) {
+        const parts = [];
+        if (added > 0) parts.push(`${added} added`);
+        if (updated > 0) parts.push(`${updated} updated`);
+        toast.success(`Google Calendar: ${parts.join(', ')}.`);
+      } else if (approvedToSync.length > 0) toast.error('Could not sync. Try connecting your calendar first.');
+    } catch (err) {
+      console.error('Calendar sync error:', err);
+      toast.error(err.message || 'Could not sync to Google Calendar');
+    } finally {
+      setSyncingCalendar(false);
+    }
+  };
+
   const resetForm = () => {
     setLeaveForm({
       type: 'vacation',
@@ -424,6 +498,21 @@ const MyTimeOff = () => {
           <p className="text-[15px] sm:text-[17px] text-[#86868b] mt-1">Manage your vacation, sick leave, and time-off requests</p>
         </div>
         <div className="flex items-center gap-2">
+          {approvedToSync.length > 0 && (
+            <button
+              onClick={handleSyncToGoogleCalendar}
+              disabled={syncingCalendar}
+              title="Add or update approved vacation/sick leave on your Google Calendar"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors disabled:opacity-50"
+            >
+              {syncingCalendar ? (
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Calendar className="w-4 h-4" />
+              )}
+              <span>Sync to Google Calendar</span>
+            </button>
+          )}
           <button 
             onClick={handleManualRefresh}
             disabled={refreshing}

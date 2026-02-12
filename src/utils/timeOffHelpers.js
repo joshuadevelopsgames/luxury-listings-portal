@@ -1,11 +1,12 @@
 /**
  * Time Off Helper Functions
- * 
- * Utility functions for time off request validation, admin detection,
- * and date calculations.
+ *
+ * Work week: Monday 9am–Friday 5pm Vancouver; only work days (Mon–Fri excluding BC stat holidays) count as vacation days.
+ * All date math uses Vancouver timezone / calendar dates.
  */
 
-import { differenceInDays, differenceInBusinessDays, isWeekend, addDays, format } from 'date-fns';
+import { addDays, format } from 'date-fns';
+import { getVancouverToday, calendarDaysBetweenVancouver, countWorkDaysVancouver } from './vancouverTime';
 
 // ============================================================================
 // ADMIN DETECTION
@@ -39,58 +40,29 @@ export const canCancelRequest = (user, request) => {
 // DATE CALCULATIONS
 // ============================================================================
 
-/**
- * Calculate business days between two dates (excludes weekends)
- */
+/** Work days = Mon–Fri Vancouver, excluding BC stat holidays. */
 export const calculateBusinessDays = (startDate, endDate) => {
   if (!startDate || !endDate) return 0;
-  
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  
-  // Use date-fns if available, otherwise manual calculation
-  if (typeof differenceInBusinessDays === 'function') {
-    // Add 1 because we want inclusive counting (both start and end day)
-    return differenceInBusinessDays(end, start) + 1;
-  }
-  
-  // Manual fallback calculation
-  let count = 0;
-  let current = new Date(start);
-  
-  while (current <= end) {
-    const day = current.getDay();
-    if (day !== 0 && day !== 6) { // Not Sunday (0) or Saturday (6)
-      count++;
-    }
-    current = addDays(current, 1);
-  }
-  
-  return count;
+  const startStr = typeof startDate === 'string' ? startDate.split('T')[0] : format(new Date(startDate), 'yyyy-MM-dd');
+  const endStr = typeof endDate === 'string' ? endDate.split('T')[0] : format(new Date(endDate), 'yyyy-MM-dd');
+  return countWorkDaysVancouver(startStr, endStr);
 };
 
-/**
- * Calculate total days between two dates (includes weekends)
- */
+/** Calendar days (inclusive) using Vancouver date interpretation. */
 export const calculateTotalDays = (startDate, endDate) => {
   if (!startDate || !endDate) return 0;
-  
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  
-  return differenceInDays(end, start) + 1; // +1 for inclusive counting
+  const startStr = typeof startDate === 'string' ? startDate.split('T')[0] : format(new Date(startDate), 'yyyy-MM-dd');
+  const endStr = typeof endDate === 'string' ? endDate.split('T')[0] : format(new Date(endDate), 'yyyy-MM-dd');
+  return calendarDaysBetweenVancouver(startStr, endStr);
 };
 
-/**
- * Get days until a date from today
- */
+/** Days from Vancouver today until target date (positive = future, negative = past). */
 export const getDaysUntil = (targetDate) => {
   if (!targetDate) return 0;
-  const target = new Date(targetDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  return differenceInDays(target, today);
+  const todayStr = getVancouverToday();
+  const targetStr = typeof targetDate === 'string' ? targetDate.split('T')[0] : format(new Date(targetDate), 'yyyy-MM-dd');
+  if (targetStr >= todayStr) return calendarDaysBetweenVancouver(todayStr, targetStr) - 1;
+  return -(calendarDaysBetweenVancouver(targetStr, todayStr) - 1);
 };
 
 // ============================================================================

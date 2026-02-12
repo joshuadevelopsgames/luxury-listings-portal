@@ -590,6 +590,57 @@ class GoogleCalendarService {
     }
   }
 
+  /**
+   * Update an existing leave event (e.g. when an admin edits the approved request).
+   * Uses same shape as createLeaveEvent; call with the event ID for the calendar you're updating.
+   */
+  async updateLeaveEvent(leaveRequest, eventId) {
+    if (!this.isInitialized || !this.accessToken || !eventId) {
+      throw new Error('Google Calendar not connected or missing event ID.');
+    }
+    const storedToken = this.getStoredToken(this.currentUserEmail);
+    if (!storedToken) {
+      this.isInitialized = false;
+      this.accessToken = null;
+      throw new Error('Google Calendar session expired. Please reconnect your calendar.');
+    }
+
+    const startDate = new Date(leaveRequest.startDate);
+    const endDate = new Date(leaveRequest.endDate);
+    endDate.setDate(endDate.getDate() + 1);
+
+    const event = {
+      summary: `${leaveRequest.employeeName || 'Team Member'} - ${(leaveRequest.type || 'leave').charAt(0).toUpperCase() + (leaveRequest.type || 'leave').slice(1)}`,
+      description: `Leave Type: ${leaveRequest.type || 'Other'}\nReason: ${leaveRequest.reason || 'N/A'}\nStatus: Approved\n\nThis event was automatically created from the Leave Management System.`,
+      start: { date: startDate.toISOString().split('T')[0] },
+      end: { date: endDate.toISOString().split('T')[0] },
+      colorId: this.getLeaveColorId(leaveRequest.type),
+      reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 1440 }] },
+    };
+
+    try {
+      if (window.gapi?.client) {
+        window.gapi.client.setToken({ access_token: this.accessToken });
+      }
+      const response = await window.gapi.client.calendar.events.patch({
+        calendarId: 'primary',
+        eventId,
+        resource: event,
+      });
+      console.log('✅ Leave event updated in Google Calendar:', eventId);
+      return response.result;
+    } catch (error) {
+      console.error('❌ Failed to update leave event:', error);
+      if (error.status === 401 || error.status === 403) {
+        this.isInitialized = false;
+        this.accessToken = null;
+        this.clearStoredToken(this.currentUserEmail);
+        throw new Error('Google Calendar authorization expired. Please reconnect your calendar.');
+      }
+      throw error;
+    }
+  }
+
   // Get color ID based on leave type
   getLeaveColorId(type) {
     const colors = {

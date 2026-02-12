@@ -10,10 +10,14 @@ import { useViewAs } from './ViewAsContext';
 import { googleCalendarService } from '../services/googleCalendarService';
 
 // ============================================================================
-// SYSTEM ADMINS - Full access to everything
+// SYSTEM ADMINS - Full access to everything (excludes demo; demo is view-only)
 // ============================================================================
-const SYSTEM_ADMINS = ['jrsschroeder@gmail.com', 'demo@luxurylistings.app'];
+const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
 const isSystemAdmin = (email) => SYSTEM_ADMINS.includes(email?.toLowerCase());
+
+// Demo login: can see everything, cannot edit anything
+const DEMO_VIEW_ONLY_EMAILS = ['demo@luxurylistings.app'];
+const isDemoViewOnly = (email) => DEMO_VIEW_ONLY_EMAILS.includes(email?.toLowerCase());
 
 // ============================================================================
 // LOCAL STORAGE - Persist auth state for faster page loads
@@ -147,6 +151,11 @@ export function AuthProvider({ children }) {
   async function switchRole(newRole) {
     if (!currentUser?.email) return;
     
+    // Demo view-only cannot switch roles
+    if (currentUser?.isDemoViewOnly) {
+      toast.error('Demo account cannot change roles.');
+      return;
+    }
     // System admins can switch to any role
     if (!isSystemAdmin(currentUser.email)) {
       const assignedRoles = currentUser.roles || [currentUser.primaryRole || currentUser.role] || ['content_director'];
@@ -236,6 +245,40 @@ export function AuthProvider({ children }) {
   // Handle user sign-in logic
   async function handleUserSignIn(firebaseUser) {
     const { uid, email, displayName, photoURL } = firebaseUser;
+
+    // Demo view-only: see everything, no edit; skip Firestore approval
+    if (isDemoViewOnly(email)) {
+      const roleUserData = getUserByRole(USER_ROLES.CONTENT_DIRECTOR);
+      const demoUser = {
+        uid,
+        email,
+        displayName: displayName || 'Demo User',
+        firstName: displayName?.split(' ')[0] || 'Demo',
+        lastName: displayName?.split(' ').slice(1).join(' ') || 'User',
+        position: roleUserData.position,
+        role: USER_ROLES.CONTENT_DIRECTOR,
+        roles: [USER_ROLES.CONTENT_DIRECTOR],
+        primaryRole: USER_ROLES.CONTENT_DIRECTOR,
+        department: 'Demo (View Only)',
+        startDate: roleUserData.startDate,
+        avatar: photoURL || roleUserData.avatar,
+        bio: roleUserData.bio,
+        skills: roleUserData.skills,
+        stats: roleUserData.stats,
+        isApproved: true,
+        onboardingCompleted: true,
+        isDemoViewOnly: true
+      };
+      setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+      setCurrentUser(demoUser);
+      setUserData(demoUser);
+      saveAuthToStorage(demoUser);
+      const currentPath = window.location.pathname;
+      if (currentPath === '/login' || currentPath === '/') {
+        appNavigate('/dashboard', { replace: true });
+      }
+      return;
+    }
 
     // System admin - full access; merge in saved profile from approved_users if present
     if (isSystemAdmin(email)) {

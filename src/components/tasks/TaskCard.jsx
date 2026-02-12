@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DailyTask } from '../../entities/DailyTask';
+import { getVancouverTodayMidnight } from '../../utils/vancouverTime';
 import { 
   Clock, 
   AlertTriangle, 
@@ -54,28 +55,24 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete, canEdit = true, canD
     setEditingDescription(false);
   };
 
-  // Helper function to parse dates as local dates (same as TasksPage)
   const parseLocalDate = (dateString) => {
     if (!dateString) return null;
     const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day); // month is 0-indexed
+    return new Date(year, month - 1, day);
   };
 
-  // Helper function to check if date is today (local date comparison)
+  // Vancouver timezone: today = Vancouver today
   const isTodayLocal = (dateString) => {
     if (!dateString) return false;
     const taskDate = parseLocalDate(dateString);
-    const today = new Date();
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayOnly = getVancouverTodayMidnight();
     return taskDate.getTime() === todayOnly.getTime();
   };
 
-  // Helper function to check if date is in the past (local date comparison)
   const isPastLocal = (dateString) => {
     if (!dateString) return false;
     const taskDate = parseLocalDate(dateString);
-    const today = new Date();
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayOnly = getVancouverTodayMidnight();
     return taskDate < todayOnly;
   };
 
