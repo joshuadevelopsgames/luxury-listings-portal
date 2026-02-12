@@ -264,7 +264,7 @@ const ClientDetailModal = ({
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Type</label>
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Service type (SMM / PP / Both)</label>
                   <select
                     value={editForm.clientType || CLIENT_TYPE.NA}
                     onChange={(e) => setEditForm({ ...editForm, clientType: e.target.value })}
@@ -567,6 +567,12 @@ const ClientDetailModal = ({
               <div className="border-t border-black/5 dark:border-white/5 pt-6">
                 <h3 className="text-[12px] font-semibold text-[#86868b] mb-4 uppercase tracking-wide">Package Details</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
+                    <p className="text-[11px] text-[#86868b] mb-1">Service type</p>
+                    <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">
+                      {CLIENT_TYPE_OPTIONS.find(o => o.value === (localClient.clientType || localClient.type || CLIENT_TYPE.NA))?.label ?? (localClient.clientType || localClient.type || CLIENT_TYPE.NA)}
+                    </p>
+                  </div>
                   <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
                     <p className="text-[11px] text-[#86868b] mb-1">Package Type</p>
                     <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{localClient.packageType || 'Standard'}</p>

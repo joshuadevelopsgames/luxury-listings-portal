@@ -209,7 +209,7 @@ const LeadDetailModal = ({
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Type</label>
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Service type (SMM / PP / Both)</label>
                   <select
                     value={editForm.type || 'N/A'}
                     onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
@@ -305,6 +305,17 @@ const LeadDetailModal = ({
               <div>
                 <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Contact Information</h3>
                 <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                    <div className="w-9 h-9 rounded-lg bg-[#5856d6]/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-[#5856d6]" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-[#86868b]">Service type</p>
+                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                        {CLIENT_TYPE_OPTIONS.find(o => o.value === (lead.type || 'N/A'))?.label ?? (lead.type || 'N/A')}
+                      </p>
+                    </div>
+                  </div>
                   {lead.email && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
                       <div className="w-9 h-9 rounded-lg bg-[#0071e3]/10 flex items-center justify-center flex-shrink-0">
