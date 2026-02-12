@@ -54,7 +54,7 @@ function getPostsPerPageSummary(c) {
 
 export default function PostingPackages() {
   const [searchParams] = useSearchParams();
-  const { hasPermission } = useAuth();
+  const { currentUser, hasPermission } = useAuth();
   const { confirm } = useConfirm();
   
   // Check permissions
