@@ -11,6 +11,7 @@ import {
   XCircle, 
   Archive,
   Plus,
+  Minus,
   Filter,
   Search,
   Mail,
@@ -24,6 +25,8 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { firestoreService } from '../services/firestoreService';
 import PlatformIcons from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
@@ -71,6 +74,7 @@ export default function PostingPackages() {
   const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();
   const [employees, setEmployees] = useState([]);
   const [crmClients, setCrmClients] = useState([]);
+  const [crmLeads, setCrmLeads] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
     selectedCrmClientId: null,
@@ -142,6 +146,41 @@ export default function PostingPackages() {
   useEffect(() => {
     firestoreService.getClients().then(setCrmClients).catch(() => setCrmClients([]));
   }, []);
+
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setCrmLeads([]);
+      return;
+    }
+    getDoc(doc(db, 'users', currentUser.uid))
+      .then((snap) => {
+        if (!snap.exists()) {
+          setCrmLeads([]);
+          return;
+        }
+        const data = snap.data().crmData || {};
+        const warm = (data.warmLeads || []).map((c, i) => ({
+          id: `lead-warm-${i}`,
+          clientName: c.contactName || c.clientName || c.name || '',
+          clientEmail: c.email || c.clientEmail || '',
+          source: 'lead'
+        }));
+        const contacted = (data.contactedClients || []).map((c, i) => ({
+          id: `lead-contacted-${i}`,
+          clientName: c.contactName || c.clientName || c.name || '',
+          clientEmail: c.email || c.clientEmail || '',
+          source: 'lead'
+        }));
+        const cold = (data.coldLeads || []).map((c, i) => ({
+          id: `lead-cold-${i}`,
+          clientName: c.contactName || c.clientName || c.name || '',
+          clientEmail: c.email || c.clientEmail || '',
+          source: 'lead'
+        }));
+        setCrmLeads([...warm, ...contacted, ...cold]);
+      })
+      .catch(() => setCrmLeads([]));
+  }, [currentUser?.uid]);
 
   // Test function to verify the script is working
   const testGoogleAppsScript = async () => {
@@ -1851,6 +1890,70 @@ export default function PostingPackages() {
     }
   };
 
+  const handleQuickPostsChange = async (client, delta) => {
+    const newUsed = Math.max(0, Math.min(client.packageSize, (client.postsUsed || 0) + delta));
+    const newRemaining = client.packageSize - newUsed;
+    setApprovalLoading((prev) => ({ ...prev, [client.id]: true }));
+    try {
+      const params = new URLSearchParams({
+        action: 'update',
+        clientData: JSON.stringify({
+          id: client.id,
+          clientName: client.clientName,
+          clientEmail: client.clientEmail || '',
+          profilePhoto: client.profilePhoto || '',
+          brokerage: client.brokerage || '',
+          platforms: client.platforms || {},
+          packageType: client.packageType,
+          packageSize: client.packageSize,
+          postsUsed: newUsed,
+          postsRemaining: newRemaining,
+          postsLuxuryListings: client.postsLuxuryListings ?? 0,
+          postsIgMansions: client.postsIgMansions ?? 0,
+          postsIgInteriors: client.postsIgInteriors ?? 0,
+          postsLuxuryHomes: client.postsLuxuryHomes ?? 0,
+          postedOn: getPostsPerPageSummary(client),
+          paymentStatus: client.paymentStatus,
+          approvalStatus: client.approvalStatus,
+          notes: client.notes || '',
+          startDate: client.startDate,
+          lastContact: client.lastContact,
+          customPrice: client.customPrice || 0,
+          overduePosts: client.overduePosts || 0
+        })
+      });
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`, { method: 'GET' });
+      if (!response.ok) throw new Error('Update failed');
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error || 'Update failed');
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === client.id
+            ? {
+                ...c,
+                postsUsed: newUsed,
+                postsRemaining: newRemaining,
+                status: determineStatus(c.approvalStatus, c.paymentStatus, newRemaining)
+              }
+            : c
+        )
+      );
+      if (String(client.id).startsWith('monthly-')) {
+        setMonthlyClients((prev) =>
+          prev.map((c) =>
+            c.id === client.id ? { ...c, postsUsed: newUsed, postsRemaining: newRemaining } : c
+          )
+        );
+      }
+      toast.success(delta > 0 ? 'Post logged' : 'Post unlogged');
+    } catch (err) {
+      console.error(err);
+      toast.error('Could not update posts');
+    } finally {
+      setApprovalLoading((prev) => ({ ...prev, [client.id]: false }));
+    }
+  };
+
   const handleAddCancel = () => {
     setShowAddModal(false);
     setAddForm({
@@ -2141,13 +2244,33 @@ export default function PostingPackages() {
                   
                   <div className="text-left sm:text-right flex-shrink-0">
                     <div className="text-[12px] text-[#86868b] mb-1">Package Progress</div>
-                    <div className="text-[24px] font-semibold text-[#0071e3]">
-                      {client.postsUsed}/{client.packageSize}
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        type="button"
+                        disabled={approvalLoading[client.id] || (client.postsUsed || 0) <= 0}
+                        onClick={() => handleQuickPostsChange(client, -1)}
+                        className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-40 disabled:pointer-events-none"
+                        aria-label="Decrease posts used"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="text-[24px] font-semibold text-[#0071e3] min-w-[4rem] text-center">
+                        {client.postsUsed}/{client.packageSize}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={approvalLoading[client.id] || (client.postsUsed || 0) >= client.packageSize}
+                        onClick={() => handleQuickPostsChange(client, 1)}
+                        className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-40 disabled:pointer-events-none"
+                        aria-label="Increase posts used"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div className="w-24 h-2 bg-black/5 dark:bg-white/10 rounded-full mt-2 overflow-hidden">
+                    <div className="w-24 h-2 bg-black/5 dark:bg-white/10 rounded-full mt-2 overflow-hidden ml-auto">
                       <div 
                         className="h-full bg-[#0071e3] rounded-full transition-all"
-                        style={{ width: `${Math.min((client.postsUsed / client.packageSize) * 100, 100)}%` }}
+                        style={{ width: `${Math.min(((client.postsUsed || 0) / client.packageSize) * 100, 100)}%` }}
                       />
                     </div>
                   </div>
@@ -2380,13 +2503,33 @@ export default function PostingPackages() {
                         
                         <div className="text-left sm:text-right flex-shrink-0">
                           <div className="text-[12px] text-[#86868b] mb-1">Monthly Progress</div>
-                          <div className="text-[24px] font-semibold text-[#5856d6]">
-                            {client.postsUsed}/{client.packageSize}
+                          <div className="flex items-center gap-2 justify-end">
+                            <button
+                              type="button"
+                              disabled={approvalLoading[client.id] || (client.postsUsed || 0) <= 0}
+                              onClick={() => handleQuickPostsChange(client, -1)}
+                              className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-40 disabled:pointer-events-none"
+                              aria-label="Decrease posts used"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <span className="text-[24px] font-semibold text-[#5856d6] min-w-[4rem] text-center">
+                              {client.postsUsed}/{client.packageSize}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={approvalLoading[client.id] || (client.postsUsed || 0) >= client.packageSize}
+                              onClick={() => handleQuickPostsChange(client, 1)}
+                              className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-40 disabled:pointer-events-none"
+                              aria-label="Increase posts used"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
                           </div>
-                          <div className="w-24 h-2 bg-black/5 dark:bg-white/10 rounded-full mt-2 overflow-hidden">
+                          <div className="w-24 h-2 bg-black/5 dark:bg-white/10 rounded-full mt-2 overflow-hidden ml-auto">
                             <div 
                               className="h-full bg-[#5856d6] rounded-full transition-all"
-                              style={{ width: `${Math.min((client.postsUsed / client.packageSize) * 100, 100)}%` }}
+                              style={{ width: `${Math.min(((client.postsUsed || 0) / client.packageSize) * 100, 100)}%` }}
                             />
                           </div>
                         </div>
@@ -3087,7 +3230,14 @@ export default function PostingPackages() {
                     className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                   />
                   <div className="max-h-44 overflow-y-auto rounded-lg border border-black/10 dark:border-white/10 divide-y divide-black/5 dark:divide-white/5">
-                    {crmClients
+                    <button
+                      type="button"
+                      onClick={() => setAddForm({ ...addForm, selectedCrmClientId: 'new', clientSearchFilter: '', clientName: '', clientEmail: '' })}
+                      className={`w-full text-left px-3 py-2.5 text-[13px] font-medium transition-colors ${addForm.selectedCrmClientId === 'new' ? 'bg-[#34c759]/10 text-[#34c759]' : 'text-[#0071e3] hover:bg-[#0071e3]/10'}`}
+                    >
+                      ＋ Add new client
+                    </button>
+                    {[...crmClients, ...crmLeads]
                       .filter(c => {
                         const q = (addForm.clientSearchFilter || '').toLowerCase();
                         if (!q) return true;
@@ -3112,13 +3262,6 @@ export default function PostingPackages() {
                           {(c.clientEmail || c.email) && <span className="text-[#86868b] ml-2">{c.clientEmail || c.email}</span>}
                         </button>
                       ))}
-                    <button
-                      type="button"
-                      onClick={() => setAddForm({ ...addForm, selectedCrmClientId: 'new', clientSearchFilter: '', clientName: '', clientEmail: '' })}
-                      className={`w-full text-left px-3 py-2.5 text-[13px] font-medium transition-colors ${addForm.selectedCrmClientId === 'new' ? 'bg-[#34c759]/10 text-[#34c759]' : 'text-[#0071e3] hover:bg-[#0071e3]/10'}`}
-                    >
-                      ＋ Add new client
-                    </button>
                   </div>
                   {addForm.selectedCrmClientId && addForm.selectedCrmClientId !== 'new' && (
                     <p className="text-[12px] text-[#86868b]">
