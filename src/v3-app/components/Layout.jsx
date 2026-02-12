@@ -7,6 +7,7 @@ import { firestoreService } from '../../services/firestoreService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
 import FeedbackButton from '../../components/ui/FeedbackButton';
+import ClientProfilesList from '../../components/client/ClientProfilesList';
 import { modules, getBaseModuleIds, getNavItemsForModules } from '../../modules/registry';
 import { 
   Home, 
@@ -646,6 +647,9 @@ const V3Layout = () => {
           </p>
         </footer>
       </div>
+
+      {/* Global add-client modal when not on Clients page (e.g. from CRM) */}
+      {location.pathname !== '/clients' && <ClientProfilesList modalOnly />}
 
       {/* Feedback & Support Button */}
       <FeedbackButton />

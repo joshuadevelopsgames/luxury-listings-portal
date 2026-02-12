@@ -58,7 +58,7 @@ const XIcon = ({ className }) => (
   </svg>
 );
 
-const ClientProfilesList = ({ internalOnly = false }) => {
+const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
   const { currentUser } = useAuth();
   const { hasFeaturePermission } = usePermissions();
   const { confirm } = useConfirm();
@@ -321,6 +321,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
   };
 
   if (loading) {
+    if (modalOnly) return null;
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mb-4" />
@@ -330,6 +331,8 @@ const ClientProfilesList = ({ internalOnly = false }) => {
   }
 
   return (
+    <>
+      {!modalOnly && (
     <div className="space-y-6">
       {/* Header Actions */}
       {displayClients.length === 0 && (
@@ -902,6 +905,8 @@ const ClientProfilesList = ({ internalOnly = false }) => {
         </div>
       )}
 
+    </div>
+  )}
       {/* Potential duplicates modal */}
       {showDuplicatesModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1267,7 +1272,7 @@ const ClientProfilesList = ({ internalOnly = false }) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

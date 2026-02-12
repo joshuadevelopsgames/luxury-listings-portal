@@ -38,25 +38,22 @@ export async function getCrmLeadsForCurrentUser(uid) {
   try {
     const userRef = doc(db, 'users', resolvedUid);
     const snap = await getDoc(userRef);
-    const data = snap.exists() ? snap.data().crmData || {} : {};
-    const warm = (data.warmLeads || []).map((c, i) => ({
-      id: String(c.id ?? `lead-warm-${i}`),
+    if (!snap.exists()) return [];
+    const raw = snap.data();
+    // CRM Add Lead form writes to crmData; Google Sheets sync writes to top level. Merge both.
+    const fromCrm = raw.crmData || {};
+    const warmLeads = [...(fromCrm.warmLeads || []), ...(raw.warmLeads || [])];
+    const contactedClients = [...(fromCrm.contactedClients || []), ...(raw.contactedClients || [])];
+    const coldLeads = [...(fromCrm.coldLeads || []), ...(raw.coldLeads || [])];
+    const mapLead = (c, i, prefix) => ({
+      id: String(c.id ?? `${prefix}-${i}`),
       clientName: (c.contactName || c.clientName || c.name || '').trim() || '—',
       clientEmail: (c.email || c.clientEmail || '').trim() || '',
       source: 'lead'
-    }));
-    const contacted = (data.contactedClients || []).map((c, i) => ({
-      id: String(c.id ?? `lead-contacted-${i}`),
-      clientName: (c.contactName || c.clientName || c.name || '').trim() || '—',
-      clientEmail: (c.email || c.clientEmail || '').trim() || '',
-      source: 'lead'
-    }));
-    const cold = (data.coldLeads || []).map((c, i) => ({
-      id: String(c.id ?? `lead-cold-${i}`),
-      clientName: (c.contactName || c.clientName || c.name || '').trim() || '—',
-      clientEmail: (c.email || c.clientEmail || '').trim() || '',
-      source: 'lead'
-    }));
+    });
+    const warm = warmLeads.map((c, i) => mapLead(c, i, 'lead-warm'));
+    const contacted = contactedClients.map((c, i) => mapLead(c, i, 'lead-contacted'));
+    const cold = coldLeads.map((c, i) => mapLead(c, i, 'lead-cold'));
     return [...warm, ...contacted, ...cold];
   } catch (err) {
     console.error('CRM getCrmLeadsForCurrentUser error:', err);

@@ -26,7 +26,6 @@ import {
   Instagram,
   ExternalLink,
   Database,
-  RefreshCw,
   Settings,
   Building,
   Save,
@@ -38,6 +37,7 @@ import {
 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
+import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
@@ -84,6 +84,8 @@ const CRMPage = () => {
   });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [exportingCrm, setExportingCrm] = useState(false);
+  const [importingCrm, setImportingCrm] = useState(false);
+  const importFileRef = React.useRef(null);
 
   // Toast notification helper
   const showToast = (message, type = 'success') => {
@@ -148,29 +150,28 @@ const CRMPage = () => {
     try {
       const docRef = doc(db, 'users', currentUser.uid);
       const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists() && docSnap.data().crmData) {
-        const storedData = docSnap.data().crmData;
-        console.log('📂 Loaded CRM data from Firebase:', storedData);
-        
-        if (storedData.warmLeads && storedData.warmLeads.length > 0) {
-          setWarmLeads(storedData.warmLeads);
-        }
-        if (storedData.contactedClients && storedData.contactedClients.length > 0) {
-          setContactedClients(storedData.contactedClients);
-        }
-        if (storedData.coldLeads && storedData.coldLeads.length > 0) {
-          setColdLeads(storedData.coldLeads);
-        }
-      } else {
-        console.log('📂 No stored CRM data found, starting with empty arrays');
-        setWarmLeads([]);
-        setContactedClients([]);
-        setColdLeads([]);
+      const raw = docSnap.exists() ? docSnap.data() : {};
+      const fromCrm = raw.crmData || {};
+      // Merge crmData + top-level (old Sheets sync wrote to top-level); dedupe by id
+      const mergeById = (a, b) => {
+        const byId = new Map();
+        [...(a || []), ...(b || [])].forEach((item) => {
+          const id = item?.id ?? item?.email;
+          if (id && !byId.has(id)) byId.set(id, item);
+        });
+        return Array.from(byId.values());
+      };
+      const warm = mergeById(fromCrm.warmLeads, raw.warmLeads);
+      const contacted = mergeById(fromCrm.contactedClients, raw.contactedClients);
+      const cold = mergeById(fromCrm.coldLeads, raw.coldLeads);
+      setWarmLeads(warm);
+      setContactedClients(contacted);
+      setColdLeads(cold);
+      if (warm.length || contacted.length || cold.length) {
+        console.log('📂 Loaded CRM data from Firebase:', { warm: warm.length, contacted: contacted.length, cold: cold.length });
       }
     } catch (error) {
       console.error('Error loading stored CRM data:', error);
-      // Start with empty arrays on error
       setWarmLeads([]);
       setContactedClients([]);
       setColdLeads([]);
@@ -211,7 +212,7 @@ const CRMPage = () => {
     }
   }, [selectedClient, selectedItemType]);
 
-  // Load data on component mount
+  // Load data on component mount (Firestore only)
   useEffect(() => {
     loadStoredData();
   }, [currentUser?.uid]);
@@ -751,6 +752,44 @@ const CRMPage = () => {
           <p className="text-[15px] text-[#86868b] mt-1">Manage your leads and client relationships</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <input
+            ref={importFileRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setImportingCrm(true);
+              try {
+                const { warmLeads: w, contactedClients: c, coldLeads: cold } = await importCrmFromXlsxFile(file);
+                const total = w.length + c.length + cold.length;
+                if (total === 0) {
+                  showToast('No leads found in file', 'error');
+                } else {
+                  setWarmLeads(w);
+                  setContactedClients(c);
+                  setColdLeads(cold);
+                  await saveCRMDataToFirebase({ warmLeads: w, contactedClients: c, coldLeads: cold });
+                  showToast(`Imported ${total} lead${total !== 1 ? 's' : ''} from xlsx`);
+                }
+              } catch (err) {
+                console.error(err);
+                showToast('Import failed: ' + (err.message || 'invalid file'), 'error');
+              } finally {
+                setImportingCrm(false);
+                e.target.value = '';
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => importFileRef.current?.click()}
+            disabled={importingCrm}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#af52de]/10 text-[#af52de] text-[13px] font-medium hover:bg-[#af52de]/20 transition-colors disabled:opacity-50"
+          >
+            {importingCrm ? 'Importing…' : 'Import from xlsx'}
+          </button>
           <button
             onClick={() => {
               setExportingCrm(true);

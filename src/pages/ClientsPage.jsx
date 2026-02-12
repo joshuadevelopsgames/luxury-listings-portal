@@ -35,6 +35,17 @@ const ClientsPage = () => {
     return () => window.removeEventListener('switchTab', handleTabSwitch);
   }, []);
 
+  // Open add client modal when navigating from CRM (e.g. /clients?openAdd=1)
+  useEffect(() => {
+    if (searchParams.get('openAdd') === '1') {
+      setSearchParams({});
+      const t = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('openAddClientModal'));
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [searchParams]);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
