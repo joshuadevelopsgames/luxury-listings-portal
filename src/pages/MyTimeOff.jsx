@@ -583,8 +583,7 @@ const MyTimeOff = () => {
           <div>
             <h3 className="text-[13px] font-medium text-[#0071e3] mb-1">Time Off Policy</h3>
             <p className="text-[13px] text-[#0071e3]/80 leading-relaxed">
-              Requests must be submitted at least two weeks in advance. Sick leave can be requested same-day. 
-              Unused vacation days are paid out at year end. Contact HR if you have questions.
+              Requests must be submitted at least three weeks in advance. Sick leave can be requested same-day.
             </p>
           </div>
         </div>

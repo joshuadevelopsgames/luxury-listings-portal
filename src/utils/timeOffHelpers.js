@@ -73,9 +73,9 @@ export const getDaysUntil = (targetDate) => {
  * Minimum notice periods by leave type (in days)
  */
 const MIN_NOTICE_DAYS = {
-  vacation: 14,    // 2 weeks notice for vacation
+  vacation: 21,    // 3 weeks notice for vacation
   sick: 0,         // Same day OK for sick
-  travel: 14,      // 2 weeks for travel
+  travel: 21,      // 3 weeks for travel
   remote: 0        // Same day OK for remote
 };
 
@@ -134,13 +134,13 @@ export const validateLeaveRequest = (request, userBalances, existingRequests = [
     }
   }
   
-  // Notice period check
+  // Notice period check (blocks submission unless 3 weeks notice for vacation/travel; sick same-day OK)
   const daysUntilStart = getDaysUntil(request.startDate);
   const minNotice = MIN_NOTICE_DAYS[leaveType] || 0;
   
   if (daysUntilStart < minNotice && request.type !== 'sick') {
-    warnings.push(
-      `${leaveType.charAt(0).toUpperCase() + leaveType.slice(1)} requests typically require ${minNotice} days notice. You're requesting with ${daysUntilStart} days notice.`
+    errors.push(
+      `${leaveType.charAt(0).toUpperCase() + leaveType.slice(1)} requests require at least ${minNotice} days (3 weeks) notice. You're requesting with ${daysUntilStart} days notice.`
     );
   }
   
