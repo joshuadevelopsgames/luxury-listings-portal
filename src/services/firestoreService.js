@@ -1817,13 +1817,33 @@ class FirestoreService {
     }
   }
 
+  /**
+   * Sanitize payload for Firestore: omit undefined, ensure keys are strings, keep primitives and plain objects safe.
+   */
+  _sanitizeClientUpdateData(data) {
+    if (data == null) return {};
+    const out = {};
+    for (const key of Object.keys(data)) {
+      const k = String(key);
+      const v = data[key];
+      if (v === undefined) continue;
+      if (v != null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date) && typeof v.toDate !== 'function') {
+        out[k] = this._sanitizeClientUpdateData(v);
+      } else {
+        out[k] = v;
+      }
+    }
+    return out;
+  }
+
   // Update client information
   async updateClient(clientId, clientData) {
     try {
       const id = clientId != null ? String(clientId) : '';
       const docRef = doc(db, this.collections.CLIENTS, id);
+      const sanitized = this._sanitizeClientUpdateData(clientData);
       await updateDoc(docRef, {
-        ...clientData,
+        ...sanitized,
         updatedAt: serverTimestamp()
       });
       console.log('✅ Client updated:', clientId);
