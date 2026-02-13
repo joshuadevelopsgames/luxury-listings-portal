@@ -5017,11 +5017,11 @@ class FirestoreService {
   async updateCanvas(userId, canvasId, patch) {
     if (!userId) throw new Error('userId required');
     const ref = doc(db, this.collections.CANVASES, canvasId);
-    const data = { updated: serverTimestamp() };
+    const data = { userId, updated: serverTimestamp() };
     if (patch.title !== undefined) data.title = patch.title;
     if (patch.emoji !== undefined) data.emoji = patch.emoji;
     if (patch.blocks !== undefined) data.blocks = patch.blocks;
-    await updateDoc(ref, data);
+    await setDoc(ref, data, { merge: true });
   }
 
   async deleteCanvas(userId, canvasId) {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -381,11 +381,11 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
   return null;
 }
 
-export default function CanvasBlockEditor({
+function CanvasBlockEditorInner({
   blocks,
   onBlocksChange,
   onWordCountChange,
-}) {
+}, ref) {
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
   const [focusedBlockId, setFocusedBlockId] = useState(null);
@@ -476,6 +476,17 @@ export default function CanvasBlockEditor({
     },
     [safeBlocks, removeBlock]
   );
+
+  useImperativeHandle(ref, () => ({
+    syncFocusedBlockFromDom() {
+      if (!focusedBlockId || !containerRef.current) return;
+      const row = containerRef.current.querySelector(`[data-block-id="${focusedBlockId}"]`);
+      const editable = row?.querySelector?.('[contenteditable="true"]');
+      if (editable && editable.innerHTML !== undefined) {
+        updateBlock(focusedBlockId, { content: editable.innerHTML });
+      }
+    },
+  }), [focusedBlockId, updateBlock]);
 
   const handleDragEnd = useCallback(
     (event) => {
@@ -731,3 +742,5 @@ export default function CanvasBlockEditor({
     </>
   );
 }
+
+export default forwardRef(CanvasBlockEditorInner);

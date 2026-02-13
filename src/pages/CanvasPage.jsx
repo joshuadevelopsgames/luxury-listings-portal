@@ -70,6 +70,7 @@ export default function CanvasPage() {
   const [wordCountStr, setWordCountStr] = useState('0 words · 0 characters');
   const [loading, setLoading] = useState(true);
   const persistBlocksTimerRef = useRef(null);
+  const canvasEditorRef = useRef(null);
 
   const userId = currentUser?.uid ?? null;
   const activeCanvas = canvases.find((c) => c.id === activeId);
@@ -521,14 +522,22 @@ export default function CanvasPage() {
               <div className="w-px h-5 bg-border mx-1" />
               <button
                 type="button"
-                onClick={() => document.execCommand('insertUnorderedList')}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  document.execCommand('insertUnorderedList');
+                  canvasEditorRef.current?.syncFocusedBlockFromDom?.();
+                }}
                 className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               >
                 <List className="w-4 h-4" />
               </button>
               <button
                 type="button"
-                onClick={() => document.execCommand('insertOrderedList')}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  document.execCommand('insertOrderedList');
+                  canvasEditorRef.current?.syncFocusedBlockFromDom?.();
+                }}
                 className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               >
                 <ListOrdered className="w-4 h-4" />
@@ -546,6 +555,7 @@ export default function CanvasPage() {
 
             {/* Block editor */}
             <CanvasBlockEditor
+              ref={canvasEditorRef}
               blocks={activeCanvas?.blocks ?? []}
               onBlocksChange={updateActiveBlocks}
               onWordCountChange={setWordCountStr}
