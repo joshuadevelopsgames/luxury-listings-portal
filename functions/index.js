@@ -664,6 +664,101 @@ Do not include # symbols in the hashtags array. Do not include any markdown or e
 });
 
 /**
+ * Canvas/workspace AI assist: summarize, expand, or change tone
+ * Uses server-side OpenAI/OpenRouter so the API key is never exposed.
+ */
+exports.canvasAssist = onCall({
+  cors: true,
+  maxInstances: 10,
+  secrets: ['OPENROUTER_API_KEY', 'OPENAI_API_KEY'],
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const userId = request.auth.uid;
+  const userEmail = request.auth.token.email || 'unknown';
+  const rateLimit = await checkRateLimit(userId, 'openai');
+  if (!rateLimit.allowed) {
+    throw new HttpsError(
+      'resource-exhausted',
+      rateLimit.reason === 'cooldown'
+        ? `Please wait ${RATE_LIMITS.openai.cooldownMinutes} minutes.`
+        : 'Rate limit exceeded. Try again later.'
+    );
+  }
+
+  const { action, blockText } = request.data || {};
+  const validActions = ['summarize', 'expand', 'professional', 'casual'];
+  if (!validActions.includes(action) || typeof blockText !== 'string') {
+    throw new HttpsError('invalid-argument', 'action (summarize|expand|professional|casual) and blockText are required');
+  }
+
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const openAIKey = process.env.OPENAI_API_KEY;
+  if (!openRouterKey && !openAIKey) {
+    throw new HttpsError('internal', 'No AI provider key configured');
+  }
+
+  const prompts = {
+    summarize: 'Summarize the following text concisely in 1-3 sentences. Preserve key points only. Return only the summary, no preamble.',
+    expand: 'Expand the following text into a longer, more detailed version. Keep the same tone and add relevant detail. Return only the expanded text.',
+    professional: 'Rewrite the following text in a formal, professional tone. Keep the same meaning and length roughly. Return only the rewritten text.',
+    casual: 'Rewrite the following text in a friendly, casual tone. Keep the same meaning. Return only the rewritten text.',
+  };
+  const systemPrompt = prompts[action] || prompts.summarize;
+  const body = {
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: (blockText || '(no content)').substring(0, 15000) },
+    ],
+    max_tokens: 2000,
+    temperature: 0.5,
+  };
+
+  try {
+    let data;
+    let provider;
+    if (openRouterKey) {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openRouterKey}` },
+        body: JSON.stringify({ ...body, model: 'openai/gpt-4o-mini' }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'OpenRouter request failed');
+      }
+      data = await response.json();
+      provider = 'openrouter';
+    } else {
+      const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openAIKey}` },
+        body: JSON.stringify({ ...body, model: 'gpt-4o-mini' }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'OpenAI request failed');
+      }
+      data = await response.json();
+      provider = 'openai';
+    }
+
+    const text = data.choices?.[0]?.message?.content?.trim() || '';
+    await logApiUsage(userId, userEmail, 'canvas_assist', {
+      action,
+      tokensUsed: data.usage?.total_tokens || 0,
+      provider,
+    });
+    return { text };
+  } catch (error) {
+    console.error('❌ Canvas assist failed:', error);
+    throw new HttpsError('internal', error.message || 'AI assist failed');
+  }
+});
+
+/**
  * Compute deterministic health score 0-100 (100 = doing exceptionally well).
  * - Insights (80%): growth/decay from report history (views, followers, engagement).
  * - Deliverables (20%): meeting monthly deliverables (0 remaining = full points).

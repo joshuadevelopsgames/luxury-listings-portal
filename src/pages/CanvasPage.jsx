@@ -137,7 +137,7 @@ export default function CanvasPage() {
   const [sharedCanvases, setSharedCanvases] = useState([]);
   const [sharedLoading, setSharedLoading] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [shareEmail, setShareEmail] = useState('');
+  const [shareSelectedUser, setShareSelectedUser] = useState('');
   const [shareSubmitting, setShareSubmitting] = useState(false);
   const [shareCollaborators, setShareCollaborators] = useState([]);
   const [approvedUsers, setApprovedUsers] = useState([]);
@@ -507,21 +507,25 @@ export default function CanvasPage() {
   };
 
   const handleShareInvite = async () => {
-    const email = shareEmail.trim().toLowerCase();
-    if (!email || !activeId || !userId || !activeCanvas) return;
+    const email = (shareSelectedUser || '').trim().toLowerCase();
+    if (!email || !activeId || !userId || !activeCanvas || !userEmail) return;
     const ownerId = activeCanvas.userId ?? userId;
     if (ownerId !== userId) return;
     setShareSubmitting(true);
     try {
-      const user = await firestoreService.getApprovedUserByEmail(email);
-      if (!user) {
-        toast.error('User not found. They must be an approved team member.');
-        setShareSubmitting(false);
-        return;
-      }
       await firestoreService.shareCanvas(userId, activeId, { email, role: 'editor' });
       setShareCollaborators((prev) => [...prev.filter((c) => c.email !== email), { email, role: 'editor' }]);
-      setShareEmail('');
+      setShareSelectedUser('');
+      const workspaceTitle = activeCanvas?.title || 'Untitled workspace';
+      const inviterName = currentUser?.displayName || currentUser?.firstName || userEmail?.split('@')[0] || 'Someone';
+      await firestoreService.createNotification({
+        userEmail: email,
+        type: 'workspace_shared',
+        title: 'Workspace shared with you',
+        message: `${inviterName} invited you to edit "${workspaceTitle}".`,
+        link: `/workspaces?id=${activeId}`,
+        read: false,
+      });
       toast.success(`Invited ${email}`);
     } catch (err) {
       console.error('Share error:', err);
@@ -952,7 +956,7 @@ export default function CanvasPage() {
                       type="button"
                       onClick={() => {
                         setShareModalOpen(true);
-                        setShareEmail('');
+                        setShareSelectedUser('');
                         if (activeId) {
                           firestoreService.getCanvasById(activeId).then((c) => {
                             setShareCollaborators(c?.sharedWith || []);
@@ -1006,7 +1010,7 @@ export default function CanvasPage() {
                             onClick={() => {
                               setContextOpen(false);
                               setShareModalOpen(true);
-                              setShareEmail('');
+                              setShareSelectedUser('');
                               if (activeId) {
                                 firestoreService.getCanvasById(activeId).then((c) => {
                                   setShareCollaborators(c?.sharedWith || []);
@@ -1112,27 +1116,36 @@ export default function CanvasPage() {
       </main>
 
       {/* Share modal */}
-      {shareModalOpen && activeId && (
+      {shareModalOpen && activeId && (() => {
+        const collaboratorEmails = new Set(shareCollaborators.map((c) => (c.email || '').toLowerCase()));
+        const shareableUsers = approvedUsers.filter(
+          (u) => u.email && (u.email || '').toLowerCase() !== (userEmail || '').toLowerCase() && !collaboratorEmails.has((u.email || '').toLowerCase())
+        );
+        return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45">
           <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-md w-full max-h-[80vh] flex flex-col">
             <h3 className="text-lg font-bold text-foreground mb-2">Share workspace</h3>
-            <p className="text-sm text-muted-foreground mb-4">Invite people to edit this workspace.</p>
+            <p className="text-sm text-muted-foreground mb-4">Invite a team member to edit this workspace. They will get a notification.</p>
             <div className="flex gap-2 mb-4">
-              <input
-                type="email"
-                value={shareEmail}
-                onChange={(e) => setShareEmail(e.target.value)}
-                placeholder="Email address"
+              <select
+                value={shareSelectedUser}
+                onChange={(e) => setShareSelectedUser(e.target.value)}
                 className="flex-1 px-3.5 py-2.5 rounded-md border border-input bg-background text-foreground text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleShareInvite())}
-              />
+              >
+                <option value="">Select a team member…</option>
+                {shareableUsers.map((u) => (
+                  <option key={u.email || u.id} value={u.email || u.id}>
+                    {u.displayName || [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || u.id}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
-                disabled={shareSubmitting || !shareEmail.trim()}
+                disabled={shareSubmitting || !shareSelectedUser.trim()}
                 onClick={handleShareInvite}
                 className="px-4 py-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm disabled:opacity-50"
               >
-                Invite
+                Add
               </button>
             </div>
             {shareCollaborators.length > 0 && (
@@ -1161,7 +1174,7 @@ export default function CanvasPage() {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => { setShareModalOpen(false); setShareEmail(''); setShareCollaborators([]); }}
+                onClick={() => { setShareModalOpen(false); setShareSelectedUser(''); setShareCollaborators([]); }}
                 className="px-4 py-2 rounded-md bg-muted text-muted-foreground hover:text-foreground font-semibold text-sm"
               >
                 Done
@@ -1169,7 +1182,8 @@ export default function CanvasPage() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Shortcuts modal */}
       {shortcutsOpen && (

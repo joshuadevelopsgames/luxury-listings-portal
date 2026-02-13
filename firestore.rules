@@ -311,10 +311,17 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     
-    // Canvases - per-user rich documents; user can only read/write their own
+    // Canvases (workspaces) - owner can do anything; shared users can read and update (edit)
     match /canvases/{canvasId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read, update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        ('sharedWithEmails' in resource.data && (
+          request.auth.token.email in resource.data.sharedWithEmails ||
+          (request.auth.token.email_lower != null && request.auth.token.email_lower in resource.data.sharedWithEmails)
+        ))
+      );
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
     
     // Content calendar - users can read/write their own calendars and items

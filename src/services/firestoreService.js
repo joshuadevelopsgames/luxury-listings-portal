@@ -5090,9 +5090,10 @@ class FirestoreService {
 
   async getCanvasesSharedWith(userEmail) {
     if (!userEmail) return [];
+    const emailLower = String(userEmail).trim().toLowerCase();
     const q = query(
       collection(db, this.collections.CANVASES),
-      where('sharedWithEmails', 'array-contains', userEmail)
+      where('sharedWithEmails', 'array-contains', emailLower)
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => {
