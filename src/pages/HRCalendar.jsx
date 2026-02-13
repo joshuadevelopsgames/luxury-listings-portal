@@ -297,36 +297,48 @@ const HRCalendar = () => {
     loadLeaveRequests();
   }, [currentUser?.email]);
 
-  // Load team members from Firestore
+  // Load team members from Firestore; only load leave balances for time-off admins
   useEffect(() => {
     const loadTeamMembers = async () => {
       try {
-        // Use getAllUsersWithLeaveBalances which includes leave balance data
-        const users = await firestoreService.getAllUsersWithLeaveBalances();
-        if (users && users.length > 0) {
-          const formattedMembers = users.map((user, index) => ({
-            id: index + 1,
-            name: user.displayName || user.email?.split('@')[0] || 'Unknown',
-            email: user.email,
-            avatar: (user.displayName || user.email || 'U').charAt(0).toUpperCase(),
-            position: user.position || user.role || 'Team Member',
-            department: user.department || 'General',
-            totalVacationDays: user.leaveBalances?.vacation?.total || 15,
-            usedVacationDays: user.leaveBalances?.vacation?.used || 0,
-            totalSickDays: user.leaveBalances?.sick?.total || 10,
-            usedSickDays: user.leaveBalances?.sick?.used || 0
-          }));
-          setTeamMembers(formattedMembers);
+        if (isTimeOffAdmin) {
+          const users = await firestoreService.getAllUsersWithLeaveBalances();
+          if (users && users.length > 0) {
+            const formattedMembers = users.map((user, index) => ({
+              id: index + 1,
+              name: user.displayName || user.email?.split('@')[0] || 'Unknown',
+              email: user.email,
+              avatar: (user.displayName || user.email || 'U').charAt(0).toUpperCase(),
+              position: user.position || user.role || 'Team Member',
+              department: user.department || 'General',
+              totalVacationDays: user.leaveBalances?.vacation?.total || 15,
+              usedVacationDays: user.leaveBalances?.vacation?.used || 0,
+              totalSickDays: user.leaveBalances?.sick?.total || 10,
+              usedSickDays: user.leaveBalances?.sick?.used || 0
+            }));
+            setTeamMembers(formattedMembers);
+          }
+        } else {
+          const users = await firestoreService.getApprovedUsers();
+          if (users && users.length > 0) {
+            setTeamMembers(users.map((user, index) => ({
+              id: index + 1,
+              name: user.displayName || user.email?.split('@')[0] || 'Unknown',
+              email: user.email,
+              avatar: (user.displayName || user.email || 'U').charAt(0).toUpperCase(),
+              position: user.position || user.role || 'Team Member',
+              department: user.department || 'General'
+            })));
+          }
         }
       } catch (error) {
         console.error('Error loading team members:', error);
-        // Set empty array to prevent crashes
         setTeamMembers([]);
       }
     };
 
     loadTeamMembers();
-  }, []);
+  }, [isTimeOffAdmin]);
 
   // Handle approve leave request with notes and notifications
   const handleApproveRequest = async (requestId, notes = '') => {
@@ -1337,7 +1349,7 @@ const HRCalendar = () => {
             </div>
             
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-              {/* Leave Balance Summary */}
+              {isTimeOffAdmin && viewingMember.totalVacationDays != null && (
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="rounded-xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -1378,7 +1390,7 @@ const HRCalendar = () => {
                   </div>
                 </div>
               </div>
-              
+              )}
               {/* Leave Request History */}
               <div>
                 <h3 className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mb-3">Leave Request History</h3>
@@ -1533,7 +1545,8 @@ const HRCalendar = () => {
         </div>
       </div>
 
-      {/* Team Overview */}
+      {/* Team Overview - leave balance visible to time-off admins only */}
+      {isTimeOffAdmin && (
       <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
         <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2">
@@ -1553,7 +1566,7 @@ const HRCalendar = () => {
               </tr>
             </thead>
             <tbody>
-              {teamMembers.map((member) => (
+              {teamMembers.filter(m => m.totalVacationDays != null).map((member) => (
                 <tr key={member.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/5 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
@@ -1630,6 +1643,7 @@ const HRCalendar = () => {
           </table>
         </div>
       </div>
+      )}
 
       {/* Admin: Team Leave Balances */}
       {isTimeOffAdmin && (

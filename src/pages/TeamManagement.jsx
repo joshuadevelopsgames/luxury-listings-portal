@@ -53,6 +53,7 @@ const TeamManagement = () => {
   
   const isHRManager = currentRole === 'hr_manager';
   const canRunLeaveMigration = isHRManager || isSystemAdmin;
+  const canViewLeaveBalance = isHRManager || isSystemAdmin;
   const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
 
   // Team members loaded from Firestore
@@ -77,7 +78,7 @@ const TeamManagement = () => {
         });
         const formattedMembers = await Promise.all(sortedUsers.map(async (user, index) => {
           const email = user.email || user.id;
-          const leaveBalance = await firestoreService.getUserLeaveBalances(email);
+          const leaveBalance = canViewLeaveBalance ? await firestoreService.getUserLeaveBalances(email) : { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } };
           return {
             ...user,
             id: user.id || index + 1,
@@ -106,7 +107,7 @@ const TeamManagement = () => {
       }
     };
     loadTeamMembers();
-  }, []);
+  }, [canViewLeaveBalance]);
 
   // Departments for filtering - keep in sync with PermissionsManager.jsx
   const departments = ['all', 'Executive', 'Content Team', 'Design Team', 'Sales', 'Marketing', 'Operations', 'HR', 'IT', 'Finance', 'General'];
@@ -408,7 +409,7 @@ const TeamManagement = () => {
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Employee</th>
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Department</th>
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Performance</th>
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Leave Balance</th>
+                {canViewLeaveBalance && <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Leave Balance</th>}
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Status</th>
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Actions</th>
               </tr>
@@ -460,35 +461,36 @@ const TeamManagement = () => {
                     </div>
                   </td>
                   
-                  <td className="py-4 px-4">
-                    <div className="space-y-2">
-                      <div>
-                        <div className="flex justify-between text-[10px] text-[#86868b] mb-1">
-                          <span>Vacation</span>
-                          <span>{member.leaveBalance.vacation.remaining}/{member.leaveBalance.vacation.total}</span>
+                  {canViewLeaveBalance && (
+                    <td className="py-4 px-4">
+                      <div className="space-y-2">
+                        <div>
+                          <div className="flex justify-between text-[10px] text-[#86868b] mb-1">
+                            <span>Vacation</span>
+                            <span>{member.leaveBalance.vacation.remaining}/{member.leaveBalance.vacation.total}</span>
+                          </div>
+                          <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-[#0071e3] rounded-full transition-all"
+                              style={{ width: `${(member.leaveBalance.vacation.remaining / member.leaveBalance.vacation.total) * 100}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-[#0071e3] rounded-full transition-all"
-                            style={{ width: `${(member.leaveBalance.vacation.remaining / member.leaveBalance.vacation.total) * 100}%` }}
-                          />
+                        <div>
+                          <div className="flex justify-between text-[10px] text-[#86868b] mb-1">
+                            <span>Sick</span>
+                            <span>{member.leaveBalance.sick.remaining}/{member.leaveBalance.sick.total}</span>
+                          </div>
+                          <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-[#ff3b30] rounded-full transition-all"
+                              style={{ width: `${(member.leaveBalance.sick.remaining / member.leaveBalance.sick.total) * 100}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="flex justify-between text-[10px] text-[#86868b] mb-1">
-                          <span>Sick</span>
-                          <span>{member.leaveBalance.sick.remaining}/{member.leaveBalance.sick.total}</span>
-                        </div>
-                        <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-[#ff3b30] rounded-full transition-all"
-                            style={{ width: `${(member.leaveBalance.sick.remaining / member.leaveBalance.sick.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  
+                    </td>
+                  )}
                   <td className="py-4 px-4">
                     <span className={`text-[11px] px-2 py-1 rounded-md font-medium flex items-center gap-1 w-fit ${getStatusColor(member.status)}`}>
                       {getStatusIcon(member.status)}

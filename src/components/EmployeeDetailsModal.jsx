@@ -47,6 +47,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
   const isHRManager = currentRole === 'hr_manager';
   const canEdit = isHRManager || isSystemAdmin;
   const canEditLeave = canEdit;
+  const canViewLeaveBalance = canEdit;
 
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
         setLoading(false);
         return;
       }
-      if (!base.leaveBalance) {
+      if (!base.leaveBalance && canViewLeaveBalance) {
         try {
           const leaveBalance = await firestoreService.getUserLeaveBalances(base.email);
           if (!cancelled) setEmployee({ ...base, leaveBalance });
@@ -81,7 +82,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
     };
     load();
     return () => { cancelled = true; };
-  }, [userProp?.id, userProp?.email]);
+  }, [userProp?.id, userProp?.email, canViewLeaveBalance]);
 
   useEffect(() => {
     if (!employee || !isEditMode) return;
@@ -273,6 +274,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                     <input type="date" value={editProfileForm.startDate} onChange={(e) => setEditProfileForm((p) => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                   </div>
                 </div>
+                {canViewLeaveBalance && (
                 <div className="border-t border-black/5 dark:border-white/10 pt-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Calendar className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
@@ -315,6 +317,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                     </div>
                   </div>
                 </div>
+                )}
               </div>
             </div>
           </div>
@@ -351,6 +354,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
               employeeId={null}
             />
 
+            {canViewLeaveBalance && (
             <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
               <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
                 <div className="flex items-center gap-3">
@@ -381,6 +385,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                 </div>
               </div>
             </div>
+            )}
           </div>
         )}
 
