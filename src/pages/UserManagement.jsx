@@ -604,6 +604,7 @@ const UserManagement = () => {
       'social_media_manager': 'Social Media Manager',
       'hr_manager': 'HR Manager',
       'sales_manager': 'Sales Manager',
+      'assistant': 'Assistant',
       'pending': 'Pending Approval'
     };
     return roleNames[role] || role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -619,6 +620,7 @@ const UserManagement = () => {
       'social_media_manager': 'bg-purple-100 text-purple-800',
       'hr_manager': 'bg-green-100 text-green-800',
       'sales_manager': 'bg-orange-100 text-orange-800',
+      'assistant': 'bg-slate-100 text-slate-800',
       'pending': 'bg-gray-100 text-gray-800'
     };
     return colors[role] || 'bg-gray-100 text-gray-800';
@@ -990,7 +992,8 @@ const UserManagement = () => {
       'content_director': 'Content & Creative',
       'social_media_manager': 'Marketing',
       'hr_manager': 'Human Resources',
-      'sales_manager': 'Sales'
+      'sales_manager': 'Sales',
+      'assistant': 'General'
     };
     return departments[role] || 'General';
   };
@@ -1156,6 +1159,7 @@ const UserManagement = () => {
                 <option value="social_media_manager">Social Media Manager</option>
                 <option value="hr_manager">HR Manager</option>
                 <option value="sales_manager">Sales Manager</option>
+                <option value="assistant">Assistant</option>
               </select>
             </div>
             

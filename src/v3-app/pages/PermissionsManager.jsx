@@ -360,7 +360,8 @@ const PermissionsManager = () => {
       'social_media_manager': 'Social Media Manager',
       'graphic_designer': 'Graphic Designer',
       'hr_manager': 'HR Manager',
-      'sales_manager': 'Sales Manager'
+      'sales_manager': 'Sales Manager',
+      'assistant': 'Assistant'
     };
     return displayNames[role] || role;
   };
@@ -669,6 +670,7 @@ const PermissionsManager = () => {
                                 <option value="graphic_designer">Graphic Designer</option>
                                 <option value="hr_manager">HR Manager</option>
                                 <option value="sales_manager">Sales Manager</option>
+                                <option value="assistant">Assistant</option>
                               </select>
                               {savingRole === email && (
                                 <RefreshCw className="w-4 h-4 text-[#0071e3] animate-spin" />
@@ -993,6 +995,7 @@ const PermissionsManager = () => {
                     <option value="graphic_designer">Graphic Designer</option>
                     <option value="hr_manager">HR Manager</option>
                     <option value="sales_manager">Sales Manager</option>
+                    <option value="assistant">Assistant</option>
                   </select>
                 </div>
 

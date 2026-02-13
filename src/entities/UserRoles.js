@@ -7,6 +7,7 @@ export const USER_ROLES = {
   GRAPHIC_DESIGNER: 'graphic_designer',
   HR_MANAGER: 'hr_manager',
   SALES_MANAGER: 'sales_manager',
+  ASSISTANT: 'assistant',
   PENDING: 'pending'
 };
 
@@ -275,6 +276,44 @@ export const ROLE_PERMISSIONS = {
     icon: '💼'
   },
 
+  [USER_ROLES.ASSISTANT]: {
+    name: 'Assistant',
+    displayName: 'Assistant',
+    description: 'Support role with limited access to dashboard, tasks, and resources',
+    permissions: {
+      canViewDashboard: true,
+      canManageTutorials: false,
+      canCreateTutorials: false,
+      canEditTutorials: false,
+      canDeleteTutorials: false,
+      canViewTasks: true,
+      canCreateTasks: false,
+      canAssignTasks: false,
+      canViewAllTasks: false,
+      canManageClientPackages: false,
+      canViewResources: true,
+      canUploadResources: false,
+      canViewAnalytics: false,
+      canManageTeam: false,
+      canViewHRData: false,
+      canManageHRData: false,
+      canViewSocialMetrics: false,
+      canManageSocialContent: false,
+      canViewCRM: false,
+      canManageLeads: false,
+      canViewSalesPipeline: false,
+      canManageDeals: false,
+      canViewSalesReports: false
+    },
+    features: [
+      'Dashboard Access',
+      'View Assigned Tasks',
+      'Resource Library'
+    ],
+    color: 'slate',
+    icon: '📋'
+  },
+
   [USER_ROLES.PENDING]: {
     name: 'Pending Approval',
     displayName: 'Pending',
@@ -368,6 +407,13 @@ export const DEFAULT_USER_BY_ROLE = {
   [USER_ROLES.SALES_MANAGER]: {
     role: USER_ROLES.SALES_MANAGER,
     department: 'Sales',
+    bio: '',
+    skills: [],
+    stats: {}
+  },
+  [USER_ROLES.ASSISTANT]: {
+    role: USER_ROLES.ASSISTANT,
+    department: 'General',
     bio: '',
     skills: [],
     stats: {}
