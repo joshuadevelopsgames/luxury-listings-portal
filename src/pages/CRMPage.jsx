@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,9 +41,7 @@ import { firestoreService } from '../services/firestoreService';
 import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
 import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
 import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db } from '../firebase';
 import { PERMISSIONS } from '../entities/Permissions';
 import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes } from '../services/crmService';
 import { findPotentialMatchesForContact } from '../services/clientDuplicateService';
@@ -93,6 +91,7 @@ const CRMPage = () => {
   const [importingCrm, setImportingCrm] = useState(false);
   const [mergingDuplicates, setMergingDuplicates] = useState(false);
   const importFileRef = React.useRef(null);
+  const addingLeadRef = useRef(false);
 
   // Toast notification helper
   const showToast = (message, type = 'success') => {
@@ -155,33 +154,16 @@ const CRMPage = () => {
     primaryContact: c.primaryContact || null
   });
 
-  // Load stored data from Firebase
+  // Load CRM data from shared Firestore doc (all users see same leads)
   const loadStoredData = async () => {
     if (!currentUser?.uid) return;
-
     try {
-      const docRef = doc(db, 'users', currentUser.uid);
-      const docSnap = await getDoc(docRef);
-      const raw = docSnap.exists() ? docSnap.data() : {};
-      const fromCrm = raw.crmData || {};
-      // Prefer crmData as source of truth when present (so merged data persists after refresh)
-      const mergeById = (a, b) => {
-        const byId = new Map();
-        [...(a || []), ...(b || [])].forEach((item) => {
-          const id = item?.id ?? item?.email;
-          if (id && !byId.has(id)) byId.set(id, item);
-        });
-        return Array.from(byId.values());
-      };
-      const useCrmOnly = Array.isArray(fromCrm.warmLeads);
-      const warm = useCrmOnly ? (fromCrm.warmLeads ?? []) : mergeById(fromCrm.warmLeads, raw.warmLeads);
-      const contacted = useCrmOnly ? (fromCrm.contactedClients ?? []) : mergeById(fromCrm.contactedClients, raw.contactedClients);
-      const cold = useCrmOnly ? (fromCrm.coldLeads ?? []) : mergeById(fromCrm.coldLeads, raw.coldLeads);
-      setWarmLeads(warm);
-      setContactedClients(contacted);
+      const { warmLeads: w, contactedClients: c, coldLeads: cold } = await firestoreService.getCrmData();
+      setWarmLeads(w);
+      setContactedClients(c);
       setColdLeads(cold);
-      if (warm.length || contacted.length || cold.length) {
-        console.log('📂 Loaded CRM data from Firebase:', { warm: warm.length, contacted: contacted.length, cold: cold.length });
+      if (w.length || c.length || cold.length) {
+        console.log('📂 Loaded CRM data from Firebase:', { warm: w.length, contacted: c.length, cold: cold.length });
       }
     } catch (error) {
       console.error('Error loading stored CRM data:', error);
@@ -225,9 +207,16 @@ const CRMPage = () => {
     }
   }, [selectedClient, selectedItemType]);
 
-  // Load data on component mount (Firestore only)
+  // Load CRM data on mount and subscribe to shared doc so all users see updates
   useEffect(() => {
+    if (!currentUser?.uid) return;
     loadStoredData();
+    const unsubscribe = firestoreService.onCrmDataChange(({ warmLeads: w, contactedClients: c, coldLeads: cold }) => {
+      setWarmLeads(w);
+      setContactedClients(c);
+      setColdLeads(cold);
+    });
+    return () => unsubscribe();
   }, [currentUser?.uid]);
 
   const fullContactsList = [
@@ -263,7 +252,7 @@ const CRMPage = () => {
       notes: newLead.notes || '',
       location: loc,
       primaryContact: pc,
-      status: 'New Lead',
+      status: selectedTabKeys[0] === 'warmLeads' ? 'warm' : selectedTabKeys[0] === 'contactedClients' ? 'contacted' : 'cold',
       lastContact: new Date().toISOString(),
       category: selectedTabKeys[0]
     };
@@ -280,8 +269,8 @@ const CRMPage = () => {
     setPossibleExistingMatches([]);
   };
 
-  // Add new lead to Google Sheets
   const handleAddNewLead = async () => {
+    if (addingLeadRef.current) return;
     const hasName = (newLead.firstName || '').trim() || (newLead.lastName || '').trim();
     if (!hasName || !newLead.email) {
       toast.error('Please fill in at least First name, Last name, and Email');
@@ -302,6 +291,7 @@ const CRMPage = () => {
       return;
     }
 
+    addingLeadRef.current = true;
     setIsAddingLead(true);
     try {
       await doAddNewLead();
@@ -309,29 +299,20 @@ const CRMPage = () => {
       console.error('❌ Error adding new lead:', error);
       showToast(`❌ Error adding lead: ${error.message}`, 'error');
     } finally {
+      addingLeadRef.current = false;
       setIsAddingLead(false);
     }
   };
 
-  // Save CRM data to Firebase (optional override when state may not have flushed yet)
+  // Save CRM data to shared Firestore doc (visible to all users)
   const saveCRMDataToFirebase = async (override) => {
-    if (!currentUser?.uid) {
-      throw new Error('You must be signed in to save CRM data');
-    }
-    const userDocRef = doc(db, 'users', currentUser.uid);
-    const data = override ?? {
-      warmLeads,
-      contactedClients,
-      coldLeads
-    };
-    await setDoc(userDocRef, {
-      crmData: {
-        warmLeads: data.warmLeads ?? [],
-        contactedClients: data.contactedClients ?? [],
-        coldLeads: data.coldLeads ?? [],
-        lastSyncTime: new Date().toISOString()
-      }
-    }, { merge: true });
+    if (!currentUser?.uid) throw new Error('You must be signed in to save CRM data');
+    const data = override ?? { warmLeads, contactedClients, coldLeads };
+    await firestoreService.setCrmData({
+      warmLeads: data.warmLeads ?? [],
+      contactedClients: data.contactedClients ?? [],
+      coldLeads: data.coldLeads ?? []
+    });
     console.log('💾 CRM data saved to Firebase');
   };
 
@@ -799,6 +780,12 @@ const CRMPage = () => {
     <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300 p-0">
       <button
         type="button"
+        role="button"
+        tabIndex={0}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1125,6 +1112,8 @@ const CRMPage = () => {
               <button
                 type="button"
                 onClick={async () => {
+                  if (addingLeadRef.current) return;
+                  addingLeadRef.current = true;
                   setIsAddingLead(true);
                   try {
                     await doAddNewLead();
@@ -1132,6 +1121,7 @@ const CRMPage = () => {
                     console.error('❌ Error adding new lead:', error);
                     showToast(`❌ Error adding lead: ${error.message}`, 'error');
                   } finally {
+                    addingLeadRef.current = false;
                     setIsAddingLead(false);
                   }
                 }}
@@ -1203,18 +1193,18 @@ const CRMPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to tab(s)</label>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to tab (pick one)</label>
                     <div className="flex flex-wrap gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={selectedTabs.warmLeads} onChange={(e) => setSelectedTabs(prev => ({ ...prev, warmLeads: e.target.checked }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <input type="checkbox" checked={selectedTabs.warmLeads} onChange={(e) => setSelectedTabs(e.target.checked ? { warmLeads: true, contactedClients: false, coldLeads: false } : (prev) => ({ ...prev, warmLeads: false }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
                         <span className="text-[13px] text-[#1d1d1f] dark:text-white">Warm Leads</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={selectedTabs.contactedClients} onChange={(e) => setSelectedTabs(prev => ({ ...prev, contactedClients: e.target.checked }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <input type="checkbox" checked={selectedTabs.contactedClients} onChange={(e) => setSelectedTabs(e.target.checked ? { warmLeads: false, contactedClients: true, coldLeads: false } : (prev) => ({ ...prev, contactedClients: false }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
                         <span className="text-[13px] text-[#1d1d1f] dark:text-white">Contacted Clients</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={selectedTabs.coldLeads} onChange={(e) => setSelectedTabs(prev => ({ ...prev, coldLeads: e.target.checked }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <input type="checkbox" checked={selectedTabs.coldLeads} onChange={(e) => setSelectedTabs(e.target.checked ? { warmLeads: false, contactedClients: false, coldLeads: true } : (prev) => ({ ...prev, coldLeads: false }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
                         <span className="text-[13px] text-[#1d1d1f] dark:text-white">Cold Leads</span>
                       </label>
                     </div>

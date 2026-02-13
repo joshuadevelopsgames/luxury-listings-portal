@@ -48,6 +48,7 @@ class FirestoreService {
     EMPLOYEES: 'employees',
     LEAVE_REQUESTS: 'leave_requests',
     CLIENTS: 'clients',
+    CRM: 'crm',
     SUPPORT_TICKETS: 'support_tickets',
     TICKET_COMMENTS: 'ticket_comments',
     NOTIFICATIONS: 'notifications',
@@ -2116,6 +2117,47 @@ class FirestoreService {
         });
       });
       callback(clients);
+    });
+  }
+
+  // ===== SHARED CRM DATA (leads visible to all users) =====
+  static CRM_DATA_DOC_ID = 'data';
+
+  async getCrmData() {
+    try {
+      const ref = doc(db, this.collections.CRM, FirestoreService.CRM_DATA_DOC_ID);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? snap.data() : {};
+      return {
+        warmLeads: Array.isArray(data.warmLeads) ? data.warmLeads : [],
+        contactedClients: Array.isArray(data.contactedClients) ? data.contactedClients : [],
+        coldLeads: Array.isArray(data.coldLeads) ? data.coldLeads : []
+      };
+    } catch (err) {
+      console.error('getCrmData error:', err);
+      return { warmLeads: [], contactedClients: [], coldLeads: [] };
+    }
+  }
+
+  async setCrmData(payload) {
+    const ref = doc(db, this.collections.CRM, FirestoreService.CRM_DATA_DOC_ID);
+    await setDoc(ref, {
+      warmLeads: payload.warmLeads ?? [],
+      contactedClients: payload.contactedClients ?? [],
+      coldLeads: payload.coldLeads ?? [],
+      lastSyncTime: new Date().toISOString()
+    }, { merge: true });
+  }
+
+  onCrmDataChange(callback) {
+    const ref = doc(db, this.collections.CRM, FirestoreService.CRM_DATA_DOC_ID);
+    return onSnapshot(ref, (snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      callback({
+        warmLeads: Array.isArray(data.warmLeads) ? data.warmLeads : [],
+        contactedClients: Array.isArray(data.contactedClients) ? data.contactedClients : [],
+        coldLeads: Array.isArray(data.coldLeads) ? data.coldLeads : []
+      });
     });
   }
 

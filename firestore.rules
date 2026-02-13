@@ -133,6 +133,11 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
+    // Shared CRM data (leads) - any authenticated can read/write so leads show for everyone
+    match /crm/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+    
     // Clients - any authenticated can read; writes restricted to roles with client management
     match /clients/{clientId} {
       allow read: if isAuthenticated();
