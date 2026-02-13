@@ -71,7 +71,7 @@ export default function CanvasPage() {
   const [loading, setLoading] = useState(true);
   const persistBlocksTimerRef = useRef(null);
 
-  const uid = currentUser?.uid ?? null;
+  const userId = currentUser?.uid ?? null;
   const activeCanvas = canvases.find((c) => c.id === activeId);
   const filteredCanvases = search.trim()
     ? canvases.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()))
@@ -88,17 +88,17 @@ export default function CanvasPage() {
       if (persistBlocksTimerRef.current) clearTimeout(persistBlocksTimerRef.current);
       persistBlocksTimerRef.current = setTimeout(() => {
         persistBlocksTimerRef.current = null;
-        if (uid && activeId) {
-          firestoreService.updateCanvas(uid, activeId, { blocks }).catch(() => toast.error('Failed to save'));
+        if (userId && activeId) {
+          firestoreService.updateCanvas(userId, activeId, { blocks }).catch(() => toast.error('Failed to save'));
         }
       }, 1200);
     },
-    [activeId, uid]
+    [activeId, userId]
   );
 
   const createCanvas = useCallback(
     (title = 'Untitled Canvas', emoji = '📄') => {
-      if (!uid) {
+      if (!userId) {
         toast.error('Please sign in to create canvases');
         return;
       }
@@ -114,10 +114,10 @@ export default function CanvasPage() {
       setCanvases((prev) => [c, ...prev]);
       setActiveId(c.id);
       toast.success('Canvas created');
-      firestoreService.createCanvas(uid, c).catch(() => toast.error('Failed to save canvas'));
+      firestoreService.createCanvas(userId, c).catch(() => toast.error('Failed to save canvas'));
       return c;
     },
-    [uid]
+    [userId]
   );
 
   const openCanvas = useCallback(
@@ -127,15 +127,15 @@ export default function CanvasPage() {
         persistBlocksTimerRef.current = null;
       }
       const prev = canvases.find((x) => x.id === activeId);
-      if (uid && activeId && prev?.blocks) {
-        firestoreService.updateCanvas(uid, activeId, { blocks: prev.blocks }).catch(() => {});
+      if (userId && activeId && prev?.blocks) {
+        firestoreService.updateCanvas(userId, activeId, { blocks: prev.blocks }).catch(() => {});
       }
       const c = canvases.find((x) => x.id === id);
       if (!c) return;
       setActiveId(id);
       setSidebarOpen(false);
     },
-    [canvases, activeId, uid]
+    [canvases, activeId, userId]
   );
 
   const deleteCanvas = useCallback(
@@ -147,9 +147,9 @@ export default function CanvasPage() {
         confirmText: 'Delete',
         variant: 'danger',
       });
-      if (ok && uid) {
+      if (ok && userId) {
         try {
-          await firestoreService.deleteCanvas(uid, id);
+          await firestoreService.deleteCanvas(userId, id);
           setCanvases((prev) => prev.filter((x) => x.id !== id));
           if (activeId === id) setActiveId(null);
           toast.success('Canvas deleted');
@@ -158,12 +158,12 @@ export default function CanvasPage() {
         }
       }
     },
-    [canvases, activeId, confirm, uid]
+    [canvases, activeId, confirm, userId]
   );
 
   const duplicateCanvas = useCallback(
     (id) => {
-      if (!uid) return;
+      if (!userId) return;
       const src = canvases.find((c) => c.id === id);
       if (!src) return;
       const blocks = Array.isArray(src.blocks) && src.blocks.length
@@ -179,35 +179,35 @@ export default function CanvasPage() {
       };
       setCanvases((prev) => [c, ...prev]);
       setActiveId(c.id);
-      firestoreService.createCanvas(uid, c).catch(() => toast.error('Failed to duplicate canvas'));
+      firestoreService.createCanvas(userId, c).catch(() => toast.error('Failed to duplicate canvas'));
       toast.success('Canvas duplicated');
     },
-    [canvases, uid]
+    [canvases, userId]
   );
 
   useEffect(() => {
-    if (!uid) return;
+    if (!userId) return;
     setLoading(true);
     firestoreService
-      .getCanvases(uid)
+      .getCanvases(userId)
       .then((list) => {
         setCanvases(list);
         setActiveId(null);
       })
       .catch(() => toast.error('Failed to load canvases'))
       .finally(() => setLoading(false));
-  }, [uid]);
+  }, [userId]);
 
 
   const updateActiveMeta = useCallback(
     (patch) => {
-      if (!activeId || !uid) return;
+      if (!activeId || !userId) return;
       setCanvases((prev) =>
         prev.map((c) => (c.id === activeId ? { ...c, ...patch, updated: Date.now() } : c))
       );
-      firestoreService.updateCanvas(uid, activeId, patch).catch(() => toast.error('Failed to save'));
+      firestoreService.updateCanvas(userId, activeId, patch).catch(() => toast.error('Failed to save'));
     },
-    [activeId, uid]
+    [activeId, userId]
   );
 
   const handleExport = () => {
@@ -251,7 +251,7 @@ export default function CanvasPage() {
     <div className="flex flex-1 min-h-0 bg-[#f5f5f7] dark:bg-[#161617] overflow-hidden">
       {/* Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-30 w-[280px] min-w-[280px] flex flex-col bg-[#ffffff] dark:bg-[#1c1c1e] border-r border-border transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed md:static inset-y-0 left-0 z-20 w-[280px] min-w-[280px] flex flex-col bg-[#ffffff] dark:bg-[#1c1c1e] border-r border-border transition-transform duration-300 md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -356,7 +356,7 @@ export default function CanvasPage() {
       {/* Backdrop for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-20 md:hidden"
+          className="fixed inset-0 bg-black/40 z-10 md:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden
         />
