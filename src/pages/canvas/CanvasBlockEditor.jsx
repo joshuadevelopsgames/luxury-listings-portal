@@ -77,7 +77,7 @@ function wordCharCount(blocks) {
   return `${words} word${words !== 1 ? 's' : ''} · ${text.length} char${text.length !== 1 ? 's' : ''}`;
 }
 
-function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect }) {
+function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock }) {
   const {
     attributes,
     listeners,
@@ -119,13 +119,16 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
           onRequestImage={onRequestImage}
           onRequestVideo={onRequestVideo}
           onSlashDetect={onSlashDetect}
+          onEnterCreateBlock={onEnterCreateBlock}
+          onPasteImage={onPasteImage}
+          onBackspaceEmptyBlock={onBackspaceEmptyBlock}
         />
       </div>
     </div>
   );
 }
 
-function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect }) {
+function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock }) {
   const elRef = useRef(null);
 
   const notifyContent = useCallback(
@@ -318,6 +321,40 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
             dangerouslySetInnerHTML={{ __html: block.content || '' }}
             onBlur={(e) => notifyContent(e.currentTarget.innerHTML)}
             onFocus={() => onFocus(block.id)}
+            onKeyDown={(e) => {
+              const el = e.currentTarget;
+              const text = (el.textContent || '').trim();
+              const isTextLike = ['text', 'h1', 'h2', 'h3', 'quote', 'callout'].includes(block.type);
+              if (e.key === 'Enter' && !e.shiftKey && onEnterCreateBlock && isTextLike) {
+                const sel = window.getSelection();
+                const atEnd = !sel?.rangeCount || (() => {
+                  const r = sel.getRangeAt(0);
+                  if (!r.collapsed) return false;
+                  const end = document.createRange();
+                  end.selectNodeContents(el);
+                  end.collapse(false);
+                  return r.compareBoundaryPoints(Range.END_TO_END, end) === 0;
+                })();
+                if (text === '' || atEnd) {
+                  e.preventDefault();
+                  onEnterCreateBlock(block.id);
+                }
+              }
+              if (e.key === 'Backspace' && text === '' && onBackspaceEmptyBlock && isTextLike) {
+                e.preventDefault();
+                onBackspaceEmptyBlock(block.id);
+              }
+            }}
+            onPaste={(e) => {
+              const files = e.clipboardData?.files;
+              if (files?.length && onPasteImage) {
+                const imageFile = Array.from(files).find((f) => f.type.startsWith('image/'));
+                if (imageFile) {
+                  e.preventDefault();
+                  onPasteImage(block.id, imageFile);
+                }
+              }
+            }}
             onInput={(e) => {
               if (!onSlashDetect || !['text', 'h1', 'h2', 'h3', 'quote', 'callout'].includes(block.type)) return;
               const sel = window.getSelection();
@@ -404,6 +441,42 @@ export default function CanvasBlockEditor({
     [safeBlocks, onBlocksChange, onWordCountChange]
   );
 
+  const handleEnterCreateBlock = useCallback(
+    (blockId) => {
+      const idx = safeBlocks.findIndex((b) => b.id === blockId);
+      if (idx === -1) return;
+      const newBlock = { id: blockId(), type: 'text', content: '' };
+      addBlockAfter(idx, newBlock);
+      setFocusedBlockId(newBlock.id);
+    },
+    [safeBlocks, addBlockAfter]
+  );
+
+  const handlePasteImage = useCallback(
+    (blockId, file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const idx = safeBlocks.findIndex((b) => b.id === blockId);
+        const newBlock = { id: blockId(), type: 'image', content: ev.target.result, caption: '' };
+        addBlockAfter(idx >= 0 ? idx : safeBlocks.length - 1, newBlock);
+        setFocusedBlockId(newBlock.id);
+      };
+      reader.readAsDataURL(file);
+    },
+    [safeBlocks, addBlockAfter]
+  );
+
+  const handleBackspaceEmptyBlock = useCallback(
+    (blockId) => {
+      const idx = safeBlocks.findIndex((b) => b.id === blockId);
+      if (idx <= 0) return;
+      const prev = safeBlocks[idx - 1];
+      removeBlock(blockId);
+      setFocusedBlockId(prev.id);
+    },
+    [safeBlocks, removeBlock]
+  );
+
   const handleDragEnd = useCallback(
     (event) => {
       const { active, over } = event;
@@ -462,6 +535,45 @@ export default function CanvasBlockEditor({
       c.label.toLowerCase().includes(slashFilter.toLowerCase()) ||
       c.id.includes(slashFilter)
   );
+
+  // Slash menu keyboard: ArrowUp/Down, Enter, Escape
+  useEffect(() => {
+    if (!slashOpen || slashItems.length === 0) return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSlashIndex((i) => (i + 1) % slashItems.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSlashIndex((i) => (i - 1 + slashItems.length) % slashItems.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const c = slashItems[slashIndex];
+        if (!c) return;
+        const idx = focusedIndex >= 0 ? focusedIndex : safeBlocks.length - 1;
+        if (c.id === 'image' || c.id === 'video') {
+          pendingMediaRef.current = { blockId: null, type: null };
+          if (fileInputRef.current) {
+            fileInputRef.current.accept = c.id === 'image' ? 'image/*' : 'video/*';
+            fileInputRef.current.click();
+          }
+        } else {
+          const newBlock =
+            c.id === 'checklist'
+              ? { id: blockId(), type: 'checklist', content: JSON.stringify([{ text: '', checked: false }]) }
+              : { id: blockId(), type: c.id, content: c.id === 'bullet' || c.id === 'ordered' ? '<li></li>' : '', caption: '' };
+          addBlockAfter(idx, newBlock);
+          setFocusedBlockId(newBlock.id);
+        }
+        setSlashOpen(false);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setSlashOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [slashOpen, slashIndex, slashItems, focusedIndex, safeBlocks, addBlockAfter]);
 
   return (
     <>
@@ -544,6 +656,9 @@ export default function CanvasBlockEditor({
                     }
                   }}
                   onSlashDetect={handleSlashDetect}
+                  onEnterCreateBlock={handleEnterCreateBlock}
+                  onPasteImage={handlePasteImage}
+                  onBackspaceEmptyBlock={handleBackspaceEmptyBlock}
                 />
               ))}
             </SortableContext>

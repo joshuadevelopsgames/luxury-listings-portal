@@ -254,7 +254,7 @@ const router = createBrowserRouter([
           { path: 'features', element: <PermissionRoute pageId="features" pageName="Add-ons"><FeaturesPage /></PermissionRoute> },
           { path: 'workload', element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
-          { path: 'canvas', element: <CanvasPage /> },
+          { path: 'canvas', element: <PermissionRoute pageId="canvas" pageName="Canvas"><CanvasPage /></PermissionRoute> },
 
           // Admin pages - system admin only
           { path: 'system-admin', element: <SystemAdminPage /> },

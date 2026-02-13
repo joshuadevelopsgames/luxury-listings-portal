@@ -264,11 +264,6 @@ const V3Layout = () => {
       // No permissions - show nothing
       enabledModules = [];
     }
-    // Canvas is available to all logged-in users
-    if (!isViewingAs && !enabledModules.includes('canvas')) {
-      enabledModules = ['canvas', ...enabledModules];
-    }
-
     // Get navigation items grouped by section from the registry
     const sectionedModules = getNavItemsForModules(enabledModules);
     
