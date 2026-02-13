@@ -64,10 +64,10 @@ export const modules = {
     name: 'Workspace',
     description: 'Workspaces with formatting, checklists, slash commands, and collaboration',
     icon: PencilRuler,
-    routes: ['/canvas'],
+    routes: ['/workspaces'],
     widgets: [],
     navItem: {
-      path: '/canvas',
+      path: '/workspaces',
       section: 'Main'
     },
     baseModule: true

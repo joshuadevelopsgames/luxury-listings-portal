@@ -128,7 +128,7 @@ function contentWithWikiLinks(html) {
   return html.replace(/\[\[([^\]]*)\]\]\(([^)]+)\)/g, (_, title, id) => {
     const safeId = String(id).replace(/"/g, '&quot;');
     const safeTitle = (title || 'Workspace').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-    return `<a href="/canvas?id=${encodeURIComponent(id)}" class="text-primary hover:underline" data-wiki="1">${safeTitle}</a>`;
+    return `<a href="/workspaces?id=${encodeURIComponent(id)}" class="text-primary hover:underline" data-wiki="1">${safeTitle}</a>`;
   });
 }
 
@@ -171,7 +171,7 @@ function wordCharCount(blocks) {
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂'];
 
-function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, onDuplicateBlock, restoreKey, onOpenComments, onToggleReaction, getBlockData, canvasId, currentUserEmail }) {
+function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onWikiDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, onDuplicateBlock, restoreKey, onOpenComments, onToggleReaction, getBlockData, canvasId, currentUserEmail, currentUserName, workspaceList = [] }) {
   const {
     attributes,
     listeners,
@@ -225,7 +225,7 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
           onRequestVideo={onRequestVideo}
           onSlashDetect={onSlashDetect}
           onMentionDetect={onMentionDetect}
-          onWikiDetect={workspaceList?.length ? handleWikiDetect : null}
+          onWikiDetect={workspaceList?.length ? onWikiDetect : null}
           onEnterCreateBlock={onEnterCreateBlock}
           onPasteImage={onPasteImage}
           onBackspaceEmptyBlock={onBackspaceEmptyBlock}
@@ -1136,6 +1136,7 @@ function CanvasBlockEditorInner({
                   }}
                   onSlashDetect={handleSlashDetect}
                   onMentionDetect={handleMentionDetect}
+                  onWikiDetect={handleWikiDetect}
                   onEnterCreateBlock={handleEnterCreateBlock}
                   onPasteImage={handlePasteImage}
                   onBackspaceEmptyBlock={handleBackspaceEmptyBlock}
@@ -1145,6 +1146,8 @@ function CanvasBlockEditorInner({
                   getBlockData={getBlockData}
                   canvasId={canvasId}
                   currentUserEmail={currentUserEmail}
+                  currentUserName={currentUserName}
+                  workspaceList={workspaceList}
                 />
               ))}
             </SortableContext>

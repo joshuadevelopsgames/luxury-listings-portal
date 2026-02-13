@@ -230,7 +230,7 @@ export default function CanvasPage() {
                 type: 'workspace_mention',
                 title: 'Mentioned you in a workspace',
                 message: excerpt || 'You were mentioned.',
-                link: `/canvas?id=${activeId}&block=${blockIdForLink}`,
+                link: `/workspaces?id=${activeId}&block=${blockIdForLink}`,
                 read: false,
               }).catch(() => {});
             }

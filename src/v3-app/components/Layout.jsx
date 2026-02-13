@@ -223,7 +223,7 @@ const V3Layout = () => {
     'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, path: '/instagram-reports' },
     // Upgrade modules
     'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-    'canvas': { name: 'Workspace', icon: FileText, path: '/canvas' },
+    'canvas': { name: 'Workspace', icon: FileText, path: '/workspaces' },
     'clients': { name: 'Clients List', icon: User, path: '/clients' },
     'posting-packages': { name: 'Posting Packages', icon: Briefcase, path: '/posting-packages' },
     'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
@@ -482,7 +482,7 @@ const V3Layout = () => {
       </aside>
 
       {/* Main Content - transparent when on Add-ons page so gradient shows */}
-      <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'} ${location.pathname === '/canvas' ? 'flex flex-col' : ''}`}>
+      <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'} ${location.pathname === '/workspaces' ? 'flex flex-col' : ''}`}>
         {/* View As Banner */}
         {isViewingAs && viewingAsUser && (
           <div className="sticky top-0 z-40 bg-gradient-to-r from-[#5856d6] to-[#af52de] text-white px-4 py-2.5 shadow-lg">
@@ -641,7 +641,7 @@ const V3Layout = () => {
         </header>
 
         {/* Page Content - full-bleed for Canvas so background is cohesive */}
-        {location.pathname === '/canvas' ? (
+        {location.pathname === '/workspaces' ? (
           <main className="flex-1 flex flex-col min-h-0">
             <Outlet />
           </main>
@@ -656,7 +656,7 @@ const V3Layout = () => {
         )}
 
         {/* Footer - hidden on canvas so page is full-bleed */}
-        {location.pathname !== '/canvas' && (
+        {location.pathname !== '/workspaces' && (
           <footer className="py-6 px-8 text-center border-t border-black/5 dark:border-white/5">
             <p className="text-[12px] text-[#86868b]">
               © 2026 Luxury Listings. All rights reserved.
