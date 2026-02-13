@@ -45,6 +45,7 @@ import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
 import { USER_ROLES } from '../../entities/UserRoles';
 import { getSystemAdmins, isSystemAdmin as checkIsSystemAdmin } from '../../utils/systemAdmins';
+import { PERMISSIONS } from '../../entities/Permissions';
 import EmployeeLink from '../../components/ui/EmployeeLink';
 import EmployeeDetailsModal from '../../components/EmployeeDetailsModal';
 
@@ -136,7 +137,7 @@ const DEPARTMENTS = [
 // (resolves from Firestore system_config/admins with bootstrap fallback)
 
 const PermissionsManager = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, hasPermission } = useAuth();
   const { startViewingAs } = useViewAs();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
@@ -379,6 +380,10 @@ const PermissionsManager = () => {
       return;
     }
 
+    if (!isSystemAdmin) {
+      toast.error('Only system administrators can add users');
+      return;
+    }
     try {
       setAddingUser(true);
       
@@ -419,10 +424,14 @@ const PermissionsManager = () => {
     }
   };
 
-  // Remove a user
+  // Remove a user (System Admin only)
   const handleRemoveUser = async () => {
     if (!userToRemove) return;
-    
+    if (!isSystemAdmin) {
+      toast.error('Only system administrators can remove users');
+      setUserToRemove(null);
+      return;
+    }
     // Don't allow removing system admins
     if (checkIsSystemAdmin(userToRemove.email)) {
       toast.error('Cannot remove the primary system administrator');
@@ -475,7 +484,8 @@ const PermissionsManager = () => {
     user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (!isSystemAdmin) {
+  const canAccess = isSystemAdmin || hasPermission(PERMISSIONS.MANAGE_USERS);
+  if (!canAccess) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
@@ -484,7 +494,7 @@ const PermissionsManager = () => {
             Access Denied
           </h2>
           <p className="text-[#86868b]">
-            Only system administrators can access this page.
+            You don&apos;t have permission to access this page.
           </p>
         </div>
       </div>
@@ -511,17 +521,21 @@ const PermissionsManager = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add User
-          </button>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3]">
-            <Shield className="w-4 h-4" />
-            <span className="text-[13px] font-medium">System Admin</span>
-          </div>
+          {isSystemAdmin && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add User
+            </button>
+          )}
+          {isSystemAdmin && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3]">
+              <Shield className="w-4 h-4" />
+              <span className="text-[13px] font-medium">System Admin</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -885,16 +899,18 @@ const PermissionsManager = () => {
                           </div>
                         </div>
 
-                        {/* Remove User */}
-                        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/5">
-                          <button
-                            onClick={() => setUserToRemove(user)}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors text-[13px] font-medium"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Remove User
-                          </button>
-                        </div>
+                        {/* Remove User - System Admin only */}
+                        {isSystemAdmin && (
+                          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/5">
+                            <button
+                              onClick={() => setUserToRemove(user)}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors text-[13px] font-medium"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Remove User
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>

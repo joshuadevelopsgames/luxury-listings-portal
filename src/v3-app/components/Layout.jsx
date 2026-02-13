@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
-import { usePermissions } from '../../contexts/PermissionsContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
@@ -53,7 +53,7 @@ import {
 const V3Layout = () => {
   const { currentUser, currentRole, logout } = useAuth();
   const { viewingAsUser, isViewingAs, stopViewingAs } = useViewAs();
-  const { permissions: userPermissions, isSystemAdmin } = usePermissions();
+  const { permissions: userPermissions, isSystemAdmin, hasFeaturePermission } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -317,6 +317,16 @@ const V3Layout = () => {
         adminSection.items = [...adminItems, ...rest];
       } else {
         sections.push({ title: 'Admin', items: [...adminItems] });
+      }
+    } else if (!isViewingAs && hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_USERS)) {
+      // Manage Users (no system admin): show only Users & Permissions in Admin
+      let adminSection = sections.find(s => s.title === 'Admin');
+      if (adminSection) {
+        if (!adminSection.items.includes('permissions')) {
+          adminSection.items.unshift('permissions');
+        }
+      } else {
+        sections.push({ title: 'Admin', items: ['permissions'] });
       }
     }
     

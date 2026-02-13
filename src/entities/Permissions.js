@@ -37,6 +37,7 @@ export const PERMISSIONS = {
   MANAGE_LEAVE_REQUESTS: 'manage_leave_requests',
   APPROVE_LEAVE: 'approve_leave',
   VIEW_HR_DATA: 'view_hr_data',
+  VIEW_ALL_TIME_OFF: 'view_all_time_off',
   MANAGE_TEAM: 'manage_team',
   
   // Clients List
@@ -127,6 +128,7 @@ export const PERMISSION_CATEGORIES = {
       PERMISSIONS.MANAGE_LEAVE_REQUESTS,
       PERMISSIONS.APPROVE_LEAVE,
       PERMISSIONS.VIEW_HR_DATA,
+      PERMISSIONS.VIEW_ALL_TIME_OFF,
       PERMISSIONS.MANAGE_TEAM
     ]
   },
@@ -210,6 +212,7 @@ export const PERMISSION_LABELS = {
   [PERMISSIONS.MANAGE_LEAVE_REQUESTS]: 'Manage Leave Requests',
   [PERMISSIONS.APPROVE_LEAVE]: 'Approve Leave Requests',
   [PERMISSIONS.VIEW_HR_DATA]: 'View HR Data',
+  [PERMISSIONS.VIEW_ALL_TIME_OFF]: 'View All Time Off (vacation/sick)',
   [PERMISSIONS.MANAGE_TEAM]: 'Manage Team',
   
   [PERMISSIONS.VIEW_ALL_CLIENTS]: 'View All Clients',
@@ -239,7 +242,7 @@ export const PERMISSION_LABELS = {
 // Helper function to get permission description
 export function getPermissionDescription(permission) {
   const descriptions = {
-    [PERMISSIONS.MANAGE_USERS]: 'Create, edit, and delete user accounts',
+    [PERMISSIONS.MANAGE_USERS]: 'Edit user roles and page permissions (add/remove users is system admin only)',
     [PERMISSIONS.APPROVE_USERS]: 'Approve pending user registrations',
     [PERMISSIONS.ASSIGN_ROLES]: 'Assign and modify user roles',
     [PERMISSIONS.DELETE_USERS]: 'Remove users from the system',
@@ -268,6 +271,7 @@ export function getPermissionDescription(permission) {
     [PERMISSIONS.MANAGE_LEAVE_REQUESTS]: 'View and manage all leave requests',
     [PERMISSIONS.APPROVE_LEAVE]: 'Approve or reject leave requests',
     [PERMISSIONS.VIEW_HR_DATA]: 'Access HR data and reports',
+    [PERMISSIONS.VIEW_ALL_TIME_OFF]: 'See all users\' vacation and sick days (read-only list)',
     [PERMISSIONS.MANAGE_TEAM]: 'Manage team members and structure',
     
     [PERMISSIONS.VIEW_ALL_CLIENTS]: 'View all SMM client profiles',

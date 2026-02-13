@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
+import { PERMISSIONS } from '../entities/Permissions';
 import EmployeeDetailsModal from '../components/EmployeeDetailsModal';
 import EmployeeLink from '../components/ui/EmployeeLink';
 import { firestoreService } from '../services/firestoreService';
@@ -38,7 +39,7 @@ import { safeFormatDate } from '../utils/dateUtils';
 import { toast } from 'react-hot-toast';
 
 const TeamManagement = () => {
-  const { currentUser, currentRole } = useAuth();
+  const { currentUser, currentRole, hasPermission } = useAuth();
   const { confirm } = useConfirm();
   const { hasFeaturePermission, isSystemAdmin } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,7 +54,8 @@ const TeamManagement = () => {
   
   const isHRManager = currentRole === 'hr_manager';
   const canRunLeaveMigration = isHRManager || isSystemAdmin;
-  const canViewLeaveBalance = isHRManager || isSystemAdmin;
+  const canViewLeaveBalance = isHRManager || isSystemAdmin ||
+    hasPermission(PERMISSIONS.VIEW_ALL_TIME_OFF) || hasPermission(PERMISSIONS.VIEW_HR_DATA);
   const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
 
   // Team members loaded from Firestore
