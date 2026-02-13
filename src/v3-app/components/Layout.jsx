@@ -487,7 +487,7 @@ const V3Layout = () => {
       </aside>
 
       {/* Main Content - transparent when on Add-ons page so gradient shows */}
-      <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'}`}>
+      <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'} ${location.pathname === '/canvas' ? 'flex flex-col' : ''}`}>
         {/* View As Banner */}
         {isViewingAs && viewingAsUser && (
           <div className="sticky top-0 z-40 bg-gradient-to-r from-[#5856d6] to-[#af52de] text-white px-4 py-2.5 shadow-lg">
@@ -645,22 +645,29 @@ const V3Layout = () => {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="p-4 lg:p-8">
-          <div className="max-w-[1600px] mx-auto">
-            {/* Apple-style content wrapper */}
-            <div className="v3-content-wrapper">
-              <Outlet />
+        {/* Page Content - full-bleed for Canvas so background is cohesive */}
+        {location.pathname === '/canvas' ? (
+          <main className="flex-1 flex flex-col min-h-0">
+            <Outlet />
+          </main>
+        ) : (
+          <main className="p-4 lg:p-8">
+            <div className="max-w-[1600px] mx-auto">
+              <div className="v3-content-wrapper">
+                <Outlet />
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        )}
 
-        {/* Footer */}
-        <footer className="py-6 px-8 text-center border-t border-black/5 dark:border-white/5">
-          <p className="text-[12px] text-[#86868b]">
-            © 2026 Luxury Listings. All rights reserved.
-          </p>
-        </footer>
+        {/* Footer - hidden on canvas so page is full-bleed */}
+        {location.pathname !== '/canvas' && (
+          <footer className="py-6 px-8 text-center border-t border-black/5 dark:border-white/5">
+            <p className="text-[12px] text-[#86868b]">
+              © 2026 Luxury Listings. All rights reserved.
+            </p>
+          </footer>
+        )}
       </div>
 
       {/* Global add-client modal when not on Clients page (e.g. from CRM) */}

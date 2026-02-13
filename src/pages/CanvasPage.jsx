@@ -98,7 +98,10 @@ export default function CanvasPage() {
 
   const createCanvas = useCallback(
     (title = 'Untitled Canvas', emoji = '📄') => {
-      if (!uid) return;
+      if (!uid) {
+        toast.error('Please sign in to create canvases');
+        return;
+      }
       const initialBlocks = [{ id: blockId(), type: 'text', content: '' }];
       const c = {
         id: uid(),
@@ -110,7 +113,8 @@ export default function CanvasPage() {
       };
       setCanvases((prev) => [c, ...prev]);
       setActiveId(c.id);
-      firestoreService.createCanvas(uid, c).catch(() => toast.error('Failed to create canvas'));
+      toast.success('Canvas created');
+      firestoreService.createCanvas(uid, c).catch(() => toast.error('Failed to save canvas'));
       return c;
     },
     [uid]
@@ -244,10 +248,10 @@ export default function CanvasPage() {
   if (!currentUser) return null;
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] bg-background overflow-hidden">
+    <div className="flex flex-1 min-h-0 bg-[#f5f5f7] dark:bg-[#161617] overflow-hidden">
       {/* Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-30 w-[280px] min-w-[280px] flex flex-col bg-card border-r border-border transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed md:static inset-y-0 left-0 z-30 w-[280px] min-w-[280px] flex flex-col bg-[#ffffff] dark:bg-[#1c1c1e] border-r border-border transition-transform duration-300 md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -359,23 +363,23 @@ export default function CanvasPage() {
       )}
 
       {/* Main */}
-      <main className="flex-1 flex flex-col bg-background min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#f5f5f7] dark:bg-[#161617]">
         {!activeId ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-10 text-muted-foreground">
-            <div className="w-[100px] h-[100px] rounded-2xl bg-muted flex items-center justify-center text-primary mb-6">
-              <PencilRuler className="w-10 h-10" />
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
+            <div className="w-16 h-16 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center text-primary mb-5">
+              <PencilRuler className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">
+            <h3 className="text-xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
               Your Canvas Workspace
             </h3>
-            <p className="text-sm max-w-[340px] leading-relaxed mb-5">
+            <p className="text-sm max-w-[340px] leading-relaxed text-[#86868b] dark:text-[#a1a1a6] mb-5">
               Create rich documents with blocks, checklists, media, and slash commands. Type{' '}
-              <strong>/</strong> for quick commands. Drag to reorder blocks.
+              <strong className="text-foreground">/</strong> for quick commands. Drag to reorder blocks.
             </p>
             <button
               type="button"
               onClick={() => createCanvas()}
-              className="inline-flex items-center gap-1.5 py-2.5 px-5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm"
+              className="inline-flex items-center gap-1.5 py-2.5 px-5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm shadow-sm"
             >
               <Plus className="w-4 h-4" /> Create Your First Canvas
             </button>
@@ -383,7 +387,7 @@ export default function CanvasPage() {
         ) : (
           <>
             {/* Top bar */}
-            <div className="h-[52px] flex items-center gap-2.5 px-4 border-b border-border bg-muted/40 flex-shrink-0">
+            <div className="h-[52px] flex items-center gap-2.5 px-4 border-b border-border bg-[#f5f5f7] dark:bg-[#161617] flex-shrink-0">
               <button
                 type="button"
                 className="md:hidden p-1.5 text-muted-foreground hover:bg-muted rounded"
@@ -509,7 +513,7 @@ export default function CanvasPage() {
             </div>
 
             {/* Format toolbar */}
-            <div className="h-[46px] flex items-center gap-0.5 px-4 border-b border-border bg-muted/40 flex-shrink-0 overflow-x-auto">
+            <div className="h-[46px] flex items-center gap-0.5 px-4 border-b border-border bg-[#f5f5f7] dark:bg-[#161617] flex-shrink-0 overflow-x-auto">
               <FormatBtn cmd="bold" icon={<Bold className="w-3.5 h-3.5" />} />
               <FormatBtn cmd="italic" icon={<Italic className="w-3.5 h-3.5" />} />
               <FormatBtn cmd="underline" icon={<Underline className="w-3.5 h-3.5" />} />
@@ -548,7 +552,7 @@ export default function CanvasPage() {
             />
 
             {/* Word count */}
-            <div className="h-7 flex items-center justify-end px-5 border-t border-border bg-muted/40 text-[11px] text-muted-foreground">
+            <div className="h-7 flex items-center justify-end px-5 border-t border-border bg-[#f5f5f7] dark:bg-[#161617] text-[11px] text-muted-foreground">
               {wordCountStr}
             </div>
           </>
