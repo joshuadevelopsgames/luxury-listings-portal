@@ -23,6 +23,17 @@ function firstNonEmpty(group, key) {
   return group[0]?.[key] ?? '';
 }
 
+function mergedObject(group) {
+  const merged = {};
+  const allKeys = new Set();
+  group.forEach((c) => Object.keys(c || {}).forEach((k) => allKeys.add(k)));
+  allKeys.forEach((key) => {
+    if (key === '_source') return;
+    merged[key] = key === 'id' ? group[0]?.id : firstNonEmpty(group, key);
+  });
+  return merged;
+}
+
 /**
  * Merge duplicate CRM leads (by name/email) into one per group. Keeps one lead per group with merged fields.
  * @param {Array} warmLeads
@@ -52,10 +63,7 @@ export function mergeCrmDuplicates(warmLeads, contactedClients, coldLeads) {
 
   for (const group of groups) {
     const keeper = group[0];
-    const merged = { _source: keeper._source };
-    for (const key of LEAD_FIELDS) {
-      merged[key] = key === 'id' ? keeper.id : firstNonEmpty(group, key);
-    }
+    const merged = { ...mergedObject(group), _source: keeper._source };
     merged.id = keeper.id;
     mergedLeads.push(merged);
     group.forEach((c) => idsToRemove.add(c.id));

@@ -774,6 +774,28 @@ class FirestoreService {
     return this.saveSystemConfig('systemUptime', value);
   }
 
+  /**
+   * Bootstrap the system_config/admins document if it doesn't exist.
+   * Called once by the initial system admin to seed the admins list.
+   * Safe to call multiple times - only creates if missing.
+   */
+  async bootstrapSystemAdmins(bootstrapEmail) {
+    try {
+      const adminDocRef = doc(db, this.collections.SYSTEM_CONFIG, 'admins');
+      const adminSnap = await getDoc(adminDocRef);
+      if (!adminSnap.exists()) {
+        await setDoc(adminDocRef, {
+          emails: [bootstrapEmail.toLowerCase()],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log('✅ system_config/admins bootstrapped with:', bootstrapEmail);
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not bootstrap system admins:', error.message);
+    }
+  }
+
   // Get system config
   async getSystemConfig(key) {
     try {
@@ -4065,6 +4087,122 @@ class FirestoreService {
       return { success: true };
     } catch (error) {
       console.error('❌ Error resolving error report:', error);
+      throw error;
+    }
+  }
+
+  // ===== ANNOUNCEMENTS (Admin-managed site-wide banners) =====
+
+  /**
+   * Get all announcements (active and inactive).
+   */
+  async getAnnouncements() {
+    try {
+      const snapshot = await getDocs(
+        query(collection(db, 'announcements'), orderBy('priority', 'desc'))
+      );
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (error) {
+      console.error('Error getting announcements:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get only active, non-expired announcements.
+   */
+  async getActiveAnnouncements() {
+    try {
+      const snapshot = await getDocs(
+        query(
+          collection(db, 'announcements'),
+          where('active', '==', true),
+          orderBy('priority', 'desc')
+        )
+      );
+      const now = new Date();
+      return snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(a => !a.expiresAt || a.expiresAt.toDate() > now);
+    } catch (error) {
+      console.error('Error getting active announcements:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Real-time listener for active announcements.
+   */
+  onActiveAnnouncementsChange(callback) {
+    try {
+      return onSnapshot(
+        query(
+          collection(db, 'announcements'),
+          where('active', '==', true),
+          orderBy('priority', 'desc')
+        ),
+        (snapshot) => {
+          const now = new Date();
+          const announcements = snapshot.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter(a => !a.expiresAt || a.expiresAt.toDate() > now);
+          callback(announcements);
+        },
+        (error) => {
+          console.warn('Announcements listener error:', error.message);
+          callback([]);
+        }
+      );
+    } catch (error) {
+      console.warn('Could not start announcements listener:', error.message);
+      return () => {};
+    }
+  }
+
+  /**
+   * Create a new announcement.
+   */
+  async createAnnouncement(data) {
+    try {
+      const docRef = await addDoc(collection(db, 'announcements'), {
+        ...data,
+        active: data.active !== undefined ? data.active : true,
+        dismissible: data.dismissible !== undefined ? data.dismissible : true,
+        priority: data.priority || 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return { id: docRef.id };
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing announcement.
+   */
+  async updateAnnouncement(announcementId, updates) {
+    try {
+      const ref = doc(db, 'announcements', announcementId);
+      await updateDoc(ref, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an announcement.
+   */
+  async deleteAnnouncement(announcementId) {
+    try {
+      await deleteDoc(doc(db, 'announcements', announcementId));
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
       throw error;
     }
   }

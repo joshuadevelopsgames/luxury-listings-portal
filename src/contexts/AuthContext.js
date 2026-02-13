@@ -8,16 +8,8 @@ import { appNavigate } from '../utils/navigation';
 import { usePendingUsers } from './PendingUsersContext';
 import { useViewAs } from './ViewAsContext';
 import { googleCalendarService } from '../services/googleCalendarService';
-
-// ============================================================================
-// SYSTEM ADMINS - Full access to everything (excludes demo; demo is view-only)
-// ============================================================================
-const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
-const isSystemAdmin = (email) => SYSTEM_ADMINS.includes(email?.toLowerCase());
-
-// Demo login: can see everything, cannot edit anything
-const DEMO_VIEW_ONLY_EMAILS = ['demo@luxurylistings.app'];
-const isDemoViewOnly = (email) => DEMO_VIEW_ONLY_EMAILS.includes(email?.toLowerCase());
+import { isSystemAdmin, isDemoViewOnly, loadSystemAdmins, startAdminListener } from '../utils/systemAdmins';
+import { resolvePermission } from '../utils/permissionResolver';
 
 // ============================================================================
 // LOCAL STORAGE - Persist auth state for faster page loads
@@ -75,6 +67,13 @@ export function AuthProvider({ children }) {
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
 
   const { addPendingUser } = usePendingUsers();
+
+  // Load system admins from Firestore on mount + start real-time listener
+  useEffect(() => {
+    loadSystemAdmins();
+    const unsubscribeAdmins = startAdminListener();
+    return () => unsubscribeAdmins();
+  }, []);
 
   // ============================================================================
   // AUTH METHODS
@@ -202,16 +201,16 @@ export function AuthProvider({ children }) {
   }
 
   function hasPermission(permission) {
-    // System admin always has all permissions
-    if (isSystemAdmin(currentUser?.email)) return true;
-    
-    // Check custom permissions
-    const customPerms = currentUser?.customPermissions || userData?.customPermissions || [];
-    if (customPerms.includes(permission)) return true;
-    
-    // Check role permissions
-    const permissions = getCurrentRolePermissions();
-    return permissions.permissions[permission] || false;
+    // Unified permission resolver: checks system admin, custom, page, feature, role-based
+    return resolvePermission({
+      permission,
+      role: currentRole,
+      customPermissions: currentUser?.customPermissions || userData?.customPermissions || [],
+      pagePermissions: currentUser?.pagePermissions || [],
+      featurePermissions: currentUser?.featurePermissions || [],
+      isAdmin: isSystemAdmin(currentUser?.email),
+      adminPermissions: !!currentUser?.adminPermissions,
+    });
   }
 
   // ============================================================================
@@ -282,6 +281,9 @@ export function AuthProvider({ children }) {
 
     // System admin - full access; merge in saved profile from approved_users if present
     if (isSystemAdmin(email)) {
+      // Ensure system_config/admins doc exists (bootstrap on first admin sign-in)
+      firestoreService.bootstrapSystemAdmins(email).catch(() => {});
+
       let savedRole;
       try {
         savedRole = await firestoreService.getSystemConfig('currentRole');

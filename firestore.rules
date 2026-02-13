@@ -6,17 +6,67 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Helper function to check if user is admin
+
+    // Helper: resolve system admins from system_config/admins doc (dynamic, no hardcoded emails)
+    // Falls back to legacy hardcoded email for bootstrap safety
     function isAdmin() {
-      return isAuthenticated() && 
-             (request.auth.token.email == 'jrsschroeder@gmail.com' ||
-              request.auth.token.email == 'demo@luxurylistings.app');
+      let adminDoc = get(/databases/$(database)/documents/system_config/admins);
+      let dynamicAdmins = adminDoc != null && adminDoc.data != null && 'emails' in adminDoc.data
+        ? adminDoc.data.emails
+        : [];
+      return isAuthenticated() && (
+        request.auth.token.email in dynamicAdmins ||
+        request.auth.token.email == 'jrsschroeder@gmail.com' ||
+        request.auth.token.email == 'demo@luxurylistings.app'
+      );
     }
-    
+
+    // Helper: check if user has a specific role by reading their approved_users doc
+    function getUserRole() {
+      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email));
+      return userDoc != null && userDoc.data != null && 'role' in userDoc.data
+        ? userDoc.data.role
+        : 'pending';
+    }
+
+    // Helper: check if user has a specific feature permission
+    function hasFeaturePermission(feature) {
+      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email));
+      return userDoc != null && userDoc.data != null && 'featurePermissions' in userDoc.data
+        && feature in userDoc.data.featurePermissions;
+    }
+
+    // Helper: check if user has admin-level permissions flag
+    function hasAdminPermissions() {
+      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email));
+      return userDoc != null && userDoc.data != null
+        && 'adminPermissions' in userDoc.data
+        && userDoc.data.adminPermissions == true;
+    }
+
+    // Helper: check if user's role is in the allowed list
+    function userRoleIn(allowedRoles) {
+      return getUserRole() in allowedRoles;
+    }
+
     // Helper function to get user email
     function getUserEmail() {
       return request.auth.token.email;
+    }
+
+    // ===== AUDIT LOG (append-only) =====
+    // Anyone authenticated can create audit entries; only admins can read; no updates/deletes
+    match /audit_log/{logId} {
+      allow create: if isAuthenticated();
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // ===== SYSTEM CONFIG =====
+    // admins doc readable by all authenticated (so isAdmin helper works); writable only by admin
+    match /system_config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
     
     // Users collection - users can read/write their own data, admins can access all
@@ -47,7 +97,8 @@ service cloud.firestore {
       allow update: if isAdmin() ||
         (isAuthenticated() && request.auth.token.email == userEmail &&
          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-           'role', 'roles', 'primaryRole', 'isApproved', 'email', 'customPermissions'
+           'role', 'roles', 'primaryRole', 'isApproved', 'email', 'customPermissions',
+           'pagePermissions', 'featurePermissions', 'adminPermissions'
          ]));
     }
     
@@ -82,11 +133,14 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
-    // Clients - authenticated users can read, authenticated users can write
-    // TODO: Add role-based check (only Social Media Managers and Admins should write)
+    // Clients - any authenticated can read; writes restricted to roles with client management
     match /clients/{clientId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && (
+        isAdmin() ||
+        hasAdminPermissions() ||
+        userRoleIn(['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'])
+      );
     }
     
     // System doc for monthly posts reset (last year-month). Read: any authenticated; write: admin only.
@@ -114,11 +168,14 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Client contracts - authenticated users can read, authenticated users can write
-    // TODO: Add role-based check (only Social Media Managers and Admins should write)
+    // Client contracts - any authenticated can read; writes restricted to client-managing roles
     match /client_contracts/{contractId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && (
+        isAdmin() ||
+        hasAdminPermissions() ||
+        userRoleIn(['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'])
+      );
     }
     
     // Client messages - authenticated users can read/write
@@ -132,21 +189,18 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
-    // Pending clients - authenticated users can read, authenticated users can write
-    // TODO: Add role-based check (only Social Media Managers and Admins should write)
+    // Pending clients - any authenticated can read; writes restricted to client-managing roles
     match /pending_clients/{clientId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && (
+        isAdmin() ||
+        hasAdminPermissions() ||
+        userRoleIn(['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'])
+      );
     }
     
     // Analytics config - authenticated users can read, admins can write
     match /analytics_config/{document=**} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-    
-    // System config - authenticated users can read, admins can write
-    match /system_config/{document=**} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
@@ -178,11 +232,22 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && resource.data.userEmail == request.auth.token.email;
     }
     
-    // Leave requests - authenticated users can read, authenticated users can write
-    // TODO: Add HR role check for write operations
+    // Leave requests - any authenticated can read; create own requests; only HR/admin can approve/update others
     match /leave_requests/{requestId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      // Anyone can create their own leave request
+      allow create: if isAuthenticated();
+      // Updates: owner can edit own pending request; HR/admin can approve/reject any
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        userRoleIn(['admin', 'hr_manager']) ||
+        (resource.data.userEmail == request.auth.token.email && resource.data.status == 'pending')
+      );
+      // Delete: admin/HR only
+      allow delete: if isAuthenticated() && (
+        isAdmin() ||
+        userRoleIn(['admin', 'hr_manager'])
+      );
     }
     
     // Graphic projects - authenticated users can read/write (design team collaboration)
@@ -252,16 +317,52 @@ service cloud.firestore {
       allow read, update, delete: if isAuthenticated() && resource.data.userEmail == request.auth.token.email;
       allow create: if isAuthenticated() && request.resource.data.userEmail == request.auth.token.email;
     }
+    // Content items - owner can CRUD; admins/directors can read all and update status (approval workflow)
     match /content_items/{itemId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userEmail == request.auth.token.email;
+      allow read: if isAuthenticated() && (
+        resource.data.userEmail == request.auth.token.email ||
+        isAdmin() ||
+        userRoleIn(['admin', 'director', 'content_director'])
+      );
       allow create: if isAuthenticated() && request.resource.data.userEmail == request.auth.token.email;
+      allow update: if isAuthenticated() && (
+        resource.data.userEmail == request.auth.token.email ||
+        isAdmin() ||
+        userRoleIn(['admin', 'director', 'content_director'])
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.userEmail == request.auth.token.email ||
+        isAdmin()
+      );
     }
     
-    // Note: The catch-all rule below is commented out to maintain current functionality
-    // Uncomment it once you've verified all collections are explicitly listed above
-    // match /{document=**} {
-    //   allow read, write: if false;
-    // }
+    // Announcements - all authenticated can read; only admins can write
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Custom roles - admin read/write for role management
+    match /custom_roles/{roleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Rate limits - Cloud Functions manage these via Admin SDK; no client access
+    match /rate_limits/{docId} {
+      allow read, write: if false;
+    }
+
+    // API usage logs - Cloud Functions manage; admin read only
+    match /api_usage_logs/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Catch-all: deny access to any collection not explicitly listed above
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
 

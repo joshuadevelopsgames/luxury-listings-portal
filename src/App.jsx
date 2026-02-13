@@ -26,6 +26,7 @@ import V3Login from './v3-app/components/Login';
 import V3Dashboard from './v3-app/components/Dashboard';
 import PermissionRoute from './v3-app/components/PermissionRoute';
 import PermissionsManager from './v3-app/pages/PermissionsManager';
+import AnnouncementManager from './v3-app/pages/AnnouncementManager';
 import SystemAdminPage from './pages/SystemAdminPage';
 
 // V3 Styles
@@ -275,6 +276,7 @@ const router = createBrowserRouter([
 
           // Admin pages
           { path: 'permissions', element: <PermissionsManager /> },
+          { path: 'announcements', element: <AnnouncementManager /> },
           { path: 'instagram-reports', element: <InstagramReportsPage /> },
 
           // Meta OAuth callback

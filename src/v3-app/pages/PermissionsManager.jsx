@@ -44,6 +44,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
 import { USER_ROLES } from '../../entities/UserRoles';
+import { getSystemAdmins, isSystemAdmin as checkIsSystemAdmin } from '../../utils/systemAdmins';
 import EmployeeLink from '../../components/ui/EmployeeLink';
 import EmployeeDetailsModal from '../../components/EmployeeDetailsModal';
 
@@ -130,13 +131,8 @@ const DEPARTMENTS = [
   'General'
 ];
 
-// System admins (for full access display); demo is view-only, not an admin
-const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
-
-// Protected admins that cannot be removed
-const PROTECTED_ADMINS = [
-  'jrsschroeder@gmail.com'
-];
+// System admins and protected admins are now loaded dynamically from systemAdmins utility
+// (resolves from Firestore system_config/admins with bootstrap fallback)
 
 const PermissionsManager = () => {
   const { currentUser } = useAuth();
@@ -172,8 +168,11 @@ const PermissionsManager = () => {
   // Unified edit profile: open EmployeeDetailsModal in edit mode
   const [profileModalUser, setProfileModalUser] = useState(null);
 
-  // Check if current user is system admin
-  const isSystemAdmin = SYSTEM_ADMINS.includes(currentUser?.email?.toLowerCase());
+  // Check if current user is system admin (dynamic from Firestore)
+  const isSystemAdmin = checkIsSystemAdmin(currentUser?.email);
+
+  // Get current admin list for UI display
+  const SYSTEM_ADMINS = getSystemAdmins();
 
   // Load all approved users (including system admins who may not be in approved_users)
   useEffect(() => {
@@ -423,8 +422,8 @@ const PermissionsManager = () => {
   const handleRemoveUser = async () => {
     if (!userToRemove) return;
     
-    // Don't allow removing protected admins
-    if (PROTECTED_ADMINS.includes(userToRemove.email?.toLowerCase())) {
+    // Don't allow removing system admins
+    if (checkIsSystemAdmin(userToRemove.email)) {
       toast.error('Cannot remove the primary system administrator');
       setUserToRemove(null);
       return;

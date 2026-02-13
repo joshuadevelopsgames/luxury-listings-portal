@@ -1,12 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { firestoreService } from '../services/firestoreService';
+import { isSystemAdmin as checkIsSystemAdmin } from '../utils/systemAdmins';
 // getBaseModuleIds import removed - base modules now check explicit permissions
 
 const PermissionsContext = createContext();
-
-// System admins always have full access (demo is view-only, not here)
-const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
 
 // Feature permissions - granular access within pages
 export const FEATURE_PERMISSIONS = {
@@ -71,8 +69,8 @@ export function PermissionsProvider({ children }) {
       return;
     }
 
-    // Check if system admin
-    const adminStatus = SYSTEM_ADMINS.includes(currentUser.email.toLowerCase());
+    // Check if system admin (dynamic from Firestore system_config/admins)
+    const adminStatus = checkIsSystemAdmin(currentUser.email);
     setIsSystemAdmin(adminStatus);
 
     // System admins don't need to load permissions

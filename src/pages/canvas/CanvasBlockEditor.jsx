@@ -97,14 +97,14 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-[#7b5ea7]/5 dark:hover:bg-[#b494da]/10"
+      className="group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-muted/50"
       data-block-id={block.id}
       data-block-type={block.type}
     >
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center justify-center w-6 shrink-0 cursor-grab active:cursor-grabbing text-[#a0a0a0] dark:text-[#6d5f80] opacity-0 group-hover:opacity-100 touch-none"
+        className="flex items-center justify-center w-6 shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground opacity-0 group-hover:opacity-100 touch-none"
       >
         <GripVertical className="w-4 h-4" />
       </div>
@@ -157,13 +157,13 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
                 const next = items.map((it, j) => (j === i ? { ...it, checked: e.target.checked } : it));
                 notifyContent(JSON.stringify(next));
               }}
-              className="mt-1.5 w-4 h-4 accent-[#7b5ea7] cursor-pointer shrink-0"
+              className="mt-1.5 w-4 h-4 accent-primary cursor-pointer shrink-0"
             />
             <span
               ref={i === 0 ? elRef : null}
               contentEditable
               suppressContentEditableWarning
-              className={`flex-1 outline-none min-h-[22px] ${item.checked ? 'line-through text-[#a0a0a0]' : ''}`}
+              className={`flex-1 outline-none min-h-[22px] ${item.checked ? 'line-through text-muted-foreground' : ''}`}
               dangerouslySetInnerHTML={{ __html: item.text }}
               onBlur={(e) => {
                 const next = items.map((it, j) => (j === i ? { ...it, text: e.currentTarget.innerHTML } : it));
@@ -201,7 +201,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
             <div
               contentEditable
               suppressContentEditableWarning
-              className="text-sm text-[#616061] dark:text-[#a393b8] text-center py-1 px-2 outline-none empty:before:content-['Add_caption…'] empty:before:text-[#a0a0a0]"
+              className="text-sm text-muted-foreground text-center py-1 px-2 outline-none empty:before:content-['Add_caption…'] empty:before:text-muted-foreground"
               onBlur={(e) => notifyContent(block.content, e.currentTarget.innerHTML)}
               dangerouslySetInnerHTML={{ __html: block.caption || '' }}
             />
@@ -210,7 +210,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
           <button
             type="button"
             onClick={() => onRequestImage?.()}
-            className="w-full py-8 border-2 border-dashed border-[#7b5ea7] rounded-lg text-[#7b5ea7] font-medium hover:bg-[#7b5ea7]/10"
+            className="w-full py-8 border-2 border-dashed border-primary rounded-lg text-primary font-medium hover:bg-primary/10"
           >
             Click or drop image
           </button>
@@ -237,7 +237,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
             <div
               contentEditable
               suppressContentEditableWarning
-              className="text-sm text-[#616061] dark:text-[#a393b8] text-center py-1 outline-none empty:before:content-['Add_caption…']"
+              className="text-sm text-muted-foreground text-center py-1 outline-none empty:before:content-['Add_caption…']"
               onBlur={(e) => notifyContent(block.content, e.currentTarget.innerHTML)}
               dangerouslySetInnerHTML={{ __html: block.caption || '' }}
             />
@@ -246,7 +246,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
           <button
             type="button"
             onClick={() => onRequestVideo?.()}
-            className="w-full py-8 border-2 border-dashed border-[#7b5ea7] rounded-lg text-[#7b5ea7] font-medium hover:bg-[#7b5ea7]/10"
+            className="w-full py-8 border-2 border-dashed border-primary rounded-lg text-primary font-medium hover:bg-primary/10"
           >
             Click or drop video
           </button>
@@ -256,7 +256,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
   }
 
   if (block.type === 'divider') {
-    return <hr className="border-0 h-px bg-[#e8e3ef] dark:bg-[#3b2f52] my-4" />;
+    return <hr className="border-0 h-px bg-border my-4" />;
   }
 
   const isTextLike = ['text', 'h1', 'h2', 'h3', 'quote', 'code', 'callout', 'bullet', 'ordered'].includes(block.type);
@@ -270,11 +270,11 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
           : block.type === 'h3'
             ? 'text-lg font-semibold mt-2 mb-0.5'
             : block.type === 'quote'
-              ? 'border-l-4 border-[#7b5ea7] pl-4 py-1 bg-[#ede4f7] dark:bg-[#3b2f52] rounded-r text-[#616061] dark:text-[#a393b8] italic'
+              ? 'border-l-4 border-primary pl-4 py-1 bg-muted rounded-r text-muted-foreground italic'
               : block.type === 'code'
-                ? 'font-mono text-sm bg-[#f4f2f7] dark:bg-[#271f38] border border-[#e8e3ef] dark:border-[#3b2f52] rounded px-4 py-2 whitespace-pre-wrap'
+                ? 'font-mono text-sm bg-muted border border-border rounded px-4 py-2 whitespace-pre-wrap'
                 : block.type === 'callout'
-                  ? 'flex gap-2 py-2 px-3 bg-[#fef9ec] dark:bg-[#252014] border-l-4 border-[#f5c542] dark:border-[#9e7a20] rounded-r'
+                  ? 'flex gap-2 py-2 px-3 bg-amber-500/10 dark:bg-amber-500/15 border-l-4 border-amber-500 dark:border-amber-400 rounded-r'
                   : block.type === 'bullet' || block.type === 'ordered'
                     ? 'pl-4'
                     : 'min-h-[24px]';
@@ -334,7 +334,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
                 onSlashDetect(null);
               }
             }}
-            style={{ caretColor: '#7b5ea7' }}
+            style={{ caretColor: 'hsl(var(--primary))' }}
           />
         )}
       </div>
@@ -509,12 +509,12 @@ export default function CanvasBlockEditor({
         <div className="max-w-[760px] mx-auto py-7 px-9 min-h-full">
           {dropZoneVisible && (
             <div
-              className={`flex flex-col items-center justify-center gap-2 py-8 my-2 border-2 border-dashed rounded-xl text-[#7b5ea7] font-semibold text-sm ${
-                dropZoneOver ? 'bg-[#7b5ea7]/15 border-[#6a4e94]' : 'bg-[#7b5ea7]/5'
+              className={`flex flex-col items-center justify-center gap-2 py-8 my-2 border-2 border-dashed rounded-xl text-primary font-semibold text-sm ${
+                dropZoneOver ? 'bg-primary/15 border-primary' : 'bg-primary/5'
               }`}
             >
               Drop images or videos here
-              <span className="text-xs font-normal text-[#616061] dark:text-[#a393b8]">PNG, JPG, GIF, MP4, WebM</span>
+              <span className="text-xs font-normal text-muted-foreground">PNG, JPG, GIF, MP4, WebM</span>
             </div>
           )}
 
@@ -553,7 +553,7 @@ export default function CanvasBlockEditor({
             <button
               type="button"
               onClick={() => addBlockAfter(safeBlocks.length - 1, { id: blockId(), type: 'text', content: '' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#a0a0a0] dark:text-[#6d5f80] border border-dashed border-[#e8e3ef] dark:border-[#3b2f52] rounded-md hover:border-[#7b5ea7] hover:text-[#7b5ea7]"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground border border-dashed border-border rounded-md hover:border-primary hover:text-primary"
             >
               <Plus className="w-4 h-4" /> Add block
             </button>
@@ -563,7 +563,7 @@ export default function CanvasBlockEditor({
                 pendingMediaRef.current = { blockId: null, type: null };
                 fileInputRef.current?.click();
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#a0a0a0] dark:text-[#6d5f80] border border-dashed border-[#e8e3ef] dark:border-[#3b2f52] rounded-md hover:border-[#7b5ea7] hover:text-[#7b5ea7]"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground border border-dashed border-border rounded-md hover:border-primary hover:text-primary"
             >
               <Image className="w-4 h-4" /> Add media
             </button>
@@ -573,15 +573,15 @@ export default function CanvasBlockEditor({
 
       {slashOpen && slashItems.length > 0 && (
         <div
-          className="fixed z-50 w-[230px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-white dark:bg-[#231b33] border border-[#e8e3ef] dark:border-[#3b2f52] rounded-xl shadow-xl"
+          className="fixed z-50 w-[230px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
           style={{ left: slashPosRef.current.left, top: slashPosRef.current.top }}
         >
           {slashItems.map((c, i) => (
             <button
               key={c.id}
               type="button"
-              className={`w-full flex items-center gap-2 py-2 px-3 rounded-lg text-left text-sm ${
-                i === slashIndex ? 'bg-[#ede8f5] dark:bg-[#3b2f52]' : 'hover:bg-[#ede8f5] dark:hover:bg-[#3b2f52]'
+              className={`w-full flex items-center gap-2 py-2 px-3 rounded-lg text-left text-sm text-foreground ${
+                i === slashIndex ? 'bg-muted' : 'hover:bg-muted'
               }`}
               onClick={() => {
                 const idx = focusedIndex >= 0 ? focusedIndex : safeBlocks.length - 1;
@@ -601,12 +601,12 @@ export default function CanvasBlockEditor({
                 setSlashOpen(false);
               }}
             >
-              <span className="w-6 h-6 flex items-center justify-center rounded-md bg-[#ede4f7] dark:bg-[#3b2f52] text-[#7b5ea7] shrink-0">
+              <span className="w-6 h-6 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">
                 {typeof c.icon === 'function' ? <c.icon className="w-3.5 h-3.5" /> : c.icon}
               </span>
               <div>
                 <span className="font-semibold">{c.label}</span>
-                <small className="block text-[10px] text-[#616061] dark:text-[#a393b8]">{c.desc}</small>
+                <small className="block text-[10px] text-muted-foreground">{c.desc}</small>
               </div>
             </button>
           ))}

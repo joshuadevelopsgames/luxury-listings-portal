@@ -244,23 +244,23 @@ export default function CanvasPage() {
   if (!currentUser) return null;
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] bg-[#1a1329] overflow-hidden">
+    <div className="flex h-[calc(100vh-3.5rem)] bg-background overflow-hidden">
       {/* Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-30 w-[280px] min-w-[280px] flex flex-col bg-[#231b33] border-r border-white/10 transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed md:static inset-y-0 left-0 z-30 w-[280px] min-w-[280px] flex flex-col bg-card border-r border-border transition-transform duration-300 md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7b5ea7] to-[#b494da] flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
               <PencilRuler className="w-4 h-4" />
             </div>
-            <h2 className="text-white font-bold text-[15px]">Canvases</h2>
+            <h2 className="text-foreground font-bold text-[15px]">Canvases</h2>
           </div>
           <button
             type="button"
-            className="md:hidden p-1.5 text-[#cfc3e0] hover:bg-white/10 rounded"
+            className="md:hidden p-1.5 text-muted-foreground hover:bg-muted rounded"
             onClick={() => setSidebarOpen(false)}
             aria-label="Close sidebar"
           >
@@ -271,31 +271,31 @@ export default function CanvasPage() {
           <button
             type="button"
             onClick={() => createCanvas()}
-            className="w-full py-2.5 px-3.5 rounded-md bg-[#7b5ea7] hover:bg-[#6a4e94] text-white font-bold text-sm flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-3.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm flex items-center justify-center gap-2"
           >
             <Plus className="w-3.5 h-3.5" /> New Canvas
           </button>
         </div>
         <div className="relative px-3.5 pb-3">
-          <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#a393b8]/70 pointer-events-none" />
+          <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search canvases…"
-            className="w-full pl-9 pr-3 py-2 rounded-md border border-white/10 bg-white/5 text-[#cfc3e0] placeholder:text-[#a393b8]/60 text-sm outline-none focus:border-[#7b5ea7] focus:bg-white/10"
+            className="w-full pl-9 pr-3 py-2 rounded-md border border-input bg-muted/30 text-foreground placeholder:text-muted-foreground text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
           />
         </div>
-        <div className="px-4 pt-2 text-[11px] font-bold uppercase tracking-wider text-[#a393b8]">
+        <div className="px-4 pt-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
           Your Canvases
         </div>
         <div className="flex-1 overflow-y-auto px-2 pb-4 min-h-0">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-[#7b5ea7] border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : filteredCanvases.length === 0 ? (
-            <div className="text-center py-8 text-[#a393b8] text-sm">
+            <div className="text-center py-8 text-muted-foreground text-sm">
               <FolderOpen className="w-9 h-9 mx-auto mb-3 opacity-40" />
               {search.trim() ? 'No canvases match your search.' : 'No canvases yet.'}
             </div>
@@ -306,19 +306,17 @@ export default function CanvasPage() {
                   key={c.id}
                   onClick={() => openCanvas(c.id)}
                   className={`flex items-center gap-2.5 py-2.5 px-3 rounded-md cursor-pointer transition-colors group ${
-                    c.id === activeId
-                      ? 'bg-[#3b2f52]'
-                      : 'hover:bg-[#2e2445]'
+                    c.id === activeId ? 'bg-muted' : 'hover:bg-muted/70'
                   }`}
                 >
                   <span className="text-base flex-shrink-0 w-5 text-center">{c.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div
-                      className={`text-sm truncate ${c.id === activeId ? 'text-white font-bold' : 'text-[#cfc3e0]'}`}
+                      className={`text-sm truncate ${c.id === activeId ? 'text-foreground font-bold' : 'text-foreground/90'}`}
                     >
                       {c.title}
                     </div>
-                    <div className="text-[11px] text-[#a393b8]/60">{dateStr(c.updated)}</div>
+                    <div className="text-[11px] text-muted-foreground">{dateStr(c.updated)}</div>
                   </div>
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
@@ -327,7 +325,7 @@ export default function CanvasPage() {
                         e.stopPropagation();
                         duplicateCanvas(c.id);
                       }}
-                      className="p-1.5 rounded text-[#a393b8] hover:bg-white/10 hover:text-white"
+                      className="p-1.5 rounded text-muted-foreground hover:bg-muted hover:text-foreground"
                       title="Duplicate"
                     >
                       <Copy className="w-3.5 h-3.5" />
@@ -338,7 +336,7 @@ export default function CanvasPage() {
                         e.stopPropagation();
                         deleteCanvas(c.id);
                       }}
-                      className="p-1.5 rounded text-[#a393b8] hover:bg-white/10 hover:text-[#e05260]"
+                      className="p-1.5 rounded text-muted-foreground hover:bg-muted hover:text-destructive"
                       title="Delete"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -361,13 +359,13 @@ export default function CanvasPage() {
       )}
 
       {/* Main */}
-      <main className="flex-1 flex flex-col bg-white dark:bg-[#1e1a2a] min-w-0">
+      <main className="flex-1 flex flex-col bg-background min-w-0">
         {!activeId ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-10 text-[#616061] dark:text-[#a393b8]">
-            <div className="w-[100px] h-[100px] rounded-2xl bg-gradient-to-br from-[#ede4f7] to-[#f8f7fa] dark:from-[#3b2f52] dark:to-[#271f38] flex items-center justify-center text-[#7b5ea7] mb-6">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-10 text-muted-foreground">
+            <div className="w-[100px] h-[100px] rounded-2xl bg-muted flex items-center justify-center text-primary mb-6">
               <PencilRuler className="w-10 h-10" />
             </div>
-            <h3 className="text-xl font-bold text-[#1d1c1d] dark:text-[#e4dced] mb-2">
+            <h3 className="text-xl font-bold text-foreground mb-2">
               Your Canvas Workspace
             </h3>
             <p className="text-sm max-w-[340px] leading-relaxed mb-5">
@@ -377,7 +375,7 @@ export default function CanvasPage() {
             <button
               type="button"
               onClick={() => createCanvas()}
-              className="inline-flex items-center gap-1.5 py-2.5 px-5 rounded-md bg-[#7b5ea7] hover:bg-[#6a4e94] text-white font-bold text-sm"
+              className="inline-flex items-center gap-1.5 py-2.5 px-5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm"
             >
               <Plus className="w-4 h-4" /> Create Your First Canvas
             </button>
@@ -385,10 +383,10 @@ export default function CanvasPage() {
         ) : (
           <>
             {/* Top bar */}
-            <div className="h-[52px] flex items-center gap-2.5 px-4 border-b border-[#e8e3ef] dark:border-[#3b2f52] bg-[#f8f7fa] dark:bg-[#271f38] flex-shrink-0">
+            <div className="h-[52px] flex items-center gap-2.5 px-4 border-b border-border bg-muted/40 flex-shrink-0">
               <button
                 type="button"
-                className="md:hidden p-1.5 text-[#616061] dark:text-[#a393b8] hover:bg-black/5 dark:hover:bg-white/10 rounded"
+                className="md:hidden p-1.5 text-muted-foreground hover:bg-muted rounded"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open sidebar"
               >
@@ -398,7 +396,7 @@ export default function CanvasPage() {
                 <button
                   type="button"
                   onClick={() => setEmojiPickerOpen((o) => !o)}
-                  className="text-xl p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 shrink-0"
+                  className="text-xl p-1 rounded hover:bg-muted shrink-0"
                 >
                   {activeCanvas?.emoji ?? '📄'}
                 </button>
@@ -409,12 +407,12 @@ export default function CanvasPage() {
                       onClick={() => setEmojiPickerOpen(false)}
                       aria-hidden
                     />
-                    <div className="absolute top-full left-0 mt-1 z-50 w-[270px] p-3 bg-white dark:bg-[#231b33] border border-[#e8e3ef] dark:border-[#3b2f52] rounded-xl shadow-xl grid grid-cols-7 gap-1">
+                    <div className="absolute top-full left-0 mt-1 z-50 w-[270px] p-3 bg-popover border border-border rounded-xl shadow-xl grid grid-cols-7 gap-1">
                       {EMOJIS.map((e) => (
                         <button
                           key={e}
                           type="button"
-                          className="text-2xl p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
+                          className="text-2xl p-1.5 rounded-md hover:bg-muted"
                           onClick={() => {
                             updateActiveMeta({ emoji: e });
                             setEmojiPickerOpen(false);
@@ -430,7 +428,7 @@ export default function CanvasPage() {
                   type="text"
                   value={activeCanvas?.title ?? ''}
                   onChange={(e) => updateActiveMeta({ title: e.target.value })}
-                  className="flex-1 min-w-0 px-1.5 py-1 rounded text-base font-bold text-[#1d1c1d] dark:text-[#e4dced] bg-transparent border-none outline-none focus:bg-black/5 dark:focus:bg-white/10"
+                  className="flex-1 min-w-0 px-1.5 py-1 rounded text-base font-bold text-foreground bg-transparent border-none outline-none focus:bg-muted/50"
                   spellCheck={false}
                 />
               </div>
@@ -438,7 +436,7 @@ export default function CanvasPage() {
                 <button
                   type="button"
                   onClick={() => document.execCommand('undo')}
-                  className="p-2 rounded text-[#616061] dark:text-[#a393b8] hover:bg-black/5 dark:hover:bg-white/10"
+                  className="p-2 rounded text-muted-foreground hover:bg-muted"
                   title="Undo"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -446,7 +444,7 @@ export default function CanvasPage() {
                 <button
                   type="button"
                   onClick={() => document.execCommand('redo')}
-                  className="p-2 rounded text-[#616061] dark:text-[#a393b8] hover:bg-black/5 dark:hover:bg-white/10"
+                  className="p-2 rounded text-muted-foreground hover:bg-muted"
                   title="Redo"
                 >
                   <RotateCw className="w-4 h-4" />
@@ -454,7 +452,7 @@ export default function CanvasPage() {
                 <button
                   type="button"
                   onClick={handleExport}
-                  className="p-2 rounded text-[#616061] dark:text-[#a393b8] hover:bg-black/5 dark:hover:bg-white/10"
+                  className="p-2 rounded text-muted-foreground hover:bg-muted"
                   title="Export"
                 >
                   <Download className="w-4 h-4" />
@@ -467,7 +465,7 @@ export default function CanvasPage() {
                       setContextPos({ top: rect.bottom + 4, left: rect.right - 180 });
                       setContextOpen(true);
                     }}
-                    className="p-2 rounded text-[#616061] dark:text-[#a393b8] hover:bg-black/5 dark:hover:bg-white/10"
+                    className="p-2 rounded text-muted-foreground hover:bg-muted"
                     title="More"
                   >
                     <MoreHorizontal className="w-4 h-4" />
@@ -480,7 +478,7 @@ export default function CanvasPage() {
                         aria-hidden
                       />
                       <div
-                        className="fixed z-50 min-w-[180px] py-1.5 px-1.5 bg-white dark:bg-[#231b33] border border-[#e8e3ef] dark:border-[#3b2f52] rounded-xl shadow-xl"
+                        className="fixed z-50 min-w-[180px] py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
                         style={{ top: contextPos.top, left: contextPos.left }}
                       >
                         <button
@@ -489,9 +487,9 @@ export default function CanvasPage() {
                             duplicateCanvas(activeId);
                             setContextOpen(false);
                           }}
-                          className="w-full flex items-center gap-2.5 py-2 px-3 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-left text-sm"
+                          className="w-full flex items-center gap-2.5 py-2 px-3 rounded-md hover:bg-muted text-foreground text-left text-sm"
                         >
-                          <Copy className="w-4 h-4 text-[#616061]" /> Duplicate
+                          <Copy className="w-4 h-4 text-muted-foreground" /> Duplicate
                         </button>
                         <button
                           type="button"
@@ -499,7 +497,7 @@ export default function CanvasPage() {
                             deleteCanvas(activeId);
                             setContextOpen(false);
                           }}
-                          className="w-full flex items-center gap-2.5 py-2 px-3 rounded-md hover:bg-red-500/10 text-red-600 dark:text-red-400 text-left text-sm"
+                          className="w-full flex items-center gap-2.5 py-2 px-3 rounded-md hover:bg-destructive/10 text-destructive text-left text-sm"
                         >
                           <Trash2 className="w-4 h-4" /> Delete
                         </button>
@@ -511,31 +509,31 @@ export default function CanvasPage() {
             </div>
 
             {/* Format toolbar */}
-            <div className="h-[46px] flex items-center gap-0.5 px-4 border-b border-[#e8e3ef] dark:border-[#3b2f52] bg-[#f8f7fa] dark:bg-[#271f38] flex-shrink-0 overflow-x-auto">
+            <div className="h-[46px] flex items-center gap-0.5 px-4 border-b border-border bg-muted/40 flex-shrink-0 overflow-x-auto">
               <FormatBtn cmd="bold" icon={<Bold className="w-3.5 h-3.5" />} />
               <FormatBtn cmd="italic" icon={<Italic className="w-3.5 h-3.5" />} />
               <FormatBtn cmd="underline" icon={<Underline className="w-3.5 h-3.5" />} />
               <FormatBtn cmd="strikeThrough" icon={<Strikethrough className="w-3.5 h-3.5" />} />
-              <div className="w-px h-5 bg-[#e8e3ef] dark:bg-[#3b2f52] mx-1" />
+              <div className="w-px h-5 bg-border mx-1" />
               <button
                 type="button"
                 onClick={() => document.execCommand('insertUnorderedList')}
-                className="p-2 rounded hover:bg-[#ede8f5] dark:hover:bg-[#3b2f52] text-[#616061] dark:text-[#a393b8]"
+                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               >
                 <List className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => document.execCommand('insertOrderedList')}
-                className="p-2 rounded hover:bg-[#ede8f5] dark:hover:bg-[#3b2f52] text-[#616061] dark:text-[#a393b8]"
+                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               >
                 <ListOrdered className="w-4 h-4" />
               </button>
-              <div className="w-px h-5 bg-[#e8e3ef] dark:bg-[#3b2f52] mx-1" />
+              <div className="w-px h-5 bg-border mx-1" />
               <button
                 type="button"
                 onClick={() => setLinkModal(true)}
-                className="p-2 rounded hover:bg-[#ede8f5] dark:hover:bg-[#3b2f52] text-[#616061] dark:text-[#a393b8]"
+                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
                 title="Insert link"
               >
                 <Link2 className="w-4 h-4" />
@@ -550,7 +548,7 @@ export default function CanvasPage() {
             />
 
             {/* Word count */}
-            <div className="h-7 flex items-center justify-end px-5 border-t border-[#e8e3ef] dark:border-[#3b2f52] bg-[#f8f7fa] dark:bg-[#271f38] text-[11px] text-[#a0a0a0] dark:text-[#6d5f80]">
+            <div className="h-7 flex items-center justify-end px-5 border-t border-border bg-muted/40 text-[11px] text-muted-foreground">
               {wordCountStr}
             </div>
           </>
@@ -560,17 +558,17 @@ export default function CanvasPage() {
       {/* Link modal */}
       {linkModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45">
-          <div className="bg-white dark:bg-[#231b33] rounded-xl shadow-xl p-7 max-w-md w-full">
-            <h3 className="text-lg font-bold text-[#1d1c1d] dark:text-[#e4dced] mb-2">
+          <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-md w-full">
+            <h3 className="text-lg font-bold text-foreground mb-2">
               Insert Link
             </h3>
-            <p className="text-sm text-[#616061] dark:text-[#a393b8] mb-4">Enter the URL:</p>
+            <p className="text-sm text-muted-foreground mb-4">Enter the URL:</p>
             <input
               type="url"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="https://example.com"
-              className="w-full px-3.5 py-2.5 rounded-md border border-[#ddd6e5] dark:border-[#3b2f52] bg-white dark:bg-[#1e1a2a] text-[#1d1c1d] dark:text-[#e4dced] text-sm outline-none focus:border-[#7b5ea7]"
+              className="w-full px-3.5 py-2.5 rounded-md border border-input bg-background text-foreground text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
               onKeyDown={(e) => e.key === 'Enter' && insertLink()}
               autoFocus
             />
@@ -581,14 +579,14 @@ export default function CanvasPage() {
                   setLinkModal(false);
                   setLinkUrl('');
                 }}
-                className="px-4 py-2 rounded-md bg-[#ede8f5] dark:bg-[#3b2f52] text-[#616061] dark:text-[#a393b8] font-semibold text-sm"
+                className="px-4 py-2 rounded-md bg-muted text-muted-foreground hover:text-foreground font-semibold text-sm"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={insertLink}
-                className="px-4 py-2 rounded-md bg-[#7b5ea7] hover:bg-[#6a4e94] text-white font-semibold text-sm"
+                className="px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm"
               >
                 Insert
               </button>
@@ -618,7 +616,7 @@ function FormatBtn({ cmd, icon }) {
         document.execCommand(cmd, false, null);
         update();
       }}
-      className={`p-2 rounded hover:bg-[#ede8f5] dark:hover:bg-[#3b2f52] ${active ? 'bg-[#d9d0ea] dark:bg-[#4a3c64] text-[#7b5ea7]' : 'text-[#616061] dark:text-[#a393b8]'}`}
+      className={`p-2 rounded hover:bg-muted ${active ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground'}`}
     >
       {icon}
     </button>

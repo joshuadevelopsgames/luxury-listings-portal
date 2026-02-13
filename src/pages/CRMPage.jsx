@@ -154,7 +154,7 @@ const CRMPage = () => {
       const docSnap = await getDoc(docRef);
       const raw = docSnap.exists() ? docSnap.data() : {};
       const fromCrm = raw.crmData || {};
-      // Merge crmData + top-level (old Sheets sync wrote to top-level); dedupe by id
+      // Prefer crmData as source of truth when present (so merged data persists after refresh)
       const mergeById = (a, b) => {
         const byId = new Map();
         [...(a || []), ...(b || [])].forEach((item) => {
@@ -163,9 +163,10 @@ const CRMPage = () => {
         });
         return Array.from(byId.values());
       };
-      const warm = mergeById(fromCrm.warmLeads, raw.warmLeads);
-      const contacted = mergeById(fromCrm.contactedClients, raw.contactedClients);
-      const cold = mergeById(fromCrm.coldLeads, raw.coldLeads);
+      const useCrmOnly = Array.isArray(fromCrm.warmLeads);
+      const warm = useCrmOnly ? (fromCrm.warmLeads ?? []) : mergeById(fromCrm.warmLeads, raw.warmLeads);
+      const contacted = useCrmOnly ? (fromCrm.contactedClients ?? []) : mergeById(fromCrm.contactedClients, raw.contactedClients);
+      const cold = useCrmOnly ? (fromCrm.coldLeads ?? []) : mergeById(fromCrm.coldLeads, raw.coldLeads);
       setWarmLeads(warm);
       setContactedClients(contacted);
       setColdLeads(cold);

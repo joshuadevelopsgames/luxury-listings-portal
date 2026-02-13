@@ -6,6 +6,7 @@ import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
+import AnnouncementBanner from '../../components/AnnouncementBanner';
 import FeedbackButton from '../../components/ui/FeedbackButton';
 import ClientProfilesList from '../../components/client/ClientProfilesList';
 import { modules, getBaseModuleIds, getNavItemsForModules } from '../../modules/registry';
@@ -41,7 +42,8 @@ import {
   Sparkles,
   Bug,
   Activity,
-  ShieldCheck
+  ShieldCheck,
+  Megaphone
 } from 'lucide-react';
 
 /**
@@ -56,6 +58,7 @@ const V3Layout = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [announcementHeight, setAnnouncementHeight] = useState(0);
 
   // Monthly posts reset: when an admin loads, if we're in a new month run reset (renew posts for all clients; history stays in post_log tasks)
   const hasCheckedMonthlyReset = useRef(false);
@@ -231,6 +234,7 @@ const V3Layout = () => {
     'client-health': { name: 'Client Health', icon: Activity, path: '/client-health' },
     'system-admin': { name: 'System Admin', icon: ShieldCheck, path: '/system-admin' },
     'permissions': { name: 'Users & Permissions', icon: Settings, path: '/permissions' },
+    'announcements': { name: 'Announcements', icon: Megaphone, path: '/announcements' },
     'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
     'resources': { name: 'Resources', icon: FileText, path: '/resources' },
     'features': { name: 'Add-ons', icon: Sparkles, path: '/features' },
@@ -312,7 +316,7 @@ const V3Layout = () => {
       
       // Add system-admin and permissions to Admin section (system-admin first)
       const adminSection = sections.find(s => s.title === 'Admin');
-      const adminItems = ['system-admin', 'permissions'];
+      const adminItems = ['system-admin', 'permissions', 'announcements'];
       if (adminSection) {
         const rest = adminSection.items.filter(id => !adminItems.includes(id));
         adminSection.items = [...adminItems, ...rest];
@@ -518,8 +522,14 @@ const V3Layout = () => {
           </div>
         )}
 
+        {/* Announcement Banner (between View As and Header) */}
+        <AnnouncementBanner onHeightChange={setAnnouncementHeight} />
+
         {/* Header */}
-        <header className={`sticky ${isViewingAs ? 'top-[44px]' : 'top-0'} z-30 h-[60px] bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-b border-gray-200 dark:border-white/5`}>
+        <header
+          className="sticky z-30 h-[60px] bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-b border-gray-200 dark:border-white/5"
+          style={{ top: (isViewingAs ? 44 : 0) + announcementHeight }}
+        >
           <div className="h-full flex items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-4">
               {/* Mobile menu button */}

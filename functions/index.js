@@ -2471,6 +2471,402 @@ function getVancouverTodayDateString() {
   return `${y}-${m}-${d}`;
 }
 
+// ============================================================================
+// SERVER-SIDE PERMISSION ENFORCEMENT
+// ============================================================================
+
+/** Bootstrap admin email (Firestore rules also have this as fallback). */
+const BOOTSTRAP_ADMIN_EMAIL = 'jrsschroeder@gmail.com';
+
+/**
+ * Helper: Check if a user is a system admin (reads system_config/admins).
+ */
+async function isServerAdmin(email) {
+  if (!email) return false;
+  const lower = email.toLowerCase();
+  if (lower === BOOTSTRAP_ADMIN_EMAIL) return true;
+  try {
+    const adminDoc = await admin.firestore().doc('system_config/admins').get();
+    if (adminDoc.exists) {
+      const emails = adminDoc.data().emails || [];
+      return emails.map(e => e.toLowerCase()).includes(lower);
+    }
+  } catch (_) { /* fall through */ }
+  return false;
+}
+
+/**
+ * Helper: Get user's role and permissions from approved_users.
+ */
+async function getUserPermissions(email) {
+  if (!email) return null;
+  const lower = email.toLowerCase().trim();
+  const doc = await admin.firestore().doc(`approved_users/${lower}`).get();
+  if (!doc.exists) return null;
+  const data = doc.data();
+  return {
+    role: data.role || 'pending',
+    roles: data.roles || [data.role || 'pending'],
+    pagePermissions: data.pagePermissions || [],
+    featurePermissions: data.featurePermissions || [],
+    customPermissions: data.customPermissions || [],
+    adminPermissions: !!data.adminPermissions,
+    isApproved: !!data.isApproved,
+  };
+}
+
+/**
+ * Helper: Write an audit log entry.
+ */
+async function writeAuditLog({ action, actorEmail, targetEmail, details, collection: collectionName }) {
+  try {
+    await admin.firestore().collection('audit_log').add({
+      action,
+      actorEmail: actorEmail || 'system',
+      targetEmail: targetEmail || null,
+      collection: collectionName || null,
+      details: details || {},
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.warn('Audit log write failed:', error.message);
+  }
+}
+
+/**
+ * Callable: Validate permission server-side before a sensitive write.
+ * Used by the client as a pre-check before Firestore direct writes.
+ *
+ * Params: { action: string, targetCollection: string, targetId?: string }
+ * Returns: { allowed: boolean, reason?: string }
+ */
+exports.validatePermission = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
+
+  const email = request.auth.token.email;
+  const { action, targetCollection } = request.data || {};
+
+  if (!action || !targetCollection) {
+    throw new HttpsError('invalid-argument', 'action and targetCollection are required');
+  }
+
+  // Admin bypass
+  if (await isServerAdmin(email)) {
+    return { allowed: true, role: 'admin' };
+  }
+
+  const perms = await getUserPermissions(email);
+  if (!perms || !perms.isApproved) {
+    return { allowed: false, reason: 'User is not approved' };
+  }
+
+  // Permission matrix: collection → required roles/features
+  const WRITE_RULES = {
+    clients: {
+      roles: ['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'],
+      features: ['manage_clients'],
+    },
+    client_contracts: {
+      roles: ['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'],
+      features: ['manage_clients'],
+    },
+    pending_clients: {
+      roles: ['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'],
+      features: ['manage_clients'],
+    },
+    leave_requests: {
+      roles: ['admin', 'hr_manager'],
+      features: ['approve_time_off'],
+      // Note: users can create their own, but approve/update-others requires these
+      allowOwnCreate: true,
+    },
+    approved_users: {
+      roles: ['admin'],
+      features: ['manage_users'],
+    },
+  };
+
+  const rules = WRITE_RULES[targetCollection];
+  if (!rules) {
+    // No specific rules - allow if authenticated and approved
+    return { allowed: true };
+  }
+
+  // Check role
+  if (rules.roles && rules.roles.includes(perms.role)) {
+    return { allowed: true };
+  }
+
+  // Check feature permissions
+  if (rules.features) {
+    const hasFeature = rules.features.some(f =>
+      perms.featurePermissions.includes(f) ||
+      perms.customPermissions.includes(f)
+    );
+    if (hasFeature) return { allowed: true };
+  }
+
+  // Check adminPermissions flag
+  if (perms.adminPermissions) {
+    const adminFeatures = ['approve_time_off', 'view_analytics', 'manage_clients', 'assign_client_managers', 'edit_client_packages'];
+    if (rules.features && rules.features.some(f => adminFeatures.includes(f))) {
+      return { allowed: true };
+    }
+  }
+
+  return { allowed: false, reason: `Role '${perms.role}' does not have write access to '${targetCollection}'` };
+});
+
+/**
+ * Callable: Update user permissions (admin-only).
+ * Server-side enforcement ensures only admins can change permissions.
+ *
+ * Params: { targetEmail: string, pages?: string[], features?: string[], adminPermissions?: boolean, role?: string }
+ */
+exports.updateUserPermissions = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
+
+  const actorEmail = request.auth.token.email;
+  if (!(await isServerAdmin(actorEmail))) {
+    throw new HttpsError('permission-denied', 'Only system administrators can modify permissions');
+  }
+
+  const { targetEmail, pages, features, adminPermissions, role } = request.data || {};
+  if (!targetEmail) {
+    throw new HttpsError('invalid-argument', 'targetEmail is required');
+  }
+
+  const db = admin.firestore();
+  const normalizedEmail = targetEmail.toLowerCase().trim();
+  const userRef = db.doc(`approved_users/${normalizedEmail}`);
+  const userSnap = await userRef.get();
+
+  if (!userSnap.exists) {
+    throw new HttpsError('not-found', `User ${normalizedEmail} not found`);
+  }
+
+  const previousData = userSnap.data();
+  const updates = { permissionsUpdatedAt: admin.firestore.FieldValue.serverTimestamp() };
+
+  if (pages !== undefined) updates.pagePermissions = pages;
+  if (features !== undefined) updates.featurePermissions = features;
+  if (adminPermissions !== undefined) updates.adminPermissions = !!adminPermissions;
+  if (role !== undefined) {
+    updates.role = role;
+    updates.primaryRole = role;
+    updates.roles = [role];
+  }
+
+  await userRef.update(updates);
+
+  // Audit log
+  await writeAuditLog({
+    action: 'permissions_updated',
+    actorEmail,
+    targetEmail: normalizedEmail,
+    collection: 'approved_users',
+    details: {
+      previousRole: previousData.role,
+      previousPages: previousData.pagePermissions || [],
+      previousFeatures: previousData.featurePermissions || [],
+      newRole: updates.role || previousData.role,
+      newPages: updates.pagePermissions || previousData.pagePermissions || [],
+      newFeatures: updates.featurePermissions || previousData.featurePermissions || [],
+      adminPermissions: updates.adminPermissions !== undefined ? updates.adminPermissions : previousData.adminPermissions,
+    },
+  });
+
+  return { ok: true, email: normalizedEmail };
+});
+
+// ============================================================================
+// AUDIT LOG TRIGGERS
+// ============================================================================
+
+/**
+ * Trigger: Log when a user is added to approved_users.
+ */
+exports.auditUserApproved = onDocumentCreated('approved_users/{userEmail}', async (event) => {
+  const data = event.data?.data();
+  if (!data) return;
+  await writeAuditLog({
+    action: 'user_approved',
+    actorEmail: data.approvedBy || 'system',
+    targetEmail: event.params.userEmail,
+    collection: 'approved_users',
+    details: { role: data.role, roles: data.roles },
+  });
+});
+
+/**
+ * Trigger: Log when a client is created.
+ */
+exports.auditClientCreated = onDocumentCreated('clients/{clientId}', async (event) => {
+  const data = event.data?.data();
+  if (!data) return;
+  await writeAuditLog({
+    action: 'client_created',
+    actorEmail: data.createdBy || data.assignedManager || 'unknown',
+    collection: 'clients',
+    details: { clientName: data.clientName || data.name, clientId: event.params.clientId },
+  });
+});
+
+/**
+ * Trigger: Log when a leave request status changes (approval/rejection).
+ */
+exports.auditLeaveRequestUpdated = onDocumentUpdated('leave_requests/{requestId}', async (event) => {
+  const before = event.data?.before?.data();
+  const after = event.data?.after?.data();
+  if (!before || !after) return;
+
+  // Only log status changes
+  if (before.status !== after.status) {
+    await writeAuditLog({
+      action: 'leave_request_status_changed',
+      actorEmail: after.approvedBy || after.updatedBy || 'unknown',
+      targetEmail: after.userEmail,
+      collection: 'leave_requests',
+      details: {
+        requestId: event.params.requestId,
+        previousStatus: before.status,
+        newStatus: after.status,
+        reason: after.rejectionReason || null,
+      },
+    });
+  }
+});
+
+/**
+ * Trigger: Log when user permissions change in approved_users.
+ */
+exports.auditPermissionsChanged = onDocumentUpdated('approved_users/{userEmail}', async (event) => {
+  const before = event.data?.before?.data();
+  const after = event.data?.after?.data();
+  if (!before || !after) return;
+
+  // Check if any permission-related fields changed
+  const permFields = ['role', 'roles', 'primaryRole', 'pagePermissions', 'featurePermissions', 'adminPermissions', 'customPermissions'];
+  const changed = permFields.some(field => JSON.stringify(before[field]) !== JSON.stringify(after[field]));
+
+  if (changed) {
+    await writeAuditLog({
+      action: 'user_permissions_changed',
+      actorEmail: 'permissions_manager', // Will be overridden by updateUserPermissions if called via Cloud Function
+      targetEmail: event.params.userEmail,
+      collection: 'approved_users',
+      details: {
+        changedFields: permFields.filter(f => JSON.stringify(before[f]) !== JSON.stringify(after[f])),
+        before: Object.fromEntries(permFields.map(f => [f, before[f]])),
+        after: Object.fromEntries(permFields.map(f => [f, after[f]])),
+      },
+    });
+  }
+});
+
+// ============================================================================
+// CONTENT APPROVAL WORKFLOW
+// ============================================================================
+
+/**
+ * Content status workflow:
+ *   draft → internal_review → client_review → approved → scheduled → published
+ *
+ * Trigger: When a content_item status changes, create notifications for approvers.
+ */
+exports.contentApprovalNotification = onDocumentUpdated('content_items/{itemId}', async (event) => {
+  const before = event.data?.before?.data();
+  const after = event.data?.after?.data();
+  if (!before || !after) return;
+  if (before.status === after.status) return; // No status change
+
+  const db = admin.firestore();
+  const itemId = event.params.itemId;
+  const title = (after.title || 'Content item').slice(0, 50);
+
+  // Status transition notifications
+  const notifications = [];
+
+  if (after.status === 'internal_review') {
+    // Notify content directors and admins for internal review
+    const approvers = await db.collection('approved_users')
+      .where('role', 'in', ['admin', 'content_director', 'director'])
+      .get();
+    approvers.docs.forEach(doc => {
+      const approverEmail = doc.data().email || doc.id;
+      if (approverEmail !== after.userEmail) { // Don't notify the creator
+        notifications.push({
+          userEmail: approverEmail,
+          type: 'content_review',
+          title: 'Content needs review',
+          message: `"${title}" has been submitted for internal review.`,
+          link: `/content-calendar`,
+          contentItemId: itemId,
+          read: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    });
+  }
+
+  if (after.status === 'approved') {
+    // Notify the creator that content was approved
+    notifications.push({
+      userEmail: after.userEmail,
+      type: 'content_approved',
+      title: 'Content approved',
+      message: `"${title}" has been approved and is ready to schedule.`,
+      link: `/content-calendar`,
+      contentItemId: itemId,
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  if (after.status === 'rejected') {
+    // Notify the creator that content was rejected
+    notifications.push({
+      userEmail: after.userEmail,
+      type: 'content_rejected',
+      title: 'Content needs revision',
+      message: `"${title}" needs changes: ${after.reviewNotes || 'See notes.'}`,
+      link: `/content-calendar`,
+      contentItemId: itemId,
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Write all notifications in batch
+  if (notifications.length > 0) {
+    const batch = db.batch();
+    notifications.forEach(n => {
+      batch.set(db.collection('notifications').doc(), n);
+    });
+    await batch.commit();
+    console.log(`Content approval: sent ${notifications.length} notification(s) for item ${itemId}`);
+  }
+
+  // Audit log the status change
+  await writeAuditLog({
+    action: 'content_status_changed',
+    actorEmail: after.reviewedBy || after.userEmail || 'unknown',
+    collection: 'content_items',
+    details: {
+      itemId,
+      title,
+      previousStatus: before.status,
+      newStatus: after.status,
+      reviewNotes: after.reviewNotes || null,
+    },
+  });
+});
+
+// ============================================================================
+// CONTENT CALENDAR POST-DUE REMINDERS
+// ============================================================================
+
 /** Every 15 minutes: find content_items due today (Vancouver), create notification, mark reminderSent. */
 exports.contentCalendarPostDueReminders = onSchedule(
   { schedule: 'every 15 minutes', timeZone: 'America/Vancouver' },
