@@ -796,14 +796,19 @@ const CRMPage = () => {
     }
   };
   const SortHeader = ({ columnKey, label }) => (
-    <th
-      className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-      onClick={() => handleSort(columnKey)}
-    >
-      <span className="inline-flex items-center gap-1">
+    <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300 p-0">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSort(columnKey);
+        }}
+        className="w-full text-left py-3 px-4 cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-white/10 transition-colors inline-flex items-center gap-1"
+      >
         {label}
         {sortBy === columnKey ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <span className="w-3.5 h-3.5 opacity-30"><ArrowUp className="w-3.5 h-3.5" /></span>}
-      </span>
+      </button>
     </th>
   );
 
@@ -925,7 +930,7 @@ const CRMPage = () => {
             <Plus className="w-4 h-4" />
             Add Client
           </button>
-          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors">
+          <button type="button" onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors">
             <Plus className="w-4 h-4" />
             Add Lead
           </button>
@@ -1290,7 +1295,7 @@ const CRMPage = () => {
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleAddNewLead} disabled={isAddingLead} className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                <button type="button" onClick={handleAddNewLead} disabled={isAddingLead} className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                   <Plus className="w-4 h-4" />
                   {isAddingLead ? 'Adding…' : 'Add Lead'}
                 </button>
