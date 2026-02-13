@@ -416,9 +416,12 @@ export default function CanvasPage() {
   useEffect(() => {
     if (!activeId) return;
     const onKeyDown = (e) => {
+      const active = document.activeElement;
+      const inEditable = active?.isContentEditable || active?.tagName === 'TEXTAREA' || (active?.tagName === 'INPUT' && !/^(button|submit|checkbox|radio)$/i.test(active?.type));
       const isMac = navigator.platform?.toUpperCase().includes('MAC');
       const mod = isMac ? e.metaKey : e.ctrlKey;
       if (e.key === '?' || (mod && e.key === '/')) {
+        if (inEditable && e.key === '?') return;
         e.preventDefault();
         setShortcutsOpen((o) => !o);
         return;
@@ -755,11 +758,12 @@ export default function CanvasPage() {
                     </div>
                     <div className="text-[11px] text-muted-foreground">{dateStr(c.updated)}</div>
                   </div>
-                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         duplicateCanvas(c.id);
                       }}
                       className="p-1.5 rounded text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -771,6 +775,7 @@ export default function CanvasPage() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         deleteCanvas(c.id);
                       }}
                       className="p-1.5 rounded text-muted-foreground hover:bg-muted hover:text-destructive"

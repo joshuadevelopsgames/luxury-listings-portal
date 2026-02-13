@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
 const ConfirmContext = createContext(null);
@@ -17,6 +17,7 @@ const ConfirmContext = createContext(null);
  *   if (confirmed) { ... }
  */
 export const ConfirmProvider = ({ children }) => {
+  const resolveRef = useRef(null);
   const [state, setState] = useState({
     isOpen: false,
     title: '',
@@ -25,11 +26,11 @@ export const ConfirmProvider = ({ children }) => {
     cancelText: 'Cancel',
     variant: 'default',
     isLoading: false,
-    resolve: null
   });
 
   const confirm = useCallback((options = {}) => {
     return new Promise((resolve) => {
+      resolveRef.current = resolve;
       setState({
         isOpen: true,
         title: options.title || 'Confirm Action',
@@ -38,24 +39,25 @@ export const ConfirmProvider = ({ children }) => {
         cancelText: options.cancelText || 'Cancel',
         variant: options.variant || 'default',
         isLoading: false,
-        resolve
       });
     });
   }, []);
 
   const handleClose = useCallback(() => {
-    if (state.resolve) {
-      state.resolve(false);
+    if (resolveRef.current) {
+      resolveRef.current(false);
+      resolveRef.current = null;
     }
-    setState(prev => ({ ...prev, isOpen: false, resolve: null }));
-  }, [state.resolve]);
+    setState(prev => ({ ...prev, isOpen: false }));
+  }, []);
 
   const handleConfirm = useCallback(() => {
-    if (state.resolve) {
-      state.resolve(true);
+    if (resolveRef.current) {
+      resolveRef.current(true);
+      resolveRef.current = null;
     }
-    setState(prev => ({ ...prev, isOpen: false, resolve: null }));
-  }, [state.resolve]);
+    setState(prev => ({ ...prev, isOpen: false }));
+  }, []);
 
   // For async operations where you want to show loading state
   const confirmWithLoading = useCallback((options = {}) => {
@@ -69,14 +71,17 @@ export const ConfirmProvider = ({ children }) => {
           } catch (error) {
             resolve(false);
           } finally {
-            setState(prev => ({ ...prev, isOpen: false, isLoading: false, resolve: null }));
+            setState(prev => ({ ...prev, isOpen: false, isLoading: false }));
+            resolveRef.current = null;
           }
         } else {
           resolve(result);
-          setState(prev => ({ ...prev, isOpen: false, resolve: null }));
+          setState(prev => ({ ...prev, isOpen: false }));
+          resolveRef.current = null;
         }
       };
 
+      resolveRef.current = wrappedResolve;
       setState({
         isOpen: true,
         title: options.title || 'Confirm Action',
@@ -85,7 +90,6 @@ export const ConfirmProvider = ({ children }) => {
         cancelText: options.cancelText || 'Cancel',
         variant: options.variant || 'default',
         isLoading: false,
-        resolve: wrappedResolve
       });
     });
   }, []);
