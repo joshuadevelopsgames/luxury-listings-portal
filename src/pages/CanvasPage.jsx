@@ -90,7 +90,10 @@ export default function CanvasPage() {
       persistBlocksTimerRef.current = setTimeout(() => {
         persistBlocksTimerRef.current = null;
         if (userId && activeId) {
-          firestoreService.updateCanvas(userId, activeId, { blocks }).catch(() => toast.error('Failed to save'));
+          firestoreService.updateCanvas(userId, activeId, { blocks }).catch((err) => {
+          console.error('Canvas save error (blocks):', err);
+          toast.error('Failed to save');
+        });
         }
       }, 1200);
     },
@@ -115,7 +118,10 @@ export default function CanvasPage() {
       setCanvases((prev) => [c, ...prev]);
       setActiveId(c.id);
       toast.success('Canvas created');
-      firestoreService.createCanvas(userId, c).catch(() => toast.error('Failed to save canvas'));
+      firestoreService.createCanvas(userId, c).catch((err) => {
+        console.error('Canvas create error:', err);
+        toast.error('Failed to save canvas');
+      });
       return c;
     },
     [userId]
@@ -129,7 +135,9 @@ export default function CanvasPage() {
       }
       const prev = canvases.find((x) => x.id === activeId);
       if (userId && activeId && prev?.blocks) {
-        firestoreService.updateCanvas(userId, activeId, { blocks: prev.blocks }).catch(() => {});
+        firestoreService.updateCanvas(userId, activeId, { blocks: prev.blocks }).catch((err) => {
+        console.error('Canvas save error (openCanvas):', err);
+      });
       }
       const c = canvases.find((x) => x.id === id);
       if (!c) return;
@@ -154,7 +162,8 @@ export default function CanvasPage() {
           setCanvases((prev) => prev.filter((x) => x.id !== id));
           if (activeId === id) setActiveId(null);
           toast.success('Canvas deleted');
-        } catch {
+        } catch (err) {
+          console.error('Canvas delete error:', err);
           toast.error('Failed to delete canvas');
         }
       }
@@ -180,7 +189,10 @@ export default function CanvasPage() {
       };
       setCanvases((prev) => [c, ...prev]);
       setActiveId(c.id);
-      firestoreService.createCanvas(userId, c).catch(() => toast.error('Failed to duplicate canvas'));
+      firestoreService.createCanvas(userId, c).catch((err) => {
+        console.error('Canvas duplicate error:', err);
+        toast.error('Failed to duplicate canvas');
+      });
       toast.success('Canvas duplicated');
     },
     [canvases, userId]
@@ -195,7 +207,10 @@ export default function CanvasPage() {
         setCanvases(list);
         setActiveId(null);
       })
-      .catch(() => toast.error('Failed to load canvases'))
+      .catch((err) => {
+      console.error('Canvas load error:', err);
+      toast.error('Failed to load canvases');
+    })
       .finally(() => setLoading(false));
   }, [userId]);
 
@@ -206,7 +221,10 @@ export default function CanvasPage() {
       setCanvases((prev) =>
         prev.map((c) => (c.id === activeId ? { ...c, ...patch, updated: Date.now() } : c))
       );
-      firestoreService.updateCanvas(userId, activeId, patch).catch(() => toast.error('Failed to save'));
+      firestoreService.updateCanvas(userId, activeId, patch).catch((err) => {
+      console.error('Canvas save error (meta):', err);
+      toast.error('Failed to save');
+    });
     },
     [activeId, userId]
   );

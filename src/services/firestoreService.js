@@ -5020,8 +5020,16 @@ class FirestoreService {
     const data = { userId, updated: serverTimestamp() };
     if (patch.title !== undefined) data.title = patch.title;
     if (patch.emoji !== undefined) data.emoji = patch.emoji;
-    if (patch.blocks !== undefined) data.blocks = patch.blocks;
-    await setDoc(ref, data, { merge: true });
+    if (patch.blocks !== undefined) {
+      // Firestore rejects undefined; ensure plain array of plain objects
+      data.blocks = JSON.parse(JSON.stringify(patch.blocks));
+    }
+    try {
+      await setDoc(ref, data, { merge: true });
+    } catch (e) {
+      console.error('Firestore updateCanvas failed:', { canvasId, userId, patchKeys: Object.keys(patch), error: e?.code ?? e?.message ?? e });
+      throw e;
+    }
   }
 
   async deleteCanvas(userId, canvasId) {
