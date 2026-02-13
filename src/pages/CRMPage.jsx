@@ -108,7 +108,8 @@ const CRMPage = () => {
 
   // Add New Lead modal state
   const [newLead, setNewLead] = useState({
-    contactName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     type: CLIENT_TYPE.NA,
     phone: '',
@@ -231,9 +232,12 @@ const CRMPage = () => {
     const selectedTabKeys = Object.entries(selectedTabs)
       .filter(([key, value]) => value)
       .map(([key]) => key);
+    const contactName = [newLead.firstName, newLead.lastName].filter(Boolean).join(' ').trim();
     const newLeadData = {
       id: Date.now() + Math.random(),
-      contactName: newLead.contactName || '',
+      contactName: contactName || '',
+      firstName: newLead.firstName || '',
+      lastName: newLead.lastName || '',
       email: newLead.email || '',
       type: newLead.type || CLIENT_TYPE.NA,
       addedToCrmAt: new Date().toISOString(),
@@ -261,8 +265,9 @@ const CRMPage = () => {
 
   // Add new lead to Google Sheets
   const handleAddNewLead = async () => {
-    if (!newLead.contactName || !newLead.email) {
-      toast.error('Please fill in at least Contact Name and Email');
+    const hasName = (newLead.firstName || '').trim() || (newLead.lastName || '').trim();
+    if (!hasName || !newLead.email) {
+      toast.error('Please fill in at least First name, Last name, and Email');
       return;
     }
     if (Object.values(selectedTabs).filter(Boolean).length === 0) {
@@ -270,8 +275,9 @@ const CRMPage = () => {
       return;
     }
 
+    const contactName = [newLead.firstName, newLead.lastName].filter(Boolean).join(' ').trim();
     const matches = findPotentialMatchesForContact(fullContactsList, {
-      name: newLead.contactName,
+      name: contactName,
       email: newLead.email
     });
     if (matches.length > 0) {
@@ -314,7 +320,8 @@ const CRMPage = () => {
   // Reset new lead form
   const resetNewLeadForm = () => {
     setNewLead({
-      contactName: '',
+      firstName: '',
+      lastName: '',
       email: '',
       type: CLIENT_TYPE.NA,
       phone: '',
@@ -839,7 +846,7 @@ const CRMPage = () => {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
           >
             <Plus className="w-4 h-4" />
-            + Add Client
+            Add Client
           </button>
           <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors">
             <Plus className="w-4 h-4" />
@@ -1124,10 +1131,14 @@ const CRMPage = () => {
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Contact name *</label>
-                      <input type="text" value={newLead.contactName} onChange={(e) => setNewLead(prev => ({ ...prev, contactName: e.target.value }))} placeholder="Enter contact name" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">First name *</label>
+                      <input type="text" value={newLead.firstName} onChange={(e) => setNewLead(prev => ({ ...prev, firstName: e.target.value }))} placeholder="First name" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                     </div>
                     <div>
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Last name *</label>
+                      <input type="text" value={newLead.lastName} onChange={(e) => setNewLead(prev => ({ ...prev, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    </div>
+                    <div className="sm:col-span-2">
                       <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Email *</label>
                       <input type="email" value={newLead.email} onChange={(e) => setNewLead(prev => ({ ...prev, email: e.target.value }))} placeholder="email@example.com" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                     </div>

@@ -78,7 +78,8 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
   );
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
-    clientName: '',
+    firstName: '',
+    lastName: '',
     clientEmail: '',
     clientType: CLIENT_TYPE.NA,
     phone: '',
@@ -231,8 +232,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
         postsUsedByPlatform[key] = 0;
       });
     }
+    const clientName = [addForm.firstName, addForm.lastName].filter(Boolean).join(' ').trim();
     const newClient = {
-      clientName: addForm.clientName.trim(),
+      clientName: clientName,
       clientEmail: addForm.clientEmail.trim(),
       clientType: addForm.clientType || CLIENT_TYPE.NA,
       phone: addForm.phone.trim(),
@@ -263,7 +265,8 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
     setShowAddModal(false);
     setPossibleExistingMatches([]);
     setAddForm({
-      clientName: '',
+      firstName: '',
+      lastName: '',
       clientEmail: '',
       clientType: CLIENT_TYPE.NA,
       phone: '',
@@ -279,17 +282,18 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
   };
 
   const handleAddClient = async () => {
-    if (!addForm.clientName.trim()) {
-      toast.error('Please enter a client name');
+    const clientName = [addForm.firstName, addForm.lastName].filter(Boolean).join(' ').trim();
+    if (!clientName) {
+      toast.error('Please enter first name and/or last name');
       return;
     }
-    if (!addForm.clientEmail?.trim()) {
+    if (!internalOnly && !addForm.clientEmail?.trim()) {
       toast.error('Please enter a client email');
       return;
     }
 
     const matches = findPotentialMatchesForContact(displayClients, {
-      name: addForm.clientName,
+      name: clientName,
       email: addForm.clientEmail
     });
     if (matches.length > 0) {
@@ -1054,7 +1058,8 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                 onClick={() => {
                   setShowAddModal(false);
                   setAddForm({
-                    clientName: '',
+                    firstName: '',
+                    lastName: '',
                     clientEmail: '',
                     clientType: CLIENT_TYPE.NA,
                     phone: '',
@@ -1079,17 +1084,30 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                 </p>
               )}
               <div className="space-y-4">
-                {/* Client Name */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Client Name *
-                  </label>
-                  <input
-                    value={addForm.clientName}
-                    onChange={(e) => setAddForm({...addForm, clientName: e.target.value})}
-                    placeholder="Enter client name"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                  />
+                {/* First name / Last name */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      First name *
+                    </label>
+                    <input
+                      value={addForm.firstName}
+                      onChange={(e) => setAddForm({...addForm, firstName: e.target.value})}
+                      placeholder="First name"
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      Last name *
+                    </label>
+                    <input
+                      value={addForm.lastName}
+                      onChange={(e) => setAddForm({...addForm, lastName: e.target.value})}
+                      placeholder="Last name"
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    />
+                  </div>
                 </div>
 
                 {/* Email */}
@@ -1231,7 +1249,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
               <div className="flex gap-3 mt-6 pt-6 border-t border-black/5 dark:border-white/10">
                 <button
                   onClick={handleAddClient}
-                  disabled={adding || !addForm.clientName.trim() || (!internalOnly && !addForm.clientEmail?.trim())}
+                  disabled={adding || !([addForm.firstName, addForm.lastName].filter(Boolean).join(' ').trim()) || (!internalOnly && !addForm.clientEmail?.trim())}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
                 >
                   {adding ? (
@@ -1250,7 +1268,8 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                   onClick={() => {
                     setShowAddModal(false);
                     setAddForm({
-                      clientName: '',
+                      firstName: '',
+                      lastName: '',
                       clientEmail: '',
                       clientType: CLIENT_TYPE.NA,
                       phone: '',
