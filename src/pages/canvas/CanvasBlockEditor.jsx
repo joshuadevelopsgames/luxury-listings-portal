@@ -171,7 +171,7 @@ function wordCharCount(blocks) {
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂'];
 
-function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onWikiDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, onDuplicateBlock, restoreKey, onOpenComments, onToggleReaction, getBlockData, canvasId, currentUserEmail, currentUserName, workspaceList = [] }) {
+function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onWikiDetect, enableWikiDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, onDuplicateBlock, restoreKey, onOpenComments, onToggleReaction, getBlockData, canvasId, currentUserEmail, currentUserName }) {
   const {
     attributes,
     listeners,
@@ -225,7 +225,7 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
           onRequestVideo={onRequestVideo}
           onSlashDetect={onSlashDetect}
           onMentionDetect={onMentionDetect}
-          onWikiDetect={workspaceList?.length ? onWikiDetect : null}
+          onWikiDetect={enableWikiDetect ? onWikiDetect : null}
           onEnterCreateBlock={onEnterCreateBlock}
           onPasteImage={onPasteImage}
           onBackspaceEmptyBlock={onBackspaceEmptyBlock}
@@ -1137,6 +1137,7 @@ function CanvasBlockEditorInner({
                   onSlashDetect={handleSlashDetect}
                   onMentionDetect={handleMentionDetect}
                   onWikiDetect={handleWikiDetect}
+                  enableWikiDetect={(workspaceList || []).length > 0}
                   onEnterCreateBlock={handleEnterCreateBlock}
                   onPasteImage={handlePasteImage}
                   onBackspaceEmptyBlock={handleBackspaceEmptyBlock}
@@ -1147,7 +1148,6 @@ function CanvasBlockEditorInner({
                   canvasId={canvasId}
                   currentUserEmail={currentUserEmail}
                   currentUserName={currentUserName}
-                  workspaceList={workspaceList}
                 />
               ))}
             </SortableContext>

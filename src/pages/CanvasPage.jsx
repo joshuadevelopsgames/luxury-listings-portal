@@ -147,8 +147,7 @@ export default function CanvasPage() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyVersions, setHistoryVersions] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [blockSearchQuery, setBlockSearchQuery] = useState('');
-  const [blockSearchFocused, setBlockSearchFocused] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [aiMenuOpen, setAiMenuOpen] = useState(false);
   const [aiAssistLoading, setAiAssistLoading] = useState(false);
@@ -625,33 +624,25 @@ export default function CanvasPage() {
             <Plus className="w-3.5 h-3.5" /> New Workspace
           </button>
         </div>
-        <div className="relative px-3.5 pb-2">
-          <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search workspaces…"
-            className="w-full pl-9 pr-3 py-2 rounded-md border border-input bg-muted/30 text-foreground placeholder:text-muted-foreground text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-          />
-        </div>
         <div className="relative px-3.5 pb-3">
-          <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            value={blockSearchQuery}
-            onChange={(e) => setBlockSearchQuery(e.target.value)}
-            onFocus={() => setBlockSearchFocused(true)}
-            onBlur={() => setTimeout(() => setBlockSearchFocused(false), 150)}
-            placeholder="Search in content…"
-            className="w-full pl-9 pr-3 py-2 rounded-md border border-input bg-muted/30 text-foreground placeholder:text-muted-foreground text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-          />
-          {blockSearchFocused && blockSearchQuery.trim().length >= 2 && (
+          <div className="flex items-center gap-2 rounded-md border border-input bg-muted/30 text-foreground focus-within:border-ring focus-within:ring-1 focus-within:ring-ring py-2 pl-3 pr-3">
+            <Search className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+              placeholder="Search workspaces and content…"
+              className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          {searchFocused && search.trim().length >= 2 && (
             <div className="absolute left-3.5 right-3.5 top-full mt-1 py-1.5 max-h-64 overflow-y-auto bg-popover border border-border rounded-lg shadow-xl z-30">
-              {searchBlocksInCanvases([...canvases, ...sharedCanvases], blockSearchQuery).length === 0 ? (
-                <p className="px-3 py-2 text-sm text-muted-foreground">No matches</p>
+              {searchBlocksInCanvases([...canvases, ...sharedCanvases], search).length === 0 ? (
+                <p className="px-3 py-2 text-sm text-muted-foreground">No matches in content</p>
               ) : (
-                searchBlocksInCanvases([...canvases, ...sharedCanvases], blockSearchQuery).map((r) => (
+                searchBlocksInCanvases([...canvases, ...sharedCanvases], search).map((r) => (
                   <button
                     key={`${r.canvasId}-${r.blockId}`}
                     type="button"
@@ -659,8 +650,8 @@ export default function CanvasPage() {
                     onClick={() => {
                       setActiveId(r.canvasId);
                       setHighlightBlockId(r.blockId);
-                      setBlockSearchQuery('');
-                      setBlockSearchFocused(false);
+                      setSearch('');
+                      setSearchFocused(false);
                       setSidebarOpen(false);
                       setTimeout(() => setHighlightBlockId(null), 2000);
                     }}

@@ -93,7 +93,7 @@ const ALL_PAGES = {
   'time-off': { name: 'Time Off', icon: Calendar, description: 'Request and manage time off', isBase: true },
   'my-clients': { name: 'My Clients', icon: Users, description: 'View your assigned clients', isBase: true },
   'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, description: 'Instagram analytics reports', isBase: true },
-  'canvas': { name: 'Workspace', icon: FileText, description: 'Workspaces with blocks, slash commands, and collaboration', isBase: true },
+  'canvas': { name: 'Workspaces', icon: FileText, description: 'Workspaces with blocks, slash commands, and collaboration', isBase: true },
   // Upgrade modules
   'dashboard': { name: 'Dashboard', icon: Home, description: 'Main dashboard overview' },
   'tasks': { name: 'Tasks', icon: CheckSquare, description: 'Task management' },

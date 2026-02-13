@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
@@ -93,6 +93,11 @@ import FieldServiceSettings from './field-service-app/pages/Settings';
 
 // Error Handling
 import { RouteErrorPage } from './components/ErrorBoundary';
+
+function CanvasRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/workspaces${search}`} replace />;
+}
 
 // ============================================================================
 // NAVIGATION HELPER - Sets up programmatic navigation
@@ -254,8 +259,8 @@ const router = createBrowserRouter([
           { path: 'features', element: <PermissionRoute pageId="features" pageName="Add-ons"><FeaturesPage /></PermissionRoute> },
           { path: 'workload', element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
-          { path: 'workspaces', element: <PermissionRoute pageId="canvas" pageName="Workspace"><CanvasPage /></PermissionRoute> },
-          { path: 'canvas', element: <Navigate to="/workspaces" replace /> },
+          { path: 'workspaces', element: <PermissionRoute pageId="canvas" pageName="Workspaces"><CanvasPage /></PermissionRoute> },
+          { path: 'canvas', element: <CanvasRedirect /> },
 
           // Admin pages - system admin only
           { path: 'system-admin', element: <SystemAdminPage /> },
