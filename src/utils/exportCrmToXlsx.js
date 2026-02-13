@@ -1,18 +1,27 @@
 import * as XLSX from 'xlsx';
+import { getContactTypes } from '../services/crmService';
 
-const row = (item, sheetName) => ({
-  'Contact Name': item.contactName || item.clientName || '—',
-  'Email': item.email || item.clientEmail || '—',
-  'Type': item.type || 'N/A',
-  'Phone': item.phone || '—',
-  'Instagram': item.instagram || '—',
-  'Organization': item.organization || '—',
-  'Website': item.website || '—',
-  'Notes': item.notes || '—',
-  'Status': item.status || '—',
-  'Last Contact': item.lastContact || '—',
-  'Sheet': sheetName
-});
+const row = (item, sheetName) => {
+  const pc = item.primaryContact;
+  const primaryContactStr = pc && (pc.name || pc.email || pc.phone || pc.role)
+    ? [pc.name, pc.role, pc.email, pc.phone].filter(Boolean).join(' · ')
+    : '—';
+  return {
+    'Contact Name': item.contactName || item.clientName || '—',
+    'Email': item.email || item.clientEmail || '—',
+    'Type': getContactTypes(item).join(', ') || 'N/A',
+    'Location': (item.location || '').trim() || '—',
+    'Primary Contact': primaryContactStr,
+    'Phone': item.phone || '—',
+    'Instagram': item.instagram || '—',
+    'Organization': item.organization || '—',
+    'Website': item.website || '—',
+    'Notes': item.notes || '—',
+    'Status': item.status || '—',
+    'Last Contact': item.lastContact || '—',
+    'Sheet': sheetName
+  };
+};
 
 export function exportCrmToXlsx({ warmLeads = [], contactedClients = [], coldLeads = [], existingClients = [] }) {
   const wb = XLSX.utils.book_new();

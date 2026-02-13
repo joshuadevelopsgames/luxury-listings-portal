@@ -33,7 +33,9 @@ import {
   List,
   LayoutGrid,
   UserCheck,
-  Download
+  Download,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
@@ -43,7 +45,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
 import { PERMISSIONS } from '../entities/Permissions';
-import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../services/crmService';
+import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes } from '../services/crmService';
 import { findPotentialMatchesForContact } from '../services/clientDuplicateService';
 import ClientLink from '../components/ui/ClientLink';
 import LeadLink from '../components/crm/LeadLink';
@@ -63,7 +65,10 @@ const CRMPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'SMM' | 'PP' | 'BOTH' | 'N/A'
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
   // Default to card view on mobile, list on desktop
   const [viewMode, setViewMode] = useState(() => 
     typeof window !== 'undefined' && window.innerWidth < 640 ? 'card' : 'list'
@@ -111,12 +116,14 @@ const CRMPage = () => {
     firstName: '',
     lastName: '',
     email: '',
-    type: CLIENT_TYPE.NA,
+    types: [],
     phone: '',
     instagram: '',
     organization: '',
     website: '',
-    notes: ''
+    notes: '',
+    location: '',
+    primaryContact: { name: '', email: '', phone: '', role: '' }
   });
   const [selectedTabs, setSelectedTabs] = useState({
     warmLeads: false,
@@ -143,7 +150,9 @@ const CRMPage = () => {
     phone: c.phone || '',
     instagram: c.instagram || '',
     website: c.website || '',
-    notes: c.notes || ''
+    notes: c.notes || '',
+    location: c.location || null,
+    primaryContact: c.primaryContact || null
   });
 
   // Load stored data from Firebase
@@ -233,19 +242,27 @@ const CRMPage = () => {
       .filter(([key, value]) => value)
       .map(([key]) => key);
     const contactName = [newLead.firstName, newLead.lastName].filter(Boolean).join(' ').trim();
+    const types = Array.isArray(newLead.types) && newLead.types.length ? newLead.types : [CLIENT_TYPE.NA];
+    const loc = (newLead.location || '').trim() || null;
+    const pc = newLead.primaryContact && (newLead.primaryContact.name || newLead.primaryContact.email || newLead.primaryContact.phone || newLead.primaryContact.role)
+      ? { name: newLead.primaryContact.name || '', email: newLead.primaryContact.email || '', phone: newLead.primaryContact.phone || '', role: newLead.primaryContact.role || '' }
+      : null;
     const newLeadData = {
       id: Date.now() + Math.random(),
       contactName: contactName || '',
       firstName: newLead.firstName || '',
       lastName: newLead.lastName || '',
       email: newLead.email || '',
-      type: newLead.type || CLIENT_TYPE.NA,
+      type: types[0],
+      types,
       addedToCrmAt: new Date().toISOString(),
       phone: newLead.phone || '',
       instagram: newLead.instagram || '',
       organization: newLead.organization || '',
       website: newLead.website || '',
       notes: newLead.notes || '',
+      location: loc,
+      primaryContact: pc,
       status: 'New Lead',
       lastContact: new Date().toISOString(),
       category: selectedTabKeys[0]
@@ -298,8 +315,9 @@ const CRMPage = () => {
 
   // Save CRM data to Firebase (optional override when state may not have flushed yet)
   const saveCRMDataToFirebase = async (override) => {
-    if (!currentUser?.uid) return;
-
+    if (!currentUser?.uid) {
+      throw new Error('You must be signed in to save CRM data');
+    }
     const userDocRef = doc(db, 'users', currentUser.uid);
     const data = override ?? {
       warmLeads,
@@ -323,12 +341,14 @@ const CRMPage = () => {
       firstName: '',
       lastName: '',
       email: '',
-      type: CLIENT_TYPE.NA,
+      types: [],
       phone: '',
       instagram: '',
       organization: '',
       website: '',
-      notes: ''
+      notes: '',
+      location: '',
+      primaryContact: { name: '', email: '', phone: '', role: '' }
     });
     setSelectedTabs({
       warmLeads: false,
@@ -396,12 +416,16 @@ const CRMPage = () => {
     if (!confirmed) return;
 
     try {
+      const leadTypes = getContactTypes(lead);
       const clientData = {
         clientName: lead.contactName || lead.name || lead.email.split('@')[0] || 'Unknown',
         clientEmail: lead.email,
-        clientType: lead.type || CLIENT_TYPE.NA,
+        clientType: leadTypes[0] || CLIENT_TYPE.NA,
+        clientTypes: leadTypes,
         phone: lead.phone || '',
         notes: lead.notes || '',
+        location: (lead.location || '').trim() || null,
+        primaryContact: lead.primaryContact || null,
         packageType: 'Standard',
         packageSize: 1,
         postsUsed: 0,
@@ -535,7 +559,11 @@ const CRMPage = () => {
     const org = (client.organization || '').toLowerCase();
     const ig = (client.instagram || '').toLowerCase();
     const web = (client.website || '').toLowerCase();
-    return !q || name.includes(q) || email.includes(q) || org.includes(q) || ig.includes(q) || web.includes(q);
+    const loc = (client.location || '').toLowerCase();
+    const pc = client.primaryContact || {};
+    const pcName = (pc.name || '').toLowerCase();
+    const pcEmail = (pc.email || '').toLowerCase();
+    return !q || name.includes(q) || email.includes(q) || org.includes(q) || ig.includes(q) || web.includes(q) || loc.includes(q) || pcName.includes(q) || pcEmail.includes(q);
   };
 
   // Single combined list: warm + contacted + cold + existing, with type for filtering
@@ -543,15 +571,28 @@ const CRMPage = () => {
     ...warmLeads.map(c => ({ ...c, _type: 'warm', isExisting: false })),
     ...contactedClients.map(c => ({ ...c, _type: 'contacted', isExisting: false })),
     ...coldLeads.map(c => ({ ...c, _type: 'cold', isExisting: false })),
-    ...existingClients.map(c => ({ ...c, _type: 'clients', isExisting: true, type: c.clientType || c.type || CLIENT_TYPE.NA }))
+    ...existingClients.map(c => ({ ...c, _type: 'clients', isExisting: true, type: (c.clientTypes && c.clientTypes[0]) || c.clientType || c.type || CLIENT_TYPE.NA }))
   ]
     .filter(c => matchesSearch(c, c.isExisting))
     .filter(c => statusFilter === 'all' || c._type === statusFilter)
-    .filter(c => typeFilter === 'all' || (c.type || CLIENT_TYPE.NA) === typeFilter)
+    .filter(c => typeFilter === 'all' || getContactTypes(c).includes(typeFilter))
+    .filter(c => locationFilter === 'all' || (locationFilter === '_none_' ? !(c.location || '').trim() : (c.location || '').trim() === locationFilter))
     .sort((a, b) => {
-      const nameA = (a.contactName || a.clientName || a.email || '').toLowerCase();
-      const nameB = (b.contactName || b.clientName || b.email || '').toLowerCase();
-      return nameA.localeCompare(nameB);
+      const getVal = (c, key) => {
+        switch (key) {
+          case 'name': return (c.contactName || c.clientName || c.email || '').toLowerCase();
+          case 'email': return (c.email || c.clientEmail || '').toLowerCase();
+          case 'type': return (getContactTypes(c).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || '—').toLowerCase();
+          case 'location': return ((c.location || '').trim() || '—').toLowerCase();
+          case 'phone': return (c.phone || '').toLowerCase();
+          case 'status': return (getClientStatusLabel(c.status, c.isExisting) || '').toLowerCase();
+          default: return '';
+        }
+      };
+      const va = getVal(a, sortBy);
+      const vb = getVal(b, sortBy);
+      const cmp = va.localeCompare(vb, undefined, { sensitivity: 'base' });
+      return sortDir === 'asc' ? cmp : -cmp;
     });
 
   const totalWarmLeads = warmLeads.length;
@@ -559,6 +600,9 @@ const CRMPage = () => {
   const totalColdLeads = coldLeads.length;
   const totalExistingClients = existingClients.length;
   const totalLeads = totalWarmLeads + totalContacted + totalColdLeads;
+
+  const allContactsForLocations = [...warmLeads, ...contactedClients, ...coldLeads, ...existingClients];
+  const uniqueLocations = [...new Set(allContactsForLocations.map(c => (c.location || '').trim()).filter(Boolean))].sort();
 
   const renderClientCard = (client, isExisting = false) => (
     <div key={client.id} className="p-5 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/10 hover:shadow-lg transition-shadow">
@@ -615,11 +659,23 @@ const CRMPage = () => {
               {getClientStatusLabel(client.status, isExisting)}
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium">
-              Type: {client.type || CLIENT_TYPE.NA}
+              Type: {getContactTypes(client).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
             </span>
+            {client.location && (
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium flex items-center gap-1">
+                <MapPin className="w-3 h-3" /> {client.location}
+              </span>
+            )}
           </div>
         </div>
-        
+        {(client.primaryContact && (client.primaryContact.name || client.primaryContact.email)) && (
+          <div className="mb-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+            <p className="text-[11px] font-medium text-[#86868b] mb-1">Primary contact</p>
+            <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{client.primaryContact.name || '—'}{client.primaryContact.role ? ` · ${client.primaryContact.role}` : ''}</p>
+            {client.primaryContact.email && <p className="text-[12px] text-[#86868b]">{client.primaryContact.email}</p>}
+            {client.primaryContact.phone && <p className="text-[12px] text-[#86868b]">{client.primaryContact.phone}</p>}
+          </div>
+        )}
         <div className="space-y-3 mb-5">
           {/* Notes section - now cleaner without organization/website clutter */}
           {client.notes && client.notes !== 'No additional information' && (
@@ -695,9 +751,10 @@ const CRMPage = () => {
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.email}</td>
       <td className="py-3 px-4">
         <span className="text-[11px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium">
-          {client.type || CLIENT_TYPE.NA}
+          {getContactTypes(client).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
         </span>
       </td>
+      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.location || '—'}</td>
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.phone || '—'}</td>
       <td className="py-3 px-4">
         <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
@@ -731,16 +788,36 @@ const CRMPage = () => {
     </tr>
   );
 
+  const handleSort = (key) => {
+    if (sortBy === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortBy(key);
+      setSortDir('asc');
+    }
+  };
+  const SortHeader = ({ columnKey, label }) => (
+    <th
+      className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+      onClick={() => handleSort(columnKey)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {sortBy === columnKey ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <span className="w-3.5 h-3.5 opacity-30"><ArrowUp className="w-3.5 h-3.5" /></span>}
+      </span>
+    </th>
+  );
+
   const renderLeadList = (items, isExistingDefault = false) => (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-white/10">
       <table className="w-full">
         <thead>
           <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
-            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Name</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Email</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Type</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Phone</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Status</th>
+            <SortHeader columnKey="name" label="Name" />
+            <SortHeader columnKey="email" label="Email" />
+            <SortHeader columnKey="type" label="Type" />
+            <SortHeader columnKey="location" label="Location" />
+            <SortHeader columnKey="phone" label="Phone" />
+            <SortHeader columnKey="status" label="Status" />
             <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Actions</th>
           </tr>
         </thead>
@@ -951,6 +1028,17 @@ const CRMPage = () => {
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
+        <select
+          value={locationFilter}
+          onChange={(e) => setLocationFilter(e.target.value)}
+          className="h-10 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 min-w-[140px]"
+        >
+          <option value="all">All locations</option>
+          <option value="_none_">No location</option>
+          {uniqueLocations.map((loc) => (
+            <option key={loc} value={loc}>{loc}</option>
+          ))}
+        </select>
         <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10">
           <button
             type="button"
@@ -1088,16 +1176,26 @@ const CRMPage = () => {
                 </div>
                 <div className="p-4 space-y-4">
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Type *</label>
-                    <select
-                      value={newLead.type || CLIENT_TYPE.NA}
-                      onChange={(e) => setNewLead(prev => ({ ...prev, type: e.target.value }))}
-                      className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    >
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Type(s) *</label>
+                    <div className="flex flex-wrap gap-3">
                       {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
-                        <option key={value} value={value}>{label}</option>
+                        <label key={value} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={(newLead.types || []).includes(value)}
+                            onChange={(e) => {
+                              const prev = newLead.types || [];
+                              setNewLead(prev2 => ({
+                                ...prev2,
+                                types: e.target.checked ? [...prev, value] : prev.filter(t => t !== value)
+                              }));
+                            }}
+                            className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                          />
+                          <span className="text-[13px] text-[#1d1d1f] dark:text-white">{label}</span>
+                        </label>
                       ))}
-                    </select>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to tab(s)</label>
@@ -1160,8 +1258,33 @@ const CRMPage = () => {
                     </div>
                   </div>
                   <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Location</label>
+                    <input type="text" value={newLead.location || ''} onChange={(e) => setNewLead(prev => ({ ...prev, location: e.target.value }))} placeholder="City, region, or country" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                  </div>
+                  <div>
                     <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Notes</label>
                     <textarea value={newLead.notes} onChange={(e) => setNewLead(prev => ({ ...prev, notes: e.target.value }))} rows={3} placeholder="Additional notes" className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none" />
+                  </div>
+                  <div className="border-t border-black/5 dark:border-white/10 pt-4">
+                    <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white mb-3">Primary contact (optional)</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[12px] font-medium text-[#86868b] mb-1">Name</label>
+                        <input type="text" value={newLead.primaryContact?.name || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), name: e.target.value } }))} placeholder="Contact name" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px]" />
+                      </div>
+                      <div>
+                        <label className="block text-[12px] font-medium text-[#86868b] mb-1">Email</label>
+                        <input type="email" value={newLead.primaryContact?.email || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), email: e.target.value } }))} placeholder="contact@example.com" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px]" />
+                      </div>
+                      <div>
+                        <label className="block text-[12px] font-medium text-[#86868b] mb-1">Phone</label>
+                        <input type="tel" value={newLead.primaryContact?.phone || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), phone: e.target.value } }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px]" />
+                      </div>
+                      <div>
+                        <label className="block text-[12px] font-medium text-[#86868b] mb-1">Role</label>
+                        <input type="text" value={newLead.primaryContact?.role || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), role: e.target.value } }))} placeholder="e.g. Marketing Manager" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px]" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

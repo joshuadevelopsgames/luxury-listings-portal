@@ -8,20 +8,36 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { auth } from '../firebase';
 
-// Type (SMM, PP, BOTH, N/A) - required for every contact
+// Type (SMM, PP, BOTH, N/A, DESIGN, PROD, CONSULT) - required for every contact
 export const CLIENT_TYPE = {
   SMM: 'SMM',
   PP: 'PP',
   BOTH: 'BOTH',
-  NA: 'N/A'
+  NA: 'N/A',
+  DESIGN: 'Design',
+  PROD: 'Prod',
+  CONSULT: 'Consult'
 };
 
 export const CLIENT_TYPE_OPTIONS = [
   { value: CLIENT_TYPE.SMM, label: 'SMM' },
   { value: CLIENT_TYPE.PP, label: 'Posting Package (PP)' },
   { value: CLIENT_TYPE.BOTH, label: 'Both' },
+  { value: CLIENT_TYPE.DESIGN, label: 'Graphic Design (Design)' },
+  { value: CLIENT_TYPE.PROD, label: 'Production (Prod)' },
+  { value: CLIENT_TYPE.CONSULT, label: 'Consultation (Consult)' },
   { value: CLIENT_TYPE.NA, label: 'N/A (lead – service interest unknown)' }
 ];
+
+/** Normalize contact type(s) to array for display/filter. Supports types[], type, clientTypes[], clientType. */
+export function getContactTypes(contact) {
+  if (!contact) return [CLIENT_TYPE.NA];
+  const arr = contact.types ?? contact.clientTypes;
+  if (Array.isArray(arr) && arr.length) return arr;
+  const single = contact.type ?? contact.clientType;
+  if (single) return [single];
+  return [CLIENT_TYPE.NA];
+}
 
 const DEFAULT_TAB = 'warmLeads';
 
@@ -78,7 +94,14 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
 
   const name = (contact.contactName || contact.clientName || '').trim();
   const email = (contact.email || contact.clientEmail || '').trim();
-  const type = contact.type || CLIENT_TYPE.NA;
+  const types = Array.isArray(contact.types) && contact.types.length
+    ? contact.types
+    : (contact.clientTypes && contact.clientTypes.length)
+      ? contact.clientTypes
+      : (contact.type || contact.clientType)
+        ? [contact.type || contact.clientType]
+        : [CLIENT_TYPE.NA];
+  const type = types[0] || CLIENT_TYPE.NA;
 
   if (!email) {
     return { success: false, error: 'Email is required for CRM' };
@@ -92,17 +115,23 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
     const contactedClients = Array.isArray(existing.contactedClients) ? existing.contactedClients : [];
     const coldLeads = Array.isArray(existing.coldLeads) ? existing.coldLeads : [];
 
+    const primaryContact = contact.primaryContact && (contact.primaryContact.name || contact.primaryContact.email || contact.primaryContact.phone || contact.primaryContact.role)
+      ? { name: contact.primaryContact.name || '', email: contact.primaryContact.email || '', phone: contact.primaryContact.phone || '', role: contact.primaryContact.role || '' }
+      : null;
     const newLead = {
       id: `crm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       contactName: name || email.split('@')[0] || '—',
       email,
       type,
+      types,
       addedToCrmAt: new Date().toISOString(),
       phone: contact.phone || '',
       instagram: contact.instagram || '',
       organization: contact.organization || '',
       website: contact.website || '',
       notes: contact.notes || '',
+      location: (contact.location || '').trim() || null,
+      primaryContact: primaryContact || null,
       status: 'New Lead',
       lastContact: new Date().toISOString(),
       category: tab === 'warmLeads' ? 'warmLeads' : tab === 'contactedClients' ? 'contactedClients' : 'coldLeads'

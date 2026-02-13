@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { firestoreService } from '../../services/firestoreService';
 import {
   DndContext,
   closestCenter,
@@ -34,6 +35,10 @@ import {
   Film,
   Plus,
   Trash2,
+  Copy,
+  BarChart2,
+  FileText,
+  MessageSquare,
 } from 'lucide-react';
 
 export function blockId() {
@@ -54,7 +59,78 @@ export const BLOCK_TYPES = [
   { id: 'divider', icon: Minus, label: 'Divider', desc: 'Horizontal rule' },
   { id: 'image', icon: Image, label: 'Image', desc: 'Upload or drop image' },
   { id: 'video', icon: Film, label: 'Video', desc: 'Upload or drop video' },
+  { id: 'poll', icon: BarChart2, label: 'Poll', desc: 'Single or multiple choice poll' },
+  { id: 'form', icon: FileText, label: 'Form', desc: 'Custom form with fields' },
 ];
+
+function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName, onRemove }) {
+  const [formValues, setFormValues] = useState({});
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!canvasId || !blockId) return;
+    firestoreService.addCanvasFormResponse(canvasId, blockId, currentUserEmail || null, currentUserName || null, formValues).then(() => {
+      setFormSubmitted(true);
+    }).catch(() => {});
+  };
+  if (formSubmitted) {
+    return (
+      <div className="py-3 px-4 rounded-lg bg-muted/50 text-sm text-muted-foreground">
+        Thanks for submitting.
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={handleSubmit} className="py-2 space-y-3">
+      {data.title && <div className="text-sm font-medium text-foreground">{data.title}</div>}
+      {data.fields.map((field, i) => (
+        <div key={i} className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">{field.label}</label>
+          {field.type === 'short_text' && (
+            <input
+              type="text"
+              value={formValues[i] ?? ''}
+              onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
+              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+            />
+          )}
+          {field.type === 'long_text' && (
+            <textarea
+              value={formValues[i] ?? ''}
+              onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+            />
+          )}
+          {field.type === 'single_choice' && (
+            <select
+              value={formValues[i] ?? ''}
+              onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
+              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+            >
+              <option value="">Select...</option>
+              {(field.options || []).map((opt, j) => (
+                <option key={j} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      ))}
+      <button type="submit" className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+        Submit
+      </button>
+    </form>
+  );
+}
+
+function contentWithWikiLinks(html) {
+  if (!html || typeof html !== 'string') return '';
+  return html.replace(/\[\[([^\]]*)\]\]\(([^)]+)\)/g, (_, title, id) => {
+    const safeId = String(id).replace(/"/g, '&quot;');
+    const safeTitle = (title || 'Workspace').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    return `<a href="/canvas?id=${encodeURIComponent(id)}" class="text-primary hover:underline" data-wiki="1">${safeTitle}</a>`;
+  });
+}
 
 function wordCharCount(blocks) {
   const text = blocks
@@ -63,6 +139,22 @@ function wordCharCount(blocks) {
         try {
           const items = JSON.parse(b.content || '[]');
           return items.map((i) => i.text).join(' ');
+        } catch {
+          return '';
+        }
+      }
+      if (b.type === 'poll') {
+        try {
+          const d = JSON.parse(b.content || '{}');
+          return (d.question || '') + ' ' + (d.options || []).map((o) => o.text).join(' ');
+        } catch {
+          return '';
+        }
+      }
+      if (b.type === 'form') {
+        try {
+          const d = JSON.parse(b.content || '{}');
+          return (d.title || '') + ' ' + (d.fields || []).map((f) => f.label).join(' ');
         } catch {
           return '';
         }
@@ -77,7 +169,9 @@ function wordCharCount(blocks) {
   return `${words} word${words !== 1 ? 's' : ''} · ${text.length} char${text.length !== 1 ? 's' : ''}`;
 }
 
-function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock }) {
+const REACTION_EMOJIS = ['👍', '❤️', '😂'];
+
+function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, onDuplicateBlock, restoreKey, onOpenComments, onToggleReaction, getBlockData, canvasId, currentUserEmail }) {
   const {
     attributes,
     listeners,
@@ -108,7 +202,18 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
       >
         <GripVertical className="w-4 h-4" />
       </div>
-      <div className="flex-1 min-w-0">
+      {onDuplicateBlock && (
+        <button
+          type="button"
+          onClick={() => onDuplicateBlock(block.id)}
+          className="flex items-center justify-center w-6 shrink-0 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground"
+          title="Duplicate block"
+          aria-label="Duplicate block"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </button>
+      )}
+      <div className="flex-1 min-w-0 relative">
         <BlockContent
           block={block}
           onContentChange={onContentChange}
@@ -119,16 +224,55 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
           onRequestImage={onRequestImage}
           onRequestVideo={onRequestVideo}
           onSlashDetect={onSlashDetect}
+          onMentionDetect={onMentionDetect}
+          onWikiDetect={workspaceList?.length ? handleWikiDetect : null}
           onEnterCreateBlock={onEnterCreateBlock}
           onPasteImage={onPasteImage}
           onBackspaceEmptyBlock={onBackspaceEmptyBlock}
+          restoreKey={restoreKey}
+          canvasId={canvasId}
+          currentUserEmail={currentUserEmail}
+          currentUserName={currentUserName}
         />
+        {canvasId && (onOpenComments || onToggleReaction) && (
+          <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+            {onOpenComments && (
+              <button
+                type="button"
+                onClick={() => onOpenComments(block.id)}
+                className="p-1 rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                title="Comment"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                {getBlockData?.(block.id)?.comments?.length > 0 && (
+                  <span className="ml-0.5 text-[10px]">{getBlockData(block.id).comments.length}</span>
+                )}
+              </button>
+            )}
+            {onToggleReaction && REACTION_EMOJIS.map((emoji) => {
+              const reactions = getBlockData?.(block.id)?.reactions || [];
+              const count = reactions.filter((r) => r.emoji === emoji).length;
+              const hasReacted = currentUserEmail && reactions.some((r) => r.emoji === emoji && r.userId === currentUserEmail);
+              return (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => onToggleReaction(block.id, emoji)}
+                  className={`p-1 rounded text-sm ${hasReacted ? 'opacity-100' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                  title={emoji}
+                >
+                  {emoji}{count > 0 ? <span className="ml-0.5 text-[10px]">{count}</span> : null}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock }) {
+function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onWikiDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, restoreKey, canvasId, currentUserEmail, currentUserName }) {
   const elRef = useRef(null);
 
   const notifyContent = useCallback(
@@ -183,6 +327,78 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
           </div>
         ))}
       </div>
+    );
+  }
+
+  if (block.type === 'poll') {
+    let data = { question: '', options: [{ text: 'Option 1', votes: 0 }, { text: 'Option 2', votes: 0 }], votedBy: [] };
+    try {
+      data = JSON.parse(block.content || '{}');
+      if (!Array.isArray(data.options)) data.options = [{ text: 'Option 1', votes: 0 }, { text: 'Option 2', votes: 0 }];
+      if (!Array.isArray(data.votedBy)) data.votedBy = [];
+    } catch {
+      // use defaults
+    }
+    const hasVoted = currentUserEmail && data.votedBy.includes(currentUserEmail);
+    const totalVotes = data.options.reduce((s, o) => s + (o.votes || 0), 0);
+    return (
+      <div className="py-2 space-y-3">
+        <input
+          type="text"
+          value={data.question}
+          onChange={(e) => {
+            const next = { ...data, question: e.target.value };
+            notifyContent(JSON.stringify(next));
+          }}
+          placeholder="Poll question"
+          className="w-full text-base font-medium bg-transparent border-none outline-none focus:ring-0 p-0 text-foreground placeholder:text-muted-foreground"
+        />
+        <div className="space-y-2">
+          {data.options.map((opt, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={hasVoted}
+                onClick={() => {
+                  if (!currentUserEmail || hasVoted) return;
+                  const nextOpts = data.options.map((o, j) => (j === i ? { ...o, votes: (o.votes || 0) + 1 } : o));
+                  const next = { ...data, options: nextOpts, votedBy: [...data.votedBy, currentUserEmail] };
+                  notifyContent(JSON.stringify(next));
+                }}
+                className="px-3 py-1.5 rounded-md border border-input bg-muted/50 hover:bg-muted text-sm disabled:opacity-60"
+              >
+                Vote
+              </button>
+              <span className="flex-1 text-sm text-foreground">{opt.text}</span>
+              {totalVotes > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {opt.votes || 0} ({totalVotes ? Math.round(((opt.votes || 0) / totalVotes) * 100) : 0}%)
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (block.type === 'form') {
+    let data = { title: '', fields: [{ type: 'short_text', label: 'Field 1' }] };
+    try {
+      data = JSON.parse(block.content || '{}');
+      if (!Array.isArray(data.fields)) data.fields = [{ type: 'short_text', label: 'Field 1' }];
+    } catch {
+      // use defaults
+    }
+    return (
+      <FormBlock
+        data={data}
+        blockId={block.id}
+        canvasId={canvasId}
+        currentUserEmail={currentUserEmail}
+        currentUserName={currentUserName}
+        onRemove={() => onRemove(block.id)}
+      />
     );
   }
 
@@ -293,6 +509,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
         {block.type === 'callout' && <span className="text-lg shrink-0">💡</span>}
         {block.type === 'bullet' && (
           <ul
+            key={restoreKey != null ? `${block.id}-r${restoreKey}` : block.id}
             contentEditable
             suppressContentEditableWarning
             className="list-disc outline-none list-inside min-h-[24px]"
@@ -303,6 +520,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
         )}
         {block.type === 'ordered' && (
           <ol
+            key={restoreKey != null ? `${block.id}-r${restoreKey}` : block.id}
             contentEditable
             suppressContentEditableWarning
             className="list-decimal outline-none list-inside min-h-[24px]"
@@ -313,12 +531,13 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
         )}
         {!['bullet', 'ordered'].includes(block.type) && (
           <div
+            key={restoreKey != null ? `${block.id}-r${restoreKey}` : block.id}
             contentEditable
             suppressContentEditableWarning
             ref={block.type === 'text' ? elRef : undefined}
             className={contentClass}
             data-placeholder={placeholder}
-            dangerouslySetInnerHTML={{ __html: block.content || '' }}
+            dangerouslySetInnerHTML={{ __html: contentWithWikiLinks(block.content || '') }}
             onBlur={(e) => notifyContent(e.currentTarget.innerHTML)}
             onFocus={() => onFocus(block.id)}
             onKeyDown={(e) => {
@@ -356,19 +575,33 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
               }
             }}
             onInput={(e) => {
-              if (!onSlashDetect || !['text', 'h1', 'h2', 'h3', 'quote', 'callout'].includes(block.type)) return;
+              if (!['text', 'h1', 'h2', 'h3', 'quote', 'callout'].includes(block.type)) return;
               const sel = window.getSelection();
               if (!sel?.rangeCount) return;
               const node = sel.anchorNode;
               const text = node?.textContent || '';
               const offset = sel.anchorOffset || 0;
               const before = text.substring(0, offset);
-              const m = before.match(/\/(\w*)$/);
-              if (m) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                onSlashDetect(m[1], rect);
+              const slashM = before.match(/\/(\w*)$/);
+              const mentionM = before.match(/@([^\s@]*)$/);
+              const wikiM = before.match(/\[\[([^\]]*)$/);
+              const rect = e.currentTarget.getBoundingClientRect();
+              if (slashM && onSlashDetect) {
+                onSlashDetect(slashM[1], rect);
+                if (onMentionDetect) onMentionDetect(null, null, null);
+                if (onWikiDetect) onWikiDetect(null, null, null);
+              } else if (mentionM && onMentionDetect) {
+                onMentionDetect(block.id, mentionM[1], rect);
+                if (onSlashDetect) onSlashDetect(null);
+                if (onWikiDetect) onWikiDetect(null, null, null);
+              } else if (wikiM && onWikiDetect) {
+                onWikiDetect(block.id, wikiM[1], rect);
+                if (onSlashDetect) onSlashDetect(null);
+                if (onMentionDetect) onMentionDetect(null, null, null);
               } else {
-                onSlashDetect(null);
+                if (onSlashDetect) onSlashDetect(null);
+                if (onMentionDetect) onMentionDetect(null, null, null);
+                if (onWikiDetect) onWikiDetect(null, null, null);
               }
             }}
             style={{ caretColor: 'hsl(var(--primary))' }}
@@ -385,6 +618,13 @@ function CanvasBlockEditorInner({
   blocks,
   onBlocksChange,
   onWordCountChange,
+  restoreKey = 0,
+  approvedUsers = [],
+  highlightBlockId = null,
+  canvasId = null,
+  currentUserEmail = null,
+  currentUserName = null,
+  workspaceList = [],
 }, ref) {
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -397,6 +637,20 @@ function CanvasBlockEditorInner({
   const [slashIndex, setSlashIndex] = useState(0);
   const slashPosRef = useRef({ left: 0, top: 0 });
   const persistTimerRef = useRef(null);
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionFilter, setMentionFilter] = useState('');
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const mentionPosRef = useRef({ left: 0, top: 0 });
+  const mentionBlockIdRef = useRef(null);
+  const [wikiOpen, setWikiOpen] = useState(false);
+  const [wikiFilter, setWikiFilter] = useState('');
+  const [wikiIndex, setWikiIndex] = useState(0);
+  const wikiBlockIdRef = useRef(null);
+  const wikiPosRef = useRef({ left: 0, top: 0 });
+  const [openCommentBlockId, setOpenCommentBlockId] = useState(null);
+  const [blockDataMap, setBlockDataMap] = useState({});
+  const [commentInput, setCommentInput] = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -477,6 +731,18 @@ function CanvasBlockEditorInner({
     [safeBlocks, removeBlock]
   );
 
+  const handleDuplicateBlock = useCallback(
+    (blockId) => {
+      const idx = safeBlocks.findIndex((b) => b.id === blockId);
+      if (idx === -1) return;
+      const block = safeBlocks[idx];
+      const cloned = { ...block, id: blockId() };
+      addBlockAfter(idx, cloned);
+      setFocusedBlockId(cloned.id);
+    },
+    [safeBlocks, addBlockAfter]
+  );
+
   useImperativeHandle(ref, () => ({
     syncFocusedBlockFromDom() {
       if (!focusedBlockId || !containerRef.current) return;
@@ -484,6 +750,24 @@ function CanvasBlockEditorInner({
       const editable = row?.querySelector?.('[contenteditable="true"]');
       if (editable && editable.innerHTML !== undefined) {
         updateBlock(focusedBlockId, { content: editable.innerHTML });
+      }
+    },
+    getFocusedBlockId() {
+      return focusedBlockId;
+    },
+    getFocusedBlockContent() {
+      if (!focusedBlockId || !containerRef.current) return null;
+      const row = containerRef.current.querySelector(`[data-block-id="${focusedBlockId}"]`);
+      const editable = row?.querySelector?.('[contenteditable="true"]');
+      return editable ? editable.innerHTML : null;
+    },
+    setFocusedBlockContent(html) {
+      if (!focusedBlockId || !containerRef.current) return;
+      const row = containerRef.current.querySelector(`[data-block-id="${focusedBlockId}"]`);
+      const editable = row?.querySelector?.('[contenteditable="true"]');
+      if (editable) {
+        editable.innerHTML = html;
+        updateBlock(focusedBlockId, { content: html });
       }
     },
   }), [focusedBlockId, updateBlock]);
@@ -540,6 +824,79 @@ function CanvasBlockEditorInner({
     setSlashOpen(true);
   }, []);
 
+  const handleWikiDetect = useCallback((blockId, filter, rect) => {
+    if (blockId === null) {
+      setWikiOpen(false);
+      wikiBlockIdRef.current = null;
+      return;
+    }
+    if (rect) wikiPosRef.current = { left: rect.left, top: rect.bottom + 4 };
+    wikiBlockIdRef.current = blockId;
+    setWikiFilter(filter || '');
+    setWikiIndex(0);
+    setWikiOpen(true);
+  }, []);
+
+  const handleWikiSelect = useCallback((workspace) => {
+    const blockId = wikiBlockIdRef.current;
+    if (!blockId || !workspace) { setWikiOpen(false); return; }
+    const block = safeBlocks.find((b) => b.id === blockId);
+    if (!block) { setWikiOpen(false); return; }
+    const token = `[[${workspace.title || 'Workspace'}](${workspace.id})`;
+    const content = block.content || '';
+    const needle = '[[' + wikiFilter;
+    const idx = content.indexOf(needle);
+    const newContent = idx === -1 ? content + token : content.slice(0, idx) + token + content.slice(idx + needle.length);
+    updateBlock(blockId, { content: newContent });
+    setWikiOpen(false);
+    wikiBlockIdRef.current = null;
+  }, [wikiFilter, safeBlocks, updateBlock]);
+
+  const wikiItems = (workspaceList || []).filter((w) => {
+    const q = (wikiFilter || '').toLowerCase();
+    if (!q) return true;
+    return (w.title || '').toLowerCase().includes(q);
+  }).slice(0, 8);
+
+  const handleMentionDetect = useCallback((blockId, filter, rect) => {
+    if (blockId === null) {
+      setMentionOpen(false);
+      mentionBlockIdRef.current = null;
+      return;
+    }
+    if (rect) {
+      mentionPosRef.current = { left: rect.left, top: rect.bottom + 4 };
+    }
+    mentionBlockIdRef.current = blockId;
+    setMentionFilter(filter || '');
+    setMentionIndex(0);
+    setMentionOpen(true);
+  }, []);
+
+  const handleMentionSelect = useCallback((user) => {
+    const blockId = mentionBlockIdRef.current;
+    if (!blockId) { setMentionOpen(false); return; }
+    const block = safeBlocks.find((b) => b.id === blockId);
+    if (!block) { setMentionOpen(false); return; }
+    const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || '';
+    const token = `@[${displayName}](${user.email || user.id || ''})`;
+    const content = block.content || '';
+    const needle = '@' + mentionFilter;
+    const idx = content.indexOf(needle);
+    const newContent = idx === -1 ? content + token : content.slice(0, idx) + token + content.slice(idx + needle.length);
+    updateBlock(blockId, { content: newContent });
+    setMentionOpen(false);
+    mentionBlockIdRef.current = null;
+  }, [mentionFilter, safeBlocks, updateBlock]);
+
+  const mentionItems = (approvedUsers || []).filter((u) => {
+    const name = [u.firstName, u.lastName].filter(Boolean).join(' ').toLowerCase();
+    const email = (u.email || u.id || '').toLowerCase();
+    const q = (mentionFilter || '').toLowerCase();
+    if (!q) return true;
+    return name.includes(q) || email.includes(q);
+  }).slice(0, 8);
+
   const slashItems = BLOCK_TYPES.filter(
     (c) =>
       !slashFilter ||
@@ -569,10 +926,16 @@ function CanvasBlockEditorInner({
             fileInputRef.current.click();
           }
         } else {
-          const newBlock =
-            c.id === 'checklist'
-              ? { id: blockId(), type: 'checklist', content: JSON.stringify([{ text: '', checked: false }]) }
-              : { id: blockId(), type: c.id, content: c.id === 'bullet' || c.id === 'ordered' ? '<li></li>' : '', caption: '' };
+          let newBlock;
+          if (c.id === 'checklist') {
+            newBlock = { id: blockId(), type: 'checklist', content: JSON.stringify([{ text: '', checked: false }]) };
+          } else if (c.id === 'poll') {
+            newBlock = { id: blockId(), type: 'poll', content: JSON.stringify({ question: '', options: [{ text: 'Option 1', votes: 0 }, { text: 'Option 2', votes: 0 }], votedBy: [] }) };
+          } else if (c.id === 'form') {
+            newBlock = { id: blockId(), type: 'form', content: JSON.stringify({ title: '', fields: [{ type: 'short_text', label: 'Field 1' }] }) };
+          } else {
+            newBlock = { id: blockId(), type: c.id, content: c.id === 'bullet' || c.id === 'ordered' ? '<li></li>' : '', caption: '' };
+          }
           addBlockAfter(idx, newBlock);
           setFocusedBlockId(newBlock.id);
         }
@@ -585,6 +948,110 @@ function CanvasBlockEditorInner({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [slashOpen, slashIndex, slashItems, focusedIndex, safeBlocks, addBlockAfter]);
+
+  // Mention menu keyboard
+  useEffect(() => {
+    if (!mentionOpen || mentionItems.length === 0) return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionIndex((i) => (i + 1) % mentionItems.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionIndex((i) => (i - 1 + mentionItems.length) % mentionItems.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const u = mentionItems[mentionIndex];
+        if (u) handleMentionSelect(u);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setMentionOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mentionOpen, mentionIndex, mentionItems, handleMentionSelect]);
+
+  useEffect(() => {
+    if (!wikiOpen || wikiItems.length === 0) return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setWikiIndex((i) => (i + 1) % wikiItems.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setWikiIndex((i) => (i - 1 + wikiItems.length) % wikiItems.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const w = wikiItems[wikiIndex];
+        if (w) handleWikiSelect(w);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setWikiOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [wikiOpen, wikiIndex, wikiItems, handleWikiSelect]);
+
+  // Scroll to and focus block when highlightBlockId is set
+  useEffect(() => {
+    if (!highlightBlockId || !containerRef.current) return;
+    const row = containerRef.current.querySelector(`[data-block-id="${highlightBlockId}"]`);
+    if (!row) return;
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const editable = row.querySelector?.('[contenteditable="true"]');
+    if (editable) {
+      editable.focus();
+      setFocusedBlockId(highlightBlockId);
+    }
+  }, [highlightBlockId]);
+
+  useEffect(() => {
+    if (!openCommentBlockId || !canvasId) return;
+    firestoreService.getBlockComments(canvasId, openCommentBlockId).then((data) => {
+      setBlockDataMap((prev) => ({ ...prev, [openCommentBlockId]: data }));
+    });
+  }, [openCommentBlockId, canvasId]);
+
+  const handleOpenComments = useCallback((blockId) => {
+    setOpenCommentBlockId(blockId);
+    setCommentInput('');
+  }, []);
+
+  const handleToggleReaction = useCallback((blockId, emoji) => {
+    if (!canvasId || !blockId || !currentUserEmail) return;
+    firestoreService.toggleBlockReaction(canvasId, blockId, emoji, currentUserEmail).then(() => {
+      firestoreService.getBlockComments(canvasId, blockId).then((data) => {
+        setBlockDataMap((prev) => ({ ...prev, [blockId]: data }));
+      });
+    });
+  }, [canvasId, currentUserEmail]);
+
+  const getBlockData = useCallback((blockId) => blockDataMap[blockId], [blockDataMap]);
+
+  const handleAddBlockComment = useCallback(async () => {
+    if (!openCommentBlockId || !canvasId || !commentInput.trim() || !currentUserEmail) return;
+    setCommentSubmitting(true);
+    try {
+      const newComment = await firestoreService.addBlockComment(canvasId, openCommentBlockId, {
+        user: currentUserEmail,
+        userName: currentUserName || currentUserEmail,
+        text: commentInput.trim(),
+      });
+      setBlockDataMap((prev) => ({
+        ...prev,
+        [openCommentBlockId]: {
+          ...prev[openCommentBlockId],
+          comments: [...(prev[openCommentBlockId]?.comments || []), newComment],
+          reactions: prev[openCommentBlockId]?.reactions || [],
+        },
+      }));
+      setCommentInput('');
+    } finally {
+      setCommentSubmitting(false);
+    }
+  }, [openCommentBlockId, canvasId, commentInput, currentUserEmail, currentUserName]);
 
   return (
     <>
@@ -647,6 +1114,7 @@ function CanvasBlockEditorInner({
                 <SortableBlock
                   key={block.id}
                   block={block}
+                  restoreKey={restoreKey}
                   onContentChange={updateBlock}
                   onRemove={removeBlock}
                   isFocused={block.id === focusedBlockId}
@@ -667,9 +1135,16 @@ function CanvasBlockEditorInner({
                     }
                   }}
                   onSlashDetect={handleSlashDetect}
+                  onMentionDetect={handleMentionDetect}
                   onEnterCreateBlock={handleEnterCreateBlock}
                   onPasteImage={handlePasteImage}
                   onBackspaceEmptyBlock={handleBackspaceEmptyBlock}
+                  onDuplicateBlock={handleDuplicateBlock}
+                  onOpenComments={canvasId ? handleOpenComments : null}
+                  onToggleReaction={canvasId && currentUserEmail ? handleToggleReaction : null}
+                  getBlockData={getBlockData}
+                  canvasId={canvasId}
+                  currentUserEmail={currentUserEmail}
                 />
               ))}
             </SortableContext>
@@ -718,10 +1193,16 @@ function CanvasBlockEditorInner({
                     fileInputRef.current.click();
                   }
                 } else {
-                  const newBlock =
-                    c.id === 'checklist'
-                      ? { id: blockId(), type: 'checklist', content: JSON.stringify([{ text: '', checked: false }]) }
-                      : { id: blockId(), type: c.id, content: c.id === 'bullet' || c.id === 'ordered' ? '<li></li>' : '', caption: '' };
+                  let newBlock;
+                  if (c.id === 'checklist') {
+                    newBlock = { id: blockId(), type: 'checklist', content: JSON.stringify([{ text: '', checked: false }]) };
+                  } else if (c.id === 'poll') {
+                    newBlock = { id: blockId(), type: 'poll', content: JSON.stringify({ question: '', options: [{ text: 'Option 1', votes: 0 }, { text: 'Option 2', votes: 0 }], votedBy: [] }) };
+                  } else if (c.id === 'form') {
+                    newBlock = { id: blockId(), type: 'form', content: JSON.stringify({ title: '', fields: [{ type: 'short_text', label: 'Field 1' }] }) };
+                  } else {
+                    newBlock = { id: blockId(), type: c.id, content: c.id === 'bullet' || c.id === 'ordered' ? '<li></li>' : '', caption: '' };
+                  }
                   addBlockAfter(idx, newBlock);
                 }
                 setSlashOpen(false);
@@ -733,6 +1214,87 @@ function CanvasBlockEditorInner({
               <div>
                 <span className="font-semibold">{c.label}</span>
                 <small className="block text-[10px] text-muted-foreground">{c.desc}</small>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {openCommentBlockId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setOpenCommentBlockId(null)}>
+          <div className="bg-popover border border-border rounded-xl shadow-xl w-full max-w-md max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-3 border-b border-border font-medium text-foreground">Comments</div>
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
+              {(blockDataMap[openCommentBlockId]?.comments || []).map((c) => (
+                <div key={c.id} className="text-sm">
+                  <span className="font-medium text-foreground">{c.userName || c.user}</span>
+                  <span className="text-muted-foreground ml-2 text-xs">{c.createdAt && new Date(c.createdAt).toLocaleString()}</span>
+                  <p className="mt-0.5 text-foreground/90">{c.text}</p>
+                </div>
+              ))}
+            </div>
+            <div className="p-3 border-t border-border flex gap-2">
+              <input
+                type="text"
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAddBlockComment()}
+                placeholder="Add a comment…"
+                className="flex-1 px-3 py-2 rounded-md border border-input bg-background text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleAddBlockComment}
+                disabled={commentSubmitting || !commentInput.trim()}
+                className="px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {wikiOpen && wikiItems.length > 0 && (
+        <div
+          className="fixed z-50 w-[260px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
+          style={{ left: wikiPosRef.current.left, top: wikiPosRef.current.top }}
+        >
+          {wikiItems.map((w, i) => (
+            <button
+              key={w.id}
+              type="button"
+              className={`w-full flex items-center gap-2 py-2 px-3 rounded-lg text-left text-sm text-foreground ${i === wikiIndex ? 'bg-muted' : 'hover:bg-muted'}`}
+              onClick={() => handleWikiSelect(w)}
+            >
+              <span className="text-base">{w.title || 'Untitled'}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {mentionOpen && mentionItems.length > 0 && (
+        <div
+          className="fixed z-50 w-[260px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
+          style={{ left: mentionPosRef.current.left, top: mentionPosRef.current.top }}
+        >
+          {mentionItems.map((u, i) => (
+            <button
+              key={u.email || u.id || i}
+              type="button"
+              className={`w-full flex items-center gap-2 py-2 px-3 rounded-lg text-left text-sm text-foreground ${
+                i === mentionIndex ? 'bg-muted' : 'hover:bg-muted'
+              }`}
+              onClick={() => handleMentionSelect(u)}
+            >
+              <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+                {(u.firstName?.[0] || u.email?.[0] || '?').toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <div className="font-medium truncate">
+                  {[u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || 'User'}
+                </div>
+                {u.email && <div className="text-xs text-muted-foreground truncate">{u.email}</div>}
               </div>
             </button>
           ))}

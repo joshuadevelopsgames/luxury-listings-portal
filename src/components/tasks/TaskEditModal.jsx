@@ -26,6 +26,7 @@ import { DailyTask } from '../../entities/DailyTask';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { openEmailInGmail } from '../../utils/gmailCompose';
+import { firestoreService } from '../../services/firestoreService';
 
 const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], onNavigate, onTaskCreated }) => {
   const { currentUser } = useAuth();
@@ -58,6 +59,56 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   const commentFileInputRef = useRef(null);
   const taskFileInputRef = useRef(null);
   const paperclipMenuRef = useRef(null);
+  const commentInputRef = useRef(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [approvedUsers, setApprovedUsers] = useState([]);
+
+  useEffect(() => {
+    firestoreService.getApprovedUsers().then(setApprovedUsers).catch(() => setApprovedUsers([]));
+  }, []);
+
+  const mentionFilter = newComment.includes('@') ? newComment.slice(newComment.lastIndexOf('@') + 1) : '';
+  const mentionOpen = newComment.includes('@') && !/\s/.test(mentionFilter);
+  const mentionItems = (mentionFilter === '' ? approvedUsers : approvedUsers.filter((u) => {
+    const name = [u.firstName, u.lastName].filter(Boolean).join(' ').toLowerCase();
+    const email = (u.email || u.id || '').toLowerCase();
+    const q = mentionFilter.toLowerCase();
+    return name.includes(q) || email.includes(q);
+  })).slice(0, 6);
+
+  useEffect(() => {
+    if (!mentionOpen) setMentionIndex(0);
+  }, [mentionOpen]);
+
+  useEffect(() => {
+    if (!mentionOpen || mentionItems.length === 0) return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionIndex((i) => (i + 1) % mentionItems.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionIndex((i) => (i - 1 + mentionItems.length) % mentionItems.length);
+      } else if (e.key === 'Enter' && mentionItems[mentionIndex]) {
+        e.preventDefault();
+        const u = mentionItems[mentionIndex];
+        const displayName = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '';
+        const token = `@[${displayName}](${u.email || u.id || ''})`;
+        setNewComment((prev) => {
+          const at = prev.lastIndexOf('@');
+          return at === -1 ? prev : prev.slice(0, at) + token;
+        });
+      } else if (e.key === 'Escape') {
+        setNewComment((prev) => {
+          const at = prev.lastIndexOf('@');
+          return at === -1 ? prev : prev.slice(0, at);
+        });
+        setMentionIndex(0);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mentionOpen, mentionIndex, mentionItems]);
 
   const handleTaskDrop = (e) => {
     e.preventDefault();
@@ -358,6 +409,22 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
       : currentUser?.email || 'User';
 
     await task.addComment(currentUser?.email, userName, commentText.trim() || '(photo)', commentAttachmentUrls);
+
+    const mentionedEmails = [...commentText.matchAll(/@\[[^\]]*\]\(([^)]+)\)/g)].map((m) => m[1].trim().toLowerCase());
+    const currentEmail = (currentUser?.email || '').toLowerCase();
+    const excerpt = commentText.replace(/<[^>]+>/g, ' ').slice(0, 60) + (commentText.length > 60 ? '…' : '');
+    for (const email of mentionedEmails) {
+      if (email && email !== currentEmail) {
+        firestoreService.createNotification({
+          userEmail: email,
+          type: 'task_comment_mention',
+          title: 'Mentioned you in a task comment',
+          message: excerpt || 'You were mentioned in a comment.',
+          link: `/tasks?taskId=${task.id}`,
+          read: false,
+        }).catch(() => {});
+      }
+    }
 
     const updatedComments = [...(task.comments || []), {
       id: Date.now().toString(),
@@ -800,14 +867,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                   {currentUser?.firstName?.[0] || 'U'}
                 </div>
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 space-y-2 relative">
+                  <div className="flex items-center gap-2" ref={commentInputRef}>
                     <input
                       type="text"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
-                      placeholder="Comment"
+                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && !mentionOpen && handleAddComment()}
+                      placeholder="Comment (type @ to mention)"
                       className="flex-1 min-w-0 text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                     />
                     <input
@@ -858,6 +925,36 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       <Send className="w-4 h-4" />
                     </button>
                   </div>
+                  {mentionOpen && mentionItems.length > 0 && commentInputRef.current && (
+                    <div
+                      className="absolute left-0 bottom-full mb-1 w-56 max-h-48 overflow-y-auto py-1.5 px-1.5 bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 z-30"
+                      style={{ minWidth: commentInputRef.current.offsetWidth }}
+                    >
+                      {mentionItems.map((u, i) => (
+                        <button
+                          key={u.email || u.id || i}
+                          type="button"
+                          className={`w-full flex items-center gap-2 py-2 px-3 rounded-md text-left text-sm ${i === mentionIndex ? 'bg-blue-100 dark:bg-blue-900/30' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+                          onClick={() => {
+                            const displayName = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '';
+                            const token = `@[${displayName}](${u.email || u.id || ''})`;
+                            setNewComment((prev) => {
+                              const at = prev.lastIndexOf('@');
+                              return at === -1 ? prev : prev.slice(0, at) + token;
+                            });
+                          }}
+                        >
+                          <span className="w-7 h-7 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                            {(u.firstName?.[0] || u.email?.[0] || '?').toUpperCase()}
+                          </span>
+                          <div className="min-w-0 truncate">
+                            <div className="font-medium truncate">{[u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || 'User'}</div>
+                            {u.email && <div className="text-xs text-gray-500 dark:text-[#a1a1a6] truncate">{u.email}</div>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {commentAttachmentUrls.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {commentAttachmentUrls.map((url) => (

@@ -61,8 +61,8 @@ export const modules = {
 
   'canvas': {
     id: 'canvas',
-    name: 'Canvas',
-    description: 'Rich documents with formatting, checklists, and slash commands',
+    name: 'Workspace',
+    description: 'Workspaces with formatting, checklists, slash commands, and collaboration',
     icon: PencilRuler,
     routes: ['/canvas'],
     widgets: [],

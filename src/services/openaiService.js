@@ -688,6 +688,47 @@ Return ONLY the JSON object, no markdown or explanation.`;
 
     throw new Error(result.data?.error || 'Health prediction failed');
   }
+
+  /**
+   * AI assist for workspace blocks: summarize, expand, or change tone
+   * @param {string} action - 'summarize' | 'expand' | 'professional' | 'casual'
+   * @param {string} blockText - Plain text content (strip HTML before calling)
+   * @returns {Promise<string>} - Revised text
+   */
+  async canvasAssist(action, blockText) {
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key is not configured. Add REACT_APP_OPENAI_API_KEY to your environment.');
+    }
+    const prompts = {
+      summarize: 'Summarize the following text concisely in 1-3 sentences. Preserve key points only. Return only the summary, no preamble.',
+      expand: 'Expand the following text into a longer, more detailed version. Keep the same tone and add relevant detail. Return only the expanded text.',
+      professional: 'Rewrite the following text in a formal, professional tone. Keep the same meaning and length roughly. Return only the rewritten text.',
+      casual: 'Rewrite the following text in a friendly, casual tone. Keep the same meaning. Return only the rewritten text.',
+    };
+    const systemPrompt = prompts[action] || prompts.summarize;
+    const response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: blockText || '(no content)' },
+        ],
+        temperature: 0.5,
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `OpenAI error: ${response.status}`);
+    }
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content?.trim() || '';
+    return text;
+  }
 }
 
 export const openaiService = new OpenAIService();

@@ -32,7 +32,7 @@ import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
-import { CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../../services/crmService';
+import { CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes } from '../../services/crmService';
 import { toast } from 'react-hot-toast';
 import PlatformIcons from '../PlatformIcons';
 import { getPostsRemaining, getEnabledPlatforms } from '../../utils/clientPostsUtils';
@@ -89,7 +89,9 @@ const ClientDetailModal = ({
     setEditForm({
       clientName: localClient.clientName || '',
       clientEmail: localClient.clientEmail || '',
-      clientType: localClient.clientType || localClient.type || CLIENT_TYPE.NA,
+      clientTypes: localClient.clientTypes && localClient.clientTypes.length ? [...localClient.clientTypes] : (localClient.clientType || localClient.type ? [localClient.clientType || localClient.type] : [CLIENT_TYPE.NA]),
+      location: localClient.location || '',
+      primaryContact: localClient.primaryContact ? { name: localClient.primaryContact.name || '', email: localClient.primaryContact.email || '', phone: localClient.primaryContact.phone || '', role: localClient.primaryContact.role || '' } : { name: '', email: '', phone: '', role: '' },
       phone: localClient.phone || '',
       website: localClient.website || '',
       instagramHandle: localClient.instagramHandle || '',
@@ -136,7 +138,12 @@ const ClientDetailModal = ({
       return;
     }
 
-    const payload = { ...editForm };
+    const clientTypes = editForm.clientTypes && editForm.clientTypes.length ? editForm.clientTypes : [CLIENT_TYPE.NA];
+    const loc = (editForm.location || '').trim() || null;
+    const pc = editForm.primaryContact && (editForm.primaryContact.name || editForm.primaryContact.email || editForm.primaryContact.phone || editForm.primaryContact.role)
+      ? { name: editForm.primaryContact.name || '', email: editForm.primaryContact.email || '', phone: editForm.primaryContact.phone || '', role: editForm.primaryContact.role || '' }
+      : null;
+    const payload = { ...editForm, clientTypes, clientType: clientTypes[0], location: loc, primaryContact: pc };
     if (payload.postsRemainingByPlatform && Object.keys(payload.postsRemainingByPlatform).length > 0) {
       payload.postsRemaining = Object.values(payload.postsRemainingByPlatform).reduce((s, n) => s + (Number(n) || 0), 0);
     }
@@ -264,16 +271,45 @@ const ClientDetailModal = ({
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Service type (SMM / PP / Both)</label>
-                  <select
-                    value={editForm.clientType || CLIENT_TYPE.NA}
-                    onChange={(e) => setEditForm({ ...editForm, clientType: e.target.value })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
-                  >
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Service type(s)</label>
+                  <div className="flex flex-wrap gap-3">
                     {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
-                      <option key={value} value={value}>{label}</option>
+                      <label key={value} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={(editForm.clientTypes || []).includes(value)}
+                          onChange={(e) => {
+                            const prev = editForm.clientTypes || [];
+                            setEditForm({
+                              ...editForm,
+                              clientTypes: e.target.checked ? [...prev, value] : prev.filter(t => t !== value)
+                            });
+                          }}
+                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                        />
+                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">{label}</span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Location</label>
+                  <input
+                    type="text"
+                    value={editForm.location || ''}
+                    onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                    placeholder="City, region, or country"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                  />
+                </div>
+                <div className="col-span-full border-t border-black/5 dark:border-white/10 pt-4">
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-2 block">Primary contact (optional)</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input type="text" value={editForm.primaryContact?.name || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), name: e.target.value } })} placeholder="Name" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="email" value={editForm.primaryContact?.email || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), email: e.target.value } })} placeholder="Email" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="tel" value={editForm.primaryContact?.phone || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), phone: e.target.value } })} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="text" value={editForm.primaryContact?.role || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), role: e.target.value } })} placeholder="Role" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                  </div>
                 </div>
                 <div>
                   <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Phone</label>
@@ -567,6 +603,27 @@ const ClientDetailModal = ({
                 </div>
               )}
 
+              {(localClient.location || (localClient.primaryContact && (localClient.primaryContact.name || localClient.primaryContact.email))) && (
+              <div className="border-t border-black/5 dark:border-white/5 pt-6">
+                <h3 className="text-[12px] font-semibold text-[#86868b] mb-4 uppercase tracking-wide">Location & primary contact</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {localClient.location && (
+                    <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
+                      <p className="text-[11px] text-[#86868b] mb-1">Location</p>
+                      <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{localClient.location}</p>
+                    </div>
+                  )}
+                  {localClient.primaryContact && (localClient.primaryContact.name || localClient.primaryContact.email) && (
+                    <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl md:col-span-2">
+                      <p className="text-[11px] text-[#86868b] mb-1">Primary contact</p>
+                      <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{localClient.primaryContact.name || '—'}{localClient.primaryContact.role ? ` · ${localClient.primaryContact.role}` : ''}</p>
+                      {localClient.primaryContact.email && <p className="text-[12px] text-[#86868b]">{localClient.primaryContact.email}</p>}
+                      {localClient.primaryContact.phone && <p className="text-[12px] text-[#86868b]">{localClient.primaryContact.phone}</p>}
+                    </div>
+                  )}
+                </div>
+              </div>
+              )}
               {/* Package Details */}
               <div className="border-t border-black/5 dark:border-white/5 pt-6">
                 <h3 className="text-[12px] font-semibold text-[#86868b] mb-4 uppercase tracking-wide">Package Details</h3>
@@ -574,7 +631,7 @@ const ClientDetailModal = ({
                   <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
                     <p className="text-[11px] text-[#86868b] mb-1">Service type</p>
                     <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">
-                      {CLIENT_TYPE_OPTIONS.find(o => o.value === (localClient.clientType || localClient.type || CLIENT_TYPE.NA))?.label ?? (localClient.clientType || localClient.type || CLIENT_TYPE.NA)}
+                      {getContactTypes(localClient).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
                     </p>
                   </div>
                   <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">

@@ -24,11 +24,12 @@ import {
   MessageSquare,
   FileText,
   Trash2,
-  UserCheck
+  UserCheck,
+  MapPin
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { openGmailWithComposeTo } from '../../utils/gmailCompose';
-import { CLIENT_TYPE_OPTIONS } from '../../services/crmService';
+import { CLIENT_TYPE_OPTIONS, getContactTypes } from '../../services/crmService';
 
 const LeadDetailModal = ({
   lead,
@@ -56,13 +57,15 @@ const LeadDetailModal = ({
     setEditForm({
       contactName: lead.contactName || '',
       email: lead.email || '',
-      type: lead.type || 'N/A',
+      types: lead.types && lead.types.length ? [...lead.types] : (lead.type ? [lead.type] : []),
       phone: lead.phone || '',
       instagram: lead.instagram || '',
       organization: lead.organization || '',
       website: lead.website || '',
       notes: lead.notes || '',
-      status: lead.status || 'warm'
+      status: lead.status || 'warm',
+      location: lead.location || '',
+      primaryContact: lead.primaryContact ? { name: lead.primaryContact.name || '', email: lead.primaryContact.email || '', phone: lead.primaryContact.phone || '', role: lead.primaryContact.role || '' } : { name: '', email: '', phone: '', role: '' }
     });
     setIsEditing(true);
   };
@@ -75,11 +78,17 @@ const LeadDetailModal = ({
 
     setSaving(true);
     try {
+      const types = editForm.types && editForm.types.length ? editForm.types : ['N/A'];
+      const loc = (editForm.location || '').trim() || null;
+      const pc = editForm.primaryContact && (editForm.primaryContact.name || editForm.primaryContact.email || editForm.primaryContact.phone || editForm.primaryContact.role)
+        ? { name: editForm.primaryContact.name || '', email: editForm.primaryContact.email || '', phone: editForm.primaryContact.phone || '', role: editForm.primaryContact.role || '' }
+        : null;
+      const payload = { ...lead, ...editForm, types, type: types[0], location: loc, primaryContact: pc };
       if (onEdit) {
-        await onEdit({ ...lead, ...editForm });
+        await onEdit(payload);
       }
       if (onLeadUpdate) {
-        onLeadUpdate({ ...lead, ...editForm });
+        onLeadUpdate(payload);
       }
       toast.success('Lead updated');
       setIsEditing(false);
@@ -209,16 +218,26 @@ const LeadDetailModal = ({
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Service type (SMM / PP / Both)</label>
-                  <select
-                    value={editForm.type || 'N/A'}
-                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
-                  >
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Service type(s)</label>
+                  <div className="flex flex-wrap gap-3">
                     {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
-                      <option key={value} value={value}>{label}</option>
+                      <label key={value} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={(editForm.types || []).includes(value)}
+                          onChange={(e) => {
+                            const prev = editForm.types || [];
+                            setEditForm({
+                              ...editForm,
+                              types: e.target.checked ? [...prev, value] : prev.filter(t => t !== value)
+                            });
+                          }}
+                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                        />
+                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">{label}</span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
                 <div>
                   <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Phone</label>
@@ -226,6 +245,16 @@ const LeadDetailModal = ({
                     type="tel"
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Location</label>
+                  <input
+                    type="text"
+                    value={editForm.location || ''}
+                    onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                    placeholder="City, region, or country"
                     className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
                   />
                 </div>
@@ -270,6 +299,15 @@ const LeadDetailModal = ({
                     <option value="converted">Converted</option>
                   </select>
                 </div>
+                <div className="md:col-span-2 border-t border-black/5 dark:border-white/10 pt-4">
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-2 block">Primary contact (optional)</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input type="text" value={editForm.primaryContact?.name || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), name: e.target.value } })} placeholder="Name" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="email" value={editForm.primaryContact?.email || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), email: e.target.value } })} placeholder="Email" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="tel" value={editForm.primaryContact?.phone || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), phone: e.target.value } })} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="text" value={editForm.primaryContact?.role || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), role: e.target.value } })} placeholder="Role" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Notes</label>
@@ -305,6 +343,17 @@ const LeadDetailModal = ({
               <div>
                 <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Contact Information</h3>
                 <div className="space-y-3">
+                  {lead.location && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                      <div className="w-9 h-9 rounded-lg bg-[#34c759]/10 flex items-center justify-center flex-shrink-0">
+                        <MapPin className="w-4 h-4 text-[#34c759]" />
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-[#86868b]">Location</p>
+                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{lead.location}</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
                     <div className="w-9 h-9 rounded-lg bg-[#5856d6]/10 flex items-center justify-center flex-shrink-0">
                       <FileText className="w-4 h-4 text-[#5856d6]" />
@@ -312,10 +361,18 @@ const LeadDetailModal = ({
                     <div>
                       <p className="text-[11px] text-[#86868b]">Service type</p>
                       <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
-                        {CLIENT_TYPE_OPTIONS.find(o => o.value === (lead.type || 'N/A'))?.label ?? (lead.type || 'N/A')}
+                        {getContactTypes(lead).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
                       </p>
                     </div>
                   </div>
+                  {lead.primaryContact && (lead.primaryContact.name || lead.primaryContact.email) && (
+                    <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
+                      <p className="text-[11px] text-[#86868b] mb-1">Primary contact</p>
+                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{lead.primaryContact.name || '—'}{lead.primaryContact.role ? ` · ${lead.primaryContact.role}` : ''}</p>
+                      {lead.primaryContact.email && <p className="text-[12px] text-[#86868b]">{lead.primaryContact.email}</p>}
+                      {lead.primaryContact.phone && <p className="text-[12px] text-[#86868b]">{lead.primaryContact.phone}</p>}
+                    </div>
+                  )}
                   {lead.email && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
                       <div className="w-9 h-9 rounded-lg bg-[#0071e3]/10 flex items-center justify-center flex-shrink-0">

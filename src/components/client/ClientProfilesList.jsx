@@ -40,7 +40,7 @@ import PlatformIcons from '../PlatformIcons';
 import ClientLink from '../ui/ClientLink';
 import ClientDetailModal from './ClientDetailModal';
 import { useOpenClientCard } from '../../hooks/useOpenClientCard';
-import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS } from '../../services/crmService';
+import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes } from '../../services/crmService';
 import { findPotentialDuplicateGroups, findPotentialMatchesForContact } from '../../services/clientDuplicateService';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { getPostsRemaining, getEnabledPlatforms } from '../../utils/clientPostsUtils';
@@ -81,7 +81,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
     firstName: '',
     lastName: '',
     clientEmail: '',
-    clientType: CLIENT_TYPE.NA,
+    clientTypes: [],
+    location: '',
+    primaryContact: { name: '', email: '', phone: '', role: '' },
     phone: '',
     notes: '',
     packageType: 'Standard',
@@ -233,10 +235,18 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       });
     }
     const clientName = [addForm.firstName, addForm.lastName].filter(Boolean).join(' ').trim();
+    const clientTypes = Array.isArray(addForm.clientTypes) && addForm.clientTypes.length ? addForm.clientTypes : [CLIENT_TYPE.NA];
+    const loc = (addForm.location || '').trim() || null;
+    const pc = addForm.primaryContact && (addForm.primaryContact.name || addForm.primaryContact.email || addForm.primaryContact.phone || addForm.primaryContact.role)
+      ? { name: addForm.primaryContact.name || '', email: addForm.primaryContact.email || '', phone: addForm.primaryContact.phone || '', role: addForm.primaryContact.role || '' }
+      : null;
     const newClient = {
       clientName: clientName,
       clientEmail: addForm.clientEmail.trim(),
-      clientType: addForm.clientType || CLIENT_TYPE.NA,
+      clientType: clientTypes[0],
+      clientTypes,
+      location: loc,
+      primaryContact: pc,
       phone: addForm.phone.trim(),
       notes: addForm.notes.trim(),
       packageType: addForm.packageType,
@@ -254,21 +264,30 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       postedOn: 'Luxury Listings'
     };
     await firestoreService.addClient(newClient);
-    await addContactToCRM({
+    const crmResult = await addContactToCRM({
       clientName: newClient.clientName,
       clientEmail: newClient.clientEmail,
       type: newClient.clientType,
+      types: newClient.clientTypes,
+      location: newClient.location,
+      primaryContact: newClient.primaryContact,
       phone: newClient.phone,
       notes: newClient.notes
     }, 'warmLeads');
-    toast.success('Client added successfully and added to CRM.');
+    if (!crmResult?.success) {
+      toast.success('Client added. Could not add to CRM: ' + (crmResult?.error || 'unknown error'));
+    } else {
+      toast.success('Client added successfully and added to CRM.');
+    }
     setShowAddModal(false);
     setPossibleExistingMatches([]);
     setAddForm({
       firstName: '',
       lastName: '',
       clientEmail: '',
-      clientType: CLIENT_TYPE.NA,
+      clientTypes: [],
+      location: '',
+      primaryContact: { name: '', email: '', phone: '', role: '' },
       phone: '',
       notes: '',
       packageType: 'Standard',
@@ -1061,7 +1080,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     firstName: '',
                     lastName: '',
                     clientEmail: '',
-                    clientType: CLIENT_TYPE.NA,
+                    clientTypes: [],
+                    location: '',
+                    primaryContact: { name: '', email: '', phone: '', role: '' },
                     phone: '',
                     notes: '',
                     packageType: 'Standard',
@@ -1084,6 +1105,31 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                 </p>
               )}
               <div className="space-y-4">
+                {/* Type(s) multi-select */}
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Type(s) *
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
+                      <label key={value} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={(addForm.clientTypes || []).includes(value)}
+                          onChange={(e) => {
+                            const prev = addForm.clientTypes || [];
+                            setAddForm(prev2 => ({
+                              ...prev2,
+                              clientTypes: e.target.checked ? [...prev, value] : prev.filter(t => t !== value)
+                            }));
+                          }}
+                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                        />
+                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 {/* First name / Last name */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1124,22 +1170,42 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                   />
                 </div>
 
-                {!internalOnly && (
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                      Type *
-                    </label>
-                    <select
-                      value={addForm.clientType || CLIENT_TYPE.NA}
-                      onChange={(e) => setAddForm({...addForm, clientType: e.target.value})}
-                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                    >
-                      {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
+                {/* Location */}
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={addForm.location || ''}
+                    onChange={(e) => setAddForm({...addForm, location: e.target.value})}
+                    placeholder="City, region, or country"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+
+                {/* Primary contact (optional) */}
+                <div className="border-t border-black/5 dark:border-white/10 pt-4">
+                  <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white mb-3">Primary contact (optional)</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Name</label>
+                      <input type="text" value={addForm.primaryContact?.name || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), name: e.target.value } }))} placeholder="Contact name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0" />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Email</label>
+                      <input type="email" value={addForm.primaryContact?.email || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), email: e.target.value } }))} placeholder="contact@example.com" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0" />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Phone</label>
+                      <input type="tel" value={addForm.primaryContact?.phone || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), phone: e.target.value } }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0" />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Role</label>
+                      <input type="text" value={addForm.primaryContact?.role || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), role: e.target.value } }))} placeholder="e.g. Marketing Manager" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0" />
+                    </div>
                   </div>
-                )}
+                </div>
 
                 {/* Phone */}
                 <div>
@@ -1271,7 +1337,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       firstName: '',
                       lastName: '',
                       clientEmail: '',
-                      clientType: CLIENT_TYPE.NA,
+                      clientTypes: [],
+                      location: '',
+                      primaryContact: { name: '', email: '', phone: '', role: '' },
                       phone: '',
                       notes: '',
                       packageType: 'Standard',

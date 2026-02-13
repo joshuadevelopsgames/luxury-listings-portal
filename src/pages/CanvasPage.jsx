@@ -1,9 +1,69 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
+import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { firestoreService } from '../services/firestoreService';
+import { openaiService } from '../services/openaiService';
 import CanvasBlockEditor, { blockId } from './canvas/CanvasBlockEditor';
+
+function extractMentionedEmails(blocks) {
+  const emails = new Set();
+  if (!Array.isArray(blocks)) return emails;
+  blocks.forEach((b) => {
+    const html = b.content || '';
+    const regex = /@\[[^\]]*\]\(([^)]+)\)/g;
+    let m;
+    while ((m = regex.exec(html)) !== null) emails.add(m[1].trim().toLowerCase());
+  });
+  return emails;
+}
+
+function blockSearchableText(block) {
+  if (block.type === 'checklist') {
+    try {
+      const items = JSON.parse(block.content || '[]');
+      return items.map((i) => i.text).join(' ');
+    } catch { return ''; }
+  }
+  if (block.type === 'poll') {
+    try {
+      const d = JSON.parse(block.content || '{}');
+      return (d.question || '') + ' ' + (d.options || []).map((o) => o.text).join(' ');
+    } catch { return ''; }
+  }
+  if (block.type === 'form') {
+    try {
+      const d = JSON.parse(block.content || '{}');
+      return (d.title || '') + ' ' + (d.fields || []).map((f) => f.label).join(' ');
+    } catch { return ''; }
+  }
+  if (block.type === 'image' || block.type === 'video') return block.caption || '';
+  return (block.content || '').replace(/<[^>]+>/g, ' ');
+}
+
+function searchBlocksInCanvases(canvasesList, query) {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const results = [];
+  canvasesList.forEach((canvas) => {
+    const blocks = canvas.blocks || [];
+    blocks.forEach((block) => {
+      const text = blockSearchableText(block);
+      if (text.toLowerCase().includes(q)) {
+        const excerpt = text.replace(/\s+/g, ' ').trim().slice(0, 60) + (text.length > 60 ? '…' : '');
+        results.push({
+          canvasId: canvas.id,
+          canvasTitle: canvas.title || 'Untitled',
+          blockId: block.id,
+          blockType: block.type,
+          excerpt,
+        });
+      }
+    });
+  });
+  return results.slice(0, 20);
+}
 import {
   PencilRuler,
   Plus,
@@ -32,6 +92,10 @@ import {
   Heading2,
   Heading3,
   FolderOpen,
+  UserPlus,
+  History,
+  Keyboard,
+  Sparkles,
 } from 'lucide-react';
 
 const EMOJIS = ['📄', '📝', '📋', '📑', '🗒️', '📌', '📎', '💡', '🎯', '🚀', '🔥', '⭐', '💎', '🎨', '📊', '📈', '🏆', '💼', '🧠', '❤️', '✅', '🌟', '🌈', '🔔', '⚡'];
@@ -57,6 +121,7 @@ function dateStr(ts) {
 export default function CanvasPage() {
   const { currentUser } = useAuth();
   const confirm = useConfirm();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [canvases, setCanvases] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -65,22 +130,64 @@ export default function CanvasPage() {
   const [contextPos, setContextPos] = useState({ top: 0, left: 0 });
   const [linkModal, setLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const linkSavedSelectionRef = useRef(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState('mine'); // 'mine' | 'shared'
+  const [sharedCanvases, setSharedCanvases] = useState([]);
+  const [sharedLoading, setSharedLoading] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareEmail, setShareEmail] = useState('');
+  const [shareSubmitting, setShareSubmitting] = useState(false);
+  const [shareCollaborators, setShareCollaborators] = useState([]);
+  const [approvedUsers, setApprovedUsers] = useState([]);
   const [wordCountStr, setWordCountStr] = useState('0 words · 0 characters');
   const [loading, setLoading] = useState(true);
+  const [highlightBlockId, setHighlightBlockId] = useState(null);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historyVersions, setHistoryVersions] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [blockSearchQuery, setBlockSearchQuery] = useState('');
+  const [blockSearchFocused, setBlockSearchFocused] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [aiMenuOpen, setAiMenuOpen] = useState(false);
+  const [aiAssistLoading, setAiAssistLoading] = useState(false);
   const persistBlocksTimerRef = useRef(null);
   const canvasEditorRef = useRef(null);
+  const undoStackRef = useRef([]);
+  const redoStackRef = useRef([]);
+  const [restoreKey, setRestoreKey] = useState(0); // bump on undo/redo so contenteditable remounts with restored content
+  const MAX_UNDO = 50;
 
   const userId = currentUser?.uid ?? null;
-  const activeCanvas = canvases.find((c) => c.id === activeId);
+  const userEmail = currentUser?.email ?? null;
+  const activeCanvas = canvases.find((c) => c.id === activeId) ?? sharedCanvases.find((c) => c.id === activeId);
   const filteredCanvases = search.trim()
     ? canvases.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()))
     : canvases;
+  const filteredSharedCanvases = search.trim()
+    ? sharedCanvases.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()))
+    : sharedCanvases;
+  const isOwner = activeCanvas && userId && (canvases.some((c) => c.id === activeId) || activeCanvas.userId === userId);
+  const canShare = isOwner;
+
+  const pushUndo = useCallback((blocks) => {
+    if (!blocks?.length) return;
+    const copy = JSON.parse(JSON.stringify(blocks));
+    const key = JSON.stringify(copy);
+    const stack = undoStackRef.current;
+    if (stack.length && JSON.stringify(stack[stack.length - 1]) === key) return;
+    if (stack.length >= MAX_UNDO) stack.shift();
+    stack.push(copy);
+  }, []);
 
   const updateActiveBlocks = useCallback(
-    (blocks) => {
+    (blocks, opts = {}) => {
       if (!activeId) return;
+      if (!opts.skipUndoPush && activeCanvas?.blocks) {
+        pushUndo(activeCanvas.blocks);
+        redoStackRef.current = [];
+      }
       setCanvases((prev) =>
         prev.map((c) =>
           c.id === activeId ? { ...c, blocks, updated: Date.now() } : c
@@ -89,21 +196,73 @@ export default function CanvasPage() {
       if (persistBlocksTimerRef.current) clearTimeout(persistBlocksTimerRef.current);
       persistBlocksTimerRef.current = setTimeout(() => {
         persistBlocksTimerRef.current = null;
-        if (userId && activeId) {
-          firestoreService.updateCanvas(userId, activeId, { blocks }).catch((err) => {
-          console.error('Canvas save error (blocks):', err);
-          toast.error('Failed to save');
-        });
+        if (activeId && (userId || activeCanvas?.userId)) {
+          const ownerId = activeCanvas?.userId ?? userId;
+          firestoreService.updateCanvas(ownerId, activeId, { blocks }).catch((err) => {
+            console.error('Canvas save error (blocks):', err);
+            toast.error('Failed to save');
+          });
+          if (isOwner) {
+            firestoreService.saveCanvasHistorySnapshot(activeId, {
+              blocks,
+              title: activeCanvas?.title,
+              createdBy: userEmail,
+            }).catch(() => {});
+          }
+          if (sharedCanvases.some((c) => c.id === activeId)) {
+            setSharedCanvases((prev) => prev.map((c) => (c.id === activeId ? { ...c, blocks, updated: Date.now() } : c)));
+          }
+          const prevEmails = extractMentionedEmails(activeCanvas?.blocks);
+          const newEmails = extractMentionedEmails(blocks);
+          const currentEmail = (currentUser?.email || '').toLowerCase();
+          const excerpt = blocks.slice(0, 3).map((b) => (b.content || '').replace(/<[^>]+>/g, ' ').trim()).join(' ').slice(0, 80) + (blocks.length > 3 ? '…' : '');
+          for (const email of newEmails) {
+            if (email && email !== currentEmail && !prevEmails.has(email)) {
+              let blockIdForLink = blocks[0]?.id || '';
+              for (const b of blocks) {
+                if ((b.content || '').toLowerCase().includes(email)) {
+                  blockIdForLink = b.id;
+                  break;
+                }
+              }
+              firestoreService.createNotification({
+                userEmail: email,
+                type: 'workspace_mention',
+                title: 'Mentioned you in a workspace',
+                message: excerpt || 'You were mentioned.',
+                link: `/canvas?id=${activeId}&block=${blockIdForLink}`,
+                read: false,
+              }).catch(() => {});
+            }
+          }
         }
       }, 1200);
     },
-    [activeId, userId]
+    [activeId, userId, activeCanvas?.blocks, activeCanvas?.userId, pushUndo, sharedCanvases]
   );
 
+  const handleUndo = useCallback(() => {
+    if (!activeId || !activeCanvas?.blocks) return;
+    const prev = undoStackRef.current.pop();
+    if (!prev) return;
+    redoStackRef.current.push(JSON.parse(JSON.stringify(activeCanvas.blocks)));
+    updateActiveBlocks(prev, { skipUndoPush: true });
+    setRestoreKey((k) => k + 1);
+  }, [activeId, activeCanvas?.blocks, updateActiveBlocks]);
+
+  const handleRedo = useCallback(() => {
+    if (!activeId || !activeCanvas?.blocks) return;
+    const next = redoStackRef.current.pop();
+    if (!next) return;
+    undoStackRef.current.push(JSON.parse(JSON.stringify(activeCanvas.blocks)));
+    updateActiveBlocks(next, { skipUndoPush: true });
+    setRestoreKey((k) => k + 1);
+  }, [activeId, activeCanvas?.blocks, updateActiveBlocks]);
+
   const createCanvas = useCallback(
-    (title = 'Untitled Canvas', emoji = '📄') => {
+    (title = 'Untitled Workspace', emoji = '📄') => {
       if (!userId) {
-        toast.error('Please sign in to create canvases');
+        toast.error('Please sign in to create workspaces');
         return;
       }
       const initialBlocks = [{ id: blockId(), type: 'text', content: '' }];
@@ -117,10 +276,10 @@ export default function CanvasPage() {
       };
       setCanvases((prev) => [c, ...prev]);
       setActiveId(c.id);
-      toast.success('Canvas created');
+      toast.success('Workspace created');
       firestoreService.createCanvas(userId, c).catch((err) => {
         console.error('Canvas create error:', err);
-        toast.error('Failed to save canvas');
+        toast.error('Failed to save workspace');
       });
       return c;
     },
@@ -151,8 +310,8 @@ export default function CanvasPage() {
     async (id) => {
       const c = canvases.find((x) => x.id === id);
       const ok = await confirm({
-        title: 'Delete Canvas',
-        message: `Delete "${c?.title ?? 'Canvas'}"? This cannot be undone.`,
+        title: 'Delete Workspace',
+        message: `Delete "${c?.title ?? 'Workspace'}"? This cannot be undone.`,
         confirmText: 'Delete',
         variant: 'danger',
       });
@@ -161,10 +320,10 @@ export default function CanvasPage() {
           await firestoreService.deleteCanvas(userId, id);
           setCanvases((prev) => prev.filter((x) => x.id !== id));
           if (activeId === id) setActiveId(null);
-          toast.success('Canvas deleted');
+          toast.success('Workspace deleted');
         } catch (err) {
-          console.error('Canvas delete error:', err);
-          toast.error('Failed to delete canvas');
+          console.error('Workspace delete error:', err);
+          toast.error('Failed to delete workspace');
         }
       }
     },
@@ -174,7 +333,7 @@ export default function CanvasPage() {
   const duplicateCanvas = useCallback(
     (id) => {
       if (!userId) return;
-      const src = canvases.find((c) => c.id === id);
+      const src = canvases.find((c) => c.id === id) ?? sharedCanvases.find((c) => c.id === id);
       if (!src) return;
       const blocks = Array.isArray(src.blocks) && src.blocks.length
         ? src.blocks.map((b) => ({ ...b, id: blockId() }))
@@ -191,11 +350,11 @@ export default function CanvasPage() {
       setActiveId(c.id);
       firestoreService.createCanvas(userId, c).catch((err) => {
         console.error('Canvas duplicate error:', err);
-        toast.error('Failed to duplicate canvas');
+        toast.error('Failed to duplicate workspace');
       });
-      toast.success('Canvas duplicated');
+      toast.success('Workspace duplicated');
     },
-    [canvases, userId]
+    [canvases, sharedCanvases, userId]
   );
 
   useEffect(() => {
@@ -208,25 +367,97 @@ export default function CanvasPage() {
         setActiveId(null);
       })
       .catch((err) => {
-      console.error('Canvas load error:', err);
-      toast.error('Failed to load canvases');
-    })
+        console.error('Canvas load error:', err);
+        toast.error('Failed to load workspaces');
+      })
       .finally(() => setLoading(false));
   }, [userId]);
 
+  useEffect(() => {
+    if (sidebarTab !== 'shared' || !userEmail) return;
+    setSharedLoading(true);
+    firestoreService
+      .getCanvasesSharedWith(userEmail)
+      .then(setSharedCanvases)
+      .catch((err) => {
+        console.error('Shared workspaces load error:', err);
+        toast.error('Failed to load shared workspaces');
+      })
+      .finally(() => setSharedLoading(false));
+  }, [sidebarTab, userEmail]);
+
+  useEffect(() => {
+    firestoreService.getApprovedUsers().then(setApprovedUsers).catch(() => setApprovedUsers([]));
+  }, []);
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    const block = searchParams.get('block');
+    if (!id) return;
+    setActiveId(id);
+    if (block) setHighlightBlockId(block);
+    if (id && block) setSearchParams({}, { replace: true });
+    const inMine = canvases.some((c) => c.id === id);
+    const inShared = sharedCanvases.some((c) => c.id === id);
+    if (!inMine && !inShared) {
+      firestoreService.getCanvasById(id).then((c) => {
+        if (!c) return;
+        if (c.userId === userId) setCanvases((prev) => [c, ...prev]);
+        else setSharedCanvases((prev) => [c, ...prev]);
+      }).catch(() => {});
+    }
+  }, [searchParams, setSearchParams, userId, canvases, sharedCanvases]);
+
+  useEffect(() => {
+    if (!highlightBlockId) return;
+    const t = setTimeout(() => setHighlightBlockId(null), 2000);
+    return () => clearTimeout(t);
+  }, [highlightBlockId]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    const onKeyDown = (e) => {
+      const isMac = navigator.platform?.toUpperCase().includes('MAC');
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      if (e.key === '?' || (mod && e.key === '/')) {
+        e.preventDefault();
+        setShortcutsOpen((o) => !o);
+        return;
+      }
+      if (!mod) return;
+      if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.shiftKey) handleRedo();
+        else handleUndo();
+      }
+      if (e.key === 'y' && !isMac) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleRedo();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [activeId, handleUndo, handleRedo]);
 
   const updateActiveMeta = useCallback(
     (patch) => {
-      if (!activeId || !userId) return;
+      if (!activeId || !activeCanvas) return;
+      const ownerId = activeCanvas.userId ?? userId;
+      if (!ownerId) return;
       setCanvases((prev) =>
         prev.map((c) => (c.id === activeId ? { ...c, ...patch, updated: Date.now() } : c))
       );
-      firestoreService.updateCanvas(userId, activeId, patch).catch((err) => {
-      console.error('Canvas save error (meta):', err);
-      toast.error('Failed to save');
-    });
+      if (sharedCanvases.some((c) => c.id === activeId)) {
+        setSharedCanvases((prev) => prev.map((c) => (c.id === activeId ? { ...c, ...patch, updated: Date.now() } : c)));
+      }
+      firestoreService.updateCanvas(ownerId, activeId, patch).catch((err) => {
+        console.error('Canvas save error (meta):', err);
+        toast.error('Failed to save');
+      });
     },
-    [activeId, userId]
+    [activeId, activeCanvas, userId, sharedCanvases]
   );
 
   const handleExport = () => {
@@ -249,7 +480,7 @@ export default function CanvasPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = (activeCanvas.title || 'canvas') + '.txt';
+    a.download = (activeCanvas.title || 'workspace') + '.txt';
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Exported');
@@ -257,11 +488,106 @@ export default function CanvasPage() {
 
   const insertLink = () => {
     if (linkUrl.trim()) {
+      const saved = linkSavedSelectionRef.current;
+      if (saved?.editable && saved?.range) {
+        saved.editable.focus();
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(saved.range);
+      }
       document.execCommand('createLink', false, linkUrl.trim());
       toast.success('Link inserted');
+      canvasEditorRef.current?.syncFocusedBlockFromDom?.();
     }
     setLinkModal(false);
     setLinkUrl('');
+    linkSavedSelectionRef.current = null;
+  };
+
+  const handleShareInvite = async () => {
+    const email = shareEmail.trim().toLowerCase();
+    if (!email || !activeId || !userId || !activeCanvas) return;
+    const ownerId = activeCanvas.userId ?? userId;
+    if (ownerId !== userId) return;
+    setShareSubmitting(true);
+    try {
+      const user = await firestoreService.getApprovedUserByEmail(email);
+      if (!user) {
+        toast.error('User not found. They must be an approved team member.');
+        setShareSubmitting(false);
+        return;
+      }
+      await firestoreService.shareCanvas(userId, activeId, { email, role: 'editor' });
+      setShareCollaborators((prev) => [...prev.filter((c) => c.email !== email), { email, role: 'editor' }]);
+      setShareEmail('');
+      toast.success(`Invited ${email}`);
+    } catch (err) {
+      console.error('Share error:', err);
+      toast.error(err?.message || 'Failed to invite');
+    } finally {
+      setShareSubmitting(false);
+    }
+  };
+
+  const handleAiAssist = useCallback(async (action) => {
+    setAiMenuOpen(false);
+    canvasEditorRef.current?.syncFocusedBlockFromDom?.();
+    const blockId = canvasEditorRef.current?.getFocusedBlockId?.();
+    const html = canvasEditorRef.current?.getFocusedBlockContent?.();
+    if (!blockId || html === null) {
+      toast.error('Focus a text block first');
+      return;
+    }
+    const plainText = (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!plainText) {
+      toast.error('Block is empty');
+      return;
+    }
+    setAiAssistLoading(true);
+    try {
+      const result = await openaiService.canvasAssist(action, plainText);
+      canvasEditorRef.current?.setFocusedBlockContent?.(result);
+      toast.success('Done');
+    } catch (err) {
+      console.error('AI assist error:', err);
+      toast.error(err?.message || 'AI assist failed');
+    } finally {
+      setAiAssistLoading(false);
+    }
+  }, []);
+
+  const handleRestoreVersion = async (versionId) => {
+    if (!activeId || !activeCanvas || !userId) return;
+    const ownerId = activeCanvas.userId ?? userId;
+    if (ownerId !== userId && !canvases.some((c) => c.id === activeId)) return;
+    try {
+      const { blocks } = await firestoreService.restoreCanvasVersion(ownerId, activeId, versionId);
+      pushUndo(activeCanvas.blocks);
+      setCanvases((prev) => prev.map((c) => (c.id === activeId ? { ...c, blocks, updated: Date.now() } : c)));
+      if (sharedCanvases.some((c) => c.id === activeId)) {
+        setSharedCanvases((prev) => prev.map((c) => (c.id === activeId ? { ...c, blocks, updated: Date.now() } : c)));
+      }
+      setRestoreKey((k) => k + 1);
+      setHistoryModalOpen(false);
+      toast.success('Version restored');
+    } catch (err) {
+      console.error('Restore error:', err);
+      toast.error(err?.message || 'Failed to restore');
+    }
+  };
+
+  const handleUnshare = async (email) => {
+    if (!activeId || !userId || !activeCanvas) return;
+    const ownerId = activeCanvas.userId ?? userId;
+    if (ownerId !== userId) return;
+    try {
+      await firestoreService.unshareCanvas(userId, activeId, email);
+      setShareCollaborators((prev) => prev.filter((c) => c.email !== email));
+      toast.success('Removed collaborator');
+    } catch (err) {
+      console.error('Unshare error:', err);
+      toast.error(err?.message || 'Failed to remove');
+    }
   };
 
   if (!currentUser) return null;
@@ -279,7 +605,7 @@ export default function CanvasPage() {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
               <PencilRuler className="w-4 h-4" />
             </div>
-            <h2 className="text-foreground font-bold text-[15px]">Canvases</h2>
+            <h2 className="text-foreground font-bold text-[15px]">Workspaces</h2>
           </div>
           <button
             type="button"
@@ -296,31 +622,128 @@ export default function CanvasPage() {
             onClick={() => createCanvas()}
             className="w-full py-2.5 px-3.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm flex items-center justify-center gap-2"
           >
-            <Plus className="w-3.5 h-3.5" /> New Canvas
+            <Plus className="w-3.5 h-3.5" /> New Workspace
           </button>
         </div>
-        <div className="relative px-3.5 pb-3">
+        <div className="relative px-3.5 pb-2">
           <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search canvases…"
+            placeholder="Search workspaces…"
             className="w-full pl-9 pr-3 py-2 rounded-md border border-input bg-muted/30 text-foreground placeholder:text-muted-foreground text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
           />
         </div>
-        <div className="px-4 pt-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          Your Canvases
+        <div className="relative px-3.5 pb-3">
+          <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={blockSearchQuery}
+            onChange={(e) => setBlockSearchQuery(e.target.value)}
+            onFocus={() => setBlockSearchFocused(true)}
+            onBlur={() => setTimeout(() => setBlockSearchFocused(false), 150)}
+            placeholder="Search in content…"
+            className="w-full pl-9 pr-3 py-2 rounded-md border border-input bg-muted/30 text-foreground placeholder:text-muted-foreground text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+          />
+          {blockSearchFocused && blockSearchQuery.trim().length >= 2 && (
+            <div className="absolute left-3.5 right-3.5 top-full mt-1 py-1.5 max-h-64 overflow-y-auto bg-popover border border-border rounded-lg shadow-xl z-30">
+              {searchBlocksInCanvases([...canvases, ...sharedCanvases], blockSearchQuery).length === 0 ? (
+                <p className="px-3 py-2 text-sm text-muted-foreground">No matches</p>
+              ) : (
+                searchBlocksInCanvases([...canvases, ...sharedCanvases], blockSearchQuery).map((r) => (
+                  <button
+                    key={`${r.canvasId}-${r.blockId}`}
+                    type="button"
+                    className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                    onClick={() => {
+                      setActiveId(r.canvasId);
+                      setHighlightBlockId(r.blockId);
+                      setBlockSearchQuery('');
+                      setBlockSearchFocused(false);
+                      setSidebarOpen(false);
+                      setTimeout(() => setHighlightBlockId(null), 2000);
+                    }}
+                  >
+                    <span className="font-medium text-foreground block truncate">{r.canvasTitle}</span>
+                    <span className="text-xs text-muted-foreground block truncate">{r.excerpt}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex border-b border-border px-2">
+          <button
+            type="button"
+            onClick={() => setSidebarTab('mine')}
+            className={`flex-1 py-2 text-[11px] font-bold uppercase tracking-wider ${sidebarTab === 'mine' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+          >
+            My Workspaces
+          </button>
+          <button
+            type="button"
+            onClick={() => setSidebarTab('shared')}
+            className={`flex-1 py-2 text-[11px] font-bold uppercase tracking-wider ${sidebarTab === 'shared' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+          >
+            Shared with me
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto px-2 pb-4 min-h-0">
-          {loading ? (
+          {sidebarTab === 'shared' ? (
+            sharedLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredSharedCanvases.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                <FolderOpen className="w-9 h-9 mx-auto mb-3 opacity-40" />
+                Workspaces shared with you will appear here.
+              </div>
+            ) : (
+              <ul className="space-y-0.5">
+                {filteredSharedCanvases.map((c) => (
+                  <li
+                    key={c.id}
+                    onClick={() => openCanvas(c.id)}
+                    className={`flex items-center gap-2.5 py-2.5 px-3 rounded-md cursor-pointer transition-colors group ${
+                      c.id === activeId ? 'bg-muted' : 'hover:bg-muted/70'
+                    }`}
+                  >
+                    <span className="text-base flex-shrink-0 w-5 text-center">{c.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`text-sm truncate ${c.id === activeId ? 'text-foreground font-bold' : 'text-foreground/90'}`}
+                      >
+                        {c.title}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">{dateStr(c.updated)}</div>
+                    </div>
+                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          duplicateCanvas(c.id);
+                        }}
+                        className="p-1.5 rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Duplicate"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : filteredCanvases.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               <FolderOpen className="w-9 h-9 mx-auto mb-3 opacity-40" />
-              {search.trim() ? 'No canvases match your search.' : 'No canvases yet.'}
+              {search.trim() ? 'No workspaces match your search.' : 'No workspaces yet.'}
             </div>
           ) : (
             <ul className="space-y-0.5">
@@ -389,18 +812,18 @@ export default function CanvasPage() {
               <PencilRuler className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
-              Your Canvas Workspace
+              Your Workspace
             </h3>
             <p className="text-sm max-w-[340px] leading-relaxed text-[#86868b] dark:text-[#a1a1a6] mb-5">
-              Create rich documents with blocks, checklists, media, and slash commands. Type{' '}
-              <strong className="text-foreground">/</strong> for quick commands. Drag to reorder blocks.
+              Create workspaces with blocks, checklists, media, and slash commands. Type{' '}
+              <strong className="text-foreground">/</strong> for quick commands. Use <strong className="text-foreground">[[</strong> to link to other workspaces.
             </p>
             <button
               type="button"
               onClick={() => createCanvas()}
               className="inline-flex items-center gap-1.5 py-2.5 px-5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm shadow-sm"
             >
-              <Plus className="w-4 h-4" /> Create Your First Canvas
+              <Plus className="w-4 h-4" /> Create Your First Workspace
             </button>
           </div>
         ) : (
@@ -456,17 +879,17 @@ export default function CanvasPage() {
                 />
               </div>
               <div className="flex items-center gap-1">
+<button
+                type="button"
+                onClick={handleUndo}
+                className="p-2 rounded text-muted-foreground hover:bg-muted"
+                title="Undo"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
                 <button
                   type="button"
-                  onClick={() => document.execCommand('undo')}
-                  className="p-2 rounded text-muted-foreground hover:bg-muted"
-                  title="Undo"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => document.execCommand('redo')}
+                  onClick={handleRedo}
                   className="p-2 rounded text-muted-foreground hover:bg-muted"
                   title="Redo"
                 >
@@ -480,6 +903,73 @@ export default function CanvasPage() {
                 >
                   <Download className="w-4 h-4" />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShortcutsOpen((o) => !o)}
+                  className="p-2 rounded text-muted-foreground hover:bg-muted"
+                  title="Shortcuts (?)"
+                >
+                  <Keyboard className="w-4 h-4" />
+                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setAiMenuOpen((o) => !o)}
+                    disabled={aiAssistLoading}
+                    className="p-2 rounded text-muted-foreground hover:bg-muted disabled:opacity-50"
+                    title="AI assist"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </button>
+                  {aiMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setAiMenuOpen(false)} aria-hidden />
+                      <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl">
+                        <button type="button" onClick={() => handleAiAssist('summarize')} className="w-full text-left py-2 px-3 rounded-lg hover:bg-muted text-sm">Summarize</button>
+                        <button type="button" onClick={() => handleAiAssist('expand')} className="w-full text-left py-2 px-3 rounded-lg hover:bg-muted text-sm">Expand</button>
+                        <button type="button" onClick={() => handleAiAssist('professional')} className="w-full text-left py-2 px-3 rounded-lg hover:bg-muted text-sm">Professional tone</button>
+                        <button type="button" onClick={() => handleAiAssist('casual')} className="w-full text-left py-2 px-3 rounded-lg hover:bg-muted text-sm">Casual tone</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {canShare && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistoryModalOpen(true);
+                        setHistoryLoading(true);
+                        setHistoryVersions([]);
+                        if (activeId) {
+                          firestoreService.getCanvasHistory(activeId).then((v) => {
+                            setHistoryVersions(v);
+                          }).catch(() => setHistoryVersions([])).finally(() => setHistoryLoading(false));
+                        }
+                      }}
+                      className="p-2 rounded text-muted-foreground hover:bg-muted"
+                      title="Version history"
+                    >
+                      <History className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShareModalOpen(true);
+                        setShareEmail('');
+                        if (activeId) {
+                          firestoreService.getCanvasById(activeId).then((c) => {
+                            setShareCollaborators(c?.sharedWith || []);
+                          }).catch(() => setShareCollaborators([]));
+                        }
+                      }}
+                      className="p-2 rounded text-muted-foreground hover:bg-muted"
+                      title="Share"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
                 <div className="relative">
                   <button
                     type="button"
@@ -514,6 +1004,24 @@ export default function CanvasPage() {
                         >
                           <Copy className="w-4 h-4 text-muted-foreground" /> Duplicate
                         </button>
+                        {canShare && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setContextOpen(false);
+                              setShareModalOpen(true);
+                              setShareEmail('');
+                              if (activeId) {
+                                firestoreService.getCanvasById(activeId).then((c) => {
+                                  setShareCollaborators(c?.sharedWith || []);
+                                }).catch(() => setShareCollaborators([]));
+                              }
+                            }}
+                            className="w-full flex items-center gap-2.5 py-2 px-3 rounded-md hover:bg-muted text-foreground text-left text-sm"
+                          >
+                            <UserPlus className="w-4 h-4 text-muted-foreground" /> Share
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => {
@@ -563,7 +1071,20 @@ export default function CanvasPage() {
               <div className="w-px h-5 bg-border mx-1" />
               <button
                 type="button"
-                onClick={() => setLinkModal(true)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  const sel = window.getSelection();
+                  const editable = document.activeElement?.closest?.('[contenteditable="true"]');
+                  if (editable && sel?.rangeCount) {
+                    linkSavedSelectionRef.current = {
+                      range: sel.getRangeAt(0).cloneRange(),
+                      editable,
+                    };
+                  } else {
+                    linkSavedSelectionRef.current = null;
+                  }
+                  setLinkModal(true);
+                }}
                 className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
                 title="Insert link"
               >
@@ -577,6 +1098,13 @@ export default function CanvasPage() {
               blocks={activeCanvas?.blocks ?? []}
               onBlocksChange={updateActiveBlocks}
               onWordCountChange={setWordCountStr}
+              restoreKey={restoreKey}
+              approvedUsers={approvedUsers}
+              highlightBlockId={highlightBlockId}
+              canvasId={activeId}
+              currentUserEmail={userEmail}
+              currentUserName={currentUser?.firstName && currentUser?.lastName ? `${currentUser.firstName} ${currentUser.lastName}` : currentUser?.email || null}
+              workspaceList={[...canvases, ...sharedCanvases].map((c) => ({ id: c.id, title: c.title || 'Untitled' }))}
             />
 
             {/* Word count */}
@@ -586,6 +1114,130 @@ export default function CanvasPage() {
           </>
         )}
       </main>
+
+      {/* Share modal */}
+      {shareModalOpen && activeId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45">
+          <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-md w-full max-h-[80vh] flex flex-col">
+            <h3 className="text-lg font-bold text-foreground mb-2">Share workspace</h3>
+            <p className="text-sm text-muted-foreground mb-4">Invite people to edit this workspace.</p>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="email"
+                value={shareEmail}
+                onChange={(e) => setShareEmail(e.target.value)}
+                placeholder="Email address"
+                className="flex-1 px-3.5 py-2.5 rounded-md border border-input bg-background text-foreground text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleShareInvite())}
+              />
+              <button
+                type="button"
+                disabled={shareSubmitting || !shareEmail.trim()}
+                onClick={handleShareInvite}
+                className="px-4 py-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm disabled:opacity-50"
+              >
+                Invite
+              </button>
+            </div>
+            {shareCollaborators.length > 0 && (
+              <div className="flex-1 min-h-0 overflow-y-auto mb-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Collaborators</p>
+                <ul className="space-y-1">
+                  {shareCollaborators.map((collab) => (
+                    <li
+                      key={collab.email}
+                      className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/50"
+                    >
+                      <span className="text-sm text-foreground truncate">{collab.email}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleUnshare(collab.email)}
+                        className="p-1.5 rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        title="Remove"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setShareModalOpen(false); setShareEmail(''); setShareCollaborators([]); }}
+                className="px-4 py-2 rounded-md bg-muted text-muted-foreground hover:text-foreground font-semibold text-sm"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shortcuts modal */}
+      {shortcutsOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45" onClick={() => setShortcutsOpen(false)}>
+          <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+              <Keyboard className="w-5 h-5" /> Shortcuts
+            </h3>
+            <ul className="space-y-2 text-sm">
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Block types</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">/</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Link to workspace</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">[[</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Mention</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">@</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Undo</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘Z</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Redo</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘⇧Z</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Duplicate block</span><span className="text-muted-foreground text-xs">hover block → copy icon</span></li>
+            </ul>
+            <p className="mt-4 text-xs text-muted-foreground">Press ? or ⌘/ to toggle this panel</p>
+          </div>
+        </div>
+      )}
+
+      {/* History modal */}
+      {historyModalOpen && activeId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45">
+          <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-md w-full max-h-[80vh] flex flex-col">
+            <h3 className="text-lg font-bold text-foreground mb-2">Version history</h3>
+            <p className="text-sm text-muted-foreground mb-4">Restore a previous version of this workspace.</p>
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : historyVersions.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4">No history yet. Edits will create versions.</p>
+            ) : (
+              <ul className="flex-1 min-h-0 overflow-y-auto space-y-1 mb-4">
+                {historyVersions.map((v) => (
+                  <li
+                    key={v.id}
+                    className="flex items-center justify-between gap-3 py-2 px-3 rounded-md bg-muted/50 hover:bg-muted"
+                  >
+                    <span className="text-sm text-foreground truncate">{dateStr(v.updated)} · {v.blocks?.length ?? 0} blocks</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRestoreVersion(v.id)}
+                      className="px-3 py-1 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
+                    >
+                      Restore
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setHistoryModalOpen(false)}
+                className="px-4 py-2 rounded-md bg-muted text-muted-foreground hover:text-foreground font-semibold text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Link modal */}
       {linkModal && (
@@ -644,6 +1296,7 @@ function FormatBtn({ cmd, icon }) {
   return (
     <button
       type="button"
+      onMouseDown={(e) => e.preventDefault()}
       onClick={() => {
         document.execCommand(cmd, false, null);
         update();

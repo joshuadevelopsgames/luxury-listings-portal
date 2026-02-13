@@ -503,6 +503,18 @@ const TasksPage = () => {
     }
   }, [showRequestModal]);
 
+  // Deep link: open task modal when ?taskId= is in URL
+  useEffect(() => {
+    const taskId = searchParams.get('taskId');
+    if (!taskId || tasks.length === 0) return;
+    const t = tasks.find((x) => x.id === taskId);
+    if (t) {
+      setEditingTask(t);
+      setShowEditModal(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, tasks, setSearchParams]);
+
   // Load task requests once (no real-time listener for performance)
   useEffect(() => {
     if (!currentUser?.email) return;

@@ -72,7 +72,8 @@ class FirestoreService {
     USAGE_EVENTS: 'usage_events',
     CONTENT_CALENDARS: 'content_calendars',
     CONTENT_ITEMS: 'content_items',
-    CANVASES: 'canvases'
+    CANVASES: 'canvases',
+    CANVAS_FORM_RESPONSES: 'canvas_form_responses'
   };
 
   // Test connection method
@@ -5003,26 +5004,34 @@ class FirestoreService {
     if (!userId) throw new Error('userId required');
     const ref = doc(db, this.collections.CANVASES, canvas.id);
     const blocks = canvas.blocks && canvas.blocks.length ? canvas.blocks : [{ id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type: 'text', content: '' }];
-    await setDoc(ref, {
+    const data = {
       userId,
       title: canvas.title,
       emoji: canvas.emoji,
       blocks,
       created: serverTimestamp(),
       updated: serverTimestamp(),
-    });
+    };
+    if (canvas.sharedWithEmails?.length) {
+      data.sharedWithEmails = [...new Set(canvas.sharedWithEmails)];
+      data.sharedWith = (canvas.sharedWith || []).slice(0, canvas.sharedWithEmails.length);
+    }
+    await setDoc(ref, data);
     return { id: canvas.id, title: canvas.title, emoji: canvas.emoji, blocks, created: Date.now(), updated: Date.now() };
   }
 
   async updateCanvas(userId, canvasId, patch) {
     if (!userId) throw new Error('userId required');
     const ref = doc(db, this.collections.CANVASES, canvasId);
-    const data = { userId, updated: serverTimestamp() };
+    const data = { updated: serverTimestamp() };
     if (patch.title !== undefined) data.title = patch.title;
     if (patch.emoji !== undefined) data.emoji = patch.emoji;
     if (patch.blocks !== undefined) {
-      // Firestore rejects undefined; ensure plain array of plain objects
       data.blocks = JSON.parse(JSON.stringify(patch.blocks));
+    }
+    if (patch.sharedWithEmails !== undefined) {
+      data.sharedWithEmails = [...new Set(patch.sharedWithEmails)];
+      data.sharedWith = patch.sharedWith !== undefined ? patch.sharedWith : (data.sharedWith || []);
     }
     try {
       await setDoc(ref, data, { merge: true });
@@ -5035,6 +5044,185 @@ class FirestoreService {
   async deleteCanvas(userId, canvasId) {
     if (!userId) throw new Error('userId required');
     await deleteDoc(doc(db, this.collections.CANVASES, canvasId));
+  }
+
+  async getCanvasesSharedWith(userEmail) {
+    if (!userEmail) return [];
+    const q = query(
+      collection(db, this.collections.CANVASES),
+      where('sharedWithEmails', 'array-contains', userEmail)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => {
+      const data = d.data();
+      let blocks = data.blocks;
+      if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
+        const legacyContent = data.content || '';
+        blocks = [{ id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type: 'text', content: legacyContent }];
+      }
+      return {
+        id: d.id,
+        userId: data.userId,
+        title: data.title || 'Untitled Canvas',
+        emoji: data.emoji || '📄',
+        blocks,
+        created: data.created?.toMillis?.() ?? data.created ?? Date.now(),
+        updated: data.updated?.toMillis?.() ?? data.updated ?? Date.now(),
+      };
+    });
+  }
+
+  async shareCanvas(ownerUserId, canvasId, { email, role = 'editor' }) {
+    if (!ownerUserId || !canvasId || !email) throw new Error('ownerUserId, canvasId, and email required');
+    const ref = doc(db, this.collections.CANVASES, canvasId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Canvas not found');
+    const data = snap.data();
+    if (data.userId !== ownerUserId) throw new Error('Only the owner can share');
+    const emailTrim = String(email).trim().toLowerCase();
+    const sharedWith = Array.isArray(data.sharedWith) ? [...data.sharedWith] : [];
+    const sharedWithEmails = Array.isArray(data.sharedWithEmails) ? [...data.sharedWithEmails] : [];
+    if (sharedWithEmails.includes(emailTrim)) return;
+    sharedWithEmails.push(emailTrim);
+    sharedWith.push({ email: emailTrim, role });
+    await updateDoc(ref, { sharedWith, sharedWithEmails, updated: serverTimestamp() });
+  }
+
+  async unshareCanvas(ownerUserId, canvasId, email) {
+    if (!ownerUserId || !canvasId || !email) throw new Error('ownerUserId, canvasId, and email required');
+    const ref = doc(db, this.collections.CANVASES, canvasId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Canvas not found');
+    const data = snap.data();
+    if (data.userId !== ownerUserId) throw new Error('Only the owner can unshare');
+    const emailTrim = String(email).trim().toLowerCase();
+    const sharedWith = (Array.isArray(data.sharedWith) ? data.sharedWith : []).filter((e) => (e.email || '').toLowerCase() !== emailTrim);
+    const sharedWithEmails = (Array.isArray(data.sharedWithEmails) ? data.sharedWithEmails : []).filter((e) => String(e).toLowerCase() !== emailTrim);
+    await updateDoc(ref, { sharedWith, sharedWithEmails, updated: serverTimestamp() });
+  }
+
+  async getCanvasById(canvasId) {
+    if (!canvasId) return null;
+    const snap = await getDoc(doc(db, this.collections.CANVASES, canvasId));
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    let blocks = data.blocks;
+    if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
+      const legacyContent = data.content || '';
+      blocks = [{ id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type: 'text', content: legacyContent }];
+    }
+    return {
+      id: snap.id,
+      userId: data.userId,
+      title: data.title || 'Untitled Canvas',
+      emoji: data.emoji || '📄',
+      blocks,
+      sharedWith: data.sharedWith || [],
+      sharedWithEmails: data.sharedWithEmails || [],
+      created: data.created?.toMillis?.() ?? data.created ?? Date.now(),
+      updated: data.updated?.toMillis?.() ?? data.updated ?? Date.now(),
+    };
+  }
+
+  async addCanvasFormResponse(canvasId, blockId, respondentEmail, respondentName, answers) {
+    const ref = await addDoc(collection(db, this.collections.CANVAS_FORM_RESPONSES), {
+      canvasId,
+      blockId,
+      respondentEmail: respondentEmail || null,
+      respondentName: respondentName || null,
+      answers,
+      createdAt: serverTimestamp(),
+    });
+    return ref.id;
+  }
+
+  async getCanvasHistory(canvasId, limit = 50) {
+    if (!canvasId) return [];
+    const canvasRef = doc(db, this.collections.CANVASES, canvasId);
+    const col = collection(canvasRef, 'history');
+    const q = query(col, orderBy('updated', 'desc'), firestoreLimit(limit));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        blocks: data.blocks || [],
+        title: data.title,
+        updated: data.updated?.toMillis?.() ?? data.updated ?? Date.now(),
+        createdBy: data.createdBy,
+      };
+    });
+  }
+
+  async saveCanvasHistorySnapshot(canvasId, snapshot) {
+    if (!canvasId || !snapshot?.blocks) return;
+    const canvasRef = doc(db, this.collections.CANVASES, canvasId);
+    const col = collection(canvasRef, 'history');
+    const ref = await addDoc(col, {
+      blocks: JSON.parse(JSON.stringify(snapshot.blocks)),
+      title: snapshot.title,
+      updated: serverTimestamp(),
+      createdBy: snapshot.createdBy || null,
+    });
+    const limit = 50;
+    const q = query(col, orderBy('updated', 'desc'));
+    const snap = await getDocs(q);
+    const toDelete = snap.docs.slice(limit);
+    await Promise.all(toDelete.map((d) => deleteDoc(doc(db, this.collections.CANVASES, canvasId, 'history', d.id))));
+    return ref.id;
+  }
+
+  async restoreCanvasVersion(ownerUserId, canvasId, versionId) {
+    if (!ownerUserId || !canvasId || !versionId) throw new Error('ownerUserId, canvasId, versionId required');
+    const docRef = doc(db, this.collections.CANVASES, canvasId, 'history', versionId);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) throw new Error('Version not found');
+    const data = snap.data();
+    const blocks = data.blocks || [];
+    await this.updateCanvas(ownerUserId, canvasId, { blocks });
+    return { blocks };
+  }
+
+  async getBlockComments(canvasId, blockId) {
+    if (!canvasId || !blockId) return { comments: [], reactions: [] };
+    const docRef = doc(db, this.collections.CANVASES, canvasId, 'block_comments', blockId);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) return { comments: [], reactions: [] };
+    const data = snap.data();
+    return {
+      comments: Array.isArray(data.comments) ? data.comments : [],
+      reactions: Array.isArray(data.reactions) ? data.reactions : [],
+    };
+  }
+
+  async addBlockComment(canvasId, blockId, { user, userName, text }) {
+    if (!canvasId || !blockId) throw new Error('canvasId and blockId required');
+    const docRef = doc(db, this.collections.CANVASES, canvasId, 'block_comments', blockId);
+    const snap = await getDoc(docRef);
+    const comments = snap.exists() && Array.isArray(snap.data().comments) ? [...snap.data().comments] : [];
+    const reactions = snap.exists() && Array.isArray(snap.data().reactions) ? [...snap.data().reactions] : [];
+    const newComment = {
+      id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      user,
+      userName: userName || user,
+      text,
+      createdAt: new Date().toISOString(),
+    };
+    comments.push(newComment);
+    await setDoc(docRef, { comments, reactions }, { merge: true });
+    return newComment;
+  }
+
+  async toggleBlockReaction(canvasId, blockId, emoji, userId) {
+    if (!canvasId || !blockId || !userId) return;
+    const docRef = doc(db, this.collections.CANVASES, canvasId, 'block_comments', blockId);
+    const snap = await getDoc(docRef);
+    const comments = snap.exists() && Array.isArray(snap.data().comments) ? snap.data().comments : [];
+    let reactions = snap.exists() && Array.isArray(snap.data().reactions) ? [...snap.data().reactions] : [];
+    const idx = reactions.findIndex((r) => r.emoji === emoji && r.userId === userId);
+    if (idx >= 0) reactions.splice(idx, 1);
+    else reactions.push({ emoji, userId });
+    await setDoc(docRef, { comments, reactions }, { merge: true });
   }
 
   /**
