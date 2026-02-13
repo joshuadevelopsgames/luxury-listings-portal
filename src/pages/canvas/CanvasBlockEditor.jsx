@@ -1175,7 +1175,11 @@ function CanvasBlockEditorInner({
         </div>
       </div>
 
-      {slashOpen && slashItems.length > 0 && (
+      {slashOpen && slashItems.length > 0 && (() => {
+        // #region agent log
+        fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CanvasBlockEditor.jsx:slashMenu',message:'slash menu render',data:{slashItemsLen:slashItems.length,firstIconType:typeof slashItems[0]?.icon,firstIconKeys:slashItems[0]?.icon!=null?Object.keys(slashItems[0].icon).slice(0,5):null,firstId:slashItems[0]?.id},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        return (
         <div
           className="fixed z-50 w-[230px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
           style={{ left: slashPosRef.current.left, top: slashPosRef.current.top }}
@@ -1212,7 +1216,16 @@ function CanvasBlockEditorInner({
               }}
             >
               <span className="w-6 h-6 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">
-                {typeof c.icon === 'function' ? <c.icon className="w-3.5 h-3.5" /> : c.icon}
+                {(() => {
+                  // #region agent log
+                  const isPrim = typeof c.icon === 'string' || typeof c.icon === 'number';
+                  let out = isPrim ? c.icon : React.createElement(c.icon, { className: 'w-3.5 h-3.5' });
+                  if (!isPrim && c.icon != null) {
+                    fetch('http://127.0.0.1:7247/ingest/5f481a4f-2c53-40ee-be98-e77cffd69946',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CanvasBlockEditor.jsx:iconBranch',message:'icon render',data:{id:c.id,iconType:typeof c.icon,iconKeys:Object.keys(c.icon).slice(0,6),outKeys:out&&typeof out==='object'?Object.keys(out).slice(0,6):null},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+                  }
+                  // #endregion
+                  return out;
+                })()}
               </span>
               <div>
                 <span className="font-semibold">{c.label}</span>
@@ -1221,7 +1234,7 @@ function CanvasBlockEditorInner({
             </button>
           ))}
         </div>
-      )}
+      ); })()}
 
       {openCommentBlockId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setOpenCommentBlockId(null)}>
