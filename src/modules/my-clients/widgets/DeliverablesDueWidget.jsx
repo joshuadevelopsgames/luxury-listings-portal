@@ -33,7 +33,7 @@ const DeliverablesDueWidget = () => {
   };
 
   const myClients = useMemo(
-    () => allClients.filter(isAssignedToMe),
+    () => allClients.filter(isAssignedToMe).filter((c) => !c.isInternal),
     [allClients, currentUser?.email, currentUser?.uid]
   );
 

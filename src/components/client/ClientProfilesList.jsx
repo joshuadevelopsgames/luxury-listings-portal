@@ -392,7 +392,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
           <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium text-[#86868b]">Total Clients</p>
+                <p className="text-[12px] font-medium text-[#86868b]">{internalOnly ? 'Total Accounts' : 'Total Clients'}</p>
                 <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white mt-1">{stats.total}</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-[#0071e3]/10 flex items-center justify-center">

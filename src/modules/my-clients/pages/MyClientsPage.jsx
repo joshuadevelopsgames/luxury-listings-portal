@@ -98,7 +98,7 @@ const MyClientsPage = () => {
   };
 
   const clients = useMemo(
-    () => allClients.filter(isAssignedToMe),
+    () => allClients.filter(isAssignedToMe).filter((c) => !c.isInternal),
     [allClients, currentUser?.email, currentUser?.uid]
   );
 

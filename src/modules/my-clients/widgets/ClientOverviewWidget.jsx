@@ -23,7 +23,7 @@ const ClientOverviewWidget = () => {
   };
 
   const clients = useMemo(
-    () => allClients.filter(isAssignedToMe).slice(0, 4),
+    () => allClients.filter(isAssignedToMe).filter((c) => !c.isInternal).slice(0, 4),
     [allClients, currentUser?.email, currentUser?.uid]
   );
 

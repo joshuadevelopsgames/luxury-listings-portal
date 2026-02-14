@@ -103,15 +103,16 @@ const V3Dashboard = () => {
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
   const { clients, loading: clientsLoading } = useClients();
 
-  // Clients to display: all if full access, else only those assigned to effective user
-  const displayClients = hasFullClientAccess
+  // Clients to display: exclude internal accounts (they are not clients). All if full access, else only assigned.
+  const displayClients = (hasFullClientAccess
     ? clients
     : clients.filter((c) => {
         const am = (c.assignedManager || '').trim().toLowerCase();
         const email = (currentUser?.email || '').trim().toLowerCase();
         const uid = currentUser?.uid || '';
         return am === email || (uid && am === uid.toLowerCase());
-      });
+      })
+  ).filter((c) => !c.isInternal);
   const clientCountForDisplay = displayClients.length;
   const clientLabelForDisplay = hasFullClientAccess ? 'Total Clients' : 'My Clients';
 
