@@ -151,6 +151,7 @@ export default function CanvasPage() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [aiMenuOpen, setAiMenuOpen] = useState(false);
   const [aiAssistLoading, setAiAssistLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null); // { blockId, originalHtml, suggestedText }
   const persistBlocksTimerRef = useRef(null);
   const canvasEditorRef = useRef(null);
   const undoStackRef = useRef([]);
@@ -537,6 +538,7 @@ export default function CanvasPage() {
 
   const handleAiAssist = useCallback(async (action) => {
     setAiMenuOpen(false);
+    setAiSuggestion(null);
     canvasEditorRef.current?.syncFocusedBlockFromDom?.();
     const blockId = canvasEditorRef.current?.getFocusedBlockId?.();
     const html = canvasEditorRef.current?.getFocusedBlockContent?.();
@@ -552,14 +554,31 @@ export default function CanvasPage() {
     setAiAssistLoading(true);
     try {
       const result = await openaiService.canvasAssist(action, plainText);
-      canvasEditorRef.current?.setFocusedBlockContent?.(result);
-      toast.success('Done');
+      const text = (result?.trim?.() ?? String(result ?? '')).trim();
+      if (text) setAiSuggestion({ blockId, originalHtml: html, suggestedText: text });
+      else toast.error('No response from AI');
     } catch (err) {
       console.error('AI assist error:', err);
       toast.error(err?.message || 'AI assist failed');
     } finally {
       setAiAssistLoading(false);
     }
+  }, []);
+
+  const handleAiAccept = useCallback(() => {
+    if (!aiSuggestion?.blockId || !aiSuggestion?.suggestedText || !activeCanvas?.blocks) return;
+    const html = aiSuggestion.suggestedText.replace(/\n/g, '<br>');
+    const nextBlocks = activeCanvas.blocks.map((b) =>
+      b.id === aiSuggestion.blockId ? { ...b, content: html } : b
+    );
+    updateActiveBlocks(nextBlocks);
+    setAiSuggestion(null);
+    toast.success('Accepted');
+  }, [aiSuggestion, activeCanvas?.blocks, updateActiveBlocks]);
+
+  const handleAiReject = useCallback(() => {
+    setAiSuggestion(null);
+    toast.success('Reverted');
   }, []);
 
   const handleRestoreVersion = async (versionId) => {
@@ -911,7 +930,13 @@ export default function CanvasPage() {
                 >
                   <Keyboard className="w-4 h-4" />
                 </button>
-                <div className="relative">
+                <div className="relative flex items-center gap-2">
+                  {aiAssistLoading && (
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground animate-pulse px-2 py-1 rounded bg-muted/80">
+                      <span className="inline-block w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      AI writing…
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => setAiMenuOpen((o) => !o)}
@@ -1105,6 +1130,9 @@ export default function CanvasPage() {
               currentUserEmail={userEmail}
               currentUserName={currentUser?.firstName && currentUser?.lastName ? `${currentUser.firstName} ${currentUser.lastName}` : currentUser?.email || null}
               workspaceList={[...canvases, ...sharedCanvases].map((c) => ({ id: c.id, title: c.title || 'Untitled' }))}
+              aiSuggestion={aiSuggestion}
+              onAiAccept={handleAiAccept}
+              onAiReject={handleAiReject}
             />
 
             {/* Word count */}

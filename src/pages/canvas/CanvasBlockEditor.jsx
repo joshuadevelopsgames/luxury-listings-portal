@@ -132,6 +132,22 @@ function contentWithWikiLinks(html) {
   });
 }
 
+// Render @[Display Name](email) as member card: only show name, hide email from display
+function contentWithMentions(html) {
+  if (!html || typeof html !== 'string') return '';
+  return html.replace(/@\[([^\]]*)\]\(([^)]+)\)/g, (_, name, email) => {
+    const safeName = String(name || 'User').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    const safeEmail = String(email || '').replace(/"/g, '&quot;');
+    return `<span class="mention-pill inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-sm font-medium no-underline" data-mention="1" data-email="${safeEmail}" contenteditable="false">@${safeName}</span>`;
+  });
+}
+
+// On save, convert mention pills back to @[Name](email) so storage stays canonical (attr order may vary)
+function htmlMentionsToStorage(html) {
+  if (!html || typeof html !== 'string') return html;
+  return html.replace(/<span[^>]*(?:mention-pill[^>]*data-email="([^"]*)"|data-email="([^"]*)"[^>]*mention-pill)[^>]*>@([^<]*)<\/span>/gi, (_, e1, e2, name) => `@[${name}](${e1 || e2})`);
+}
+
 function wordCharCount(blocks) {
   const text = blocks
     .map((b) => {
@@ -170,8 +186,22 @@ function wordCharCount(blocks) {
 }
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂'];
+const TEXT_BLOCK_TYPES = ['text', 'h1', 'h2', 'h3', 'quote', 'code', 'callout', 'bullet', 'ordered'];
 
-function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onWikiDetect, enableWikiDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, onDuplicateBlock, restoreKey, onOpenComments, onToggleReaction, getBlockData, canvasId, currentUserEmail, currentUserName }) {
+function AiSuggestionDiff({ originalHtml, suggestedText, onAccept, onReject }) {
+  return (
+    <div className="space-y-2 py-1">
+      <div className="text-muted-foreground/90 line-through text-[0.95em] min-h-[24px] [&>*]:line-through" dangerouslySetInnerHTML={{ __html: originalHtml || '' }} />
+      <div className="text-foreground min-h-[24px] border-l-2 border-primary/50 pl-2 text-[0.95em] whitespace-pre-wrap">{suggestedText}</div>
+      <div className="flex items-center gap-2 pt-1">
+        <button type="button" onClick={onAccept} className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">Accept</button>
+        <button type="button" onClick={onReject} className="px-3 py-1.5 rounded-md border border-input bg-muted/50 hover:bg-muted text-sm">Reject</button>
+      </div>
+    </div>
+  );
+}
+
+function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onWikiDetect, enableWikiDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, onDuplicateBlock, restoreKey, onOpenComments, onToggleReaction, getBlockData, canvasId, currentUserEmail, currentUserName, aiSuggestion, onAiAccept, onAiReject }) {
   const {
     attributes,
     listeners,
@@ -214,26 +244,35 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
         </button>
       )}
       <div className="flex-1 min-w-0 relative">
-        <BlockContent
-          block={block}
-          onContentChange={onContentChange}
-          onRemove={onRemove}
-          isFocused={isFocused}
-          onFocus={onFocus}
-          fileInputRef={fileInputRef}
-          onRequestImage={onRequestImage}
-          onRequestVideo={onRequestVideo}
-          onSlashDetect={onSlashDetect}
-          onMentionDetect={onMentionDetect}
-          onWikiDetect={enableWikiDetect ? onWikiDetect : null}
-          onEnterCreateBlock={onEnterCreateBlock}
-          onPasteImage={onPasteImage}
-          onBackspaceEmptyBlock={onBackspaceEmptyBlock}
-          restoreKey={restoreKey}
-          canvasId={canvasId}
-          currentUserEmail={currentUserEmail}
-          currentUserName={currentUserName}
-        />
+        {aiSuggestion?.blockId === block.id && TEXT_BLOCK_TYPES.includes(block.type) && onAiAccept && onAiReject ? (
+          <AiSuggestionDiff
+            originalHtml={aiSuggestion.originalHtml}
+            suggestedText={aiSuggestion.suggestedText}
+            onAccept={onAiAccept}
+            onReject={onAiReject}
+          />
+        ) : (
+          <BlockContent
+            block={block}
+            onContentChange={onContentChange}
+            onRemove={onRemove}
+            isFocused={isFocused}
+            onFocus={onFocus}
+            fileInputRef={fileInputRef}
+            onRequestImage={onRequestImage}
+            onRequestVideo={onRequestVideo}
+            onSlashDetect={onSlashDetect}
+            onMentionDetect={onMentionDetect}
+            onWikiDetect={enableWikiDetect ? onWikiDetect : null}
+            onEnterCreateBlock={onEnterCreateBlock}
+            onPasteImage={onPasteImage}
+            onBackspaceEmptyBlock={onBackspaceEmptyBlock}
+            restoreKey={restoreKey}
+            canvasId={canvasId}
+            currentUserEmail={currentUserEmail}
+            currentUserName={currentUserName}
+          />
+        )}
         {canvasId && (onOpenComments || onToggleReaction) && (
           <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
             {onOpenComments && (
@@ -513,8 +552,8 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
             contentEditable
             suppressContentEditableWarning
             className="list-disc outline-none list-inside min-h-[24px]"
-            dangerouslySetInnerHTML={{ __html: block.content || '<li></li>' }}
-            onBlur={(e) => notifyContent(e.currentTarget.innerHTML)}
+            dangerouslySetInnerHTML={{ __html: contentWithMentions(contentWithWikiLinks(block.content || '<li></li>')) }}
+            onBlur={(e) => notifyContent(htmlMentionsToStorage(e.currentTarget.innerHTML))}
             onFocus={() => onFocus(block.id)}
           />
         )}
@@ -524,8 +563,8 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
             contentEditable
             suppressContentEditableWarning
             className="list-decimal outline-none list-inside min-h-[24px]"
-            dangerouslySetInnerHTML={{ __html: block.content || '<li></li>' }}
-            onBlur={(e) => notifyContent(e.currentTarget.innerHTML)}
+            dangerouslySetInnerHTML={{ __html: contentWithMentions(contentWithWikiLinks(block.content || '<li></li>')) }}
+            onBlur={(e) => notifyContent(htmlMentionsToStorage(e.currentTarget.innerHTML))}
             onFocus={() => onFocus(block.id)}
           />
         )}
@@ -537,8 +576,8 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
             ref={block.type === 'text' ? elRef : undefined}
             className={contentClass}
             data-placeholder={placeholder}
-            dangerouslySetInnerHTML={{ __html: contentWithWikiLinks(block.content || '') }}
-            onBlur={(e) => notifyContent(e.currentTarget.innerHTML)}
+            dangerouslySetInnerHTML={{ __html: contentWithMentions(contentWithWikiLinks(block.content || '')) }}
+            onBlur={(e) => notifyContent(htmlMentionsToStorage(e.currentTarget.innerHTML))}
             onFocus={() => onFocus(block.id)}
             onKeyDown={(e) => {
               const el = e.currentTarget;
@@ -625,6 +664,9 @@ function CanvasBlockEditorInner({
   currentUserEmail = null,
   currentUserName = null,
   workspaceList = [],
+  aiSuggestion = null,
+  onAiAccept = null,
+  onAiReject = null,
 }, ref) {
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -959,7 +1001,7 @@ function CanvasBlockEditorInner({
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setMentionIndex((i) => (i - 1 + mentionItems.length) % mentionItems.length);
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
         const u = mentionItems[mentionIndex];
         if (u) handleMentionSelect(u);
@@ -1148,6 +1190,9 @@ function CanvasBlockEditorInner({
                   canvasId={canvasId}
                   currentUserEmail={currentUserEmail}
                   currentUserName={currentUserName}
+                  aiSuggestion={aiSuggestion}
+                  onAiAccept={onAiAccept}
+                  onAiReject={onAiReject}
                 />
               ))}
             </SortableContext>

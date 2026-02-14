@@ -700,13 +700,14 @@ exports.canvasAssist = onCall({
     throw new HttpsError('internal', 'No AI provider key configured');
   }
 
+  const systemBase = 'You are a human real estate marketing professional writing copy. Sound like a real person: warm, direct, and professional. No AI-speak, no filler like "I\'m here to assist" or "I\'d be happy to help." No over-politeness or robotic phrases. Write as a skilled agent or marketer would in an email or listing. Output only the requested text, no preamble or explanation.';
   const prompts = {
-    summarize: 'Summarize the following text concisely in 1-3 sentences. Preserve key points only. Return only the summary, no preamble.',
-    expand: 'Expand the following text into a longer, more detailed version. Keep the same tone and add relevant detail. Return only the expanded text.',
-    professional: 'Rewrite the following text in a formal, professional tone. Keep the same meaning and length roughly. Return only the rewritten text.',
-    casual: 'Rewrite the following text in a friendly, casual tone. Keep the same meaning. Return only the rewritten text.',
+    summarize: 'Summarize the following in 1-3 short sentences. Keep only the key points. Sound like a human wrote it.',
+    expand: 'Expand this into a longer version. Add useful detail a real estate marketer would include. Same tone—conversational and professional. No generic fluff.',
+    professional: 'Rewrite in a clear, professional real estate tone. Same meaning and roughly same length. How a serious agent would phrase it.',
+    casual: 'Rewrite in a friendly, casual but still professional tone. Same meaning. How you\'d text a client or colleague.',
   };
-  const systemPrompt = prompts[action] || prompts.summarize;
+  const systemPrompt = `${systemBase}\n\nTask: ${prompts[action] || prompts.summarize}`;
   const body = {
     messages: [
       { role: 'system', content: systemPrompt },
