@@ -39,6 +39,9 @@ import {
   BarChart2,
   FileText,
   MessageSquare,
+  FileBarChart,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 
 export function blockId() {
@@ -61,6 +64,7 @@ export const BLOCK_TYPES = [
   { id: 'video', icon: Film, label: 'Video', desc: 'Upload or drop video' },
   { id: 'poll', icon: BarChart2, label: 'Poll', desc: 'Single or multiple choice poll' },
   { id: 'form', icon: FileText, label: 'Form', desc: 'Custom form with fields' },
+  { id: 'report', icon: FileBarChart, label: 'Report', desc: 'Embed an analytics report' },
 ];
 
 function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName, onRemove }) {
@@ -123,6 +127,95 @@ function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName,
   );
 }
 
+function ReportBlock({ block, onContentChange }) {
+  const notifyContent = useCallback((content) => onContentChange(block.id, { content }), [block.id, onContentChange]);
+  let data = { reportId: '', publicLinkId: '', title: '', size: 'full' };
+  try {
+    const parsed = JSON.parse(block.content || '{}');
+    data = { ...data, ...parsed };
+  } catch {
+    // use defaults
+  }
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const reportUrl = data.publicLinkId ? `${window.location.origin}/report/${data.publicLinkId}` : '';
+
+  useEffect(() => {
+    if (!data.publicLinkId && reports.length === 0) {
+      setLoadingReports(true);
+      firestoreService.getInstagramReports().then((list) => {
+        setReports(list.filter((r) => r.publicLinkId));
+        setLoadingReports(false);
+      }).catch(() => setLoadingReports(false));
+    }
+  }, [data.publicLinkId]);
+
+  const sizeOptions = [
+    { id: 'link', label: 'Link', icon: Link2, desc: 'Small link' },
+    { id: 'small', label: 'Small', icon: Minimize2, desc: 'Small embed' },
+    { id: 'full', label: 'Full', icon: Maximize2, desc: 'Full view' },
+  ];
+
+  if (!data.publicLinkId) {
+    return (
+      <div className="py-3 px-4 rounded-lg border border-dashed border-border bg-muted/30">
+        <label className="text-xs font-medium text-muted-foreground block mb-2">Select report</label>
+        <select
+          value={data.reportId}
+          onChange={(e) => {
+            const id = e.target.value;
+            const r = reports.find((x) => x.id === id);
+            if (r) notifyContent(JSON.stringify({ reportId: r.id, publicLinkId: r.publicLinkId, title: r.title || 'Report', size: data.size }));
+          }}
+          className="w-full max-w-md px-3 py-2 rounded-md border border-input bg-background text-sm"
+          disabled={loadingReports}
+        >
+          <option value="">{loadingReports ? 'Loading…' : 'Choose a report…'}</option>
+          {reports.map((r) => (
+            <option key={r.id} value={r.id}>{r.title || 'Untitled'} {r.clientName ? `(${r.clientName})` : ''}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  const SizeButton = ({ sizeId, icon: Icon, label }) => (
+    <button
+      type="button"
+      onClick={() => notifyContent(JSON.stringify({ ...data, size: sizeId }))}
+      className={`p-1.5 rounded border transition-colors ${data.size === sizeId ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:bg-muted'}`}
+      title={label}
+    >
+      <Icon className="w-3.5 h-3.5" />
+    </button>
+  );
+
+  return (
+    <div className="relative rounded-lg border border-border bg-muted/20 overflow-hidden">
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+        {sizeOptions.map((s) => (
+          <SizeButton key={s.id} sizeId={s.id} icon={s.icon} label={s.label} />
+        ))}
+      </div>
+      {data.size === 'link' && (
+        <div className="py-3 px-4 pr-24">
+          <a href={reportUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">
+            {data.title || 'View report'}
+          </a>
+        </div>
+      )}
+      {(data.size === 'small' || data.size === 'full') && (
+        <iframe
+          src={reportUrl}
+          title={data.title || 'Report'}
+          className="w-full border-0 bg-white dark:bg-[#1d1d1f]"
+          style={{ height: data.size === 'small' ? 280 : 420, minHeight: data.size === 'small' ? 280 : 420 }}
+        />
+      )}
+    </div>
+  );
+}
+
 function contentWithWikiLinks(html) {
   if (!html || typeof html !== 'string') return '';
   return html.replace(/\[\[([^\]]*)\]\]\(([^)]+)\)/g, (_, title, id) => {
@@ -171,6 +264,14 @@ function wordCharCount(blocks) {
         try {
           const d = JSON.parse(b.content || '{}');
           return (d.title || '') + ' ' + (d.fields || []).map((f) => f.label).join(' ');
+        } catch {
+          return '';
+        }
+      }
+      if (b.type === 'report') {
+        try {
+          const d = JSON.parse(b.content || '{}');
+          return d.title || '';
         } catch {
           return '';
         }
@@ -273,9 +374,9 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
             currentUserName={currentUserName}
           />
         )}
-        {canvasId && (onOpenComments || onToggleReaction) && (
+        {(canvasId && (onOpenComments || onToggleReaction)) || onRemove ? (
           <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-            {onOpenComments && (
+            {canvasId && onOpenComments && (
               <button
                 type="button"
                 onClick={() => onOpenComments(block.id)}
@@ -288,7 +389,7 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
                 )}
               </button>
             )}
-            {onToggleReaction && REACTION_EMOJIS.map((emoji) => {
+            {canvasId && onToggleReaction && REACTION_EMOJIS.map((emoji) => {
               const reactions = getBlockData?.(block.id)?.reactions || [];
               const count = reactions.filter((r) => r.emoji === emoji).length;
               const hasReacted = currentUserEmail && reactions.some((r) => r.emoji === emoji && r.userId === currentUserEmail);
@@ -304,8 +405,18 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
                 </button>
               );
             })}
+            {onRemove && (
+              <button
+                type="button"
+                onClick={() => onRemove(block.id)}
+                className="p-1 rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                title="Remove block"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -437,6 +548,15 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
         currentUserEmail={currentUserEmail}
         currentUserName={currentUserName}
         onRemove={() => onRemove(block.id)}
+      />
+    );
+  }
+
+  if (block.type === 'report') {
+    return (
+      <ReportBlock
+        block={block}
+        onContentChange={(blockId, patch) => onContentChange(blockId, patch)}
       />
     );
   }
@@ -667,6 +787,7 @@ function CanvasBlockEditorInner({
   aiSuggestion = null,
   onAiAccept = null,
   onAiReject = null,
+  latestBlocksRef = null,
 }, ref) {
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -693,6 +814,8 @@ function CanvasBlockEditorInner({
   const [blockDataMap, setBlockDataMap] = useState({});
   const [commentInput, setCommentInput] = useState('');
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [addBlockMenuOpen, setAddBlockMenuOpen] = useState(false);
+  const addBlockMenuPosRef = useRef({ left: 0, top: 0 });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -703,7 +826,8 @@ function CanvasBlockEditorInner({
 
   const updateBlock = useCallback(
     (blockId, patch) => {
-      const next = safeBlocks.map((b) =>
+      const base = (latestBlocksRef?.current && Array.isArray(latestBlocksRef.current)) ? latestBlocksRef.current : safeBlocks;
+      const next = base.map((b) =>
         b.id === blockId ? { ...b, ...patch } : b
       );
       onBlocksChange(next);
@@ -714,27 +838,48 @@ function CanvasBlockEditorInner({
         onBlocksChange(next);
       }, 1200);
     },
-    [safeBlocks, onBlocksChange, onWordCountChange]
+    [safeBlocks, onBlocksChange, onWordCountChange, latestBlocksRef]
   );
 
   const addBlockAfter = useCallback(
     (afterIndex, block) => {
-      const next = [...safeBlocks];
+      const base = (latestBlocksRef?.current && Array.isArray(latestBlocksRef.current)) ? latestBlocksRef.current : safeBlocks;
+      const next = [...base];
       next.splice(afterIndex + 1, 0, block);
       onBlocksChange(next);
       setFocusedBlockId(block.id);
       if (onWordCountChange) onWordCountChange(wordCharCount(next));
     },
-    [safeBlocks, onBlocksChange, onWordCountChange]
+    [safeBlocks, onBlocksChange, onWordCountChange, latestBlocksRef]
   );
+
+  const createBlockByType = useCallback((typeId) => {
+    if (typeId === 'checklist') {
+      return { id: blockId(), type: 'checklist', content: JSON.stringify([{ text: '', checked: false }]) };
+    }
+    if (typeId === 'poll') {
+      return { id: blockId(), type: 'poll', content: JSON.stringify({ question: '', options: [{ text: 'Option 1', votes: 0 }, { text: 'Option 2', votes: 0 }], votedBy: [] }) };
+    }
+    if (typeId === 'form') {
+      return { id: blockId(), type: 'form', content: JSON.stringify({ title: '', fields: [{ type: 'short_text', label: 'Field 1' }] }) };
+    }
+    if (typeId === 'report') {
+      return { id: blockId(), type: 'report', content: JSON.stringify({ reportId: '', publicLinkId: '', title: '', size: 'full' }) };
+    }
+    if (typeId === 'image' || typeId === 'video') {
+      return { id: blockId(), type: typeId, content: '', caption: '' };
+    }
+    return { id: blockId(), type: typeId, content: typeId === 'bullet' || typeId === 'ordered' ? '<li></li>' : '', caption: '' };
+  }, []);
 
   const removeBlock = useCallback(
     (blockId) => {
-      const next = safeBlocks.filter((b) => b.id !== blockId);
+      const base = (latestBlocksRef?.current && Array.isArray(latestBlocksRef.current)) ? latestBlocksRef.current : safeBlocks;
+      const next = base.filter((b) => b.id !== blockId);
       onBlocksChange(next);
       if (onWordCountChange) onWordCountChange(wordCharCount(next));
     },
-    [safeBlocks, onBlocksChange, onWordCountChange]
+    [safeBlocks, onBlocksChange, onWordCountChange, latestBlocksRef]
   );
 
   const handleEnterCreateBlock = useCallback(
@@ -775,14 +920,15 @@ function CanvasBlockEditorInner({
 
   const handleDuplicateBlock = useCallback(
     (blockId) => {
-      const idx = safeBlocks.findIndex((b) => b.id === blockId);
+      const base = (latestBlocksRef?.current && Array.isArray(latestBlocksRef.current)) ? latestBlocksRef.current : safeBlocks;
+      const idx = base.findIndex((b) => b.id === blockId);
       if (idx === -1) return;
-      const block = safeBlocks[idx];
+      const block = base[idx];
       const cloned = { ...block, id: blockId() };
       addBlockAfter(idx, cloned);
       setFocusedBlockId(cloned.id);
     },
-    [safeBlocks, addBlockAfter]
+    [safeBlocks, addBlockAfter, latestBlocksRef]
   );
 
   useImperativeHandle(ref, () => ({
@@ -810,6 +956,13 @@ function CanvasBlockEditorInner({
       if (editable) {
         editable.innerHTML = html;
         updateBlock(focusedBlockId, { content: html });
+      }
+    },
+    openAddBlockMenu() {
+      setAddBlockMenuOpen(true);
+      const rect = containerRef.current?.getBoundingClientRect?.();
+      if (rect) {
+        addBlockMenuPosRef.current = { left: rect.left + rect.width / 2 - 115, top: rect.bottom - 140 };
       }
     },
   }), [focusedBlockId, updateBlock]);
@@ -920,9 +1073,13 @@ function CanvasBlockEditorInner({
     if (!blockId) { setMentionOpen(false); return; }
     const block = safeBlocks.find((b) => b.id === blockId);
     if (!block) { setMentionOpen(false); return; }
+    // Use live DOM content so deletions (e.g. backspaced pill) are reflected before we insert
+    const row = containerRef.current?.querySelector(`[data-block-id="${blockId}"]`);
+    const editable = row?.querySelector?.('[contenteditable="true"]');
+    const rawHtml = editable?.innerHTML ?? block.content ?? '';
+    const content = htmlMentionsToStorage(rawHtml);
     const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || '';
     const token = `@[${displayName}](${user.email || user.id || ''})`;
-    const content = block.content || '';
     const needle = '@' + mentionFilter;
     const idx = content.indexOf(needle);
     const newContent = idx === -1 ? content + token : content.slice(0, idx) + token + content.slice(idx + needle.length);
@@ -1198,10 +1355,14 @@ function CanvasBlockEditorInner({
             </SortableContext>
           </DndContext>
 
-          <div className="flex items-center gap-2 py-2 mt-2 opacity-80 hover:opacity-100">
+          <div className="flex items-center gap-2 py-2 mt-2 opacity-80 hover:opacity-100 relative">
             <button
               type="button"
-              onClick={() => addBlockAfter(safeBlocks.length - 1, { id: blockId(), type: 'text', content: '' })}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                addBlockMenuPosRef.current = { left: rect.left, top: rect.bottom + 4 };
+                setAddBlockMenuOpen((o) => !o);
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground border border-dashed border-border rounded-md hover:border-primary hover:text-primary"
             >
               <Plus className="w-4 h-4" /> Add block
@@ -1216,6 +1377,45 @@ function CanvasBlockEditorInner({
             >
               <Image className="w-4 h-4" /> Add media
             </button>
+            {addBlockMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setAddBlockMenuOpen(false)} aria-hidden />
+                <div
+                  className="fixed z-50 w-[230px] max-h-[280px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
+                  style={{ left: addBlockMenuPosRef.current.left, top: addBlockMenuPosRef.current.top }}
+                >
+                  {BLOCK_TYPES.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-left text-sm text-foreground hover:bg-muted"
+                      onClick={() => {
+                        if (c.id === 'image' || c.id === 'video') {
+                          pendingMediaRef.current = { blockId: null, type: null };
+                          if (fileInputRef.current) {
+                            fileInputRef.current.accept = c.id === 'image' ? 'image/*' : 'video/*';
+                            fileInputRef.current.click();
+                          }
+                        } else {
+                          const newBlock = createBlockByType(c.id);
+                          addBlockAfter(safeBlocks.length - 1, newBlock);
+                          setFocusedBlockId(newBlock.id);
+                        }
+                        setAddBlockMenuOpen(false);
+                      }}
+                    >
+                      <span className="w-6 h-6 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">
+                        {typeof c.icon === 'string' || typeof c.icon === 'number' ? c.icon : React.createElement(c.icon, { className: 'w-3.5 h-3.5' })}
+                      </span>
+                      <div>
+                        <span className="font-semibold">{c.label}</span>
+                        <small className="block text-[10px] text-muted-foreground">{c.desc}</small>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1245,16 +1445,7 @@ function CanvasBlockEditorInner({
                     fileInputRef.current.click();
                   }
                 } else {
-                  let newBlock;
-                  if (c.id === 'checklist') {
-                    newBlock = { id: blockId(), type: 'checklist', content: JSON.stringify([{ text: '', checked: false }]) };
-                  } else if (c.id === 'poll') {
-                    newBlock = { id: blockId(), type: 'poll', content: JSON.stringify({ question: '', options: [{ text: 'Option 1', votes: 0 }, { text: 'Option 2', votes: 0 }], votedBy: [] }) };
-                  } else if (c.id === 'form') {
-                    newBlock = { id: blockId(), type: 'form', content: JSON.stringify({ title: '', fields: [{ type: 'short_text', label: 'Field 1' }] }) };
-                  } else {
-                    newBlock = { id: blockId(), type: c.id, content: c.id === 'bullet' || c.id === 'ordered' ? '<li></li>' : '', caption: '' };
-                  }
+                  const newBlock = createBlockByType(c.id);
                   addBlockAfter(idx, newBlock);
                 }
                 setSlashOpen(false);

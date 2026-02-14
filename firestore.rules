@@ -322,6 +322,17 @@ service cloud.firestore {
       );
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Block comments and reactions - same access as parent canvas (owner + shared)
+      match /block_comments/{blockId} {
+        allow read, write: if isAuthenticated() && (
+          get(/databases/$(database)/documents/canvases/$(canvasId)).data.userId == request.auth.uid ||
+          ('sharedWithEmails' in get(/databases/$(database)/documents/canvases/$(canvasId)).data && (
+            request.auth.token.email in get(/databases/$(database)/documents/canvases/$(canvasId)).data.sharedWithEmails ||
+            (request.auth.token.email_lower != null && request.auth.token.email_lower in get(/databases/$(database)/documents/canvases/$(canvasId)).data.sharedWithEmails)
+          ))
+        );
+      }
     }
     
     // Content calendar - users can read/write their own calendars and items

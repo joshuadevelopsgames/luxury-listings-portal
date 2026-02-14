@@ -38,6 +38,12 @@ function blockSearchableText(block) {
       return (d.title || '') + ' ' + (d.fields || []).map((f) => f.label).join(' ');
     } catch { return ''; }
   }
+  if (block.type === 'report') {
+    try {
+      const d = JSON.parse(block.content || '{}');
+      return d.title || '';
+    } catch { return ''; }
+  }
   if (block.type === 'image' || block.type === 'video') return block.caption || '';
   return (block.content || '').replace(/<[^>]+>/g, ' ');
 }
@@ -154,6 +160,7 @@ export default function CanvasPage() {
   const [aiSuggestion, setAiSuggestion] = useState(null); // { blockId, originalHtml, suggestedText }
   const persistBlocksTimerRef = useRef(null);
   const canvasEditorRef = useRef(null);
+  const latestBlocksRef = useRef([]); // so editor never overwrites with stale blocks after Add block
   const undoStackRef = useRef([]);
   const redoStackRef = useRef([]);
   const [restoreKey, setRestoreKey] = useState(0); // bump on undo/redo so contenteditable remounts with restored content
@@ -184,6 +191,7 @@ export default function CanvasPage() {
   const updateActiveBlocks = useCallback(
     (blocks, opts = {}) => {
       if (!activeId) return;
+      latestBlocksRef.current = blocks;
       if (!opts.skipUndoPush && activeCanvas?.blocks) {
         pushUndo(activeCanvas.blocks);
         redoStackRef.current = [];
@@ -215,9 +223,13 @@ export default function CanvasPage() {
           const prevEmails = extractMentionedEmails(activeCanvas?.blocks);
           const newEmails = extractMentionedEmails(blocks);
           const currentEmail = (currentUser?.email || '').toLowerCase();
+          const sharedEmails = new Set([
+            ...(activeCanvas?.sharedWithEmails || []),
+            ...(Array.isArray(activeCanvas?.sharedWith) ? activeCanvas.sharedWith.map((s) => (typeof s === 'string' ? s : s.email || '')) : []),
+          ].map((e) => (e || '').toLowerCase()).filter(Boolean));
           const excerpt = blocks.slice(0, 3).map((b) => (b.content || '').replace(/<[^>]+>/g, ' ').trim()).join(' ').slice(0, 80) + (blocks.length > 3 ? '…' : '');
           for (const email of newEmails) {
-            if (email && email !== currentEmail && !prevEmails.has(email)) {
+            if (email && email !== currentEmail && !prevEmails.has(email) && sharedEmails.has(email)) {
               let blockIdForLink = blocks[0]?.id || '';
               for (const b of blocks) {
                 if ((b.content || '').toLowerCase().includes(email)) {
@@ -233,6 +245,11 @@ export default function CanvasPage() {
                 link: `/workspaces?id=${activeId}&block=${blockIdForLink}`,
                 read: false,
               }).catch(() => {});
+            }
+          }
+          for (const email of prevEmails) {
+            if (email && !newEmails.has(email)) {
+              firestoreService.deleteWorkspaceMentionNotifications(email, activeId).catch(() => {});
             }
           }
         }
@@ -308,26 +325,28 @@ export default function CanvasPage() {
 
   const deleteCanvas = useCallback(
     async (id) => {
-      const c = canvases.find((x) => x.id === id);
+      const c = canvases.find((x) => x.id === id) ?? sharedCanvases.find((x) => x.id === id);
+      const ownerId = c?.userId ?? userId;
       const ok = await confirm({
         title: 'Delete Workspace',
         message: `Delete "${c?.title ?? 'Workspace'}"? This cannot be undone.`,
         confirmText: 'Delete',
+        cancelText: 'Cancel',
         variant: 'danger',
       });
-      if (ok && userId) {
-        try {
-          await firestoreService.deleteCanvas(userId, id);
-          setCanvases((prev) => prev.filter((x) => x.id !== id));
-          if (activeId === id) setActiveId(null);
-          toast.success('Workspace deleted');
-        } catch (err) {
-          console.error('Workspace delete error:', err);
-          toast.error('Failed to delete workspace');
-        }
+      if (!ok || !ownerId) return;
+      try {
+        await firestoreService.deleteCanvas(ownerId, id);
+        setCanvases((prev) => prev.filter((x) => x.id !== id));
+        setSharedCanvases((prev) => prev.filter((x) => x.id !== id));
+        if (activeId === id) setActiveId(null);
+        toast.success('Workspace deleted');
+      } catch (err) {
+        console.error('Workspace delete error:', err);
+        toast.error(err?.message ?? 'Failed to delete workspace');
       }
     },
-    [canvases, activeId, confirm, userId]
+    [canvases, sharedCanvases, activeId, confirm, userId]
   );
 
   const duplicateCanvas = useCallback(
@@ -427,6 +446,16 @@ export default function CanvasPage() {
         setShortcutsOpen((o) => !o);
         return;
       }
+      if (mod && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
+        e.preventDefault();
+        createCanvas();
+        return;
+      }
+      if (mod && (e.key === 'N' || e.key === 'n') && !e.shiftKey) {
+        e.preventDefault();
+        canvasEditorRef.current?.openAddBlockMenu?.();
+        return;
+      }
       if (!mod) return;
       if (e.key === 'z' || e.key === 'Z') {
         e.preventDefault();
@@ -442,7 +471,7 @@ export default function CanvasPage() {
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [activeId, handleUndo, handleRedo]);
+  }, [activeId, handleUndo, handleRedo, createCanvas]);
 
   const updateActiveMeta = useCallback(
     (patch) => {
@@ -901,7 +930,7 @@ export default function CanvasPage() {
 <button
                 type="button"
                 onClick={handleUndo}
-                className="p-2 rounded text-muted-foreground hover:bg-muted"
+                className="p-2 rounded text-muted-foreground hover:bg-muted active:bg-muted/80 active:scale-[0.96] transition-transform"
                 title="Undo"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -909,7 +938,7 @@ export default function CanvasPage() {
                 <button
                   type="button"
                   onClick={handleRedo}
-                  className="p-2 rounded text-muted-foreground hover:bg-muted"
+                  className="p-2 rounded text-muted-foreground hover:bg-muted active:bg-muted/80 active:scale-[0.96] transition-transform"
                   title="Redo"
                 >
                   <RotateCw className="w-4 h-4" />
@@ -917,7 +946,7 @@ export default function CanvasPage() {
                 <button
                   type="button"
                   onClick={handleExport}
-                  className="p-2 rounded text-muted-foreground hover:bg-muted"
+                  className="p-2 rounded text-muted-foreground hover:bg-muted active:bg-muted/80 active:scale-[0.96] transition-transform"
                   title="Export"
                 >
                   <Download className="w-4 h-4" />
@@ -925,7 +954,7 @@ export default function CanvasPage() {
                 <button
                   type="button"
                   onClick={() => setShortcutsOpen((o) => !o)}
-                  className="p-2 rounded text-muted-foreground hover:bg-muted"
+                  className="p-2 rounded text-muted-foreground hover:bg-muted active:bg-muted/80 active:scale-[0.96] transition-transform"
                   title="Shortcuts (?)"
                 >
                   <Keyboard className="w-4 h-4" />
@@ -941,7 +970,7 @@ export default function CanvasPage() {
                     type="button"
                     onClick={() => setAiMenuOpen((o) => !o)}
                     disabled={aiAssistLoading}
-                    className="p-2 rounded text-muted-foreground hover:bg-muted disabled:opacity-50"
+                    className="p-2 rounded text-muted-foreground hover:bg-muted active:bg-muted/80 active:scale-[0.96] transition-transform disabled:opacity-50"
                     title="AI assist"
                   >
                     <Sparkles className="w-4 h-4" />
@@ -972,7 +1001,7 @@ export default function CanvasPage() {
                           }).catch(() => setHistoryVersions([])).finally(() => setHistoryLoading(false));
                         }
                       }}
-                      className="p-2 rounded text-muted-foreground hover:bg-muted"
+                      className="p-2 rounded text-muted-foreground hover:bg-muted active:bg-muted/80 active:scale-[0.96] transition-transform"
                       title="Version history"
                     >
                       <History className="w-4 h-4" />
@@ -988,7 +1017,7 @@ export default function CanvasPage() {
                           }).catch(() => setShareCollaborators([]));
                         }
                       }}
-                      className="p-2 rounded text-muted-foreground hover:bg-muted"
+                      className="p-2 rounded text-muted-foreground hover:bg-muted active:bg-muted/80 active:scale-[0.96] transition-transform"
                       title="Share"
                     >
                       <UserPlus className="w-4 h-4" />
@@ -1003,7 +1032,7 @@ export default function CanvasPage() {
                       setContextPos({ top: rect.bottom + 4, left: rect.right - 180 });
                       setContextOpen(true);
                     }}
-                    className="p-2 rounded text-muted-foreground hover:bg-muted"
+                    className="p-2 rounded text-muted-foreground hover:bg-muted active:bg-muted/80 active:scale-[0.96] transition-transform"
                     title="More"
                   >
                     <MoreHorizontal className="w-4 h-4" />
@@ -1047,16 +1076,18 @@ export default function CanvasPage() {
                             <UserPlus className="w-4 h-4 text-muted-foreground" /> Share
                           </button>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            deleteCanvas(activeId);
-                            setContextOpen(false);
-                          }}
-                          className="w-full flex items-center gap-2.5 py-2 px-3 rounded-md hover:bg-destructive/10 text-destructive text-left text-sm"
-                        >
-                          <Trash2 className="w-4 h-4" /> Delete
-                        </button>
+                        {canShare && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteCanvas(activeId);
+                              setContextOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 py-2 px-3 rounded-md hover:bg-destructive/10 text-destructive text-left text-sm"
+                          >
+                            <Trash2 className="w-4 h-4" /> Delete
+                          </button>
+                        )}
                       </div>
                     </>
                   )}
@@ -1078,7 +1109,7 @@ export default function CanvasPage() {
                   document.execCommand('insertUnorderedList');
                   canvasEditorRef.current?.syncFocusedBlockFromDom?.();
                 }}
-                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground active:bg-muted/80 active:scale-[0.96] transition-transform"
               >
                 <List className="w-4 h-4" />
               </button>
@@ -1089,7 +1120,7 @@ export default function CanvasPage() {
                   document.execCommand('insertOrderedList');
                   canvasEditorRef.current?.syncFocusedBlockFromDom?.();
                 }}
-                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground active:bg-muted/80 active:scale-[0.96] transition-transform"
               >
                 <ListOrdered className="w-4 h-4" />
               </button>
@@ -1110,7 +1141,7 @@ export default function CanvasPage() {
                   }
                   setLinkModal(true);
                 }}
-                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground active:bg-muted/80 active:scale-[0.96] transition-transform"
                 title="Insert link"
               >
                 <Link2 className="w-4 h-4" />
@@ -1118,9 +1149,15 @@ export default function CanvasPage() {
             </div>
 
             {/* Block editor */}
+            {(() => {
+              const blocks = activeCanvas?.blocks ?? [];
+              latestBlocksRef.current = blocks;
+              return null;
+            })()}
             <CanvasBlockEditor
               ref={canvasEditorRef}
               blocks={activeCanvas?.blocks ?? []}
+              latestBlocksRef={latestBlocksRef}
               onBlocksChange={updateActiveBlocks}
               onWordCountChange={setWordCountStr}
               restoreKey={restoreKey}
@@ -1226,6 +1263,8 @@ export default function CanvasPage() {
               <li className="flex justify-between gap-4"><span className="text-muted-foreground">Mention</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">@</kbd></li>
               <li className="flex justify-between gap-4"><span className="text-muted-foreground">Undo</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘Z</kbd></li>
               <li className="flex justify-between gap-4"><span className="text-muted-foreground">Redo</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘⇧Z</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Add block</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘N</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">New workspace</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘⇧N</kbd></li>
               <li className="flex justify-between gap-4"><span className="text-muted-foreground">Duplicate block</span><span className="text-muted-foreground text-xs">hover block → copy icon</span></li>
             </ul>
             <p className="mt-4 text-xs text-muted-foreground">Press ? or ⌘/ to toggle this panel</p>
@@ -1339,7 +1378,7 @@ function FormatBtn({ cmd, icon }) {
         document.execCommand(cmd, false, null);
         update();
       }}
-      className={`p-2 rounded hover:bg-muted ${active ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+      className={`p-2 rounded hover:bg-muted active:scale-[0.96] transition-transform ${active ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground'} active:bg-muted/80`}
     >
       {icon}
     </button>

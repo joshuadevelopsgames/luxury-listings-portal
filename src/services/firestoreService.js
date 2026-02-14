@@ -2517,6 +2517,22 @@ class FirestoreService {
     }
   }
 
+  /** Delete workspace_mention notifications for a user for a given workspace (e.g. when mention is removed) */
+  async deleteWorkspaceMentionNotifications(userEmail, workspaceId) {
+    if (!userEmail || !workspaceId) return;
+    try {
+      const list = await this.getNotifications(userEmail);
+      const toDelete = list.filter(
+        (n) => n.type === 'workspace_mention' && (n.link || '').includes(workspaceId)
+      );
+      for (const n of toDelete) {
+        await this.deleteNotification(n.id);
+      }
+    } catch (error) {
+      console.error('Error deleting workspace mention notifications:', error);
+    }
+  }
+
   // ===== CONTENT CALENDAR =====
 
   /** Normalize content item from Firestore: media array, legacy imageUrl/videoUrl, dates */
