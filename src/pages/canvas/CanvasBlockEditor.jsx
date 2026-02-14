@@ -67,6 +67,8 @@ export const BLOCK_TYPES = [
   { id: 'report', icon: FileBarChart, label: 'Report', desc: 'Embed an analytics report' },
 ];
 
+const UNIFIED_TEXT_TYPES = ['text', 'h1', 'h2', 'h3', 'quote', 'code', 'callout', 'bullet', 'ordered'];
+
 function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName, onRemove }) {
   const [formValues, setFormValues] = useState({});
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -422,6 +424,100 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
   );
 }
 
+function UnifiedBlockRow({ block, bodyRefCallback, isTextLike, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onWikiDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, restoreKey, onDuplicateBlock, onOpenComments, onToggleReaction, getBlockData, canvasId, currentUserEmail, currentUserName }) {
+  const { setNodeRef, transform, transition, isDragging, attributes, listeners } = useSortable({ id: block.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-muted/50"
+      data-block-id={block.id}
+      data-block-type={block.type}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex items-center justify-center w-6 shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground opacity-0 group-hover:opacity-100 touch-none"
+        contentEditable={false}
+        suppressContentEditableWarning
+      >
+        <GripVertical className="w-4 h-4" />
+      </div>
+      {onDuplicateBlock && (
+        <button
+          type="button"
+          contentEditable={false}
+          suppressContentEditableWarning
+          onClick={() => onDuplicateBlock(block.id)}
+          className="flex items-center justify-center w-6 shrink-0 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground"
+          title="Duplicate block"
+          aria-label="Duplicate block"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </button>
+      )}
+      <div className="flex-1 min-w-0 relative">
+        {isTextLike ? (
+          <div
+            ref={(el) => bodyRefCallback(block.id, el)}
+            data-block-body
+            className="outline-none min-h-[24px]"
+          />
+        ) : (
+          <div contentEditable={false} suppressContentEditableWarning>
+            <BlockContent
+              block={block}
+              onContentChange={onContentChange}
+              onRemove={onRemove}
+              isFocused={isFocused}
+              onFocus={onFocus}
+              fileInputRef={fileInputRef}
+              onRequestImage={onRequestImage}
+              onRequestVideo={onRequestVideo}
+              onSlashDetect={onSlashDetect}
+              onMentionDetect={onMentionDetect}
+              onWikiDetect={onWikiDetect}
+              onEnterCreateBlock={onEnterCreateBlock}
+              onPasteImage={onPasteImage}
+              onBackspaceEmptyBlock={onBackspaceEmptyBlock}
+              restoreKey={restoreKey}
+              canvasId={canvasId}
+              currentUserEmail={currentUserEmail}
+              currentUserName={currentUserName}
+            />
+          </div>
+        )}
+        {(canvasId && (onOpenComments || onToggleReaction)) || onRemove ? (
+          <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5" contentEditable={false} suppressContentEditableWarning>
+            {canvasId && onOpenComments && (
+              <button type="button" onClick={() => onOpenComments(block.id)} className="p-1 rounded text-muted-foreground hover:bg-muted hover:text-foreground" title="Comment">
+                <MessageSquare className="w-3.5 h-3.5" />
+                {getBlockData?.(block.id)?.comments?.length > 0 && <span className="ml-0.5 text-[10px]">{getBlockData(block.id).comments.length}</span>}
+              </button>
+            )}
+            {canvasId && onToggleReaction && REACTION_EMOJIS.map((emoji) => {
+              const reactions = getBlockData?.(block.id)?.reactions || [];
+              const count = reactions.filter((r) => r.emoji === emoji).length;
+              const hasReacted = currentUserEmail && reactions.some((r) => r.emoji === emoji && r.userId === currentUserEmail);
+              return (
+                <button key={emoji} type="button" onClick={() => onToggleReaction(block.id, emoji)} className={`p-1 rounded text-sm ${hasReacted ? 'opacity-100' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`} title={emoji}>
+                  {emoji}{count > 0 ? <span className="ml-0.5 text-[10px]">{count}</span> : null}
+                </button>
+              );
+            })}
+            {onRemove && (
+              <button type="button" onClick={() => onRemove(block.id)} className="p-1 rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Remove block">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fileInputRef, onRequestImage, onRequestVideo, onSlashDetect, onMentionDetect, onWikiDetect, onEnterCreateBlock, onPasteImage, onBackspaceEmptyBlock, restoreKey, canvasId, currentUserEmail, currentUserName }) {
   const elRef = useRef(null);
 
@@ -703,6 +799,10 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
               const el = e.currentTarget;
               const text = (el.textContent || '').trim();
               const isTextLike = ['text', 'h1', 'h2', 'h3', 'quote', 'callout'].includes(block.type);
+              if (e.key === 'Enter' && e.shiftKey && onEnterCreateBlock && isTextLike) {
+                e.preventDefault();
+                onEnterCreateBlock(block.id);
+              }
               if (e.key === 'Enter' && !e.shiftKey && onEnterCreateBlock && isTextLike) {
                 const sel = window.getSelection();
                 const atEnd = !sel?.rangeCount || (() => {
@@ -791,6 +891,8 @@ function CanvasBlockEditorInner({
 }, ref) {
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const unifiedBodyRefs = useRef({});
+  const prevBlockIdsRef = useRef('');
   const [focusedBlockId, setFocusedBlockId] = useState(null);
   const [dropZoneOver, setDropZoneOver] = useState(false);
   const [dropZoneVisible, setDropZoneVisible] = useState(false);
@@ -823,6 +925,11 @@ function CanvasBlockEditorInner({
 
   const safeBlocks = Array.isArray(blocks) ? blocks : [];
   const blockIds = safeBlocks.map((b) => b.id);
+
+  const unifiedBodyRefCallback = useCallback((blockId, el) => {
+    if (el) unifiedBodyRefs.current[blockId] = el;
+    else delete unifiedBodyRefs.current[blockId];
+  }, []);
 
   const updateBlock = useCallback(
     (blockId, patch) => {
@@ -918,6 +1025,52 @@ function CanvasBlockEditorInner({
     [safeBlocks, removeBlock]
   );
 
+  useEffect(() => {
+    const ids = blockIds.join(',');
+    if (ids === prevBlockIdsRef.current) return;
+    prevBlockIdsRef.current = ids;
+    safeBlocks.forEach((block) => {
+      if (!UNIFIED_TEXT_TYPES.includes(block.type)) return;
+      const el = unifiedBodyRefs.current[block.id];
+      if (!el) return;
+      const html = contentWithMentions(contentWithWikiLinks(block.content || (block.type === 'bullet' || block.type === 'ordered' ? '<li></li>' : '')));
+      if (el.innerHTML !== html) el.innerHTML = html;
+    });
+  }, [safeBlocks, blockIds]);
+
+  const handleUnifiedInput = useCallback(() => {
+    if (!containerRef.current) return;
+    const rows = containerRef.current.querySelectorAll('[data-block-id]');
+    rows.forEach((row) => {
+      const blockId = row.getAttribute('data-block-id');
+      const body = row.querySelector('[data-block-body]');
+      if (!body || !blockId) return;
+      const block = safeBlocks.find((b) => b.id === blockId);
+      if (!block || !UNIFIED_TEXT_TYPES.includes(block.type)) return;
+      updateBlock(blockId, { content: htmlMentionsToStorage(body.innerHTML) });
+    });
+  }, [safeBlocks, updateBlock]);
+
+  useEffect(() => {
+    const onSelectionChange = () => {
+      if (!containerRef.current) return;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const anchor = sel.anchorNode;
+      if (!anchor || !containerRef.current.contains(anchor)) return;
+      let node = anchor;
+      while (node && node !== containerRef.current) {
+        if (node.nodeType === 1 && node.getAttribute?.('data-block-id')) {
+          setFocusedBlockId(node.getAttribute('data-block-id'));
+          return;
+        }
+        node = node.parentNode;
+      }
+    };
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () => document.removeEventListener('selectionchange', onSelectionChange);
+  }, []);
+
   const handleDuplicateBlock = useCallback(
     (blockId) => {
       const base = (latestBlocksRef?.current && Array.isArray(latestBlocksRef.current)) ? latestBlocksRef.current : safeBlocks;
@@ -935,7 +1088,7 @@ function CanvasBlockEditorInner({
     syncFocusedBlockFromDom() {
       if (!focusedBlockId || !containerRef.current) return;
       const row = containerRef.current.querySelector(`[data-block-id="${focusedBlockId}"]`);
-      const editable = row?.querySelector?.('[contenteditable="true"]');
+      const editable = row?.querySelector?.('[data-block-body]') || row?.querySelector?.('[contenteditable="true"]');
       if (editable && editable.innerHTML !== undefined) {
         updateBlock(focusedBlockId, { content: editable.innerHTML });
       }
@@ -946,13 +1099,13 @@ function CanvasBlockEditorInner({
     getFocusedBlockContent() {
       if (!focusedBlockId || !containerRef.current) return null;
       const row = containerRef.current.querySelector(`[data-block-id="${focusedBlockId}"]`);
-      const editable = row?.querySelector?.('[contenteditable="true"]');
+      const editable = row?.querySelector?.('[data-block-body]') || row?.querySelector?.('[contenteditable="true"]');
       return editable ? editable.innerHTML : null;
     },
     setFocusedBlockContent(html) {
       if (!focusedBlockId || !containerRef.current) return;
       const row = containerRef.current.querySelector(`[data-block-id="${focusedBlockId}"]`);
-      const editable = row?.querySelector?.('[contenteditable="true"]');
+      const editable = row?.querySelector?.('[data-block-body]') || row?.querySelector?.('[contenteditable="true"]');
       if (editable) {
         editable.innerHTML = html;
         updateBlock(focusedBlockId, { content: html });
@@ -1075,7 +1228,7 @@ function CanvasBlockEditorInner({
     if (!block) { setMentionOpen(false); return; }
     // Use live DOM content so deletions (e.g. backspaced pill) are reflected before we insert
     const row = containerRef.current?.querySelector(`[data-block-id="${blockId}"]`);
-    const editable = row?.querySelector?.('[contenteditable="true"]');
+    const editable = row?.querySelector?.('[data-block-body]') || row?.querySelector?.('[contenteditable="true"]');
     const rawHtml = editable?.innerHTML ?? block.content ?? '';
     const content = htmlMentionsToStorage(rawHtml);
     const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || '';
@@ -1199,7 +1352,7 @@ function CanvasBlockEditorInner({
     const row = containerRef.current.querySelector(`[data-block-id="${highlightBlockId}"]`);
     if (!row) return;
     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const editable = row.querySelector?.('[contenteditable="true"]');
+    const editable = row.querySelector?.('[data-block-body]') || row.querySelector?.('[contenteditable="true"]');
     if (editable) {
       editable.focus();
       setFocusedBlockId(highlightBlockId);
@@ -1267,7 +1420,6 @@ function CanvasBlockEditorInner({
       />
 
       <div
-        ref={containerRef}
         className="flex-1 overflow-y-auto min-h-0"
         onDragEnter={(e) => {
           if (e.dataTransfer?.types?.includes('Files')) {
@@ -1309,49 +1461,87 @@ function CanvasBlockEditorInner({
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
-              {safeBlocks.map((block) => (
-                <SortableBlock
-                  key={block.id}
-                  block={block}
-                  restoreKey={restoreKey}
-                  onContentChange={updateBlock}
-                  onRemove={removeBlock}
-                  isFocused={block.id === focusedBlockId}
-                  onFocus={setFocusedBlockId}
-                  fileInputRef={fileInputRef}
-                  onRequestImage={() => {
-                    pendingMediaRef.current = { blockId: block.id, type: 'image' };
-                    if (fileInputRef.current) {
-                      fileInputRef.current.accept = 'image/*';
-                      fileInputRef.current.click();
+              <div
+                ref={containerRef}
+                contentEditable
+                suppressContentEditableWarning
+                className="outline-none"
+                onInput={handleUnifiedInput}
+                onKeyDown={(e) => {
+                  if (!containerRef.current) return;
+                  const sel = window.getSelection();
+                  if (!sel || sel.rangeCount === 0) return;
+                  let node = sel.anchorNode;
+                  while (node && node !== containerRef.current) {
+                    if (node.nodeType === 1 && node.getAttribute?.('data-block-id')) {
+                      const blockId = node.getAttribute('data-block-id');
+                      const block = safeBlocks.find((b) => b.id === blockId);
+                      const isTextLike = block && UNIFIED_TEXT_TYPES.includes(block.type);
+                      if (!isTextLike) return;
+                      const body = node.querySelector?.('[data-block-body]');
+                      const text = (body?.textContent || '').trim();
+                      const atEnd = body && sel.rangeCount && (() => {
+                        const r = sel.getRangeAt(0);
+                        if (!r.collapsed) return false;
+                        const end = document.createRange();
+                        end.selectNodeContents(body);
+                        end.collapse(false);
+                        return r.compareBoundaryPoints(Range.END_TO_END, end) === 0;
+                      })();
+                      if (e.key === 'Enter' && (e.shiftKey || text === '' || atEnd)) {
+                        e.preventDefault();
+                        handleEnterCreateBlock(blockId);
+                      } else if (e.key === 'Backspace' && text === '') {
+                        e.preventDefault();
+                        handleBackspaceEmptyBlock(blockId);
+                      }
+                      return;
                     }
-                  }}
-                  onRequestVideo={() => {
-                    pendingMediaRef.current = { blockId: block.id, type: 'video' };
-                    if (fileInputRef.current) {
-                      fileInputRef.current.accept = 'video/*';
-                      fileInputRef.current.click();
-                    }
-                  }}
-                  onSlashDetect={handleSlashDetect}
-                  onMentionDetect={handleMentionDetect}
-                  onWikiDetect={handleWikiDetect}
-                  enableWikiDetect={(workspaceList || []).length > 0}
-                  onEnterCreateBlock={handleEnterCreateBlock}
-                  onPasteImage={handlePasteImage}
-                  onBackspaceEmptyBlock={handleBackspaceEmptyBlock}
-                  onDuplicateBlock={handleDuplicateBlock}
-                  onOpenComments={canvasId ? handleOpenComments : null}
-                  onToggleReaction={canvasId && currentUserEmail ? handleToggleReaction : null}
-                  getBlockData={getBlockData}
-                  canvasId={canvasId}
-                  currentUserEmail={currentUserEmail}
-                  currentUserName={currentUserName}
-                  aiSuggestion={aiSuggestion}
-                  onAiAccept={onAiAccept}
-                  onAiReject={onAiReject}
-                />
-              ))}
+                    node = node.parentNode;
+                  }
+                }}
+              >
+                {safeBlocks.map((block) => (
+                  <UnifiedBlockRow
+                    key={block.id}
+                    block={block}
+                    bodyRefCallback={unifiedBodyRefCallback}
+                    isTextLike={UNIFIED_TEXT_TYPES.includes(block.type)}
+                    onContentChange={updateBlock}
+                    onRemove={removeBlock}
+                    isFocused={block.id === focusedBlockId}
+                    onFocus={setFocusedBlockId}
+                    fileInputRef={fileInputRef}
+                    onRequestImage={() => {
+                      pendingMediaRef.current = { blockId: block.id, type: 'image' };
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = 'image/*';
+                        fileInputRef.current.click();
+                      }
+                    }}
+                    onRequestVideo={() => {
+                      pendingMediaRef.current = { blockId: block.id, type: 'video' };
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = 'video/*';
+                        fileInputRef.current.click();
+                      }
+                    }}
+                    onSlashDetect={handleSlashDetect}
+                    onMentionDetect={handleMentionDetect}
+                    onWikiDetect={handleWikiDetect}
+                    onEnterCreateBlock={handleEnterCreateBlock}
+                    onPasteImage={handlePasteImage}
+                    onBackspaceEmptyBlock={handleBackspaceEmptyBlock}
+                    onDuplicateBlock={handleDuplicateBlock}
+                    onOpenComments={canvasId ? handleOpenComments : null}
+                    onToggleReaction={canvasId && currentUserEmail ? handleToggleReaction : null}
+                    getBlockData={getBlockData}
+                    canvasId={canvasId}
+                    currentUserEmail={currentUserEmail}
+                    currentUserName={currentUserName}
+                  />
+                ))}
+              </div>
             </SortableContext>
           </DndContext>
 

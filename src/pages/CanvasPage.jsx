@@ -446,14 +446,9 @@ export default function CanvasPage() {
         setShortcutsOpen((o) => !o);
         return;
       }
-      if (mod && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
+      if (mod && e.shiftKey && (e.key === 'W' || e.key === 'w')) {
         e.preventDefault();
         createCanvas();
-        return;
-      }
-      if (mod && (e.key === 'N' || e.key === 'n') && !e.shiftKey) {
-        e.preventDefault();
-        canvasEditorRef.current?.openAddBlockMenu?.();
         return;
       }
       if (!mod) return;
@@ -1263,8 +1258,8 @@ export default function CanvasPage() {
               <li className="flex justify-between gap-4"><span className="text-muted-foreground">Mention</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">@</kbd></li>
               <li className="flex justify-between gap-4"><span className="text-muted-foreground">Undo</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘Z</kbd></li>
               <li className="flex justify-between gap-4"><span className="text-muted-foreground">Redo</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘⇧Z</kbd></li>
-              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Add block</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘N</kbd></li>
-              <li className="flex justify-between gap-4"><span className="text-muted-foreground">New workspace</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘⇧N</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">Add block (paragraph)</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⇧↵</kbd></li>
+              <li className="flex justify-between gap-4"><span className="text-muted-foreground">New workspace</span><kbd className="px-1.5 py-0.5 rounded bg-muted font-mono">⌘⇧W</kbd></li>
               <li className="flex justify-between gap-4"><span className="text-muted-foreground">Duplicate block</span><span className="text-muted-foreground text-xs">hover block → copy icon</span></li>
             </ul>
             <p className="mt-4 text-xs text-muted-foreground">Press ? or ⌘/ to toggle this panel</p>

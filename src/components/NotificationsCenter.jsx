@@ -201,14 +201,19 @@ const NotificationsCenter = () => {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[#1d1d1f] dark:text-white mb-1">
                             {notification.title}
+                            {(notification.count || 0) > 1 && (
+                              <span className="ml-1.5 text-[#86868b] font-normal">({notification.count})</span>
+                            )}
                           </p>
                           <p className="text-xs text-[#86868b] mb-2">
                             {notification.message}
                           </p>
                           <p className="text-xs text-[#86868b]">
-                            {notification.createdAt?.toDate 
-                              ? format(notification.createdAt.toDate(), 'MMM dd, h:mm a')
-                              : 'Just now'}
+                            {notification.updatedAt?.toDate
+                              ? format(notification.updatedAt.toDate(), 'MMM dd, h:mm a')
+                              : notification.createdAt?.toDate
+                                ? format(notification.createdAt.toDate(), 'MMM dd, h:mm a')
+                                : 'Just now'}
                           </p>
                         </div>
 

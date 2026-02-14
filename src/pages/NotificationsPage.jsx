@@ -241,6 +241,9 @@ const NotificationsPage = () => {
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
                         {notification.title}
+                        {(notification.count || 0) > 1 && (
+                          <span className="ml-1.5 text-[#86868b] font-normal">({notification.count})</span>
+                        )}
                       </p>
                       {!notification.read && (
                         <span className="px-2 py-0.5 bg-[#0071e3] text-white text-[10px] font-semibold rounded-full">
@@ -256,7 +259,7 @@ const NotificationsPage = () => {
                         {getTypeLabel(notification.type)}
                       </span>
                       <span>
-                        {safeFormatDate(notification.createdAt, 'MMM d, yyyy h:mm a', 'Just now')}
+                        {safeFormatDate(notification.updatedAt || notification.createdAt, 'MMM d, yyyy h:mm a', 'Just now')}
                       </span>
                       {notification.link && (
                         <span className="text-[#0071e3]">Click to view →</span>

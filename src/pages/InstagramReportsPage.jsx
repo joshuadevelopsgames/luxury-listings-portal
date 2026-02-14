@@ -9,7 +9,6 @@ import { openaiService } from '../services/openaiService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 // Fallback to browser-based OCR if Cloud Vision and AI extraction fail
 import { instagramOCRService } from '../services/instagramOCRService';
-import { getStorage, ref, deleteObject } from 'firebase/storage';
 import { 
   Instagram, 
   Plus, 
@@ -47,7 +46,8 @@ import {
   Building2,
   FolderOpen,
   CalendarDays,
-  FileBarChart
+  FileBarChart,
+  Archive
 } from 'lucide-react';
 import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, getMonth, parseISO, isWithinInterval } from 'date-fns';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
@@ -106,10 +106,10 @@ const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
   const { isSystemAdmin } = usePermissions();
   const { confirm } = useConfirm();
-  // currentUser is effective user (viewed user when View As); use their admin status for client list
+  // currentUser is effective user (viewed user when View As). Admins = system admin OR adminPermissions (see all clients/reports).
   const effectiveIsAdmin = isViewingAs
     ? INSTAGRAM_ADMIN_EMAILS.includes((currentUser?.email || '').toLowerCase())
-    : (isSystemAdmin || INSTAGRAM_ADMIN_EMAILS.includes((realUser?.email || '').toLowerCase()));
+    : (isSystemAdmin || !!realUser?.adminPermissions || INSTAGRAM_ADMIN_EMAILS.includes((realUser?.email || '').toLowerCase()));
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
@@ -120,6 +120,9 @@ const InstagramReportsPage = () => {
   const [expandedClient, setExpandedClient] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
   const [preSelectedClientId, setPreSelectedClientId] = useState(null);
+  const [activeTab, setActiveTab] = useState('clients'); // 'clients' | 'internal' | 'archive'
+  const [archivedReports, setArchivedReports] = useState([]);
+  const [archiveLoading, setArchiveLoading] = useState(false);
   
   // Aggregated report generation state
   const [generatingReport, setGeneratingReport] = useState(null); // { clientId, type: 'quarterly' | 'yearly' }
@@ -140,6 +143,20 @@ const InstagramReportsPage = () => {
     }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined });
     return () => unsubscribe();
   }, [currentUser?.uid, effectiveIsAdmin, isViewingAs]);
+
+  // Load archived reports (system admin only)
+  useEffect(() => {
+    if (!isSystemAdmin) {
+      setArchivedReports([]);
+      return () => {};
+    }
+    setArchiveLoading(true);
+    const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
+      setArchivedReports(data);
+      setArchiveLoading(false);
+    }, { archived: true });
+    return () => unsubscribe();
+  }, [isSystemAdmin]);
 
   // Load clients
   useEffect(() => {
@@ -224,6 +241,14 @@ const InstagramReportsPage = () => {
       return dateB - dateA;
     });
   }, [reports, effectiveIsAdmin]);
+
+  // List for current tab: clients (non-internal) or internal accounts only
+  const clientsWithReportsForTab = useMemo(() => {
+    if (activeTab === 'internal') {
+      return clientsWithReports.filter(({ client }) => !!client.isInternal);
+    }
+    return clientsWithReports.filter(({ client }) => !client.isInternal);
+  }, [clientsWithReports, activeTab]);
 
   // Get reports for a specific time period
   const getReportsForPeriod = (clientId, startDate, endDate) => {
@@ -380,23 +405,12 @@ const InstagramReportsPage = () => {
   const handleDeleteReport = async (report) => {
     const confirmed = await confirm({
       title: 'Delete Report',
-      message: `Are you sure you want to delete "${report.title}"? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${report.title}"? It will be removed from your view.`,
       confirmText: 'Delete',
       variant: 'danger'
     });
     if (!confirmed) return;
-    
     try {
-      const storage = getStorage();
-      for (const screenshot of report.screenshots || []) {
-        if (!screenshot.path) continue;
-        try {
-          const imageRef = ref(storage, screenshot.path);
-          await deleteObject(imageRef);
-        } catch (e) {
-          console.warn('Error deleting screenshot:', e);
-        }
-      }
       await firestoreService.deleteInstagramReport(report.id);
       toast.success('Report deleted');
     } catch (error) {
@@ -411,8 +425,8 @@ const InstagramReportsPage = () => {
     setShowCreateModal(true);
   };
 
-  // Report card component
-  const ReportCard = ({ report, compact = false }) => (
+  // Report card component. archiveMode: hide Edit/Delete (for Archive tab).
+  const ReportCard = ({ report, compact = false, archiveMode = false }) => (
     <div className={`rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10 overflow-hidden ${compact ? '' : 'hover:shadow-md'} transition-all`}>
       <div className={`${compact ? 'p-3' : 'p-4'} flex items-center justify-between gap-3`}>
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -464,20 +478,24 @@ const InstagramReportsPage = () => {
           >
             <ExternalLink className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
           </button>
-          <button
-            onClick={() => setEditingReport(report)}
-            className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
-            title="Edit"
-          >
-            <Edit className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
-          </button>
-          <button
-            onClick={() => handleDeleteReport(report)}
-            className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors`}
-            title="Delete"
-          >
-            <Trash2 className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
-          </button>
+          {!archiveMode && (
+            <>
+              <button
+                onClick={() => setEditingReport(report)}
+                className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
+                title="Edit"
+              >
+                <Edit className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+              </button>
+              <button
+                onClick={() => handleDeleteReport(report)}
+                className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors`}
+                title="Delete"
+              >
+                <Trash2 className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -503,13 +521,15 @@ const InstagramReportsPage = () => {
             {effectiveIsAdmin ? 'Manage analytics reports for all clients' : `Analytics reports for your ${myClients.length} assigned client${myClients.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[13px] sm:text-[14px] font-medium hover:opacity-90 transition-opacity"
-        >
-          <Plus className="w-4 h-4" />
-          New Report
-        </button>
+        {activeTab !== 'archive' && (
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[13px] sm:text-[14px] font-medium hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-4 h-4" />
+            New Report
+          </button>
+        )}
       </div>
 
       {/* Stats Overview */}
@@ -564,11 +584,73 @@ const InstagramReportsPage = () => {
         </div>
       </div>
 
-      {/* Client-centric Reports */}
-      {loading ? (
+      {/* Tabs: Clients | Internal Accounts */}
+      <div className="flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 w-fit">
+        <button
+          type="button"
+          onClick={() => setActiveTab('clients')}
+          className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'clients' ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+        >
+          Clients ({myClientsOnly.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('internal')}
+          className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'internal' ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+        >
+          Internal Accounts ({myInternalAccounts.length})
+        </button>
+        {isSystemAdmin && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('archive')}
+            className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'archive' ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+          >
+            Archive ({archivedReports.length})
+          </button>
+        )}
+      </div>
+
+      {/* Archive tab: system admin only */}
+      {activeTab === 'archive' && (
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+          <div className="p-4 border-b border-black/5 dark:border-white/10 flex items-center gap-2">
+            <Archive className="w-5 h-5 text-[#86868b]" />
+            <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Archived reports</h3>
+            <span className="text-[12px] text-[#86868b]">Deleted by users; visible here only to system admins.</span>
+          </div>
+          <div className="p-4">
+            {archiveLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-[#E1306C] border-t-transparent rounded-full animate-spin" />
+                <span className="ml-3 text-[14px] text-[#86868b]">Loading archive...</span>
+              </div>
+            ) : archivedReports.length === 0 ? (
+              <div className="text-center py-12 text-[#86868b] text-[14px]">No archived reports.</div>
+            ) : (
+              <div className="space-y-2">
+                {archivedReports.map((report) => (
+                  <ReportCard key={report.id} report={report} compact archiveMode />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Client-centric Reports (hidden on Archive tab) */}
+      {activeTab !== 'archive' && (loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="w-8 h-8 border-2 border-[#E1306C] border-t-transparent rounded-full animate-spin" />
           <span className="ml-3 text-[14px] text-[#86868b]">Loading...</span>
+        </div>
+      ) : (activeTab === 'internal' && myInternalAccounts.length === 0) ? (
+        <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
+          <Building2 className="w-16 h-16 mx-auto text-[#86868b] opacity-50 mb-4" />
+          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No internal accounts</h3>
+          <p className="text-[14px] text-[#86868b] mt-2">
+            Add internal accounts in Clients to create analytics reports for them here.
+          </p>
         </div>
       ) : myClients.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
@@ -580,7 +662,7 @@ const InstagramReportsPage = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {clientsWithReports.map(({ client, reports: clientReports }) => {
+          {clientsWithReportsForTab.map(({ client, reports: clientReports }) => {
             const isExpanded = expandedClient === client.id;
             const monthlyReports = clientReports.filter(r => !r.reportType || r.reportType === 'monthly');
             const quarterlyReports = clientReports.filter(r => r.reportType === 'quarterly');
@@ -765,8 +847,8 @@ const InstagramReportsPage = () => {
             );
           })}
 
-          {/* Unlinked Reports (Admin only) */}
-          {effectiveIsAdmin && unlinkedReports.length > 0 && (
+          {/* Unlinked Reports (Admin only, Clients tab only) */}
+          {activeTab === 'clients' && effectiveIsAdmin && unlinkedReports.length > 0 && (
             <div className="rounded-2xl bg-[#ff9500]/5 dark:bg-[#ff9500]/10 border border-[#ff9500]/20 overflow-hidden">
               <button
                 onClick={() => setExpandedClient(expandedClient === 'unlinked' ? null : 'unlinked')}
@@ -801,14 +883,14 @@ const InstagramReportsPage = () => {
             </div>
           )}
         </div>
-      )}
+      ))}
 
       {/* Create/Edit Modal */}
       {(showCreateModal || editingReport) && (
         <ReportModal
           report={editingReport}
           preSelectedClientId={preSelectedClientId}
-          clientList={myClients}
+          clientList={(!editingReport && !preSelectedClientId && activeTab === 'internal') ? myInternalAccounts : myClients}
           onClose={() => {
             setShowCreateModal(false);
             setEditingReport(null);

@@ -2372,28 +2372,41 @@ class FirestoreService {
 
   // ===== NOTIFICATIONS =====
 
-  // Create notification
+  // Create notification. Same-type unread notifications for the same user are stacked (count incremented, updatedAt set) so they appear as one with a count.
   async createNotification(notificationData) {
-    // Validate required fields
     if (!notificationData?.userEmail || typeof notificationData.userEmail !== 'string') {
       console.warn('⚠️ createNotification called with invalid userEmail:', notificationData?.userEmail);
       return { success: false, error: 'Invalid user email for notification' };
     }
-    
+    const type = notificationData.type;
+    const userEmail = notificationData.userEmail;
+
     try {
-      // Remove any undefined values from notificationData
       const cleanedData = {};
       for (const [key, value] of Object.entries(notificationData)) {
-        if (value !== undefined) {
-          cleanedData[key] = value;
-        }
+        if (value !== undefined) cleanedData[key] = value;
       }
-      
+
+      const existingList = await this.getNotifications(userEmail);
+      const existing = existingList.find((n) => n.type === type && !n.read);
+      if (existing) {
+        const count = (existing.count || 1) + 1;
+        await updateDoc(doc(db, this.collections.NOTIFICATIONS, existing.id), {
+          count,
+          title: cleanedData.title ?? existing.title,
+          message: cleanedData.message ?? existing.message,
+          link: cleanedData.link !== undefined ? cleanedData.link : existing.link,
+          updatedAt: serverTimestamp(),
+        });
+        console.log('✅ Notification stacked:', existing.id, 'count=', count);
+        return { success: true, id: existing.id };
+      }
+
       const notification = {
         ...cleanedData,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        count: 1,
       };
-
       const docRef = await addDoc(collection(db, this.collections.NOTIFICATIONS), notification);
       console.log('✅ Notification created:', docRef.id);
       return { success: true, id: docRef.id };
@@ -2420,10 +2433,10 @@ class FirestoreService {
         });
       });
       
-      // Sort by createdAt descending (newest first)
+      // Sort by updatedAt or createdAt descending (stacked notifications use updatedAt so they appear newest first)
       return notifications.sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate() : (a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0));
+        const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate() : (b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0));
         return dateB - dateA;
       });
     } catch (error) {
@@ -2450,10 +2463,9 @@ class FirestoreService {
         });
       });
       
-      // Sort by createdAt descending (newest first) in the app
       const sortedNotifications = notifications.sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate() : (a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0));
+        const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate() : (b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0));
         return dateB - dateA;
       });
       
@@ -3702,9 +3714,15 @@ class FirestoreService {
       const email = auth.currentUser?.email;
       if (!uid) throw new Error('You must be signed in to update a report');
       
-      // System admins can edit any report
+      // System admins or users with adminPermissions can edit any report
       const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
-      const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
+      let isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
+      if (!isAdmin && email) {
+        try {
+          const perms = await this.getUserPermissions(email);
+          isAdmin = !!perms?.adminPermissions;
+        } catch (_) {}
+      }
       
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
       const docSnap = await getDoc(docRef);
@@ -3773,16 +3791,22 @@ class FirestoreService {
     }
   }
 
-  // Delete Instagram report. Fails if report does not belong to current user (unless admin).
+  // "Delete" Instagram report: soft-delete (archive). Report is hidden from main list and moved to system admin Archive tab.
   async deleteInstagramReport(reportId) {
     try {
       const uid = auth.currentUser?.uid;
       const email = auth.currentUser?.email;
       if (!uid) throw new Error('You must be signed in to delete a report');
       
-      // System admins can delete any report
+      // System admins or users with adminPermissions can delete any report
       const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
-      const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
+      let isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
+      if (!isAdmin && email) {
+        try {
+          const perms = await this.getUserPermissions(email);
+          isAdmin = !!perms?.adminPermissions;
+        } catch (_) {}
+      }
       
       const docRef = doc(db, this.collections.INSTAGRAM_REPORTS, reportId);
       const docSnap = await getDoc(docRef);
@@ -3799,43 +3823,68 @@ class FirestoreService {
         throw new Error('You do not have permission to delete this report');
       }
       
-      await deleteDoc(docRef);
-      console.log('✅ Instagram report deleted:', reportId);
+      await updateDoc(docRef, {
+        archived: true,
+        archivedAt: serverTimestamp(),
+        archivedBy: email || uid,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Instagram report archived:', reportId);
       return { success: true };
     } catch (error) {
-      console.error('❌ Error deleting Instagram report:', error);
+      console.error('❌ Error archiving Instagram report:', error);
       throw error;
     }
   }
 
   // Listen to Instagram reports changes. If loadAll=true (for admins), loads all reports.
+  // archived=true: load only archived reports (for system admin Archive tab). Otherwise exclude archived.
   // Pass userId when "View As" is active so reports for that user are loaded.
-  onInstagramReportsChange(callback, { loadAll = false, userId = null } = {}) {
+  onInstagramReportsChange(callback, { loadAll = false, userId = null, archived = false } = {}) {
     const uid = userId || auth.currentUser?.uid;
-    if (!uid) {
+    if (!uid && !archived) {
       callback([]);
-      return () => {}; // Return empty unsubscribe function
+      return () => {};
     }
     
-    // If loadAll is true, fetch all reports (for admins); otherwise filter by userId
+    if (archived) {
+      const q = query(
+        collection(db, this.collections.INSTAGRAM_REPORTS),
+        where('archived', '==', true),
+        orderBy('archivedAt', 'desc')
+      );
+      return onSnapshot(q, (snapshot) => {
+        const reports = [];
+        snapshot.forEach((doc) => {
+          reports.push({ id: doc.id, ...doc.data() });
+        });
+        console.log(`📊 Instagram archived reports loaded: ${reports.length}`);
+        callback(reports);
+      }, (error) => {
+        console.error('❌ Error loading archived Instagram reports:', error);
+        callback([]);
+      });
+    }
+    
     const q = loadAll
       ? query(
           collection(db, this.collections.INSTAGRAM_REPORTS),
+          where('archived', '!=', true),
+          orderBy('archived', 'asc'),
           orderBy('createdAt', 'desc')
         )
       : query(
           collection(db, this.collections.INSTAGRAM_REPORTS),
           where('userId', '==', uid),
+          where('archived', '!=', true),
+          orderBy('archived', 'asc'),
           orderBy('createdAt', 'desc')
         );
     
     return onSnapshot(q, (snapshot) => {
       const reports = [];
       snapshot.forEach((doc) => {
-        reports.push({
-          id: doc.id,
-          ...doc.data()
-        });
+        reports.push({ id: doc.id, ...doc.data() });
       });
       console.log(`📊 Instagram reports loaded: ${reports.length} reports (loadAll=${loadAll})`);
       callback(reports);
