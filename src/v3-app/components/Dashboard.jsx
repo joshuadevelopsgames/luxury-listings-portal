@@ -125,9 +125,9 @@ const V3Dashboard = () => {
   };
   const visibleMainContentBlocks = mainContentOrder.filter((id) => mainContentVisibility[id]);
 
-  // Load dashboard preferences (current user only; skip when viewing as)
+  // Load dashboard preferences for effective user (when viewing as, load viewed user's prefs; never save in view-as)
   useEffect(() => {
-    if (!currentUser?.uid || isViewingAs) {
+    if (!currentUser?.uid) {
       setPrefsLoaded(true);
       return;
     }
@@ -140,7 +140,7 @@ const V3Dashboard = () => {
       if (prefs.widgetOrder?.length) setWidgetOrder(prefs.widgetOrder);
     });
     return () => { cancelled = true; };
-  }, [currentUser?.uid, isViewingAs]);
+  }, [currentUser?.uid]);
 
   const saveDashboardPreferences = useCallback(async (updates) => {
     if (!currentUser?.uid || isViewingAs) return;

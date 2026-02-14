@@ -316,9 +316,11 @@ export function AuthProvider({ children }) {
         onboardingCompleted: true
       };
 
-      // Persist: load saved profile from approved_users (My Profile writes here)
+      // Persist: load saved profile from approved_users (My Profile writes here); sync uid for view-as
+      let approvedDocId;
       try {
         const approved = await firestoreService.getApprovedUserByEmail(email);
+        approvedDocId = approved?.id;
         if (approved?.displayName) adminUser.displayName = approved.displayName;
         if (approved?.firstName != null) adminUser.firstName = approved.firstName;
         if (approved?.lastName != null) adminUser.lastName = approved.lastName;
@@ -326,7 +328,8 @@ export function AuthProvider({ children }) {
         if (approved?.department) adminUser.department = approved.department;
         if (approved?.avatar) adminUser.avatar = approved.avatar;
       } catch (e) { /* ignore */ }
-      
+      if (approvedDocId) firestoreService.updateApprovedUser(approvedDocId, { uid }).catch(() => {});
+
       setCurrentRole(roleToUse);
       setCurrentUser(adminUser);
       setUserData(adminUser);
@@ -386,12 +389,11 @@ export function AuthProvider({ children }) {
         setUserData(mergedUser);
         saveAuthToStorage(mergedUser);
         
-        // Sync Gmail profile photo only to approved_users (name stays from personal info / Firestore)
-        if (photoURL) {
-          const docId = approvedUser.id || email;
-          firestoreService.updateApprovedUser(docId, { avatar: photoURL }).catch(() => {});
-        }
-        
+        // Sync Gmail profile photo and uid to approved_users (uid used for view-as dashboard prefs)
+        const docId = approvedUser.id || email;
+        if (photoURL) firestoreService.updateApprovedUser(docId, { avatar: photoURL }).catch(() => {});
+        firestoreService.updateApprovedUser(docId, { uid }).catch(() => {});
+
         // Navigate based on status (only redirect to onboarding after they're past login)
         const currentPath = window.location.pathname;
         const onLoginOrHome = currentPath === '/login' || currentPath === '/';

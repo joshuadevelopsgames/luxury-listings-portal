@@ -470,7 +470,8 @@ const PermissionsManager = () => {
     startViewingAs({
       email: user.email,
       displayName: user.displayName || user.email,
-      avatar: user.avatar || user.photoURL
+      avatar: user.avatar || user.photoURL,
+      uid: user.uid
     });
     navigate('/dashboard');
     toast.success(`Now viewing as ${user.displayName || user.email}`);
