@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
+import { usePendingUsers } from '../../contexts/PendingUsersContext';
 import { firestoreService } from '../../services/firestoreService';
 import { FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import { 
@@ -137,12 +138,29 @@ const DEPARTMENTS = [
 // System admins and protected admins are now loaded dynamically from systemAdmins utility
 // (resolves from Firestore system_config/admins with bootstrap fallback)
 
+const getDepartmentForRole = (role) => {
+  if (!role) return 'General';
+  const departments = {
+    admin: 'Administration',
+    director: 'Leadership',
+    content_director: 'Content & Creative',
+    social_media_manager: 'Marketing',
+    hr_manager: 'Human Resources',
+    sales_manager: 'Sales',
+    assistant: 'General'
+  };
+  return departments[role] || 'General';
+};
+
 const PermissionsManager = () => {
   const { currentUser, hasPermission } = useAuth();
   const { startViewingAs } = useViewAs();
+  const { pendingUsers, removePendingUser, refreshPendingUsers } = usePendingUsers();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pendingAction, setPendingAction] = useState(null); // 'approve' | 'reject' per email
+  const [refreshCount, setRefreshCount] = useState(0);
   const [saving, setSaving] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedUser, setExpandedUser] = useState(null);
@@ -233,7 +251,7 @@ const PermissionsManager = () => {
     };
 
     loadUsers();
-  }, []);
+  }, [refreshCount]);
 
   // Toggle a page permission for a user
   const togglePermission = (userEmail, pageId) => {
@@ -487,6 +505,64 @@ const PermissionsManager = () => {
     user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const canApproveUsers = isSystemAdmin || hasPermission(PERMISSIONS.APPROVE_USERS);
+
+  const handleApprovePendingUser = async (pendingUser) => {
+    const email = (pendingUser.email || '').toLowerCase();
+    try {
+      setPendingAction(`approve-${email}`);
+      const role = pendingUser.requestedRole || 'content_director';
+      const approvedUserData = {
+        email: pendingUser.email?.trim() || email,
+        firstName: pendingUser.firstName || 'User',
+        lastName: pendingUser.lastName || 'Name',
+        role,
+        primaryRole: role,
+        roles: [role],
+        isApproved: true,
+        approvedAt: new Date().toISOString(),
+        approvedBy: currentUser?.email,
+        uid: pendingUser.uid || `user-${Date.now()}`,
+        displayName: pendingUser.displayName || `${pendingUser.firstName || 'User'} ${pendingUser.lastName || 'Name'}`.trim() || pendingUser.email,
+        department: getDepartmentForRole(role),
+        startDate: new Date().toISOString().split('T')[0],
+        phone: pendingUser.phone || '',
+        location: pendingUser.location || 'Remote',
+        avatar: pendingUser.avatar || ''
+      };
+      Object.keys(approvedUserData).forEach(key => {
+        if (approvedUserData[key] === undefined) delete approvedUserData[key];
+      });
+      await firestoreService.approveUser(pendingUser.id, approvedUserData);
+      await firestoreService.setUserFullPermissions(approvedUserData.email, { pages: DEFAULT_PAGES, features: [], adminPermissions: false });
+      setUserPermissions(prev => ({ ...prev, [approvedUserData.email]: DEFAULT_PAGES }));
+      setUserFeaturePermissions(prev => ({ ...prev, [approvedUserData.email]: [] }));
+      setUserAdminPermissions(prev => ({ ...prev, [approvedUserData.email]: false }));
+      setUsers(prev => [...prev, approvedUserData]);
+      await refreshPendingUsers();
+      toast.success(`${approvedUserData.email} approved`);
+    } catch (error) {
+      console.error('Error approving user:', error);
+      toast.error('Failed to approve user');
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleRejectPendingUser = async (pendingUser) => {
+    try {
+      setPendingAction(`reject-${(pendingUser.email || '').toLowerCase()}`);
+      await removePendingUser(pendingUser.id);
+      await refreshPendingUsers();
+      toast.success('User rejected');
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      toast.error('Failed to reject user');
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
   const canAccess = isSystemAdmin || hasPermission(PERMISSIONS.MANAGE_USERS);
   if (!canAccess) {
     return (
@@ -541,6 +617,55 @@ const PermissionsManager = () => {
           )}
         </div>
       </div>
+
+      {/* Pending approval */}
+      {canApproveUsers && pendingUsers.length > 0 && (
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-amber-600" />
+            <h2 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+              Pending approval ({pendingUsers.length})
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {pendingUsers.map((user) => {
+              const email = (user.email || '').toLowerCase();
+              const isBusy = pendingAction === `approve-${email}` || pendingAction === `reject-${email}`;
+              return (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between gap-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/10 px-4 py-3 min-w-[280px]"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-[#1d1d1f] dark:text-white truncate">
+                      {user.firstName} {user.lastName} {!user.firstName && !user.lastName ? user.email : ''}
+                    </p>
+                    <p className="text-[13px] text-[#86868b] truncate">{user.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleApprovePendingUser(user)}
+                      disabled={isBusy}
+                      className="h-8 px-3 rounded-lg bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#30b350] disabled:opacity-50"
+                    >
+                      {pendingAction === `approve-${email}` ? '…' : 'Approve'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRejectPendingUser(user)}
+                      disabled={isBusy}
+                      className="h-8 px-3 rounded-lg bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
+                    >
+                      {pendingAction === `reject-${email}` ? '…' : 'Reject'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative max-w-md">

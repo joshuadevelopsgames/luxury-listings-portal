@@ -50,6 +50,33 @@ import {
   Archive
 } from 'lucide-react';
 import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, getMonth, parseISO, isWithinInterval } from 'date-fns';
+
+// Vancouver-friendly: parse YYYY-MM-DD as calendar date (no UTC shift). Month names for display.
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function formatDateRangeDisplay(startYYYYMMDD, endYYYYMMDD) {
+  const parse = (s) => {
+    if (!s || typeof s !== 'string') return null;
+    const parts = s.trim().split('-').map(Number);
+    if (parts.length !== 3) return null;
+    const [y, m, d] = parts;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return { year: y, month: m, day: d };
+  };
+  const start = parse(startYYYYMMDD);
+  const end = parse(endYYYYMMDD);
+  if (!start || !end) return null;
+  const fmt = (p) => `${MONTH_NAMES[p.month - 1]} ${p.day}`;
+  return start.year === end.year
+    ? `${fmt(start)} - ${fmt(end)}, ${end.year}`
+    : `${fmt(start)}, ${start.year} - ${fmt(end)}, ${end.year}`;
+}
+
+// Build a Date at noon UTC for YYYY-MM-DD so the calendar day is correct in Vancouver (and elsewhere)
+function dateFromYYYYMMDD(yyyyMmDd) {
+  if (!yyyyMmDd || typeof yyyyMmDd !== 'string') return null;
+  const d = new Date(yyyyMmDd + 'T12:00:00.000Z');
+  return isNaN(d.getTime()) ? null : d;
+}
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
 import ClientLink from '../components/ui/ClientLink';
 
@@ -1100,21 +1127,11 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
     loadClients();
   }, [preSelectedClientId, clientList]);
 
-  // Auto-generate dateRange string when dates change
+  // Auto-generate dateRange string from selected dates (Vancouver-friendly: no timezone shift, display matches selection)
   useEffect(() => {
     if (formData.startDate && formData.endDate) {
-      const start = new Date(formData.startDate);
-      const end = new Date(formData.endDate);
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const formatDate = (d) => `${months[d.getMonth()]} ${d.getDate()}`;
-        const year = end.getFullYear();
-        const sameYear = start.getFullYear() === year;
-        const dateRangeStr = sameYear
-          ? `${formatDate(start)} - ${formatDate(end)}, ${year}`
-          : `${formatDate(start)}, ${start.getFullYear()} - ${formatDate(end)}, ${year}`;
-        setFormData(prev => ({ ...prev, dateRange: dateRangeStr }));
-      }
+      const dateRangeStr = formatDateRangeDisplay(formData.startDate, formData.endDate);
+      if (dateRangeStr) setFormData(prev => ({ ...prev, dateRange: dateRangeStr }));
     }
   }, [formData.startDate, formData.endDate]);
 
@@ -1354,8 +1371,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       const clientId = formData.clientId || null;
       const clientName = String(formData.clientName ?? '');
       const title = String(formData.title ?? '');
-      const startDate = formData.startDate ? new Date(formData.startDate) : null;
-      const endDate = formData.endDate ? new Date(formData.endDate) : null;
+      const startDate = dateFromYYYYMMDD(formData.startDate);
+      const endDate = dateFromYYYYMMDD(formData.endDate);
       const dateRange = String(formData.dateRange ?? '');
       const notes = String(formData.notes ?? '');
       const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') }));
@@ -1499,36 +1516,35 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Report Highlights / Notes
                 </label>
-                {hasMetricsForSummary && (
-                  <button
-                    type="button"
-                    onClick={handleGenerateSummary}
-                    disabled={generatingSummary}
-                    className="
-                      inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white text-sm
-                      bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-500
-                      hover:from-violet-500 hover:via-fuchsia-500 hover:to-cyan-400
-                      focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:ring-offset-2 focus:ring-offset-gray-900
-                      disabled:opacity-60 disabled:cursor-not-allowed
-                      transition-all duration-300
-                      shadow-[0_0_20px_-4px_rgba(139,92,246,0.5),0_0_24px_-6px_rgba(6,182,212,0.35)]
-                      hover:shadow-[0_0_28px_-4px_rgba(139,92,246,0.6),0_0_32px_-4px_rgba(6,182,212,0.45)]
-                      hover:scale-[1.02] active:scale-[0.98]
-                    "
-                  >
-                    {generatingSummary ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Generating…</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>Generate analytics summary</span>
-                      </>
-                    )}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleGenerateSummary}
+                  disabled={!hasMetricsForSummary || generatingSummary}
+                  title={!hasMetricsForSummary ? 'Add or extract metrics above to generate an AI summary' : undefined}
+                  className="
+                    inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white text-sm
+                    bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-500
+                    hover:from-violet-500 hover:via-fuchsia-500 hover:to-cyan-400
+                    focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:ring-offset-2 focus:ring-offset-gray-900
+                    disabled:opacity-60 disabled:cursor-not-allowed
+                    transition-all duration-300
+                    shadow-[0_0_20px_-4px_rgba(139,92,246,0.5),0_0_24px_-6px_rgba(6,182,212,0.35)]
+                    hover:shadow-[0_0_28px_-4px_rgba(139,92,246,0.6),0_0_32px_-4px_rgba(6,182,212,0.45)]
+                    hover:scale-[1.02] active:scale-[0.98]
+                  "
+                >
+                  {generatingSummary ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generating…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Generate analytics summary</span>
+                    </>
+                  )}
+                </button>
               </div>
               <textarea
                 value={formData.notes}

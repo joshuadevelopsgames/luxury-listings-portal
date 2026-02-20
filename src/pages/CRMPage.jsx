@@ -344,18 +344,20 @@ const CRMPage = () => {
     });
   };
 
-  // Handle edit from LeadDetailModal
+  // Handle edit from LeadDetailModal - pass explicit arrays so we don't save stale state (setState is async)
   const handleEditLead = async (updatedLead) => {
     if (!updatedLead?.id) return;
 
     try {
-      const updateClientInArray = (arr, setArr) => {
-        setArr(prev => prev.map(c => c.id === updatedLead.id ? { ...c, ...updatedLead } : c));
-      };
-      updateClientInArray(warmLeads, setWarmLeads);
-      updateClientInArray(contactedClients, setContactedClients);
-      updateClientInArray(coldLeads, setColdLeads);
-      await saveCRMDataToFirebase();
+      const id = String(updatedLead.id);
+      const mapOne = (arr) => arr.map((c) => (String(c.id) === id ? { ...c, ...updatedLead } : c));
+      const nextWarm = mapOne(warmLeads);
+      const nextContacted = mapOne(contactedClients);
+      const nextCold = mapOne(coldLeads);
+      await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
+      setWarmLeads(nextWarm);
+      setContactedClients(nextContacted);
+      setColdLeads(nextCold);
       showToast(`Lead "${updatedLead.contactName}" updated successfully!`);
     } catch (error) {
       console.error('Error updating lead:', error);
@@ -878,38 +880,6 @@ const CRMPage = () => {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#af52de]/10 text-[#af52de] text-[13px] font-medium hover:bg-[#af52de]/20 transition-colors disabled:opacity-50"
           >
             {importingCrm ? 'Importing…' : 'Import from xlsx'}
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              const total = (warmLeads?.length || 0) + (contactedClients?.length || 0) + (coldLeads?.length || 0);
-              if (total === 0) {
-                showToast('No leads to clear');
-                return;
-              }
-              const confirmed = await confirm({
-                title: 'Clear all leads',
-                message: `Remove all ${total} lead${total !== 1 ? 's' : ''} from CRM? Clients and internal accounts are not affected.`,
-                confirmText: 'Clear all',
-                variant: 'danger'
-              });
-              if (!confirmed) return;
-              try {
-                setWarmLeads([]);
-                setContactedClients([]);
-                setColdLeads([]);
-                await saveCRMDataToFirebase({ warmLeads: [], contactedClients: [], coldLeads: [] });
-                setSelectedClient(null);
-                setSelectedItemType(null);
-                showToast(`Cleared ${total} lead${total !== 1 ? 's' : ''}`);
-              } catch (err) {
-                console.error(err);
-                showToast('Clear failed', 'error');
-              }
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
-          >
-            Clear all leads (temp)
           </button>
           {(() => {
             const crmOnly = [...(warmLeads || []), ...(contactedClients || []), ...(coldLeads || [])];

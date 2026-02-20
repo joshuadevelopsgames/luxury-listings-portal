@@ -14,7 +14,8 @@ export const CLIENT_TYPE = {
   NA: 'N/A',
   DESIGN: 'Design',
   PROD: 'Prod',
-  CONSULT: 'Consult'
+  CONSULT: 'Consult',
+  PAST: 'Past'
 };
 
 export const CLIENT_TYPE_OPTIONS = [
@@ -23,6 +24,7 @@ export const CLIENT_TYPE_OPTIONS = [
   { value: CLIENT_TYPE.DESIGN, label: 'Graphic Design (Design)' },
   { value: CLIENT_TYPE.PROD, label: 'Production (Prod)' },
   { value: CLIENT_TYPE.CONSULT, label: 'Consultation (Consult)' },
+  { value: CLIENT_TYPE.PAST, label: 'Past Client (Past)' },
   { value: CLIENT_TYPE.NA, label: 'N/A (lead – service interest unknown)' }
 ];
 
