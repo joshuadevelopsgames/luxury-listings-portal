@@ -5,15 +5,10 @@ import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
 import { firestoreService } from '../services/firestoreService';
 import { appNavigate } from '../utils/navigation';
-import { usePendingUsers } from './PendingUsersContext';
 import { useViewAs } from './ViewAsContext';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { isSystemAdmin, isDemoViewOnly, loadSystemAdmins, startAdminListener } from '../utils/systemAdmins';
 import { resolvePermission } from '../utils/permissionResolver';
-import { getBaseModuleIds } from '../modules/registry';
-
-const ORG_EMAIL_SUFFIX = '@luxury-listings.com';
-const isOrgEmail = (email) => (email || '').toLowerCase().endsWith(ORG_EMAIL_SUFFIX);
 
 // ============================================================================
 // LOCAL STORAGE - Persist auth state for faster page loads
@@ -69,8 +64,6 @@ export function AuthProvider({ children }) {
   const [currentRole, setCurrentRole] = useState(storedAuth?.role || USER_ROLES.CONTENT_DIRECTOR);
   const [loading, setLoading] = useState(!storedAuth); // No loading if we have cached auth
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
-
-  const { addPendingUser } = usePendingUsers();
 
   // Load system admins from Firestore on mount + start real-time listener
   useEffect(() => {
@@ -352,34 +345,6 @@ export function AuthProvider({ children }) {
         );
         approvedUser = matched[0];
       }
-      // Auto-approve organization emails: create approved_users doc and default permissions so they don't wait for approval
-      if (!approvedUser && isOrgEmail(email)) {
-        const emailLower = (email || '').toLowerCase().trim();
-        const defaultRole = 'content_director';
-        const userData = {
-          email: emailLower,
-          displayName: displayName || email,
-          firstName: (displayName || '').split(' ')[0] || 'User',
-          lastName: (displayName || '').split(' ').slice(1).join(' ') || 'Name',
-          role: defaultRole,
-          primaryRole: defaultRole,
-          roles: [defaultRole],
-          isApproved: true,
-          approvedAt: new Date().toISOString(),
-          department: getDepartmentForRole(defaultRole),
-          startDate: new Date().toISOString().split('T')[0],
-          uid,
-          avatar: photoURL || ''
-        };
-        await firestoreService.addApprovedUser(userData);
-        const defaultPages = ['dashboard', 'tasks', 'resources', 'features', ...getBaseModuleIds()];
-        await firestoreService.setUserFullPermissions(emailLower, { pages: defaultPages, features: [], adminPermissions: false });
-        const pending = await firestoreService.getPendingUsers();
-        for (const p of pending.filter((u) => (u.email || '').toLowerCase() === emailLower)) {
-          await firestoreService.removePendingUser(p.id).catch(() => {});
-        }
-        approvedUser = { id: emailLower, ...userData };
-      }
       if (approvedUser?.isApproved) {
         // Approved user
         const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
@@ -439,7 +404,7 @@ export function AuthProvider({ children }) {
           appNavigate('/onboarding', { replace: true });
         }
       } else {
-        // New/pending user
+        // Not in approved_users: only admins can add users; show waiting page (no pending queue)
         const newUser = {
           uid,
           email,
@@ -452,28 +417,9 @@ export function AuthProvider({ children }) {
           avatar: photoURL,
           isApproved: false
         };
-        
         setCurrentUser(newUser);
         setUserData(newUser);
         setCurrentRole('pending');
-        
-        // Add to pending users in Firestore
-        try {
-          const existingPending = await firestoreService.getPendingUsers();
-          const alreadyPending = existingPending.some(u => u.email === email);
-          
-          if (!alreadyPending) {
-            await firestoreService.addPendingUser({
-              ...newUser,
-              id: `pending-${Date.now()}`,
-              createdAt: new Date().toISOString()
-            });
-          }
-        } catch (e) {
-          console.warn('Could not add to pending users:', e);
-        }
-        
-        // Navigate to waiting page
         if (window.location.pathname !== '/waiting-for-approval') {
           appNavigate('/waiting-for-approval', { replace: true });
         }

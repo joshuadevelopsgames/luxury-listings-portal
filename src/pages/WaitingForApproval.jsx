@@ -25,10 +25,10 @@ const WaitingForApproval = () => {
             <Clock className="w-10 h-10 text-yellow-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Waiting for Approval
+            Access Required
           </h1>
           <p className="text-gray-600 text-lg">
-            Your account is being reviewed by an administrator
+            Your email is not yet in the system. Ask an administrator to add you in Users &amp; Permissions, then log in again.
           </p>
         </div>
 
@@ -54,23 +54,15 @@ const WaitingForApproval = () => {
           <div className="flex items-start space-x-3">
             <AlertCircle className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">What Happens Next?</h3>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">What to do</h3>
               <div className="space-y-3 text-blue-800">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-blue-600" />
-                  <span>An administrator will review your account</span>
+                  <span>Contact an administrator and ask them to add your email in Users &amp; Permissions</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-blue-600" />
-                  <span>You'll be assigned a specific role (Content Manager, HR Manager, etc.)</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600" />
-                  <span>You'll receive access to role-specific features</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600" />
-                  <span>You can then log in and access your dashboard</span>
+                  <span>Once added, log in again to access your dashboard</span>
                 </div>
               </div>
             </div>
