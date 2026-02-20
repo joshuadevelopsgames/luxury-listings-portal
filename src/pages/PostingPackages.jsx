@@ -1012,7 +1012,7 @@ export default function PostingPackages() {
       showToast(`Package for ${editingClient.clientName} has been updated.`);
     } catch (error) {
       console.error('Error updating package:', error);
-      showToast(`❌ Error: ${error.message}`, 'error');
+      showToast(`Error: ${error.message}`, 'error');
       toast.error(`Error updating package for ${editingClient.clientName}: ${error.message}`);
     } finally {
       setApprovalLoading({ ...approvalLoading, [editingClient.id]: false });
@@ -1231,7 +1231,7 @@ export default function PostingPackages() {
         };
       })
     );
-    showToast(`✅ Auto-reset complete! ${monthlyPackages.length} Monthly package(s) reset successfully.`, 'success');
+    showToast(`Auto-reset complete! ${monthlyPackages.length} Monthly package(s) reset successfully.`, 'success');
 
     // Mark as checked for today
     setAutoResetChecked(true);

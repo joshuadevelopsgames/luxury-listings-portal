@@ -266,7 +266,7 @@ const CRMPage = () => {
     setWarmLeads(nextWarm);
     setContactedClients(nextContacted);
     setColdLeads(nextCold);
-    showToast(`✅ Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`);
+    showToast(`Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`);
     resetNewLeadForm();
     setShowAddModal(false);
     setPossibleExistingMatches([]);
@@ -356,10 +356,10 @@ const CRMPage = () => {
       updateClientInArray(contactedClients, setContactedClients);
       updateClientInArray(coldLeads, setColdLeads);
       await saveCRMDataToFirebase();
-      showToast(`✅ Lead "${updatedLead.contactName}" updated successfully!`);
+      showToast(`Lead "${updatedLead.contactName}" updated successfully!`);
     } catch (error) {
       console.error('Error updating lead:', error);
-      showToast(`❌ Error updating lead: ${error.message}`, 'error');
+      showToast(`Error updating lead: ${error.message}`, 'error');
       throw error;
     }
   };
@@ -384,10 +384,10 @@ const CRMPage = () => {
       setWarmLeads(nextWarm);
       setContactedClients(nextContacted);
       setColdLeads(nextCold);
-      showToast(`✅ Lead "${client.contactName}" deleted successfully!`);
+      showToast(`Lead "${client.contactName}" deleted successfully!`);
     } catch (error) {
       console.error('Error deleting lead:', error);
-      showToast(`❌ Error deleting lead: ${error.message}`, 'error');
+      showToast(`Error deleting lead: ${error.message}`, 'error');
     }
   };
 
@@ -441,7 +441,7 @@ const CRMPage = () => {
       showToast(`Client created. Please upload day-one screenshot.`);
     } catch (error) {
       console.error('Error graduating lead:', error);
-      showToast(`❌ ${error.message}`, 'error');
+      showToast(error.message, 'error');
     }
   };
 
@@ -471,10 +471,10 @@ const CRMPage = () => {
         setColdLeads(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
       }
       setGraduateScreenshotModal({ show: false, clientId: null, clientName: '', leadId: null });
-      showToast(`✅ Day-one screenshot saved. Lead promoted to client.`);
+      showToast(`Day-one screenshot saved. Lead promoted to client.`);
     } catch (error) {
       console.error('Screenshot upload error:', error);
-      showToast(`❌ Upload failed: ${error.message}`, 'error');
+      showToast(`Upload failed: ${error.message}`, 'error');
     } finally {
       setUploadingScreenshot(false);
     }
@@ -493,14 +493,14 @@ const CRMPage = () => {
     try {
       await firestoreService.deleteClient(client.id);
       setExistingClients(prev => prev.filter(c => c.id !== client.id));
-      showToast(`✅ Client "${name}" deleted successfully!`);
+      showToast(`Client "${name}" deleted successfully!`);
       if (selectedClient?.id === client.id && selectedItemType === 'client') {
         setSelectedClient(null);
         setSelectedItemType(null);
       }
     } catch (error) {
       console.error('Error deleting client:', error);
-      showToast(`❌ Error deleting client: ${error.message}`, 'error');
+      showToast(`Error deleting client: ${error.message}`, 'error');
     }
   };
 
@@ -1138,7 +1138,7 @@ const CRMPage = () => {
                     await doAddNewLead();
                   } catch (error) {
                     console.error('❌ Error adding new lead:', error);
-                    showToast(`❌ Error adding lead: ${error.message}`, 'error');
+                    showToast(`Error adding lead: ${error.message}`, 'error');
                   } finally {
                     addingLeadRef.current = false;
                     setIsAddingLead(false);
