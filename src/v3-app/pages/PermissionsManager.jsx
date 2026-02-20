@@ -195,6 +195,14 @@ const PermissionsManager = () => {
   // Get current admin list for UI display
   const SYSTEM_ADMINS = getSystemAdmins();
 
+  // Refetch users when tab becomes visible so profile/display name updates show up
+  useEffect(() => {
+    const onVisible = () => setRefreshCount((c) => c + 1);
+    const handler = () => { if (document.visibilityState === 'visible') onVisible(); };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, []);
+
   // Load all approved users (including system admins who may not be in approved_users)
   useEffect(() => {
     const loadUsers = async () => {
@@ -498,11 +506,20 @@ const PermissionsManager = () => {
 
   // Normalize email for display/key (doc id may be email when field missing)
   const userEmail = (user) => user.email || user.id || '';
+  const displayNameFor = (user) => {
+    const u = user || {};
+    if (u.displayName?.trim()) return u.displayName.trim();
+    const first = (u.firstName || '').trim();
+    const last = (u.lastName || '').trim();
+    if (first || last) return [first, last].filter(Boolean).join(' ');
+    if (u.email) return u.email;
+    return 'Unknown User';
+  };
 
   // Filter users by search
   const filteredUsers = users.filter(user => 
     userEmail(user).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
+    displayNameFor(user).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const canApproveUsers = isSystemAdmin || hasPermission(PERMISSIONS.APPROVE_USERS);
@@ -535,11 +552,8 @@ const PermissionsManager = () => {
       });
       await firestoreService.approveUser(pendingUser.id, approvedUserData);
       await firestoreService.setUserFullPermissions(approvedUserData.email, { pages: DEFAULT_PAGES, features: [], adminPermissions: false });
-      setUserPermissions(prev => ({ ...prev, [approvedUserData.email]: DEFAULT_PAGES }));
-      setUserFeaturePermissions(prev => ({ ...prev, [approvedUserData.email]: [] }));
-      setUserAdminPermissions(prev => ({ ...prev, [approvedUserData.email]: false }));
-      setUsers(prev => [...prev, approvedUserData]);
       await refreshPendingUsers();
+      setRefreshCount((c) => c + 1);
       toast.success(`${approvedUserData.email} approved`);
     } catch (error) {
       console.error('Error approving user:', error);
@@ -719,7 +733,7 @@ const PermissionsManager = () => {
                       {user.avatar || user.photoURL ? (
                         <img 
                           src={user.avatar || user.photoURL} 
-                          alt={user.displayName || 'User'} 
+                          alt={displayNameFor(user)} 
                           className="w-12 h-12 rounded-full object-cover"
                           onError={(e) => {
                             e.target.style.display = 'none';
@@ -730,7 +744,7 @@ const PermissionsManager = () => {
                       <div 
                         className={`w-12 h-12 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center text-white font-semibold text-[15px] ${user.avatar || user.photoURL ? 'hidden' : 'flex'}`}
                       >
-                        {user.displayName?.charAt(0) || email?.charAt(0) || 'U'}
+                        {displayNameFor(user).charAt(0).toUpperCase() || 'U'}
                       </div>
                       {isOnline(user.lastSeenAt) && (
                         <span 
@@ -743,7 +757,7 @@ const PermissionsManager = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <EmployeeLink user={user} showId className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
-                          {user.displayName || 'Unknown User'}
+                          {displayNameFor(user)}
                         </EmployeeLink>
                         {isAdmin && (
                           <span className="px-2 py-0.5 rounded-full bg-[#ff9500]/10 text-[#ff9500] text-[11px] font-semibold">

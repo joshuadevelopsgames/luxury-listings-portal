@@ -10,6 +10,10 @@ import { useViewAs } from './ViewAsContext';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { isSystemAdmin, isDemoViewOnly, loadSystemAdmins, startAdminListener } from '../utils/systemAdmins';
 import { resolvePermission } from '../utils/permissionResolver';
+import { getBaseModuleIds } from '../modules/registry';
+
+const ORG_EMAIL_SUFFIX = '@luxury-listings.com';
+const isOrgEmail = (email) => (email || '').toLowerCase().endsWith(ORG_EMAIL_SUFFIX);
 
 // ============================================================================
 // LOCAL STORAGE - Persist auth state for faster page loads
@@ -347,6 +351,34 @@ export function AuthProvider({ children }) {
           (u.id || '').toLowerCase() === emailLower || (u.email || '').toLowerCase() === emailLower
         );
         approvedUser = matched[0];
+      }
+      // Auto-approve organization emails: create approved_users doc and default permissions so they don't wait for approval
+      if (!approvedUser && isOrgEmail(email)) {
+        const emailLower = (email || '').toLowerCase().trim();
+        const defaultRole = 'content_director';
+        const userData = {
+          email: emailLower,
+          displayName: displayName || email,
+          firstName: (displayName || '').split(' ')[0] || 'User',
+          lastName: (displayName || '').split(' ').slice(1).join(' ') || 'Name',
+          role: defaultRole,
+          primaryRole: defaultRole,
+          roles: [defaultRole],
+          isApproved: true,
+          approvedAt: new Date().toISOString(),
+          department: getDepartmentForRole(defaultRole),
+          startDate: new Date().toISOString().split('T')[0],
+          uid,
+          avatar: photoURL || ''
+        };
+        await firestoreService.addApprovedUser(userData);
+        const defaultPages = ['dashboard', 'tasks', 'resources', 'features', ...getBaseModuleIds()];
+        await firestoreService.setUserFullPermissions(emailLower, { pages: defaultPages, features: [], adminPermissions: false });
+        const pending = await firestoreService.getPendingUsers();
+        for (const p of pending.filter((u) => (u.email || '').toLowerCase() === emailLower)) {
+          await firestoreService.removePendingUser(p.id).catch(() => {});
+        }
+        approvedUser = { id: emailLower, ...userData };
       }
       if (approvedUser?.isApproved) {
         // Approved user

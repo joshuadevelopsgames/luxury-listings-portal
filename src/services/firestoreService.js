@@ -209,6 +209,7 @@ class FirestoreService {
   }
 
   // Approve a user (move from pending to approved). Doc id = lowercase email for consistent lookup.
+  // Removes all pending docs for this email so duplicate pending entries don't remain.
   async approveUser(userId, userData) {
     try {
       const emailKey = (userData.email || '').trim().toLowerCase();
@@ -218,10 +219,13 @@ class FirestoreService {
         approvedAt: serverTimestamp(),
         isApproved: true
       });
-      
-      // Remove from pending users
-      await this.removePendingUser(userId);
-      
+
+      const pending = await this.getPendingUsers();
+      const toRemove = pending.filter((u) => (u.email || '').toLowerCase() === emailKey);
+      for (const u of toRemove) {
+        await this.removePendingUser(u.id).catch(() => {});
+      }
+
       console.log('✅ User approved:', userData.email);
     } catch (error) {
       console.error('❌ Error approving user:', error);
@@ -337,10 +341,12 @@ class FirestoreService {
         return;
       }
 
-      const emailKey = (email || '').trim();
+      const emailKey = (email || '').trim().toLowerCase();
       const docRef = doc(db, this.collections.APPROVED_USERS, emailKey);
+      const emailToStore = (cleanedUpdates.email ?? email?.trim() ?? emailKey).toLowerCase();
       await setDoc(docRef, {
         ...cleanedUpdates,
+        email: emailToStore,
         updatedAt: serverTimestamp()
       }, { merge: true });
       console.log('✅ Approved user updated:', emailKey);
