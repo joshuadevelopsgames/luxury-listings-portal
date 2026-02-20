@@ -48,6 +48,7 @@ import { getSystemAdmins, isSystemAdmin as checkIsSystemAdmin } from '../../util
 import { PERMISSIONS } from '../../entities/Permissions';
 import EmployeeLink from '../../components/ui/EmployeeLink';
 import EmployeeDetailsModal from '../../components/EmployeeDetailsModal';
+import OnlineIndicator, { isOnline } from '../../components/ui/OnlineIndicator';
 
 // Feature permissions with descriptions
 const ALL_FEATURES = {
@@ -589,21 +590,30 @@ const PermissionsManager = () => {
                   onClick={() => setExpandedUser(isExpanded ? null : email)}
                 >
                   <div className="flex items-center gap-4">
-                    {user.avatar || user.photoURL ? (
-                      <img 
-                        src={user.avatar || user.photoURL} 
-                        alt={user.displayName || 'User'} 
-                        className="w-12 h-12 rounded-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div 
-                      className={`w-12 h-12 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center text-white font-semibold text-[15px] ${user.avatar || user.photoURL ? 'hidden' : 'flex'}`}
-                    >
-                      {user.displayName?.charAt(0) || email?.charAt(0) || 'U'}
+                    <div className="relative shrink-0">
+                      {user.avatar || user.photoURL ? (
+                        <img 
+                          src={user.avatar || user.photoURL} 
+                          alt={user.displayName || 'User'} 
+                          className="w-12 h-12 rounded-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className={`w-12 h-12 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center text-white font-semibold text-[15px] ${user.avatar || user.photoURL ? 'hidden' : 'flex'}`}
+                      >
+                        {user.displayName?.charAt(0) || email?.charAt(0) || 'U'}
+                      </div>
+                      {isOnline(user.lastSeenAt) && (
+                        <span 
+                          className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#34c759] border-2 border-white dark:border-[#2c2c2e]" 
+                          title="Online"
+                          aria-hidden
+                        />
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -622,6 +632,7 @@ const PermissionsManager = () => {
                         )}
                       </div>
                       <p className="text-[13px] text-[#86868b]">{email}</p>
+                      <OnlineIndicator lastSeenAt={user.lastSeenAt} showLabel className="mt-0.5" />
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

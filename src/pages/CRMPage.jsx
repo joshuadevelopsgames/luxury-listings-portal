@@ -1193,18 +1193,34 @@ const CRMPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to tab (pick one)</label>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to tab(s)</label>
+                    <p className="text-[11px] text-[#86868b] mb-2">Warm and Cold leads are mutually exclusive; you can select Contacted Clients with either.</p>
                     <div className="flex flex-wrap gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={selectedTabs.warmLeads} onChange={(e) => setSelectedTabs(e.target.checked ? { warmLeads: true, contactedClients: false, coldLeads: false } : (prev) => ({ ...prev, warmLeads: false }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <input
+                          type="checkbox"
+                          checked={selectedTabs.warmLeads}
+                          onChange={(e) => setSelectedTabs(prev => e.target.checked ? { ...prev, warmLeads: true, coldLeads: false } : { ...prev, warmLeads: false })}
+                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                        />
                         <span className="text-[13px] text-[#1d1d1f] dark:text-white">Warm Leads</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={selectedTabs.contactedClients} onChange={(e) => setSelectedTabs(e.target.checked ? { warmLeads: false, contactedClients: true, coldLeads: false } : (prev) => ({ ...prev, contactedClients: false }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <input
+                          type="checkbox"
+                          checked={selectedTabs.contactedClients}
+                          onChange={(e) => setSelectedTabs(prev => ({ ...prev, contactedClients: e.target.checked }))}
+                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                        />
                         <span className="text-[13px] text-[#1d1d1f] dark:text-white">Contacted Clients</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={selectedTabs.coldLeads} onChange={(e) => setSelectedTabs(e.target.checked ? { warmLeads: false, contactedClients: false, coldLeads: true } : (prev) => ({ ...prev, coldLeads: false }))} className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]" />
+                        <input
+                          type="checkbox"
+                          checked={selectedTabs.coldLeads}
+                          onChange={(e) => setSelectedTabs(prev => e.target.checked ? { ...prev, coldLeads: true, warmLeads: false } : { ...prev, coldLeads: false })}
+                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                        />
                         <span className="text-[13px] text-[#1d1d1f] dark:text-white">Cold Leads</span>
                       </label>
                     </div>

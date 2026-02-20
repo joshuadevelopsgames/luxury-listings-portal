@@ -350,6 +350,18 @@ class FirestoreService {
     }
   }
 
+  // Update current user's last-seen timestamp (for presence / "last online"). Call on load and periodically while app is open.
+  async updateLastSeen(userEmail) {
+    if (!userEmail) return;
+    try {
+      const emailKey = String(userEmail).trim().toLowerCase();
+      const docRef = doc(db, this.collections.APPROVED_USERS, emailKey);
+      await setDoc(docRef, { lastSeenAt: serverTimestamp() }, { merge: true });
+    } catch (e) {
+      // Non-fatal; avoid spamming console
+    }
+  }
+
   // Listen for changes to a specific approved user's profile. Use email as-is so we listen to doc at token path.
   onApprovedUserChange(email, callback) {
     if (!email) {
@@ -5098,6 +5110,7 @@ class FirestoreService {
       }
       return {
         id: d.id,
+        userId: data.userId,
         title: data.title || 'Untitled Canvas',
         emoji: data.emoji || '📄',
         blocks,

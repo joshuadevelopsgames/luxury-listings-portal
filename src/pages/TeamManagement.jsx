@@ -55,6 +55,7 @@ const TeamManagement = () => {
   const isHRManager = currentRole === 'hr_manager';
   const canRunLeaveMigration = isHRManager || isSystemAdmin;
   const canViewLeaveBalance = isHRManager || isSystemAdmin ||
+    hasPermission(PERMISSIONS.MANAGE_USERS) ||
     hasPermission(PERMISSIONS.VIEW_ALL_TIME_OFF) || hasPermission(PERMISSIONS.VIEW_HR_DATA);
   const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
 

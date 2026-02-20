@@ -37,6 +37,8 @@ const UserManagement = () => {
   const { currentUser, hasPermission, isSystemAdmin } = useAuth();
   const { confirm } = useConfirm();
   const { pendingUsers, removePendingUser, approveUser, updatePendingUserRole, refreshPendingUsers } = usePendingUsers();
+  const canAddUser = isSystemAdmin || hasPermission(PERMISSIONS.APPROVE_USERS);
+  const canDeleteUser = isSystemAdmin || hasPermission(PERMISSIONS.DELETE_USERS);
   const [approvedUsers, setApprovedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [firestoreStatus, setFirestoreStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
@@ -1271,13 +1273,15 @@ const UserManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Manage user approvals and roles</p>
         </div>
-        <Button
-          onClick={() => setShowAddUserModal(true)}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-        >
-          <UserPlus className="w-4 h-4" />
-          Add New User
-        </Button>
+        {canAddUser && (
+          <Button
+            onClick={() => setShowAddUserModal(true)}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add New User
+          </Button>
+        )}
       </div>
 
       {/* Stats and Management Buttons */}
@@ -1488,15 +1492,17 @@ const UserManagement = () => {
                         <Edit className="w-4 h-4 mr-1" />
                         Manage User
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteApprovedUser(user.email)}
-                        className="col-span-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete User
-                      </Button>
+                      {canDeleteUser && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteApprovedUser(user.email)}
+                          className="col-span-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete User
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

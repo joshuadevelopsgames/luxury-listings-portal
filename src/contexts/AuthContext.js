@@ -475,6 +475,16 @@ export function AuthProvider({ children }) {
     loadCurrentRole();
   }, [currentUser]);
 
+  // Presence: ping lastSeenAt on load and every 2 min so Users & Permissions can show "last online"
+  useEffect(() => {
+    if (!currentUser?.email || currentUser?.isDemoViewOnly || !currentUser?.isApproved) return;
+    firestoreService.updateLastSeen(currentUser.email).catch(() => {});
+    const interval = setInterval(() => {
+      firestoreService.updateLastSeen(currentUser.email).catch(() => {});
+    }, 2 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [currentUser?.email, currentUser?.isDemoViewOnly, currentUser?.isApproved]);
+
   // Listen for profile changes from Firestore (My Profile writes to approved_users; applies to all users with a doc)
   useEffect(() => {
     if (!currentUser?.email) return;
