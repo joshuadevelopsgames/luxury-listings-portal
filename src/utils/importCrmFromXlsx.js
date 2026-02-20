@@ -63,14 +63,29 @@ function parseSheet(ws, sheetCategory) {
   return leads;
 }
 
+// Aliases per category; longest/full names first so we match "Warm Leads" before "Warm"
 const SHEET_MAP = [
   { names: ['Warm Leads', 'Warm'], key: 'warmLeads' },
   { names: ['Have Contacted Before with Proposals', 'Have Contacted Before with Prop', 'Contacted', 'Have Contacted'], key: 'contactedClients' },
   { names: ['Cold Leads', 'Cold'], key: 'coldLeads' }
 ];
 
+function categoryForSheetName(sheetName) {
+  const normalized = (sheetName || '').trim().toLowerCase();
+  if (!normalized) return null;
+  for (const { names, key } of SHEET_MAP) {
+    const matched = names.some((alias) => {
+      const a = alias.toLowerCase();
+      return normalized === a || normalized.includes(a);
+    });
+    if (matched) return key;
+  }
+  return null;
+}
+
 /**
  * One-time import from CRM xlsx file (e.g. "Copy of Luxury Listings Warm Leads.xlsx").
+ * Tab names determine category: Warm Leads / Warm → warm, Have Contacted… / Contacted → contacted, Cold Leads / Cold → cold.
  * @param {File} file - The .xlsx file
  * @returns {Promise<{ warmLeads: Array, contactedClients: Array, coldLeads: Array }>}
  */
@@ -84,9 +99,9 @@ export function importCrmFromXlsxFile(file) {
         const contactedClients = [];
         const coldLeads = [];
 
-        for (const { names, key } of SHEET_MAP) {
-          const sheetName = wb.SheetNames.find((n) => names.some((alias) => n.trim().toLowerCase().includes(alias.toLowerCase())));
-          if (!sheetName) continue;
+        for (const sheetName of wb.SheetNames) {
+          const key = categoryForSheetName(sheetName);
+          if (!key) continue;
           const ws = wb.Sheets[sheetName];
           const rows = parseSheet(ws, key);
           if (key === 'warmLeads') warmLeads.push(...rows);
@@ -94,10 +109,9 @@ export function importCrmFromXlsxFile(file) {
           else coldLeads.push(...rows);
         }
 
-        // If no standard sheet names, treat first sheet as Warm Leads
+        // If no tab matched, treat first sheet as Warm Leads
         if (warmLeads.length === 0 && contactedClients.length === 0 && coldLeads.length === 0 && wb.SheetNames.length > 0) {
-          const first = wb.Sheets[wb.SheetNames[0]];
-          warmLeads.push(...parseSheet(first, 'warmLeads'));
+          warmLeads.push(...parseSheet(wb.Sheets[wb.SheetNames[0]], 'warmLeads'));
         }
 
         resolve({ warmLeads, contactedClients, coldLeads });
