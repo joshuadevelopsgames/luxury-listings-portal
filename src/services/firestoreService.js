@@ -2146,7 +2146,8 @@ class FirestoreService {
         coldLeads: Array.isArray(data.coldLeads) ? data.coldLeads : []
       };
     } catch (err) {
-      console.error('getCrmData error:', err);
+      const isOffline = err?.code === 'unavailable' || /offline|client is offline/i.test(err?.message || '');
+      if (!isOffline) console.error('getCrmData error:', err);
       return { warmLeads: [], contactedClients: [], coldLeads: [] };
     }
   }

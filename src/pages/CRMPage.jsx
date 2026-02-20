@@ -44,7 +44,7 @@ import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PERMISSIONS } from '../entities/Permissions';
 import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes } from '../services/crmService';
-import { findPotentialMatchesForContact } from '../services/clientDuplicateService';
+import { findPotentialMatchesForContact, findPotentialDuplicateGroups } from '../services/clientDuplicateService';
 import ClientLink from '../components/ui/ClientLink';
 import LeadLink from '../components/crm/LeadLink';
 import ClientDetailModal from '../components/client/ClientDetailModal';
@@ -99,6 +99,9 @@ const CRMPage = () => {
     // Auto-hide after 3 seconds
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
+
+  const isOfflineError = (err) =>
+    err?.code === 'unavailable' || /offline|client is offline|network|disconnected|ERR_INTERNET_DISCONNECTED/i.test(err?.message || '');
 
   // Graduate lead → client: after creating client, require day-one screenshot
   const [graduateScreenshotModal, setGraduateScreenshotModal] = useState({
@@ -166,7 +169,7 @@ const CRMPage = () => {
         console.log('📂 Loaded CRM data from Firebase:', { warm: w.length, contacted: c.length, cold: cold.length });
       }
     } catch (error) {
-      console.error('Error loading stored CRM data:', error);
+      if (!isOfflineError(error)) console.error('Error loading stored CRM data:', error);
       setWarmLeads([]);
       setContactedClients([]);
       setColdLeads([]);
@@ -256,13 +259,13 @@ const CRMPage = () => {
       lastContact: new Date().toISOString(),
       category: selectedTabKeys[0]
     };
-    if (selectedTabKeys.includes('warmLeads')) setWarmLeads(prev => [newLeadData, ...prev]);
-    if (selectedTabKeys.includes('contactedClients')) setContactedClients(prev => [newLeadData, ...prev]);
-    if (selectedTabKeys.includes('coldLeads')) setColdLeads(prev => [newLeadData, ...prev]);
     const nextWarm = selectedTabKeys.includes('warmLeads') ? [newLeadData, ...warmLeads] : warmLeads;
     const nextContacted = selectedTabKeys.includes('contactedClients') ? [newLeadData, ...contactedClients] : contactedClients;
     const nextCold = selectedTabKeys.includes('coldLeads') ? [newLeadData, ...coldLeads] : coldLeads;
     await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
+    setWarmLeads(nextWarm);
+    setContactedClients(nextContacted);
+    setColdLeads(nextCold);
     showToast(`✅ Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`);
     resetNewLeadForm();
     setShowAddModal(false);
@@ -297,7 +300,10 @@ const CRMPage = () => {
       await doAddNewLead();
     } catch (error) {
       console.error('❌ Error adding new lead:', error);
-      showToast(`❌ Error adding lead: ${error.message}`, 'error');
+      const message = isOfflineError(error)
+        ? "You're offline. Check your connection and try again."
+        : `Error adding lead: ${error.message}`;
+      showToast(message, 'error');
     } finally {
       addingLeadRef.current = false;
       setIsAddingLead(false);
@@ -358,7 +364,7 @@ const CRMPage = () => {
     }
   };
 
-  // Delete lead
+  // Delete lead - pass explicit filtered arrays so we don't save stale state (setState is async)
   const deleteLead = async (client) => {
     if (!client) return;
 
@@ -371,10 +377,13 @@ const CRMPage = () => {
     if (!confirmed) return;
 
     try {
-      setWarmLeads(prev => prev.filter(c => c.id !== client.id));
-      setContactedClients(prev => prev.filter(c => c.id !== client.id));
-      setColdLeads(prev => prev.filter(c => c.id !== client.id));
-      await saveCRMDataToFirebase();
+      const nextWarm = warmLeads.filter((c) => c.id !== client.id);
+      const nextContacted = contactedClients.filter((c) => c.id !== client.id);
+      const nextCold = coldLeads.filter((c) => c.id !== client.id);
+      await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
+      setWarmLeads(nextWarm);
+      setContactedClients(nextContacted);
+      setColdLeads(nextCold);
       showToast(`✅ Lead "${client.contactName}" deleted successfully!`);
     } catch (error) {
       console.error('Error deleting lead:', error);
@@ -867,6 +876,16 @@ const CRMPage = () => {
           >
             {importingCrm ? 'Importing…' : 'Import from xlsx'}
           </button>
+          {(() => {
+            const crmOnly = [...(warmLeads || []), ...(contactedClients || []), ...(coldLeads || [])];
+            const duplicateGroups = findPotentialDuplicateGroups(crmOnly);
+            return duplicateGroups.length > 0 ? (
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[12px] font-medium">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {duplicateGroups.length} possible duplicate group{duplicateGroups.length !== 1 ? 's' : ''} – use Merge duplicates below
+              </span>
+            ) : null;
+          })()}
           <button
             type="button"
             onClick={async () => {
@@ -1328,6 +1347,7 @@ const CRMPage = () => {
               prev.map(c => c.id === updatedClient.id ? updatedClient : c)
             );
           }}
+          onDelete={canDeleteClients ? deleteExistingClient : undefined}
           employees={clientModalEmployees}
           showManagerAssignment={true}
         />
@@ -1350,9 +1370,26 @@ const CRMPage = () => {
 
       {/* Graduate: required day-one screenshot upload */}
       {graduateScreenshotModal.show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl">
-            <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-white mb-1">Day-one screenshot (required)</h3>
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110] p-4"
+          onClick={() => setGraduateScreenshotModal({ show: false, clientId: null, clientName: '', leadId: null })}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="day-one-screenshot-title"
+        >
+          <div
+            className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setGraduateScreenshotModal({ show: false, clientId: null, clientName: '', leadId: null })}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 id="day-one-screenshot-title" className="text-lg font-semibold text-[#1d1d1f] dark:text-white mb-1 pr-8">Day-one screenshot (required)</h3>
             <p className="text-[13px] text-[#86868b] mb-4">
               Upload a screenshot of followers/insights for {graduateScreenshotModal.clientName}. This completes promoting the lead to a client.
             </p>

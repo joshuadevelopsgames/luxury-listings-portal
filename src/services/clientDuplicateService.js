@@ -132,34 +132,42 @@ export function couldBeSameClient(clientA, clientB, options = {}) {
  * @param {Array<Object>} clients - List of client objects with id, clientName/contactName, clientEmail/email, etc.
  * @returns {Array<Array<Object>>} Array of groups; each group is 2+ clients that could be duplicates.
  */
+/** Normalize id so numeric and string ids from Firestore compare equal (e.g. 12345 and "12345"). */
+function normalizeId(id) {
+  if (id == null) return null;
+  return String(id);
+}
+
 export function findPotentialDuplicateGroups(clients) {
   if (!Array.isArray(clients) || clients.length < 2) return [];
 
   const parent = new Map();
-  const idToClient = new Map();
   clients.forEach((c) => {
-    const id = c.id || c.clientId;
-    if (id) {
-      parent.set(id, id);
-      idToClient.set(id, c);
-    }
+    const raw = c.id ?? c.clientId;
+    const id = raw != null ? normalizeId(raw) : null;
+    if (id) parent.set(id, id);
   });
 
   function find(x) {
-    if (parent.get(x) !== x) parent.set(x, find(parent.get(x)));
-    return parent.get(x);
+    const key = normalizeId(x);
+    if (!key || !parent.has(key)) return key;
+    if (parent.get(key) !== key) parent.set(key, find(parent.get(key)));
+    return parent.get(key);
   }
   function union(x, y) {
-    const px = find(x);
-    const py = find(y);
-    if (px !== py) parent.set(px, py);
+    const kx = normalizeId(x);
+    const ky = normalizeId(y);
+    if (!kx || !ky) return;
+    const px = find(kx);
+    const py = find(ky);
+    if (px && py && px !== py) parent.set(px, py);
   }
 
   for (let i = 0; i < clients.length; i++) {
-    const idA = clients[i].id || clients[i].clientId;
+    const idA = clients[i].id != null || clients[i].clientId != null ? normalizeId(clients[i].id ?? clients[i].clientId) : null;
     if (!idA) continue;
     for (let j = i + 1; j < clients.length; j++) {
-      const idB = clients[j].id || clients[j].clientId;
+      const idB = clients[j].id != null || clients[j].clientId != null ? normalizeId(clients[j].id ?? clients[j].clientId) : null;
       if (!idB) continue;
       if (couldBeSameClient(clients[i], clients[j], { usePhone: true })) {
         union(idA, idB);
@@ -168,14 +176,15 @@ export function findPotentialDuplicateGroups(clients) {
   }
 
   const groupsByRoot = new Map();
-  idToClient.forEach((client, id) => {
+  for (const c of clients) {
+    const raw = c.id ?? c.clientId;
+    if (raw == null) continue;
+    const id = normalizeId(raw);
     const root = find(id);
+    if (!root) continue;
     if (!groupsByRoot.has(root)) groupsByRoot.set(root, []);
-    const group = groupsByRoot.get(root);
-    if (group.length === 0 || !group.some((c) => (c.id || c.clientId) === id)) {
-      group.push(client);
-    }
-  });
+    groupsByRoot.get(root).push(c);
+  }
 
   return Array.from(groupsByRoot.values()).filter((g) => g.length >= 2);
 }

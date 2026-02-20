@@ -43,6 +43,7 @@ const ClientDetailModal = ({
   client,
   onClose,
   onClientUpdate = null,
+  onDelete = null,
   employees = [], // For manager assignment
   showManagerAssignment = false
 }) => {
@@ -234,6 +235,22 @@ const ClientDetailModal = ({
                   title="Edit client"
                 >
                   <Pencil className="w-4 h-4 text-[#0071e3]" />
+                </button>
+              )}
+              {onDelete && !isEditing && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await onDelete(localClient);
+                      onClose();
+                    } catch (e) {
+                      toast.error(e?.message || 'Failed to delete client');
+                    }
+                  }}
+                  className="p-2 rounded-xl hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors"
+                  title="Delete client"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               )}
               <button
