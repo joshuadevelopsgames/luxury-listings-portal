@@ -377,13 +377,16 @@ const CRMPage = () => {
     if (!confirmed) return;
 
     try {
-      const nextWarm = warmLeads.filter((c) => c.id !== client.id);
-      const nextContacted = contactedClients.filter((c) => c.id !== client.id);
-      const nextCold = coldLeads.filter((c) => c.id !== client.id);
+      const id = client?.id != null ? String(client.id) : undefined;
+      const nextWarm = id == null ? warmLeads : warmLeads.filter((c) => String(c.id) !== id);
+      const nextContacted = id == null ? contactedClients : contactedClients.filter((c) => String(c.id) !== id);
+      const nextCold = id == null ? coldLeads : coldLeads.filter((c) => String(c.id) !== id);
       await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
       setWarmLeads(nextWarm);
       setContactedClients(nextContacted);
       setColdLeads(nextCold);
+      setSelectedClient(null);
+      setSelectedItemType(null);
       showToast(`Lead "${client.contactName}" deleted successfully!`);
     } catch (error) {
       console.error('Error deleting lead:', error);
@@ -875,6 +878,38 @@ const CRMPage = () => {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#af52de]/10 text-[#af52de] text-[13px] font-medium hover:bg-[#af52de]/20 transition-colors disabled:opacity-50"
           >
             {importingCrm ? 'Importing…' : 'Import from xlsx'}
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const total = (warmLeads?.length || 0) + (contactedClients?.length || 0) + (coldLeads?.length || 0);
+              if (total === 0) {
+                showToast('No leads to clear');
+                return;
+              }
+              const confirmed = await confirm({
+                title: 'Clear all leads',
+                message: `Remove all ${total} lead${total !== 1 ? 's' : ''} from CRM? Clients and internal accounts are not affected.`,
+                confirmText: 'Clear all',
+                variant: 'danger'
+              });
+              if (!confirmed) return;
+              try {
+                setWarmLeads([]);
+                setContactedClients([]);
+                setColdLeads([]);
+                await saveCRMDataToFirebase({ warmLeads: [], contactedClients: [], coldLeads: [] });
+                setSelectedClient(null);
+                setSelectedItemType(null);
+                showToast(`Cleared ${total} lead${total !== 1 ? 's' : ''}`);
+              } catch (err) {
+                console.error(err);
+                showToast('Clear failed', 'error');
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+          >
+            Clear all leads (temp)
           </button>
           {(() => {
             const crmOnly = [...(warmLeads || []), ...(contactedClients || []), ...(coldLeads || [])];

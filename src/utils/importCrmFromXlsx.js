@@ -65,7 +65,7 @@ function parseSheet(ws, sheetCategory) {
 
 const SHEET_MAP = [
   { names: ['Warm Leads', 'Warm'], key: 'warmLeads' },
-  { names: ['Have Contacted Before with Proposals', 'Contacted', 'Have Contacted'], key: 'contactedClients' },
+  { names: ['Have Contacted Before with Proposals', 'Have Contacted Before with Prop', 'Contacted', 'Have Contacted'], key: 'contactedClients' },
   { names: ['Cold Leads', 'Cold'], key: 'coldLeads' }
 ];
 
