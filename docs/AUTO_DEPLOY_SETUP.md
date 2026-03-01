@@ -12,7 +12,7 @@ Vercel has built-in GitHub integration that automatically deploys on pushes. Thi
 
 1. **Go to Vercel Dashboard**
    - Visit https://vercel.com/dashboard
-   - Select your project: `newbie-tutorial`
+   - Select your project: `luxury-listings-portal`
 
 2. **Connect GitHub Repository**
    - Go to **Settings** → **Git**
@@ -71,7 +71,7 @@ If you prefer using GitHub Actions, we've set up a workflow file (`.github/workf
    - Add these secrets:
      - `VERCEL_TOKEN`: Get from https://vercel.com/account/tokens
      - `VERCEL_ORG_ID`: From `.vercel/project.json` (orgId field)
-     - `VERCEL_PROJECT_ID`: From `.vercel/project.json` (projectId field)
+     - `VERCEL_PROJECT_ID`: From `.vercel/project.json` (projectId field). After renaming the project in Vercel, run `npx vercel link` again to refresh.
 
 3. **Verify Workflow File**
    - The workflow file is at `.github/workflows/deploy.yml`

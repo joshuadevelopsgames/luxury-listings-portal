@@ -113,7 +113,7 @@ To disable auto-login in preview:
 |---------|------------------|---------------|
 | Auto-login | ❌ No | ✅ Yes (if enabled) |
 | Environment | Production | Preview |
-| URL | `smmluxurylistings.info` | `*.vercel.app` |
+| URL | `smmluxurylistings.info` | `*.vercel.app` (e.g. `luxury-listings-portal-*.vercel.app`) |
 | Branch | `main` | `dev` |
 
 ---

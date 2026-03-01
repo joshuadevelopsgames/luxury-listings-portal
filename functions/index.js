@@ -38,6 +38,7 @@ const RATE_LIMITS = {
 const ALLOWED_ORIGINS = [
   'https://www.smmluxurylistings.info',
   'https://smmluxurylistings.info',
+  'https://luxury-listings-portal.vercel.app',
   'http://localhost:3000',
   'http://127.0.0.1:3000'
 ];
