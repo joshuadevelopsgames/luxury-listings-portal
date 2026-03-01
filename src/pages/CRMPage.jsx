@@ -222,17 +222,33 @@ const CRMPage = () => {
     return () => unsubscribe();
   }, [currentUser?.uid]);
 
+  // Dedupe CRM leads by id (same lead can be in Warm + Contacted etc.); each contact gets _categories: ['warm','contacted'] etc.
+  const crmLeadsDeduped = (() => {
+    const byId = new Map();
+    warmLeads.forEach((c) => {
+      if (!byId.has(c.id)) byId.set(c.id, { ...c, _categories: [], isExisting: false });
+      byId.get(c.id)._categories.push('warm');
+    });
+    contactedClients.forEach((c) => {
+      if (!byId.has(c.id)) byId.set(c.id, { ...c, _categories: [], isExisting: false });
+      byId.get(c.id)._categories.push('contacted');
+    });
+    coldLeads.forEach((c) => {
+      if (!byId.has(c.id)) byId.set(c.id, { ...c, _categories: [], isExisting: false });
+      byId.get(c.id)._categories.push('cold');
+    });
+    return Array.from(byId.values());
+  })();
+
   const fullContactsList = [
-    ...warmLeads.map(c => ({ ...c, isExisting: false })),
-    ...contactedClients.map(c => ({ ...c, isExisting: false })),
-    ...coldLeads.map(c => ({ ...c, isExisting: false })),
+    ...crmLeadsDeduped,
     ...existingClients.map(c => ({ ...c, isExisting: true }))
   ];
 
   const doAddNewLead = async () => {
-    const selectedTabKeys = Object.entries(selectedTabs)
-      .filter(([key, value]) => value)
-      .map(([key]) => key);
+    const addToWarm = selectedTabs.warmLeads;
+    const addToContacted = selectedTabs.contactedClients;
+    const addToCold = selectedTabs.coldLeads;
     const contactName = [newLead.firstName, newLead.lastName].filter(Boolean).join(' ').trim();
     const types = Array.isArray(newLead.types) && newLead.types.length ? newLead.types : [CLIENT_TYPE.NA];
     const loc = (newLead.location || '').trim() || null;
@@ -240,7 +256,7 @@ const CRMPage = () => {
       ? { name: newLead.primaryContact.name || '', email: newLead.primaryContact.email || '', phone: newLead.primaryContact.phone || '', role: newLead.primaryContact.role || '' }
       : null;
     const newLeadData = {
-      id: Date.now() + Math.random(),
+      id: `crm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       contactName: contactName || '',
       firstName: newLead.firstName || '',
       lastName: newLead.lastName || '',
@@ -255,18 +271,19 @@ const CRMPage = () => {
       notes: newLead.notes || '',
       location: loc,
       primaryContact: pc,
-      status: selectedTabKeys[0] === 'warmLeads' ? 'warm' : selectedTabKeys[0] === 'contactedClients' ? 'contacted' : 'cold',
+      status: addToWarm ? 'warm' : addToCold ? 'cold' : 'contacted',
       lastContact: new Date().toISOString(),
-      category: selectedTabKeys[0]
+      category: addToWarm ? 'warmLeads' : addToCold ? 'coldLeads' : 'contactedClients'
     };
-    const nextWarm = selectedTabKeys.includes('warmLeads') ? [newLeadData, ...warmLeads] : warmLeads;
-    const nextContacted = selectedTabKeys.includes('contactedClients') ? [newLeadData, ...contactedClients] : contactedClients;
-    const nextCold = selectedTabKeys.includes('coldLeads') ? [newLeadData, ...coldLeads] : coldLeads;
+    const nextWarm = addToWarm ? [newLeadData, ...warmLeads] : warmLeads;
+    const nextContacted = addToContacted ? [newLeadData, ...contactedClients] : contactedClients;
+    const nextCold = addToCold ? [newLeadData, ...coldLeads] : coldLeads;
     await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
     setWarmLeads(nextWarm);
     setContactedClients(nextContacted);
     setColdLeads(nextCold);
-    showToast(`Lead added to ${selectedTabKeys.length} tab(s): ${selectedTabKeys.join(', ')}`);
+    const labels = [addToWarm && 'Warm', addToContacted && 'Contacted', addToCold && 'Cold'].filter(Boolean);
+    showToast(`Lead added to ${labels.join(', ')}`);
     resetNewLeadForm();
     setShowAddModal(false);
     setPossibleExistingMatches([]);
@@ -526,7 +543,10 @@ const CRMPage = () => {
   };
 
   // For existing clients: show "Previous client" when status is paused/cancelled/rejected
-  const getClientStatusLabel = (status, isExisting) => {
+  const getClientStatusLabel = (status, isExisting, categories) => {
+    if (Array.isArray(categories) && categories.length) {
+      return categories.map((c) => String(c).charAt(0).toUpperCase() + String(c).slice(1)).join(', ');
+    }
     const s = (status || '').toLowerCase();
     if (!isExisting) return status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : '—';
     if (s === 'paused') return 'Previous client (Paused)';
@@ -561,15 +581,13 @@ const CRMPage = () => {
     return !q || name.includes(q) || email.includes(q) || org.includes(q) || ig.includes(q) || web.includes(q) || loc.includes(q) || pcName.includes(q) || pcEmail.includes(q);
   };
 
-  // Single combined list: warm + contacted + cold + existing, with type for filtering
+  // Single combined list: deduped CRM leads + existing clients
   const allContacts = [
-    ...warmLeads.map(c => ({ ...c, _type: 'warm', isExisting: false })),
-    ...contactedClients.map(c => ({ ...c, _type: 'contacted', isExisting: false })),
-    ...coldLeads.map(c => ({ ...c, _type: 'cold', isExisting: false })),
+    ...crmLeadsDeduped.map(c => ({ ...c, _type: c._categories[0] || 'warm' })),
     ...existingClients.map(c => ({ ...c, _type: 'clients', isExisting: true, type: (c.clientTypes && c.clientTypes[0]) || c.clientType || c.type || CLIENT_TYPE.NA }))
   ]
     .filter(c => matchesSearch(c, c.isExisting))
-    .filter(c => statusFilter === 'all' || c._type === statusFilter)
+    .filter(c => statusFilter === 'all' || (c._categories && c._categories.includes(statusFilter)) || (c._type === statusFilter && !c._categories))
     .filter(c => typeFilter === 'all' || getContactTypes(c).includes(typeFilter))
     .filter(c => locationFilter === 'all' || (locationFilter === '_none_' ? !(c.location || '').trim() : (c.location || '').trim() === locationFilter))
     .sort((a, b) => {
@@ -580,7 +598,7 @@ const CRMPage = () => {
           case 'type': return (getContactTypes(c).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || '—').toLowerCase();
           case 'location': return ((c.location || '').trim() || '—').toLowerCase();
           case 'phone': return (c.phone || '').toLowerCase();
-          case 'status': return (getClientStatusLabel(c.status, c.isExisting) || '').toLowerCase();
+          case 'status': return (getClientStatusLabel(c.status, c.isExisting, c._categories) || '').toLowerCase();
           default: return '';
         }
       };
@@ -594,9 +612,9 @@ const CRMPage = () => {
   const totalContacted = contactedClients.length;
   const totalColdLeads = coldLeads.length;
   const totalExistingClients = existingClients.length;
-  const totalLeads = totalWarmLeads + totalContacted + totalColdLeads;
+  const totalLeads = crmLeadsDeduped.length;
 
-  const allContactsForLocations = [...warmLeads, ...contactedClients, ...coldLeads, ...existingClients];
+  const allContactsForLocations = [...crmLeadsDeduped, ...existingClients];
   const uniqueLocations = [...new Set(allContactsForLocations.map(c => (c.location || '').trim()).filter(Boolean))].sort();
 
   const renderClientCard = (client, isExisting = false) => (
@@ -651,7 +669,7 @@ const CRMPage = () => {
           </div>
           <div className="flex flex-col items-end gap-1">
             <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
-              {getClientStatusLabel(client.status, isExisting)}
+              {getClientStatusLabel(client.status, isExisting, client._categories)}
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium">
               Type: {getContactTypes(client).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
@@ -753,7 +771,7 @@ const CRMPage = () => {
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.phone || '—'}</td>
       <td className="py-3 px-4">
         <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
-          {getClientStatusLabel(client.status, isExisting)}
+          {getClientStatusLabel(client.status, isExisting, client._categories)}
         </span>
       </td>
       <td className="py-3 px-4">
@@ -882,8 +900,7 @@ const CRMPage = () => {
             {importingCrm ? 'Importing…' : 'Import from xlsx'}
           </button>
           {(() => {
-            const crmOnly = [...(warmLeads || []), ...(contactedClients || []), ...(coldLeads || [])];
-            const duplicateGroups = findPotentialDuplicateGroups(crmOnly);
+            const duplicateGroups = findPotentialDuplicateGroups(crmLeadsDeduped);
             return duplicateGroups.length > 0 ? (
               <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[12px] font-medium">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1217,8 +1234,8 @@ const CRMPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to tab(s)</label>
-                    <p className="text-[11px] text-[#86868b] mb-2">Warm and Cold leads are mutually exclusive; you can select Contacted Clients with either.</p>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to list(s)</label>
+                    <p className="text-[11px] text-[#86868b] mb-2">Contacted stacks with Warm or Cold. Pick Warm or Cold (or both with Contacted).</p>
                     <div className="flex flex-wrap gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input

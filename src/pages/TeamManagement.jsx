@@ -37,6 +37,7 @@ import {
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
 import { safeFormatDate } from '../utils/dateUtils';
 import { toast } from 'react-hot-toast';
+import { getSystemAdmins } from '../utils/systemAdmins';
 
 const TeamManagement = () => {
   const { currentUser, currentRole, hasPermission } = useAuth();
@@ -68,12 +69,14 @@ const TeamManagement = () => {
     return `EMP-${num}`;
   };
 
-  // Load team members from Firestore; leave balances from user profiles (same source as My Time Off)
+  // Load team members from Firestore; leave balances from user profiles (same source as My Time Off). Exclude system admins.
   useEffect(() => {
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
-        const users = await firestoreService.getApprovedUsers();
+        const raw = await firestoreService.getApprovedUsers();
+        const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
+        const users = raw.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
         const sortedUsers = [...users].sort((a, b) => {
           const dateA = a.createdAt?.toDate?.() || new Date(0);
           const dateB = b.createdAt?.toDate?.() || new Date(0);
@@ -188,8 +191,10 @@ const TeamManagement = () => {
       const result = await firestoreService.migrateLeaveBalances();
       toast.success(`Migration complete! Updated ${result.updated} users, skipped ${result.skipped}.`);
       setMigrationDone(true);
-      // Reload team members to reflect changes
-      const users = await firestoreService.getApprovedUsers();
+      // Reload team members to reflect changes (exclude system admins)
+      const raw = await firestoreService.getApprovedUsers();
+      const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
+      const users = raw.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
       const sortedUsers = [...users].sort((a, b) => {
         const dateA = a.createdAt?.toDate?.() || new Date(0);
         const dateB = b.createdAt?.toDate?.() || new Date(0);

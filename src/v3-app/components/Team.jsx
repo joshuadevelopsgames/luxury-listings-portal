@@ -3,6 +3,7 @@ import { Mail, Phone, MapPin, Calendar, MoreHorizontal, RefreshCw, Users } from 
 import { firestoreService } from '../../services/firestoreService';
 import { format } from 'date-fns';
 import EmployeeLink from '../../components/ui/EmployeeLink';
+import { getSystemAdmins } from '../../utils/systemAdmins';
 
 /**
  * V3 Team - Real Data from Firestore (Approved Users)
@@ -28,8 +29,10 @@ const V3Team = () => {
   const loadTeam = async () => {
     try {
       setLoading(true);
-      const approvedUsers = await firestoreService.getApprovedUsers();
-      setTeam(approvedUsers || []);
+      const raw = await firestoreService.getApprovedUsers();
+      const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
+      const filtered = (raw || []).filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
+      setTeam(filtered);
     } catch (error) {
       console.error('Error loading team:', error);
       setTeam([]);

@@ -3,6 +3,7 @@ import { Users, Mail, Search, RefreshCw, Building } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import EmployeeLink from '../components/ui/EmployeeLink';
 import { getGmailComposeUrl } from '../utils/gmailCompose';
+import { getSystemAdmins } from '../utils/systemAdmins';
 
 const ROLE_DISPLAY = {
   admin: 'Administrator',
@@ -43,7 +44,9 @@ export default function TeamDirectoryPage() {
     try {
       setLoading(true);
       const users = await firestoreService.getApprovedUsers();
-      setTeam(users || []);
+      const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
+      const filtered = (users || []).filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
+      setTeam(filtered);
     } catch (err) {
       console.error('Error loading team directory:', err);
       setTeam([]);

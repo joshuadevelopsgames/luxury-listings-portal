@@ -63,7 +63,8 @@ export function mergeCrmDuplicates(warmLeads, contactedClients, coldLeads) {
 
   for (const group of groups) {
     const keeper = group[0];
-    const merged = { ...mergedObject(group), _source: keeper._source };
+    const sources = [...new Set(group.map((c) => c._source))];
+    const merged = { ...mergedObject(group), _sources: sources };
     merged.id = keeper.id;
     mergedLeads.push(merged);
     group.forEach((c) => idsToRemove.add(c.id));
@@ -75,11 +76,12 @@ export function mergeCrmDuplicates(warmLeads, contactedClients, coldLeads) {
   let cold = drop(coldLeads);
 
   for (const lead of mergedLeads) {
-    const { _source, ...rest } = lead;
+    const { _source, _sources, ...rest } = lead;
     const clean = { ...rest };
-    if (_source === 'warm') warm = [clean, ...warm];
-    else if (_source === 'contacted') contacted = [clean, ...contacted];
-    else cold = [clean, ...cold];
+    const list = _sources || (_source ? [_source] : []);
+    if (list.includes('warm')) warm = [clean, ...warm];
+    if (list.includes('contacted')) contacted = [clean, ...contacted];
+    if (list.includes('cold')) cold = [clean, ...cold];
   }
 
   const removed = idsToRemove.size;

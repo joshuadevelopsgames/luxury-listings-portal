@@ -126,8 +126,13 @@ const groupReportsByYearMonth = (reportList) => {
   });
 };
 
-// Admins see all Instagram reports (must match PermissionsContext + Firestore rules)
-const INSTAGRAM_ADMIN_EMAILS = ['jrsschroeder@gmail.com'];
+// Admins see all Instagram reports (system admin, these emails, or anyone with adminPermissions)
+const INSTAGRAM_ADMIN_EMAILS = [
+  'jrsschroeder@gmail.com',
+  'matthew@luxury-listings.com',
+  'kambiz@luxury-listings.com',
+  'michelle@luxury-listings.com'
+];
 
 const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();

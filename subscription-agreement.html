@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Subscription Agreement – Joshua Schroeder & Luxury Listings Corp.</title>
+  <style>
+    /* ── Page & Print Setup ── */
+    @page {
+      size: letter;
+      margin: 0.75in 0.85in;
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+
+      body {
+        background: #fff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 10pt;
+      }
+
+      .paper {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border-top: 6px solid #1a3560 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .parties-block {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: #f7f9fc !important;
+      }
+
+      .highlight-box {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: #ebf4ff !important;
+        border: 1px solid #bee3f8 !important;
+      }
+
+      .page-break { page-break-before: always; }
+      section { page-break-inside: avoid; }
+      .sig-table { page-break-inside: avoid; }
+
+      .doc-header {
+        padding-top: 12px;
+      }
+    }
+
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      font-size: 10.5pt;
+      line-height: 1.65;
+      color: #1a202c;
+      background: #f0f2f5;
+      padding: 40px 20px 60px;
+    }
+
+    /* ── Paper Shell ── */
+    .paper {
+      background: #ffffff;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 72px 80px 80px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+      border-top: 6px solid #1a3560;
+    }
+
+    /* ── Print Button ── */
+    .no-print {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .no-print button {
+      background: #1a3560;
+      color: #fff;
+      border: none;
+      padding: 12px 32px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      letter-spacing: 0.03em;
+    }
+    .no-print button:hover { background: #14294d; }
+
+    /* ── Document Header ── */
+    .doc-header {
+      text-align: center;
+      border-bottom: 2px solid #1a3560;
+      padding-bottom: 28px;
+      margin-bottom: 32px;
+    }
+
+    .doc-header .label {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 9pt;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #4a5568;
+      margin-bottom: 10px;
+    }
+
+    .doc-header h1 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 22pt;
+      font-weight: 700;
+      color: #1a3560;
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
+
+    .doc-header .subtitle {
+      font-size: 9.5pt;
+      color: #718096;
+      font-style: italic;
+    }
+
+    /* ── Parties Block ── */
+    .parties-block {
+      background: #f7f9fc;
+      border-left: 4px solid #1a3560;
+      padding: 18px 26px;
+      margin-bottom: 20px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .parties-block .effective {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 9.5pt;
+      color: #4a5568;
+      margin-bottom: 16px;
+      letter-spacing: 0.01em;
+    }
+
+    .parties-block .effective strong {
+      color: #1a3560;
+    }
+
+    .party-row {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .party {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .party-role {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #1a3560;
+      margin-bottom: 4px;
+    }
+
+    .party-name {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #1a202c;
+      margin-bottom: 2px;
+    }
+
+    .party-detail {
+      font-size: 9pt;
+      color: #4a5568;
+      line-height: 1.5;
+    }
+
+    .party-defined {
+      font-size: 9pt;
+      color: #718096;
+      font-style: italic;
+      margin-top: 3px;
+    }
+
+    .party-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 9pt;
+      color: #a0aec0;
+      font-weight: 600;
+      padding-top: 8px;
+    }
+
+    /* ── Sections ── */
+    section {
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 9pt;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #1a3560;
+      border-bottom: 1.5px solid #e2e8f0;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .section-num {
+      font-size: 8pt;
+      color: #a0aec0;
+      font-weight: 600;
+    }
+
+    /* ── Body Text ── */
+    p {
+      margin-bottom: 7px;
+      text-align: justify;
+    }
+
+    .subsection {
+      margin-bottom: 7px;
+      padding-left: 0;
+    }
+
+    .subsection-title {
+      font-weight: bold;
+      font-style: normal;
+    }
+
+    /* ── Sub-items (a), (b) etc ── */
+    .sub-items {
+      margin: 5px 0 5px 22px;
+    }
+
+    .sub-item {
+      margin-bottom: 5px;
+      text-align: justify;
+    }
+
+    .sub-item-label {
+      font-weight: bold;
+      margin-right: 4px;
+    }
+
+    /* ── Defined Term ── */
+    .defined {
+      font-weight: bold;
+    }
+
+    /* ── Highlight Box ── */
+    .highlight-box {
+      background: #ebf4ff;
+      border: 1px solid #bee3f8;
+      border-radius: 4px;
+      padding: 14px 18px;
+      margin: 10px 0;
+      font-size: 10pt;
+    }
+
+    /* ── Signature Block ── */
+    .sig-section-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 9pt;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #1a3560;
+      border-bottom: 1.5px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+    }
+
+    .sig-intro {
+      font-size: 10pt;
+      color: #4a5568;
+      margin-bottom: 24px;
+      font-style: italic;
+    }
+
+    .sig-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    .sig-table td {
+      width: 50%;
+      vertical-align: top;
+      padding: 0 24px 0 0;
+    }
+
+    .sig-table td:last-child {
+      padding-right: 0;
+      padding-left: 24px;
+      border-left: 1px solid #e2e8f0;
+    }
+
+    .sig-party-name {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 9pt;
+      font-weight: 700;
+      color: #1a3560;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .sig-field {
+      margin-bottom: 18px;
+    }
+
+    .sig-line {
+      border-bottom: 1px solid #4a5568;
+      height: 24px;
+      margin-bottom: 3px;
+      width: 100%;
+    }
+
+    .sig-field-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 8pt;
+      color: #718096;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .sig-field-value {
+      font-size: 9.5pt;
+      color: #2d3748;
+    }
+
+    /* ── Footer ── */
+    .doc-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 8.5pt;
+      color: #a0aec0;
+      text-align: center;
+      font-style: italic;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Print Button -->
+  <div class="no-print">
+    <button onclick="window.print()">⬇ Save as PDF / Print</button>
+  </div>
+
+  <div class="paper">
+
+    <!-- ── Header ── -->
+    <div class="doc-header">
+      <div class="label">Legal Agreement &mdash; Software as a Service</div>
+      <h1>Subscription Agreement</h1>
+      <div class="subtitle">Effective March 1, 2026</div>
+    </div>
+
+    <!-- ── Parties ── -->
+    <div class="parties-block">
+      <div class="effective">
+        <strong>Effective Date:</strong> March 1, 2026
+      </div>
+      <div class="party-row">
+        <div class="party">
+          <div class="party-role">Provider</div>
+          <div class="party-name">Joshua Schroeder</div>
+          <div class="party-detail">
+            Sole Proprietor<br/>
+            Duncan, British Columbia, Canada<br/>
+            jrsschroeder@gmail.com
+          </div>
+          <div class="party-defined">("Provider")</div>
+        </div>
+        <div class="party-divider">— and —</div>
+        <div class="party">
+          <div class="party-role">Customer</div>
+          <div class="party-name">Luxury Listings Corp.</div>
+          <div class="party-detail">
+            Registered in the Province of<br/>
+            British Columbia, Canada
+          </div>
+          <div class="party-defined">("Customer")</div>
+        </div>
+      </div>
+    </div>
+
+    <p>Provider and Customer are each referred to herein as a <span class="defined">"Party"</span> and collectively as the <span class="defined">"Parties."</span></p>
+
+    <!-- ── Section 1 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">1</span>
+        Services
+      </div>
+      <p>Provider will make available to Customer a web-based software platform for luxury real estate marketers, enabling users to manage clients through a built-in CRM, create and run listing promotion and posting packages, and coordinate team workflow and reporting (the <span class="defined">"Platform"</span>). The Platform is provided on a software-as-a-service (SaaS) basis and is accessible via login credentials issued by Provider. Provider will host the Platform and provide standard technical support as described in Section 13.</p>
+    </section>
+
+    <!-- ── Section 2 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">2</span>
+        Acceptable Use &amp; Prohibited Conduct
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">2.1 Permitted Use.</span> Customer may use the Platform solely for its own internal lawful business purposes in accordance with this Agreement.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">2.2 Prohibited Conduct.</span> Customer must not, and must ensure that its users do not:</p>
+        <div class="sub-items">
+          <div class="sub-item"><span class="sub-item-label">(a)</span> use the Platform for any unlawful purpose or in violation of any applicable law or regulation;</div>
+          <div class="sub-item"><span class="sub-item-label">(b)</span> attempt to reverse engineer, decompile, disassemble, or derive source code from the Platform;</div>
+          <div class="sub-item"><span class="sub-item-label">(c)</span> attempt to gain unauthorized access to any part of the Platform, its related systems, or the accounts of other users;</div>
+          <div class="sub-item"><span class="sub-item-label">(d)</span> upload, transmit, or distribute any content that is unlawful, defamatory, obscene, infringing, or that violates the rights of any third party;</div>
+          <div class="sub-item"><span class="sub-item-label">(e)</span> use the Platform to send unsolicited commercial communications or to violate applicable anti-spam legislation;</div>
+          <div class="sub-item"><span class="sub-item-label">(f)</span> use the Platform in any manner that interferes with its security, integrity, or operation;</div>
+          <div class="sub-item"><span class="sub-item-label">(g)</span> sublicense, resell, or make the Platform available to any third party without Provider's prior written consent; or</div>
+          <div class="sub-item"><span class="sub-item-label">(h)</span> collect, process, or store personal information through the Platform in violation of applicable privacy laws, including PIPEDA and the Personal Information Protection Act (BC).</div>
+        </div>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">2.3 Immediate Suspension.</span> Provider may immediately suspend Customer's access to the Platform without notice and without following the escalation process in Section 4.4 if Provider reasonably determines that Customer has violated this Section 2. Such suspension does not limit any other remedy available to Provider under this Agreement or at law.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 3 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">3</span>
+        Subscription Fees &amp; Pricing
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">3.1 Base Fee.</span> Customer will pay a flat monthly base fee of <strong>$200.00 CAD</strong> per month.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">3.2 Per-User Fee.</span> In addition to the base fee, Customer will pay <strong>$20.00 CAD per active user per month.</strong> For purposes of this Agreement, an <span class="defined">"active user"</span> means any user account provisioned by Provider at Customer's written request and active in the Platform as of the billing date for the applicable month.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">3.3 Price Changes.</span> Provider will provide Customer with at least <strong>30 days' written notice</strong> of any changes to pricing or to how active users are counted. Price changes take effect on the first day of the billing period following the end of the notice period.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 4 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">4</span>
+        Billing &amp; Payment
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">4.1 Billing Cycle.</span> Fees are billed <strong>monthly in advance.</strong> Invoices are issued on the <strong>1st of each calendar month</strong> and are due <strong>Net 15</strong> (i.e., payable within 15 days of the invoice date).</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">4.2 Auto-Renewal.</span> This Agreement and the Customer's subscription will automatically renew on a month-to-month basis unless terminated in accordance with Section 8.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">4.3 Payment Method.</span> Payment is to be made by <strong>Interac e-Transfer</strong> to jrsschroeder@gmail.com. It is Customer's responsibility to ensure transfers are sent to the correct address by the due date.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">4.4 Late Payments and Suspension.</span> Amounts not paid by the due date will accrue interest at the rate of <strong>1.5% per month</strong> (approximately 18% per annum), calculated from the due date until the date payment is received in full. Provider will follow the escalation process below for overdue amounts:</p>
+        <div class="sub-items">
+          <div class="sub-item"><span class="sub-item-label">(a) Reminder Notice.</span> If an invoice remains unpaid <strong>15 days</strong> after the due date, Provider will send Customer a written reminder by email. Late fees begin accruing from the original due date regardless of when the reminder is sent.</div>
+          <div class="sub-item"><span class="sub-item-label">(b) Suspension Warning.</span> If the invoice remains unpaid <strong>30 days</strong> after the due date, Provider will issue a formal suspension warning giving Customer <strong>14 days</strong> to bring the account current.</div>
+          <div class="sub-item"><span class="sub-item-label">(c) Service Suspension.</span> If Customer has <strong>two or more consecutive unpaid invoices,</strong> or if any single invoice remains unpaid for more than <strong>45 days</strong> past its due date, Provider may suspend Customer's access to the Platform without further notice until all outstanding amounts (including accrued interest) are paid in full. Suspension does not relieve Customer of its obligation to pay outstanding fees.</div>
+          <div class="sub-item"><span class="sub-item-label">(d) Termination for Non-Payment.</span> If Customer's account remains suspended for more than <strong>30 days,</strong> Provider may terminate this Agreement upon written notice. For greater certainty, this Section 4.4 governs the process for termination due to non-payment. In the event of any conflict between this Section 4.4 and Section 8.3, this Section 4.4 prevails.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Section 5 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">5</span>
+        User Management &amp; True-Up
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">5.1 Provider-Managed Access.</span> Customer does not have direct access to the Platform's administrative panel. All user provisioning is managed exclusively by Provider. To add or remove a user, Customer must submit a written request to Provider by email at <strong>jrsschroeder@gmail.com.</strong> Provider will process the request within <strong>one business day</strong> of receipt and confirm by reply email once the change has been made.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">5.2 Billing for User Changes.</span> User additions will be reflected on the invoice for the month in which the user was activated. User removals will take effect at the end of the current billing month and will be reflected on the following month's invoice. Provider will maintain an accurate record of all active users and will provide Customer with a current user summary upon request.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 6 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">6</span>
+        Intellectual Property
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">6.1 Provider Ownership.</span> Provider retains all right, title, and interest in and to the Platform, including all software, code, interfaces, documentation, and updates. Nothing in this Agreement transfers ownership of the Platform or any Provider intellectual property to Customer.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">6.2 License Grant.</span> Subject to the terms of this Agreement and timely payment of all fees, Provider grants Customer a limited, non-exclusive, non-transferable, revocable licence to access and use the Platform solely for Customer's internal business purposes during the term of this Agreement.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">6.3 Right to Modify Platform.</span> Provider reserves the right to modify, update, improve, or discontinue any feature or functionality of the Platform at any time. Provider will use commercially reasonable efforts to notify Customer of material changes in advance. The removal or modification of a Platform feature does not constitute a breach of this Agreement, provided that the Platform continues to substantially perform its core functions.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">6.4 Customer Data.</span> Customer retains all right, title, and interest in and to any data it uploads or creates through the Platform (<span class="defined">"Customer Data"</span>), including client records, listing information, and reporting data. Provider will not access, use, or disclose Customer Data except as necessary to provide the services or as required by law. Upon termination, Provider will make Customer Data available for export for <strong>30 days,</strong> after which it may be deleted. Customer is strongly encouraged to maintain independent backups of all Customer Data.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">6.5 Feedback and Suggestions.</span> If Customer or its users provide Provider with any feedback, suggestions, ideas, feature requests, or other input regarding the Platform (<span class="defined">"Feedback"</span>), Customer hereby assigns to Provider all right, title, and interest in and to such Feedback. Provider may use Feedback for any purpose, including to improve or develop the Platform, without any obligation, compensation, or restriction. Customer waives any moral rights in the Feedback to the fullest extent permitted by law.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 7 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">7</span>
+        Data Protection &amp; Privacy
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">7.1 Roles.</span> As between the Parties, Customer is the data controller and Provider acts as a service provider processing personal information solely on Customer's instructions and only as necessary to provide the Platform. Provider will not use Customer Data for any purpose beyond the scope of this Agreement.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">7.2 Customer Privacy Obligations.</span> Customer represents and warrants that it has obtained all necessary consents and has all legal authority required to collect, upload, and process any personal information contained in Customer Data under applicable privacy legislation, including the <em>Personal Information Protection and Electronic Documents Act</em> (PIPEDA) and the <em>Personal Information Protection Act</em> (BC). Customer is solely responsible for its compliance with applicable privacy laws.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">7.3 Provider Security.</span> Provider will implement and maintain commercially reasonable technical and organizational measures designed to protect Customer Data against unauthorized access, disclosure, alteration, or destruction. Provider does not guarantee that its security measures will prevent all unauthorized access or data loss. Customer is strongly encouraged to maintain independent backups of all Customer Data at all times.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">7.4 No Backup Guarantee.</span> Provider does not guarantee against data loss or corruption. Provider's 30-day export window following termination (Section 6.4) is provided as a courtesy and does not constitute a backup or data preservation commitment. Provider is not liable for any loss of Customer Data except where caused directly by Provider's gross negligence or wilful misconduct.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">7.5 Privacy Law Liability.</span> Provider is not responsible for Customer's failure to comply with applicable privacy or data protection laws. If Customer receives a privacy complaint, access request, or regulatory inquiry relating to Customer Data, Customer is solely responsible for managing and responding to such matters.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">7.6 Usage and Analytics Data.</span> Provider may collect and use anonymized, aggregated data derived from Customer's use of the Platform (<span class="defined">"Usage Data"</span>) for purposes of improving the Platform, developing new features, and internal analytics. Usage Data will not identify Customer or any individual user. Provider retains all right, title, and interest in and to Usage Data.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 8 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">8</span>
+        Term &amp; Termination
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">8.1 Term.</span> This Agreement commences on March 1, 2026 and continues on a month-to-month basis until terminated.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">8.2 Termination for Convenience.</span> Either Party may terminate this Agreement by providing the other Party with <strong>at least 30 days' written notice.</strong> Notice may be given by email to the contact address set out in the signature block of this Agreement.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">8.3 Termination for Cause.</span> Provider may terminate this Agreement for cause if Customer materially breaches this Agreement and fails to cure such breach within <strong>15 days</strong> of written notice. For greater certainty, the non-payment escalation process in Section 4.4 governs termination for non-payment, and in the event of any conflict between Section 4.4 and this Section 8.3, Section 4.4 prevails.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">8.4 No Refunds for Partial Months.</span> All fees are non-refundable. No refunds or credits will be issued for any partial month of service remaining after a termination date.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">8.5 Effect of Termination.</span> Upon termination, Customer's right to access the Platform ceases immediately (or at the end of the notice period, as applicable). Each Party will promptly return or destroy the other Party's confidential information upon request.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 9 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">9</span>
+        Confidentiality
+      </div>
+      <p>Each Party agrees to keep the other Party's non-public business information, technical data, pricing, and this Agreement confidential and to use it only for the purposes of this Agreement. Neither Party will disclose the other's confidential information to third parties without prior written consent, except as required by applicable law or court order. This obligation survives termination of this Agreement for a period of <strong>3 years.</strong></p>
+    </section>
+
+    <!-- ── Section 10 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">10</span>
+        Customer Representations &amp; Warranties
+      </div>
+      <p>Customer represents and warrants to Provider as of the Effective Date and throughout the term of this Agreement that:</p>
+      <div class="sub-items">
+        <div class="sub-item"><span class="sub-item-label">(a)</span> Customer is duly incorporated, registered, or organized and in good standing under the laws of its jurisdiction;</div>
+        <div class="sub-item"><span class="sub-item-label">(b)</span> the individual signing this Agreement on Customer's behalf has full authority to bind Customer to the terms of this Agreement;</div>
+        <div class="sub-item"><span class="sub-item-label">(c)</span> Customer will comply with all applicable laws and regulations in connection with its use of the Platform; and</div>
+        <div class="sub-item"><span class="sub-item-label">(d)</span> Customer owns or has all necessary rights and licences in and to Customer Data, and Customer Data does not infringe the intellectual property, privacy, or other legal rights of any third party.</div>
+      </div>
+    </section>
+
+    <!-- ── Section 11 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">11</span>
+        Indemnification
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">11.1 Indemnity.</span> Customer will defend, indemnify, and hold harmless Provider and Provider's heirs, personal representatives, successors, and assigns from and against any and all claims, losses, liabilities, damages, costs, and expenses (including reasonable legal fees) arising out of or relating to:</p>
+        <div class="sub-items">
+          <div class="sub-item"><span class="sub-item-label">(a)</span> Customer Data, including any claim that Customer Data infringes the intellectual property, privacy, or other rights of a third party;</div>
+          <div class="sub-item"><span class="sub-item-label">(b)</span> Customer's or its users' misuse of the Platform or breach of this Agreement;</div>
+          <div class="sub-item"><span class="sub-item-label">(c)</span> Customer's violation of any applicable law or regulation; or</div>
+          <div class="sub-item"><span class="sub-item-label">(d)</span> any claim by a third party arising from Customer's use of the Platform in a manner not permitted by this Agreement.</div>
+        </div>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">11.2 Process.</span> Provider will promptly notify Customer of any claim subject to indemnification and will reasonably cooperate with Customer's defence. Customer will not settle any such claim in a manner that imposes liability or obligation on Provider without Provider's prior written consent.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">11.3 Provider IP Indemnification.</span> Provider will defend, indemnify, and hold harmless Customer from and against any third-party claim alleging that the Platform, as provided by Provider and used in accordance with this Agreement, infringes any Canadian patent, copyright, trademark, or trade secret. This obligation does not apply to claims arising from: (a) Customer's modification of the Platform; (b) use of the Platform in combination with products or services not provided by Provider; (c) Customer Data; or (d) Customer's failure to use an updated or corrected version of the Platform made available by Provider. This Section 11.3 states Provider's entire obligation and Customer's exclusive remedy with respect to intellectual property infringement claims.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 12 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">12</span>
+        Limited Liability &amp; Disclaimers
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">12.1 Disclaimer of Warranties.</span> The Platform is provided "as is" and "as available." To the maximum extent permitted by law, Provider makes no warranties, express or implied, including any implied warranties of merchantability, fitness for a particular purpose, or non-infringement.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">12.2 Limitation of Liability.</span> To the maximum extent permitted by applicable law, neither Party will be liable to the other for any indirect, incidental, special, consequential, or punitive damages (including lost profits or data) arising out of or related to this Agreement, whether arising in contract, tort (including negligence), statute, or otherwise, even if advised of the possibility of such damages.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">12.3 Liability Cap.</span> Provider's total aggregate liability to Customer under or in connection with this Agreement, whether arising in contract, tort (including negligence), statute, or otherwise, will not exceed the <strong>total fees paid by Customer to Provider in the 12 months immediately preceding the event giving rise to the claim.</strong></p>
+      </div>
+    </section>
+
+    <!-- ── Section 13 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">13</span>
+        Support, Uptime &amp; Security
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">13.1 Support.</span> Provider will offer standard email support reachable at <strong>jrsschroeder@gmail.com.</strong> Provider will make commercially reasonable efforts to respond to support requests within <strong>48 business hours.</strong></p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">13.2 Uptime.</span> Provider will use commercially reasonable efforts to maintain Platform availability. Scheduled maintenance windows will be communicated to Customer in advance where reasonably practicable. Provider does not guarantee any specific uptime percentage unless a separate Service Level Agreement is executed in writing by both Parties.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">13.3 Security.</span> Provider implements commercially reasonable security practices to protect the Platform and Customer Data. However, Provider does not guarantee that the Platform will be entirely free from vulnerabilities, unauthorized access, or data breaches. Customer is solely responsible for maintaining the confidentiality of its login credentials and for any activity occurring under its account. Customer is strongly encouraged to maintain independent backups of all Customer Data at all times. Provider is not liable for any loss of Customer Data except where caused directly by Provider's gross negligence or wilful misconduct.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">13.4 Third-Party Services.</span> The Platform may integrate with or rely upon third-party services, tools, or infrastructure (including hosting providers, email delivery, and mapping or data services) (<span class="defined">"Third-Party Services"</span>). Provider does not warrant the performance, availability, or security of any Third-Party Services. Any disruption, outage, or change in a Third-Party Service that affects the Platform will not constitute a breach of this Agreement by Provider. Customer acknowledges that its use of any Third-Party Services accessible through or in connection with the Platform may be subject to the terms and conditions of those third parties.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 14 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">14</span>
+        Professional Services &amp; Feature Development
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">14.1 What's Included.</span> The monthly base fee and per-user fees described in Section 3 cover access to the Platform, hosting, standard support, and resolution of software bugs (being unintended errors or malfunctions in existing Platform functionality).</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">14.2 New Feature Development.</span> Work that adds new functionality, workflows, or capabilities beyond the existing Platform features (<span class="defined">"New Feature Work"</span>) is not included in the subscription fees and will be scoped and billed separately as professional services.</p>
+      </div>
+      <div class="subsection">
+        <div class="highlight-box">
+          <span class="subsection-title">14.3 Introductory Hours.</span> As a one-time courtesy upon commencement of this Agreement, Provider will make available up to <strong>10 hours of New Feature Work at no charge</strong> during the first calendar month of the Agreement (March 2026). Any unused hours from this introductory period do not carry forward to subsequent months.
+        </div>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">14.4 Hourly Rate.</span> Following the introductory period, New Feature Work will be billed at <strong>$150.00 CAD per hour.</strong> Provider may modify this hourly rate upon <strong>30 days' written notice</strong> to Customer. The updated rate will apply to New Feature Work approved after the effective date of the rate change. Provider will notify Customer of the estimated scope and hours before beginning any New Feature Work, and Customer's written approval (email is sufficient) is required before work commences.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">14.5 Bug Fixes vs. New Features.</span> If there is a disagreement as to whether a requested change constitutes a bug fix or New Feature Work, Provider's reasonable determination will govern. Provider will notify Customer in advance if a request is determined to be New Feature Work subject to hourly billing.</p>
+      </div>
+    </section>
+
+    <!-- ── Section 15 ── -->
+    <section>
+      <div class="section-title">
+        <span class="section-num">15</span>
+        General Provisions
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.1 Governing Law.</span> This Agreement is governed by and construed in accordance with the laws of the <strong>Province of British Columbia and the federal laws of Canada applicable therein.</strong> The Parties submit to the exclusive jurisdiction of the courts of British Columbia.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.2 Entire Agreement.</span> This Agreement constitutes the entire agreement between the Parties with respect to its subject matter and supersedes all prior agreements, understandings, and representations.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.3 Amendments.</span> Provider may amend this Agreement by providing Customer with <strong>30 days' written notice.</strong> Amendments will not apply retroactively and will take effect at the start of the next billing cycle following the notice period. Customer's continued use of the Platform after that date constitutes acceptance of the amended terms.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.4 Assignment.</span> Customer may not assign this Agreement or any rights hereunder without Provider's prior written consent. Provider may assign this Agreement in connection with a merger, acquisition, or sale of substantially all of its assets.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.5 Force Majeure.</span> Neither Party will be liable for any delay or failure to perform its obligations under this Agreement to the extent caused by events beyond its reasonable control, including internet or hosting provider outages, natural disasters, governmental action, pandemic, power failures, or cyber attacks. The affected Party will notify the other as soon as reasonably practicable and will use commercially reasonable efforts to resume performance.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.6 No Agency or Partnership.</span> Nothing in this Agreement creates a partnership, joint venture, agency, employment, or fiduciary relationship between the Parties. Provider is an independent contractor. Neither Party has authority to bind the other in any manner.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.7 Survival.</span> The following sections survive termination or expiry of this Agreement for any reason: Section 6 (Intellectual Property), Section 7 (Data Protection &amp; Privacy), Section 9 (Confidentiality), Section 10 (Customer Representations &amp; Warranties), Section 11 (Indemnification), Section 12 (Limited Liability &amp; Disclaimers), Section 4.4 (payment obligations accrued prior to termination), and Section 15.1 (Governing Law).</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.8 Severability.</span> If any provision of this Agreement is found to be unenforceable, it will be modified to the minimum extent necessary to make it enforceable, and the remaining provisions will continue in full force.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.9 Notices.</span> Notices under this Agreement may be given by email (with confirmation of receipt) or by prepaid mail to the addresses set out in the signature block of this Agreement. Either Party may update its contact address by providing written notice to the other Party.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.10 Counterparts and Electronic Signatures.</span> This Agreement may be executed in counterparts, including by electronic signature, each of which will be deemed an original.</p>
+      </div>
+      <div class="subsection">
+        <p><span class="subsection-title">15.11 Waiver.</span> No failure or delay by either Party in exercising any right or remedy under this Agreement will constitute a waiver of that right or remedy. A waiver of any breach of this Agreement will not be deemed a waiver of any subsequent breach of the same or any other provision. No waiver will be effective unless given in writing.</p>
+      </div>
+    </section>
+
+    <!-- ── Signatures ── -->
+    <section class="page-break">
+      <div class="sig-section-title">Signatures</div>
+      <p class="sig-intro">By signing below, the Parties agree to be bound by this Agreement as of March 1, 2026.</p>
+
+      <table class="sig-table">
+        <tr>
+          <td>
+            <div class="sig-party-name">Joshua Schroeder &mdash; Provider</div>
+
+            <div class="sig-field">
+              <div class="sig-line"></div>
+              <div class="sig-field-label">Signature</div>
+            </div>
+            <div class="sig-field">
+              <div class="sig-field-value">Joshua Schroeder</div>
+              <div class="sig-field-label">Name</div>
+            </div>
+            <div class="sig-field">
+              <div class="sig-field-value">Sole Proprietor</div>
+              <div class="sig-field-label">Title</div>
+            </div>
+            <div class="sig-field">
+              <div class="sig-line"></div>
+              <div class="sig-field-label">Date</div>
+            </div>
+            <div class="sig-field">
+              <div class="sig-field-value">jrsschroeder@gmail.com</div>
+              <div class="sig-field-label">Email</div>
+            </div>
+          </td>
+          <td>
+            <div class="sig-party-name">Luxury Listings Corp. &mdash; Customer</div>
+
+            <div class="sig-field">
+              <div class="sig-line"></div>
+              <div class="sig-field-label">Signature</div>
+            </div>
+            <div class="sig-field">
+              <div class="sig-line"></div>
+              <div class="sig-field-label">Name</div>
+            </div>
+            <div class="sig-field">
+              <div class="sig-line"></div>
+              <div class="sig-field-label">Title</div>
+            </div>
+            <div class="sig-field">
+              <div class="sig-line"></div>
+              <div class="sig-field-label">Date</div>
+            </div>
+            <div class="sig-field">
+              <div class="sig-line"></div>
+              <div class="sig-field-label">Email</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- ── Footer ── -->
+    <div class="doc-footer">
+      This Agreement is entered into between the Parties as identified above, with Joshua Schroeder's principal place of business located in Duncan, British Columbia, Canada.
+    </div>
+
+  </div><!-- /paper -->
+
+</body>
+</html>

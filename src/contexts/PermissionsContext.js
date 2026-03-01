@@ -9,7 +9,7 @@ const PermissionsContext = createContext();
 // Feature permissions - granular access within pages
 export const FEATURE_PERMISSIONS = {
   VIEW_FINANCIALS: 'view_financials',      // See salary, compensation, financial data
-  MANAGE_USERS: 'manage_users',            // Add/remove users, change roles
+  MANAGE_USERS: 'manage_users',            // View users & permissions; only system admin can add/remove or change permissions
   APPROVE_TIME_OFF: 'approve_time_off',    // Approve/deny time off requests
   VIEW_ANALYTICS: 'view_analytics',        // Access to analytics dashboards
   // Client Management

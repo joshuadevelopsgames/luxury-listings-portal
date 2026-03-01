@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Invoice #001 – Luxury Listings Corp. – March 2026</title>
+  <style>
+    /* ── Page & Print Setup ── */
+    @page {
+      size: letter;
+      margin: 0.75in 0.85in;
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+      body {
+        background: #fff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .paper {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border-top: 6px solid #1a3560 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .status-badge {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .total-row {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .note-box {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      font-size: 10.5pt;
+      line-height: 1.6;
+      color: #1a202c;
+      background: #f0f2f5;
+      padding: 40px 20px 60px;
+    }
+
+    /* ── Print Button ── */
+    .no-print {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .no-print button {
+      background: #1a3560;
+      color: #fff;
+      border: none;
+      padding: 12px 32px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      letter-spacing: 0.03em;
+    }
+    .no-print button:hover { background: #14294d; }
+
+    /* ── Paper Shell ── */
+    .paper {
+      background: #fff;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 64px 72px 72px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+      border-top: 6px solid #1a3560;
+    }
+
+    /* ── Top Row: From + Invoice Label ── */
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 48px;
+    }
+
+    .from-block .from-name {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 16pt;
+      font-weight: 700;
+      color: #1a3560;
+      margin-bottom: 4px;
+    }
+
+    .from-block .from-detail {
+      font-size: 9pt;
+      color: #4a5568;
+      line-height: 1.6;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .invoice-label-block {
+      text-align: right;
+    }
+
+    .invoice-label-block .invoice-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 26pt;
+      font-weight: 700;
+      color: #1a3560;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .invoice-label-block .invoice-number {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 10pt;
+      color: #718096;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Meta Row: Bill To + Dates ── */
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-top: 2px solid #1a3560;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 22px 0;
+      margin-bottom: 36px;
+    }
+
+    .bill-to-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #1a3560;
+      margin-bottom: 8px;
+    }
+
+    .bill-to-name {
+      font-size: 11.5pt;
+      font-weight: bold;
+      color: #1a202c;
+      margin-bottom: 2px;
+    }
+
+    .bill-to-detail {
+      font-size: 9pt;
+      color: #4a5568;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+    }
+
+    .dates-block {
+      text-align: right;
+    }
+
+    .date-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 24px;
+      margin-bottom: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 9pt;
+    }
+
+    .date-label {
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 8pt;
+      font-weight: 600;
+    }
+
+    .date-value {
+      color: #1a202c;
+      font-weight: 600;
+      min-width: 110px;
+      text-align: right;
+    }
+
+    .status-badge {
+      display: inline-block;
+      margin-top: 10px;
+      background: #ebf8ff;
+      color: #2b6cb0;
+      border: 1px solid #bee3f8;
+      border-radius: 20px;
+      padding: 3px 14px;
+      font-size: 8.5pt;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Line Items Table ── */
+    .line-items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0;
+    }
+
+    .line-items thead tr {
+      border-bottom: 2px solid #1a3560;
+    }
+
+    .line-items thead th {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #1a3560;
+      padding: 0 0 10px 0;
+      text-align: left;
+    }
+
+    .line-items thead th.right { text-align: right; }
+
+    .line-items tbody tr {
+      border-bottom: 1px solid #f0f2f5;
+    }
+
+    .line-items tbody td {
+      padding: 14px 0;
+      vertical-align: top;
+      font-size: 10pt;
+      color: #2d3748;
+    }
+
+    .line-items tbody td.right {
+      text-align: right;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 10pt;
+      color: #1a202c;
+    }
+
+    .item-name {
+      font-weight: bold;
+      color: #1a202c;
+      margin-bottom: 3px;
+    }
+
+    .item-desc {
+      font-size: 9pt;
+      color: #718096;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* ── Totals Block ── */
+    .totals-wrapper {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+      margin-bottom: 36px;
+    }
+
+    .totals-block {
+      width: 280px;
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 9.5pt;
+      color: #4a5568;
+    }
+
+    .totals-row:last-of-type {
+      border-bottom: none;
+    }
+
+    .totals-row .t-label { font-weight: 500; }
+    .totals-row .t-value { font-weight: 600; color: #1a202c; }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a3560;
+      color: #fff;
+      padding: 14px 16px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .total-row .total-label {
+      font-size: 10pt;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .total-row .total-amount {
+      font-size: 15pt;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Payment Instructions ── */
+    .note-box {
+      background: #f7f9fc;
+      border-left: 4px solid #1a3560;
+      border-radius: 0 4px 4px 0;
+      padding: 18px 22px;
+      margin-bottom: 28px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .note-box .note-title {
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #1a3560;
+      margin-bottom: 8px;
+    }
+
+    .note-box .note-row {
+      font-size: 9.5pt;
+      color: #2d3748;
+      margin-bottom: 4px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .note-box .note-row .n-label {
+      color: #718096;
+      min-width: 80px;
+      font-weight: 600;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding-top: 1px;
+    }
+
+    .note-box .note-row .n-value {
+      color: #1a202c;
+      font-weight: 500;
+    }
+
+    /* ── Footer ── */
+    .invoice-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 16px;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 8.5pt;
+      color: #a0aec0;
+      font-style: italic;
+    }
+
+    .invoice-footer span {
+      color: #718096;
+      font-weight: 600;
+      font-style: normal;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Print Button -->
+  <div class="no-print">
+    <button onclick="window.print()">⬇ Save as PDF / Print</button>
+  </div>
+
+  <div class="paper">
+
+    <!-- ── Top Row ── -->
+    <div class="top-row">
+      <div class="from-block">
+        <div class="from-name">Joshua Schroeder</div>
+        <div class="from-detail">
+          Sole Proprietor<br/>
+          Duncan, British Columbia, Canada<br/>
+          jrsschroeder@gmail.com
+        </div>
+      </div>
+      <div class="invoice-label-block">
+        <div class="invoice-title">INVOICE</div>
+        <div class="invoice-number"># 001</div>
+      </div>
+    </div>
+
+    <!-- ── Meta Row ── -->
+    <div class="meta-row">
+      <div class="bill-to">
+        <div class="bill-to-label">Bill To</div>
+        <div class="bill-to-name">Luxury Listings Corp.</div>
+        <div class="bill-to-detail">
+          British Columbia, Canada
+        </div>
+      </div>
+      <div class="dates-block">
+        <div class="date-row">
+          <span class="date-label">Invoice Date</span>
+          <span class="date-value">March 1, 2026</span>
+        </div>
+        <div class="date-row">
+          <span class="date-label">Due Date</span>
+          <span class="date-value">March 16, 2026</span>
+        </div>
+        <div class="date-row">
+          <span class="date-label">Period</span>
+          <span class="date-value">March 1–31, 2026</span>
+        </div>
+        <div style="text-align:right;">
+          <span class="status-badge">Due</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Line Items ── -->
+    <table class="line-items">
+      <thead>
+        <tr>
+          <th style="width:50%">Description</th>
+          <th class="right" style="width:16%">Qty</th>
+          <th class="right" style="width:17%">Unit Price</th>
+          <th class="right" style="width:17%">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="item-name">Monthly Base Fee</div>
+            <div class="item-desc">Platform access — March 2026</div>
+          </td>
+          <td class="right">1</td>
+          <td class="right">$200.00</td>
+          <td class="right">$200.00</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="item-name">Active User Seats</div>
+            <div class="item-desc">12 users × $20.00/user — March 2026</div>
+          </td>
+          <td class="right">12</td>
+          <td class="right">$20.00</td>
+          <td class="right">$240.00</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="item-name">Introductory Feature Hours</div>
+            <div class="item-desc">10 hrs complimentary onboarding &amp; feature work — March 2026 only</div>
+          </td>
+          <td class="right">10 hrs</td>
+          <td class="right">$0.00</td>
+          <td class="right">$0.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ── Totals ── -->
+    <div class="totals-wrapper">
+      <div class="totals-block">
+        <div class="totals-row">
+          <span class="t-label">Subtotal</span>
+          <span class="t-value">$440.00 CAD</span>
+        </div>
+        <div class="totals-row">
+          <span class="t-label">GST / HST</span>
+          <span class="t-value">Not applicable</span>
+        </div>
+        <div class="total-row">
+          <span class="total-label">Total Due</span>
+          <span class="total-amount">$440.00 CAD</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Payment Instructions ── -->
+    <div class="note-box">
+      <div class="note-title">Payment Instructions</div>
+      <div class="note-row">
+        <span class="n-label">Method</span>
+        <span class="n-value">Interac e-Transfer</span>
+      </div>
+      <div class="note-row">
+        <span class="n-label">Send To</span>
+        <span class="n-value">jrsschroeder@gmail.com</span>
+      </div>
+      <div class="note-row">
+        <span class="n-label">Due By</span>
+        <span class="n-value">March 16, 2026 (Net 15)</span>
+      </div>
+      <div class="note-row">
+        <span class="n-label">Reference</span>
+        <span class="n-value">Invoice #001 — Luxury Listings Corp.</span>
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <div class="invoice-footer">
+      Late payments accrue interest at <span>1.5% per month</span> or <span>$25.00 CAD</span>, whichever is greater. &nbsp;·&nbsp;
+      Thank you for your business!
+    </div>
+
+  </div><!-- /paper -->
+
+</body>
+</html>

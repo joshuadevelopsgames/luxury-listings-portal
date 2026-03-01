@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "React App",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 3000
+    },
+    {
+      "name": "Firebase Emulators (Full Stack)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["firebase", "emulators:start"],
+      "port": 5000
+    },
+    {
+      "name": "Firebase Functions Only",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["firebase", "emulators:start", "--only", "functions"],
+      "port": 5001
+    },
+    {
+      "name": "subscription-agreement",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4400"],
+      "port": 4400
+    }
+  ]
+}

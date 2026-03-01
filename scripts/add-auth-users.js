@@ -10,9 +10,17 @@
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 
-const emails = process.argv.slice(2).map(e => e.trim()).filter(Boolean);
+const args = process.argv.slice(2).map((e) => e.trim()).filter(Boolean);
+// Optional: email firstName lastName role (single user with name/role)
+let emails = args;
+let singleUserMeta = null;
+if (args.length === 4 && args[1] && args[2] && args[3]) {
+  emails = [args[0]];
+  singleUserMeta = { firstName: args[1], lastName: args[2], role: args[3] };
+}
 if (emails.length === 0) {
   console.error('Usage: node scripts/add-auth-users.js <email1> [email2 ...]');
+  console.error('       node scripts/add-auth-users.js <email> <firstName> <lastName> <role>');
   process.exit(1);
 }
 
@@ -27,16 +35,20 @@ admin.initializeApp({ projectId: 'luxury-listings-portal-e56de' });
 const db = admin.firestore();
 const auth = admin.auth();
 
-async function addOne(email) {
+async function addOne(email, meta = null) {
   const normalized = email.trim().toLowerCase();
   const password = randomPassword();
+  const firstName = meta?.firstName ?? normalized.split('@')[0];
+  const lastName = meta?.lastName ?? '';
+  const role = meta?.role ?? 'content_director';
+  const displayName = [firstName, lastName].filter(Boolean).join(' ');
 
   try {
     await auth.createUser({
       email: normalized,
       password,
       emailVerified: false,
-      displayName: normalized.split('@')[0]
+      displayName: displayName || normalized.split('@')[0]
     });
     console.log('Auth created:', normalized, '| temp password:', password);
   } catch (e) {
@@ -52,16 +64,24 @@ async function addOne(email) {
   const now = admin.firestore.FieldValue.serverTimestamp();
   const base = {
     email: normalized,
+    firstName,
+    lastName,
+    displayName,
     isApproved: true,
     approvedAt: now,
     updatedAt: now,
-    role: 'content_director',
-    primaryRole: 'content_director',
+    role,
+    primaryRole: role,
+    roles: [role],
     pagePermissions: DEFAULT_PAGES
   };
   if (snap.exists) {
     const data = snap.data();
-    const updates = { isApproved: true, updatedAt: now };
+    const updates = {
+      isApproved: true,
+      updatedAt: now,
+      ...(meta && { firstName, lastName, displayName, role, primaryRole: role, roles: [role] })
+    };
     if (!data.pagePermissions || data.pagePermissions.length === 0) updates.pagePermissions = DEFAULT_PAGES;
     await ref.update(updates);
     console.log('Approved_users updated:', normalized);
@@ -76,7 +96,7 @@ async function addOne(email) {
 async function main() {
   const results = [];
   for (const e of emails) {
-    const pwd = await addOne(e);
+    const pwd = await addOne(e, emails.length === 1 ? singleUserMeta : null);
     results.push({ email: e.trim().toLowerCase(), password: pwd });
   }
   console.log('\n--- Temp passwords (have them change via Forgot password) ---');

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
+import { getSystemAdmins } from '../utils/systemAdmins';
 import { BarChart3, ChevronDown, ChevronUp, Users, ArrowRight, Camera } from 'lucide-react';
 import PlatformIcons, { PLATFORMS } from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
@@ -88,7 +89,10 @@ export default function WorkloadPage() {
       }
     });
     firestoreService.getApprovedUsers().then((usersData) => {
-      if (mounted) setApprovedUsers(usersData);
+      if (!mounted) return;
+      const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
+      const filtered = (usersData || []).filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
+      setApprovedUsers(filtered);
     }).catch((err) => console.error('Error loading users:', err));
     return () => {
       mounted = false;

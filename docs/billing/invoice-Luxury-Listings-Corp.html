@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice INV-2026-001 — Joshua Schroeder</title>
+  <style>
+    /* ─── Reset ──────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ─── Tokens ─────────────────────────────────────────────────────── */
+    :root {
+      --ink:        #0f1117;
+      --ink-mid:    #4b5263;
+      --ink-soft:   #8b93a5;
+      --ink-ghost:  #c4c9d4;
+      --surface:    #ffffff;
+      --surface-2:  #f7f8fa;
+      --surface-3:  #eef0f5;
+      --accent:     #5b5ef4;        /* electric indigo */
+      --accent-dim: #ededfd;
+      --accent-text:#3b3ec4;
+      --green:      #12b76a;
+      --radius-sm:  6px;
+      --radius-md:  10px;
+    }
+
+    /* ─── Base ───────────────────────────────────────────────────────── */
+    html { font-size: 15px; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
+                   Helvetica, Arial, sans-serif;
+      background: #eceef2;
+      color: var(--ink);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      line-height: 1.5;
+    }
+
+    /* ─── Page ───────────────────────────────────────────────────────── */
+    .page {
+      width: 794px;
+      min-height: 1123px;
+      margin: 40px auto;
+      background: var(--surface);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,.04),
+                  0 12px 40px rgba(0,0,0,.10);
+    }
+
+    /* ─── Top stripe ─────────────────────────────────────────────────── */
+    .stripe {
+      height: 4px;
+      background: linear-gradient(90deg, #5b5ef4 0%, #a78bfa 60%, #38bdf8 100%);
+    }
+
+    /* ─── Inner padding ──────────────────────────────────────────────── */
+    .inner { padding: 52px 56px 48px; }
+
+    /* ─── Header ─────────────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 48px;
+    }
+
+    .header-from .from-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .header-from .from-role {
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .inv-label {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-text);
+      background: var(--accent-dim);
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+    }
+
+    .inv-number {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    /* ─── Divider ────────────────────────────────────────────────────── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--surface-3);
+      margin: 0 0 36px;
+    }
+
+    /* ─── Parties ────────────────────────────────────────────────────── */
+    .parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+
+    .party-card {
+      background: var(--surface-2);
+      border: 1px solid var(--surface-3);
+      border-radius: var(--radius-md);
+      padding: 20px 22px;
+    }
+
+    .party-tag {
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 10px;
+    }
+
+    .party-name {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .party-detail {
+      font-size: 0.8rem;
+      color: var(--ink-mid);
+      line-height: 1.65;
+    }
+
+    .party-detail a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* ─── Meta strip ─────────────────────────────────────────────────── */
+    .meta-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--surface-3);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+
+    .meta-cell {
+      padding: 14px 18px;
+      border-right: 1px solid var(--surface-3);
+    }
+
+    .meta-cell:last-child { border-right: none; }
+
+    .meta-key {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 5px;
+    }
+
+    .meta-val {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .meta-val.highlight {
+      color: var(--accent);
+    }
+
+    /* ─── Table ──────────────────────────────────────────────────────── */
+    .table-label {
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 12px;
+    }
+
+    table.items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0;
+    }
+
+    table.items thead tr {
+      border-bottom: 2px solid var(--ink);
+    }
+
+    table.items thead th {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      padding: 0 12px 10px;
+      text-align: left;
+    }
+
+    table.items thead th:not(:first-child) { text-align: right; }
+
+    table.items tbody tr {
+      border-bottom: 1px solid var(--surface-3);
+    }
+
+    table.items tbody tr:last-child {
+      border-bottom: 2px solid var(--ink);
+    }
+
+    table.items tbody td {
+      padding: 18px 12px;
+      vertical-align: middle;
+    }
+
+    .td-desc .item-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .td-desc .item-sub {
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      margin-top: 3px;
+    }
+
+    .td-num {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ink-mid);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .td-total {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--ink);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* ─── Totals block ───────────────────────────────────────────────── */
+    .totals-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 4px;
+      margin-bottom: 40px;
+    }
+
+    .totals-inner {
+      width: 300px;
+    }
+
+    .total-grand {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--ink);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      margin-top: 2px;
+    }
+
+    .total-grand-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #8b93a5;
+    }
+
+    .total-grand-amount {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #ffffff;
+    }
+
+    /* ─── Payment ────────────────────────────────────────────────────── */
+    .payment-box {
+      background: var(--surface-2);
+      border: 1px solid var(--surface-3);
+      border-radius: var(--radius-md);
+      padding: 24px 26px;
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+      margin-bottom: 40px;
+    }
+
+    .payment-left {
+      flex: 0 0 auto;
+    }
+
+    .payment-left .pay-label {
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 10px;
+    }
+
+    .pay-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-dim);
+      color: var(--accent-text);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 7px 13px;
+      border-radius: 20px;
+    }
+
+    .pay-badge::before {
+      content: '';
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .payment-right {
+      flex: 1;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 20px;
+      align-items: baseline;
+    }
+
+    .pay-key {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      white-space: nowrap;
+    }
+
+    .pay-val {
+      font-size: 0.88rem;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .pay-val.accent { color: var(--accent); font-weight: 700; }
+    .pay-val.strong { font-weight: 700; }
+
+    /* ─── Footer ─────────────────────────────────────────────────────── */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 20px;
+      border-top: 1px solid var(--surface-3);
+    }
+
+    .footer-thanks {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink-mid);
+      letter-spacing: -0.01em;
+    }
+
+    .footer-contact {
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      text-align: right;
+    }
+
+    .footer-contact a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* ─── Print ──────────────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; }
+      .page { margin: 0; box-shadow: none; border-radius: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <div class="stripe"></div>
+  <div class="inner">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-from">
+        <div class="from-name">Joshua Schroeder</div>
+        <div class="from-role">Sole Proprietor</div>
+      </div>
+      <div class="header-right">
+        <div class="inv-label">Invoice</div>
+        <div class="inv-number">INV-2026-001</div>
+      </div>
+    </header>
+
+    <hr class="divider" />
+
+    <!-- Parties -->
+    <div class="parties">
+      <div class="party-card">
+        <div class="party-tag">From</div>
+        <div class="party-name">Joshua Schroeder</div>
+        <div class="party-detail">
+          Sole Proprietor<br>
+          3030 Biscay Road<br>
+          Duncan, British Columbia, Canada<br>
+          <a href="mailto:jrsschroeder@gmail.com">jrsschroeder@gmail.com</a>
+        </div>
+      </div>
+      <div class="party-card">
+        <div class="party-tag">Bill To</div>
+        <div class="party-name">Luxury Listings Corp.</div>
+        <div class="party-detail">
+          1062 Homer St #202<br>
+          Vancouver, British Columbia, Canada<br>
+          <a href="mailto:kambiz@luxury-listings.com">kambiz@luxury-listings.com</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meta strip -->
+    <div class="meta-strip">
+      <div class="meta-cell">
+        <div class="meta-key">Invoice Date</div>
+        <div class="meta-val">March 1, 2026</div>
+      </div>
+      <div class="meta-cell">
+        <div class="meta-key">Billing Period</div>
+        <div class="meta-val">Mar 1–31, 2026</div>
+      </div>
+      <div class="meta-cell">
+        <div class="meta-key">Terms</div>
+        <div class="meta-val">Net 15</div>
+      </div>
+      <div class="meta-cell">
+        <div class="meta-key">Due Date</div>
+        <div class="meta-val highlight">March 16, 2026</div>
+      </div>
+    </div>
+
+    <!-- Line items -->
+    <div class="table-label">Services</div>
+    <table class="items">
+      <thead>
+        <tr>
+          <th style="width:50%;">Description</th>
+          <th style="width:10%;">Qty</th>
+          <th style="width:20%;">Unit Price</th>
+          <th style="width:20%;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="td-desc">
+            <div class="item-name">Software Subscription — Base Fee</div>
+            <div class="item-sub">Monthly platform access, hosting &amp; standard support</div>
+          </td>
+          <td class="td-num">1</td>
+          <td class="td-num">$200.00 CAD</td>
+          <td class="td-total">$200.00 CAD</td>
+        </tr>
+        <tr>
+          <td class="td-desc">
+            <div class="item-name">Software Subscription — Per User</div>
+            <div class="item-sub">12 active user seats as of billing date</div>
+          </td>
+          <td class="td-num">12</td>
+          <td class="td-num">$20.00 CAD</td>
+          <td class="td-total">$240.00 CAD</td>
+        </tr>
+        <tr>
+          <td class="td-desc">
+            <div class="item-name">New Feature Development</div>
+            <div class="item-sub">Up to 10 hours of scoped feature development — complimentary</div>
+          </td>
+          <td class="td-num">10 hrs</td>
+          <td class="td-num">$0.00</td>
+          <td class="td-total">$0.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Total -->
+    <div class="totals-wrap">
+      <div class="totals-inner">
+        <div class="total-grand">
+          <span class="total-grand-label">Total Due (CAD)</span>
+          <span class="total-grand-amount">$440.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="payment-box">
+      <div class="payment-left">
+        <div class="pay-label">Payment Method</div>
+        <div class="pay-badge">Interac e-Transfer</div>
+      </div>
+      <div class="payment-right">
+        <span class="pay-key">Send To</span>
+        <span class="pay-val accent">jrsschroeder@gmail.com</span>
+        <span class="pay-key">Reference</span>
+        <span class="pay-val strong">INV-2026-001</span>
+        <span class="pay-key">Amount</span>
+        <span class="pay-val">$440.00 CAD</span>
+        <span class="pay-key">Due By</span>
+        <span class="pay-val">March 16, 2026</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-thanks">Thank you for your business.</div>
+      <div class="footer-contact">
+        Questions? <a href="mailto:jrsschroeder@gmail.com">jrsschroeder@gmail.com</a>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+</body>
+</html>

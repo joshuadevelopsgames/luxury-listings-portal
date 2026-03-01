@@ -61,7 +61,7 @@ const ALL_FEATURES = {
   [FEATURE_PERMISSIONS.MANAGE_USERS]: { 
     name: 'Manage Users', 
     icon: UserCog, 
-    description: 'Add, edit, or remove users and change roles' 
+    description: 'View Users & Permissions page. Only system administrators can add, remove, or change user permissions.' 
   },
   [FEATURE_PERMISSIONS.APPROVE_TIME_OFF]: { 
     name: 'Approve Time Off', 
@@ -203,28 +203,15 @@ const PermissionsManager = () => {
     return () => document.removeEventListener('visibilitychange', handler);
   }, []);
 
-  // Load all approved users (including system admins who may not be in approved_users)
+  // Load all approved users; exclude system admins so they never show in the list
   useEffect(() => {
     const loadUsers = async () => {
       try {
         setLoading(true);
-        const approvedUsers = await firestoreService.getApprovedUsers();
-        
-        // Ensure system admins are included even if not in approved_users
-        const existingEmails = new Set(approvedUsers.map(u => u.email?.toLowerCase()));
-        const systemAdminUsers = SYSTEM_ADMINS
-          .filter(email => !existingEmails.has(email.toLowerCase()))
-          .map(email => ({
-            email,
-            displayName: 'System Admin',
-            role: 'admin',
-            primaryRole: 'admin',
-            roles: ['admin'],
-            isApproved: true,
-            department: 'Administration'
-          }));
-        
-        const allUsers = [...approvedUsers, ...systemAdminUsers];
+        const approved = await firestoreService.getApprovedUsers();
+        const adminSet = new Set(SYSTEM_ADMINS.map(e => e.toLowerCase()));
+        const approvedUsers = approved.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
+        const allUsers = approvedUsers;
         setUsers(allUsers);
 
         // Load permissions for each user (pages + features); use normalized email for keys
@@ -523,6 +510,8 @@ const PermissionsManager = () => {
   );
 
   const canApproveUsers = isSystemAdmin || hasPermission(PERMISSIONS.APPROVE_USERS);
+  // Only system admins can add/remove users or change permissions; anyone with MANAGE_USERS can view
+  const canEditPermissions = isSystemAdmin;
 
   const handleApprovePendingUser = async (pendingUser) => {
     const email = (pendingUser.email || '').toLowerCase();
@@ -610,7 +599,9 @@ const PermissionsManager = () => {
             )}
           </div>
           <p className="text-[15px] text-[#86868b]">
-            Manage users and control which pages they can access
+            {canEditPermissions
+              ? 'Manage users and control which pages they can access'
+              : 'View users and their permissions. Only system administrators can add, remove, or change permissions.'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -810,8 +801,8 @@ const PermissionsManager = () => {
                               </div>
                               <select
                                 value={userRoles[email] || 'social_media_manager'}
-                                onChange={(e) => handleRoleChange(email, e.target.value)}
-                                disabled={savingRole === email}
+                                onChange={(e) => canEditPermissions && handleRoleChange(email, e.target.value)}
+                                disabled={savingRole === email || !canEditPermissions}
                                 className="h-9 px-3 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50"
                               >
                                 <option value="admin">Admin</option>
@@ -843,11 +834,14 @@ const PermissionsManager = () => {
                               type="button"
                               role="switch"
                               aria-checked={!!userAdminPermissions[email]}
+                              disabled={!canEditPermissions}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setAdminPermissions(email, !userAdminPermissions[email]);
+                                if (canEditPermissions) setAdminPermissions(email, !userAdminPermissions[email]);
                               }}
-                              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:ring-offset-2 dark:focus:ring-offset-[#2c2c2e] ${
+                              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:ring-offset-2 dark:focus:ring-offset-[#2c2c2e] ${
+                                !canEditPermissions ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                              } ${
                                 userAdminPermissions[email]
                                   ? 'bg-[#34c759]'
                                   : 'bg-black/20 dark:bg-white/20'
@@ -879,35 +873,41 @@ const PermissionsManager = () => {
                               <Eye className="w-3.5 h-3.5" />
                               View as User
                             </button>
-                            <button
-                              onClick={() => grantAllPages(email)}
-                              className="px-3 py-1.5 rounded-lg bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors"
-                            >
-                              Grant All
-                            </button>
-                            <button
-                              onClick={() => revokeAllPages(email)}
-                              className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
-                            >
-                              Revoke All
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => saveUserPermissions(email)}
-                            disabled={!hasUnsavedChanges || saving === email}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all ${
-                              hasUnsavedChanges
-                                ? 'bg-[#0071e3] text-white hover:bg-[#0077ed] shadow-lg shadow-[#0071e3]/25'
-                                : 'bg-black/5 dark:bg-white/5 text-[#86868b] cursor-not-allowed'
-                            }`}
-                          >
-                            {saving === email ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Save className="w-4 h-4" />
+                            {canEditPermissions && (
+                              <>
+                                <button
+                                  onClick={() => grantAllPages(email)}
+                                  className="px-3 py-1.5 rounded-lg bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors"
+                                >
+                                  Grant All
+                                </button>
+                                <button
+                                  onClick={() => revokeAllPages(email)}
+                                  className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+                                >
+                                  Revoke All
+                                </button>
+                              </>
                             )}
-                            Save Changes
-                          </button>
+                          </div>
+                          {canEditPermissions && (
+                            <button
+                              onClick={() => saveUserPermissions(email)}
+                              disabled={!hasUnsavedChanges || saving === email}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                                hasUnsavedChanges
+                                  ? 'bg-[#0071e3] text-white hover:bg-[#0077ed] shadow-lg shadow-[#0071e3]/25'
+                                  : 'bg-black/5 dark:bg-white/5 text-[#86868b] cursor-not-allowed'
+                              }`}
+                            >
+                              {saving === email ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Save className="w-4 h-4" />
+                              )}
+                              Save Changes
+                            </button>
+                          )}
                         </div>
 
                         {/* Base Modules Section */}
@@ -923,8 +923,12 @@ const PermissionsManager = () => {
                               return (
                                 <button
                                   key={pageId}
-                                  onClick={() => togglePermission(email, pageId)}
-                                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                                  type="button"
+                                  onClick={() => canEditPermissions && togglePermission(email, pageId)}
+                                  disabled={!canEditPermissions}
+                                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                                    canEditPermissions ? 'cursor-pointer' : 'cursor-default opacity-90'
+                                  } ${
                                     hasAccess
                                       ? 'bg-[#ff9500]/10 border-[#ff9500]/30 text-[#ff9500]'
                                       : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
@@ -968,13 +972,14 @@ const PermissionsManager = () => {
                             return (
                               <button
                                 key={pageId}
-                                onClick={() => !isDashboard && togglePermission(email, pageId)}
-                                disabled={isDashboard}
+                                type="button"
+                                onClick={() => canEditPermissions && !isDashboard && togglePermission(email, pageId)}
+                                disabled={isDashboard || !canEditPermissions}
                                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                                   hasAccess
                                     ? 'bg-[#0071e3]/10 border-[#0071e3]/30 text-[#0071e3]'
                                     : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
-                                } ${isDashboard ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                } ${isDashboard || !canEditPermissions ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                               >
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                                   hasAccess 
@@ -1019,8 +1024,12 @@ const PermissionsManager = () => {
                               return (
                                 <button
                                   key={featureId}
-                                  onClick={() => toggleFeaturePermission(email, featureId)}
+                                  type="button"
+                                  onClick={() => canEditPermissions && toggleFeaturePermission(email, featureId)}
+                                  disabled={!canEditPermissions}
                                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                                    !canEditPermissions ? 'cursor-default opacity-90' : 'cursor-pointer'
+                                  } ${
                                     hasFeature
                                       ? 'bg-[#af52de]/10 border-[#af52de]/30'
                                       : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent hover:bg-black/5 dark:hover:bg-white/5'

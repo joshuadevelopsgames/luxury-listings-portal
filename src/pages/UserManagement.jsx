@@ -32,6 +32,7 @@ import { USER_ROLES } from '../entities/UserRoles';
 import { auth } from '../firebase';
 import { PERMISSIONS, PERMISSION_CATEGORIES, PERMISSION_LABELS } from '../entities/Permissions';
 import EmployeeLink from '../components/ui/EmployeeLink';
+import { getSystemAdmins } from '../utils/systemAdmins';
 
 const UserManagement = () => {
   const { currentUser, hasPermission, isSystemAdmin } = useAuth();
@@ -113,9 +114,11 @@ const UserManagement = () => {
         console.log('🔍 DEBUG: Starting loadApprovedUsers...');
         setLoading(true);
         const users = await firestoreService.getApprovedUsers();
-        console.log('🔍 DEBUG: Loaded approved users:', users.length);
-        console.log('🔍 DEBUG: Approved users emails:', users.map(u => u.email));
-        setApprovedUsers(users);
+        const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
+        const filtered = users.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
+        console.log('🔍 DEBUG: Loaded approved users:', filtered.length);
+        console.log('🔍 DEBUG: Approved users emails:', filtered.map(u => u.email));
+        setApprovedUsers(filtered);
         console.log('🔍 DEBUG: Approved users state updated');
       } catch (error) {
         console.error('Error loading approved users:', error);
@@ -550,8 +553,10 @@ const UserManagement = () => {
       console.log('📡 Loaded pending users from Firestore:', currentPendingUsers);
       console.log('🔍 DEBUG: Pending users from Firestore:', currentPendingUsers.map(u => ({ id: u.id, email: u.email })));
       
-      // Load current approved users from Firestore
-      const currentApprovedUsers = await firestoreService.getApprovedUsers();
+      // Load current approved users from Firestore (exclude system admins)
+      const rawApproved = await firestoreService.getApprovedUsers();
+      const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
+      const currentApprovedUsers = rawApproved.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
       console.log('📡 Loaded approved users from Firestore:', currentApprovedUsers);
       console.log('🔍 DEBUG: Approved users from Firestore:', currentApprovedUsers.map(u => ({ id: u.id, email: u.email })));
       
