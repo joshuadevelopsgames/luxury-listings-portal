@@ -369,12 +369,12 @@ class FirestoreService {
     }
   }
 
-  // Listen for changes to a specific approved user's profile. Use email as-is so we listen to doc at token path.
+  // Listen for changes to a specific approved user's profile (canonical key = case-insensitive).
   onApprovedUserChange(email, callback) {
     if (!email) {
       return () => {}; // Return empty unsubscribe
     }
-    const emailKey = (email || '').trim();
+    const emailKey = (email || '').trim().toLowerCase();
     const userDocRef = doc(db, this.collections.APPROVED_USERS, emailKey);
     
     return onSnapshot(userDocRef, (docSnap) => {
@@ -389,11 +389,12 @@ class FirestoreService {
     });
   }
 
-  // Delete approved user
+  // Delete approved user (case-insensitive: always delete by canonical key)
   async deleteApprovedUser(email) {
     try {
-      await deleteDoc(doc(db, this.collections.APPROVED_USERS, email));
-      console.log('✅ Approved user deleted:', email);
+      const key = this._approvedUserKey(email);
+      await deleteDoc(doc(db, this.collections.APPROVED_USERS, key));
+      console.log('✅ Approved user deleted:', key);
     } catch (error) {
       console.error('❌ Error deleting approved user:', error);
       throw error;
@@ -1291,26 +1292,22 @@ class FirestoreService {
     };
   }
 
-  // Get user's leave balances from their user document (APPROVED_USERS). Single source of truth.
+  // Get user's leave balances from their user document (APPROVED_USERS). Case-insensitive email lookup.
   async getUserLeaveBalances(userEmail) {
     if (!userEmail || typeof userEmail !== 'string') {
       console.warn('⚠️ getUserLeaveBalances called with invalid email:', userEmail);
       return this._normalizeLeaveBalances(null);
     }
     try {
-      const userDoc = await getDoc(doc(db, this.collections.APPROVED_USERS, userEmail));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        return this._normalizeLeaveBalances(data.leaveBalances);
-      }
-      return this._normalizeLeaveBalances(null);
+      const user = await this.getApprovedUserByEmail(userEmail);
+      return this._normalizeLeaveBalances(user?.leaveBalances ?? null);
     } catch (error) {
       console.error('❌ Error getting leave balances:', error);
       return this._normalizeLeaveBalances(null);
     }
   }
 
-  // Update user's leave balances (admin function). Writes to APPROVED_USERS so My Time Off and Team Management stay in sync.
+  // Update user's leave balances (admin function). Case-insensitive: finds user doc then updates.
   async updateUserLeaveBalances(userEmail, balances) {
     if (!userEmail || typeof userEmail !== 'string') {
       console.warn('⚠️ updateUserLeaveBalances called with invalid email:', userEmail);
@@ -1322,7 +1319,11 @@ class FirestoreService {
       remote: { total: Number(balances.remote?.total) ?? 0, used: Number(balances.remote?.used) ?? 0 }
     };
     try {
-      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      const user = await this.getApprovedUserByEmail(userEmail);
+      if (!user?.id) {
+        return { success: false, error: 'User not found' };
+      }
+      const userRef = doc(db, this.collections.APPROVED_USERS, user.id);
       await updateDoc(userRef, {
         leaveBalances: toStore,
         leaveBalancesUpdatedAt: serverTimestamp()
@@ -1372,10 +1373,14 @@ class FirestoreService {
     }
   }
 
-  // Set user as time off admin
+  // Set user as time off admin (case-insensitive email lookup)
   async setTimeOffAdmin(userEmail, isAdmin) {
     try {
-      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      const user = await this.getApprovedUserByEmail(userEmail);
+      if (!user?.id) {
+        throw new Error('User not found');
+      }
+      const userRef = doc(db, this.collections.APPROVED_USERS, user.id);
       await updateDoc(userRef, {
         isTimeOffAdmin: isAdmin,
         updatedAt: serverTimestamp()
@@ -1388,14 +1393,11 @@ class FirestoreService {
     }
   }
 
-  // Check if user is time off admin
+  // Check if user is time off admin (case-insensitive email lookup)
   async isTimeOffAdmin(userEmail) {
     try {
-      const userDoc = await getDoc(doc(db, this.collections.APPROVED_USERS, userEmail));
-      if (userDoc.exists()) {
-        return userDoc.data().isTimeOffAdmin === true;
-      }
-      return false;
+      const user = await this.getApprovedUserByEmail(userEmail);
+      return user?.isTimeOffAdmin === true;
     } catch (error) {
       console.error('❌ Error checking time off admin:', error);
       return false;
@@ -4066,7 +4068,17 @@ class FirestoreService {
           return mapResult(altSnap.data());
         }
       }
-      
+
+      // Fallback: doc may exist under mixed-case ID (e.g. "Michelle@..."); find by email match
+      const allSnap = await getDocs(collection(db, this.collections.APPROVED_USERS));
+      for (const d of allSnap.docs) {
+        const data = d.data();
+        const docEmail = (data.email || d.id || '').toString().toLowerCase().trim();
+        if (docEmail === normalizedEmail) {
+          return mapResult(data);
+        }
+      }
+
       return { pages: [], features: [], adminPermissions: false };
     } catch (error) {
       console.error('❌ Error getting user permissions:', error);
@@ -4087,47 +4099,56 @@ class FirestoreService {
     }
   }
 
-  // Set user's page permissions
+  // Canonical key for approved_users: login lookups use lowercase email
+  _approvedUserKey(email) {
+    return (email || '').toLowerCase().trim();
+  }
+
+  // Set user's page permissions (uses normalized email as doc ID so login lookup finds the doc)
   async setUserPagePermissions(userEmail, pageIds) {
     try {
-      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
-      
-      // Check if document exists first
+      const key = this._approvedUserKey(userEmail);
+      const userRef = doc(db, this.collections.APPROVED_USERS, key);
+      const legacyRef = key !== userEmail ? doc(db, this.collections.APPROVED_USERS, userEmail) : null;
       const userSnap = await getDoc(userRef);
-      
+      const legacySnap = legacyRef ? await getDoc(legacyRef) : null;
+
       console.log('📝 Setting permissions for user:', userEmail);
-      console.log('📝 Document exists:', userSnap.exists());
+      console.log('📝 Canonical key:', key);
       console.log('📝 New permissions:', pageIds);
 
-      if (!userSnap.exists()) {
-        console.warn('⚠️ User document does not exist, creating with permissions...');
-        // Create document if it doesn't exist
-        await setDoc(userRef, {
-          email: userEmail,
-          pagePermissions: pageIds,
-          permissionsUpdatedAt: serverTimestamp(),
-          createdAt: serverTimestamp()
-        }, { merge: true });
-      } else {
-        // Update existing document
+      if (userSnap.exists()) {
         await updateDoc(userRef, {
           pagePermissions: pageIds,
           permissionsUpdatedAt: serverTimestamp()
         });
+      } else if (legacySnap?.exists()) {
+        const existing = legacySnap.data();
+        await setDoc(userRef, {
+          ...existing,
+          email: key,
+          pagePermissions: pageIds,
+          permissionsUpdatedAt: serverTimestamp()
+        }, { merge: true });
+        await deleteDoc(legacyRef);
+        console.log('✅ Migrated permissions doc to canonical key:', key);
+      } else {
+        await setDoc(userRef, {
+          email: key,
+          pagePermissions: pageIds,
+          permissionsUpdatedAt: serverTimestamp(),
+          createdAt: serverTimestamp()
+        }, { merge: true });
       }
-      
+
       console.log('✅ Page permissions saved for:', userEmail);
-      
-      // Verify the update
+
       const verifySnap = await getDoc(userRef);
       if (verifySnap.exists()) {
         const savedPermissions = verifySnap.data().pagePermissions || [];
-        console.log('✅ Verified saved permissions:', savedPermissions);
         if (JSON.stringify(savedPermissions) !== JSON.stringify(pageIds)) {
           console.warn('⚠️ Saved permissions do not match requested permissions!');
         }
-      } else {
-        console.error('❌ Document does not exist after save!');
       }
     } catch (error) {
       console.error('❌ Error setting user page permissions:', error);
@@ -4141,26 +4162,34 @@ class FirestoreService {
   // Set user's feature permissions (granular access within pages)
   async setUserFeaturePermissions(userEmail, featureIds) {
     try {
-      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      const key = this._approvedUserKey(userEmail);
+      const userRef = doc(db, this.collections.APPROVED_USERS, key);
+      const legacyRef = key !== userEmail ? doc(db, this.collections.APPROVED_USERS, userEmail) : null;
       const userSnap = await getDoc(userRef);
-      
-      console.log('📝 Setting feature permissions for user:', userEmail);
-      console.log('📝 New feature permissions:', featureIds);
+      const legacySnap = legacyRef ? await getDoc(legacyRef) : null;
 
-      if (!userSnap.exists()) {
-        await setDoc(userRef, {
-          email: userEmail,
-          featurePermissions: featureIds,
-          permissionsUpdatedAt: serverTimestamp(),
-          createdAt: serverTimestamp()
-        }, { merge: true });
-      } else {
+      if (userSnap.exists()) {
         await updateDoc(userRef, {
           featurePermissions: featureIds,
           permissionsUpdatedAt: serverTimestamp()
         });
+      } else if (legacySnap?.exists()) {
+        const existing = legacySnap.data();
+        await setDoc(userRef, {
+          ...existing,
+          email: key,
+          featurePermissions: featureIds,
+          permissionsUpdatedAt: serverTimestamp()
+        }, { merge: true });
+        await deleteDoc(legacyRef);
+      } else {
+        await setDoc(userRef, {
+          email: key,
+          featurePermissions: featureIds,
+          permissionsUpdatedAt: serverTimestamp(),
+          createdAt: serverTimestamp()
+        }, { merge: true });
       }
-      
       console.log('✅ Feature permissions saved for:', userEmail);
     } catch (error) {
       console.error('❌ Error setting user feature permissions:', error);
@@ -4171,13 +4200,11 @@ class FirestoreService {
   // Set both page and feature permissions at once (adminPermissions = grant all features except view_financials)
   async setUserFullPermissions(userEmail, { pages = [], features = [], adminPermissions = false } = {}) {
     try {
-      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      const key = this._approvedUserKey(userEmail);
+      const userRef = doc(db, this.collections.APPROVED_USERS, key);
+      const legacyRef = key !== userEmail ? doc(db, this.collections.APPROVED_USERS, userEmail) : null;
       const userSnap = await getDoc(userRef);
-      
-      console.log('📝 Setting full permissions for user:', userEmail);
-      console.log('📝 Page permissions:', pages);
-      console.log('📝 Feature permissions:', features);
-      console.log('📝 Admin permissions:', adminPermissions);
+      const legacySnap = legacyRef ? await getDoc(legacyRef) : null;
 
       const payload = {
         pagePermissions: pages,
@@ -4186,16 +4213,24 @@ class FirestoreService {
         permissionsUpdatedAt: serverTimestamp()
       };
 
-      if (!userSnap.exists()) {
+      if (userSnap.exists()) {
+        await updateDoc(userRef, payload);
+      } else if (legacySnap?.exists()) {
+        const existing = legacySnap.data();
         await setDoc(userRef, {
-          email: userEmail,
+          ...existing,
+          email: key,
           ...payload,
           createdAt: serverTimestamp()
         }, { merge: true });
+        await deleteDoc(legacyRef);
       } else {
-        await updateDoc(userRef, payload);
+        await setDoc(userRef, {
+          email: key,
+          ...payload,
+          createdAt: serverTimestamp()
+        }, { merge: true });
       }
-      
       console.log('✅ Full permissions saved for:', userEmail);
     } catch (error) {
       console.error('❌ Error setting user full permissions:', error);
@@ -4203,10 +4238,11 @@ class FirestoreService {
     }
   }
 
-  // Listen to user's page permissions in real-time
+  // Listen to user's page permissions in real-time (uses canonical key so it matches login lookup)
   onUserPagePermissionsChange(userEmail, callback) {
     try {
-      const userRef = doc(db, this.collections.APPROVED_USERS, userEmail);
+      const key = this._approvedUserKey(userEmail);
+      const userRef = doc(db, this.collections.APPROVED_USERS, key);
       return onSnapshot(
         userRef, 
         (docSnap) => {
