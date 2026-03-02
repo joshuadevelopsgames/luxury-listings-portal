@@ -126,7 +126,7 @@ function dateStr(ts) {
 
 export default function CanvasPage() {
   const { currentUser } = useAuth();
-  const confirm = useConfirm();
+  const { confirm } = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [canvases, setCanvases] = useState([]);
