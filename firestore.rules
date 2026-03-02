@@ -23,22 +23,23 @@ service cloud.firestore {
 
     // Helper: check if user has a specific role by reading their approved_users doc
     function getUserRole() {
-      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email));
+      // Use canonical lowercase email if custom claim is present; fall back to token email
+      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email_lower != null ? request.auth.token.email_lower : request.auth.token.email));
       return userDoc != null && userDoc.data != null && 'role' in userDoc.data
         ? userDoc.data.role
         : 'pending';
     }
-
+    
     // Helper: check if user has a specific feature permission
     function hasFeaturePermission(feature) {
-      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email));
+      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email_lower != null ? request.auth.token.email_lower : request.auth.token.email));
       return userDoc != null && userDoc.data != null && 'featurePermissions' in userDoc.data
         && feature in userDoc.data.featurePermissions;
     }
-
+    
     // Helper: check if user has admin-level permissions flag
     function hasAdminPermissions() {
-      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email));
+      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email_lower != null ? request.auth.token.email_lower : request.auth.token.email));
       return userDoc != null && userDoc.data != null
         && 'adminPermissions' in userDoc.data
         && userDoc.data.adminPermissions == true;
@@ -49,9 +50,11 @@ service cloud.firestore {
       return getUserRole() in allowedRoles;
     }
 
-    // Helper function to get user email
+    // Helper function to get canonical user email (lowercase when available via custom claim)
     function getUserEmail() {
-      return request.auth.token.email;
+      return request.auth.token.email_lower != null
+        ? request.auth.token.email_lower
+        : request.auth.token.email;
     }
 
     // ===== AUDIT LOG (append-only) =====
@@ -85,17 +88,17 @@ service cloud.firestore {
     // Pending users - authenticated users can read; users can create only their own (so they appear for approval), admins can update/delete
     match /pending_users/{document=**} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.email == request.auth.token.email;
+      allow create: if isAuthenticated() && request.resource.data.email == getUserEmail();
       allow update, delete: if isAdmin();
     }
     
     // Approved users - users can read; admins create/delete; users can create/update own doc (onboarding, My Profile)
     match /approved_users/{userEmail} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || (isAuthenticated() && request.auth.token.email == userEmail);
+      allow create: if isAdmin() || (isAuthenticated() && getUserEmail() == userEmail);
       allow delete: if isAdmin();
       allow update: if isAdmin() ||
-        (isAuthenticated() && request.auth.token.email == userEmail &&
+        (isAuthenticated() && getUserEmail() == userEmail &&
          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
            'role', 'roles', 'primaryRole', 'isApproved', 'email', 'customPermissions',
            'pagePermissions', 'featurePermissions', 'adminPermissions'
@@ -105,8 +108,8 @@ service cloud.firestore {
     // Employees - users can create/update their own (onboarding); admins can do anything
     match /employees/{employeeId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.email == request.auth.token.email;
-      allow update: if isAuthenticated() && (resource.data.email == request.auth.token.email || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.email == getUserEmail();
+      allow update: if isAuthenticated() && (resource.data.email == getUserEmail() || isAdmin());
       allow delete: if isAdmin();
     }
     
@@ -232,9 +235,9 @@ service cloud.firestore {
     
     // Per-user task/request archive preferences (which tasks/requests user has archived locally)
     match /user_task_archives/{docId} {
-      allow read: if isAuthenticated() && resource.data.userEmail == request.auth.token.email;
-      allow create: if isAuthenticated() && request.resource.data.userEmail == request.auth.token.email;
-      allow update, delete: if isAuthenticated() && resource.data.userEmail == request.auth.token.email;
+      allow read: if isAuthenticated() && resource.data.userEmail == getUserEmail();
+      allow create: if isAuthenticated() && request.resource.data.userEmail == getUserEmail();
+      allow update, delete: if isAuthenticated() && resource.data.userEmail == getUserEmail();
     }
     
     // Leave requests - any authenticated can read; create own requests; only HR/admin can approve/update others
@@ -246,7 +249,7 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (
         isAdmin() ||
         userRoleIn(['admin', 'hr_manager']) ||
-        (resource.data.userEmail == request.auth.token.email && resource.data.status == 'pending')
+        (resource.data.userEmail == getUserEmail() && resource.data.status == 'pending')
       );
       // Delete: admin/HR only
       allow delete: if isAuthenticated() && (
@@ -301,7 +304,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && 
-        resource.data.created_by == request.auth.token.email;
+        resource.data.created_by == getUserEmail();
     }
     
     // Usage analytics - any authenticated user can log; only admins can read (System Admin page)
@@ -337,24 +340,24 @@ service cloud.firestore {
     
     // Content calendar - users can read/write their own calendars and items
     match /content_calendars/{calendarId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userEmail == request.auth.token.email;
-      allow create: if isAuthenticated() && request.resource.data.userEmail == request.auth.token.email;
+      allow read, update, delete: if isAuthenticated() && resource.data.userEmail == getUserEmail();
+      allow create: if isAuthenticated() && request.resource.data.userEmail == getUserEmail();
     }
     // Content items - owner can CRUD; admins/directors can read all and update status (approval workflow)
     match /content_items/{itemId} {
       allow read: if isAuthenticated() && (
-        resource.data.userEmail == request.auth.token.email ||
+        resource.data.userEmail == getUserEmail() ||
         isAdmin() ||
         userRoleIn(['admin', 'director', 'content_director'])
       );
-      allow create: if isAuthenticated() && request.resource.data.userEmail == request.auth.token.email;
+      allow create: if isAuthenticated() && request.resource.data.userEmail == getUserEmail();
       allow update: if isAuthenticated() && (
-        resource.data.userEmail == request.auth.token.email ||
+        resource.data.userEmail == getUserEmail() ||
         isAdmin() ||
         userRoleIn(['admin', 'director', 'content_director'])
       );
       allow delete: if isAuthenticated() && (
-        resource.data.userEmail == request.auth.token.email ||
+        resource.data.userEmail == getUserEmail() ||
         isAdmin()
       );
     }
