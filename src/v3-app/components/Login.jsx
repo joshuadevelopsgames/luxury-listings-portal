@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowRight, Shield, Users, TrendingUp, Zap, Calendar, BarChart3, CheckSquare, Briefcase, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -15,6 +15,16 @@ const V3Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { signInWithGoogle, signInWithEmail } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Show a friendly message when redirected after failed access check
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const err = params.get('error');
+    if (err === 'access_required') {
+      setError('Your email is not authorized for this portal. Contact an administrator to be added in Users & Permissions.');
+    }
+  }, [location.search]);
 
   const handleGoogleSignIn = async () => {
     try {

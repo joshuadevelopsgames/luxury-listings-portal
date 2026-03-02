@@ -46,6 +46,7 @@ const ITSupportPage = () => {
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [ticketToClose, setTicketToClose] = useState(null);
   const [closingReason, setClosingReason] = useState('');
+  const [deletingTicketId, setDeletingTicketId] = useState(null);
   
   // Admin tabs and feedback/chat state
   const [activeAdminTab, setActiveAdminTab] = useState('tickets');
@@ -64,6 +65,9 @@ const ITSupportPage = () => {
   const [newBugCount, setNewBugCount] = useState(0);
   const [newFeatureCount, setNewFeatureCount] = useState(0);
   const [newChatCount, setNewChatCount] = useState(0);
+  const [errorReports, setErrorReports] = useState([]);
+  const [loadingErrorReports, setLoadingErrorReports] = useState(false);
+  const [deletingErrorReportId, setDeletingErrorReportId] = useState(null);
 
   // Google Apps Script URL for email notifications
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4ugw4vME8hCeaE3Bieu7gsrNJqbGHxkNwZR97vKi0wVbaQNMgGFnG3W-lKrkwXzFkdQ/exec';
@@ -264,6 +268,16 @@ const ITSupportPage = () => {
     
     return () => clearInterval(pollInterval);
   }, [isITSupport]);
+
+  // Load error reports (from ErrorBoundary / submitErrorReport) when on Bug Reports tab
+  useEffect(() => {
+    if (!isITSupport || activeAdminTab !== 'bugs') return;
+    setLoadingErrorReports(true);
+    firestoreService.getErrorReports()
+      .then((list) => { setErrorReports(list || []); })
+      .catch(() => setErrorReports([]))
+      .finally(() => setLoadingErrorReports(false));
+  }, [isITSupport, activeAdminTab]);
 
   // Load comments when a ticket is selected
   useEffect(() => {
@@ -624,6 +638,29 @@ const ITSupportPage = () => {
     }
   };
 
+  // Delete support ticket (IT only)
+  const handleDeleteSupportTicket = async (ticketId) => {
+    const confirmed = await confirm({
+      title: 'Delete Support Ticket',
+      message: 'Are you sure you want to delete this ticket? This cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
+    setDeletingTicketId(ticketId);
+    try {
+      await firestoreService.deleteSupportTicket(ticketId);
+      setMyTickets(prev => prev.filter(t => t.id !== ticketId));
+      if (selectedTicket?.id === ticketId) setSelectedTicket(null);
+      toast.success('Support ticket deleted');
+    } catch (error) {
+      console.error('Error deleting support ticket:', error);
+      toast.error(error?.message || 'Failed to delete ticket');
+    } finally {
+      setDeletingTicketId(null);
+    }
+  };
+
   // Handle comment submission
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -763,6 +800,28 @@ const ITSupportPage = () => {
     } catch (error) {
       console.error('Error archiving chat:', error);
       toast.error('Failed to archive chat');
+    }
+  };
+
+  // Delete error report (admin only)
+  const handleDeleteErrorReport = async (reportId) => {
+    const confirmed = await confirm({
+      title: 'Delete Error Report',
+      message: 'Are you sure you want to delete this error report? This cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
+    setDeletingErrorReportId(reportId);
+    try {
+      await firestoreService.deleteErrorReport(reportId);
+      setErrorReports(prev => prev.filter(r => r.id !== reportId));
+      toast.success('Error report deleted');
+    } catch (error) {
+      console.error('Error deleting error report:', error);
+      toast.error(error?.message || 'Failed to delete');
+    } finally {
+      setDeletingErrorReportId(null);
     }
   };
 
@@ -1299,6 +1358,15 @@ const ITSupportPage = () => {
                           >
                             View Details
                           </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteSupportTicket(ticket.id); }}
+                            disabled={deletingTicketId === ticket.id}
+                            className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 flex items-center gap-1"
+                            title="Delete ticket"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </button>
                         </div>
                       )}
                     </div>
@@ -1336,15 +1404,17 @@ const ITSupportPage = () => {
                 {feedbackItems.filter(f => f.type === 'bug').map((bug) => (
                   <div 
                     key={bug.id}
-                    onClick={() => setSelectedFeedback(bug)}
-                    className={`p-4 rounded-xl cursor-pointer transition-all ${
+                    className={`p-4 rounded-xl transition-all ${
                       bug.status === 'open' ? 'bg-[#ff3b30]/5 border border-[#ff3b30]/20' :
                       bug.status === 'in_progress' ? 'bg-[#0071e3]/5 border border-[#0071e3]/20' :
                       'bg-black/[0.02] dark:bg-white/5 border border-transparent'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer" 
+                        onClick={() => setSelectedFeedback(bug)}
+                      >
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{bug.title}</p>
                           <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
@@ -1370,12 +1440,61 @@ const ITSupportPage = () => {
                           {bug.createdAt?.toDate ? format(bug.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
                         </p>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-[#86868b] flex-shrink-0" />
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteFeedback(bug.id); }}
+                          disabled={deletingFeedbackId === bug.id}
+                          className="p-2 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50"
+                          title="Delete bug report"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setSelectedFeedback(bug)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                          <ChevronRight className="w-5 h-5 text-[#86868b]" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+
+            {/* Error Reports (from ErrorBoundary / crash reports) */}
+            <div className="mt-8 pt-6 border-t border-black/5 dark:border-white/10">
+              <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white mb-3">Error Reports (crash reports)</h4>
+              {loadingErrorReports ? (
+                <p className="text-[12px] text-[#86868b]">Loading...</p>
+              ) : errorReports.length === 0 ? (
+                <p className="text-[12px] text-[#86868b]">No error reports.</p>
+              ) : (
+                <div className="space-y-2">
+                  {errorReports.map((report) => (
+                    <div
+                      key={report.id}
+                      className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                          {report.errorMessage?.substring(0, 120) || 'Error report'}
+                        </p>
+                        <p className="text-[11px] text-[#86868b] mt-0.5">
+                          {report.userEmail} · {report.createdAt?.toDate ? format(report.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
+                          {report.status === 'resolved' && ' · Resolved'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteErrorReport(report.id)}
+                        disabled={deletingErrorReportId === report.id}
+                        className="p-2 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 flex-shrink-0"
+                        title="Delete error report"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1935,6 +2054,19 @@ const ITSupportPage = () => {
                   </button>
                 </form>
               </div>
+
+              {isITSupport && (
+                <div className="pt-4 mt-4 border-t border-black/5 dark:border-white/10 flex justify-end">
+                  <button
+                    onClick={() => handleDeleteSupportTicket(selectedTicket.id)}
+                    disabled={deletingTicketId === selectedTicket.id}
+                    className="px-4 py-2 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {deletingTicketId === selectedTicket.id ? 'Deleting...' : 'Delete Ticket'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>,

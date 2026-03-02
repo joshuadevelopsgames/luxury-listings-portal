@@ -345,8 +345,8 @@ export function AuthProvider({ children }) {
         );
         approvedUser = matched[0];
       }
-      if (approvedUser?.isApproved) {
-        // Approved user
+      if (approvedUser) {
+        // Any user in approved_users is allowed to access (ignore isApproved flag)
         const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
         const primaryRole = assignedRoles[0] || 'content_director';
         
@@ -404,24 +404,11 @@ export function AuthProvider({ children }) {
           appNavigate('/onboarding', { replace: true });
         }
       } else {
-        // Not in approved_users: only admins can add users; show waiting page (no pending queue)
-        const newUser = {
-          uid,
-          email,
-          displayName: displayName || 'New User',
-          firstName: displayName?.split(' ')[0] || 'New',
-          lastName: displayName?.split(' ').slice(1).join(' ') || 'User',
-          role: 'pending',
-          department: 'Pending Approval',
-          startDate: new Date().toISOString().split('T')[0],
-          avatar: photoURL,
-          isApproved: false
-        };
-        setCurrentUser(newUser);
-        setUserData(newUser);
-        setCurrentRole('pending');
-        if (window.location.pathname !== '/waiting-for-approval') {
-          appNavigate('/waiting-for-approval', { replace: true });
+        // Not in approved_users: hard-block access (no pending approval flow).
+        // Sign the user out and send them back to login with an error flag.
+        await logout();
+        if (window.location.pathname !== '/login') {
+          appNavigate('/login?error=access_required', { replace: true });
         }
       }
     } catch (error) {

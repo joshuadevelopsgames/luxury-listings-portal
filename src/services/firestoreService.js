@@ -2359,6 +2359,30 @@ class FirestoreService {
     }
   }
 
+  // Delete a support ticket (IT Support / admin only)
+  async deleteSupportTicket(ticketId) {
+    try {
+      const email = auth.currentUser?.email;
+      if (!email) throw new Error('You must be signed in to delete a ticket');
+      const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
+      let isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
+      if (!isAdmin) {
+        try {
+          const perms = await this.getUserPermissions(email);
+          isAdmin = !!perms?.adminPermissions;
+        } catch (_) {}
+      }
+      if (!isAdmin) throw new Error('Only IT Support or admin can delete support tickets');
+      const docRef = doc(db, this.collections.SUPPORT_TICKETS, ticketId);
+      await deleteDoc(docRef);
+      console.log('✅ Support ticket deleted:', ticketId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting support ticket:', error);
+      throw error;
+    }
+  }
+
   // Listen to support tickets changes
   onSupportTicketsChange(callback, userEmail = null) {
     let q;
@@ -4280,6 +4304,20 @@ class FirestoreService {
       return { success: true };
     } catch (error) {
       console.error('❌ Error resolving error report:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an error report (admin only; rules enforce isAdmin())
+   */
+  async deleteErrorReport(reportId) {
+    try {
+      await deleteDoc(doc(db, this.collections.ERROR_REPORTS, reportId));
+      console.log('✅ Error report deleted:', reportId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting error report:', error);
       throw error;
     }
   }
