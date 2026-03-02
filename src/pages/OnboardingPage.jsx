@@ -55,6 +55,29 @@ const OnboardingPage = () => {
   const [completing, setCompleting] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [connectingCalendar, setConnectingCalendar] = useState(false);
+  const [checkingCompleted, setCheckingCompleted] = useState(true);
+
+  // Persistence: Firestore is source of truth. If user already completed onboarding, redirect to dashboard.
+  useEffect(() => {
+    if (!currentUser?.email) {
+      setCheckingCompleted(false);
+      return;
+    }
+    if (currentUser.onboardingCompleted === true) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    let cancelled = false;
+    firestoreService.getApprovedUserByEmail(currentUser.email).then((approved) => {
+      if (cancelled) return;
+      if (approved?.onboardingCompleted === true) {
+        mergeCurrentUser({ onboardingCompleted: true, onboardingCompletedDate: approved.onboardingCompletedDate });
+        navigate('/dashboard', { replace: true });
+      }
+    }).finally(() => { if (!cancelled) setCheckingCompleted(false); });
+    return () => { cancelled = true; };
+  }, [currentUser?.email, currentUser?.onboardingCompleted, navigate, mergeCurrentUser]);
+
   const [profileData, setProfileData] = useState({
     firstName: userData?.firstName || currentUser?.firstName || '',
     lastName: userData?.lastName || currentUser?.lastName || '',
@@ -543,6 +566,14 @@ const OnboardingPage = () => {
 
   const currentStepData = steps[currentStep];
   const StepIcon = currentStepData.icon;
+
+  if (checkingCompleted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] to-white dark:from-[#1d1d1f] dark:to-[#0a0a0a] flex items-center justify-center">
+        <div className="h-8 w-48 bg-black/10 dark:bg-white/10 rounded animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] to-white dark:from-[#1d1d1f] dark:to-[#0a0a0a] py-12 px-4">

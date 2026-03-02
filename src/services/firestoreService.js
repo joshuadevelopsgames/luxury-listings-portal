@@ -3682,7 +3682,7 @@ class FirestoreService {
     }
   }
 
-  // Get Instagram reports for the current user only.
+  // Get Instagram reports for the current user only (excludes archived/deleted).
   async getInstagramReports() {
     try {
       const uid = auth.currentUser?.uid;
@@ -3695,10 +3695,9 @@ class FirestoreService {
       const snapshot = await getDocs(q);
       const reports = [];
       snapshot.forEach((docSnap) => {
-        reports.push({
-          id: docSnap.id,
-          ...docSnap.data()
-        });
+        const data = docSnap.data();
+        if (data.archived === true) return;
+        reports.push({ id: docSnap.id, ...data });
       });
       console.log('✅ Fetched Instagram reports:', reports.length);
       return reports;
@@ -3728,10 +3727,9 @@ class FirestoreService {
       const snapshot = await getDocs(q);
       const reports = [];
       snapshot.forEach((docSnap) => {
-        reports.push({
-          id: docSnap.id,
-          ...docSnap.data()
-        });
+        const data = docSnap.data();
+        if (data.archived === true) return;
+        reports.push({ id: docSnap.id, ...data });
       });
       console.log(`✅ Fetched ${reports.length} Instagram reports for client ${clientId}`);
       return reports;
@@ -3761,10 +3759,9 @@ class FirestoreService {
       const snapshot = await getDocs(q);
       const reports = [];
       snapshot.forEach((docSnap) => {
-        reports.push({
-          id: docSnap.id,
-          ...docSnap.data()
-        });
+        const data = docSnap.data();
+        if (data.archived === true) return;
+        reports.push({ id: docSnap.id, ...data });
       });
       console.log(`✅ Fetched ${reports.length} report history for client ${clientId}`);
       return reports;
