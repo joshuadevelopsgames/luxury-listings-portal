@@ -28,6 +28,50 @@ export const CLIENT_TYPE_OPTIONS = [
   { value: CLIENT_TYPE.NA, label: 'N/A (lead – service interest unknown)' }
 ];
 
+/** Canonical location options for CRM/leads/clients. Use for searchable dropdown and filter consistency. */
+export const CRM_LOCATIONS = [
+  'Arizona',
+  'Aspen',
+  'Austin',
+  'Australia',
+  'Beverly Hills',
+  'Boston',
+  'Carmel / Pebble Beach',
+  'Cayman',
+  'Denver',
+  'Europe',
+  'Florida Keys',
+  'France / Monaco',
+  'Gold Coast, Australia',
+  'Hamptons, NY',
+  'LA / So Cal',
+  'Latin America',
+  'London',
+  'Los Angeles',
+  'Martha\'s Vineyard',
+  'Miami',
+  'Miami Beach',
+  'Monaco',
+  'Nashville',
+  'National (HQ NYC)',
+  'Naples, FL',
+  'New Canaan, CT',
+  'New York',
+  'NorCal',
+  'NW Florida',
+  'NYC / Hamptons / FL',
+  'NYC / Miami',
+  'NYC/Miami',
+  'Phoenix',
+  'San Antonio',
+  'Santa Fe',
+  'Scottsdale / Paradise Valley',
+  'Scottsdale / Phoenix',
+  'Seattle',
+  'So Cal',
+  'UK'
+].sort();
+
 /** Normalize contact type(s) to array for display/filter. Supports types[], type, clientTypes[], clientType. */
 export function getContactTypes(contact) {
   if (!contact) return [CLIENT_TYPE.NA];

@@ -54,7 +54,7 @@ export default function NewVersionNotifier() {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    window.location.reload();
+                    window.location.reload(true);
                   }}
                   className="shrink-0 text-[13px] font-medium text-[#34c759] hover:text-[#30d158] underline"
                 >

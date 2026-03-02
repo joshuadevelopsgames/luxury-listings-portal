@@ -43,17 +43,20 @@ import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
 import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PERMISSIONS } from '../entities/Permissions';
-import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes } from '../services/crmService';
+import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS } from '../services/crmService';
+import { useCustomLocations } from '../contexts/CustomLocationsContext';
 import { findPotentialMatchesForContact, findPotentialDuplicateGroups } from '../services/clientDuplicateService';
 import ClientLink from '../components/ui/ClientLink';
 import LeadLink from '../components/crm/LeadLink';
 import ClientDetailModal from '../components/client/ClientDetailModal';
 import LeadDetailModal from '../components/crm/LeadDetailModal';
+import { LocationSelect } from '../components/crm/LocationSelect';
 
 const CRMPage = () => {
   const navigate = useNavigate();
-  const { currentUser, currentRole, hasPermission } = useAuth();
+  const { currentUser, currentRole, hasPermission, isSystemAdmin } = useAuth();
   const { confirm } = useConfirm();
+  const { customLocationsWithMeta, removeCustomLocation, refresh } = useCustomLocations();
   
   // Check permissions
   const canManageCRM = hasPermission(PERMISSIONS.MANAGE_CRM);
@@ -90,7 +93,13 @@ const CRMPage = () => {
   const [exportingCrm, setExportingCrm] = useState(false);
   const [importingCrm, setImportingCrm] = useState(false);
   const [mergingDuplicates, setMergingDuplicates] = useState(false);
+  const [showManageLocationsModal, setShowManageLocationsModal] = useState(false);
+  const [deletingLocation, setDeletingLocation] = useState(null);
   const importFileRef = React.useRef(null);
+
+  useEffect(() => {
+    if (showManageLocationsModal) refresh();
+  }, [showManageLocationsModal, refresh]);
   const addingLeadRef = useRef(false);
 
   // Toast notification helper
@@ -615,7 +624,10 @@ const CRMPage = () => {
   const totalLeads = crmLeadsDeduped.length;
 
   const allContactsForLocations = [...crmLeadsDeduped, ...existingClients];
-  const uniqueLocations = [...new Set(allContactsForLocations.map(c => (c.location || '').trim()).filter(Boolean))].sort();
+  const uniqueLocationsFromData = [...new Set(allContactsForLocations.map(c => (c.location || '').trim()).filter(Boolean))];
+  const canonicalSet = new Set(CRM_LOCATIONS);
+  const legacyLocations = uniqueLocationsFromData.filter((loc) => !canonicalSet.has(loc)).sort();
+  const locationFilterOptions = [...CRM_LOCATIONS, ...legacyLocations];
 
   const renderClientCard = (client, isExisting = false) => (
     <div key={client.id} className="p-5 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/10 hover:shadow-lg transition-shadow">
@@ -951,6 +963,16 @@ const CRMPage = () => {
             <Download className="w-4 h-4" />
             {exportingCrm ? 'Exporting…' : 'Export to spreadsheet'}
           </button>
+          {canManageCRM && (
+            <button
+              type="button"
+              onClick={() => setShowManageLocationsModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            >
+              <MapPin className="w-4 h-4" />
+              Manage locations
+            </button>
+          )}
           <button
             onClick={() => navigate('/clients?openAdd=1')}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
@@ -1068,7 +1090,7 @@ const CRMPage = () => {
         >
           <option value="all">All locations</option>
           <option value="_none_">No location</option>
-          {uniqueLocations.map((loc) => (
+          {locationFilterOptions.map((loc) => (
             <option key={loc} value={loc}>{loc}</option>
           ))}
         </select>
@@ -1177,6 +1199,83 @@ const CRMPage = () => {
                 className="flex-1 py-2.5 rounded-xl border border-black/10 dark:border-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Manage custom locations modal (admins) */}
+      {showManageLocationsModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-lg max-h-[85vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/10 flex-shrink-0">
+              <div>
+                <h3 className="text-[18px] font-semibold text-[#1d1d1f] dark:text-white">Custom locations</h3>
+                <p className="text-[13px] text-[#86868b] mt-0.5">Remove custom locations so they no longer appear in the dropdown. Contacts that already use a location will keep it until you edit them.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowManageLocationsModal(false)}
+                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {customLocationsWithMeta.length === 0 ? (
+                <p className="text-[14px] text-[#86868b]">No custom locations yet. Add one by typing in the location field and choosing &quot;Use …&quot;.</p>
+              ) : (
+                <table className="w-full text-left text-[14px]">
+                  <thead>
+                    <tr className="border-b border-black/10 dark:border-white/10">
+                      <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Location</th>
+                      {isSystemAdmin && <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Created by</th>}
+                      <th className="pb-2 w-[80px] font-medium text-[#1d1d1f] dark:text-white text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customLocationsWithMeta.map((item) => (
+                      <tr key={item.value} className="border-b border-black/5 dark:border-white/5">
+                        <td className="py-2.5 pr-4 text-[#1d1d1f] dark:text-white">{item.value}</td>
+                        {isSystemAdmin && <td className="py-2.5 pr-4 text-[13px] text-[#86868b]">{item.createdBy || '—'}</td>}
+                        <td className="py-2.5 text-right">
+                          <button
+                            type="button"
+                            disabled={deletingLocation === item.value}
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Remove location?',
+                                message: `"${item.value}" will be removed from the list. Existing contacts with this location will keep it until edited.`,
+                                confirmText: 'Remove',
+                                variant: 'danger'
+                              });
+                              if (!ok) return;
+                              setDeletingLocation(item.value);
+                              try {
+                                await removeCustomLocation(item.value);
+                                showToast(`Removed "${item.value}"`);
+                              } catch (err) {
+                                showToast(err?.message || 'Failed to remove', 'error');
+                              } finally {
+                                setDeletingLocation(null);
+                              }
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-[12px] font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                          >
+                            {deletingLocation === item.value ? 'Removing…' : 'Delete'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="p-5 border-t border-black/5 dark:border-white/10 flex-shrink-0">
+              <button type="button" onClick={() => setShowManageLocationsModal(false)} className="w-full py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15">
+                Close
               </button>
             </div>
           </div>
@@ -1311,7 +1410,13 @@ const CRMPage = () => {
                   </div>
                   <div>
                     <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Location</label>
-                    <input type="text" value={newLead.location || ''} onChange={(e) => setNewLead(prev => ({ ...prev, location: e.target.value }))} placeholder="City, region, or country" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <LocationSelect
+                      value={newLead.location || ''}
+                      onChange={(loc) => setNewLead((prev) => ({ ...prev, location: loc || '' }))}
+                      placeholder="Search or select location"
+                      className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      allowLegacy={false}
+                    />
                   </div>
                   <div>
                     <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Notes</label>

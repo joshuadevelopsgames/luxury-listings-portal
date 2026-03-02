@@ -28,6 +28,7 @@ import {
   Camera
 } from 'lucide-react';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { LocationSelect } from '../crm/LocationSelect';
 import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
 import { usePermissions } from '../../contexts/PermissionsContext';
@@ -311,12 +312,12 @@ const ClientDetailModal = ({
                 </div>
                 <div>
                   <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Location</label>
-                  <input
-                    type="text"
+                  <LocationSelect
                     value={editForm.location || ''}
-                    onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                    placeholder="City, region, or country"
+                    onChange={(loc) => setEditForm({ ...editForm, location: loc || '' })}
+                    placeholder="Search or select location"
                     className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    allowLegacy={true}
                   />
                 </div>
                 <div className="col-span-full border-t border-black/5 dark:border-white/10 pt-4">

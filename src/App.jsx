@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
 import { PermissionsProvider } from './contexts/PermissionsContext';
+import { CustomLocationsProvider } from './contexts/CustomLocationsContext';
 import { ClientsProvider } from './contexts/ClientsContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
 import { Toaster } from 'react-hot-toast';
@@ -305,6 +306,7 @@ function App() {
       <ViewAsProvider>
         <AuthProvider>
           <PermissionsProvider>
+            <CustomLocationsProvider>
             <ClientsProvider>
               <ConfirmProvider>
                 <RouterProvider router={router} />
@@ -329,6 +331,7 @@ function App() {
                 />
               </ConfirmProvider>
             </ClientsProvider>
+            </CustomLocationsProvider>
           </PermissionsProvider>
         </AuthProvider>
       </ViewAsProvider>

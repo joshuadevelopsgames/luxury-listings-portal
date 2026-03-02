@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestoreService } from '../../services/firestoreService';
+import { LocationSelect } from '../crm/LocationSelect';
 import { format } from 'date-fns';
 import ClientContractsSection from './ClientContractsSection';
 import { toast } from 'react-hot-toast';
@@ -1175,12 +1176,12 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                   <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                     Location
                   </label>
-                  <input
-                    type="text"
+                  <LocationSelect
                     value={addForm.location || ''}
-                    onChange={(e) => setAddForm({...addForm, location: e.target.value})}
-                    placeholder="City, region, or country"
+                    onChange={(loc) => setAddForm({ ...addForm, location: loc || '' })}
+                    placeholder="Search or select location"
                     className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    allowLegacy={false}
                   />
                 </div>
 

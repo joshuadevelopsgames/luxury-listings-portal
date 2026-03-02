@@ -2180,6 +2180,65 @@ class FirestoreService {
     });
   }
 
+  static CRM_CUSTOM_LOCATIONS_DOC_ID = 'custom_locations';
+
+  /**
+   * Get custom location options (value + createdBy, createdAt for admin UI).
+   * @returns {Promise<Array<{ value: string, createdBy: string, createdAt: string }>>}
+   */
+  async getCustomLocations() {
+    try {
+      const ref = doc(db, this.collections.CRM, FirestoreService.CRM_CUSTOM_LOCATIONS_DOC_ID);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? snap.data() : {};
+      const list = Array.isArray(data.locations) ? data.locations : [];
+      return list.map((item) => ({
+        value: typeof item.value === 'string' ? item.value : String(item.value || ''),
+        createdBy: typeof item.createdBy === 'string' ? item.createdBy : '',
+        createdAt: typeof item.createdAt === 'string' ? item.createdAt : (item.createdAt?.toISOString?.() || '')
+      })).filter((item) => item.value.trim() !== '');
+    } catch (err) {
+      console.error('getCustomLocations error:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Add or update a custom location. If value exists, updates createdBy/createdAt.
+   * @param {string} value - Location string
+   * @param {string} createdBy - User email
+   */
+  async addCustomLocation(value, createdBy) {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return;
+    const ref = doc(db, this.collections.CRM, FirestoreService.CRM_CUSTOM_LOCATIONS_DOC_ID);
+    const snap = await getDoc(ref);
+    const list = (snap.exists() ? snap.data().locations : null) || [];
+    const arr = Array.isArray(list) ? list.map((x) => ({ value: String(x.value || '').trim(), createdBy: String(x.createdBy || ''), createdAt: String(x.createdAt || '') })) : [];
+    const existing = arr.findIndex((x) => x.value === trimmed);
+    const entry = { value: trimmed, createdBy: createdBy || '', createdAt: new Date().toISOString() };
+    if (existing >= 0) {
+      arr[existing] = entry;
+    } else {
+      arr.push(entry);
+    }
+    await setDoc(ref, { locations: arr }, { merge: true });
+  }
+
+  /**
+   * Remove a custom location by value.
+   * @param {string} value - Location string (exact match)
+   */
+  async removeCustomLocation(value) {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return;
+    const ref = doc(db, this.collections.CRM, FirestoreService.CRM_CUSTOM_LOCATIONS_DOC_ID);
+    const snap = await getDoc(ref);
+    const list = (snap.exists() ? snap.data().locations : null) || [];
+    const arr = Array.isArray(list) ? list.filter((x) => String(x.value || '').trim() !== trimmed) : [];
+    await setDoc(ref, { locations: arr }, { merge: true });
+  }
+
   // ===== IT SUPPORT TICKET MANAGEMENT =====
 
   // Get support tickets for a user
