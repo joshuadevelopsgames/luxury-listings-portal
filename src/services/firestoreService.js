@@ -274,15 +274,16 @@ class FirestoreService {
     }
   }
 
-  // Get one approved user by email. Tries exact id, then lowercase; if still not found, finds by case-insensitive match (handles admin-added docs with different casing).
+  // Get one approved user by email. Uses lowercase first (canonical form for Google sign-in and addApprovedUser); then case-insensitive scan.
   async getApprovedUserByEmail(email) {
     if (!email) return null;
     try {
       const trimmed = (email || '').trim();
       const lower = trimmed.toLowerCase();
-      let docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, trimmed));
+      // Try lowercase first (Firebase/Google typically use lowercase; addApprovedUser stores lowercase)
+      let docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, lower));
       if (!docSnap.exists() && lower !== trimmed)
-        docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, lower));
+        docSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, trimmed));
       if (docSnap?.exists())
         return { id: docSnap.id, ...docSnap.data() };
       const snapshot = await getDocs(collection(db, this.collections.APPROVED_USERS));

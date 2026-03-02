@@ -43,7 +43,7 @@ import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
 import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PERMISSIONS } from '../entities/Permissions';
-import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS } from '../services/crmService';
+import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS, normalizeLocation } from '../services/crmService';
 import { useCustomLocations } from '../contexts/CustomLocationsContext';
 import { findPotentialMatchesForContact, findPotentialDuplicateGroups } from '../services/clientDuplicateService';
 import ClientLink from '../components/ui/ClientLink';
@@ -260,7 +260,7 @@ const CRMPage = () => {
     const addToCold = selectedTabs.coldLeads;
     const contactName = [newLead.firstName, newLead.lastName].filter(Boolean).join(' ').trim();
     const types = Array.isArray(newLead.types) && newLead.types.length ? newLead.types : [CLIENT_TYPE.NA];
-    const loc = (newLead.location || '').trim() || null;
+    const loc = normalizeLocation(newLead.location || '') || null;
     const pc = newLead.primaryContact && (newLead.primaryContact.name || newLead.primaryContact.email || newLead.primaryContact.phone || newLead.primaryContact.role)
       ? { name: newLead.primaryContact.name || '', email: newLead.primaryContact.email || '', phone: newLead.primaryContact.phone || '', role: newLead.primaryContact.role || '' }
       : null;
@@ -598,7 +598,7 @@ const CRMPage = () => {
     .filter(c => matchesSearch(c, c.isExisting))
     .filter(c => statusFilter === 'all' || (c._categories && c._categories.includes(statusFilter)) || (c._type === statusFilter && !c._categories))
     .filter(c => typeFilter === 'all' || getContactTypes(c).includes(typeFilter))
-    .filter(c => locationFilter === 'all' || (locationFilter === '_none_' ? !(c.location || '').trim() : (c.location || '').trim() === locationFilter))
+    .filter(c => locationFilter === 'all' || (locationFilter === '_none_' ? !(c.location || '').trim() : (c.location || '').trim().toLowerCase() === locationFilter.toLowerCase()))
     .sort((a, b) => {
       const getVal = (c, key) => {
         switch (key) {
@@ -613,6 +613,16 @@ const CRMPage = () => {
       };
       const va = getVal(a, sortBy);
       const vb = getVal(b, sortBy);
+      if (sortBy === 'location') {
+        const empty = '—';
+        const aEmpty = va === empty;
+        const bEmpty = vb === empty;
+        if (aEmpty && bEmpty) return 0;
+        if (aEmpty) return 1;
+        if (bEmpty) return -1;
+        const cmp = va.localeCompare(vb, undefined, { sensitivity: 'base' });
+        return sortDir === 'asc' ? cmp : -cmp;
+      }
       const cmp = va.localeCompare(vb, undefined, { sensitivity: 'base' });
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -625,9 +635,17 @@ const CRMPage = () => {
 
   const allContactsForLocations = [...crmLeadsDeduped, ...existingClients];
   const uniqueLocationsFromData = [...new Set(allContactsForLocations.map(c => (c.location || '').trim()).filter(Boolean))];
-  const canonicalSet = new Set(CRM_LOCATIONS);
-  const legacyLocations = uniqueLocationsFromData.filter((loc) => !canonicalSet.has(loc)).sort();
-  const locationFilterOptions = [...CRM_LOCATIONS, ...legacyLocations];
+  const canonicalSetLower = new Set(CRM_LOCATIONS.map((l) => l.toLowerCase()));
+  const legacyLocations = uniqueLocationsFromData.filter((loc) => !canonicalSetLower.has(loc.toLowerCase())).sort();
+  const locationFilterOptionsDeduped = [];
+  const seenLocLower = new Set();
+  for (const loc of [...CRM_LOCATIONS, ...legacyLocations]) {
+    const key = (loc || '').toLowerCase();
+    if (seenLocLower.has(key)) continue;
+    seenLocLower.add(key);
+    locationFilterOptionsDeduped.push(loc);
+  }
+  const locationFilterOptions = locationFilterOptionsDeduped.sort();
 
   const renderClientCard = (client, isExisting = false) => (
     <div key={client.id} className="p-5 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/10 hover:shadow-lg transition-shadow">

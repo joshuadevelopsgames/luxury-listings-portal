@@ -30,7 +30,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { LocationSelect } from './LocationSelect';
 import { openGmailWithComposeTo } from '../../utils/gmailCompose';
-import { CLIENT_TYPE_OPTIONS, getContactTypes } from '../../services/crmService';
+import { CLIENT_TYPE_OPTIONS, getContactTypes, normalizeLocation } from '../../services/crmService';
 
 const LeadDetailModal = ({
   lead,
@@ -80,7 +80,7 @@ const LeadDetailModal = ({
     setSaving(true);
     try {
       const types = editForm.types && editForm.types.length ? editForm.types : ['N/A'];
-      const loc = (editForm.location || '').trim() || null;
+      const loc = normalizeLocation(editForm.location || '') || null;
       const pc = editForm.primaryContact && (editForm.primaryContact.name || editForm.primaryContact.email || editForm.primaryContact.phone || editForm.primaryContact.role)
         ? { name: editForm.primaryContact.name || '', email: editForm.primaryContact.email || '', phone: editForm.primaryContact.phone || '', role: editForm.primaryContact.role || '' }
         : null;

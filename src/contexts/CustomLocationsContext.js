@@ -29,7 +29,15 @@ export function CustomLocationsProvider({ children }) {
   }, [refresh]);
 
   const customLocations = customLocationsWithMeta.map((x) => x.value);
-  const allLocationOptions = [...CRM_LOCATIONS, ...customLocations].sort();
+  const seenLower = new Set();
+  const allLocationOptions = [...CRM_LOCATIONS, ...customLocations]
+    .filter((loc) => {
+      const key = (loc || '').toLowerCase();
+      if (seenLower.has(key)) return false;
+      seenLower.add(key);
+      return true;
+    })
+    .sort();
 
   const addCustomLocation = useCallback(async (value, createdBy) => {
     await firestoreService.addCustomLocation(value, createdBy);

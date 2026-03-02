@@ -334,17 +334,10 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Check if user is approved (direct lookup first so admin-added members are found regardless of doc id casing)
+    // Single lookup: normalize email (canonical = lowercase), then one service call (1 read if found, 1 collection read only if not).
+    const emailNormalized = (email || '').trim().toLowerCase();
     try {
-      let approvedUser = await firestoreService.getApprovedUserByEmail(email);
-      if (!approvedUser) {
-        const approvedUsers = await firestoreService.getApprovedUsers();
-        const emailLower = (email || '').toLowerCase();
-        const matched = approvedUsers.filter(u =>
-          (u.id || '').toLowerCase() === emailLower || (u.email || '').toLowerCase() === emailLower
-        );
-        approvedUser = matched[0];
-      }
+      const approvedUser = await firestoreService.getApprovedUserByEmail(emailNormalized);
       if (approvedUser) {
         // Any user in approved_users is allowed to access (ignore isApproved flag)
         const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
@@ -413,14 +406,11 @@ export function AuthProvider({ children }) {
       }
     } catch (error) {
       console.error('Error checking user approval:', error);
-      setCurrentRole('pending');
-      setCurrentUser({
-        uid,
-        email,
-        displayName: displayName || 'New User',
-        role: 'pending',
-        isApproved: false
-      });
+      // Don't leave user stuck (e.g. network/Google callback hiccup). Treat as not approved and send to login so they can retry.
+      await logout();
+      if (window.location.pathname !== '/login') {
+        appNavigate('/login?error=access_required', { replace: true });
+      }
     }
   }
 

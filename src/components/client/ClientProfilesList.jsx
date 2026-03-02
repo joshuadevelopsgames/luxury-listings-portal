@@ -41,7 +41,7 @@ import PlatformIcons from '../PlatformIcons';
 import ClientLink from '../ui/ClientLink';
 import ClientDetailModal from './ClientDetailModal';
 import { useOpenClientCard } from '../../hooks/useOpenClientCard';
-import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes } from '../../services/crmService';
+import { addContactToCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, normalizeLocation } from '../../services/crmService';
 import { findPotentialDuplicateGroups, findPotentialMatchesForContact } from '../../services/clientDuplicateService';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { getPostsRemaining, getEnabledPlatforms } from '../../utils/clientPostsUtils';
@@ -237,7 +237,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
     }
     const clientName = [addForm.firstName, addForm.lastName].filter(Boolean).join(' ').trim();
     const clientTypes = Array.isArray(addForm.clientTypes) && addForm.clientTypes.length ? addForm.clientTypes : [CLIENT_TYPE.NA];
-    const loc = (addForm.location || '').trim() || null;
+    const loc = normalizeLocation(addForm.location || '') || null;
     const pc = addForm.primaryContact && (addForm.primaryContact.name || addForm.primaryContact.email || addForm.primaryContact.phone || addForm.primaryContact.role)
       ? { name: addForm.primaryContact.name || '', email: addForm.primaryContact.email || '', phone: addForm.primaryContact.phone || '', role: addForm.primaryContact.role || '' }
       : null;

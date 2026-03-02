@@ -33,7 +33,7 @@ import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
-import { CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes } from '../../services/crmService';
+import { CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, normalizeLocation } from '../../services/crmService';
 import { toast } from 'react-hot-toast';
 import PlatformIcons from '../PlatformIcons';
 import { getPostsRemaining, getEnabledPlatforms } from '../../utils/clientPostsUtils';
@@ -141,7 +141,7 @@ const ClientDetailModal = ({
     }
 
     const clientTypes = editForm.clientTypes && editForm.clientTypes.length ? editForm.clientTypes : [CLIENT_TYPE.NA];
-    const loc = (editForm.location || '').trim() || null;
+    const loc = normalizeLocation(editForm.location || '') || null;
     const pc = editForm.primaryContact && (editForm.primaryContact.name || editForm.primaryContact.email || editForm.primaryContact.phone || editForm.primaryContact.role)
       ? { name: editForm.primaryContact.name || '', email: editForm.primaryContact.email || '', phone: editForm.primaryContact.phone || '', role: editForm.primaryContact.role || '' }
       : null;

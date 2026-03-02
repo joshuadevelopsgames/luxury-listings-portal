@@ -28,7 +28,37 @@ export const CLIENT_TYPE_OPTIONS = [
   { value: CLIENT_TYPE.NA, label: 'N/A (lead – service interest unknown)' }
 ];
 
-/** Canonical location options for CRM/leads/clients. Use for searchable dropdown and filter consistency. */
+const LOCATION_ABBREVIATIONS = {
+  nyc: 'New York City',
+  fl: 'Florida',
+  ct: 'Connecticut',
+  la: 'Los Angeles',
+  uk: 'United Kingdom',
+  'so cal': 'Southern California',
+  socal: 'Southern California',
+  norcal: 'Northern California',
+  'nw fl': 'Northwest Florida',
+  'nw florida': 'Northwest Florida'
+};
+
+/**
+ * Normalize location for storage: trim, expand abbreviations, title case. Case-insensitive so we avoid duplicates.
+ * @param {string} loc
+ * @returns {string}
+ */
+export function normalizeLocation(loc) {
+  let s = (loc || '').trim();
+  if (!s) return '';
+  const lower = s.toLowerCase();
+  for (const [abbr, full] of Object.entries(LOCATION_ABBREVIATIONS)) {
+    if (lower === abbr || lower === full.toLowerCase()) {
+      return full;
+    }
+  }
+  return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
+/** Canonical location options: no slashes, no abbreviations (e.g. New York City not NYC). */
 export const CRM_LOCATIONS = [
   'Arizona',
   'Aspen',
@@ -36,15 +66,12 @@ export const CRM_LOCATIONS = [
   'Australia',
   'Beverly Hills',
   'Boston',
-  'Carmel / Pebble Beach',
   'Cayman',
   'Denver',
   'Europe',
   'Florida Keys',
-  'France / Monaco',
   'Gold Coast, Australia',
-  'Hamptons, NY',
-  'LA / So Cal',
+  'Hamptons, New York',
   'Latin America',
   'London',
   'Los Angeles',
@@ -53,23 +80,20 @@ export const CRM_LOCATIONS = [
   'Miami Beach',
   'Monaco',
   'Nashville',
-  'National (HQ NYC)',
-  'Naples, FL',
-  'New Canaan, CT',
+  'Naples, Florida',
+  'New Canaan, Connecticut',
   'New York',
-  'NorCal',
-  'NW Florida',
-  'NYC / Hamptons / FL',
-  'NYC / Miami',
-  'NYC/Miami',
+  'New York City',
+  'Northern California',
+  'Northwest Florida',
   'Phoenix',
   'San Antonio',
   'Santa Fe',
-  'Scottsdale / Paradise Valley',
-  'Scottsdale / Phoenix',
+  'Scottsdale',
+  'Paradise Valley',
   'Seattle',
-  'So Cal',
-  'UK'
+  'Southern California',
+  'United Kingdom'
 ].sort();
 
 /** Normalize contact type(s) to array for display/filter. Supports types[], type, clientTypes[], clientType. */
@@ -150,7 +174,7 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
       organization: contact.organization || '',
       website: contact.website || '',
       notes: contact.notes || '',
-      location: (contact.location || '').trim() || null,
+      location: normalizeLocation(contact.location || '') || null,
       primaryContact: primaryContact || null,
       status: tab === 'warmLeads' ? 'warm' : tab === 'contactedClients' ? 'contacted' : 'cold',
       lastContact: new Date().toISOString(),

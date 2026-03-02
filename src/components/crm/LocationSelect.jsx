@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CRM_LOCATIONS } from '../../services/crmService';
+import { CRM_LOCATIONS, normalizeLocation } from '../../services/crmService';
 import { useCustomLocations } from '../../contexts/CustomLocationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -16,14 +16,14 @@ export function LocationSelect({ value, onChange, placeholder = 'Search or selec
   const normalizedValue = (value || '').trim() || null;
   const displayValue = open ? query : (normalizedValue || '');
 
-  const optionSet = new Set(options);
-  const legacyValue = normalizedValue && !optionSet.has(normalizedValue) ? normalizedValue : null;
+  const optionSetLower = new Set(options.map((o) => o.toLowerCase()));
+  const legacyValue = normalizedValue && !optionSetLower.has(normalizedValue.toLowerCase()) ? normalizedValue : null;
   const allOptions = legacyValue && allowLegacy ? [legacyValue, ...options] : options;
   const q = query.trim();
   const filtered = q
     ? allOptions.filter((loc) => loc.toLowerCase().includes(q.toLowerCase())).slice(0, MAX_DROPDOWN)
     : allOptions.slice(0, MAX_DROPDOWN);
-  const exactMatch = q && allOptions.some((loc) => loc === q);
+  const exactMatch = q && allOptions.some((loc) => loc.toLowerCase() === q.toLowerCase());
   const showCustomOption = q && !exactMatch;
 
   useEffect(() => {
@@ -35,7 +35,8 @@ export function LocationSelect({ value, onChange, placeholder = 'Search or selec
   }, []);
 
   const handleSelect = (loc) => {
-    onChange(loc ? String(loc).trim() : '');
+    const val = loc ? normalizeLocation(String(loc).trim()) : '';
+    onChange(val);
     setQuery('');
     setOpen(false);
   };
@@ -74,8 +75,9 @@ export function LocationSelect({ value, onChange, placeholder = 'Search or selec
               <button
                 type="button"
                 onClick={() => {
-                  handleSelect(q);
-                  addCustomLocation(q, currentUser?.email || '').catch((err) => console.warn('addCustomLocation', err));
+                  const normalized = normalizeLocation(q);
+                  handleSelect(normalized);
+                  addCustomLocation(normalized, currentUser?.email || '').catch((err) => console.warn('addCustomLocation', err));
                 }}
                 className="w-full px-4 py-2.5 text-left text-[#0071e3] hover:bg-black/5 dark:hover:bg-white/5 font-medium"
               >
