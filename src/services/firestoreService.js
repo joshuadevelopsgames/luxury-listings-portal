@@ -243,11 +243,12 @@ class FirestoreService {
       const approvedUsers = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+        const canonicalEmail = ((data.email ?? doc.id) || '').toString().toLowerCase().trim();
         approvedUsers.push({
           id: doc.id,
           ...data,
-          // Ensure email is always set (doc id is email); prevents users disappearing in UI when field is missing
-          email: data.email ?? doc.id
+          // Canonical email so Permissions UI and login lookup use the same key (source of truth)
+          email: canonicalEmail || doc.id
         });
       });
       
@@ -4038,52 +4039,78 @@ class FirestoreService {
     return ['approve_time_off', 'view_analytics', 'manage_clients', 'assign_client_managers', 'edit_client_packages'];
   }
 
-  // Get user's full permissions (pages, features, adminPermissions)
-  async getUserPermissions(userEmail) {
-    try {
-      const normalizedEmail = userEmail.toLowerCase().trim();
-      const userRef = doc(db, this.collections.APPROVED_USERS, normalizedEmail);
-      const userSnap = await getDoc(userRef);
-      
-      const mapResult = (userData) => {
-        const adminPermissions = !!userData.adminPermissions;
-        const features = adminPermissions
-          ? this._adminFeaturePermissions()
-          : (userData.featurePermissions || []);
-        return {
-          pages: userData.pagePermissions || [],
-          features,
-          adminPermissions
-        };
-      };
+  // Normalize doc data to { pages, features, adminPermissions }. Single place for both read and subscribe.
+  _mapPermissionsFromDoc(userData) {
+    if (!userData) return { pages: [], features: [], adminPermissions: false };
+    const adminPermissions = !!userData.adminPermissions;
+    const features = adminPermissions
+      ? this._adminFeaturePermissions()
+      : (userData.featurePermissions || []);
+    return {
+      pages: userData.pagePermissions || [],
+      features,
+      adminPermissions
+    };
+  }
 
-      if (userSnap.exists()) {
-        return mapResult(userSnap.data());
+  /**
+   * Get user permissions (single source of truth for both one-shot and live).
+   * - getUserPermissions(email) → Promise<{ pages, features, adminPermissions }>
+   * - getUserPermissions(email, { subscribe: true, onUpdate }) → { unsubscribe } for real-time updates.
+   * Resolution: canonical key → alt key → collection scan (case-insensitive). Same behavior for "View as" and logged-in user.
+   */
+  getUserPermissions(userEmail, options = {}) {
+    const { subscribe: wantSubscribe, onUpdate } = options;
+    const normalizedEmail = (userEmail || '').toLowerCase().trim();
+    const key = normalizedEmail;
+
+    const pushResult = (result) => {
+      if (typeof onUpdate === 'function') {
+        onUpdate({ pages: result?.pages ?? [], features: result?.features ?? [] });
       }
-      
-      if (normalizedEmail !== userEmail) {
-        const altRef = doc(db, this.collections.APPROVED_USERS, userEmail);
-        const altSnap = await getDoc(altRef);
-        if (altSnap.exists()) {
-          return mapResult(altSnap.data());
+    };
+
+    const oneShot = async () => {
+      try {
+        let userSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, key));
+        if (userSnap.exists()) return this._mapPermissionsFromDoc(userSnap.data());
+        if (normalizedEmail !== userEmail) {
+          userSnap = await getDoc(doc(db, this.collections.APPROVED_USERS, userEmail));
+          if (userSnap.exists()) return this._mapPermissionsFromDoc(userSnap.data());
         }
-      }
-
-      // Fallback: doc may exist under mixed-case ID (e.g. "Michelle@..."); find by email match
-      const allSnap = await getDocs(collection(db, this.collections.APPROVED_USERS));
-      for (const d of allSnap.docs) {
-        const data = d.data();
-        const docEmail = (data.email || d.id || '').toString().toLowerCase().trim();
-        if (docEmail === normalizedEmail) {
-          return mapResult(data);
+        const allSnap = await getDocs(collection(db, this.collections.APPROVED_USERS));
+        for (const d of allSnap.docs) {
+          const data = d.data();
+          const docEmail = (data.email || d.id || '').toString().toLowerCase().trim();
+          if (docEmail === normalizedEmail) return this._mapPermissionsFromDoc(data);
         }
+        return this._mapPermissionsFromDoc(null);
+      } catch (error) {
+        console.error('❌ Error getting user permissions:', error);
+        throw error;
       }
+    };
 
-      return { pages: [], features: [], adminPermissions: false };
-    } catch (error) {
-      console.error('❌ Error getting user permissions:', error);
-      throw error;
+    if (wantSubscribe && typeof onUpdate === 'function') {
+      const userRef = doc(db, this.collections.APPROVED_USERS, key);
+      const unsub = onSnapshot(
+        userRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            pushResult(this._mapPermissionsFromDoc(docSnap.data()));
+          } else {
+            oneShot().then(pushResult).catch(() => pushResult({ pages: [], features: [] }));
+          }
+        },
+        (error) => {
+          console.warn('⚠️ Firestore listener error (user permissions):', error.message);
+          pushResult({ pages: [], features: [] });
+        }
+      );
+      return { unsubscribe: () => unsub() };
     }
+
+    return oneShot();
   }
 
   // Get user's page permissions (legacy support)
@@ -4254,14 +4281,13 @@ class FirestoreService {
           }
         },
         (error) => {
-          // Handle Firestore listener errors gracefully
           console.warn('⚠️ Firestore listener error (permissions):', error.message);
           callback([]);
         }
       );
     } catch (error) {
       console.warn('⚠️ Error setting up permissions listener:', error.message);
-      return () => {}; // Return empty cleanup function
+      return () => {};
     }
   }
 

@@ -69,9 +69,38 @@ export const BLOCK_TYPES = [
 
 const UNIFIED_TEXT_TYPES = ['text', 'h1', 'h2', 'h3', 'quote', 'code', 'callout', 'bullet', 'ordered'];
 
-function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName, onRemove }) {
+/** Wrapper class for unified text-like blocks so quote/code/headings get correct styling. */
+function getUnifiedBlockWrapperClass(blockType) {
+  switch (blockType) {
+    case 'h1': return 'text-2xl font-bold leading-tight mt-4 mb-1';
+    case 'h2': return 'text-xl font-bold leading-tight mt-3 mb-1';
+    case 'h3': return 'text-lg font-semibold mt-2 mb-0.5';
+    case 'quote': return 'border-l-4 border-primary pl-4 py-1 bg-muted rounded-r text-muted-foreground italic';
+    case 'code': return 'font-mono text-sm bg-muted border border-border rounded px-4 py-2 whitespace-pre-wrap';
+    case 'callout': return 'flex gap-2 py-2 px-3 bg-amber-500/10 dark:bg-amber-500/15 border-l-4 border-amber-500 dark:border-amber-400 rounded-r';
+    case 'bullet':
+    case 'ordered': return 'pl-4';
+    default: return 'min-h-[24px]';
+  }
+}
+
+const FORM_FIELD_TYPES = [
+  { id: 'short_text', label: 'Short text' },
+  { id: 'long_text', label: 'Long text' },
+  { id: 'single_choice', label: 'Single choice' },
+];
+
+function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName, onRemove, onContentChange }) {
   const [formValues, setFormValues] = useState({});
   const [formSubmitted, setFormSubmitted] = useState(false);
+
+  const updateData = useCallback(
+    (next) => {
+      if (onContentChange) onContentChange(blockId, { content: JSON.stringify(next) });
+    },
+    [blockId, onContentChange]
+  );
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!canvasId || !blockId) return;
@@ -79,6 +108,7 @@ function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName,
       setFormSubmitted(true);
     }).catch(() => {});
   };
+
   if (formSubmitted) {
     return (
       <div className="py-3 px-4 rounded-lg bg-muted/50 text-sm text-muted-foreground">
@@ -86,46 +116,134 @@ function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName,
       </div>
     );
   }
+
+  const fields = Array.isArray(data.fields) ? data.fields : [{ type: 'short_text', label: 'Field 1' }];
+  const canEdit = !!onContentChange;
+
   return (
-    <form onSubmit={handleSubmit} className="py-2 space-y-3">
-      {data.title && <div className="text-sm font-medium text-foreground">{data.title}</div>}
-      {data.fields.map((field, i) => (
-        <div key={i} className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">{field.label}</label>
-          {field.type === 'short_text' && (
+    <div className="py-2 space-y-4">
+      {canEdit && (
+        <div className="space-y-3 p-3 rounded-lg bg-muted/40 border border-border">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Form builder</span>
+            {onRemove && (
+              <button type="button" onClick={onRemove} className="p-1 rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Remove block">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Form title</label>
             <input
               type="text"
-              value={formValues[i] ?? ''}
-              onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
+              value={data.title ?? ''}
+              onChange={(e) => updateData({ ...data, title: e.target.value })}
+              placeholder="Form title (optional)"
               className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
             />
-          )}
-          {field.type === 'long_text' && (
-            <textarea
-              value={formValues[i] ?? ''}
-              onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
-              rows={3}
-              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-            />
-          )}
-          {field.type === 'single_choice' && (
-            <select
-              value={formValues[i] ?? ''}
-              onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
-              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-            >
-              <option value="">Select...</option>
-              {(field.options || []).map((opt, j) => (
-                <option key={j} value={opt}>{opt}</option>
-              ))}
-            </select>
-          )}
+          </div>
+          {fields.map((field, i) => (
+            <div key={i} className="flex flex-wrap items-start gap-2 p-2 rounded-md bg-background/60 border border-border">
+              <input
+                type="text"
+                value={field.label ?? ''}
+                onChange={(e) => {
+                  const next = fields.map((f, j) => (j === i ? { ...f, label: e.target.value } : f));
+                  updateData({ ...data, fields: next });
+                }}
+                placeholder="Field label"
+                className="flex-1 min-w-[120px] px-2 py-1.5 rounded border border-input text-sm"
+              />
+              <select
+                value={field.type ?? 'short_text'}
+                onChange={(e) => {
+                  const next = fields.map((f, j) => (j === i ? { ...f, type: e.target.value, options: (f.type === 'single_choice' ? f.options : undefined) || [] } : f));
+                  updateData({ ...data, fields: next });
+                }}
+                className="px-2 py-1.5 rounded border border-input text-sm bg-background"
+              >
+                {FORM_FIELD_TYPES.map((t) => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </select>
+              {field.type === 'single_choice' && (
+                <input
+                  type="text"
+                  value={(field.options || []).join(', ')}
+                  onChange={(e) => {
+                    const options = e.target.value.split(/,\s*/).filter(Boolean);
+                    const next = fields.map((f, j) => (j === i ? { ...f, options } : f));
+                    updateData({ ...data, fields: next });
+                  }}
+                  placeholder="Option A, Option B"
+                  className="flex-1 min-w-[140px] px-2 py-1.5 rounded border border-input text-sm"
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = fields.filter((_, j) => j !== i);
+                  if (next.length === 0) next.push({ type: 'short_text', label: 'Field 1' });
+                  updateData({ ...data, fields: next });
+                }}
+                className="p-1.5 rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                title="Remove field"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => updateData({ ...data, fields: [...fields, { type: 'short_text', label: `Field ${fields.length + 1}` }] })}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            <Plus className="w-4 h-4" /> Add field
+          </button>
+          <p className="text-xs text-muted-foreground">Responses are saved with this workspace.</p>
         </div>
-      ))}
-      <button type="submit" className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
-        Submit
-      </button>
-    </form>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {data.title && <div className="text-sm font-medium text-foreground">{data.title}</div>}
+        {fields.map((field, i) => (
+          <div key={i} className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">{field.label || `Field ${i + 1}`}</label>
+            {field.type === 'short_text' && (
+              <input
+                type="text"
+                value={formValues[i] ?? ''}
+                onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
+                className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+              />
+            )}
+            {field.type === 'long_text' && (
+              <textarea
+                value={formValues[i] ?? ''}
+                onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
+                rows={3}
+                className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+              />
+            )}
+            {field.type === 'single_choice' && (
+              <select
+                value={formValues[i] ?? ''}
+                onChange={(e) => setFormValues((v) => ({ ...v, [i]: e.target.value }))}
+                className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+              >
+                <option value="">Select...</option>
+                {(field.options || []).map((opt, j) => (
+                  <option key={j} value={opt}>{opt}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        ))}
+        <button type="submit" className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+          Submit
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -324,7 +442,9 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-muted/50"
+      className={`group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-muted/50 ${
+        isFocused ? 'bg-amber-100/70 dark:bg-amber-500/20 ring-1 ring-amber-400/60' : ''
+      }`}
       data-block-id={block.id}
       data-block-type={block.type}
     >
@@ -431,7 +551,9 @@ function UnifiedBlockRow({ block, bodyRefCallback, isTextLike, onContentChange, 
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-muted/50"
+      className={`group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-muted/50 ${
+        isFocused ? 'bg-amber-100/70 dark:bg-amber-500/20 ring-1 ring-amber-400/60' : ''
+      }`}
       data-block-id={block.id}
       data-block-type={block.type}
     >
@@ -459,11 +581,14 @@ function UnifiedBlockRow({ block, bodyRefCallback, isTextLike, onContentChange, 
       )}
       <div className="flex-1 min-w-0 relative">
         {isTextLike ? (
-          <div
-            ref={(el) => bodyRefCallback(block.id, el)}
-            data-block-body
-            className="outline-none min-h-[24px]"
-          />
+          <div className={getUnifiedBlockWrapperClass(block.type)}>
+            {block.type === 'callout' && <span className="text-lg shrink-0">💡</span>}
+            <div
+              ref={(el) => bodyRefCallback(block.id, el)}
+              data-block-body
+              className={block.type === 'callout' ? 'flex-1 outline-none min-h-[24px]' : 'outline-none min-h-[24px]'}
+            />
+          </div>
         ) : (
           <div contentEditable={false} suppressContentEditableWarning>
             <BlockContent
@@ -615,9 +740,18 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
               >
                 Vote
               </button>
-              <span className="flex-1 text-sm text-foreground">{opt.text}</span>
+              <input
+                type="text"
+                value={opt.text ?? ''}
+                onChange={(e) => {
+                  const nextOpts = data.options.map((o, j) => (j === i ? { ...o, text: e.target.value } : o));
+                  notifyContent(JSON.stringify({ ...data, options: nextOpts }));
+                }}
+                placeholder={`Option ${i + 1}`}
+                className="flex-1 min-w-0 text-sm bg-transparent border-none outline-none focus:ring-0 p-0 text-foreground placeholder:text-muted-foreground"
+              />
               {totalVotes > 0 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground shrink-0">
                   {opt.votes || 0} ({totalVotes ? Math.round(((opt.votes || 0) / totalVotes) * 100) : 0}%)
                 </span>
               )}
@@ -643,7 +777,8 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
         canvasId={canvasId}
         currentUserEmail={currentUserEmail}
         currentUserName={currentUserName}
-        onRemove={() => onRemove(block.id)}
+        onRemove={onRemove ? () => onRemove(block.id) : null}
+        onContentChange={onContentChange}
       />
     );
   }

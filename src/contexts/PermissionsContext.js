@@ -81,37 +81,17 @@ export function PermissionsProvider({ children }) {
       return;
     }
 
-    let isMounted = true;
-
-    // Always fetch fresh permissions from Firestore on page load
-    const loadPermissions = async () => {
-      try {
-        const result = await firestoreService.getUserPermissions(currentUser.email);
-        const pagePerms = result?.pages || result || [];
-        const featurePerms = result?.features || [];
-        
-        if (isMounted) {
-          setPermissions(Array.isArray(pagePerms) ? pagePerms : []);
-          setFeaturePermissions(Array.isArray(featurePerms) ? featurePerms : []);
-        }
-      } catch (error) {
-        console.error('Error loading permissions:', error);
-        if (isMounted) {
-          setPermissions([]);
-          setFeaturePermissions([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+    // Single API: subscribe so Firestore is source of truth; same resolution as "View as" when doc at canonical key is missing.
+    const sub = firestoreService.getUserPermissions(currentUser.email, {
+      subscribe: true,
+      onUpdate: (result) => {
+        setPermissions(Array.isArray(result?.pages) ? result.pages : []);
+        setFeaturePermissions(Array.isArray(result?.features) ? result.features : []);
+        setLoading(false);
       }
-    };
+    });
 
-    loadPermissions();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => sub?.unsubscribe?.();
   }, [currentUser?.email]);
 
   // Demo view-only: see all pages, no edit (handled in state: permissions/featurePermissions empty, isDemoViewOnly set in AuthContext)
