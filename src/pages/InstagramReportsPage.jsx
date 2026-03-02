@@ -504,7 +504,7 @@ const InstagramReportsPage = () => {
             )}
           </button>
           <button
-            onClick={() => window.open(`/report/${report.publicLinkId}`, '_blank')}
+            onClick={() => window.open(`${window.location.origin}/report/${report.publicLinkId}`, '_blank')}
             className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
             title="Preview"
           >

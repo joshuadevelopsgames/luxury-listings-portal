@@ -2203,20 +2203,26 @@ class FirestoreService {
     }
   }
 
+  _normalizeLocation(loc) {
+    const s = (loc || '').trim();
+    if (!s) return '';
+    return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  }
+
   /**
-   * Add or update a custom location. If value exists, updates createdBy/createdAt.
+   * Add or update a custom location. Case-insensitive: "miami" and "Miami" are one. Value stored normalized (title case).
    * @param {string} value - Location string
    * @param {string} createdBy - User email
    */
   async addCustomLocation(value, createdBy) {
-    const trimmed = (value || '').trim();
-    if (!trimmed) return;
+    const normalized = this._normalizeLocation(value);
+    if (!normalized) return;
     const ref = doc(db, this.collections.CRM, FirestoreService.CRM_CUSTOM_LOCATIONS_DOC_ID);
     const snap = await getDoc(ref);
     const list = (snap.exists() ? snap.data().locations : null) || [];
     const arr = Array.isArray(list) ? list.map((x) => ({ value: String(x.value || '').trim(), createdBy: String(x.createdBy || ''), createdAt: String(x.createdAt || '') })) : [];
-    const existing = arr.findIndex((x) => x.value === trimmed);
-    const entry = { value: trimmed, createdBy: createdBy || '', createdAt: new Date().toISOString() };
+    const existing = arr.findIndex((x) => x.value.toLowerCase() === normalized.toLowerCase());
+    const entry = { value: normalized, createdBy: createdBy || '', createdAt: new Date().toISOString() };
     if (existing >= 0) {
       arr[existing] = entry;
     } else {
@@ -2226,16 +2232,16 @@ class FirestoreService {
   }
 
   /**
-   * Remove a custom location by value.
-   * @param {string} value - Location string (exact match)
+   * Remove a custom location by value (case-insensitive).
+   * @param {string} value - Location string
    */
   async removeCustomLocation(value) {
-    const trimmed = (value || '').trim();
-    if (!trimmed) return;
+    const normalized = this._normalizeLocation(value);
+    if (!normalized) return;
     const ref = doc(db, this.collections.CRM, FirestoreService.CRM_CUSTOM_LOCATIONS_DOC_ID);
     const snap = await getDoc(ref);
     const list = (snap.exists() ? snap.data().locations : null) || [];
-    const arr = Array.isArray(list) ? list.filter((x) => String(x.value || '').trim() !== trimmed) : [];
+    const arr = Array.isArray(list) ? list.filter((x) => String(x.value || '').trim().toLowerCase() !== normalized.toLowerCase()) : [];
     await setDoc(ref, { locations: arr }, { merge: true });
   }
 
@@ -3636,6 +3642,7 @@ class FirestoreService {
         month: reportMonth,             // 1-12 from report date (user input)
         userId: uid,
         publicLinkId,
+        archived: false,                // Required: listener uses where('archived','!=',true); missing field is excluded
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -3954,15 +3961,15 @@ class FirestoreService {
       : query(
           collection(db, this.collections.INSTAGRAM_REPORTS),
           where('userId', '==', uid),
-          where('archived', '!=', true),
-          orderBy('archived', 'asc'),
           orderBy('createdAt', 'desc')
         );
     
     return onSnapshot(q, (snapshot) => {
       const reports = [];
       snapshot.forEach((doc) => {
-        reports.push({ id: doc.id, ...doc.data() });
+        const data = { id: doc.id, ...doc.data() };
+        if (!loadAll && data.archived === true) return; // exclude archived when loading own reports
+        reports.push(data);
       });
       console.log(`📊 Instagram reports loaded: ${reports.length} reports (loadAll=${loadAll})`);
       callback(reports);
