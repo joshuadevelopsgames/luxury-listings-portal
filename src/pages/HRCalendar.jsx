@@ -253,48 +253,49 @@ const HRCalendar = () => {
     checkGoogleCalendarConnection();
   }, []);
 
-  // Load leave requests from Firestore
-  useEffect(() => {
-    const loadLeaveRequests = async () => {
-      try {
-        const requests = await firestoreService.getAllLeaveRequests();
-        if (requests && requests.length > 0) {
-          // Transform Firestore data to match expected format
-          const formattedRequests = requests.map(req => ({
-            id: req.id,
-            employeeId: req.employeeId || req.employeeEmail || req.userEmail,
-            employeeEmail: req.employeeEmail || req.userEmail || req.employeeId,
-            employeeName: req.employeeName || req.userName || 'Unknown',
-            type: req.type || 'vacation',
-            startDate: req.startDate,
-            endDate: req.endDate,
-            startTime: req.startTime || '09:00',
-            endTime: req.endTime || '17:00',
-            isAllDay: req.isAllDay !== false,
-            days: req.days || 1,
-            status: req.status || 'pending',
-            reason: req.reason || '',
-            location: req.location || '',
-            description: req.description || req.notes || '',
-            attendees: req.attendees || '',
-            reminders: req.reminders || ['15'],
-            recurrence: req.recurrence || 'none',
-            tags: req.tags || [],
-            priority: req.priority || 'medium',
-            requesterCalendarEventId: req.requesterCalendarEventId,
-            calendarEventIdsByEmail: req.calendarEventIdsByEmail || {},
-            archived: req.archived,
-            otherSubType: req.otherSubType,
-            otherCustomLabel: req.otherCustomLabel
-          }));
-          setLeaveRequests(prev => [...formattedRequests, ...prev.filter(r => !requests.find(fr => fr.id === r.id))]);
-        }
-      } catch (error) {
-        console.error('Error loading leave requests from Firestore:', error);
-      }
-    };
+  // Real-time listener for leave requests (approvals and edits stay in sync across tabs/refresh)
+  const formatLeaveRequest = (req) => ({
+    id: req.id,
+    employeeId: req.employeeId || req.employeeEmail || req.userEmail,
+    employeeEmail: req.employeeEmail || req.userEmail || req.employeeId,
+    employeeName: req.employeeName || req.userName || 'Unknown',
+    type: req.type || 'vacation',
+    startDate: req.startDate,
+    endDate: req.endDate,
+    startTime: req.startTime || '09:00',
+    endTime: req.endTime || '17:00',
+    isAllDay: req.isAllDay !== false,
+    days: req.days || 1,
+    status: req.status || 'pending',
+    reason: req.reason || '',
+    location: req.location || '',
+    description: req.description || req.notes || '',
+    attendees: req.attendees || '',
+    reminders: req.reminders || ['15'],
+    recurrence: req.recurrence || 'none',
+    tags: req.tags || [],
+    priority: req.priority || 'medium',
+    requesterCalendarEventId: req.requesterCalendarEventId,
+    calendarEventIdsByEmail: req.calendarEventIdsByEmail || {},
+    archived: req.archived,
+    otherSubType: req.otherSubType,
+    otherCustomLabel: req.otherCustomLabel
+  });
 
-    loadLeaveRequests();
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    const unsubscribe = firestoreService.onLeaveRequestsChange(
+      (requests) => {
+        const formatted = (requests || []).map(formatLeaveRequest);
+        setLeaveRequests(formatted);
+      },
+      null // all requests for HR view
+    );
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [currentUser?.email]);
 
   // Load team members from Firestore; only load leave balances for time-off admins
