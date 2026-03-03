@@ -38,20 +38,53 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
   };
 
   const getEventsForDate = (date) => {
-    const dateStr = date.toDateString();
     return events.filter(event => {
       const start = new Date(event.start);
       const end = event.end ? new Date(event.end) : start;
-      const startStr = start.toDateString();
-      const endStr = end.toDateString();
-      if (startStr === endStr) return startStr === dateStr;
-      const dateMs = date.getTime();
       const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
       const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
       const cellDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
       return cellDay >= startDay && cellDay <= endDay;
     });
   };
+
+  // Map event to visible day indices (0–41) for spanning bar; return null if not visible this month
+  const getEventSpan = (event) => {
+    const start = new Date(event.start);
+    const end = event.end ? new Date(event.end) : start;
+    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+    let startIdx = -1;
+    let endIdx = -1;
+    calendarDays.forEach((d, i) => {
+      const t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      if (t >= startDay && t <= endDay) {
+        if (startIdx === -1) startIdx = i;
+        endIdx = i;
+      }
+    });
+    if (startIdx === -1) return null;
+    return { startIdx, endIdx };
+  };
+
+  // Assign events to lanes so overlapping spans don't stack on the same row
+  const getEventLanes = () => {
+    const withSpan = events
+      .map(event => ({ event, span: getEventSpan(event) }))
+      .filter(({ span }) => span != null);
+    const lanes = [];
+    for (const { event, span } of withSpan) {
+      let lane = 0;
+      while (lanes.some(({ span: s }) => lane === s.lane && span.startIdx <= s.endIdx && span.endIdx >= s.startIdx)) {
+        lane++;
+      }
+      lanes.push({ event, span: { ...span, lane } });
+    }
+    return lanes;
+  };
+
+  const eventLanes = getEventLanes();
+  const numLanes = eventLanes.length === 0 ? 0 : Math.max(...eventLanes.map(({ span }) => span.lane)) + 1;
 
   const formatDate = (date) => {
     return date.toLocaleDateString('en-US', { 
@@ -117,6 +150,42 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
           ))}
         </div>
 
+        {/* Event strip: one continuous bar per event spanning its full date range (overlapping events stack in lanes) */}
+        {numLanes > 0 && (
+          <div
+            className="grid gap-0.5 border-b border-gray-200 py-1 px-0.5"
+            style={{
+              gridTemplateColumns: 'repeat(42, minmax(0, 1fr))',
+              gridTemplateRows: `repeat(${numLanes}, minmax(26px, auto))`,
+            }}
+          >
+            {eventLanes.map(({ event, span }) => (
+              <div
+                key={event.id ?? `${event.title}-${span.startIdx}-${span.endIdx}`}
+                className={`min-h-[26px] flex items-center px-1.5 rounded cursor-pointer truncate ${
+                  event.type === 'leave' ? 'bg-amber-100 text-amber-900' :
+                  event.type === 'meeting' ? 'bg-blue-100 text-blue-800' :
+                  event.type === 'training' ? 'bg-green-100 text-green-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}
+                style={{
+                  gridColumn: `${span.startIdx + 1} / ${span.endIdx + 2}`,
+                  gridRow: span.lane + 1,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onEventClick) onEventClick(event);
+                }}
+              >
+                <span className="text-xs font-medium truncate" title={event.title + (event.time ? ` (${event.time})` : '')}>
+                  {event.title}
+                  {event.time && <span className="opacity-80 ml-0.5">· {event.time}</span>}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Calendar Days */}
         <div className="grid grid-cols-7">
           {calendarDays.map((date, index) => {
@@ -126,12 +195,12 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
             return (
               <div
                 key={index}
-                className={`min-h-[120px] border-r border-b border-gray-200 p-2 cursor-pointer hover:bg-gray-50 transition-colors ${
+                className={`min-h-[80px] border-r border-b border-gray-200 p-2 cursor-pointer hover:bg-gray-50 transition-colors ${
                   isSelected ? 'bg-blue-50 border-blue-300' : ''
                 } ${!isCurrentMonth(date) ? 'bg-gray-50 text-gray-400' : ''}`}
                 onClick={() => handleDateClick(date)}
               >
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between">
                   <span className={`text-sm font-medium ${
                     isToday(date) ? 'bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
                   }`}>
@@ -141,33 +210,6 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
                     <Badge variant="secondary" className="text-xs">
                       {dayEvents.length}
                     </Badge>
-                  )}
-                </div>
-                
-                {/* Events for this day */}
-                <div className="space-y-1">
-                  {dayEvents.slice(0, 2).map((event, eventIndex) => (
-                    <div
-                      key={eventIndex}
-                      className={`text-xs p-1 rounded cursor-pointer ${
-                        event.type === 'leave' ? 'bg-yellow-100 text-yellow-800' :
-                        event.type === 'meeting' ? 'bg-blue-100 text-blue-800' :
-                        event.type === 'training' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onEventClick) onEventClick(event);
-                      }}
-                    >
-                      <div className="font-medium truncate">{event.title}</div>
-                      <div className="text-xs opacity-75">{event.time}</div>
-                    </div>
-                  ))}
-                  {dayEvents.length > 2 && (
-                    <div className="text-xs text-gray-500 text-center">
-                      +{dayEvents.length - 2} more
-                    </div>
                   )}
                 </div>
               </div>
