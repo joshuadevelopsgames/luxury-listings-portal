@@ -7,15 +7,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Plus, AlertCircle, Users } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../../../contexts/PermissionsContext';
 import { firestoreService } from '../../../services/firestoreService';
 
 const TimeOffSummaryWidget = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { hasFeaturePermission } = usePermissions();
+  const canApproveByFeature = hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [upcomingTimeOff, setUpcomingTimeOff] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [firestoreTimeOffAdmin, setFirestoreTimeOffAdmin] = useState(false);
+  const isAdmin = canApproveByFeature || firestoreTimeOffAdmin;
   const [pendingApprovals, setPendingApprovals] = useState(0);
   
   // Leave balances from Firestore
@@ -29,9 +33,8 @@ const TimeOffSummaryWidget = () => {
       if (!currentUser?.email) return;
       
       try {
-        // Check if user is admin
         const adminStatus = await firestoreService.isTimeOffAdmin(currentUser.email);
-        setIsAdmin(adminStatus);
+        setFirestoreTimeOffAdmin(!!adminStatus);
         
         // Load user's leave balances
         const userBalances = await firestoreService.getUserLeaveBalances(currentUser.email);
@@ -49,8 +52,7 @@ const TimeOffSummaryWidget = () => {
         const upcoming = approved.find(r => new Date(r.startDate) > new Date());
         setUpcomingTimeOff(upcoming);
         
-        // If admin, count all pending approvals
-        if (adminStatus) {
+        if (canApproveByFeature || adminStatus) {
           const allRequests = await firestoreService.getAllLeaveRequests();
           const allPending = allRequests.filter(r => r.status === 'pending');
           setPendingApprovals(allPending.length);
@@ -63,7 +65,7 @@ const TimeOffSummaryWidget = () => {
     };
 
     loadData();
-  }, [currentUser?.email]);
+  }, [currentUser?.email, canApproveByFeature]);
 
   const vacationRemaining = balances.vacation.total - balances.vacation.used;
   const sickRemaining = balances.sick.total - balances.sick.used;

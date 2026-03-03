@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import Calendar from '../components/ui/calendar';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
@@ -44,12 +45,15 @@ import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 
 const HRCalendar = () => {
   const { currentUser, hasPermission } = useAuth();
-  
-  // Check permissions - simplified to isTimeOffAdmin
+  const { hasFeaturePermission } = usePermissions();
+  // Approve time off: Users & Permissions feature "Approve Time Off" OR legacy isTimeOffAdmin on user doc
+  const canApproveByFeature = hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
+  const [firestoreTimeOffAdmin, setFirestoreTimeOffAdmin] = useState(false);
+  const isTimeOffAdmin = canApproveByFeature || firestoreTimeOffAdmin;
+
   const canManageLeave = hasPermission(PERMISSIONS.MANAGE_LEAVE_REQUESTS);
   const canApproveLeave = hasPermission(PERMISSIONS.APPROVE_LEAVE);
   const canViewHRData = hasPermission(PERMISSIONS.VIEW_HR_DATA);
-  const [isTimeOffAdmin, setIsTimeOffAdmin] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showNotesModal, setShowNotesModal] = useState(null); // 'approve' or 'reject' or null
   const [processingRequest, setProcessingRequest] = useState(null);
@@ -94,14 +98,13 @@ const HRCalendar = () => {
     setSelectedEvent(null);
   }, [currentUser?.email]);
 
-  // Check if current user is a time off admin
+  // Legacy: user doc isTimeOffAdmin (also synced when saving Approve Time Off in Permissions Manager)
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!currentUser?.email) return;
       try {
         const adminStatus = await firestoreService.isTimeOffAdmin(currentUser.email);
-        setIsTimeOffAdmin(adminStatus);
-        console.log('📅 Time off admin status:', adminStatus);
+        setFirestoreTimeOffAdmin(!!adminStatus);
       } catch (error) {
         console.error('Error checking admin status:', error);
       }

@@ -310,15 +310,18 @@ const PermissionsManager = () => {
     setHasChanges(prev => ({ ...prev, [userEmail]: true }));
   };
 
-  // Save permissions for a user (pages, features, adminPermissions)
+  // Save permissions for a user (pages, features, adminPermissions). Sync Approve Time Off to isTimeOffAdmin for notifications.
   const saveUserPermissions = async (userEmail) => {
     try {
       setSaving(userEmail);
+      const features = userFeaturePermissions[userEmail] || [];
+      const hasApproveTimeOff = features.includes(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
       await firestoreService.setUserFullPermissions(userEmail, {
         pages: userPermissions[userEmail] || [],
-        features: userFeaturePermissions[userEmail] || [],
+        features,
         adminPermissions: !!userAdminPermissions[userEmail]
       });
+      await firestoreService.setTimeOffAdmin(userEmail, hasApproveTimeOff);
       toast.success(`Permissions saved for ${userEmail}`);
       setHasChanges(prev => ({ ...prev, [userEmail]: false }));
     } catch (error) {
