@@ -25,15 +25,6 @@ service cloud.firestore {
       );
     }
 
-    // Helper: check if user has a specific role by reading their approved_users doc
-    function getUserRole() {
-      // Use canonical lowercase email if custom claim is present; fall back to token email
-      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email_lower != null ? request.auth.token.email_lower : request.auth.token.email));
-      return userDoc != null && userDoc.data != null && 'role' in userDoc.data
-        ? userDoc.data.role
-        : 'pending';
-    }
-    
     // Helper: check if user has a specific feature permission
     function hasFeaturePermission(feature) {
       let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email_lower != null ? request.auth.token.email_lower : request.auth.token.email));
@@ -47,11 +38,6 @@ service cloud.firestore {
       return userDoc != null && userDoc.data != null
         && 'adminPermissions' in userDoc.data
         && userDoc.data.adminPermissions == true;
-    }
-
-    // Helper: check if user's role is in the allowed list
-    function userRoleIn(allowedRoles) {
-      return getUserRole() in allowedRoles;
     }
 
     // Helper function to get canonical user email (lowercase when available via custom claim)
@@ -145,13 +131,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
-    // Clients - any authenticated can read; writes restricted to roles with client management
+    // Clients - any authenticated can read; writes by admin or manage_clients feature or admin toggle
     match /clients/{clientId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (
         isAdmin() ||
         hasAdminPermissions() ||
-        userRoleIn(['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'])
+        hasFeaturePermission('manage_clients')
       );
     }
     
@@ -180,13 +166,13 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Client contracts - any authenticated can read; writes restricted to client-managing roles
+    // Client contracts - any authenticated can read; writes by admin or manage_clients or admin toggle
     match /client_contracts/{contractId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (
         isAdmin() ||
         hasAdminPermissions() ||
-        userRoleIn(['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'])
+        hasFeaturePermission('manage_clients')
       );
     }
     
@@ -201,13 +187,13 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
-    // Pending clients - any authenticated can read; writes restricted to client-managing roles
+    // Pending clients - any authenticated can read; writes by admin or manage_clients or admin toggle
     match /pending_clients/{clientId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (
         isAdmin() ||
         hasAdminPermissions() ||
-        userRoleIn(['admin', 'director', 'content_director', 'social_media_manager', 'sales_manager'])
+        hasFeaturePermission('manage_clients')
       );
     }
     
@@ -244,21 +230,20 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && resource.data.userEmail == getUserEmail();
     }
     
-    // Leave requests - any authenticated can read; create own requests; only HR/admin can approve/update others
+    // Leave requests - any authenticated can read; create own; approve/update/delete by admin or Approve Time Off or admin toggle
     match /leave_requests/{requestId} {
       allow read: if isAuthenticated();
-      // Anyone can create their own leave request
       allow create: if isAuthenticated();
-      // Updates: owner can edit own pending request; HR/admin can approve/reject any
       allow update: if isAuthenticated() && (
         isAdmin() ||
-        userRoleIn(['admin', 'hr_manager']) ||
+        hasFeaturePermission('approve_time_off') ||
+        hasAdminPermissions() ||
         (resource.data.userEmail == getUserEmail() && resource.data.status == 'pending')
       );
-      // Delete: admin/HR only
       allow delete: if isAuthenticated() && (
         isAdmin() ||
-        userRoleIn(['admin', 'hr_manager'])
+        hasFeaturePermission('approve_time_off') ||
+        hasAdminPermissions()
       );
     }
     
@@ -347,18 +332,18 @@ service cloud.firestore {
       allow read, update, delete: if isAuthenticated() && resource.data.userEmail == getUserEmail();
       allow create: if isAuthenticated() && request.resource.data.userEmail == getUserEmail();
     }
-    // Content items - owner can CRUD; admins/directors can read all and update status (approval workflow)
+    // Content items - owner can CRUD; admin or admin toggle can read all and update status (approval workflow)
     match /content_items/{itemId} {
       allow read: if isAuthenticated() && (
         resource.data.userEmail == getUserEmail() ||
         isAdmin() ||
-        userRoleIn(['admin', 'director', 'content_director'])
+        hasAdminPermissions()
       );
       allow create: if isAuthenticated() && request.resource.data.userEmail == getUserEmail();
       allow update: if isAuthenticated() && (
         resource.data.userEmail == getUserEmail() ||
         isAdmin() ||
-        userRoleIn(['admin', 'director', 'content_director'])
+        hasAdminPermissions()
       );
       allow delete: if isAuthenticated() && (
         resource.data.userEmail == getUserEmail() ||
