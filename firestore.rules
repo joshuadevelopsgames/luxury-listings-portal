@@ -32,14 +32,6 @@ service cloud.firestore {
         && feature in userDoc.data.featurePermissions;
     }
     
-    // Helper: check if user has admin-level permissions flag
-    function hasAdminPermissions() {
-      let userDoc = get(/databases/$(database)/documents/approved_users/$(request.auth.token.email_lower != null ? request.auth.token.email_lower : request.auth.token.email));
-      return userDoc != null && userDoc.data != null
-        && 'adminPermissions' in userDoc.data
-        && userDoc.data.adminPermissions == true;
-    }
-
     // Helper function to get canonical user email (lowercase when available via custom claim)
     function getUserEmail() {
       return request.auth.token.email_lower != null
@@ -131,12 +123,11 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
-    // Clients - any authenticated can read; writes by admin or manage_clients feature or admin toggle
+    // Clients - any authenticated can read; writes by admin or manage_clients feature
     match /clients/{clientId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (
         isAdmin() ||
-        hasAdminPermissions() ||
         hasFeaturePermission('manage_clients')
       );
     }
@@ -166,12 +157,11 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Client contracts - any authenticated can read; writes by admin or manage_clients or admin toggle
+    // Client contracts - any authenticated can read; writes by admin or manage_clients
     match /client_contracts/{contractId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (
         isAdmin() ||
-        hasAdminPermissions() ||
         hasFeaturePermission('manage_clients')
       );
     }
@@ -187,12 +177,11 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
-    // Pending clients - any authenticated can read; writes by admin or manage_clients or admin toggle
+    // Pending clients - any authenticated can read; writes by admin or manage_clients
     match /pending_clients/{clientId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (
         isAdmin() ||
-        hasAdminPermissions() ||
         hasFeaturePermission('manage_clients')
       );
     }
@@ -230,20 +219,18 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && resource.data.userEmail == getUserEmail();
     }
     
-    // Leave requests - any authenticated can read; create own; approve/update/delete by admin or Approve Time Off or admin toggle
+    // Leave requests - any authenticated can read; create own; approve/update/delete by admin or Approve Time Off
     match /leave_requests/{requestId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         isAdmin() ||
         hasFeaturePermission('approve_time_off') ||
-        hasAdminPermissions() ||
         (resource.data.userEmail == getUserEmail() && resource.data.status == 'pending')
       );
       allow delete: if isAuthenticated() && (
         isAdmin() ||
-        hasFeaturePermission('approve_time_off') ||
-        hasAdminPermissions()
+        hasFeaturePermission('approve_time_off')
       );
     }
     
@@ -267,12 +254,12 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
-    // Instagram reports - public read (for shareable client links); list/edit/delete scoped by userId in app
+    // Instagram reports - public read (for shareable client links); list/edit/delete scoped by userId or view_all_reports
     match /instagram_reports/{reportId} {
       allow read: if true;  // Public read so share links work without auth; app filters list by userId
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && 
-        (resource.data.userId == request.auth.uid || isAdmin() || hasAdminPermissions());
+        (resource.data.userId == request.auth.uid || isAdmin() || hasFeaturePermission('view_all_reports'));
     }
     
     // Error reports - ANYONE can create (even unauthenticated), only admin can read/update
@@ -332,18 +319,18 @@ service cloud.firestore {
       allow read, update, delete: if isAuthenticated() && resource.data.userEmail == getUserEmail();
       allow create: if isAuthenticated() && request.resource.data.userEmail == getUserEmail();
     }
-    // Content items - owner can CRUD; admin or admin toggle can read all and update status (approval workflow)
+    // Content items - owner can CRUD; admin or approve_content can read all and update status (approval workflow)
     match /content_items/{itemId} {
       allow read: if isAuthenticated() && (
         resource.data.userEmail == getUserEmail() ||
         isAdmin() ||
-        hasAdminPermissions()
+        hasFeaturePermission('approve_content')
       );
       allow create: if isAuthenticated() && request.resource.data.userEmail == getUserEmail();
       allow update: if isAuthenticated() && (
         resource.data.userEmail == getUserEmail() ||
         isAdmin() ||
-        hasAdminPermissions()
+        hasFeaturePermission('approve_content')
       );
       allow delete: if isAuthenticated() && (
         resource.data.userEmail == getUserEmail() ||
