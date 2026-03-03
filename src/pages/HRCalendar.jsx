@@ -230,25 +230,37 @@ const HRCalendar = () => {
     { value: '1440', label: '1 day before' }
   ];
 
-  // Combine leave requests with Google Calendar events
+  // Combine leave requests with Google Calendar events (multi-day: start/end span full range)
   const allEvents = [
-    ...leaveRequests.map(request => ({
-      id: `leave-${request.id}`,
-      title: `${request.employeeName} - ${getLeaveTypeLabel(request)}`,
-      description: request.description || request.reason,
-      start: new Date(request.startDate + 'T' + request.startTime),
-      end: new Date(request.endDate + 'T' + request.endTime),
-      type: 'leave',
-      leaveType: request.type,
-      time: `${request.startDate} - ${request.endDate}`,
-      isAllDay: request.isAllDay,
-      source: 'leave-request',
-      data: request,
-      location: request.location,
-      priority: request.priority,
-      tags: request.tags,
-      dotColor: leaveTypes[request.type]?.dotColor || 'bg-gray-500'
-    })),
+    ...leaveRequests.map(request => {
+      const startDate = request.startDate || '';
+      const endDate = request.endDate || startDate;
+      const startTime = request.startTime || '00:00';
+      const endTime = request.endTime || '23:59';
+      const start = new Date(startDate + 'T' + startTime);
+      const end = new Date(endDate + 'T' + endTime);
+      if (isNaN(end.getTime())) {
+        end.setTime(start.getTime());
+        end.setHours(23, 59, 59, 999);
+      }
+      return {
+        id: `leave-${request.id}`,
+        title: `${request.employeeName} - ${getLeaveTypeLabel(request)}`,
+        description: request.description || request.reason,
+        start,
+        end,
+        type: 'leave',
+        leaveType: request.type,
+        time: startDate === endDate ? startDate : `${startDate} - ${endDate}`,
+        isAllDay: request.isAllDay,
+        source: 'leave-request',
+        data: request,
+        location: request.location,
+        priority: request.priority,
+        tags: request.tags,
+        dotColor: leaveTypes[request.type]?.dotColor || 'bg-gray-500'
+      };
+    }),
     ...googleEvents
   ];
 
