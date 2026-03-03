@@ -195,6 +195,10 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <RouteErrorPage />,
     children: [
+      // Public Instagram reports first so /report/:id is never matched by protected catch-all
+      { path: '/report/:publicLinkId', element: <PublicInstagramReportPage /> },
+      { path: '/report-demo', element: <DemoInstagramReportPage /> },
+
       // Public routes (no auth required)
       { path: '/login', element: <LoginPage /> },
       { path: '/client-login', element: <ClientLogin /> },
@@ -202,10 +206,6 @@ const router = createBrowserRouter([
       { path: '/client-waiting-for-approval', element: <ClientWaitingForApproval /> },
       { path: '/waiting-for-approval', element: <WaitingForApproval /> },
       { path: '/__/auth/action', element: <FirebaseAuthHandler /> },
-      
-      // Public Instagram reports
-      { path: '/report/:publicLinkId', element: <PublicInstagramReportPage /> },
-      { path: '/report-demo', element: <DemoInstagramReportPage /> },
       
       // OAuth callbacks
       { path: '/slack-callback', element: <SlackCallback /> },

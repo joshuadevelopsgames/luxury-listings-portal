@@ -385,7 +385,10 @@ export function AuthProvider({ children }) {
         firestoreService.updateApprovedUser(docId, { uid }).catch(() => {});
 
         // Navigate based on status (only redirect to onboarding after they're past login)
+        // Never redirect when viewing a public report link (no auth required for /report/:id)
         const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/report/')) return;
+
         const onLoginOrHome = currentPath === '/login' || currentPath === '/';
         if (onLoginOrHome) {
           if (mergedUser.onboardingCompleted) {
