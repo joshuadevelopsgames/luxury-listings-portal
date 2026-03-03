@@ -2533,7 +2533,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                       </h3>
                       <div className="space-y-3">
                         {report.metrics.ageRanges.map((range, idx) => {
-                          const maxPct = report.metrics.ageRanges[0]?.percentage || 100;
+                          const maxPct = Math.max(1, ...report.metrics.ageRanges.map((r) => r.percentage));
                           const barPct = Math.min(100, (range.percentage / maxPct) * 100);
                           return (
                             <div key={idx} className="flex items-center gap-3">
@@ -2558,7 +2558,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                       </h3>
                       <div className="space-y-3">
                         {report.metrics.contentBreakdown.map((item, idx) => {
-                          const maxPct = report.metrics.contentBreakdown[0]?.percentage || 100;
+                          const maxPct = Math.max(1, ...report.metrics.contentBreakdown.map((r) => r.percentage));
                           const barPct = Math.min(100, (item.percentage / maxPct) * 100);
                           return (
                             <div key={idx} className="flex items-center gap-3">
@@ -2764,20 +2764,23 @@ const ReportPreviewModal = ({ report, onClose }) => {
                       Age Distribution
                     </h3>
                     <div className="space-y-2">
-                      {report.metrics.ageRanges.map((range, idx) => (
+                      {(() => {
+                        const ageMax = Math.max(1, ...report.metrics.ageRanges.map((r) => r.percentage));
+                        return report.metrics.ageRanges.map((range, idx) => (
                         <div key={idx} className="flex items-center justify-between">
                           <span className="text-sm text-gray-700">{range.range}</span>
                           <div className="flex items-center gap-2">
                             <div className="w-20 bg-gray-100 rounded-full h-2">
                               <div 
                                 className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
-                                style={{ width: `${(range.percentage / (report.metrics.ageRanges[0]?.percentage || 100)) * 100}%` }}
+                                style={{ width: `${(range.percentage / ageMax) * 100}%` }}
                               />
                             </div>
                             <span className="text-xs font-medium text-gray-900 w-10 text-right">{range.percentage}%</span>
                           </div>
                         </div>
-                      ))}
+                      ));
+                      })()}
                     </div>
                   </div>
                 )}

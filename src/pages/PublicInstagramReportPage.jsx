@@ -484,7 +484,7 @@ const PublicInstagramReportPage = () => {
                   </h3>
                   <div className="space-y-3">
                     {report.metrics.ageRanges.map((range, idx) => {
-                      const maxPct = report.metrics.ageRanges[0]?.percentage || 100;
+                      const maxPct = Math.max(1, ...report.metrics.ageRanges.map((r) => r.percentage));
                       const barPct = Math.min(100, (range.percentage / maxPct) * 100);
                       return (
                         <div key={idx} className="flex items-center gap-3">
@@ -512,7 +512,7 @@ const PublicInstagramReportPage = () => {
                   </h3>
                   <div className="space-y-3">
                     {report.metrics.contentBreakdown.map((item, idx) => {
-                      const maxPct = report.metrics.contentBreakdown[0]?.percentage || 100;
+                      const maxPct = Math.max(1, ...report.metrics.contentBreakdown.map((r) => r.percentage));
                       const barPct = Math.min(100, (item.percentage / maxPct) * 100);
                       return (
                         <div key={idx} className="flex items-center gap-3">
@@ -571,12 +571,12 @@ const PublicInstagramReportPage = () => {
                   {(() => {
                     const follows = report.metrics.growth.follows ?? 0;
                     const unfollows = report.metrics.growth.unfollows ?? 0;
-                    const netChange = report.metrics.growth.overall !== undefined ? report.metrics.growth.overall : (follows - unfollows);
+                    const netChange = (report.metrics.growth.overall != null ? report.metrics.growth.overall : (follows - unfollows)) ?? 0;
                     return (
                       <div className="grid grid-cols-3 gap-4">
                         <div className="bg-gray-100 rounded-xl p-4 text-center">
                           <div className={`text-xl font-bold ${netChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                            {netChange >= 0 ? '+' : ''}{netChange.toLocaleString()}
+                            {netChange >= 0 ? '+' : ''}{Number(netChange).toLocaleString()}
                           </div>
                           <p className="text-xs text-gray-500 mt-1">Overall</p>
                         </div>
