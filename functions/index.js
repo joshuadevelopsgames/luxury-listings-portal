@@ -2607,7 +2607,7 @@ async function getUserPermissions(email) {
     pagePermissions: data.pagePermissions || [],
     featurePermissions: data.featurePermissions || [],
     customPermissions: data.customPermissions || [],
-    adminPermissions: !!data.adminPermissions,
+    adminPermissions: false,
     isApproved: !!data.isApproved,
   };
 }
@@ -2704,14 +2704,6 @@ exports.validatePermission = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
     if (hasFeature) return { allowed: true };
   }
 
-  // Check adminPermissions flag
-  if (perms.adminPermissions) {
-    const adminFeatures = ['approve_time_off', 'view_analytics', 'manage_clients', 'assign_client_managers', 'edit_client_packages'];
-    if (rules.features && rules.features.some(f => adminFeatures.includes(f))) {
-      return { allowed: true };
-    }
-  }
-
   return { allowed: false, reason: `Role '${perms.role}' does not have write access to '${targetCollection}'` };
 });
 
@@ -2719,7 +2711,7 @@ exports.validatePermission = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
  * Callable: Update user permissions (admin-only).
  * Server-side enforcement ensures only admins can change permissions.
  *
- * Params: { targetEmail: string, pages?: string[], features?: string[], adminPermissions?: boolean, role?: string }
+ * Params: { targetEmail: string, pages?: string[], features?: string[], role?: string }
  */
 exports.updateUserPermissions = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in');
@@ -2729,7 +2721,7 @@ exports.updateUserPermissions = onCall({ cors: ALLOWED_ORIGINS }, async (request
     throw new HttpsError('permission-denied', 'Only system administrators can modify permissions');
   }
 
-  const { targetEmail, pages, features, adminPermissions, role } = request.data || {};
+  const { targetEmail, pages, features, role } = request.data || {};
   if (!targetEmail) {
     throw new HttpsError('invalid-argument', 'targetEmail is required');
   }
@@ -2748,7 +2740,7 @@ exports.updateUserPermissions = onCall({ cors: ALLOWED_ORIGINS }, async (request
 
   if (pages !== undefined) updates.pagePermissions = pages;
   if (features !== undefined) updates.featurePermissions = features;
-  if (adminPermissions !== undefined) updates.adminPermissions = !!adminPermissions;
+  updates.adminPermissions = false;
   if (role !== undefined) {
     updates.role = role;
     updates.primaryRole = role;
@@ -2770,7 +2762,7 @@ exports.updateUserPermissions = onCall({ cors: ALLOWED_ORIGINS }, async (request
       newRole: updates.role || previousData.role,
       newPages: updates.pagePermissions || previousData.pagePermissions || [],
       newFeatures: updates.featurePermissions || previousData.featurePermissions || [],
-      adminPermissions: updates.adminPermissions !== undefined ? updates.adminPermissions : previousData.adminPermissions,
+      adminPermissions: false,
     },
   });
 

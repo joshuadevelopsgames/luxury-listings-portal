@@ -204,7 +204,6 @@ export function AuthProvider({ children }) {
       pagePermissions: currentUser?.pagePermissions || [],
       featurePermissions: currentUser?.featurePermissions || [],
       isAdmin: isSystemAdmin(currentUser?.email),
-      adminPermissions: !!currentUser?.adminPermissions,
     });
   }
 
@@ -469,7 +468,7 @@ export function AuthProvider({ children }) {
           customPermissions: approvedUser.customPermissions || prev.customPermissions || [],
           pagePermissions: approvedUser.pagePermissions ?? prev.pagePermissions ?? [],
           featurePermissions: approvedUser.featurePermissions ?? prev.featurePermissions ?? [],
-          adminPermissions: approvedUser.adminPermissions ?? prev.adminPermissions ?? false,
+          adminPermissions: false,
           onboardingCompleted: approvedUser.onboardingCompleted !== undefined ? approvedUser.onboardingCompleted : prev.onboardingCompleted,
           onboardingCompletedDate: approvedUser.onboardingCompletedDate ?? prev.onboardingCompletedDate
         };
@@ -529,7 +528,6 @@ export function AuthProvider({ children }) {
           customPermissions: effectiveUser?.customPermissions || [],
           pagePermissions: viewAs.viewAsPermissions || [],
           featurePermissions: viewAs.viewAsFeaturePermissions || [],
-          adminPermissions: !!viewAs.viewAsAdminPermissions,
           isAdmin: false,
         });
       }
@@ -578,7 +576,6 @@ export function useEffectiveAuth() {
         customPermissions: viewingAsUser?.customPermissions || [],
         pagePermissions: viewAs.viewAsPermissions || [],
         featurePermissions: viewAs.viewAsFeaturePermissions || [],
-        adminPermissions: !!viewAs.viewAsAdminPermissions,
         isAdmin: false,
       }),
       isViewingAs: true,

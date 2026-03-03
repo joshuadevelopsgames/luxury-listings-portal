@@ -2374,14 +2374,8 @@ class FirestoreService {
       const email = auth.currentUser?.email;
       if (!email) throw new Error('You must be signed in to delete a ticket');
       const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
-      let isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
-      if (!isAdmin) {
-        try {
-          const perms = await this.getUserPermissions(email);
-          isAdmin = !!perms?.adminPermissions;
-        } catch (_) {}
-      }
-      if (!isAdmin) throw new Error('Only IT Support or admin can delete support tickets');
+      const isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
+      if (!isAdmin) throw new Error('Only system administrators can delete support tickets');
       const docRef = doc(db, this.collections.SUPPORT_TICKETS, ticketId);
       await deleteDoc(docRef);
       console.log('✅ Support ticket deleted:', ticketId);
@@ -3829,13 +3823,13 @@ class FirestoreService {
       const email = auth.currentUser?.email;
       if (!uid) throw new Error('You must be signed in to update a report');
       
-      // System admins or users with adminPermissions can edit any report
+      // System admins or users with view_all_reports can edit any report
       const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
       let isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
       if (!isAdmin && email) {
         try {
           const perms = await this.getUserPermissions(email);
-          isAdmin = !!perms?.adminPermissions;
+          isAdmin = (perms?.features || []).includes('view_all_reports');
         } catch (_) {}
       }
       
@@ -3913,13 +3907,13 @@ class FirestoreService {
       const email = auth.currentUser?.email;
       if (!uid) throw new Error('You must be signed in to delete a report');
       
-      // System admins or users with adminPermissions can delete any report
+      // System admins or users with view_all_reports can delete any report
       const SYSTEM_ADMINS = ['jrsschroeder@gmail.com'];
       let isAdmin = SYSTEM_ADMINS.includes(email?.toLowerCase());
       if (!isAdmin && email) {
         try {
           const perms = await this.getUserPermissions(email);
-          isAdmin = !!perms?.adminPermissions;
+          isAdmin = (perms?.features || []).includes('view_all_reports');
         } catch (_) {}
       }
       
@@ -4036,22 +4030,13 @@ class FirestoreService {
 
   // ===== PAGE PERMISSIONS MANAGEMENT =====
 
-  // Feature permission ids granted by admin permissions switch (excludes view_financials and manage_users)
-  _adminFeaturePermissions() {
-    return ['approve_time_off', 'view_analytics', 'manage_clients', 'assign_client_managers', 'edit_client_packages'];
-  }
-
-  // Normalize doc data to { pages, features, adminPermissions }. Single place for both read and subscribe.
+  // Normalize doc data to { pages, features, adminPermissions }. Features are only from doc (no admin bundle).
   _mapPermissionsFromDoc(userData) {
     if (!userData) return { pages: [], features: [], adminPermissions: false };
-    const adminPermissions = !!userData.adminPermissions;
-    const features = adminPermissions
-      ? this._adminFeaturePermissions()
-      : (userData.featurePermissions || []);
     return {
       pages: userData.pagePermissions || [],
-      features,
-      adminPermissions
+      features: userData.featurePermissions || [],
+      adminPermissions: false
     };
   }
 
@@ -4213,8 +4198,8 @@ class FirestoreService {
     }
   }
 
-  // Set both page and feature permissions at once (adminPermissions = grant all features except view_financials)
-  async setUserFullPermissions(userEmail, { pages = [], features = [], adminPermissions = false } = {}) {
+  // Set both page and feature permissions at once
+  async setUserFullPermissions(userEmail, { pages = [], features = [] } = {}) {
     try {
       const key = this._approvedUserKey(userEmail);
       const userRef = doc(db, this.collections.APPROVED_USERS, key);
@@ -4225,7 +4210,7 @@ class FirestoreService {
       const payload = {
         pagePermissions: pages,
         featurePermissions: features,
-        adminPermissions: !!adminPermissions,
+        adminPermissions: false,
         permissionsUpdatedAt: serverTimestamp()
       };
 

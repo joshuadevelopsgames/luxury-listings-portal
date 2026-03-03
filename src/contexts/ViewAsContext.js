@@ -14,7 +14,6 @@ export function useViewAs() {
       stopViewingAs: () => {},
       viewAsPermissions: [],
       viewAsFeaturePermissions: [],
-      viewAsAdminPermissions: false,
       viewAsRole: null,
       getEffectiveUser: (user) => user,
       effectiveHasPermission: (_, realHasPermission) => realHasPermission,
@@ -40,7 +39,6 @@ export function ViewAsProvider({ children }) {
   const [viewingAsUser, setViewingAsUser] = useState(null);
   const [viewAsPermissions, setViewAsPermissions] = useState([]);
   const [viewAsFeaturePermissions, setViewAsFeaturePermissions] = useState([]);
-  const [viewAsAdminPermissions, setViewAsAdminPermissions] = useState(false);
   const [viewAsRole, setViewAsRole] = useState(null);
 
   // Subscribe to viewed user's doc so permissions/role stay in sync when changed in Users & Permissions
@@ -48,7 +46,6 @@ export function ViewAsProvider({ children }) {
     if (!viewingAsUser?.email) {
       setViewAsPermissions([]);
       setViewAsFeaturePermissions([]);
-      setViewAsAdminPermissions(false);
       setViewAsRole(null);
       return;
     }
@@ -57,13 +54,11 @@ export function ViewAsProvider({ children }) {
       if (!approvedUser) {
         setViewAsPermissions([]);
         setViewAsFeaturePermissions([]);
-        setViewAsAdminPermissions(false);
         setViewAsRole(null);
         return;
       }
       setViewAsPermissions(approvedUser.pagePermissions || []);
       setViewAsFeaturePermissions(approvedUser.featurePermissions || []);
-      setViewAsAdminPermissions(!!approvedUser.adminPermissions);
       setViewAsRole(approvedUser.role || approvedUser.primaryRole || viewingAsUser.role || 'content_director');
       setViewingAsUser(prev => prev ? { ...prev, ...approvedUser } : null);
     });
@@ -83,7 +78,6 @@ export function ViewAsProvider({ children }) {
     setViewingAsUser(null);
     setViewAsPermissions([]);
     setViewAsFeaturePermissions([]);
-    setViewAsAdminPermissions(false);
     setViewAsRole(null);
   };
 
@@ -135,7 +129,6 @@ export function ViewAsProvider({ children }) {
     stopViewingAs,
     viewAsPermissions,
     viewAsFeaturePermissions,
-    viewAsAdminPermissions,
     viewAsRole,
     getEffectiveUser,
     effectiveHasPermission,

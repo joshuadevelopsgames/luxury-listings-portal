@@ -126,13 +126,12 @@ const groupReportsByYearMonth = (reportList) => {
   });
 };
 
-// Who sees all reports: system admin OR the "Admin permissions" toggle on Users & Permissions (no hardcoded emails).
+// Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
-  const { currentUser, realUser, isViewingAs } = useAuth();
+  const { currentUser, realUser, isViewingAs, hasPermission } = useAuth();
   const { isSystemAdmin } = usePermissions();
   const { confirm } = useConfirm();
-  // currentUser = effective user (viewed user when View As). See-all = system admin OR that user's adminPermissions from the UI.
-  const effectiveIsAdmin = isSystemAdmin || !!currentUser?.adminPermissions;
+  const effectiveIsAdmin = isSystemAdmin || hasPermission('view_all_reports');
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);

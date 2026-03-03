@@ -88,6 +88,16 @@ const ALL_FEATURES = {
     icon: Briefcase, 
     description: 'Edit package type, posts remaining, and payment status' 
   },
+  [FEATURE_PERMISSIONS.VIEW_ALL_REPORTS]: { 
+    name: 'See All Reports', 
+    icon: BarChart3, 
+    description: 'View and edit all Instagram analytics reports (not just your own)' 
+  },
+  [FEATURE_PERMISSIONS.APPROVE_CONTENT]: { 
+    name: 'Approve Content', 
+    icon: Check, 
+    description: 'View and approve/reject all team content items (approval workflow)' 
+  },
 };
 
 // Build ALL_PAGES from module registry + additional pages
@@ -166,7 +176,6 @@ const PermissionsManager = () => {
   const [expandedUser, setExpandedUser] = useState(null);
   const [userPermissions, setUserPermissions] = useState({});
   const [userFeaturePermissions, setUserFeaturePermissions] = useState({});
-  const [userAdminPermissions, setUserAdminPermissions] = useState({}); // when true: all features except View Financials
   const [hasChanges, setHasChanges] = useState({});
   
   // Add user modal state
@@ -217,7 +226,6 @@ const PermissionsManager = () => {
         // Load permissions for each user (pages + features); use normalized email for keys
         const permissionsMap = {};
         const featurePermissionsMap = {};
-        const adminPermissionsMap = {};
         const rolesMap = {};
         for (const user of allUsers) {
           const uEmail = user.email || user.id || '';
@@ -225,18 +233,15 @@ const PermissionsManager = () => {
             const result = await firestoreService.getUserPermissions(uEmail);
             permissionsMap[uEmail] = result?.pages || [];
             featurePermissionsMap[uEmail] = result?.features || [];
-            adminPermissionsMap[uEmail] = !!result?.adminPermissions;
           } catch (e) {
             permissionsMap[uEmail] = [];
             featurePermissionsMap[uEmail] = [];
-            adminPermissionsMap[uEmail] = false;
           }
           rolesMap[uEmail] = user.primaryRole || user.role || user.roles?.[0] || 'social_media_manager';
         }
         setUserRoles(rolesMap);
         setUserPermissions(permissionsMap);
         setUserFeaturePermissions(featurePermissionsMap);
-        setUserAdminPermissions(adminPermissionsMap);
       } catch (error) {
         console.error('Error loading users:', error);
         toast.error('Failed to load users');
@@ -310,7 +315,7 @@ const PermissionsManager = () => {
     setHasChanges(prev => ({ ...prev, [userEmail]: true }));
   };
 
-  // Save permissions for a user (pages, features, adminPermissions). Sync Approve Time Off to isTimeOffAdmin for notifications.
+  // Save permissions for a user (pages, features). Sync Approve Time Off to isTimeOffAdmin for notifications.
   const saveUserPermissions = async (userEmail) => {
     try {
       setSaving(userEmail);
@@ -319,8 +324,7 @@ const PermissionsManager = () => {
       const hasApproveTimeOff = features.includes(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
       await firestoreService.setUserFullPermissions(userEmail, {
         pages: userPermissions[userEmail] || [],
-        features,
-        adminPermissions: !!userAdminPermissions[userEmail]
+        features
       });
       await firestoreService.setTimeOffAdmin(userEmail, hasApproveTimeOff);
       toast.success(`Permissions saved for ${userEmail}`);
@@ -334,12 +338,6 @@ const PermissionsManager = () => {
     } finally {
       setSaving(null);
     }
-  };
-
-  const setAdminPermissions = (userEmail, value) => {
-    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase())) return;
-    setUserAdminPermissions(prev => ({ ...prev, [userEmail]: !!value }));
-    setHasChanges(prev => ({ ...prev, [userEmail]: true }));
   };
 
   // Handle role change for a user
@@ -428,13 +426,12 @@ const PermissionsManager = () => {
       await firestoreService.addApprovedUser(userData);
       
       // Default pages only; clients and other pages are enabled per user. Role is not used for permissions.
-      await firestoreService.setUserFullPermissions(userData.email, { pages: DEFAULT_PAGES, features: [], adminPermissions: false });
+      await firestoreService.setUserFullPermissions(userData.email, { pages: DEFAULT_PAGES, features: [] });
       
       setUsers(prev => [...prev, userData]);
       setUserPermissions(prev => ({ ...prev, [userData.email]: DEFAULT_PAGES }));
       setUserFeaturePermissions(prev => ({ ...prev, [userData.email]: [] }));
-      setUserAdminPermissions(prev => ({ ...prev, [userData.email]: false }));
-      
+
       toast.success(`User ${newUserForm.displayName} added successfully`);
       setShowAddModal(false);
       setNewUserForm({ email: '', displayName: '', role: 'content_director' });
@@ -547,7 +544,7 @@ const PermissionsManager = () => {
         if (approvedUserData[key] === undefined) delete approvedUserData[key];
       });
       await firestoreService.approveUser(pendingUser.id, approvedUserData);
-      await firestoreService.setUserFullPermissions(approvedUserData.email, { pages: DEFAULT_PAGES, features: [], adminPermissions: false });
+      await firestoreService.setUserFullPermissions(approvedUserData.email, { pages: DEFAULT_PAGES, features: [] });
       await refreshPendingUsers();
       setRefreshCount((c) => c + 1);
       toast.success(`${approvedUserData.email} approved`);
@@ -828,38 +825,6 @@ const PermissionsManager = () => {
                             <span className="text-[11px] text-[#86868b]">
                               Controls dashboard view and default permissions
                             </span>
-                          </div>
-                          <div className="flex items-center justify-between flex-wrap gap-3 mt-4">
-                            <div className="flex items-center gap-2">
-                              <Shield className="w-4 h-4 text-[#34c759]" />
-                              <div>
-                                <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Admin permissions</span>
-                                <p className="text-[11px] text-[#86868b]">All feature permissions except View Financial Data and Manage Users</p>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={!!userAdminPermissions[email]}
-                              disabled={!canEditPermissions}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (canEditPermissions) setAdminPermissions(email, !userAdminPermissions[email]);
-                              }}
-                              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:ring-offset-2 dark:focus:ring-offset-[#2c2c2e] ${
-                                !canEditPermissions ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                              } ${
-                                userAdminPermissions[email]
-                                  ? 'bg-[#34c759]'
-                                  : 'bg-black/20 dark:bg-white/20'
-                              }`}
-                            >
-                              <span
-                                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-out ${
-                                  userAdminPermissions[email] ? 'translate-x-6' : 'translate-x-0'
-                                }`}
-                              />
-                            </button>
                           </div>
                         </div>
 

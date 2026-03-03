@@ -62,17 +62,15 @@ export const permissionEnforcement = {
    * @param {string} params.targetEmail - User email to update
    * @param {string[]} [params.pages] - Page permissions
    * @param {string[]} [params.features] - Feature permissions
-   * @param {boolean} [params.adminPermissions] - Admin permissions flag
    * @param {string} [params.role] - New role
    * @returns {Promise<{ok: boolean}>}
    */
-  async updateUserPermissions({ targetEmail, pages, features, adminPermissions, role }) {
+  async updateUserPermissions({ targetEmail, pages, features, role }) {
     try {
       const result = await getUpdateUserPermissionsFn()({
         targetEmail,
         pages,
         features,
-        adminPermissions,
         role,
       });
       return result.data;
