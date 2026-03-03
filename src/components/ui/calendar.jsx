@@ -38,9 +38,13 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
   };
 
   const getEventsForDate = (date) => {
+    const cellDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
     return events.filter(event => {
-      const eventDate = new Date(event.start);
-      return eventDate.toDateString() === date.toDateString();
+      const start = new Date(event.start);
+      const end = event.end ? new Date(event.end) : start;
+      const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+      const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+      return cellDay >= startDay && cellDay <= endDay;
     });
   };
 
