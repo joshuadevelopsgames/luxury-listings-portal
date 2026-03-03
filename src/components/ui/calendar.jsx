@@ -48,44 +48,6 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
     });
   };
 
-  // Map event to visible day indices (0–41) for spanning bar; return null if not visible this month
-  const getEventSpan = (event) => {
-    const start = new Date(event.start);
-    const end = event.end ? new Date(event.end) : start;
-    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
-    const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
-    let startIdx = -1;
-    let endIdx = -1;
-    calendarDays.forEach((d, i) => {
-      const t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-      if (t >= startDay && t <= endDay) {
-        if (startIdx === -1) startIdx = i;
-        endIdx = i;
-      }
-    });
-    if (startIdx === -1) return null;
-    return { startIdx, endIdx };
-  };
-
-  // Assign events to lanes so overlapping spans don't stack on the same row
-  const getEventLanes = () => {
-    const withSpan = events
-      .map(event => ({ event, span: getEventSpan(event) }))
-      .filter(({ span }) => span != null);
-    const lanes = [];
-    for (const { event, span } of withSpan) {
-      let lane = 0;
-      while (lanes.some(({ span: s }) => lane === s.lane && span.startIdx <= s.endIdx && span.endIdx >= s.startIdx)) {
-        lane++;
-      }
-      lanes.push({ event, span: { ...span, lane } });
-    }
-    return lanes;
-  };
-
-  const eventLanes = getEventLanes();
-  const numLanes = eventLanes.length === 0 ? 0 : Math.max(...eventLanes.map(({ span }) => span.lane)) + 1;
-
   const formatDate = (date) => {
     return date.toLocaleDateString('en-US', { 
       month: 'long', 
@@ -120,6 +82,43 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
   };
 
   const calendarDays = getCalendarDays();
+
+  // Map event to visible day indices (0–41) for spanning bar; return null if not visible this month
+  const getEventSpan = (event) => {
+    const start = new Date(event.start);
+    const end = event.end ? new Date(event.end) : start;
+    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+    let startIdx = -1;
+    let endIdx = -1;
+    calendarDays.forEach((d, i) => {
+      const t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      if (t >= startDay && t <= endDay) {
+        if (startIdx === -1) startIdx = i;
+        endIdx = i;
+      }
+    });
+    if (startIdx === -1) return null;
+    return { startIdx, endIdx };
+  };
+
+  const getEventLanes = () => {
+    const withSpan = events
+      .map(event => ({ event, span: getEventSpan(event) }))
+      .filter(({ span }) => span != null);
+    const lanes = [];
+    for (const { event, span } of withSpan) {
+      let lane = 0;
+      while (lanes.some(({ span: s }) => lane === s.lane && span.startIdx <= s.endIdx && span.endIdx >= s.startIdx)) {
+        lane++;
+      }
+      lanes.push({ event, span: { ...span, lane } });
+    }
+    return lanes;
+  };
+
+  const eventLanes = getEventLanes();
+  const numLanes = eventLanes.length === 0 ? 0 : Math.max(...eventLanes.map(({ span }) => span.lane)) + 1;
 
   return (
     <div className="space-y-4">
