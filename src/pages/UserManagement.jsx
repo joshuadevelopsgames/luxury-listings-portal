@@ -705,10 +705,10 @@ const UserManagement = () => {
     console.log('🔧 Opening unified manage modal for user:', user);
     setManagedUser(user);
     
-    // Load page permissions
+    // Load page permissions (unified API)
     try {
-      const pagePerms = await firestoreService.getUserPagePermissions(user.email);
-      setUserPagePermissions(pagePerms || []);
+      const result = await firestoreService.getUserPermissions(user.email);
+      setUserPagePermissions(result?.pages || []);
     } catch (error) {
       console.error('Error loading page permissions:', error);
       // If permission error, user might not have access - start with empty array

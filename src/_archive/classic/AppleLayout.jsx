@@ -61,7 +61,8 @@ const AppleLayout = ({ children }) => {
 
     const loadPermissions = async () => {
       try {
-        const permissions = await firestoreService.getUserPagePermissions(currentUser.email);
+        const result = await firestoreService.getUserPermissions(currentUser.email);
+        const permissions = result?.pages || [];
         if (isMounted) {
           setUserPermissions(permissions || []);
         }

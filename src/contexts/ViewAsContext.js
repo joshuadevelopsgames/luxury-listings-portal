@@ -13,6 +13,8 @@ export function useViewAs() {
       startViewingAs: () => {},
       stopViewingAs: () => {},
       viewAsPermissions: [],
+      viewAsFeaturePermissions: [],
+      viewAsAdminPermissions: false,
       viewAsRole: null,
       getEffectiveUser: (user) => user,
       effectiveHasPermission: (_, realHasPermission) => realHasPermission,
@@ -37,39 +39,36 @@ export function useViewAs() {
 export function ViewAsProvider({ children }) {
   const [viewingAsUser, setViewingAsUser] = useState(null);
   const [viewAsPermissions, setViewAsPermissions] = useState([]);
+  const [viewAsFeaturePermissions, setViewAsFeaturePermissions] = useState([]);
+  const [viewAsAdminPermissions, setViewAsAdminPermissions] = useState(false);
   const [viewAsRole, setViewAsRole] = useState(null);
 
-  // Load permissions when viewing as a user
+  // Subscribe to viewed user's doc so permissions/role stay in sync when changed in Users & Permissions
   useEffect(() => {
     if (!viewingAsUser?.email) {
       setViewAsPermissions([]);
+      setViewAsFeaturePermissions([]);
+      setViewAsAdminPermissions(false);
       setViewAsRole(null);
       return;
     }
 
-    const loadViewAsData = async () => {
-      try {
-        // Get the viewed user's permissions (page-level permissions)
-        const permissions = await firestoreService.getUserPagePermissions(viewingAsUser.email);
-        setViewAsPermissions(permissions || []);
-        
-        // Get their role
-        const role = viewingAsUser.role || viewingAsUser.primaryRole || 'content_director';
-        setViewAsRole(role);
-        
-        console.log('📋 View As loaded:', {
-          user: viewingAsUser.email,
-          permissions: permissions?.length || 0,
-          role
-        });
-      } catch (error) {
-        console.error('Error loading view-as data:', error);
+    const unsubscribe = firestoreService.onApprovedUserChange(viewingAsUser.email, (approvedUser) => {
+      if (!approvedUser) {
         setViewAsPermissions([]);
+        setViewAsFeaturePermissions([]);
+        setViewAsAdminPermissions(false);
         setViewAsRole(null);
+        return;
       }
-    };
+      setViewAsPermissions(approvedUser.pagePermissions || []);
+      setViewAsFeaturePermissions(approvedUser.featurePermissions || []);
+      setViewAsAdminPermissions(!!approvedUser.adminPermissions);
+      setViewAsRole(approvedUser.role || approvedUser.primaryRole || viewingAsUser.role || 'content_director');
+      setViewingAsUser(prev => prev ? { ...prev, ...approvedUser } : null);
+    });
 
-    loadViewAsData();
+    return () => unsubscribe();
   }, [viewingAsUser?.email]);
 
   // Start viewing as another user
@@ -83,6 +82,8 @@ export function ViewAsProvider({ children }) {
     console.log('👁️ Stopping View As');
     setViewingAsUser(null);
     setViewAsPermissions([]);
+    setViewAsFeaturePermissions([]);
+    setViewAsAdminPermissions(false);
     setViewAsRole(null);
   };
 
@@ -133,8 +134,9 @@ export function ViewAsProvider({ children }) {
     startViewingAs,
     stopViewingAs,
     viewAsPermissions,
+    viewAsFeaturePermissions,
+    viewAsAdminPermissions,
     viewAsRole,
-    // Helper functions for components to get effective values
     getEffectiveUser,
     effectiveHasPermission,
     getEffectivePermissions,

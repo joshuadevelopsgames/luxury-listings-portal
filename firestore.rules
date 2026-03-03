@@ -7,14 +7,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper: resolve system admins from system_config/admins doc (dynamic, no hardcoded emails)
-    // Falls back to legacy hardcoded email for bootstrap safety
+    // Helper: resolve system admins from system_config/admins doc (dynamic, no hardcoded emails).
+    // Use email_lower when present so list stored lowercase matches; token.email can be mixed case.
     function isAdmin() {
       let adminDoc = get(/databases/$(database)/documents/system_config/admins);
       let dynamicAdmins = adminDoc != null && adminDoc.data != null && 'emails' in adminDoc.data
         ? adminDoc.data.emails
         : [];
+      let emailToCheck = request.auth.token.email_lower != null
+        ? request.auth.token.email_lower
+        : request.auth.token.email;
       return isAuthenticated() && (
+        emailToCheck in dynamicAdmins ||
         request.auth.token.email in dynamicAdmins ||
         request.auth.token.email == 'jrsschroeder@gmail.com' ||
         request.auth.token.email == 'demo@luxurylistings.app'

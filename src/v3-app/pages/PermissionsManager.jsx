@@ -314,6 +314,7 @@ const PermissionsManager = () => {
   const saveUserPermissions = async (userEmail) => {
     try {
       setSaving(userEmail);
+      if (isSystemAdmin) await firestoreService.ensureEmailLowerClaim();
       const features = userFeaturePermissions[userEmail] || [];
       const hasApproveTimeOff = features.includes(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
       await firestoreService.setUserFullPermissions(userEmail, {
@@ -326,7 +327,10 @@ const PermissionsManager = () => {
       setHasChanges(prev => ({ ...prev, [userEmail]: false }));
     } catch (error) {
       console.error('Error saving permissions:', error);
-      toast.error('Failed to save permissions');
+      const msg = error?.code === 'permission-denied'
+        ? 'Permission denied. Ensure you are a system admin and deploy the latest Firestore rules.'
+        : (error?.message || 'Failed to save permissions');
+      toast.error(msg);
     } finally {
       setSaving(null);
     }

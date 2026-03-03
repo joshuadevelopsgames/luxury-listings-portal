@@ -358,6 +358,11 @@ class FirestoreService {
     }
   }
 
+  // Ensure current user has email_lower custom claim and refresh token (so Firestore rules isAdmin() works with lowercase admin list).
+  async ensureEmailLowerClaim() {
+    await ensureEmailLowerClaimBeforeTemplates();
+  }
+
   // Update current user's last-seen timestamp (for presence / "last online"). Call on load and periodically while app is open.
   async updateLastSeen(userEmail) {
     if (!userEmail) return;
@@ -4108,19 +4113,6 @@ class FirestoreService {
     }
 
     return oneShot();
-  }
-
-  // Get user's page permissions (legacy support)
-  async getUserPagePermissions(userEmail) {
-    try {
-      const result = await this.getUserPermissions(userEmail);
-      return result.pages || [];
-    } catch (error) {
-      console.error('❌ Error getting user page permissions:', error);
-      console.error('❌ Email used:', userEmail);
-      console.error('❌ Error code:', error.code);
-      throw error;
-    }
   }
 
   // Canonical key for approved_users: login lookups use lowercase email

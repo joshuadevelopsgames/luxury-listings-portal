@@ -198,10 +198,8 @@ export function AuthProvider({ children }) {
   }
 
   function hasPermission(permission) {
-    // Unified permission resolver: checks system admin, custom, page, feature, role-based
     return resolvePermission({
       permission,
-      role: currentRole,
       customPermissions: currentUser?.customPermissions || userData?.customPermissions || [],
       pagePermissions: currentUser?.pagePermissions || [],
       featurePermissions: currentUser?.featurePermissions || [],
@@ -469,6 +467,9 @@ export function AuthProvider({ children }) {
           primaryRole: approvedUser.primaryRole || prev.primaryRole,
           roles: approvedUser.roles || prev.roles,
           customPermissions: approvedUser.customPermissions || prev.customPermissions || [],
+          pagePermissions: approvedUser.pagePermissions ?? prev.pagePermissions ?? [],
+          featurePermissions: approvedUser.featurePermissions ?? prev.featurePermissions ?? [],
+          adminPermissions: approvedUser.adminPermissions ?? prev.adminPermissions ?? false,
           onboardingCompleted: approvedUser.onboardingCompleted !== undefined ? approvedUser.onboardingCompleted : prev.onboardingCompleted,
           onboardingCompletedDate: approvedUser.onboardingCompletedDate ?? prev.onboardingCompletedDate
         };
@@ -513,8 +514,6 @@ export function AuthProvider({ children }) {
   const isViewingAs = viewAs?.isViewingAs && viewAs?.viewingAsUser;
   const effectiveUser = isViewingAs ? viewAs.viewingAsUser : currentUser;
   const effectiveRole = isViewingAs && viewAs.viewAsRole ? viewAs.viewAsRole : currentRole;
-  const viewAsPagePerms = viewAs?.viewAsPermissions || [];
-  const viewAsRolePerms = getRolePermissions(effectiveRole)?.permissions;
 
   const value = {
     currentUser: effectiveUser,
@@ -524,9 +523,15 @@ export function AuthProvider({ children }) {
     switchRole,
     getCurrentRolePermissions: () => getRolePermissions(effectiveRole),
     hasPermission: (permission) => {
-      if (isViewingAs) {
-        const custom = effectiveUser?.customPermissions || [];
-        return viewAsPagePerms.includes(permission) || (viewAsRolePerms && viewAsRolePerms[permission]) || custom.includes(permission);
+      if (isViewingAs && viewAs?.viewingAsUser) {
+        return resolvePermission({
+          permission,
+          customPermissions: effectiveUser?.customPermissions || [],
+          pagePermissions: viewAs.viewAsPermissions || [],
+          featurePermissions: viewAs.viewAsFeaturePermissions || [],
+          adminPermissions: !!viewAs.viewAsAdminPermissions,
+          isAdmin: false,
+        });
       }
       return hasPermission(permission);
     },
@@ -559,18 +564,23 @@ export function useEffectiveAuth() {
   const viewAs = useViewAs();
   
   if (viewAs?.isViewingAs && viewAs?.viewingAsUser) {
+    const viewingAsUser = viewAs.viewingAsUser;
     return {
       ...auth,
       currentUser: {
-        ...viewAs.viewingAsUser,
-        _realUser: auth.currentUser,
+        ...viewingAsUser,
+        _realUser: auth.realUser,
         _isViewingAs: true
       },
       currentRole: viewAs.viewAsRole || auth.currentRole,
-      hasPermission: (permission) => {
-        // When viewing as, check the viewed user's permissions
-        return viewAs.viewAsPermissions?.includes(permission) || false;
-      },
+      hasPermission: (permission) => resolvePermission({
+        permission,
+        customPermissions: viewingAsUser?.customPermissions || [],
+        pagePermissions: viewAs.viewAsPermissions || [],
+        featurePermissions: viewAs.viewAsFeaturePermissions || [],
+        adminPermissions: !!viewAs.viewAsAdminPermissions,
+        isAdmin: false,
+      }),
       isViewingAs: true,
       realUser: auth.currentUser,
       viewingAsUser: viewAs.viewingAsUser

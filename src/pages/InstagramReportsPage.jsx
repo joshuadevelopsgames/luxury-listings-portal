@@ -126,22 +126,13 @@ const groupReportsByYearMonth = (reportList) => {
   });
 };
 
-// Admins see all Instagram reports (system admin, these emails, or anyone with adminPermissions)
-const INSTAGRAM_ADMIN_EMAILS = [
-  'jrsschroeder@gmail.com',
-  'matthew@luxury-listings.com',
-  'kambiz@luxury-listings.com',
-  'michelle@luxury-listings.com'
-];
-
+// Who sees all reports: system admin OR the "Admin permissions" toggle on Users & Permissions (no hardcoded emails).
 const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
   const { isSystemAdmin } = usePermissions();
   const { confirm } = useConfirm();
-  // currentUser is effective user (viewed user when View As). Admins = system admin OR adminPermissions (see all clients/reports).
-  const effectiveIsAdmin = isViewingAs
-    ? INSTAGRAM_ADMIN_EMAILS.includes((currentUser?.email || '').toLowerCase())
-    : (isSystemAdmin || !!realUser?.adminPermissions || INSTAGRAM_ADMIN_EMAILS.includes((realUser?.email || '').toLowerCase()));
+  // currentUser = effective user (viewed user when View As). See-all = system admin OR that user's adminPermissions from the UI.
+  const effectiveIsAdmin = isSystemAdmin || !!currentUser?.adminPermissions;
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);

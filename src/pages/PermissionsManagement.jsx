@@ -47,8 +47,8 @@ const PermissionsManagement = () => {
       
       const permissionsMap = {};
       for (const user of approvedUsers) {
-        const permissions = await firestoreService.getUserPagePermissions(user.email);
-        permissionsMap[user.email] = permissions || [];
+        const result = await firestoreService.getUserPermissions(user.email);
+        permissionsMap[user.email] = result?.pages || [];
       }
       setUserPermissions(permissionsMap);
     } catch (error) {
@@ -85,8 +85,6 @@ const PermissionsManagement = () => {
 
       await firestoreService.setUserPagePermissions(userEmail, permissions);
       toast.success(`Permissions saved for ${userEmail}`);
-      
-      await firestoreService.getUserPagePermissions(userEmail);
     } catch (error) {
       console.error('Error saving permissions:', error);
       toast.error(`Failed to save permissions: ${error.message || 'Unknown error'}`);

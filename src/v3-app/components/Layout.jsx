@@ -52,7 +52,7 @@ import {
  */
 const V3Layout = () => {
   const { currentUser, currentRole, logout } = useAuth();
-  const { viewingAsUser, isViewingAs, stopViewingAs } = useViewAs();
+  const { viewingAsUser, isViewingAs, stopViewingAs, viewAsPermissions } = useViewAs();
   const { permissions: userPermissions, isSystemAdmin, hasFeaturePermission } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
@@ -137,7 +137,6 @@ const V3Layout = () => {
   
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [viewAsPermissions, setViewAsPermissions] = useState([]);
 
   const handleDarkModeToggle = () => {
     const next = !darkMode;
@@ -193,25 +192,7 @@ const V3Layout = () => {
     }
   }, [darkMode]);
 
-  // Load permissions for the user being viewed as
-  useEffect(() => {
-    if (!isViewingAs || !viewingAsUser?.email) {
-      setViewAsPermissions([]);
-      return;
-    }
-
-    const loadViewAsPermissions = async () => {
-      try {
-        const permissions = await firestoreService.getUserPagePermissions(viewingAsUser.email);
-        setViewAsPermissions(permissions || []);
-      } catch (error) {
-        console.error('Error loading view-as permissions:', error);
-        setViewAsPermissions([]);
-      }
-    };
-
-    loadViewAsPermissions();
-  }, [isViewingAs, viewingAsUser?.email]);
+  // View-as permissions come from ViewAsContext (live subscription to approved_users doc)
 
   // All available pages with their icons
   // Combines hardcoded pages with module registry
