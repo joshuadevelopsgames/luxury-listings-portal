@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { firestoreService } from '../services/firestoreService';
-import { isSystemAdmin as checkIsSystemAdmin } from '../utils/systemAdmins';
+import { isSystemAdmin as checkIsSystemAdmin, onSystemAdminsChange } from '../utils/systemAdmins';
 // getBaseModuleIds import removed - base modules now check explicit permissions
 
 const PermissionsContext = createContext();
@@ -71,6 +71,12 @@ export function PermissionsProvider({ children }) {
       return;
     }
 
+    // Subscribe to admin changes so isSystemAdmin updates when the admin list loads from Firestore
+    const unsubscribeAdmins = onSystemAdminsChange((adminEmails) => {
+      const adminStatus = adminEmails.includes(currentUser.email.toLowerCase());
+      setIsSystemAdmin(adminStatus);
+    });
+
     // Check if system admin (dynamic from Firestore system_config/admins)
     const adminStatus = checkIsSystemAdmin(currentUser.email);
     setIsSystemAdmin(adminStatus);
@@ -80,7 +86,7 @@ export function PermissionsProvider({ children }) {
       setPermissions([]);
       setFeaturePermissions([]);
       setLoading(false);
-      return;
+      return () => unsubscribeAdmins();
     }
 
     // Single API: subscribe so Firestore is source of truth; same resolution as "View as" when doc at canonical key is missing.
@@ -93,7 +99,10 @@ export function PermissionsProvider({ children }) {
       }
     });
 
-    return () => sub?.unsubscribe?.();
+    return () => {
+      sub?.unsubscribe?.();
+      unsubscribeAdmins();
+    };
   }, [currentUser?.email]);
 
   // Demo view-only: see all pages, no edit (handled in state: permissions/featurePermissions empty, isDemoViewOnly set in AuthContext)
