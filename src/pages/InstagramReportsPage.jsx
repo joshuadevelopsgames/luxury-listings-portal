@@ -528,8 +528,8 @@ const InstagramReportsPage = () => {
   );
 
   // Stats summary - only count reports for MY clients
-  const myClientIds = new Set(myClients.map(c => c.id));
-  const myReports = reports.filter(r => r.clientId && myClientIds.has(r.clientId));
+  const myClientIdsSet = new Set(myClients.map(c => c.id));
+  const myReports = reports.filter(r => r.clientId && myClientIdsSet.has(r.clientId));
   const totalReports = myReports.length;
 
   return (
