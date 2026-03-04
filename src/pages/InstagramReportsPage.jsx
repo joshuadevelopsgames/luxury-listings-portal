@@ -159,12 +159,14 @@ const InstagramReportsPage = () => {
       setLoading(false);
       return () => {};
     }
+    // Get list of assigned client IDs to pass to the listener
+    const assignedClientIds = effectiveIsAdmin ? [] : myClients.map(c => c.id).filter(Boolean);
     const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
       setReports(data);
       setLoading(false);
-    }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined });
+    }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined, clientIds: assignedClientIds });
     return () => unsubscribe();
-  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs]);
+  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, myClients]);
 
   // Load archived reports (system admin only)
   useEffect(() => {
@@ -209,6 +211,8 @@ const InstagramReportsPage = () => {
     return allClients.filter(isAssignedToMe);
   }, [allClients, currentUser?.email, currentUser?.uid, effectiveIsAdmin]);
 
+  // Memoize client IDs for report filtering
+  const myClientIds = useMemo(() => myClients.map(c => c.id).filter(Boolean), [myClients]);
   const myClientsOnly = useMemo(() => myClients.filter(c => !c.isInternal), [myClients]);
   const myInternalAccounts = useMemo(() => myClients.filter(c => c.isInternal), [myClients]);
 
