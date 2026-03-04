@@ -367,6 +367,8 @@ export function AuthProvider({ children }) {
           skills: approvedUser.skills || roleUserData.skills,
           stats: approvedUser.stats || roleUserData.stats,
           customPermissions: approvedUser.customPermissions || [],
+          pagePermissions: approvedUser.pagePermissions || [],
+          featurePermissions: approvedUser.featurePermissions || [],
           isApproved: true,
           onboardingCompleted: approvedUser.onboardingCompleted
         };
