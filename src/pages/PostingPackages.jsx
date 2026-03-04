@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
@@ -54,9 +55,11 @@ export default function PostingPackages() {
   const [searchParams] = useSearchParams();
   const { currentUser, hasPermission } = useAuth();
   const { confirm } = useConfirm();
+  const { hasFeaturePermission } = usePermissions();
   
   // Check permissions
   const canManagePackages = hasPermission(PERMISSIONS.MANAGE_POSTING_PACKAGES);
+  const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -1431,11 +1434,13 @@ export default function PostingPackages() {
           <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.completed}</p>
           <p className="text-[12px] sm:text-[13px] text-[#86868b]">Completed</p>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] col-span-2 sm:col-span-1 hover:shadow-lg transition-all">
-          <DollarSign className="w-5 h-5 text-white/80 mb-2" strokeWidth={1.5} />
-          <p className="text-[24px] sm:text-[28px] font-semibold text-white tracking-[-0.02em]">${stats.revenue.toLocaleString()}</p>
-          <p className="text-[12px] sm:text-[13px] text-white/70">Total Revenue</p>
-        </div>
+        {canViewFinancials && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] col-span-2 sm:col-span-1 hover:shadow-lg transition-all">
+            <DollarSign className="w-5 h-5 text-white/80 mb-2" strokeWidth={1.5} />
+            <p className="text-[24px] sm:text-[28px] font-semibold text-white tracking-[-0.02em]">${stats.revenue.toLocaleString()}</p>
+            <p className="text-[12px] sm:text-[13px] text-white/70">Total Revenue</p>
+          </div>
+        )}
       </div>
 
       {/* Tab Navigation */}
