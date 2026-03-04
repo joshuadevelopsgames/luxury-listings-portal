@@ -18,6 +18,17 @@ export const FEATURE_PERMISSIONS = {
   EDIT_CLIENT_PACKAGES: 'edit_client_packages',     // Edit package details
   VIEW_ALL_REPORTS: 'view_all_reports',             // See and edit all Instagram reports (not just own)
   APPROVE_CONTENT: 'approve_content',               // Read/update all content items (approval workflow)
+  // Admin Tools
+  MANAGE_CHATS: 'manage_chats',                     // View and respond to user chats
+  MANAGE_FEEDBACK: 'manage_feedback',               // View and manage bug reports and feature requests
+  MANAGE_GRAPHIC_PROJECTS: 'manage_graphic_projects', // Archive and delete graphic projects
+  MANAGE_RESOURCES: 'manage_resources',             // Create and edit resources
+  MANAGE_EMPLOYEE_PROFILES: 'manage_employee_profiles', // Edit all employee profile fields
+  VIEW_ALL_MODULES: 'view_all_modules',             // View all available modules in onboarding
+  MANAGE_WORKLOAD: 'manage_workload',               // Access workload management features
+  MANAGE_ALL_CLIENTS: 'manage_all_clients',         // Manage all clients (not just assigned)
+  VIEW_AUDIT_TRAIL: 'view_audit_trail',             // View audit information (created by, etc.)
+  MANAGE_INSTAGRAM_REPORTS: 'manage_instagram_reports', // Archive and manage all Instagram reports
 };
 
 export function usePermissions() {
@@ -112,8 +123,6 @@ export function PermissionsProvider({ children }) {
   const hasPermission = (pageId) => {
     // Demo view-only can see everything (all pages)
     if (isDemoViewOnly) return true;
-    // System admins have access to everything
-    if (isSystemAdmin) return true;
     
     // Dashboard is always accessible
     if (pageId === 'dashboard') return true;
@@ -127,8 +136,6 @@ export function PermissionsProvider({ children }) {
   const hasFeaturePermission = (featureId) => {
     // Demo view-only: no edit/manage features
     if (isDemoViewOnly) return false;
-    // System admins have access to all features
-    if (isSystemAdmin) return true;
     
     // Check user's feature permissions
     return featurePermissions.includes(featureId);

@@ -528,7 +528,7 @@ const MyClientsPage = () => {
                       <Plus className="w-3.5 h-3.5" strokeWidth={2} />
                       Log post
                     </button>
-                    {isSystemAdmin && (
+                    {canManageAllClients && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditPostsClient(client); setShowEditPostsModal(true); }}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15 text-[11px] font-medium transition-colors"

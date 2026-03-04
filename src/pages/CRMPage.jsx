@@ -1249,7 +1249,7 @@ const CRMPage = () => {
                   <thead>
                     <tr className="border-b border-black/10 dark:border-white/10">
                       <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Location</th>
-                      {isSystemAdmin && <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Created by</th>}
+                      {canViewAuditTrail && <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Created by</th>}
                       <th className="pb-2 w-[80px] font-medium text-[#1d1d1f] dark:text-white text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1257,7 +1257,7 @@ const CRMPage = () => {
                     {customLocationsWithMeta.map((item) => (
                       <tr key={item.value} className="border-b border-black/5 dark:border-white/5">
                         <td className="py-2.5 pr-4 text-[#1d1d1f] dark:text-white">{item.value}</td>
-                        {isSystemAdmin && <td className="py-2.5 pr-4 text-[13px] text-[#86868b]">{item.createdBy || '—'}</td>}
+                        {canViewAuditTrail && <td className="py-2.5 pr-4 text-[13px] text-[#86868b]">{item.createdBy || '—'}</td>}
                         <td className="py-2.5 text-right">
                           <button
                             type="button"

@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { firestoreService } from '../services/firestoreService';
 import { 
   MessageSquare, 
@@ -18,7 +19,9 @@ import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 
 export default function AdminChats() {
-  const { currentUser, isSystemAdmin } = useAuth();
+  const { currentUser } = useAuth();
+  const { hasFeaturePermission } = usePermissions();
+  const { MANAGE_CHATS } = FEATURE_PERMISSIONS;
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -100,7 +103,7 @@ export default function AdminChats() {
   const openChats = chats.filter(c => c.status === 'open');
   const closedChats = chats.filter(c => c.status === 'closed');
 
-  if (!isSystemAdmin) {
+  if (!hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CHATS)) {
     return (
       <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000] flex items-center justify-center">
         <p className="text-[#86868b]">Access denied. Admin only.</p>

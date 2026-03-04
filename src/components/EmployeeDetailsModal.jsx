@@ -43,9 +43,10 @@ function normalizeToEmployee(user) {
 
 const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, startInEditMode = false }) => {
   const { currentRole } = useAuth();
-  const { isSystemAdmin } = usePermissions();
+  const { hasFeaturePermission } = usePermissions();
+  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
   const isHRManager = currentRole === 'hr_manager';
-  const canEdit = isHRManager || isSystemAdmin;
+  const canEdit = isHRManager || canManageEmployeeProfiles;
   const canEditLeave = canEdit;
   const canViewLeaveBalance = canEdit;
 

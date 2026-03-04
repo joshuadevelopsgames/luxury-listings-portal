@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import PersonCard from '../components/PersonCard';
 import { firestoreService } from '../services/firestoreService';
 import { 
@@ -25,7 +26,9 @@ import { useNavigate } from 'react-router-dom';
 import { format, isValid } from 'date-fns';
 
 const EmployeeSelfService = () => {
-  const { currentUser, currentRole, isSystemAdmin, mergeCurrentUser } = useAuth();
+  const { currentUser, currentRole, mergeCurrentUser } = useAuth();
+  const { hasFeaturePermission } = usePermissions();
+  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [employeeFirestoreId, setEmployeeFirestoreId] = useState(null);
@@ -35,7 +38,7 @@ const EmployeeSelfService = () => {
   const [leaveBalances, setLeaveBalances] = useState(null); // From Firestore (same source as My Time Off)
   
   const isHRManager = currentRole === 'hr_manager';
-  const canEditAllFields = isHRManager || isSystemAdmin;
+  const canEditAllFields = isHRManager || canManageEmployeeProfiles;
 
   // Generate numerical employee ID (EMP-001, EMP-002, etc.)
   const generateEmployeeId = (index) => {

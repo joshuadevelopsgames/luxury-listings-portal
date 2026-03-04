@@ -513,7 +513,7 @@ const PermissionsManager = () => {
     displayNameFor(user).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canApproveUsers = isSystemAdmin || hasPermission(PERMISSIONS.APPROVE_USERS);
+  const canApproveUsers = isSystemAdmin || hasPermission(PERMISSIONS.APPROVE_USERS); // isSystemAdmin kept for safety access to Permissions UI
   // Only system admins can add/remove users or change permissions; anyone with MANAGE_USERS can view
   const canEditPermissions = isSystemAdmin;
 
@@ -570,7 +570,7 @@ const PermissionsManager = () => {
     }
   };
 
-  const canAccess = isSystemAdmin || hasPermission(PERMISSIONS.MANAGE_USERS);
+  const canAccess = isSystemAdmin || hasPermission(PERMISSIONS.MANAGE_USERS); // isSystemAdmin kept for safety access to Permissions UI
   if (!canAccess) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">

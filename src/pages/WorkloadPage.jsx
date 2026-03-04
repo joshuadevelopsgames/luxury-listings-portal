@@ -71,7 +71,8 @@ function aggregatePackages(clients) {
 }
 
 export default function WorkloadPage() {
-  const { isSystemAdmin } = usePermissions();
+  const { hasFeaturePermission } = usePermissions();
+  const canManageWorkload = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_WORKLOAD);
   const { currentUser } = useAuth();
   const [clients, setClients] = useState([]);
   const [approvedUsers, setApprovedUsers] = useState([]);
@@ -292,7 +293,7 @@ export default function WorkloadPage() {
                       <ClientCard
                         key={client.id}
                         client={client}
-                        isAdmin={isSystemAdmin}
+                        isAdmin={canManageWorkload}
                         managers={managers}
                         onReassign={handleReassign}
                         reassigning={reassigning}
@@ -336,7 +337,7 @@ export default function WorkloadPage() {
                     <ClientCard
                       key={client.id}
                       client={client}
-                      isAdmin={isSystemAdmin}
+                      isAdmin={canManageWorkload}
                       managers={managers}
                       onReassign={handleReassign}
                       reassigning={reassigning}

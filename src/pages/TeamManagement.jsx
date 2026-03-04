@@ -54,8 +54,8 @@ const TeamManagement = () => {
   const [migrationDone, setMigrationDone] = useState(false);
   
   // Permissions sourced exclusively from the Users & Permissions UI - no role-based fallbacks
-  const canRunLeaveMigration = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
-  const canViewLeaveBalance = isSystemAdmin ||
+  const canRunLeaveMigration = hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
+  const canViewLeaveBalance =
     hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF) ||
     hasPermission(PERMISSIONS.MANAGE_USERS) ||
     hasPermission(PERMISSIONS.VIEW_ALL_TIME_OFF) || hasPermission(PERMISSIONS.VIEW_HR_DATA);

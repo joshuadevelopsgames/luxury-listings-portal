@@ -28,7 +28,6 @@ import V3Dashboard from './v3-app/components/Dashboard';
 import PermissionRoute from './v3-app/components/PermissionRoute';
 import PermissionsManager from './v3-app/pages/PermissionsManager';
 import AnnouncementManager from './v3-app/pages/AnnouncementManager';
-import SystemAdminPage from './pages/SystemAdminPage';
 
 // V3 Styles
 import './v3-app/styles/globals.css';
@@ -262,9 +261,6 @@ const router = createBrowserRouter([
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
           { path: 'workspaces', element: <PermissionRoute pageId="canvas" pageName="Workspaces"><CanvasPage /></PermissionRoute> },
           { path: 'canvas', element: <CanvasRedirect /> },
-
-          // Admin pages - system admin only
-          { path: 'system-admin', element: <SystemAdminPage /> },
 
           // Profile pages - always accessible when logged in
           { path: 'my-time-off', element: <MyTimeOff /> },

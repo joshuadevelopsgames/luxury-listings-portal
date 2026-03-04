@@ -49,9 +49,10 @@ const ClientDetailModal = ({
   showManagerAssignment = false
 }) => {
   const { currentUser } = useAuth();
-  const { isSystemAdmin, hasPermission } = usePermissions();
-  const canEdit = isSystemAdmin || hasPermission('clients');
-  const canAssignManagers = isSystemAdmin || hasPermission('assign_managers');
+  const { hasPermission, hasFeaturePermission } = usePermissions();
+  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
+  const canEdit = hasPermission('clients');
+  const canAssignManagers = hasPermission('assign_managers');
   
   const [localClient, setLocalClient] = useState(client);
   const [isEditing, setIsEditing] = useState(false);

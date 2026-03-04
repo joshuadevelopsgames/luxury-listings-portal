@@ -131,7 +131,7 @@ const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
   const { isSystemAdmin, hasFeaturePermission } = usePermissions();
   const { confirm } = useConfirm();
-  const effectiveIsAdmin = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_REPORTS);
+  const effectiveIsAdmin = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_REPORTS);
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
@@ -170,7 +170,7 @@ const InstagramReportsPage = () => {
 
   // Load archived reports (system admin only)
   useEffect(() => {
-    if (!isSystemAdmin) {
+    if (!hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_INSTAGRAM_REPORTS)) {
       setArchivedReports([]);
       return () => {};
     }
@@ -626,7 +626,7 @@ const InstagramReportsPage = () => {
         >
           Internal Accounts ({myInternalAccounts.length})
         </button>
-        {isSystemAdmin && (
+        {hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_INSTAGRAM_REPORTS) && (
           <button
             type="button"
             onClick={() => setActiveTab('archive')}

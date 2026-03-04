@@ -153,7 +153,9 @@ const categoryColors = {
 
 export default function ResourcesPage() {
   const navigate = useNavigate();
-  const { currentRole, isSystemAdmin } = useAuth();
+  const { currentRole } = useAuth();
+  const { hasFeaturePermission } = usePermissions();
+  const canManageResources = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_RESOURCES);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("resources");
   
@@ -263,7 +265,7 @@ export default function ResourcesPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {importantResources.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} isSystemAdmin={isSystemAdmin} />
+                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} canManageResources={canManageResources} />
                 ))}
               </div>
             </section>
@@ -283,7 +285,7 @@ export default function ResourcesPage() {
                 </div>
               ) : (
                 otherResources.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} isSystemAdmin={isSystemAdmin} />
+                  <ResourceCard key={resource.id} resource={resource} navigate={navigate} currentRole={currentRole} canManageResources={canManageResources} />
                 ))
               )}
             </div>
@@ -337,14 +339,14 @@ export default function ResourcesPage() {
   );
 }
 
-function ResourceCard({ resource, navigate, currentRole, isSystemAdmin }) {
+function ResourceCard({ resource, navigate, currentRole, canManageResources }) {
   const Icon = typeIcons[resource.type];
   
   // Handle dynamic role-based routing for Manager Messages
   const getInternalPath = () => {
     if (resource.internalPath === 'dynamic-role-message') {
       // System admins always see the admin message
-      if (isSystemAdmin) {
+      if (canManageResources) {
         return '/admin-message';
       }
       return roleMessagePages[currentRole] || '/content-manager-message';

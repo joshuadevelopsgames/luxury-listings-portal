@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { firestoreService } from '../services/firestoreService';
 import { 
   Bug, 
@@ -34,7 +35,9 @@ const STATUS_OPTIONS = [
 ];
 
 export default function AdminFeedback() {
-  const { currentUser, isSystemAdmin } = useAuth();
+  const { currentUser } = useAuth();
+  const { hasFeaturePermission } = usePermissions();
+  const { MANAGE_FEEDBACK } = FEATURE_PERMISSIONS;
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,7 +106,7 @@ export default function AdminFeedback() {
     open: feedback.filter(f => f.status === 'open').length
   }), [feedback]);
 
-  if (!isSystemAdmin) {
+  if (!hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_FEEDBACK)) {
     return (
       <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000] flex items-center justify-center">
         <p className="text-[#86868b]">Access denied. Admin only.</p>

@@ -49,7 +49,8 @@ const SECTION_ORDER = ['Main', 'SMM', 'Content Team', 'Design Team', 'Sales Team
 
 const OnboardingPage = () => {
   const { currentUser, userData, mergeCurrentUser } = useAuth();
-  const { permissions, isSystemAdmin } = usePermissions();
+  const { permissions, hasFeaturePermission } = usePermissions();
+  const canViewAllModules = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_MODULES);
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [completing, setCompleting] = useState(false);
@@ -89,7 +90,7 @@ const OnboardingPage = () => {
   });
 
   const onboardingModules = useMemo(() => {
-    const ids = isSystemAdmin ? Object.keys(modules) : (Array.isArray(permissions) ? permissions : []);
+    const ids = canViewAllModules ? Object.keys(modules) : (Array.isArray(permissions) ? permissions : []);
     return ids
       .filter((id) => modules[id] && modules[id].navItem)
       .map((id) => {

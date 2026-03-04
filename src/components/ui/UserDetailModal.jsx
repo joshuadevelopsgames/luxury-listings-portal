@@ -59,14 +59,15 @@ const UserDetailModal = ({
   onUserUpdate = null
 }) => {
   const { currentUser, hasPermission } = useAuth();
-  const { isSystemAdmin } = usePermissions();
+  const { hasFeaturePermission } = usePermissions();
+  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
   
   // Permission checks
-  const canEditAnyName = hasPermission(PERMISSIONS.EDIT_ANY_NAME) || isSystemAdmin;
+  const canEditAnyName = hasPermission(PERMISSIONS.EDIT_ANY_NAME) || canManageEmployeeProfiles;
   const canEditOwnName = hasPermission(PERMISSIONS.EDIT_OWN_NAME);
-  const canEditAnyProfile = hasPermission(PERMISSIONS.EDIT_ANY_PROFILE) || isSystemAdmin;
+  const canEditAnyProfile = hasPermission(PERMISSIONS.EDIT_ANY_PROFILE) || canManageEmployeeProfiles;
   const isOwnProfile = currentUser?.email?.toLowerCase() === user?.email?.toLowerCase();
-  const canEdit = isSystemAdmin || canEditAnyProfile || isOwnProfile;
+  const canEdit = canEditAnyProfile || isOwnProfile;
   
   const [localUser, setLocalUser] = useState(user);
   const [isEditing, setIsEditing] = useState(false);
@@ -120,7 +121,7 @@ const UserDetailModal = ({
       }
       
       // Check department editing permissions (admin only)
-      if (isSystemAdmin) {
+      if (canManageEmployeeProfiles) {
         updates.department = editForm.department || null;
         updates.startDate = editForm.startDate || null;
       }
@@ -265,13 +266,13 @@ const UserDetailModal = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
-                    Department {!isSystemAdmin && '(admin only)'}
+                    Department {!canManageEmployeeProfiles && '(admin only)'}
                   </label>
                   <select
                     value={editForm.department}
                     onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
-                    disabled={!isSystemAdmin}
+                    disabled={!canManageEmployeeProfiles}
                   >
                     <option value="">Select department...</option>
                     {DEPARTMENTS.map(dept => (
@@ -281,14 +282,14 @@ const UserDetailModal = ({
                 </div>
                 <div>
                   <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
-                    Start Date {!isSystemAdmin && '(admin only)'}
+                    Start Date {!canManageEmployeeProfiles && '(admin only)'}
                   </label>
                   <input
                     type="date"
                     value={editForm.startDate}
                     onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
-                    disabled={!isSystemAdmin}
+                    disabled={!canManageEmployeeProfiles}
                   />
                 </div>
               </div>
