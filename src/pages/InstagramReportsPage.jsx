@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions } from '../contexts/PermissionsContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { firestoreService } from '../services/firestoreService';
@@ -128,10 +128,10 @@ const groupReportsByYearMonth = (reportList) => {
 
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
-  const { currentUser, realUser, isViewingAs, hasPermission } = useAuth();
-  const { isSystemAdmin } = usePermissions();
+  const { currentUser, realUser, isViewingAs } = useAuth();
+  const { isSystemAdmin, hasFeaturePermission } = usePermissions();
   const { confirm } = useConfirm();
-  const effectiveIsAdmin = isSystemAdmin || hasPermission('view_all_reports');
+  const effectiveIsAdmin = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_REPORTS);
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
