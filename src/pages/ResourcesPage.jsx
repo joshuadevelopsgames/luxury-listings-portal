@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { usePermissions, FEATURE_PERMISSIONS } from "../contexts/PermissionsContext";
 import { toast } from "react-hot-toast";
 import AppSetupPage from "./AppSetupPage";
 import { USER_ROLES } from "../entities/UserRoles";

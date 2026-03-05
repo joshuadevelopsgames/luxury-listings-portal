@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import {
   X,
   Mail,

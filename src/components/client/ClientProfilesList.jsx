@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { openEmailInGmail } from '../../utils/gmailCompose';
+import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import { 
   Users, 
   Mail, 
