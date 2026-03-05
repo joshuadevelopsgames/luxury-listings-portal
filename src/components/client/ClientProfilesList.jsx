@@ -37,7 +37,6 @@ import { format } from 'date-fns';
 import ClientContractsSection from './ClientContractsSection';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import PlatformIcons from '../PlatformIcons';
 import ClientLink from '../ui/ClientLink';
 import ClientDetailModal from './ClientDetailModal';

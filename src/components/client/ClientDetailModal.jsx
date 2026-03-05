@@ -32,7 +32,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { LocationSelect } from '../crm/LocationSelect';
 import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
-import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, normalizeLocation } from '../../services/crmService';
 import { toast } from 'react-hot-toast';

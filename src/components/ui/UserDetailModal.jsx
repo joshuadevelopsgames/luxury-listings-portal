@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { toast } from 'react-hot-toast';
 import { PERMISSIONS } from '../../entities/Permissions';
