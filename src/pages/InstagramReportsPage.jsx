@@ -257,8 +257,11 @@ const InstagramReportsPage = () => {
     });
     
     // Convert to array and sort by client name
-    return Array.from(clientMap.values())
-      .sort((a, b) => (a.client.clientName || '').localeCompare(b.client.clientName || ''));
+    return (
+      Array.from(clientMap.values()).sort((a, b) =>
+        (a.client.clientName || '').localeCompare(b.client.clientName || '')
+      )
+    );
   }, [myClients, reports, effectiveIsAdmin]);
 
   // Unlinked reports (reports without clientId) - only visible to admins
