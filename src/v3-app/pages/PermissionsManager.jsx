@@ -219,13 +219,14 @@ const PermissionsManager = () => {
         setLoading(true);
         const approved = await firestoreService.getApprovedUsers();
         const adminSet = new Set(SYSTEM_ADMINS.map(e => e.toLowerCase()));
-        // Include system admins in the user list
+        // Deduplicate: if a system admin is already in approved_users, don't add them again
+        const approvedEmails = new Set(approved.map(u => (u.email || u.id || '').toLowerCase()));
         const systemAdminUsers = SYSTEM_ADMINS.map(email => ({
           id: email,
           email: email.toLowerCase(),
           isSystemAdmin: true,
           primaryRole: 'system_admin'
-        }));
+        })).filter(admin => !approvedEmails.has(admin.email));
         const allUsers = [...approved, ...systemAdminUsers];
         setUsers(allUsers);
 
@@ -261,8 +262,9 @@ const PermissionsManager = () => {
 
   // Toggle a page permission for a user
   const togglePermission = (userEmail, pageId) => {
-    // Allow system admins to modify their own permissions
-    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase()) && currentUser?.email?.toLowerCase() !== userEmail.toLowerCase()) {
+    // Prevent modifying other system admins' permissions, but allow self-modification
+    const isOtherAdmin = SYSTEM_ADMINS.includes(userEmail.toLowerCase()) && currentUser?.email?.toLowerCase() !== userEmail.toLowerCase();
+    if (isOtherAdmin) {
       toast.error("Cannot modify other system admin permissions");
       return;
     }
@@ -281,8 +283,9 @@ const PermissionsManager = () => {
 
   // Toggle a feature permission for a user
   const toggleFeaturePermission = (userEmail, featureId) => {
-    // Allow system admins to modify their own permissions
-    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase()) && currentUser?.email?.toLowerCase() !== userEmail.toLowerCase()) {
+    // Prevent modifying other system admins' permissions, but allow self-modification
+    const isOtherAdmin = SYSTEM_ADMINS.includes(userEmail.toLowerCase()) && currentUser?.email?.toLowerCase() !== userEmail.toLowerCase();
+    if (isOtherAdmin) {
       toast.error("Cannot modify other system admin permissions");
       return;
     }
@@ -713,6 +716,8 @@ const PermissionsManager = () => {
             const email = userEmail(user);
             const isExpanded = expandedUser === email;
             const isAdmin = SYSTEM_ADMINS.includes(email.toLowerCase());
+            const isCurrentUser = currentUser?.email?.toLowerCase() === email.toLowerCase();
+            const isOtherAdmin = isAdmin && !isCurrentUser;
             const perms = userPermissions[email] || [];
             const hasUnsavedChanges = hasChanges[email];
 
@@ -791,13 +796,11 @@ const PermissionsManager = () => {
                 {/* Expanded Permissions */}
                 {isExpanded && (
                   <div className="px-4 pb-4 border-t border-gray-200 dark:border-white/5">
-                    {isAdmin ? (
+                    {isOtherAdmin ? (
                       <div className="py-6 text-center">
                         <AlertCircle className="w-8 h-8 text-[#ff9500] mx-auto mb-2" />
                         <p className="text-[13px] text-[#86868b]">
-                          System administrators have full access to all pages.
-                          <br />
-                          Their permissions cannot be modified.
+                          System administrators cannot modify other admins' permissions.
                         </p>
                       </div>
                     ) : (
