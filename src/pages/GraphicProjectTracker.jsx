@@ -105,7 +105,7 @@ const GRAPHIC_TEAM = [
 
 const GraphicProjectTracker = () => {
   const { currentUser } = useAuth();
-  const { hasFeaturePermission, FEATURE_PERMISSIONS } = usePermissions();
+  const { hasFeaturePermission } = usePermissions();
   const canManageGraphicProjects = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_GRAPHIC_PROJECTS);
   const { confirm } = useConfirm();
   const [projects, setProjects] = useState([]);
