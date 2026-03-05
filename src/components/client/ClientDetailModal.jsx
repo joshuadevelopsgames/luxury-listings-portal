@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import {
   X,
   Mail,
@@ -31,7 +32,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { LocationSelect } from '../crm/LocationSelect';
 import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
-import { usePermissions } from '../../contexts/PermissionsContext';
 import { firestoreService } from '../../services/firestoreService';
 import { CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, normalizeLocation } from '../../services/crmService';
 import { toast } from 'react-hot-toast';
@@ -39,6 +39,8 @@ import PlatformIcons from '../PlatformIcons';
 import { getPostsRemaining, getEnabledPlatforms } from '../../utils/clientPostsUtils';
 
 const PLATFORM_LABELS = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', youtube: 'YouTube', tiktok: 'TikTok', x: 'X' };
+
+const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
 const ClientDetailModal = ({
   client,
@@ -49,9 +51,10 @@ const ClientDetailModal = ({
   showManagerAssignment = false
 }) => {
   const { currentUser } = useAuth();
-  const { isSystemAdmin, hasPermission } = usePermissions();
-  const canEdit = isSystemAdmin || hasPermission('clients');
-  const canAssignManagers = isSystemAdmin || hasPermission('assign_managers');
+  const { hasPermission, hasFeaturePermission } = usePermissions();
+  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
+  const canEdit = hasPermission('clients');
+  const canAssignManagers = hasPermission('assign_managers');
   
   const [localClient, setLocalClient] = useState(client);
   const [isEditing, setIsEditing] = useState(false);
@@ -145,6 +148,10 @@ const ClientDetailModal = ({
     const pc = editForm.primaryContact && (editForm.primaryContact.name || editForm.primaryContact.email || editForm.primaryContact.phone || editForm.primaryContact.role)
       ? { name: editForm.primaryContact.name || '', email: editForm.primaryContact.email || '', phone: editForm.primaryContact.phone || '', role: editForm.primaryContact.role || '' }
       : null;
+    if (editForm.clientEmail && !emailRegex.test(editForm.clientEmail)) {
+      toast.error("Invalid client email address.");
+      return;
+    }
     const payload = { ...editForm, clientTypes, clientType: clientTypes[0], location: loc, primaryContact: pc };
     if (payload.postsRemainingByPlatform && Object.keys(payload.postsRemainingByPlatform).length > 0) {
       payload.postsRemaining = Object.values(payload.postsRemainingByPlatform).reduce((s, n) => s + (Number(n) || 0), 0);
@@ -171,6 +178,11 @@ const ClientDetailModal = ({
     try {
       const previousManager = localClient.assignedManager || null;
       await firestoreService.updateClient(localClient.id, { assignedManager: managerEmail || null });
+      if (managerEmail && !emailRegex.test(managerEmail)) {
+        toast.error("Invalid manager email address.");
+        setAssigningManager(false);
+        return;
+      }
       await firestoreService.logClientReassignment(localClient.id, localClient.clientName || localClient.name, previousManager, managerEmail || null, currentUser?.email);
       const updatedClient = { ...localClient, assignedManager: managerEmail || null };
       setLocalClient(updatedClient);

@@ -238,6 +238,7 @@ export function AuthProvider({ children }) {
   // Handle user sign-in logic
   async function handleUserSignIn(firebaseUser) {
     const { uid, email, displayName, photoURL } = firebaseUser;
+    const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
     // Demo view-only: see everything, no edit; skip Firestore approval
     if (isDemoViewOnly(email)) {
@@ -322,7 +323,7 @@ export function AuthProvider({ children }) {
         if (approved?.department) adminUser.department = approved.department;
         if (approved?.avatar) adminUser.avatar = approved.avatar;
       } catch (e) { /* ignore */ }
-      if (approvedDocId) firestoreService.updateApprovedUser(approvedDocId, { uid }).catch(() => {});
+       if (approvedDocId && emailRegex.test(approvedDocId)) firestoreService.updateApprovedUser(approvedDocId, { uid }).catch(() => {});
 
       setCurrentRole(roleToUse);
       setCurrentUser(adminUser);
@@ -367,6 +368,8 @@ export function AuthProvider({ children }) {
           skills: approvedUser.skills || roleUserData.skills,
           stats: approvedUser.stats || roleUserData.stats,
           customPermissions: approvedUser.customPermissions || [],
+          pagePermissions: approvedUser.pagePermissions || [],
+          featurePermissions: approvedUser.featurePermissions || [],
           isApproved: true,
           onboardingCompleted: approvedUser.onboardingCompleted
         };
@@ -378,8 +381,10 @@ export function AuthProvider({ children }) {
         
         // Sync Gmail profile photo and uid to approved_users (uid used for view-as dashboard prefs)
         const docId = approvedUser.id || email;
-        if (photoURL) firestoreService.updateApprovedUser(docId, { avatar: photoURL }).catch(() => {});
-        firestoreService.updateApprovedUser(docId, { uid }).catch(() => {});
+         if (emailRegex.test(docId)) {
+           if (photoURL) firestoreService.updateApprovedUser(docId, { avatar: photoURL }).catch(() => {});
+           firestoreService.updateApprovedUser(docId, { uid }).catch(() => {});
+         }
 
         // Navigate based on status (only redirect to onboarding after they're past login)
         // Never redirect when viewing a public report link (no auth required for /report/:id)

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { firestoreService } from '../services/firestoreService';
-import { isSystemAdmin as checkIsSystemAdmin } from '../utils/systemAdmins';
+import { isSystemAdmin as checkIsSystemAdmin, onSystemAdminsChange } from '../utils/systemAdmins';
 // getBaseModuleIds import removed - base modules now check explicit permissions
 
 const PermissionsContext = createContext();
@@ -18,6 +18,17 @@ export const FEATURE_PERMISSIONS = {
   EDIT_CLIENT_PACKAGES: 'edit_client_packages',     // Edit package details
   VIEW_ALL_REPORTS: 'view_all_reports',             // See and edit all Instagram reports (not just own)
   APPROVE_CONTENT: 'approve_content',               // Read/update all content items (approval workflow)
+  // Admin Tools
+  MANAGE_CHATS: 'manage_chats',                     // View and respond to user chats
+  MANAGE_FEEDBACK: 'manage_feedback',               // View and manage bug reports and feature requests
+  MANAGE_GRAPHIC_PROJECTS: 'manage_graphic_projects', // Archive and delete graphic projects
+  MANAGE_RESOURCES: 'manage_resources',             // Create and edit resources
+  MANAGE_EMPLOYEE_PROFILES: 'manage_employee_profiles', // Edit all employee profile fields
+  VIEW_ALL_MODULES: 'view_all_modules',             // View all available modules in onboarding
+  MANAGE_WORKLOAD: 'manage_workload',               // Access workload management features
+  MANAGE_ALL_CLIENTS: 'manage_all_clients',         // Manage all clients (not just assigned)
+  VIEW_AUDIT_TRAIL: 'view_audit_trail',             // View audit information (created by, etc.)
+  MANAGE_INSTAGRAM_REPORTS: 'manage_instagram_reports', // Archive and manage all Instagram reports
 };
 
 export function usePermissions() {
@@ -38,7 +49,7 @@ export function PermissionsProvider({ children }) {
 
   // Refresh permissions on demand (e.g., after admin changes)
   const refreshPermissions = useCallback(async () => {
-    if (!currentUser?.email || isSystemAdmin || currentUser?.isDemoViewOnly) return;
+    if (!currentUser?.email || currentUser?.isDemoViewOnly) return;
     
     try {
       const result = await firestoreService.getUserPermissions(currentUser.email);
@@ -71,17 +82,19 @@ export function PermissionsProvider({ children }) {
       return;
     }
 
+    // Subscribe to admin changes so isSystemAdmin updates when the admin list loads from Firestore
+    const unsubscribeAdmins = onSystemAdminsChange((adminEmails) => {
+      const adminStatus = adminEmails.includes(currentUser.email.toLowerCase());
+      setIsSystemAdmin(adminStatus);
+    });
+
     // Check if system admin (dynamic from Firestore system_config/admins)
     const adminStatus = checkIsSystemAdmin(currentUser.email);
     setIsSystemAdmin(adminStatus);
 
-    // System admins don't need to load permissions
-    if (adminStatus) {
-      setPermissions([]);
-      setFeaturePermissions([]);
-      setLoading(false);
-      return;
-    }
+    // System admins now use the same permission-based logic as everyone else, 
+    // except for the Permissions UI which checks isSystemAdmin separately.
+    // So we proceed to load permissions even if adminStatus is true.
 
     // Single API: subscribe so Firestore is source of truth; same resolution as "View as" when doc at canonical key is missing.
     const sub = firestoreService.getUserPermissions(currentUser.email, {
@@ -93,7 +106,10 @@ export function PermissionsProvider({ children }) {
       }
     });
 
-    return () => sub?.unsubscribe?.();
+    return () => {
+      sub?.unsubscribe?.();
+      unsubscribeAdmins();
+    };
   }, [currentUser?.email]);
 
   // Demo view-only: see all pages, no edit (handled in state: permissions/featurePermissions empty, isDemoViewOnly set in AuthContext)
@@ -103,8 +119,6 @@ export function PermissionsProvider({ children }) {
   const hasPermission = (pageId) => {
     // Demo view-only can see everything (all pages)
     if (isDemoViewOnly) return true;
-    // System admins have access to everything
-    if (isSystemAdmin) return true;
     
     // Dashboard is always accessible
     if (pageId === 'dashboard') return true;
@@ -118,8 +132,6 @@ export function PermissionsProvider({ children }) {
   const hasFeaturePermission = (featureId) => {
     // Demo view-only: no edit/manage features
     if (isDemoViewOnly) return false;
-    // System admins have access to all features
-    if (isSystemAdmin) return true;
     
     // Check user's feature permissions
     return featurePermissions.includes(featureId);

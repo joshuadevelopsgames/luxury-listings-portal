@@ -43,6 +43,7 @@ import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
 import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PERMISSIONS } from '../entities/Permissions';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS, normalizeLocation } from '../services/crmService';
 import { useCustomLocations } from '../contexts/CustomLocationsContext';
 import { findPotentialMatchesForContact, findPotentialDuplicateGroups } from '../services/clientDuplicateService';
@@ -54,7 +55,8 @@ import { LocationSelect } from '../components/crm/LocationSelect';
 
 const CRMPage = () => {
   const navigate = useNavigate();
-  const { currentUser, currentRole, hasPermission, isSystemAdmin } = useAuth();
+  const { currentUser, currentRole, hasPermission, isSystemAdmin: isAuthAdmin } = useAuth();
+  const { isSystemAdmin, hasFeaturePermission } = usePermissions();
   const { confirm } = useConfirm();
   const { customLocationsWithMeta, removeCustomLocation, refresh } = useCustomLocations();
   
@@ -63,6 +65,7 @@ const CRMPage = () => {
   const canManageLeads = hasPermission(PERMISSIONS.MANAGE_LEADS);
   const canViewLeads = hasPermission(PERMISSIONS.VIEW_LEADS);
   const canDeleteClients = hasPermission(PERMISSIONS.DELETE_CLIENTS);
+  const canViewAuditTrail = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_AUDIT_TRAIL);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -1249,7 +1252,7 @@ const CRMPage = () => {
                   <thead>
                     <tr className="border-b border-black/10 dark:border-white/10">
                       <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Location</th>
-                      {isSystemAdmin && <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Created by</th>}
+                      {canViewAuditTrail && <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Created by</th>}
                       <th className="pb-2 w-[80px] font-medium text-[#1d1d1f] dark:text-white text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1257,7 +1260,7 @@ const CRMPage = () => {
                     {customLocationsWithMeta.map((item) => (
                       <tr key={item.value} className="border-b border-black/5 dark:border-white/5">
                         <td className="py-2.5 pr-4 text-[#1d1d1f] dark:text-white">{item.value}</td>
-                        {isSystemAdmin && <td className="py-2.5 pr-4 text-[13px] text-[#86868b]">{item.createdBy || '—'}</td>}
+                        {canViewAuditTrail && <td className="py-2.5 pr-4 text-[13px] text-[#86868b]">{item.createdBy || '—'}</td>}
                         <td className="py-2.5 text-right">
                           <button
                             type="button"

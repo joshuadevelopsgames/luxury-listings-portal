@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions } from '../contexts/PermissionsContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import PersonCard from './PersonCard';
 import { firestoreService } from '../services/firestoreService';
 import {
@@ -41,11 +41,14 @@ function normalizeToEmployee(user) {
   };
 }
 
+const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
+
 const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, startInEditMode = false }) => {
   const { currentRole } = useAuth();
-  const { isSystemAdmin } = usePermissions();
+  const { hasFeaturePermission } = usePermissions();
+  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
   const isHRManager = currentRole === 'hr_manager';
-  const canEdit = isHRManager || isSystemAdmin;
+  const canEdit = isHRManager || canManageEmployeeProfiles;
   const canEditLeave = canEdit;
   const canViewLeaveBalance = canEdit;
 
@@ -122,7 +125,11 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
   };
 
   const saveAll = async () => {
-    if (!employee?.email) return;
+    if (!employee?.email || !emailRegex.test(employee.email)) {
+      toast.error("Invalid employee email. Cannot save changes.");
+      setSaving(false);
+      return;
+    }
     setSaving(true);
     try {
       const displayName = `${editProfileForm.firstName} ${editProfileForm.lastName}`.trim();
@@ -340,7 +347,11 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
               isHRView={canEdit}
               onSave={async (updatedData) => {
                 try {
-                  await firestoreService.updateApprovedUser(employee.email, { ...updatedData, displayName: `${updatedData.firstName || ''} ${updatedData.lastName || ''}`.trim(), location: updatedData.address ?? updatedData.location });
+                   if (!employee.email || !emailRegex.test(employee.email)) {
+                     toast.error("Invalid employee email. Cannot save changes.");
+                     throw new Error("Invalid employee email");
+                   }
+                   await firestoreService.updateApprovedUser(employee.email, { ...updatedData, displayName: `${updatedData.firstName || ''} ${updatedData.lastName || ''}`.trim(), location: updatedData.address ?? updatedData.location });
                   const emp = await firestoreService.getEmployeeByEmail(employee.email);
                   if (emp) await firestoreService.updateEmployee(emp.id, updatedData);
                   else await firestoreService.addEmployee({ firstName: updatedData.firstName, lastName: updatedData.lastName, email: employee.email, ...updatedData });

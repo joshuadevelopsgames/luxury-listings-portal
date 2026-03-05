@@ -3949,7 +3949,7 @@ class FirestoreService {
   // Listen to Instagram reports changes. If loadAll=true (for admins), loads all reports.
   // archived=true: load only archived reports (for system admin Archive tab). Otherwise exclude archived.
   // Pass userId when "View As" is active so reports for that user are loaded.
-  onInstagramReportsChange(callback, { loadAll = false, userId = null, archived = false } = {}) {
+  onInstagramReportsChange(callback, { loadAll = false, userId = null, clientIds = [], archived = false } = {}) {
     const uid = userId || auth.currentUser?.uid;
     if (!uid && !archived) {
       callback([]);
@@ -3975,27 +3975,50 @@ class FirestoreService {
       });
     }
     
-    const q = loadAll
-      ? query(
-          collection(db, this.collections.INSTAGRAM_REPORTS),
-          where('archived', '!=', true),
-          orderBy('archived', 'asc'),
-          orderBy('createdAt', 'desc')
-        )
-      : query(
-          collection(db, this.collections.INSTAGRAM_REPORTS),
-          where('userId', '==', uid),
-          orderBy('createdAt', 'desc')
-        );
+    // If loadAll is true, get all reports. Otherwise, get reports where:
+    // - userId matches current user, OR
+    // - clientId is in the list of assigned clients
+    let q;
+    if (loadAll) {
+      // Fetch all non-archived reports (no inequality operator with orderBy to avoid index requirement)
+      q = query(
+        collection(db, this.collections.INSTAGRAM_REPORTS),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (clientIds && clientIds.length > 0) {
+      // Get reports created by user OR for assigned clients (need to fetch all non-archived and filter client-side)
+      q = query(
+        collection(db, this.collections.INSTAGRAM_REPORTS),
+        where('archived', '!=', true),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      // Only get reports created by user
+      q = query(
+        collection(db, this.collections.INSTAGRAM_REPORTS),
+        where('userId', '==', uid),
+        orderBy('createdAt', 'desc')
+      );
+    }
     
     return onSnapshot(q, (snapshot) => {
       const reports = [];
       snapshot.forEach((doc) => {
         const data = { id: doc.id, ...doc.data() };
-        if (!loadAll && data.archived === true) return; // exclude archived when loading own reports
+        
+        // Always exclude archived reports unless specifically requesting them
+        if (data.archived === true) return;
+        
+        // If not loadAll and clientIds provided, filter to only include reports created by user or for assigned clients
+        if (!loadAll && clientIds && clientIds.length > 0) {
+          if (data.userId !== uid && !clientIds.includes(data.clientId)) {
+            return; // Skip reports not created by user and not for assigned clients
+          }
+        }
+        
         reports.push(data);
       });
-      console.log(`📊 Instagram reports loaded: ${reports.length} reports (loadAll=${loadAll})`);
+      console.log(`📊 Instagram reports loaded: ${reports.length} reports (loadAll=${loadAll}, clientIds=${clientIds?.length || 0})`);
       callback(reports);
     }, (error) => {
       console.error('❌ Error loading Instagram reports:', error);

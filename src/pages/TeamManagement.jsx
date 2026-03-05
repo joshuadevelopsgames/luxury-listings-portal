@@ -40,7 +40,7 @@ import { toast } from 'react-hot-toast';
 import { getSystemAdmins } from '../utils/systemAdmins';
 
 const TeamManagement = () => {
-  const { currentUser, currentRole, hasPermission } = useAuth();
+  const { currentUser, hasPermission } = useAuth();
   const { confirm } = useConfirm();
   const { hasFeaturePermission, isSystemAdmin } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,9 +53,10 @@ const TeamManagement = () => {
   const [migratingLeave, setMigratingLeave] = useState(false);
   const [migrationDone, setMigrationDone] = useState(false);
   
-  const isHRManager = currentRole === 'hr_manager';
-  const canRunLeaveMigration = isHRManager || isSystemAdmin;
-  const canViewLeaveBalance = isHRManager || isSystemAdmin ||
+  // Permissions sourced exclusively from the Users & Permissions UI - no role-based fallbacks
+  const canRunLeaveMigration = hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
+  const canViewLeaveBalance =
+    hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF) ||
     hasPermission(PERMISSIONS.MANAGE_USERS) ||
     hasPermission(PERMISSIONS.VIEW_ALL_TIME_OFF) || hasPermission(PERMISSIONS.VIEW_HR_DATA);
   const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);

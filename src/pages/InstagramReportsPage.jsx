@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions } from '../contexts/PermissionsContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { firestoreService } from '../services/firestoreService';
@@ -131,10 +131,10 @@ const groupReportsByYearMonth = (reportList) => {
 
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
-  const { currentUser, realUser, isViewingAs, hasPermission } = useAuth();
-  const { isSystemAdmin } = usePermissions();
+  const { currentUser, realUser, isViewingAs } = useAuth();
+  const { isSystemAdmin, hasFeaturePermission, FEATURE_PERMISSIONS } = usePermissions();
   const { confirm } = useConfirm();
-  const effectiveIsAdmin = isSystemAdmin || hasPermission('view_all_reports');
+  const effectiveIsAdmin = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_REPORTS);
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
@@ -153,35 +153,6 @@ const InstagramReportsPage = () => {
   const [generatingReport, setGeneratingReport] = useState(null); // { clientId, type: 'quarterly' | 'yearly' }
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedQuarter, setSelectedQuarter] = useState(getQuarter(new Date()));
-
-  // Load reports - admins see all, others see only their own; when View As, load by effective user.
-  useEffect(() => {
-    const uid = currentUser?.uid;
-    if (!uid) {
-      setReports([]);
-      setLoading(false);
-      return () => {};
-    }
-    const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
-      setReports(data);
-      setLoading(false);
-    }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined });
-    return () => unsubscribe();
-  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs]);
-
-  // Load archived reports (system admin only)
-  useEffect(() => {
-    if (!isSystemAdmin) {
-      setArchivedReports([]);
-      return () => {};
-    }
-    setArchiveLoading(true);
-    const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
-      setArchivedReports(data);
-      setArchiveLoading(false);
-    }, { archived: true });
-    return () => unsubscribe();
-  }, [isSystemAdmin]);
 
   // Load clients
   useEffect(() => {
@@ -212,15 +183,48 @@ const InstagramReportsPage = () => {
     return allClients.filter(isAssignedToMe);
   }, [allClients, currentUser?.email, currentUser?.uid, effectiveIsAdmin]);
 
-  const myClientsOnly = useMemo(() => myClients.filter(c => !c.isInternal), [myClients]);
-  const myInternalAccounts = useMemo(() => myClients.filter(c => c.isInternal), [myClients]);
+  // Load reports - admins see all, others see only their own; when View As, load by effective user.
+  useEffect(() => {
+    const uid = currentUser?.uid;
+    if (!uid) {
+      setReports([]);
+      setLoading(false);
+      return () => {};
+    }
+    // Get list of assigned client IDs to pass to the listener
+    const assignedClientIds = effectiveIsAdmin ? [] : (myClients || []).map(c => c.id).filter(Boolean);
+    const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
+      setReports(data);
+      setLoading(false);
+    }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined, clientIds: assignedClientIds });
+    return () => unsubscribe();
+  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, myClients]);
+
+  // Load archived reports (system admin only)
+  useEffect(() => {
+    if (!hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_INSTAGRAM_REPORTS)) {
+      setArchivedReports([]);
+      return () => {};
+    }
+    setArchiveLoading(true);
+    const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
+      setArchivedReports(data);
+      setArchiveLoading(false);
+    }, { archived: true });
+    return () => unsubscribe();
+  }, [isSystemAdmin]);
+
+  // Memoize client IDs for report filtering
+  const myClientIds = useMemo(() => (myClients || []).map(c => c.id).filter(Boolean), [myClients]);
+  const myClientsOnly = useMemo(() => (myClients || []).filter(c => !c.isInternal), [myClients]);
+  const myInternalAccounts = useMemo(() => (myClients || []).filter(c => c.isInternal), [myClients]);
 
   // Group reports by client
   const clientsWithReports = useMemo(() => {
     const clientMap = new Map();
     
     // Initialize with my clients (even if they have no reports)
-    myClients.forEach(client => {
+    (myClients || []).forEach(client => {
       clientMap.set(client.id, {
         client,
         reports: []
@@ -526,8 +530,8 @@ const InstagramReportsPage = () => {
   );
 
   // Stats summary - only count reports for MY clients
-  const myClientIds = new Set(myClients.map(c => c.id));
-  const myReports = reports.filter(r => r.clientId && myClientIds.has(r.clientId));
+  const myClientIdsSet = new Set((myClients || []).map(c => c.id));
+  const myReports = reports.filter(r => r.clientId && myClientIdsSet.has(r.clientId));
   const totalReports = myReports.length;
 
   return (
@@ -624,7 +628,7 @@ const InstagramReportsPage = () => {
         >
           Internal Accounts ({myInternalAccounts.length})
         </button>
-        {isSystemAdmin && (
+        {hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_INSTAGRAM_REPORTS) && (
           <button
             type="button"
             onClick={() => setActiveTab('archive')}

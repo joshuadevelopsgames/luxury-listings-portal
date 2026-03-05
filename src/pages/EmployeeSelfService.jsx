@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import PersonCard from '../components/PersonCard';
 import { firestoreService } from '../services/firestoreService';
 import { 
@@ -17,7 +18,6 @@ import {
   MapPin,
   Briefcase,
   Clock,
-  DollarSign,
   Award,
   Download,
   Edit
@@ -26,7 +26,9 @@ import { useNavigate } from 'react-router-dom';
 import { format, isValid } from 'date-fns';
 
 const EmployeeSelfService = () => {
-  const { currentUser, currentRole, isSystemAdmin, mergeCurrentUser } = useAuth();
+  const { currentUser, currentRole, mergeCurrentUser } = useAuth();
+  const { hasFeaturePermission } = usePermissions();
+  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [employeeFirestoreId, setEmployeeFirestoreId] = useState(null);
@@ -36,7 +38,7 @@ const EmployeeSelfService = () => {
   const [leaveBalances, setLeaveBalances] = useState(null); // From Firestore (same source as My Time Off)
   
   const isHRManager = currentRole === 'hr_manager';
-  const canEditAllFields = isHRManager || isSystemAdmin;
+  const canEditAllFields = isHRManager || canManageEmployeeProfiles;
 
   // Generate numerical employee ID (EMP-001, EMP-002, etc.)
   const generateEmployeeId = (index) => {
@@ -279,7 +281,6 @@ const EmployeeSelfService = () => {
           { value: 'overview', label: 'Overview' },
           { value: 'personal', label: 'Personal Info' },
           { value: 'timeoff', label: 'Time Off' },
-          { value: 'compensation', label: 'Compensation' },
           { value: 'documents', label: 'Documents' }
         ].map(tab => (
           <button
@@ -442,61 +443,7 @@ const EmployeeSelfService = () => {
         </div>
       )}
 
-      {/* Compensation Tab - Coming Soon */}
-      {activeTab === 'compensation' && (
-        <div className="relative min-h-[280px] rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 blur-sm select-none pointer-events-none">
-            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <DollarSign className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-                <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Compensation</span>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[12px] font-medium text-[#86868b]">Annual Salary</label>
-                  <p className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mt-1">{employeeData.compensation.salary}</p>
-                </div>
-                <div>
-                  <label className="text-[12px] font-medium text-[#86868b]">Pay Schedule</label>
-                  <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1">{employeeData.compensation.paySchedule}</p>
-                </div>
-                <div>
-                  <label className="text-[12px] font-medium text-[#86868b]">Next Pay Date</label>
-                  <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1">{employeeData.compensation.nextPayDate && isValid(new Date(employeeData.compensation.nextPayDate)) ? format(new Date(employeeData.compensation.nextPayDate), 'MMMM dd, yyyy') : (employeeData.compensation.nextPayDate || '—')}</p>
-                </div>
-                <div>
-                  <label className="text-[12px] font-medium text-[#86868b]">YTD Earnings</label>
-                  <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1">{employeeData.compensation.ytdEarnings}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-                <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Benefits</span>
-              </div>
-              <div className="space-y-3">
-                {employeeData.benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                    <div>
-                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{benefit.name}</p>
-                      <p className="text-[12px] text-[#86868b]">
-                        {benefit.provider || `Contribution: ${benefit.contribution}` || `Coverage: ${benefit.coverage}`}
-                      </p>
-                    </div>
-                    <span className="text-[11px] px-2 py-1 rounded-md font-medium bg-[#34c759]/10 text-[#34c759]">{benefit.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-black/40 backdrop-blur-md">
-            <p className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
-              Coming Soon!
-            </p>
-          </div>
-        </div>
-      )}
+
 
       {/* Documents Tab - Coming Soon */}
       {activeTab === 'documents' && (

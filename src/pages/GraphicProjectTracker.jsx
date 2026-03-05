@@ -33,6 +33,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 
 // Import data for one-time Excel import
@@ -103,7 +104,9 @@ const GRAPHIC_TEAM = [
 ];
 
 const GraphicProjectTracker = () => {
-  const { currentUser, isSystemAdmin } = useAuth();
+  const { currentUser } = useAuth();
+  const { hasFeaturePermission, FEATURE_PERMISSIONS } = usePermissions();
+  const canManageGraphicProjects = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_GRAPHIC_PROJECTS);
   const { confirm } = useConfirm();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -385,7 +388,7 @@ const GraphicProjectTracker = () => {
   // One-time import from Excel data (admin only)
   // Clear all projects and reimport from both Excel files
   const handleClearAndReimport = async () => {
-    if (!currentUser || !isSystemAdmin) {
+    if (!currentUser || !canManageGraphicProjects) {
       toast.error('Admin access required');
       return;
     }
@@ -548,7 +551,7 @@ const GraphicProjectTracker = () => {
 
   // One-time reassign Jone's projects (admin only)
   const handleReassignJone = async () => {
-    if (!currentUser || !isSystemAdmin) {
+    if (!currentUser || !canManageGraphicProjects) {
       toast.error('Admin access required');
       return;
     }
@@ -772,7 +775,7 @@ const GraphicProjectTracker = () => {
               )}
               
               {/* Add Project button for designers and admins */}
-              {(currentTeamMember || isSystemAdmin) && (
+              {(currentTeamMember || canManageGraphicProjects) && (
                 <button
                   onClick={() => {
                     resetForm();

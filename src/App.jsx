@@ -28,7 +28,6 @@ import V3Dashboard from './v3-app/components/Dashboard';
 import PermissionRoute from './v3-app/components/PermissionRoute';
 import PermissionsManager from './v3-app/pages/PermissionsManager';
 import AnnouncementManager from './v3-app/pages/AnnouncementManager';
-import SystemAdminPage from './pages/SystemAdminPage';
 
 // V3 Styles
 import './v3-app/styles/globals.css';
@@ -254,7 +253,7 @@ const router = createBrowserRouter([
           { path: 'hr-calendar', element: <PermissionRoute pageId="hr-calendar" pageName="HR Calendar"><HRCalendar /></PermissionRoute> },
           { path: 'hr-analytics', element: <PermissionRoute pageId="hr-analytics" pageName="HR Analytics"><HRAnalytics /></PermissionRoute> },
           { path: 'client-health', element: <PermissionRoute pageId="client-health" pageName="Client Health"><ClientHealthPage /></PermissionRoute> },
-          { path: 'it-support', element: <ITSupportPage /> },
+          { path: 'it-support', element: <PermissionRoute pageId="it-support" pageName="IT Support"><ITSupportPage /></PermissionRoute> },
           { path: 'tutorials', element: <Navigate to="/features#tutorials" replace /> },
           { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
           { path: 'features', element: <PermissionRoute pageId="features" pageName="Add-ons"><FeaturesPage /></PermissionRoute> },
@@ -262,9 +261,6 @@ const router = createBrowserRouter([
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
           { path: 'workspaces', element: <PermissionRoute pageId="canvas" pageName="Workspaces"><CanvasPage /></PermissionRoute> },
           { path: 'canvas', element: <CanvasRedirect /> },
-
-          // Admin pages - system admin only
-          { path: 'system-admin', element: <SystemAdminPage /> },
 
           // Profile pages - always accessible when logged in
           { path: 'my-time-off', element: <MyTimeOff /> },

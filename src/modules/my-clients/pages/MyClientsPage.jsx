@@ -66,8 +66,9 @@ import {
 const MyClientsPage = () => {
   const navigate = useNavigate();
   const { currentUser, isViewingAs } = useAuth();
-  const { isSystemAdmin } = usePermissions();
+  const { isSystemAdmin, hasFeaturePermission, FEATURE_PERMISSIONS } = usePermissions();
   const { clients: allClients, loading: clientsLoading, getClientById } = useClients();
+  const canManageAllClients = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_ALL_CLIENTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();
@@ -147,355 +148,187 @@ const MyClientsPage = () => {
 
   const postLogByMonth = useMemo(() => {
     const byMonth = new Map();
-    postLogHistory.forEach((task) => {
-      const raw = task.completed_date || task.created_date || '';
-      const date = raw ? (raw.slice ? parseISO(raw.split('T')[0]) : new Date(raw)) : null;
-      const key = date ? format(startOfMonth(date), 'yyyy-MM') : 'unknown';
-      if (!byMonth.has(key)) byMonth.set(key, { label: date ? format(date, 'MMMM yyyy') : 'Unknown', tasks: [] });
-      byMonth.get(key).tasks.push(task);
+    postLogHistory.forEach(task => {
+      const date = task.completedAt?.toDate?.() || (task.completedAt ? new Date(task.completedAt) : null);
+      if (!date) return;
+      const monthKey = format(date, 'MMMM yyyy');
+      if (!byMonth.has(monthKey)) byMonth.set(monthKey, []);
+      byMonth.get(monthKey).push(task);
     });
-    return Array.from(byMonth.entries())
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([key, { label, tasks }]) => ({ key, label, tasks }));
+    return Array.from(byMonth.entries()).sort((a, b) => {
+      const dateA = new Date(a[0]);
+      const dateB = new Date(b[0]);
+      return dateB - dateA;
+    });
   }, [postLogHistory]);
 
-  const getHealthStatus = (client) => {
-    const postsRemaining = getPostsRemaining(client);
-    const packageSize = client.packageSize || 12;
-    const percentage = packageSize ? (postsRemaining / packageSize) * 100 : 0;
-    
-    if (percentage <= 20) return { status: 'critical', color: 'text-[#ff3b30]', bgColor: 'bg-[#ff3b30]/10', label: 'Low Posts' };
-    if (percentage <= 50) return { status: 'warning', color: 'text-[#ff9500]', bgColor: 'bg-[#ff9500]/10', label: 'Medium' };
-    return { status: 'good', color: 'text-[#34c759]', bgColor: 'bg-[#34c759]/10', label: 'On Track' };
-  };
-
-  const getPaymentStatusStyle = (status) => {
-    if (status === 'Paid') return 'text-[#34c759] bg-[#34c759]/10';
-    if (status === 'Pending') return 'text-[#ff9500] bg-[#ff9500]/10';
-    return 'text-[#ff3b30] bg-[#ff3b30]/10';
-  };
-
-  // Fetch AI health prediction for a client (with caching)
-  // Enhanced to pull Instagram report history for trend analysis
-  const fetchAiHealthPrediction = useCallback(async (client) => {
-    const clientId = client.id;
-
-    // Check cache first (24 hour expiry)
-    const cached = aiHealthPredictions[clientId];
-    if (cached && cached.timestamp && (Date.now() - cached.timestamp) < 24 * 60 * 60 * 1000) {
-      return cached;
-    }
-
-    // Check localStorage cache
-    const storageKey = `ai_health_${clientId}`;
-    const storedCache = localStorage.getItem(storageKey);
-    if (storedCache) {
-      try {
-        const parsed = JSON.parse(storedCache);
-        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 24 * 60 * 60 * 1000) {
-          setAiHealthPredictions(prev => ({ ...prev, [clientId]: parsed }));
-          return parsed;
-        }
-      } catch (e) {
-        // Invalid cache, continue to fetch
-      }
-    }
-
-    setLoadingAiHealth(prev => ({ ...prev, [clientId]: true }));
-
+  const handleLogPost = async (client, platform) => {
+    if (logSaving) return;
     try {
-      // Prepare client data for AI
-      const now = new Date();
-      const lastContact = client.lastContactDate ? new Date(client.lastContactDate) : null;
-      const renewalDate = client.renewalDate ? new Date(client.renewalDate) : null;
-
-      const clientData = {
-        clientName: client.clientName || 'Unknown',
-        postsRemaining: getPostsRemaining(client),
-        packageSize: client.packageSize || 12,
-        postsUsed: getPostsUsed(client),
-        paymentStatus: client.paymentStatus || 'unknown',
-        packageType: client.packageType || 'Standard',
-        daysSinceContact: lastContact ? differenceInDays(now, lastContact) : null,
-        daysUntilRenewal: renewalDate ? differenceInDays(renewalDate, now) : null,
-        createdAt: client.createdAt || null,
-        lastPostDate: client.lastPostDate || null,
-        notes: client.notes || ''
-      };
-
-      // Fetch Instagram report history for trend analysis (last 6 months)
-      let reportHistory = null;
-      try {
-        const reports = await firestoreService.getClientInstagramReportHistory(clientId, 6);
-        if (reports && reports.length > 0) {
-          // Prepare report data for AI (only send essential metrics to reduce payload)
-          reportHistory = reports.map(report => ({
-            dateRange: report.dateRange || `${report.startDate} - ${report.endDate}`,
-            startDate: report.startDate,
-            metrics: {
-              followers: report.metrics?.followers,
-              views: report.metrics?.views,
-              interactions: report.metrics?.interactions,
-              accountsReached: report.metrics?.accountsReached,
-              likes: report.metrics?.likes,
-              shares: report.metrics?.shares,
-              comments: report.metrics?.comments
-            }
-          }));
-          console.log(`📊 Fetched ${reportHistory.length} reports for health analysis`);
-        }
-      } catch (reportError) {
-        console.warn('Could not fetch report history for health analysis:', reportError);
-        // Continue without report history - AI will still work with client data
-      }
-
-      const prediction = await openaiService.predictClientHealth(clientData, reportHistory);
-
-      const result = {
-        ...prediction,
-        hasReportData: !!reportHistory && reportHistory.length > 0,
-        reportCount: reportHistory?.length || 0,
-        timestamp: Date.now()
-      };
-
-      // Update state cache
-      setAiHealthPredictions(prev => ({ ...prev, [clientId]: result }));
-
-      // Update localStorage cache
-      localStorage.setItem(storageKey, JSON.stringify(result));
-
-      return result;
-    } catch (error) {
-      console.error('AI health prediction failed:', error);
-      return null;
-    } finally {
-      setLoadingAiHealth(prev => ({ ...prev, [clientId]: false }));
-    }
-  }, [aiHealthPredictions]);
-
-  // Get combined health status (rule-based + AI enhanced). Prefer snapshot from monthly run, else on-demand prediction.
-  const getEnhancedHealthStatus = (client) => {
-    const baseHealth = getHealthStatus(client);
-    const snapshot = clientHealthSnapshots[client.id];
-    const aiPrediction = aiHealthPredictions[client.id];
-    const source = snapshot || aiPrediction;
-
-    if (source) {
-      const statusColors = {
-        good: { color: 'text-[#34c759]', bgColor: 'bg-[#34c759]/10' },
-        warning: { color: 'text-[#ff9500]', bgColor: 'bg-[#ff9500]/10' },
-        critical: { color: 'text-[#ff3b30]', bgColor: 'bg-[#ff3b30]/10' }
-      };
-
-      return {
-        ...baseHealth,
-        ...statusColors[source.status] || statusColors.warning,
-        status: source.status,
-        label: source.status === 'good' ? 'Healthy' : source.status === 'warning' ? 'Watch' : 'At Risk',
-        aiEnhanced: true,
-        churnRisk: source.churnRisk,
-        healthScore: source.healthScore,
-        reason: source.reason,
-        action: source.action
-      };
-    }
-
-    return { ...baseHealth, aiEnhanced: false };
-  };
-
-  const logPostPlatformIcons = { instagram: Instagram, youtube: Youtube, facebook: Facebook, linkedin: Linkedin };
-
-  const handleLogPostForClient = async () => {
-    if (!logPostClient || !currentUser?.email) return;
-    setLogSaving(true);
-    try {
-      const now = new Date();
-      const taskData = {
-        title: `Post for ${logPostClient.clientName}`,
-        description: `${logPlatform.charAt(0).toUpperCase() + logPlatform.slice(1)} post completed`,
-        assigned_to: currentUser.email,
-        assignedBy: currentUser.email,
+      setLogSaving(true);
+      const update = getPostLogUpdate(platform);
+      await firestoreService.updateClient(client.id, update);
+      
+      // Also create a task for history
+      await firestoreService.addTask({
+        title: `Logged ${platform} post`,
+        clientId: client.id,
+        clientName: client.clientName,
         status: 'completed',
-        priority: 'medium',
-        due_date: format(now, 'yyyy-MM-dd'),
-        created_date: now.toISOString(),
-        completed_date: now.toISOString(),
-        labels: ['client-post', `client-${logPostClient.id}`, logPlatform],
-        task_type: 'post_log',
-        clientId: logPostClient.id
-      };
-      await firestoreService.addTask(taskData);
-      const update = getPostLogUpdate(logPostClient, logPlatform, 1);
-      await firestoreService.updateClient(logPostClient.id, update);
-      toast.success(`Post logged for ${logPostClient.clientName}`);
+        completedAt: new Date(),
+        completedBy: currentUser.email,
+        type: 'post_log',
+        platform
+      });
+
+      toast.success(`Logged ${platform} post for ${client.clientName}`);
       setLogPostClient(null);
-      setLogPlatform('instagram');
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error('Error logging post:', error);
       toast.error('Failed to log post');
     } finally {
       setLogSaving(false);
     }
   };
 
-  // Filter clients
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = !searchQuery || 
-      client.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.clientEmail?.toLowerCase().includes(searchQuery.toLowerCase());
+  const fetchAiHealthPrediction = async (client) => {
+    if (loadingAiHealth[client.id]) return;
     
-    const health = getHealthStatus(client);
-    const matchesFilter = filterStatus === 'all' || health.status === filterStatus;
-    
-    return matchesSearch && matchesFilter;
-  });
+    setLoadingAiHealth(prev => ({ ...prev, [client.id]: true }));
+    try {
+      const prediction = await openaiService.predictClientHealth(client);
+      setAiHealthPredictions(prev => ({
+        ...prev,
+        [client.id]: {
+          ...prediction,
+          timestamp: new Date().toISOString()
+        }
+      }));
+    } catch (error) {
+      console.error('Error fetching AI health prediction:', error);
+    } finally {
+      setLoadingAiHealth(prev => ({ ...prev, [client.id]: false }));
+    }
+  };
 
-  // Stats
-  const stats = {
-    total: clients.length,
-    onTrack: clients.filter(c => getHealthStatus(c).status === 'good').length,
-    needsAttention: clients.filter(c => getHealthStatus(c).status !== 'good').length,
-    totalPosts: clients.reduce((sum, c) => sum + (c.packageSize || 0), 0),
-    postsUsed: clients.reduce((sum, c) => sum + getPostsUsed(c), 0)
+  const getClientHealth = (client) => {
+    // 1. Check for manual override
+    if (client.healthStatus) {
+      const status = client.healthStatus.toLowerCase();
+      if (status === 'good') return { label: 'Good', color: 'text-[#34c759]', bgColor: 'bg-[#34c759]/10' };
+      if (status === 'at_risk') return { label: 'At Risk', color: 'text-[#ff9500]', bgColor: 'bg-[#ff9500]/10' };
+      if (status === 'churned') return { label: 'Churned', color: 'text-[#ff3b30]', bgColor: 'bg-[#ff3b30]/10' };
+    }
+
+    // 2. Check for AI prediction (real-time)
+    const prediction = aiHealthPredictions[client.id];
+    if (prediction) {
+      const status = prediction.status.toLowerCase();
+      return { 
+        label: status === 'good' ? 'Good' : status === 'at_risk' ? 'At Risk' : 'Churned',
+        color: status === 'good' ? 'text-[#34c759]' : status === 'at_risk' ? 'text-[#ff9500]' : 'text-[#ff3b30]',
+        bgColor: status === 'good' ? 'bg-[#34c759]/10' : status === 'at_risk' ? 'bg-[#ff9500]/10' : 'bg-[#ff3b30]/10',
+        aiEnhanced: true,
+        churnRisk: prediction.churnRisk,
+        healthScore: prediction.healthScore,
+        reason: prediction.reason,
+        action: prediction.recommendedAction
+      };
+    }
+
+    // 3. Check for AI snapshot (monthly)
+    const snapshot = clientHealthSnapshots[client.id];
+    if (snapshot) {
+      const status = snapshot.status.toLowerCase();
+      return {
+        label: status === 'good' ? 'Good' : status === 'at_risk' ? 'At Risk' : 'Churned',
+        color: status === 'good' ? 'text-[#34c759]' : status === 'at_risk' ? 'text-[#ff9500]' : 'text-[#ff3b30]',
+        bgColor: status === 'good' ? 'bg-[#34c759]/10' : status === 'at_risk' ? 'bg-[#ff9500]/10' : 'bg-[#ff3b30]/10',
+        aiEnhanced: true,
+        churnRisk: snapshot.churnRisk,
+        healthScore: snapshot.healthScore,
+        reason: snapshot.reason,
+        action: snapshot.action
+      };
+    }
+
+    // 4. Default to Good
+    return { label: 'Good', color: 'text-[#34c759]', bgColor: 'bg-[#34c759]/10' };
   };
 
   if (clientsLoading) {
     return (
-      <div className="space-y-6">
-        <div className="h-8 w-48 bg-black/5 dark:bg-white/5 rounded animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-black/5 dark:bg-white/5 rounded-2xl animate-pulse" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-48 bg-black/5 dark:bg-white/5 rounded-2xl animate-pulse" />
-          ))}
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <RefreshCw className="w-6 h-6 text-[#0071e3] animate-spin" />
       </div>
     );
   }
 
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = client.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         client.brokerage?.toLowerCase().includes(searchQuery.toLowerCase());
+    const health = getClientHealth(client);
+    const matchesStatus = filterStatus === 'all' || health.label.toLowerCase().replace(' ', '_') === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-[1200px] mx-auto space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
-            My Clients
-          </h1>
-          <p className="text-[15px] text-[#86868b] mt-1">
-            {clients.length} client{clients.length !== 1 ? 's' : ''} assigned to you
-          </p>
+          <h1 className="text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">My Clients</h1>
+          <p className="text-[17px] text-[#86868b] mt-1">Managing {clients.length} active partnerships</p>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+            <input
+              type="text"
+              placeholder="Search clients..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 bg-black/5 dark:bg-white/5 border-none rounded-xl text-[14px] w-64 focus:ring-2 focus:ring-[#0071e3] transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl">
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${filterStatus === 'all' ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilterStatus('at_risk')}
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${filterStatus === 'at_risk' ? 'bg-white dark:bg-[#2d2d2d] text-[#ff9500] shadow-sm' : 'text-[#86868b] hover:text-[#ff9500]'}`}
+            >
+              At Risk
+            </button>
+          </div>
         </div>
       </div>
 
       {postLogBanner.show && (
-        <PostLogReminderBanner clientNames={postLogBanner.clientNames} onDismiss={() => setPostLogBanner(prev => ({ ...prev, show: false }))} />
+        <PostLogReminderBanner clientNames={postLogBanner.clientNames} />
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-black/5 dark:border-white/10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#0071e3]/10 flex items-center justify-center">
-              <Users className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
-            </div>
-          </div>
-          <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{stats.total}</p>
-          <p className="text-[13px] text-[#86868b]">Total Clients</p>
-        </div>
-
-        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-black/5 dark:border-white/10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#34c759]/10 flex items-center justify-center">
-              <CheckCircle className="w-4 h-4 text-[#34c759]" strokeWidth={1.5} />
-            </div>
-          </div>
-          <p className="text-[28px] font-semibold text-[#34c759]">{stats.onTrack}</p>
-          <p className="text-[13px] text-[#86868b]">On Track</p>
-        </div>
-
-        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-black/5 dark:border-white/10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#ff9500]/10 flex items-center justify-center">
-              <AlertCircle className="w-4 h-4 text-[#ff9500]" strokeWidth={1.5} />
-            </div>
-          </div>
-          <p className="text-[28px] font-semibold text-[#ff9500]">{stats.needsAttention}</p>
-          <p className="text-[13px] text-[#86868b]">Needs Attention</p>
-        </div>
-
-        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-black/5 dark:border-white/10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#5856d6]/10 flex items-center justify-center">
-              <Package className="w-4 h-4 text-[#5856d6]" strokeWidth={1.5} />
-            </div>
-          </div>
-          <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">
-            {stats.postsUsed}/{stats.totalPosts}
-          </p>
-          <p className="text-[13px] text-[#86868b]">Posts Used</p>
-        </div>
-      </div>
-
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" strokeWidth={1.5} />
-          <input
-            type="text"
-            placeholder="Search clients..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[13px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
-          />
-        </div>
-        <div className="flex gap-2">
-          {['all', 'good', 'warning', 'critical'].map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-4 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-                filterStatus === status
-                  ? 'bg-[#0071e3] text-white'
-                  : 'bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10'
-              }`}
-            >
-              {status === 'all' ? 'All' : status === 'good' ? 'On Track' : status === 'warning' ? 'Medium' : 'Low'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Client Grid */}
-      {filteredClients.length === 0 ? (
-        <div className="text-center py-16">
-          <Users className="w-12 h-12 text-[#86868b] mx-auto mb-4" strokeWidth={1} />
-          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-            {clients.length === 0 ? 'No clients assigned' : 'No clients match your search'}
-          </h3>
-          <p className="text-[15px] text-[#86868b]">
-            {clients.length === 0 
-              ? 'Clients will appear here once they are assigned to you.'
-              : 'Try adjusting your search or filter criteria.'}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Clients Grid */}
+      {filteredClients.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => {
-            const health = getEnhancedHealthStatus(client);
+            const health = getClientHealth(client);
             const isLoadingAi = loadingAiHealth[client.id];
-            const postsUsed = getPostsUsed(client);
-            const packageSize = client.packageSize || 12;
-            const progress = packageSize ? (postsUsed / packageSize) * 100 : 0;
+            const packageSize = client.packageSize || 0;
+            const postsUsed = getPostsUsed(client, 'instagram');
+            const progress = packageSize > 0 ? Math.min(100, (postsUsed / packageSize) * 100) : 0;
+            const isCritical = progress >= 90;
 
             return (
-              <div
+              <div 
                 key={client.id}
-                className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-black/5 dark:border-white/10 hover:shadow-lg transition-all cursor-pointer group"
                 onClick={() => openClientCard(client)}
+                className="group bg-white dark:bg-[#1c1c1e] rounded-[24px] border border-black/5 dark:border-white/5 p-6 hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -528,7 +361,7 @@ const MyClientsPage = () => {
                       <Plus className="w-3.5 h-3.5" strokeWidth={2} />
                       Log post
                     </button>
-                    {isSystemAdmin && (
+                    {canManageAllClients && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditPostsClient(client); setShowEditPostsModal(true); }}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15 text-[11px] font-medium transition-colors"
@@ -597,102 +430,118 @@ const MyClientsPage = () => {
                       {postsUsed} / {packageSize}
                     </span>
                   </div>
-                  <div className="h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
                     <div 
-                      className={`h-full rounded-full transition-all ${
-                        progress > 80 ? 'bg-[#ff3b30]' : progress > 50 ? 'bg-[#ff9500]' : 'bg-[#34c759]'
-                      }`}
-                      style={{ width: `${Math.min(progress, 100)}%` }}
+                      className={`h-full transition-all duration-500 ${isCritical ? 'bg-[#ff3b30]' : 'bg-[#0071e3]'}`}
+                      style={{ width: `${progress}%` }}
                     />
                   </div>
                 </div>
 
-                {/* Platforms */}
-                {client.platforms && Object.values(client.platforms).some(Boolean) && (
-                  <div className="mb-3">
-                    <PlatformIcons platforms={client.platforms} compact size={14} />
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="w-3.5 h-3.5 text-[#86868b]" />
+                      <span className="text-[11px] text-[#86868b]">Last Post</span>
+                    </div>
+                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                      {client.lastInstagramPostDate ? format(parseISO(client.lastInstagramPostDate), 'MMM d') : 'Never'}
+                    </p>
                   </div>
-                )}
-
-                {/* Details */}
-                <div className="space-y-2 text-[12px]">
-                  {client.clientEmail && (
-                    <div className="flex items-center gap-2 text-[#86868b]">
-                      <Mail className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      <span className="truncate">{client.clientEmail}</span>
+                  <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="w-3.5 h-3.5 text-[#86868b]" />
+                      <span className="text-[11px] text-[#86868b]">Status</span>
                     </div>
-                  )}
-                  {client.paymentStatus && (
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-[#86868b]" strokeWidth={1.5} />
-                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium ${getPaymentStatusStyle(client.paymentStatus)}`}>
-                        {client.paymentStatus}
-                      </span>
-                    </div>
-                  )}
+                    <p className="text-[13px] font-medium text-[#34c759]">Active</p>
+                  </div>
                 </div>
 
+                {/* Account Manager (Only if viewing all) */}
+                {canManageAllClients && client.assignedManager && (
+                  <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5 flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center text-[10px] font-bold">
+                      {client.assignedManager.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-[11px] text-[#86868b]">Managed by {client.assignedManager}</span>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
-      )}
-
-      {/* Log post modal */}
-      {logPostClient && createPortal(
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => !logSaving && setLogPostClient(null)}>
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl w-full max-w-sm shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
-              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Log post</h3>
-              <p className="text-[13px] text-[#86868b] mt-0.5">{logPostClient.clientName}</p>
-            </div>
-            <div className="p-5">
-              <p className="text-[12px] font-medium text-[#86868b] mb-2">Platform</p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(logPostPlatformIcons).map(([platform, Icon]) => (
-                  <button
-                    key={platform}
-                    type="button"
-                    onClick={() => setLogPlatform(platform)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-                      logPlatform === platform ? 'bg-[#0071e3] text-white' : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" strokeWidth={1.5} />
-                    <span className="capitalize">{platform}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3 px-5 py-4 border-t border-black/5 dark:border-white/10">
-              <button type="button" onClick={() => setLogPostClient(null)} disabled={logSaving} className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-50">Cancel</button>
-              <button type="button" onClick={handleLogPostForClient} disabled={logSaving} className="flex-1 h-11 rounded-xl bg-[#34c759] text-white text-[14px] font-medium hover:bg-[#30d158] disabled:opacity-50">
-                {logSaving ? 'Logging...' : 'Log post'}
-              </button>
-            </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#1c1c1e] rounded-[32px] border border-black/5 dark:border-white/5">
+          <div className="w-20 h-20 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+            <Users className="w-10 h-10 text-[#86868b]" />
           </div>
-        </div>,
-        document.body
+          <h2 className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">No clients found</h2>
+          <p className="text-[17px] text-[#86868b] mt-2 text-center max-w-md px-6">
+            {searchQuery ? `We couldn't find any clients matching "${searchQuery}"` : "You haven't been assigned any clients yet."}
+          </p>
+        </div>
       )}
 
-      {/* Unified client card modal */}
+      {/* Modals */}
       {clientForModal && (
         <ClientDetailModal
           client={clientForModal}
           onClose={closeClientCard}
-          onClientUpdate={() => {}}
-          employees={employees}
-          showManagerAssignment={true}
+          onUpdate={async (updates) => {
+            await firestoreService.updateClient(clientForModal.id, updates);
+            toast.success('Client updated');
+          }}
         />
       )}
 
-      {editPostsClient && showEditPostsModal && createPortal(
+      {showEditPostsModal && editPostsClient && (
         <EditPostsLoggedModal
-          client={editPostsClient}
+          isOpen={showEditPostsModal}
           onClose={() => { setShowEditPostsModal(false); setEditPostsClient(null); }}
-          onSaved={() => { setShowEditPostsModal(false); setEditPostsClient(null); }}
-        />,
-        document.body
+          client={editPostsClient}
+          history={postLogHistory}
+          loading={postLogHistoryLoading}
+          onUpdate={async (taskId, updates) => {
+            await firestoreService.updateTask(taskId, updates);
+            // Refresh history
+            const tasks = await firestoreService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 });
+            setPostLogHistory(tasks);
+          }}
+          onDelete={async (taskId) => {
+            await firestoreService.deleteTask(taskId);
+            // Refresh history
+            const tasks = await firestoreService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 });
+            setPostLogHistory(tasks);
+          }}
+        />
+      )}
+
+      {/* Log Post Confirmation Modal */}
+      {logPostClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] w-full max-w-md p-6 shadow-2xl border border-black/5 dark:border-white/5">
+            <h2 className="text-[20px] font-semibold mb-2">Log Instagram Post</h2>
+            <p className="text-[15px] text-[#86868b] mb-6">
+              Confirm you want to log an Instagram post for <strong>{logPostClient.clientName}</strong>. This will decrement their remaining post count.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setLogPostClient(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 text-[15px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleLogPost(logPostClient, logPlatform)}
+                disabled={logSaving}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center justify-center"
+              >
+                {logSaving ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Confirm Log'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
