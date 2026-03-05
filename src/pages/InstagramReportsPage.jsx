@@ -171,7 +171,7 @@ const InstagramReportsPage = () => {
 
   // Load archived reports (system admin only)
   useEffect(() => {
-    if (!isSystemAdmin) {
+    if (!effectiveIsAdmin) {
       setArchivedReports([]);
       return () => {};
     }
@@ -181,7 +181,7 @@ const InstagramReportsPage = () => {
       setArchiveLoading(false);
     }, { archived: true });
     return () => unsubscribe();
-  }, [isSystemAdmin]);
+  }, [effectiveIsAdmin]);
 
   // Load clients
   useEffect(() => {
