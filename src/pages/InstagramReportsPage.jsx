@@ -48,7 +48,8 @@ import {
   FolderOpen,
   CalendarDays,
   FileBarChart,
-  Archive
+  Archive,
+  Search
 } from 'lucide-react';
 import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, getMonth, parseISO, isWithinInterval } from 'date-fns';
 
