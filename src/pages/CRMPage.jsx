@@ -43,6 +43,7 @@ import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
 import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PERMISSIONS } from '../entities/Permissions';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS, normalizeLocation } from '../services/crmService';
 import { useCustomLocations } from '../contexts/CustomLocationsContext';
 import { findPotentialMatchesForContact, findPotentialDuplicateGroups } from '../services/clientDuplicateService';
@@ -54,7 +55,8 @@ import { LocationSelect } from '../components/crm/LocationSelect';
 
 const CRMPage = () => {
   const navigate = useNavigate();
-  const { currentUser, currentRole, hasPermission, isSystemAdmin } = useAuth();
+  const { currentUser, currentRole, hasPermission, isSystemAdmin: isAuthAdmin } = useAuth();
+  const { isSystemAdmin, hasFeaturePermission } = usePermissions();
   const { confirm } = useConfirm();
   const { customLocationsWithMeta, removeCustomLocation, refresh } = useCustomLocations();
   
@@ -63,6 +65,7 @@ const CRMPage = () => {
   const canManageLeads = hasPermission(PERMISSIONS.MANAGE_LEADS);
   const canViewLeads = hasPermission(PERMISSIONS.VIEW_LEADS);
   const canDeleteClients = hasPermission(PERMISSIONS.DELETE_CLIENTS);
+  const canViewAuditTrail = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_AUDIT_TRAIL);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

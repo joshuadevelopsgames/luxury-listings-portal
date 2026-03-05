@@ -59,7 +59,7 @@ const UserDetailModal = ({
   onUserUpdate = null
 }) => {
   const { currentUser, hasPermission } = useAuth();
-  const { hasFeaturePermission } = usePermissions();
+  const { hasFeaturePermission, FEATURE_PERMISSIONS } = usePermissions();
   const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
   
   // Permission checks

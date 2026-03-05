@@ -41,6 +41,8 @@ function normalizeToEmployee(user) {
   };
 }
 
+const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
+
 const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, startInEditMode = false }) => {
   const { currentRole } = useAuth();
   const { hasFeaturePermission } = usePermissions();
@@ -123,7 +125,11 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
   };
 
   const saveAll = async () => {
-    if (!employee?.email) return;
+    if (!employee?.email || !emailRegex.test(employee.email)) {
+      toast.error("Invalid employee email. Cannot save changes.");
+      setSaving(false);
+      return;
+    }
     setSaving(true);
     try {
       const displayName = `${editProfileForm.firstName} ${editProfileForm.lastName}`.trim();
@@ -341,7 +347,11 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
               isHRView={canEdit}
               onSave={async (updatedData) => {
                 try {
-                  await firestoreService.updateApprovedUser(employee.email, { ...updatedData, displayName: `${updatedData.firstName || ''} ${updatedData.lastName || ''}`.trim(), location: updatedData.address ?? updatedData.location });
+                   if (!employee.email || !emailRegex.test(employee.email)) {
+                     toast.error("Invalid employee email. Cannot save changes.");
+                     throw new Error("Invalid employee email");
+                   }
+                   await firestoreService.updateApprovedUser(employee.email, { ...updatedData, displayName: `${updatedData.firstName || ''} ${updatedData.lastName || ''}`.trim(), location: updatedData.address ?? updatedData.location });
                   const emp = await firestoreService.getEmployeeByEmail(employee.email);
                   if (emp) await firestoreService.updateEmployee(emp.id, updatedData);
                   else await firestoreService.addEmployee({ firstName: updatedData.firstName, lastName: updatedData.lastName, email: employee.email, ...updatedData });

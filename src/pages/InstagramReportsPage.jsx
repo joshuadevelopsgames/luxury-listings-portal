@@ -129,9 +129,9 @@ const groupReportsByYearMonth = (reportList) => {
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
-  const { isSystemAdmin, hasFeaturePermission } = usePermissions();
+  const { isSystemAdmin, hasFeaturePermission, FEATURE_PERMISSIONS } = usePermissions();
   const { confirm } = useConfirm();
-  const effectiveIsAdmin = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_REPORTS);
+  const effectiveIsAdmin = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_REPORTS);
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);

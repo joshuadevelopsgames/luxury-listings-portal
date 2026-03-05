@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { modules } from '../modules/registry';
-import { 
-  CheckCircle2, 
-  Calendar, 
-  LayoutDashboard, 
-  BookOpen, 
-  Users, 
+import {
+  CheckCircle2,
+  Calendar,
+  LayoutDashboard,
+  BookOpen,
+  Users,
   FileText,
   Sparkles,
   ArrowRight,
@@ -49,7 +49,7 @@ const SECTION_ORDER = ['Main', 'SMM', 'Content Team', 'Design Team', 'Sales Team
 
 const OnboardingPage = () => {
   const { currentUser, userData, mergeCurrentUser } = useAuth();
-  const { permissions, hasFeaturePermission } = usePermissions();
+  const { permissions, hasFeaturePermission, isSystemAdmin } = usePermissions();
   const canViewAllModules = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_MODULES);
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
@@ -107,7 +107,7 @@ const OnboardingPage = () => {
         };
       })
       .sort((a, b) => SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section));
-  }, [permissions, isSystemAdmin]);
+  }, [permissions, canViewAllModules, isSystemAdmin]);
 
   useEffect(() => {
     checkGoogleConnection();
@@ -141,6 +141,13 @@ const OnboardingPage = () => {
     console.log('🎯 Completing onboarding...');
     setCompleting(true);
     const authEmail = (currentUser?.email || '').trim();
+    // Basic email validation to prevent Firestore permission errors with invalid emails
+    const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    if (!authEmail || !emailRegex.test(authEmail)) {
+      toast.error('Invalid user email. Please log in again.');
+      setCompleting(false);
+      return;
+    }
     const completedAt = new Date().toISOString();
     try {
       // 1. Persist onboarding state first (approved_users); use auth email as-is so Firestore rule matches
@@ -203,7 +210,7 @@ const OnboardingPage = () => {
   const steps = [
     {
       id: 0,
-      title: `Welcome, ${userData?.firstName || currentUser?.displayName?.split(' ')[0] || 'Team Member'}`,
+      title: `Welcome, ${userData?.firstName || currentUser?.displayName?.split(' ')[0] || 'Team Member'}!`,
       description: 'Your workspace is ready. Next we\'ll show you what you have access to.',
       icon: Sparkles,
       content: (
@@ -252,17 +259,14 @@ const OnboardingPage = () => {
                 return (
                   <div
                     key={mod.id}
-                    className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors"
+                    className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] p-4 flex items-start space-x-4"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-white dark:bg-white/10 shadow-sm flex items-center justify-center">
-                        <Icon className="h-6 w-6 text-[#0071e3]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">{mod.name}</h4>
-                        <p className="text-[13px] text-[#86868b] leading-snug">{mod.howTo}</p>
-                        <p className="text-[11px] text-[#86868b] mt-2">Sidebar → {mod.section}</p>
-                      </div>
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white mb-0.5">{mod.name}</h4>
+                      <p className="text-[13px] text-[#86868b]">{mod.howTo}</p>
                     </div>
                   </div>
                 );
@@ -274,290 +278,124 @@ const OnboardingPage = () => {
     },
     {
       id: 2,
-      title: 'Complete Your Profile',
-      description: 'Tell us a bit about yourself',
-      icon: User,
+      title: 'Connect your Google Calendar',
+      description: 'Integrate your calendar to see events and manage your schedule directly from the dashboard.',
+      icon: Calendar,
       content: (
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg p-6 shadow-lg">
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <User className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-white">Why complete your profile?</h3>
-                <p className="text-sm text-white/90">
-                  Help your team get to know you better and ensure we have the right contact information for important updates.
-                </p>
-              </div>
+          <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#1d1d1f] p-8 text-center">
+            <div className="inline-flex h-20 w-20 rounded-2xl bg-gradient-to-br from-[#db4437] to-[#f4b400] items-center justify-center mb-6 shadow-lg shadow-[#db4437]/20">
+              <Calendar className="h-10 w-10 text-white" />
             </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b-2 border-gray-200">
-              <User className="w-5 h-5 text-blue-600" />
-              <h4 className="font-semibold text-lg text-gray-800">Personal Information</h4>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <User className="inline w-4 h-4 mr-1" />
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  value={profileData.firstName}
-                  onChange={(e) => handleProfileInputChange('firstName', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="John"
-                  required
-                />
+            <h3 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white mb-2">Google Calendar</h3>
+            <p className="text-[15px] text-[#86868b] max-w-md mx-auto mb-6">
+              Connect your Google Calendar to view your schedule and manage events within the app.
+            </p>
+            {isGoogleConnected ? (
+              <div className="flex items-center justify-center gap-2 text-[#34c759] font-medium text-[15px]">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>Connected</span>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <User className="inline w-4 h-4 mr-1" />
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  value={profileData.lastName}
-                  onChange={(e) => handleProfileInputChange('lastName', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="Doe"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <Mail className="inline w-4 h-4 mr-1" />
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={profileData.email}
-                  disabled
-                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <Phone className="inline w-4 h-4 mr-1" />
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={profileData.phone}
-                  onChange={(e) => handleProfileInputChange('phone', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="(555) 123-4567"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={profileData.city}
-                  onChange={(e) => handleProfileInputChange('city', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="Vancouver"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Province
-                </label>
-                <input
-                  type="text"
-                  value={profileData.state}
-                  onChange={(e) => handleProfileInputChange('state', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="BC"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  value={profileData.zipCode}
-                  onChange={(e) => handleProfileInputChange('zipCode', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                  placeholder="V6B 2W9"
-                />
-              </div>
-            </div>
-
+            ) : (
+              <button
+                onClick={handleConnectCalendar}
+                disabled={connectingCalendar}
+                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-[#0071e3] hover:bg-[#0077ed] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0071e3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {connectingCalendar ? (
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <img src="/google-icon.svg" alt="Google" className="w-5 h-5 mr-2" />
+                )}
+                Connect Google Calendar
+              </button>
+            )}
           </div>
         </div>
       )
     },
     {
       id: 3,
-      title: 'Connect Your Google Calendar',
-      description: 'Stay in sync with team meetings and events',
-      icon: Calendar,
+      title: 'Complete your profile',
+      description: 'Help your team know you better by filling out your profile details.',
+      icon: User,
       content: (
         <div className="space-y-6">
-          {/* Benefits - Apple-style card */}
-          <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-[#0071e3]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-3">
-                  Why connect your calendar?
-                </h3>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <li className="flex items-center gap-2 text-[13px] text-[#1d1d1f] dark:text-white">
-                    <CheckCircle2 className="h-4 w-4 text-[#34c759] flex-shrink-0" />
-                    See all team meetings in one place
-                  </li>
-                  <li className="flex items-center gap-2 text-[13px] text-[#1d1d1f] dark:text-white">
-                    <CheckCircle2 className="h-4 w-4 text-[#34c759] flex-shrink-0" />
-                    Never miss important deadlines
-                  </li>
-                  <li className="flex items-center gap-2 text-[13px] text-[#1d1d1f] dark:text-white">
-                    <CheckCircle2 className="h-4 w-4 text-[#34c759] flex-shrink-0" />
-                    Book meetings easily
-                  </li>
-                  <li className="flex items-center gap-2 text-[13px] text-[#1d1d1f] dark:text-white">
-                    <CheckCircle2 className="h-4 w-4 text-[#34c759] flex-shrink-0" />
-                    Your data stays private & secure
-                  </li>
-                </ul>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="firstName" className="block text-[13px] font-medium text-[#86868b] mb-1">First Name</label>
+              <input
+                type="text"
+                id="firstName"
+                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                value={profileData.firstName}
+                onChange={(e) => handleProfileInputChange('firstName', e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block text-[13px] font-medium text-[#86868b] mb-1">Last Name</label>
+              <input
+                type="text"
+                id="lastName"
+                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                value={profileData.lastName}
+                onChange={(e) => handleProfileInputChange('lastName', e.target.value)}
+              />
             </div>
           </div>
-
-          {/* Connection Card */}
-          {isGoogleConnected ? (
-            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-8 text-center">
-              <div className="inline-flex h-16 w-16 rounded-2xl bg-[#34c759]/15 dark:bg-[#34c759]/25 items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="h-8 w-8 text-[#34c759]" />
-              </div>
-              <h4 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Calendar connected</h4>
-              <p className="text-[13px] text-[#86868b]">
-                You're all set to view team events and schedule meetings
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-8 text-center">
-              <div className="inline-flex h-16 w-16 rounded-2xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-[#0071e3]" />
-              </div>
-              <h4 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Connect Google Calendar</h4>
-              <p className="text-[13px] text-[#86868b] mb-6">
-                Click below to authorize calendar access
-              </p>
-              <button
-                onClick={handleConnectCalendar}
-                disabled={connectingCalendar}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#0071e3] hover:bg-[#0077ed] text-white text-[15px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {connectingCalendar ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="h-5 w-5" />
-                    Connect Calendar
-                  </>
-                )}
-              </button>
-              <p className="text-[11px] text-[#86868b] mt-4">
-                You can always connect later from your calendar page
-              </p>
-            </div>
-          )}
-
-          {/* Privacy Note */}
-          <div className="rounded-xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 border-l-4 border-l-[#0071e3] dark:border-l-[#0a84ff] p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-lg" aria-hidden>🔒</span>
-              <div>
-                <p className="text-[13px] text-[#1d1d1f] dark:text-white">
-                  <strong className="text-[#0071e3] dark:text-[#0a84ff]">Privacy:</strong> We only access your calendar to show you team events.
-                  We never modify your calendar or share your personal events without permission.
-                </p>
-              </div>
-            </div>
+          <div>
+            <label htmlFor="email" className="block text-[13px] font-medium text-[#86868b] mb-1">Email</label>
+            <input
+              type="email"
+              id="email"
+              className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+              value={profileData.email}
+              disabled
+            />
           </div>
-        </div>
-      )
-    },
-    {
-      id: 4,
-      title: 'You\'re All Set! 🎉',
-      description: 'Ready to start your journey with Luxury Listings',
-      icon: CheckCircle2,
-      content: (
-        <div className="space-y-6">
-          {/* Hero - Apple-style */}
-          <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-10 text-center">
-            <div className="inline-flex h-20 w-20 rounded-2xl bg-[#34c759]/15 dark:bg-[#34c759]/25 items-center justify-center mb-6">
-              <CheckCircle2 className="h-10 w-10 text-[#34c759]" />
-            </div>
-            <h3 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white mb-2">
-              Welcome aboard
-            </h3>
-            <p className="text-[15px] text-[#86868b] max-w-md mx-auto">
-              You're all set to explore your personalized workspace
-            </p>
+          <div>
+            <label htmlFor="phone" className="block text-[13px] font-medium text-[#86868b] mb-1">Phone (Optional)</label>
+            <input
+              type="tel"
+              id="phone"
+              className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+              value={profileData.phone}
+              onChange={(e) => handleProfileInputChange('phone', e.target.value)}
+            />
           </div>
-
-          {/* Quick Tips - same card style as rest of onboarding */}
-          <p className="text-[13px] font-medium text-[#86868b]">Quick tips to get started</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center text-[15px] font-semibold text-[#0071e3]">1</div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">Check your Dashboard</p>
-                  <p className="text-[13px] text-[#86868b]">Start with the dashboard to see your tasks and updates</p>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label htmlFor="city" className="block text-[13px] font-medium text-[#86868b] mb-1">City (Optional)</label>
+              <input
+                type="text"
+                id="city"
+                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                value={profileData.city}
+                onChange={(e) => handleProfileInputChange('city', e.target.value)}
+              />
             </div>
-            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center text-[15px] font-semibold text-[#0071e3]">2</div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">Complete your profile</p>
-                  <p className="text-[13px] text-[#86868b]">Visit "My Profile" to update your contact information</p>
-                </div>
-              </div>
+            <div>
+              <label htmlFor="state" className="block text-[13px] font-medium text-[#86868b] mb-1">State/Province (Optional)</label>
+              <input
+                type="text"
+                id="state"
+                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                value={profileData.state}
+                onChange={(e) => handleProfileInputChange('state', e.target.value)}
+              />
             </div>
-            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center text-[15px] font-semibold text-[#0071e3]">3</div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">Explore the Resources page</p>
-                  <p className="text-[13px] text-[#86868b]">Find tutorials, request time off, and access helpful tools</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] border border-transparent dark:border-white/10 p-5 hover:bg-[#ebebed] dark:hover:bg-[#3a3a3c] transition-colors">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center text-[15px] font-semibold text-[#0071e3]">4</div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[#1d1d1f] dark:text-white text-[15px] mb-1">Need help?</p>
-                  <p className="text-[13px] text-[#86868b]">Use the AI assistant (bottom right) or visit IT Support anytime</p>
-                </div>
-              </div>
+            <div>
+              <label htmlFor="zipCode" className="block text-[13px] font-medium text-[#86868b] mb-1">Zip/Postal Code (Optional)</label>
+              <input
+                type="text"
+                id="zipCode"
+                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                value={profileData.zipCode}
+                onChange={(e) => handleProfileInputChange('zipCode', e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -565,135 +403,108 @@ const OnboardingPage = () => {
     }
   ];
 
-  const currentStepData = steps[currentStep];
-  const StepIcon = currentStepData.icon;
-
   if (checkingCompleted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] to-white dark:from-[#1d1d1f] dark:to-[#0a0a0a] flex items-center justify-center">
-        <div className="h-8 w-48 bg-black/10 dark:bg-white/10 rounded animate-pulse" />
+      <div className="flex items-center justify-center min-h-screen bg-[#f5f5f7] dark:bg-[#1c1c1e]">
+        <div className="text-center">
+          <div className="inline-flex h-20 w-20 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center mb-6 shadow-lg shadow-[#0071e3]/20">
+            <Sparkles className="h-10 w-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white mb-2">Loading your workspace...</h2>
+          <p className="text-[15px] text-[#86868b]">Please wait a moment while we prepare your experience.</p>
+        </div>
       </div>
     );
   }
 
+  const currentStepContent = steps[currentStep];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] to-white dark:from-[#1d1d1f] dark:to-[#0a0a0a] py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[13px] font-medium text-[#86868b]">
-              Step {currentStep + 1} of {steps.length}
-            </span>
-            <span className="text-[13px] font-medium text-[#86868b]">
-              {Math.round(((currentStep + 1) / steps.length) * 100)}% Complete
-            </span>
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1c1c1e] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-3xl bg-white dark:bg-[#1d1d1f] rounded-3xl shadow-xl border border-black/5 dark:border-white/5 overflow-hidden flex flex-col lg:flex-row">
+        {/* Left Sidebar (Steps) */}
+        <div className="lg:w-1/3 bg-black/5 dark:bg-white/5 p-6 lg:p-8 flex flex-col justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-[#1d1d1f] dark:text-white mb-6">Onboarding</h2>
+            <ul className="space-y-4">
+              {steps.map((step, index) => (
+                <li key={step.id} className="flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${index === currentStep ? 'bg-[#0071e3]' : 'bg-[#86868b]'}`}>
+                    {index + 1}
+                  </div>
+                  <span className={`text-[15px] font-medium ${index === currentStep ? 'text-[#1d1d1f] dark:text-white' : 'text-[#86868b]'}`}>{step.title}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-[#0071e3] to-[#5856d6] transition-all duration-500 ease-out"
-              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-            />
+          <div className="mt-8 lg:mt-0">
+            <p className="text-[13px] text-[#86868b]">Need help? Contact IT Support.</p>
           </div>
         </div>
 
-        {/* Main Card */}
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-xl overflow-hidden">
-          <div className="p-6 pb-4">
-            <div className="flex items-start gap-4">
-              <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center flex-shrink-0">
-                <StepIcon className="h-7 w-7 text-white" />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-1">{currentStepData.title}</h1>
-                <p className="text-[14px] text-[#86868b]">{currentStepData.description}</p>
-              </div>
+        {/* Right Content (Current Step) */}
+        <div className="lg:w-2/3 p-6 sm:p-8 lg:p-10 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] text-white mb-6 shadow-lg shadow-[#0071e3]/20">
+              <currentStepContent.icon className="w-8 h-8" />
             </div>
+            <h2 className="text-3xl font-semibold text-[#1d1d1f] dark:text-white mb-2">{currentStepContent.title}</h2>
+            <p className="text-[17px] text-[#86868b] mb-8">{currentStepContent.description}</p>
+            
+            {currentStepContent.content}
           </div>
 
-          <div className="p-6 pt-4">
-            {currentStepData.content}
-
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-black/5 dark:border-white/10">
+          {/* Navigation Buttons */}
+          <div className="mt-8 flex justify-between">
+            {currentStep > 0 && (
               <button
-                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-                disabled={currentStep === 0}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-[#1d1d1f] dark:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0071e3] transition-colors"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="w-5 h-5 mr-2" />
                 Previous
               </button>
-
-              <div className="flex items-center gap-2">
-                {/* Step Indicators */}
-                <div className="flex items-center gap-2">
-                  {steps.map((step, index) => (
-                    <div
-                      key={step.id}
-                      className={`h-2 rounded-full transition-all ${
-                        index === currentStep
-                          ? 'bg-[#0071e3] w-8'
-                          : index < currentStep
-                          ? 'bg-[#0071e3]/40 w-2'
-                          : 'bg-black/10 dark:bg-white/10 w-2'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {currentStep < steps.length - 1 ? (
-                <button
-                  onClick={() => setCurrentStep(currentStep + 1)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
-                >
-                  Next
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={handleCompleteOnboarding}
-                  disabled={completing}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#5856d6] via-[#af52de] to-[#ff2d55] text-white text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg"
-                >
-                  {completing ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Finishing...
-                    </>
-                  ) : (
-                    <>
-                      Go to Dashboard
-                      <Home className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            {/* Skip Option */}
+            )}
             {currentStep < steps.length - 1 && (
-              <div className="text-center mt-4">
-                <button
-                  onClick={handleSkip}
-                  className="text-[13px] text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white underline"
-                >
-                  Skip onboarding for now
-                </button>
-              </div>
+              <button
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                className="ml-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-[#0071e3] hover:bg-[#0077ed] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0071e3] transition-colors"
+              >
+                Next
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </button>
+            )}
+            {currentStep === steps.length - 1 && (
+              <button
+                onClick={handleCompleteOnboarding}
+                disabled={completing}
+                className="ml-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-[#0071e3] hover:bg-[#0077ed] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0071e3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {completing ? (
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  'Complete Onboarding'
+                )}
+              </button>
             )}
           </div>
+          {currentStep < steps.length - 1 && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={handleSkip}
+                className="text-[13px] text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
+              >
+                Skip for now
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Help Text */}
-        <p className="text-center text-[13px] text-[#86868b] mt-6">
-          Questions? Reach out to support anytime!
-        </p>
       </div>
     </div>
   );
 };
 
 export default OnboardingPage;
-

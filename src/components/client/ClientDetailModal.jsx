@@ -40,6 +40,8 @@ import { getPostsRemaining, getEnabledPlatforms } from '../../utils/clientPostsU
 
 const PLATFORM_LABELS = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', youtube: 'YouTube', tiktok: 'TikTok', x: 'X' };
 
+const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
+
 const ClientDetailModal = ({
   client,
   onClose,
@@ -146,6 +148,10 @@ const ClientDetailModal = ({
     const pc = editForm.primaryContact && (editForm.primaryContact.name || editForm.primaryContact.email || editForm.primaryContact.phone || editForm.primaryContact.role)
       ? { name: editForm.primaryContact.name || '', email: editForm.primaryContact.email || '', phone: editForm.primaryContact.phone || '', role: editForm.primaryContact.role || '' }
       : null;
+    if (editForm.clientEmail && !emailRegex.test(editForm.clientEmail)) {
+      toast.error("Invalid client email address.");
+      return;
+    }
     const payload = { ...editForm, clientTypes, clientType: clientTypes[0], location: loc, primaryContact: pc };
     if (payload.postsRemainingByPlatform && Object.keys(payload.postsRemainingByPlatform).length > 0) {
       payload.postsRemaining = Object.values(payload.postsRemainingByPlatform).reduce((s, n) => s + (Number(n) || 0), 0);
@@ -172,6 +178,11 @@ const ClientDetailModal = ({
     try {
       const previousManager = localClient.assignedManager || null;
       await firestoreService.updateClient(localClient.id, { assignedManager: managerEmail || null });
+      if (managerEmail && !emailRegex.test(managerEmail)) {
+        toast.error("Invalid manager email address.");
+        setAssigningManager(false);
+        return;
+      }
       await firestoreService.logClientReassignment(localClient.id, localClient.clientName || localClient.name, previousManager, managerEmail || null, currentUser?.email);
       const updatedClient = { ...localClient, assignedManager: managerEmail || null };
       setLocalClient(updatedClient);
