@@ -3940,15 +3940,21 @@ class FirestoreService {
     }
     
     if (archived) {
+      // Use only where('archived','==',true) without orderBy to avoid requiring a composite index.
+      // Sort client-side by archivedAt desc.
       const q = query(
         collection(db, this.collections.INSTAGRAM_REPORTS),
-        where('archived', '==', true),
-        orderBy('archivedAt', 'desc')
+        where('archived', '==', true)
       );
       return onSnapshot(q, (snapshot) => {
         const reports = [];
         snapshot.forEach((doc) => {
           reports.push({ id: doc.id, ...doc.data() });
+        });
+        reports.sort((a, b) => {
+          const aTime = a.archivedAt?.toMillis?.() ?? 0;
+          const bTime = b.archivedAt?.toMillis?.() ?? 0;
+          return bTime - aTime;
         });
         console.log(`📊 Instagram archived reports loaded: ${reports.length}`);
         callback(reports);

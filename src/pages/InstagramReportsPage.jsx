@@ -132,7 +132,7 @@ const groupReportsByYearMonth = (reportList) => {
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
-  const { isSystemAdmin, hasFeaturePermission } = usePermissions();
+  const { isSystemAdmin, hasFeaturePermission, loading: permissionsLoading } = usePermissions();
   const { confirm } = useConfirm();
   const effectiveIsAdmin = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_REPORTS);
   
@@ -157,9 +157,8 @@ const InstagramReportsPage = () => {
   // Load reports - admins see all, others see only their own; when View As, load by effective user.
   useEffect(() => {
     const uid = currentUser?.uid;
-    if (!uid) {
-      setReports([]);
-      setLoading(false);
+    if (!uid || permissionsLoading) {
+      if (!uid) { setReports([]); setLoading(false); }
       return () => {};
     }
     const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
@@ -167,11 +166,11 @@ const InstagramReportsPage = () => {
       setLoading(false);
     }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined });
     return () => unsubscribe();
-  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs]);
+  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, permissionsLoading]);
 
   // Load archived reports (system admin only)
   useEffect(() => {
-    if (!isSystemAdmin) {
+    if (!effectiveIsAdmin) {
       setArchivedReports([]);
       return () => {};
     }
@@ -181,7 +180,7 @@ const InstagramReportsPage = () => {
       setArchiveLoading(false);
     }, { archived: true });
     return () => unsubscribe();
-  }, [isSystemAdmin]);
+  }, [effectiveIsAdmin]);
 
   // Load clients
   useEffect(() => {
