@@ -272,10 +272,11 @@ const InstagramReportsPage = () => {
     return groupReportsByYearMonth(archivedReports);
   }, [archivedReports]);
 
-  // Filtered reports for current client
+  // Filtered reports for current client (expandedClient is the client object with .id)
   const clientReports = useMemo(() => {
-    if (!expandedClient) return [];
-    const reportsForClient = reports.filter(r => r.clientId === expandedClient.client.id);
+    const clientId = expandedClient?.id;
+    if (!clientId) return [];
+    const reportsForClient = reports.filter(r => r.clientId === clientId);
     return groupReportsByYearMonth(reportsForClient);
   }, [reports, expandedClient]);
 
@@ -662,7 +663,7 @@ const InstagramReportsPage = () => {
                   <div key={clientEntry.id} className="bg-white dark:bg-[#2c2c2e] rounded-xl shadow-sm border border-black/5 dark:border-white/10 overflow-hidden">
                     <div
                       className="flex items-center justify-between p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                      onClick={() => setExpandedClient(expandedClient?.client.id === clientEntry.id ? null : clientEntry)}
+                      onClick={() => setExpandedClient(expandedClient?.id === clientEntry.id ? null : clientEntry)}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
@@ -681,14 +682,14 @@ const InstagramReportsPage = () => {
                           <p className="text-sm text-[#86868b]">{clientEntry.clientEmail}</p>
                         </div>
                       </div>
-                      {expandedClient?.client.id === clientEntry.id ? (
+                      {expandedClient?.id === clientEntry.id ? (
                         <ChevronUp size={20} className="text-[#86868b]" />
                       ) : (
                         <ChevronDown size={20} className="text-[#86868b]" />
                       )}
                     </div>
 
-                    {expandedClient?.client.id === clientEntry.id && (
+                    {expandedClient?.id === clientEntry.id && (
                       <div className="border-t border-black/5 dark:border-white/10 p-4">
                         {clientReports.length > 0 ? (
                           clientReports.map((yearMonthGroup) => (
