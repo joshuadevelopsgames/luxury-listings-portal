@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays, parseISO, startOfMonth } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
-import { usePermissions } from '../../../contexts/PermissionsContext';
+import { usePermissions, FEATURE_PERMISSIONS } from '../../../contexts/PermissionsContext';
 import { firestoreService } from '../../../services/firestoreService';
 import { openaiService } from '../../../services/openaiService';
 import PlatformIcons from '../../../components/PlatformIcons';
@@ -66,7 +66,7 @@ import {
 const MyClientsPage = () => {
   const navigate = useNavigate();
   const { currentUser, isViewingAs } = useAuth();
-  const { isSystemAdmin, hasFeaturePermission, FEATURE_PERMISSIONS } = usePermissions();
+  const { isSystemAdmin, hasFeaturePermission } = usePermissions();
   const { clients: allClients, loading: clientsLoading, getClientById } = useClients();
   const canManageAllClients = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_ALL_CLIENTS);
   const [searchQuery, setSearchQuery] = useState('');
