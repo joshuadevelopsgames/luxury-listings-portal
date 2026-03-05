@@ -160,7 +160,7 @@ const InstagramReportsPage = () => {
       return () => {};
     }
     // Get list of assigned client IDs to pass to the listener
-    const assignedClientIds = effectiveIsAdmin ? [] : myClients.map(c => c.id).filter(Boolean);
+    const assignedClientIds = effectiveIsAdmin ? [] : (myClients || []).map(c => c.id).filter(Boolean);
     const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
       setReports(data);
       setLoading(false);
@@ -212,16 +212,16 @@ const InstagramReportsPage = () => {
   }, [allClients, currentUser?.email, currentUser?.uid, effectiveIsAdmin]);
 
   // Memoize client IDs for report filtering
-  const myClientIds = useMemo(() => myClients.map(c => c.id).filter(Boolean), [myClients]);
-  const myClientsOnly = useMemo(() => myClients.filter(c => !c.isInternal), [myClients]);
-  const myInternalAccounts = useMemo(() => myClients.filter(c => c.isInternal), [myClients]);
+  const myClientIds = useMemo(() => (myClients || []).map(c => c.id).filter(Boolean), [myClients]);
+  const myClientsOnly = useMemo(() => (myClients || []).filter(c => !c.isInternal), [myClients]);
+  const myInternalAccounts = useMemo(() => (myClients || []).filter(c => c.isInternal), [myClients]);
 
   // Group reports by client
   const clientsWithReports = useMemo(() => {
     const clientMap = new Map();
     
     // Initialize with my clients (even if they have no reports)
-    myClients.forEach(client => {
+    (myClients || []).forEach(client => {
       clientMap.set(client.id, {
         client,
         reports: []
@@ -528,7 +528,7 @@ const InstagramReportsPage = () => {
   );
 
   // Stats summary - only count reports for MY clients
-  const myClientIdsSet = new Set(myClients.map(c => c.id));
+  const myClientIdsSet = new Set((myClients || []).map(c => c.id));
   const myReports = reports.filter(r => r.clientId && myClientIdsSet.has(r.clientId));
   const totalReports = myReports.length;
 
