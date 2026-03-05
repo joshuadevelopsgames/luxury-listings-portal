@@ -10,16 +10,16 @@ import { openaiService } from '../services/openaiService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 // Fallback to browser-based OCR if Cloud Vision and AI extraction fail
 import { instagramOCRService } from '../services/instagramOCRService';
-import { 
-  Instagram, 
-  Plus, 
-  Upload, 
-  Link as LinkIcon, 
-  Copy, 
-  Check, 
-  Trash2, 
-  Eye, 
-  Edit, 
+import {
+  Instagram,
+  Plus,
+  Upload,
+  Link as LinkIcon,
+  Copy,
+  Check,
+  Trash2,
+  Eye,
+  Edit,
   X,
   Image,
   Calendar,
@@ -102,11 +102,13 @@ const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
 
 // Year/month from report date (user input). Uses stored year/month if present, else derives from startDate/createdAt.
 const getReportYear = (report) => {
+  if (!report || typeof report !== 'object') return 0;
   if (report.year != null && !Number.isNaN(Number(report.year))) return Number(report.year);
   const d = report.startDate?.toDate?.() || report.createdAt?.toDate?.();
   return d ? getYear(d) : 0;
 };
 const getReportMonth = (report) => {
+  if (!report || typeof report !== 'object') return 0;
   if (report.month != null && report.month >= 1 && report.month <= 12) return report.month;
   const d = report.startDate?.toDate?.() || report.createdAt?.toDate?.();
   return d ? getMonth(d) + 1 : 0;
@@ -115,7 +117,8 @@ const getReportMonth = (report) => {
 // Group reports by year then month. Returns { year, month, reports }[] sorted year desc, month desc.
 const groupReportsByYearMonth = (reportList) => {
   const byYearMonth = new Map();
-  reportList.forEach((r) => {
+  (reportList || []).forEach((r) => {
+    if (r == null) return;
     const y = getReportYear(r);
     const m = getReportMonth(r);
     const key = `${y}-${String(m).padStart(2, '0')}`;
@@ -233,7 +236,7 @@ const InstagramReportsPage = () => {
     
     // Add reports to their respective clients
     reports.forEach(report => {
-      if (report.clientId) {
+      if (!report || !report.clientId) return;
         if (clientMap.has(report.clientId)) {
           // Client exists in our list
           clientMap.get(report.clientId).reports.push(report);
@@ -244,7 +247,6 @@ const InstagramReportsPage = () => {
             reports: [report]
           });
         }
-      }
     });
     
     // Sort reports within each client by date (newest first)
@@ -258,7 +260,7 @@ const InstagramReportsPage = () => {
     
     // Convert to array and sort by client name
     return Array.from(clientMap.values())
-      .sort((a, b) => (a.client.clientName || '').localeCompare(b.client.clientName || ''));
+      .sort((a, b) => (a.client.clientName || '').localeCompare(b.client.clientName || '')));
   }, [myClients, reports, effectiveIsAdmin]);
 
   // Unlinked reports (reports without clientId) - only visible to admins
@@ -272,11 +274,10 @@ const InstagramReportsPage = () => {
     return groupReportsByYearMonth(archivedReports);
   }, [archivedReports]);
 
-  // Filtered reports for current client (expandedClient is the client object with .id)
+  // Filtered reports for current client
   const clientReports = useMemo(() => {
-    const clientId = expandedClient?.id;
-    if (!clientId) return [];
-    const reportsForClient = reports.filter(r => r.clientId === clientId);
+    if (!expandedClient) return [];
+    const reportsForClient = reports.filter(r => r.clientId === expandedClient.client.id);
     return groupReportsByYearMonth(reportsForClient);
   }, [reports, expandedClient]);
 
@@ -663,7 +664,7 @@ const InstagramReportsPage = () => {
                   <div key={clientEntry.id} className="bg-white dark:bg-[#2c2c2e] rounded-xl shadow-sm border border-black/5 dark:border-white/10 overflow-hidden">
                     <div
                       className="flex items-center justify-between p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                      onClick={() => setExpandedClient(expandedClient?.id === clientEntry.id ? null : clientEntry)}
+                      onClick={() => setExpandedClient(expandedClient?.client.id === clientEntry.id ? null : clientEntry)}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
@@ -682,14 +683,14 @@ const InstagramReportsPage = () => {
                           <p className="text-sm text-[#86868b]">{clientEntry.clientEmail}</p>
                         </div>
                       </div>
-                      {expandedClient?.id === clientEntry.id ? (
+                      {expandedClient?.client.id === clientEntry.id ? (
                         <ChevronUp size={20} className="text-[#86868b]" />
                       ) : (
                         <ChevronDown size={20} className="text-[#86868b]" />
                       )}
                     </div>
 
-                    {expandedClient?.id === clientEntry.id && (
+                    {expandedClient?.client.id === clientEntry.id && (
                       <div className="border-t border-black/5 dark:border-white/10 p-4">
                         {clientReports.length > 0 ? (
                           clientReports.map((yearMonthGroup) => (
