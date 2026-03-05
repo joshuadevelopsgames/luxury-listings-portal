@@ -212,15 +212,21 @@ const PermissionsManager = () => {
     return () => document.removeEventListener('visibilitychange', handler);
   }, []);
 
-  // Load all approved users; exclude system admins so they never show in the list
+  // Load all approved users and include system admins so they can manage their own permissions
   useEffect(() => {
     const loadUsers = async () => {
       try {
         setLoading(true);
         const approved = await firestoreService.getApprovedUsers();
         const adminSet = new Set(SYSTEM_ADMINS.map(e => e.toLowerCase()));
-        const approvedUsers = approved.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
-        const allUsers = approvedUsers;
+        // Include system admins in the user list
+        const systemAdminUsers = SYSTEM_ADMINS.map(email => ({
+          id: email,
+          email: email.toLowerCase(),
+          isSystemAdmin: true,
+          primaryRole: 'system_admin'
+        }));
+        const allUsers = [...approved, ...systemAdminUsers];
         setUsers(allUsers);
 
         // Load permissions for each user (pages + features); use normalized email for keys
@@ -255,9 +261,9 @@ const PermissionsManager = () => {
 
   // Toggle a page permission for a user
   const togglePermission = (userEmail, pageId) => {
-    // Don't allow modifying system admin permissions
-    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase())) {
-      toast.error("Cannot modify system admin permissions");
+    // Allow system admins to modify their own permissions
+    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase()) && currentUser?.email?.toLowerCase() !== userEmail.toLowerCase()) {
+      toast.error("Cannot modify other system admin permissions");
       return;
     }
 
@@ -275,8 +281,9 @@ const PermissionsManager = () => {
 
   // Toggle a feature permission for a user
   const toggleFeaturePermission = (userEmail, featureId) => {
-    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase())) {
-      toast.error("Cannot modify system admin permissions");
+    // Allow system admins to modify their own permissions
+    if (SYSTEM_ADMINS.includes(userEmail.toLowerCase()) && currentUser?.email?.toLowerCase() !== userEmail.toLowerCase()) {
+      toast.error("Cannot modify other system admin permissions");
       return;
     }
 
