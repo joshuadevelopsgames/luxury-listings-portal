@@ -49,7 +49,7 @@ export function PermissionsProvider({ children }) {
 
   // Refresh permissions on demand (e.g., after admin changes)
   const refreshPermissions = useCallback(async () => {
-    if (!currentUser?.email || isSystemAdmin || currentUser?.isDemoViewOnly) return;
+    if (!currentUser?.email || currentUser?.isDemoViewOnly) return;
     
     try {
       const result = await firestoreService.getUserPermissions(currentUser.email);
@@ -92,13 +92,9 @@ export function PermissionsProvider({ children }) {
     const adminStatus = checkIsSystemAdmin(currentUser.email);
     setIsSystemAdmin(adminStatus);
 
-    // System admins don't need to load permissions
-    if (adminStatus) {
-      setPermissions([]);
-      setFeaturePermissions([]);
-      setLoading(false);
-      return () => unsubscribeAdmins();
-    }
+    // System admins now use the same permission-based logic as everyone else, 
+    // except for the Permissions UI which checks isSystemAdmin separately.
+    // So we proceed to load permissions even if adminStatus is true.
 
     // Single API: subscribe so Firestore is source of truth; same resolution as "View as" when doc at canonical key is missing.
     const sub = firestoreService.getUserPermissions(currentUser.email, {
