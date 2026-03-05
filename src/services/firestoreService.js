@@ -3965,9 +3965,7 @@ class FirestoreService {
     if (loadAll) {
       // Fetch all non-archived reports (no inequality operator with orderBy to avoid index requirement)
       q = query(
-        collection(db, this.collections.INSTAGRAM_REPORTS),
-        where(\'archived\', \'==\', false),
-        orderBy(\'createdAt\', \'desc\')
+        collection(db, this.collections.INSTAGRAM_REPORTS),        where('archived', '==', false),        orderBy(\'createdAt\', \'desc\')
       );
     } else if (clientIds && clientIds.length > 0) {
       // Get reports created by user OR for assigned clients (need to fetch all non-archived and filter client-side)
