@@ -3966,7 +3966,8 @@ class FirestoreService {
       // Fetch all non-archived reports (no inequality operator with orderBy to avoid index requirement)
       q = query(
         collection(db, this.collections.INSTAGRAM_REPORTS),
-        orderBy('createdAt', 'desc')
+        where(\'archived\', \'==\', false),
+        orderBy(\'createdAt\', \'desc\')
       );
     } else if (clientIds && clientIds.length > 0) {
       // Get reports created by user OR for assigned clients (need to fetch all non-archived and filter client-side)
@@ -3989,15 +3990,13 @@ class FirestoreService {
       snapshot.forEach((doc) => {
         const data = { id: doc.id, ...doc.data() };
         
-        // Always exclude archived reports unless specifically requesting them
-        if (data.archived === true) return;
-        
         // If not loadAll and clientIds provided, filter to only include reports created by user or for assigned clients
         if (!loadAll && clientIds && clientIds.length > 0) {
           if (data.userId !== uid && !clientIds.includes(data.clientId)) {
             return; // Skip reports not created by user and not for assigned clients
           }
         }
+        // If loadAll is true, we already filtered by archived: false in the query, so no need for client-side filter here.
         
         reports.push(data);
       });
