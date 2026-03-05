@@ -62,6 +62,9 @@ export function initConsoleCapture() {
 function captureLine(level, args) {
   const timestamp = new Date().toISOString();
   const message = args.map(arg => {
+    if (arg instanceof Error) {
+      return [arg.message, arg.stack].filter(Boolean).join('\n') || String(arg);
+    }
     if (typeof arg === 'object') {
       try {
         return JSON.stringify(arg, null, 2);

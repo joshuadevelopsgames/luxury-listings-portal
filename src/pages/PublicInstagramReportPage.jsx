@@ -484,8 +484,7 @@ const PublicInstagramReportPage = () => {
                   </h3>
                   <div className="space-y-3">
                     {report.metrics.ageRanges.map((range, idx) => {
-                      const maxPct = Math.max(1, ...report.metrics.ageRanges.map((r) => r.percentage));
-                      const barPct = Math.min(100, (range.percentage / maxPct) * 100);
+                      const barPct = Math.min(100, range.percentage ?? 0);
                       return (
                         <div key={idx} className="flex items-center gap-3">
                           <span className="text-sm text-gray-700 w-16 flex-shrink-0">{range.range}</span>
@@ -512,8 +511,7 @@ const PublicInstagramReportPage = () => {
                   </h3>
                   <div className="space-y-3">
                     {report.metrics.contentBreakdown.map((item, idx) => {
-                      const maxPct = Math.max(1, ...report.metrics.contentBreakdown.map((r) => r.percentage));
-                      const barPct = Math.min(100, (item.percentage / maxPct) * 100);
+                      const barPct = Math.min(100, item.percentage ?? 0);
                       return (
                         <div key={idx} className="flex items-center gap-3">
                           <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>

@@ -100,11 +100,13 @@ const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
 
 // Year/month from report date (user input). Uses stored year/month if present, else derives from startDate/createdAt.
 const getReportYear = (report) => {
+  if (!report || typeof report !== 'object') return 0;
   if (report.year != null && !Number.isNaN(Number(report.year))) return Number(report.year);
   const d = report.startDate?.toDate?.() || report.createdAt?.toDate?.();
   return d ? getYear(d) : 0;
 };
 const getReportMonth = (report) => {
+  if (!report || typeof report !== 'object') return 0;
   if (report.month != null && report.month >= 1 && report.month <= 12) return report.month;
   const d = report.startDate?.toDate?.() || report.createdAt?.toDate?.();
   return d ? getMonth(d) + 1 : 0;
@@ -113,7 +115,8 @@ const getReportMonth = (report) => {
 // Group reports by year then month. Returns { year, month, reports }[] sorted year desc, month desc.
 const groupReportsByYearMonth = (reportList) => {
   const byYearMonth = new Map();
-  reportList.forEach((r) => {
+  (reportList || []).forEach((r) => {
+    if (r == null) return;
     const y = getReportYear(r);
     const m = getReportMonth(r);
     const key = `${y}-${String(m).padStart(2, '0')}`;
@@ -226,7 +229,7 @@ const InstagramReportsPage = () => {
     
     // Add reports to their respective clients
     reports.forEach(report => {
-      if (report.clientId) {
+      if (!report || !report.clientId) return;
         if (clientMap.has(report.clientId)) {
           // Client exists in our list
           clientMap.get(report.clientId).reports.push(report);
@@ -237,7 +240,6 @@ const InstagramReportsPage = () => {
             reports: [report]
           });
         }
-      }
     });
     
     // Sort reports within each client by date (newest first)
@@ -257,7 +259,7 @@ const InstagramReportsPage = () => {
   // Unlinked reports (reports without clientId) - only visible to admins
   const unlinkedReports = useMemo(() => {
     if (!effectiveIsAdmin) return [];
-    return reports.filter(r => !r.clientId).sort((a, b) => {
+    return reports.filter(r => r != null && !r.clientId).sort((a, b) => {
       const dateA = a.startDate?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
       const dateB = b.startDate?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
       return dateB - dateA;
@@ -2533,8 +2535,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                       </h3>
                       <div className="space-y-3">
                         {report.metrics.ageRanges.map((range, idx) => {
-                          const maxPct = Math.max(1, ...report.metrics.ageRanges.map((r) => r.percentage));
-                          const barPct = Math.min(100, (range.percentage / maxPct) * 100);
+                          const barPct = Math.min(100, range.percentage ?? 0);
                           return (
                             <div key={idx} className="flex items-center gap-3">
                               <span className="text-sm text-gray-700 w-16 flex-shrink-0">{range.range}</span>
@@ -2558,8 +2559,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                       </h3>
                       <div className="space-y-3">
                         {report.metrics.contentBreakdown.map((item, idx) => {
-                          const maxPct = Math.max(1, ...report.metrics.contentBreakdown.map((r) => r.percentage));
-                          const barPct = Math.min(100, (item.percentage / maxPct) * 100);
+                          const barPct = Math.min(100, item.percentage ?? 0);
                           return (
                             <div key={idx} className="flex items-center gap-3">
                               <span className="text-sm text-gray-700 w-16 flex-shrink-0">{item.type}</span>
@@ -2765,7 +2765,6 @@ const ReportPreviewModal = ({ report, onClose }) => {
                     </h3>
                     <div className="space-y-2">
                       {(() => {
-                        const ageMax = Math.max(1, ...report.metrics.ageRanges.map((r) => r.percentage));
                         return report.metrics.ageRanges.map((range, idx) => (
                         <div key={idx} className="flex items-center justify-between">
                           <span className="text-sm text-gray-700">{range.range}</span>
@@ -2773,7 +2772,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                             <div className="w-20 bg-gray-100 rounded-full h-2">
                               <div 
                                 className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
-                                style={{ width: `${(range.percentage / ageMax) * 100}%` }}
+                                style={{ width: `${Math.min(100, range.percentage ?? 0)}%` }}
                               />
                             </div>
                             <span className="text-xs font-medium text-gray-900 w-10 text-right">{range.percentage}%</span>

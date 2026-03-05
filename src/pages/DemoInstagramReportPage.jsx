@@ -341,7 +341,7 @@ const DemoInstagramReportPage = () => {
                     <div className="w-24 bg-gray-100 rounded-full h-2">
                       <div 
                         className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
-                        style={{ width: `${(range.percentage / report.metrics.ageRanges[0].percentage) * 100}%` }}
+                        style={{ width: `${Math.min(100, range.percentage ?? 0)}%` }}
                       />
                     </div>
                     <span className="text-sm font-medium text-gray-900 w-12 text-right">{range.percentage}%</span>

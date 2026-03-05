@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRouteError } from 'react-router-dom';
 import { AlertTriangle, RefreshCw, Home, ChevronDown, Bug, Send, CheckCircle, Mail } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { getCapturedLogs, getLogsAsString, getSystemInfo } from '../utils/consoleCapture';
@@ -343,9 +344,19 @@ class ErrorBoundary extends React.Component {
  * Provides a consistent error experience for route-level errors.
  */
 export function RouteErrorPage() {
+  const routeError = useRouteError();
   const [sendingReport, setSendingReport] = React.useState(false);
   const [reportSent, setReportSent] = React.useState(false);
   const [reportError, setReportError] = React.useState(null);
+
+  const errorMessage = (routeError?.message ?? (typeof routeError === 'string' ? routeError : '')) || 'Route Error - Page failed to load';
+  const errorStack = (routeError?.stack ?? (routeError?.componentStack ? `Component stack:\n${routeError.componentStack}` : '')) || 'React Router errorElement triggered';
+
+  React.useEffect(() => {
+    if (routeError != null) {
+      console.error('Route error:', errorMessage, errorStack);
+    }
+  }, [routeError, errorMessage, errorStack]);
 
   // Auto-reload on chunk errors (happens after deployments)
   React.useEffect(() => {
@@ -398,11 +409,11 @@ export function RouteErrorPage() {
       const consoleLogs = getCapturedLogs();
       const logsString = getLogsAsString();
 
-      // Build the report
+      // Build the report (include actual route error when available)
       const report = {
-        errorMessage: 'Route Error - Page failed to load',
-        errorStack: 'React Router errorElement triggered',
-        componentStack: '',
+        errorMessage,
+        errorStack: errorStack?.substring?.(0, 5000) ?? errorStack ?? 'React Router errorElement triggered',
+        componentStack: routeError?.componentStack ?? '',
         userEmail,
         userName,
         url: systemInfo.url,
