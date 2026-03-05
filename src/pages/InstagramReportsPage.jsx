@@ -151,6 +151,35 @@ const InstagramReportsPage = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedQuarter, setSelectedQuarter] = useState(getQuarter(new Date()));
 
+  // Load clients
+  useEffect(() => {
+    const loadClients = async () => {
+      try {
+        const clientsList = await firestoreService.getClients();
+        setAllClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
+      } catch (error) {
+        console.error('Error loading clients:', error);
+      }
+    };
+    loadClients();
+  }, []);
+
+  // Filter clients: admins see all, others see only assigned clients (currentUser is effective when View As)
+  const isAssignedToMe = (client) => {
+    const am = (client.assignedManager || '').trim().toLowerCase();
+    if (!am) return false;
+    const email = (currentUser?.email || '').trim().toLowerCase();
+    const uid = (currentUser?.uid || '').trim().toLowerCase();
+    return am === email || (uid && am === uid);
+  };
+
+  const myClients = useMemo(() => {
+    if (effectiveIsAdmin) {
+      return allClients;
+    }
+    return allClients.filter(isAssignedToMe);
+  }, [allClients, currentUser?.email, currentUser?.uid, effectiveIsAdmin]);
+
   // Load reports - admins see all, others see only their own; when View As, load by effective user.
   useEffect(() => {
     const uid = currentUser?.uid;
@@ -181,35 +210,6 @@ const InstagramReportsPage = () => {
     }, { archived: true });
     return () => unsubscribe();
   }, [isSystemAdmin]);
-
-  // Load clients
-  useEffect(() => {
-    const loadClients = async () => {
-      try {
-        const clientsList = await firestoreService.getClients();
-        setAllClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
-      } catch (error) {
-        console.error('Error loading clients:', error);
-      }
-    };
-    loadClients();
-  }, []);
-
-  // Filter clients: admins see all, others see only assigned clients (currentUser is effective when View As)
-  const isAssignedToMe = (client) => {
-    const am = (client.assignedManager || '').trim().toLowerCase();
-    if (!am) return false;
-    const email = (currentUser?.email || '').trim().toLowerCase();
-    const uid = (currentUser?.uid || '').trim().toLowerCase();
-    return am === email || (uid && am === uid);
-  };
-
-  const myClients = useMemo(() => {
-    if (effectiveIsAdmin) {
-      return allClients;
-    }
-    return allClients.filter(isAssignedToMe);
-  }, [allClients, currentUser?.email, currentUser?.uid, effectiveIsAdmin]);
 
   // Memoize client IDs for report filtering
   const myClientIds = useMemo(() => (myClients || []).map(c => c.id).filter(Boolean), [myClients]);
