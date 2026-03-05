@@ -140,42 +140,25 @@ class FirestoreService {
     }
   }
 
-  // Get all pending users
+  // Get all pending users (pending users feature disabled; returns [] for UI, still used internally by approveUser)
   async getPendingUsers() {
     try {
-      console.log('🔍 DEBUG: getPendingUsers called');
-      console.log('🔍 DEBUG: Stack trace:', new Error().stack);
-      
       const querySnapshot = await getDocs(collection(db, this.collections.PENDING_USERS));
       const pendingUsers = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data() || {};
-        // Never allow an internal `id` field to overwrite the Firestore document id
         const { id: _ignoredInternalId, ...rest } = data;
         pendingUsers.push({
           id: docSnap.id,
           ...rest
         });
       });
-      
-      console.log('🔍 DEBUG: getPendingUsers returning', pendingUsers.length, 'users');
-      console.log('🔍 DEBUG: Pending users IDs:', pendingUsers.map(u => u.id));
-      console.log('🔍 DEBUG: Pending users emails:', pendingUsers.map(u => u.email));
-      
       return pendingUsers;
     } catch (error) {
-      console.error('❌ Error getting pending users:', error);
-      console.error('🔍 DEBUG: Error stack:', error.stack);
-      console.warn('⚠️ Firestore permissions issue, trying admin service fallback...');
-      
       try {
-        // Fallback to API service
         const apiUsers = await firebaseApiService.getPendingUsers();
-        console.log('✅ API service fallback successful:', apiUsers.length, 'users');
         return apiUsers;
-      } catch (apiError) {
-        console.error('❌ API service fallback also failed:', apiError);
-        console.warn('⚠️ Returning empty pending users list');
+      } catch {
         return [];
       }
     }

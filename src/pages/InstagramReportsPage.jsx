@@ -148,6 +148,7 @@ const InstagramReportsPage = () => {
   const [activeTab, setActiveTab] = useState('clients'); // 'clients' | 'internal' | 'archive'
   const [archivedReports, setArchivedReports] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Aggregated report generation state
   const [generatingReport, setGeneratingReport] = useState(null); // { clientId, type: 'quarterly' | 'yearly' }

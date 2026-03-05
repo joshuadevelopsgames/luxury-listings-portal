@@ -72,18 +72,14 @@ export default function Dashboard() {
           await remoteConfigService.initialize();
           console.log('✅ Remote Config initialized for admin dashboard');
           
-          // Fetch counts once
-          const [approvedUsers, pendingUsers] = await Promise.all([
-            firestoreService.getApprovedUsers(),
-            firestoreService.getPendingUsers()
-          ]);
-          
+          // Fetch approved users only (pending users disabled)
+          const approvedUsers = await firestoreService.getApprovedUsers();
           const configValues = remoteConfigService.getAllValues();
           
           setAdminStats({
             totalUsers: approvedUsers?.length || 0,
             activeUsers: approvedUsers?.filter(u => u.isApproved)?.length || 0,
-            pendingApprovals: pendingUsers?.length || 0,
+            pendingApprovals: 0,
             systemUptime: configValues?.systemUptime || '99.9%'
           });
           console.log('✅ Admin stats loaded');
@@ -183,11 +179,8 @@ export default function Dashboard() {
     try {
       console.log('📊 Loading admin statistics...');
       
-      // Get approved users count
+      // Get approved users count (pending users disabled)
       const approvedUsers = await firestoreService.getApprovedUsers();
-      
-      // Get pending users count
-      const pendingUsers = await firestoreService.getPendingUsers();
       
       // Get system uptime from Remote Config
       let systemUptime = '99.9%';
@@ -216,14 +209,14 @@ export default function Dashboard() {
       setAdminStats({
         totalUsers: approvedUsers.length,
         activeUsers: activeUsers,
-        pendingApprovals: pendingUsers.length,
+        pendingApprovals: 0,
         systemUptime
       });
 
       console.log('✅ Admin stats loaded:', {
         totalUsers: approvedUsers.length,
         activeUsers,
-        pendingApprovals: pendingUsers.length,
+        pendingApprovals: 0,
         systemUptime
       });
     } catch (error) {

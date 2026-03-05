@@ -98,14 +98,6 @@ const UserManagement = () => {
     { id: 'user-management', name: 'User Management', icon: '👤', category: 'Admin' },
   ];
 
-  // Debug logging for component renders
-  console.log('🔍 DEBUG: UserManagement component rendered');
-  console.log('🔍 DEBUG: pendingUsers count:', pendingUsers.length);
-  console.log('🔍 DEBUG: approvedUsers count:', approvedUsers.length);
-  console.log('🔍 DEBUG: loading state:', loading);
-  console.log('🔍 DEBUG: isProcessing state:', isProcessing);
-  console.log('🔍 DEBUG: firestoreStatus:', firestoreStatus);
-
   // Load approved users from Firestore
   useEffect(() => {
     console.log('🔍 DEBUG: loadApprovedUsers useEffect triggered');
@@ -537,46 +529,23 @@ const UserManagement = () => {
     }
   };
 
-  // Function to refresh pending users from Firestore
+  // Function to refresh users from Firestore (pending users disabled; only approved users refreshed)
   const handleRefreshUsers = async () => {
-    console.log('🔍 DEBUG: handleRefreshUsers called');
-    console.log('🔍 DEBUG: Current pendingUsers count before refresh:', pendingUsers.length);
-    console.log('🔍 DEBUG: Current approvedUsers count before refresh:', approvedUsers.length);
-    
     try {
-      console.log('🔄 Refreshing users from Firestore...');
       setLoading(true);
       setFirestoreStatus('loading');
       
-      // Load current pending users from Firestore
-      const currentPendingUsers = await firestoreService.getPendingUsers();
-      console.log('📡 Loaded pending users from Firestore:', currentPendingUsers);
-      console.log('🔍 DEBUG: Pending users from Firestore:', currentPendingUsers.map(u => ({ id: u.id, email: u.email })));
+      await refreshPendingUsers();
       
       // Load current approved users from Firestore (exclude system admins)
       const rawApproved = await firestoreService.getApprovedUsers();
       const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
       const currentApprovedUsers = rawApproved.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
-      console.log('📡 Loaded approved users from Firestore:', currentApprovedUsers);
-      console.log('🔍 DEBUG: Approved users from Firestore:', currentApprovedUsers.map(u => ({ id: u.id, email: u.email })));
       
-      // Update the context with the fresh data
-      console.log('🔍 DEBUG: Calling refreshPendingUsers from context...');
-      await refreshPendingUsers();
-      
-      // Update approved users state
-      console.log('🔍 DEBUG: Setting approved users state...');
       setApprovedUsers(currentApprovedUsers);
-      
-      // Show success message with count
-      const message = `✅ Refreshed! Found ${currentPendingUsers.length} pending users and ${currentApprovedUsers.length} approved users in Firestore`;
-      console.log(message);
       setFirestoreStatus('success');
-      
-      // Auto-clear success status after 3 seconds
+      toast.success(`Refreshed! Found ${currentApprovedUsers.length} approved users.`);
       setTimeout(() => setFirestoreStatus('idle'), 3000);
-      
-      console.log('✅ Users refreshed successfully');
       setLoading(false);
       
     } catch (error) {

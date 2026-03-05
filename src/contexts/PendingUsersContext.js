@@ -25,20 +25,9 @@ export function PendingUsersProvider({ children }) {
       return;
     }
     
-    // Load initial data manually
-    const loadInitialData = async () => {
-      try {
-        const users = await firestoreService.getPendingUsers();
-        setPendingUsers(users);
-        setLoading(false);
-      } catch (error) {
-        setPendingUsers([]);
-        setLoading(false);
-      }
-    };
-    
-    loadInitialData();
-    
+    // Pending users disabled: no longer fetch or show pending users in the app
+    setPendingUsers([]);
+    setLoading(false);
     return () => {};
     
     /* DISABLED REAL-TIME LISTENER CODE:
@@ -90,11 +79,10 @@ export function PendingUsersProvider({ children }) {
     */
   }, []); // Empty dependency array - only run once
 
-  // Manual refresh function
+  // Manual refresh (pending users disabled; no-op)
   const refreshPendingUsers = async () => {
     try {
-      const users = await firestoreService.getPendingUsers();
-      setPendingUsers(users);
+      setPendingUsers([]);
       setLoading(false);
     } catch (error) {
       // Silent fail
