@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
+const V4App = React.lazy(() => import('./v4-app/V4App'));
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
@@ -76,21 +77,6 @@ import CanvasPage from './pages/CanvasPage';
 // Module Pages
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
 
-// Field Service (Jobber replacement)
-import FieldServiceLayout from './field-service-app/components/Layout';
-import FieldServiceDashboard from './field-service-app/pages/Dashboard';
-import FieldServiceSchedule from './field-service-app/pages/Schedule';
-import FieldServiceClients from './field-service-app/pages/Clients';
-import FieldServiceRequests from './field-service-app/pages/Requests';
-import FieldServiceQuotes from './field-service-app/pages/Quotes';
-import FieldServiceJobs from './field-service-app/pages/Jobs';
-import FieldServiceInvoices from './field-service-app/pages/Invoices';
-import FieldServiceMarketing from './field-service-app/pages/Marketing';
-import FieldServiceTimesheets from './field-service-app/pages/Timesheets';
-import FieldServiceApps from './field-service-app/pages/Apps';
-import FieldServiceRefer from './field-service-app/pages/Refer';
-import FieldServiceSettings from './field-service-app/pages/Settings';
-
 // Error Handling
 import { RouteErrorPage } from './components/ErrorBoundary';
 
@@ -144,22 +130,6 @@ function LoginPage() {
 }
 
 // ============================================================================
-// FIELD SERVICE APP - Jobber replacement (requires auth)
-// ============================================================================
-function ProtectedFieldServiceApp() {
-  const { currentUser, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
-        <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  if (!currentUser) return <Navigate to="/login" replace />;
-  return <FieldServiceLayout />;
-}
-
-// ============================================================================
 // PROTECTED APP - Requires authentication
 // ============================================================================
 function ProtectedApp() {
@@ -194,6 +164,16 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <RouteErrorPage />,
     children: [
+      // V4 App (Supabase-first) — accessible at /v4/*
+      {
+        path: '/v4/*',
+        element: (
+          <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]"><div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" /></div>}>
+            <V4App />
+          </React.Suspense>
+        ),
+      },
+
       // Public Instagram reports first so /report/:id is never matched by protected catch-all
       { path: '/report/:publicLinkId', element: <PublicInstagramReportPage /> },
       { path: '/report-demo', element: <DemoInstagramReportPage /> },
@@ -208,28 +188,6 @@ const router = createBrowserRouter([
       
       // OAuth callbacks
       { path: '/slack-callback', element: <SlackCallback /> },
-
-      // Field Service app (Jobber replacement)
-      {
-        path: '/field-service',
-        element: <ProtectedFieldServiceApp />,
-        children: [
-          { index: true, element: <Navigate to="/field-service/dashboard" replace /> },
-          { path: 'dashboard', element: <FieldServiceDashboard /> },
-          { path: 'schedule', element: <FieldServiceSchedule /> },
-          { path: 'clients', element: <FieldServiceClients /> },
-          { path: 'requests', element: <FieldServiceRequests /> },
-          { path: 'quotes', element: <FieldServiceQuotes /> },
-          { path: 'jobs', element: <FieldServiceJobs /> },
-          { path: 'invoices', element: <FieldServiceInvoices /> },
-          { path: 'marketing', element: <FieldServiceMarketing /> },
-          { path: 'timesheets', element: <FieldServiceTimesheets /> },
-          { path: 'apps', element: <FieldServiceApps /> },
-          { path: 'refer', element: <FieldServiceRefer /> },
-          { path: 'settings', element: <FieldServiceSettings /> },
-          { path: '*', element: <Navigate to="/field-service/dashboard" replace /> },
-        ],
-      },
 
       // Protected app routes (requires auth)
       {
