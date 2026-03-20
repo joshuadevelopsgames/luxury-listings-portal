@@ -1215,12 +1215,18 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
           newEndDate = metrics.endDate.toISOString().split('T')[0];
         }
         
+        // Merge only defined extraction values so we never overwrite views/profileVisits with undefined when AI/OCR omits them
+        const dateKeys = ['startDate', 'endDate', 'dateRange'];
+        const extractedMetrics = {};
+        for (const [k, v] of Object.entries(metrics)) {
+          if (v !== undefined && v !== null && !dateKeys.includes(k)) extractedMetrics[k] = v;
+        }
         return {
           ...prev,
           startDate: newStartDate,
           endDate: newEndDate,
           dateRange: metrics.dateRange ?? prev.dateRange,
-          metrics: { ...(prev.metrics || {}), ...metrics },
+          metrics: { ...(prev.metrics || {}), ...extractedMetrics },
           screenshots: []
         };
       });

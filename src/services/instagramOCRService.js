@@ -131,9 +131,10 @@ class InstagramOCRService {
     // Normalize text - replace newlines with spaces, multiple spaces with single
     const normalizedText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
     
-    // === VIEWS ===
-    const viewsMatch = text.match(/Views?\s*[\n\s]*([0-9,]+)/i) || 
-                       text.match(/([0-9,]+)\s*Views?/i);
+    // === VIEWS === (Views, View, or "total views" wording)
+    const viewsMatch = text.match(/Views?\s*[\n\s]*([0-9,]+)/i) ||
+                       text.match(/([0-9,]+)\s*Views?/i) ||
+                       text.match(/Total\s+views?\s*[\n\s]*([0-9,]+)/i);
     if (viewsMatch) {
       metrics.views = this.parseNumber(viewsMatch[1]);
     }
@@ -278,15 +279,18 @@ class InstagramOCRService {
       metrics.accountsReached = this.parseNumber(accountsReachedMatch[1]);
     }
 
-    // === PROFILE VISITS ===
+    // === PROFILE VISITS (Instagram may show "Profile visits" or "Profile views") ===
     const profileVisitsMatch = text.match(/Profile\s*visits?\s*[\n\s]*([0-9,]+)/i) ||
-                               text.match(/([0-9,]+)\s*[\n\s]*Profile\s*visits?/i);
+                               text.match(/Profile\s*views?\s*[\n\s]*([0-9,]+)/i) ||
+                               text.match(/([0-9,]+)\s*[\n\s]*Profile\s*visits?/i) ||
+                               text.match(/([0-9,]+)\s*[\n\s]*Profile\s*views?/i);
     if (profileVisitsMatch) {
       metrics.profileVisits = this.parseNumber(profileVisitsMatch[1]);
     }
 
     // === PROFILE VISITS CHANGE ===
     const profileVisitsChangeMatch = text.match(/Profile\s*visits?[^0-9]*([+-]?[0-9.]+%)/i) ||
+                                     text.match(/Profile\s*views?[^0-9]*([+-]?[0-9.]+%)/i) ||
                                      text.match(/([+-][0-9.]+%)\s*.*Profile/i);
     if (profileVisitsChangeMatch) {
       metrics.profileVisitsChange = profileVisitsChangeMatch[1];
