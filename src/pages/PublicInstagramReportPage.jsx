@@ -233,8 +233,8 @@ const PublicInstagramReportPage = () => {
                 label: 'Followers', 
                 value: report.metrics.followers?.toLocaleString() || '—', 
                 color: 'from-pink-500 to-pink-600',
-                subtext: report.metrics.followerChange != null ? `${report.metrics.followerChange > 0 ? '+' : ''}${report.metrics.followerChange}` : null,
-                subtextColor: report.metrics.followerChange > 0 ? 'text-green-600' : 'text-red-500'
+                subtext: (() => { const fc = report.metrics.followerChange; if (fc == null) return null; const n = parseInt(fc); if (!isNaN(n)) return `${n > 0 ? '+' : ''}${n}`; return String(fc); })(),
+                subtextColor: (() => { const fc = report.metrics.followerChange; const n = parseInt(fc); return (!isNaN(n) ? n : Number(fc)) > 0 ? 'text-green-600' : 'text-red-500'; })()
               },
               { 
                 icon: Heart, 

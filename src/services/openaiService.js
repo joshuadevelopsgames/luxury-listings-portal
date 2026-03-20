@@ -460,7 +460,7 @@ Extract these fields (use null if not visible):
   
   // FOLLOWERS
   "followers": number (total follower count),
-  "followerChange": "+X%" or "-X%" (vs previous period),
+  "followerChange": number (net change in follower count, e.g. 25 or -37; use integer not percentage string),
   "growth": {"overall": number, "follows": number, "unfollows": number},
   
   // DEMOGRAPHICS (if visible)

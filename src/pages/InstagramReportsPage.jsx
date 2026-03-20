@@ -301,7 +301,7 @@ const InstagramReportsPage = () => {
       if (m.views) aggregated.views += Number(m.views) || 0;
       if (m.interactions) aggregated.interactions += Number(m.interactions) || 0;
       if (m.profileVisits) aggregated.profileVisits += Number(m.profileVisits) || 0;
-      if (m.followerChange) aggregated.followerChange += Number(m.followerChange) || 0;
+      if (m.followerChange != null) aggregated.followerChange += parseInt(m.followerChange) || 0;
       // Take latest followers count
       if (m.followers) aggregated.followers = Number(m.followers);
     });
@@ -1809,8 +1809,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Follower Change</label>
                         <input
                           type="number"
-                          value={formData.metrics?.followerChange || ''}
-                          onChange={(e) => updateMetric('followerChange', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.followerChange ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('followerChange', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="-37"
                         />
@@ -2312,8 +2312,8 @@ const ReportPreviewModal = ({ report, onClose }) => {
                     label: 'Followers', 
                     value: report.metrics.followers?.toLocaleString() || '—', 
                     color: 'from-pink-500 to-pink-600',
-                    subtext: report.metrics.followerChange != null ? `${report.metrics.followerChange > 0 ? '+' : ''}${report.metrics.followerChange}` : null,
-                    subtextColor: report.metrics.followerChange > 0 ? 'text-green-600' : 'text-red-500'
+                    subtext: (() => { const fc = report.metrics.followerChange; if (fc == null) return null; const n = parseInt(fc); if (!isNaN(n)) return `${n > 0 ? '+' : ''}${n}`; return String(fc); })(),
+                    subtextColor: (() => { const fc = report.metrics.followerChange; const n = parseInt(fc); return (!isNaN(n) ? n : Number(fc)) > 0 ? 'text-green-600' : 'text-red-500'; })()
                   },
                   { 
                     icon: Heart, 
