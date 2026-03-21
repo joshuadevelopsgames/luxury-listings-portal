@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { v4WelcomeSessionKey, V4_SESSION_FIRST_PATH_KEY } from '../lib/welcomeStorage';
 
 const AuthContext = createContext(null);
 
@@ -57,6 +58,16 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const id = session?.user?.id;
+    if (typeof window !== 'undefined') {
+      try {
+        if (id) sessionStorage.removeItem(v4WelcomeSessionKey(id));
+        sessionStorage.removeItem(V4_SESSION_FIRST_PATH_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
     await supabase.auth.signOut();
   };
 

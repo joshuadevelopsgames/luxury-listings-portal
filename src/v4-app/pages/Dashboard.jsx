@@ -5,6 +5,7 @@ import { crmService } from '../services/crmService';
 import TodayWidget from '../components/dashboard/TodayWidget';
 import QuickStats from '../components/dashboard/QuickStats';
 import EngagementFeed from '../components/dashboard/EngagementFeed';
+import WelcomeSplash from '../components/WelcomeSplash';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
@@ -63,6 +64,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <WelcomeSplash />
       {/* Header */}
       <div>
         <p className="text-[13px] text-[#86868b]">{format(new Date(), 'EEEE, MMMM d')}</p>

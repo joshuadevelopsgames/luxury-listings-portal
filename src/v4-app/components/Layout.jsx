@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import WelcomeSplash from './WelcomeSplash';
+import { V4_SESSION_FIRST_PATH_KEY } from '../lib/welcomeStorage';
 import {
   Home, Users, Calendar, TrendingUp, Instagram, BarChart3,
   Palette, Bell, Settings, LogOut, Menu, ChevronRight, Sun, Moon,
@@ -76,6 +76,17 @@ export default function Layout() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
+  // First authenticated V4 pathname this session (welcome splash only if this was dashboard)
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem(V4_SESSION_FIRST_PATH_KEY)) {
+        sessionStorage.setItem(V4_SESSION_FIRST_PATH_KEY, location.pathname);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [location.pathname]);
+
   /* ── Dark mode with Vancouver time auto-switch ────────────────────── */
   const [dark, setDark] = useState(() => {
     const stored = localStorage.getItem('darkModeOverride');
@@ -144,7 +155,6 @@ export default function Layout() {
 
   return (
     <div className={`min-h-screen ${dark ? 'dark' : ''}`}>
-      <WelcomeSplash />
       {/* Background */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#161617]" />
