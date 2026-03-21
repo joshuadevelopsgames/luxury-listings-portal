@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
-const V4App = React.lazy(() => import('./v4-app/V4App'));
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
 import { ViewAsProvider } from './contexts/ViewAsContext';
@@ -17,10 +16,6 @@ import NewVersionNotifier from './components/NewVersionNotifier';
 // Admin utilities - expose to console for easy access
 import { importClients } from './utils/importClientsFromSheet';
 import { firestoreService } from './services/firestoreService';
-if (typeof window !== 'undefined') {
-  window.importClients = importClients;
-  window.firestoreService = firestoreService; // For running migrations like assignMissingClientNumbers()
-}
 
 // V3 Components (Apple-styled design)
 import V3Layout from './v3-app/components/Layout';
@@ -79,6 +74,15 @@ import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
 
 // Error Handling
 import { RouteErrorPage } from './components/ErrorBoundary';
+
+// Admin utilities — expose to console for migrations (must be after all imports)
+if (typeof window !== 'undefined') {
+  window.importClients = importClients;
+  window.firestoreService = firestoreService; // For running migrations like assignMissingClientNumbers()
+}
+
+// V4 App — Supabase-first (lazy-loaded, zero impact on V3)
+const V4App = React.lazy(() => import('./v4-app/V4App'));
 
 function CanvasRedirect() {
   const { search } = useLocation();

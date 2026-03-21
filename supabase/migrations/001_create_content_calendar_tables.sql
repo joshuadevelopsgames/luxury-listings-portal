@@ -4,7 +4,7 @@
 -- IMPORTANT: Create calendars table FIRST since content_items references it
 -- Calendars Table
 CREATE TABLE IF NOT EXISTS calendars (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_email TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS calendars (
 
 -- Content Items Table (created AFTER calendars due to foreign key reference)
 CREATE TABLE IF NOT EXISTS content_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_email TEXT NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
