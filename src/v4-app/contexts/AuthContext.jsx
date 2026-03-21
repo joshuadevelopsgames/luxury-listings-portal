@@ -45,9 +45,9 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/v4/dashboard' },
     });
     if (error) throw error;
+    // Session will be picked up by onAuthStateChange listener above
   };
 
   const signOut = async () => {
