@@ -43,13 +43,17 @@ export function AuthProvider({ children }) {
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/v4`,
-      },
-    });
-    if (error) throw error;
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      if (error) throw error;
+      // Supabase will redirect with tokens in URL fragment
+      // detectSessionInUrl in lib/supabase.js will pick them up automatically
+    } catch (err) {
+      console.error('Google sign-in error:', err);
+      throw err;
+    }
   };
 
   const signOut = async () => {
