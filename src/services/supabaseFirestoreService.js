@@ -415,6 +415,7 @@ class SupabaseService {
         created_at: ts(),
       })]).select().single();
       if (error) throw error;
+      cacheInvalidate('tasks:');
       return data.id;
     } catch (error) {
       console.error('❌ Error adding task:', error);
@@ -449,10 +450,13 @@ class SupabaseService {
   }
 
   async getTasks() {
+    const key = 'tasks:all';
+    const cached = cacheGet(key);
+    if (cached) return cached;
     try {
       const { data, error } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map(r => this._mapTask(r));
+      return cacheSet(key, (data || []).map(r => this._mapTask(r)));
     } catch (error) {
       console.error('❌ Error getting tasks:', error);
       return [];
@@ -460,10 +464,13 @@ class SupabaseService {
   }
 
   async getTasksByUser(userEmail) {
+    const key = `tasks:user:${(userEmail || '').toLowerCase()}`;
+    const cached = cacheGet(key);
+    if (cached) return cached;
     try {
       const { data, error } = await supabase.from('tasks').select('*').eq('assigned_to', userEmail).order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map(r => this._mapTask(r));
+      return cacheSet(key, (data || []).map(r => this._mapTask(r)));
     } catch (error) {
       console.error('❌ Error getting user tasks:', error);
       return [];
@@ -555,6 +562,7 @@ class SupabaseService {
       payload.meta = { ...(existing?.meta || {}), ...clean2 };
       const { error } = await supabase.from('tasks').update(payload).eq('id', taskId);
       if (error) throw error;
+      cacheInvalidate('tasks:');
     } catch (error) {
       console.error('❌ Error updating task:', error);
       throw error;
@@ -573,6 +581,7 @@ class SupabaseService {
     try {
       const { error } = await supabase.from('tasks').delete().eq('id', taskId);
       if (error) throw error;
+      cacheInvalidate('tasks:');
     } catch (error) {
       console.error('❌ Error deleting task:', error);
       throw error;
@@ -1604,6 +1613,7 @@ class SupabaseService {
         user_id_legacy: user.id, user_email: user.email, client_id_legacy: reportData.clientId || null, client_name: reportData.clientName || '', title: reportData.title || '', date_range: reportData.dateRange || '', notes: reportData.notes || '', post_links: reportData.postLinks || [], metrics: reportData.metrics || null, report_type: reportData.reportType || null, source_report_ids: reportData.sourceReportIds || null, quarterly_breakdown: reportData.quarterlyBreakdown || null, public_link_id: publicLinkId, archived: false, year: startDate ? startDate.getFullYear() : null, month: startDate ? startDate.getMonth() + 1 : null, period_start: startDate ? startDate.toISOString().split('T')[0] : null, period_end: endDate ? endDate.toISOString().split('T')[0] : null, created_at: ts(), updated_at: ts()
       }]).select().single();
       if (error) throw error;
+      cacheInvalidate('instagram_reports:');
       return { success: true, id: data.id, publicLinkId };
     } catch (error) { console.error('❌ Error creating Instagram report:', error); throw error; }
   }
@@ -1613,11 +1623,14 @@ class SupabaseService {
   }
 
   async getInstagramReports() {
+    const key = 'instagram_reports:mine';
+    const cached = cacheGet(key);
+    if (cached) return cached;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
       const { data } = await supabase.from('instagram_reports').select('*').eq('user_id_legacy', user.id).eq('archived', false).order('created_at', { ascending: false });
-      return (data || []).map(r => this._mapReport(r));
+      return cacheSet(key, (data || []).map(r => this._mapReport(r)));
     } catch { return []; }
   }
 
@@ -1672,6 +1685,7 @@ class SupabaseService {
       if (updates.reportType !== undefined) { processed.report_type = updates.reportType; delete processed.reportType; }
       const { error } = await supabase.from('instagram_reports').update(clean(processed)).eq('id', reportId);
       if (error) throw error;
+      cacheInvalidate('instagram_reports:');
       return { success: true };
     } catch (error) { throw error; }
   }
@@ -1682,6 +1696,7 @@ class SupabaseService {
       if (!user) throw new Error('You must be signed in');
       const { error } = await supabase.from('instagram_reports').update({ archived: true, archived_at: ts(), archived_by: user.email, updated_at: ts() }).eq('id', reportId);
       if (error) throw error;
+      cacheInvalidate('instagram_reports:');
       return { success: true };
     } catch (error) { throw error; }
   }
