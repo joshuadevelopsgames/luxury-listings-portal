@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PendingUsersProvider } from './contexts/PendingUsersContext';
@@ -17,68 +17,72 @@ import NewVersionNotifier from './components/NewVersionNotifier';
 import { importClients } from './utils/importClientsFromSheet';
 import { firestoreService } from './services/firestoreService';
 
-// V3 Components (Apple-styled design)
+// ── Always-needed (critical path) ────────────────────────────────────────────
 import V3Layout from './v3-app/components/Layout';
 import V3Login from './v3-app/components/Login';
-import V3Dashboard from './v3-app/components/Dashboard';
 import PermissionRoute from './v3-app/components/PermissionRoute';
-import PermissionsManager from './v3-app/pages/PermissionsManager';
-import AnnouncementManager from './v3-app/pages/AnnouncementManager';
-
-// V3 Styles
+import { RouteErrorPage } from './components/ErrorBoundary';
 import './v3-app/styles/globals.css';
 
-// Pages (wrapped in V3 layout)
-import TasksPage from './pages/TasksPage';
-import ClientsPage from './pages/ClientsPage';
-import PostingPackages from './pages/PostingPackages';
-import ContentCalendar from './pages/ContentCalendar';
-import ContentCalendarPostDue from './pages/ContentCalendarPostDue';
-import CRMPage from './pages/CRMPage';
-import TeamManagement from './pages/TeamManagement';
-import HRCalendar from './pages/HRCalendar';
-import HRAnalytics from './pages/HRAnalytics';
-import ClientHealthPage from './pages/ClientHealthPage';
-import ITSupportPage from './pages/ITSupportPage';
-import FeedbackSupportPage from './pages/FeedbackSupportPage';
-import ResourcesPage from './pages/ResourcesPage';
-import FeaturesPage from './pages/FeaturesPage';
-import MyTimeOff from './pages/MyTimeOff';
-import EmployeeSelfService from './pages/EmployeeSelfService';
-import OnboardingPage from './pages/OnboardingPage';
-import ContentManagerMessage from './pages/ContentManagerMessage';
-import AdminMessage from './pages/AdminMessage';
-import DirectorMessage from './pages/DirectorMessage';
-import SocialMediaManagerMessage from './pages/SocialMediaManagerMessage';
-import GraphicDesignerMessage from './pages/GraphicDesignerMessage';
-import HRManagerMessage from './pages/HRManagerMessage';
-import SalesManagerMessage from './pages/SalesManagerMessage';
-import InstagramReportsPage from './pages/InstagramReportsPage';
-import MetaCallback from './pages/MetaCallback';
-import WaitingForApproval from './pages/WaitingForApproval';
-import ClientLogin from './pages/ClientLogin';
-import ClientWaitingForApproval from './pages/ClientWaitingForApproval';
-import ClientPasswordReset from './pages/ClientPasswordReset';
-import FirebaseAuthHandler from './pages/FirebaseAuthHandler';
-import PublicInstagramReportPage from './pages/PublicInstagramReportPage';
-import DemoInstagramReportPage from './pages/DemoInstagramReportPage';
-import NotificationsPage from './pages/NotificationsPage';
-import WorkloadPage from './pages/WorkloadPage';
-import TeamDirectoryPage from './pages/TeamDirectoryPage';
-import SlackCallback from './pages/SlackCallback';
-import GraphicProjectTracker from './pages/GraphicProjectTracker';
-import CanvasPage from './pages/CanvasPage';
+// ── Lazy-loaded pages (split into separate chunks) ────────────────────────────
+const V3Dashboard             = React.lazy(() => import('./v3-app/components/Dashboard'));
+const PermissionsManager      = React.lazy(() => import('./v3-app/pages/PermissionsManager'));
+const AnnouncementManager     = React.lazy(() => import('./v3-app/pages/AnnouncementManager'));
 
-// Module Pages
-import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
-
-// Error Handling
-import { RouteErrorPage } from './components/ErrorBoundary';
+const TasksPage               = React.lazy(() => import('./pages/TasksPage'));
+const ClientsPage             = React.lazy(() => import('./pages/ClientsPage'));
+const PostingPackages         = React.lazy(() => import('./pages/PostingPackages'));
+const ContentCalendar         = React.lazy(() => import('./pages/ContentCalendar'));
+const ContentCalendarPostDue  = React.lazy(() => import('./pages/ContentCalendarPostDue'));
+const CRMPage                 = React.lazy(() => import('./pages/CRMPage'));
+const TeamManagement          = React.lazy(() => import('./pages/TeamManagement'));
+const HRCalendar              = React.lazy(() => import('./pages/HRCalendar'));
+const HRAnalytics             = React.lazy(() => import('./pages/HRAnalytics'));
+const ClientHealthPage        = React.lazy(() => import('./pages/ClientHealthPage'));
+const ITSupportPage           = React.lazy(() => import('./pages/ITSupportPage'));
+const FeedbackSupportPage     = React.lazy(() => import('./pages/FeedbackSupportPage'));
+const ResourcesPage           = React.lazy(() => import('./pages/ResourcesPage'));
+const FeaturesPage            = React.lazy(() => import('./pages/FeaturesPage'));
+const MyTimeOff               = React.lazy(() => import('./pages/MyTimeOff'));
+const EmployeeSelfService     = React.lazy(() => import('./pages/EmployeeSelfService'));
+const OnboardingPage          = React.lazy(() => import('./pages/OnboardingPage'));
+const ContentManagerMessage   = React.lazy(() => import('./pages/ContentManagerMessage'));
+const AdminMessage            = React.lazy(() => import('./pages/AdminMessage'));
+const DirectorMessage         = React.lazy(() => import('./pages/DirectorMessage'));
+const SocialMediaManagerMessage = React.lazy(() => import('./pages/SocialMediaManagerMessage'));
+const GraphicDesignerMessage  = React.lazy(() => import('./pages/GraphicDesignerMessage'));
+const HRManagerMessage        = React.lazy(() => import('./pages/HRManagerMessage'));
+const SalesManagerMessage     = React.lazy(() => import('./pages/SalesManagerMessage'));
+const InstagramReportsPage    = React.lazy(() => import('./pages/InstagramReportsPage'));
+const MetaCallback            = React.lazy(() => import('./pages/MetaCallback'));
+const WaitingForApproval      = React.lazy(() => import('./pages/WaitingForApproval'));
+const ClientLogin             = React.lazy(() => import('./pages/ClientLogin'));
+const ClientWaitingForApproval = React.lazy(() => import('./pages/ClientWaitingForApproval'));
+const ClientPasswordReset     = React.lazy(() => import('./pages/ClientPasswordReset'));
+const FirebaseAuthHandler     = React.lazy(() => import('./pages/FirebaseAuthHandler'));
+const PublicInstagramReportPage = React.lazy(() => import('./pages/PublicInstagramReportPage'));
+const DemoInstagramReportPage = React.lazy(() => import('./pages/DemoInstagramReportPage'));
+const NotificationsPage       = React.lazy(() => import('./pages/NotificationsPage'));
+const WorkloadPage            = React.lazy(() => import('./pages/WorkloadPage'));
+const TeamDirectoryPage       = React.lazy(() => import('./pages/TeamDirectoryPage'));
+const SlackCallback           = React.lazy(() => import('./pages/SlackCallback'));
+const GraphicProjectTracker   = React.lazy(() => import('./pages/GraphicProjectTracker'));
+const CanvasPage              = React.lazy(() => import('./pages/CanvasPage'));
+const MyClientsPage           = React.lazy(() => import('./modules/my-clients/pages/MyClientsPage'));
 
 // Admin utilities — expose to console for migrations (must be after all imports)
 if (typeof window !== 'undefined') {
   window.importClients = importClients;
-  window.firestoreService = firestoreService; // For running migrations like assignMissingClientNumbers()
+  window.firestoreService = firestoreService;
+}
+
+// ── Shared loading fallback ───────────────────────────────────────────────────
+function PageSpinner() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 }
 
 function CanvasRedirect() {
@@ -117,16 +121,8 @@ function LoginPage() {
   const { currentUser, loading } = useAuth();
 
   // Show login page immediately (even while loading)
-  // This prevents blank screen while auth initializes
-  if (loading) {
-    return <V3Login />;
-  }
-
-  // Already logged in - go to dashboard
-  if (currentUser) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
+  if (loading) return <V3Login />;
+  if (currentUser) return <Navigate to="/dashboard" replace />;
   return <V3Login />;
 }
 
@@ -136,7 +132,6 @@ function LoginPage() {
 function ProtectedApp() {
   const { currentUser, loading } = useAuth();
 
-  // Show loading spinner while checking auth
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
@@ -148,13 +143,14 @@ function ProtectedApp() {
     );
   }
 
-  // Not logged in - redirect to login
-  if (!currentUser) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!currentUser) return <Navigate to="/login" replace />;
 
-  // Logged in - show V3 layout with child routes
-  return <V3Layout />;
+  // Suspense here catches lazy-loaded page chunks; sidebar stays visible during loads
+  return (
+    <Suspense fallback={<PageSpinner />}>
+      <V3Layout />
+    </Suspense>
+  );
 }
 
 // ============================================================================
@@ -166,75 +162,69 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorPage />,
     children: [
       // Public Instagram reports first so /report/:id is never matched by protected catch-all
-      { path: '/report/:publicLinkId', element: <PublicInstagramReportPage /> },
-      { path: '/report-demo', element: <DemoInstagramReportPage /> },
+      { path: '/report/:publicLinkId', element: <Suspense fallback={<PageSpinner />}><PublicInstagramReportPage /></Suspense> },
+      { path: '/report-demo',          element: <Suspense fallback={<PageSpinner />}><DemoInstagramReportPage /></Suspense> },
 
       // Public routes (no auth required)
-      { path: '/login', element: <LoginPage /> },
-      { path: '/client-login', element: <ClientLogin /> },
-      { path: '/client-password-reset', element: <ClientPasswordReset /> },
-      { path: '/client-waiting-for-approval', element: <ClientWaitingForApproval /> },
-      { path: '/waiting-for-approval', element: <WaitingForApproval /> },
-      { path: '/__/auth/action', element: <FirebaseAuthHandler /> },
-      
+      { path: '/login',                        element: <LoginPage /> },
+      { path: '/client-login',                 element: <Suspense fallback={<PageSpinner />}><ClientLogin /></Suspense> },
+      { path: '/client-password-reset',        element: <Suspense fallback={<PageSpinner />}><ClientPasswordReset /></Suspense> },
+      { path: '/client-waiting-for-approval',  element: <Suspense fallback={<PageSpinner />}><ClientWaitingForApproval /></Suspense> },
+      { path: '/waiting-for-approval',         element: <Suspense fallback={<PageSpinner />}><WaitingForApproval /></Suspense> },
+      { path: '/__/auth/action',               element: <Suspense fallback={<PageSpinner />}><FirebaseAuthHandler /></Suspense> },
+
       // OAuth callbacks
-      { path: '/slack-callback', element: <SlackCallback /> },
+      { path: '/slack-callback', element: <Suspense fallback={<PageSpinner />}><SlackCallback /></Suspense> },
 
       // Protected app routes (requires auth)
       {
         path: '/',
         element: <ProtectedApp />,
         children: [
-          // Dashboard - default route
-          { index: true, element: <V3Dashboard /> },
+          { index: true,   element: <V3Dashboard /> },
           { path: 'dashboard', element: <V3Dashboard /> },
 
-          // Permission-protected pages
-          { path: 'tasks', element: <PermissionRoute pageId="tasks" pageName="Tasks"><TasksPage /></PermissionRoute> },
-          { path: 'my-clients', element: <PermissionRoute pageId="my-clients" pageName="My Clients"><MyClientsPage /></PermissionRoute> },
-          { path: 'clients', element: <PermissionRoute pageId="clients" pageName="Client Management"><ClientsPage /></PermissionRoute> },
+          { path: 'tasks',           element: <PermissionRoute pageId="tasks" pageName="Tasks"><TasksPage /></PermissionRoute> },
+          { path: 'my-clients',      element: <PermissionRoute pageId="my-clients" pageName="My Clients"><MyClientsPage /></PermissionRoute> },
+          { path: 'clients',         element: <PermissionRoute pageId="clients" pageName="Client Management"><ClientsPage /></PermissionRoute> },
           { path: 'posting-packages', element: <PermissionRoute pageId="posting-packages" pageName="Posting Packages"><PostingPackages /></PermissionRoute> },
           { path: 'pending-clients', element: <Navigate to="/clients?tab=pending" replace /> },
           { path: 'content-calendar', element: <PermissionRoute pageId="content-calendar" pageName="Content Calendar"><ContentCalendar /></PermissionRoute> },
           { path: 'content-calendar/post-due/:id', element: <PermissionRoute pageId="content-calendar" pageName="Content Calendar"><ContentCalendarPostDue /></PermissionRoute> },
-          { path: 'crm', element: <PermissionRoute pageId="crm" pageName="CRM"><CRMPage /></PermissionRoute> },
-          { path: 'team', element: <PermissionRoute pageId="team" pageName="Team Management"><TeamManagement /></PermissionRoute> },
-          { path: 'hr-calendar', element: <PermissionRoute pageId="hr-calendar" pageName="HR Calendar"><HRCalendar /></PermissionRoute> },
-          { path: 'hr-analytics', element: <PermissionRoute pageId="hr-analytics" pageName="HR Analytics"><HRAnalytics /></PermissionRoute> },
-          { path: 'client-health', element: <PermissionRoute pageId="client-health" pageName="Client Health"><ClientHealthPage /></PermissionRoute> },
-          { path: 'it-support', element: <PermissionRoute pageId="it-support" pageName="IT Support"><ITSupportPage /></PermissionRoute> },
-          { path: 'tutorials', element: <Navigate to="/features#tutorials" replace /> },
-          { path: 'resources', element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
-          { path: 'features', element: <PermissionRoute pageId="features" pageName="Add-ons"><FeaturesPage /></PermissionRoute> },
-          { path: 'workload', element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },
+          { path: 'crm',             element: <PermissionRoute pageId="crm" pageName="CRM"><CRMPage /></PermissionRoute> },
+          { path: 'team',            element: <PermissionRoute pageId="team" pageName="Team Management"><TeamManagement /></PermissionRoute> },
+          { path: 'hr-calendar',     element: <PermissionRoute pageId="hr-calendar" pageName="HR Calendar"><HRCalendar /></PermissionRoute> },
+          { path: 'hr-analytics',    element: <PermissionRoute pageId="hr-analytics" pageName="HR Analytics"><HRAnalytics /></PermissionRoute> },
+          { path: 'client-health',   element: <PermissionRoute pageId="client-health" pageName="Client Health"><ClientHealthPage /></PermissionRoute> },
+          { path: 'it-support',      element: <PermissionRoute pageId="it-support" pageName="IT Support"><ITSupportPage /></PermissionRoute> },
+          { path: 'tutorials',       element: <Navigate to="/features#tutorials" replace /> },
+          { path: 'resources',       element: <PermissionRoute pageId="resources" pageName="Resources"><ResourcesPage /></PermissionRoute> },
+          { path: 'features',        element: <PermissionRoute pageId="features" pageName="Add-ons"><FeaturesPage /></PermissionRoute> },
+          { path: 'workload',        element: <PermissionRoute pageId="workload" pageName="Team Workload"><WorkloadPage /></PermissionRoute> },
           { path: 'graphic-projects', element: <PermissionRoute pageId="graphic-projects" pageName="Team Projects"><GraphicProjectTracker /></PermissionRoute> },
-          { path: 'workspaces', element: <PermissionRoute pageId="canvas" pageName="Workspaces"><CanvasPage /></PermissionRoute> },
-          { path: 'canvas', element: <CanvasRedirect /> },
+          { path: 'workspaces',      element: <PermissionRoute pageId="canvas" pageName="Workspaces"><CanvasPage /></PermissionRoute> },
+          { path: 'canvas',          element: <CanvasRedirect /> },
 
-          // Profile pages - always accessible when logged in
-          { path: 'my-time-off', element: <MyTimeOff /> },
-          { path: 'self-service', element: <EmployeeSelfService /> },
-          { path: 'team-directory', element: <TeamDirectoryPage /> },
-          { path: 'feedback-support', element: <FeedbackSupportPage /> },
-          { path: 'onboarding', element: <OnboardingPage /> },
-          { path: 'content-manager-message', element: <ContentManagerMessage /> },
-          { path: 'admin-message', element: <AdminMessage /> },
-          { path: 'director-message', element: <DirectorMessage /> },
-          { path: 'social-media-manager-message', element: <SocialMediaManagerMessage /> },
-          { path: 'graphic-designer-message', element: <GraphicDesignerMessage /> },
-          { path: 'hr-manager-message', element: <HRManagerMessage /> },
-          { path: 'sales-manager-message', element: <SalesManagerMessage /> },
-          { path: 'notifications', element: <NotificationsPage /> },
+          { path: 'my-time-off',        element: <MyTimeOff /> },
+          { path: 'self-service',       element: <EmployeeSelfService /> },
+          { path: 'team-directory',     element: <TeamDirectoryPage /> },
+          { path: 'feedback-support',   element: <FeedbackSupportPage /> },
+          { path: 'onboarding',         element: <OnboardingPage /> },
+          { path: 'content-manager-message',        element: <ContentManagerMessage /> },
+          { path: 'admin-message',                  element: <AdminMessage /> },
+          { path: 'director-message',               element: <DirectorMessage /> },
+          { path: 'social-media-manager-message',   element: <SocialMediaManagerMessage /> },
+          { path: 'graphic-designer-message',       element: <GraphicDesignerMessage /> },
+          { path: 'hr-manager-message',             element: <HRManagerMessage /> },
+          { path: 'sales-manager-message',          element: <SalesManagerMessage /> },
+          { path: 'notifications',      element: <NotificationsPage /> },
 
-          // Admin pages
-          { path: 'permissions', element: <PermissionsManager /> },
-          { path: 'announcements', element: <AnnouncementManager /> },
-          { path: 'instagram-reports', element: <InstagramReportsPage /> },
+          { path: 'permissions',        element: <PermissionsManager /> },
+          { path: 'announcements',      element: <AnnouncementManager /> },
+          { path: 'instagram-reports',  element: <InstagramReportsPage /> },
 
-          // Meta OAuth callback
-          { path: 'meta-callback', element: <MetaCallback /> },
+          { path: 'meta-callback',      element: <MetaCallback /> },
 
-          // Catch-all - redirect to dashboard
           { path: '*', element: <Navigate to="/dashboard" replace /> },
         ],
       },

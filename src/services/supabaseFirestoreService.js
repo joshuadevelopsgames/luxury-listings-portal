@@ -37,6 +37,10 @@ const clean = (obj) => {
 const _cache = new Map();
 const CACHE_TTL = 30_000;
 
+// ─── In-flight deduplication ─────────────────────────────────────────────────
+// If two listeners subscribe simultaneously (empty cache), only one fetch fires.
+const _inFlight = new Map(); // cacheKey → Promise<data>
+
 function cacheGet(key) {
   const entry = _cache.get(key);
   if (!entry) return null;
@@ -50,6 +54,9 @@ function cacheSet(key, data, ttl = CACHE_TTL) {
 function cacheInvalidate(prefix) {
   for (const k of _cache.keys()) {
     if (k.startsWith(prefix)) _cache.delete(k);
+  }
+  for (const k of _inFlight.keys()) {
+    if (k.startsWith(prefix)) _inFlight.delete(k);
   }
 }
 
@@ -74,17 +81,25 @@ function getTableChannel(table) {
 }
 
 /** Realtime: fetch + subscribe pattern. Returns unsubscribe fn.
- *  All callers for the same table share one WebSocket channel. */
+ *  All callers for the same table share one WebSocket channel.
+ *  In-flight dedup: if two listeners subscribe simultaneously with an empty
+ *  cache, only one network request fires; both callbacks receive the result. */
 function realtimeListener(table, _filter, fetcher, callback) {
-  // Serve from cache if fresh, otherwise fetch
+  // Serve from cache if fresh
   const cacheKey = `${table}:${_filter || 'all'}`;
   const cached = cacheGet(cacheKey);
   if (cached) {
     callback(cached);
   } else {
-    fetcher()
-      .then(data => { cacheSet(cacheKey, data); callback(data); })
-      .catch(() => callback([]));
+    // Reuse any in-flight request for this exact key
+    let promise = _inFlight.get(cacheKey);
+    if (!promise) {
+      promise = fetcher()
+        .then(data => { cacheSet(cacheKey, data); _inFlight.delete(cacheKey); return data; })
+        .catch(() => { _inFlight.delete(cacheKey); return []; });
+      _inFlight.set(cacheKey, promise);
+    }
+    promise.then(data => callback(data));
   }
 
   // Register on shared table channel
