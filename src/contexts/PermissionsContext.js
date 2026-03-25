@@ -2,6 +2,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth } from './AuthContext';
 import { supabaseService } from '../services/supabaseService';
 import { isSystemAdmin as checkIsSystemAdmin, onSystemAdminsChange } from '../utils/systemAdmins';
+import { USER_ROLES } from '../entities/UserRoles';
+
+// Roles that should always have access to the HR Calendar / all leave requests
+const ADMIN_ROLES = [USER_ROLES.ADMIN, USER_ROLES.DIRECTOR, USER_ROLES.HR_MANAGER];
 
 const PermissionsContext = createContext();
 
@@ -80,7 +84,9 @@ export function PermissionsProvider({ children }) {
     // This prevents PermissionRoute from flashing "Access Denied" during the
     // window where authHydrated flips to true but currentUser.pagePermissions
     // is still [] from the stripped display cache (e.g. TOKEN_REFRESHED race).
-    const permissionsReady = adminStatus || seededPages.length > 0;
+    const userRoleVal = currentUser?.role || currentUser?.primaryRole;
+    const isAdminRoleUser = ADMIN_ROLES.includes(userRoleVal);
+    const permissionsReady = adminStatus || isAdminRoleUser || seededPages.length > 0;
     if (authHydrated && permissionsReady) {
       setLoading(false);
     }
@@ -113,9 +119,13 @@ export function PermissionsProvider({ children }) {
   // ── Primary API ──────────────────────────────────────────────────────
 
   /** Can the user see this sidebar page? */
+  const userRole = currentUser?.role || currentUser?.primaryRole;
+  const isAdminRole = ADMIN_ROLES.includes(userRole);
+
   const hasPageAccess = (pageId) => {
     if (isDemoViewOnly) return true;
     if (isSystemAdmin) return true;
+    if (isAdminRole) return true; // Admin/Director/HR roles get full page access
     if (pageId === 'dashboard') return true;
     return pages.includes(pageId);
   };
