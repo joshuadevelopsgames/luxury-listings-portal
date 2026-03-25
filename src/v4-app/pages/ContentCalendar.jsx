@@ -11,7 +11,7 @@ import {
 import { format, addDays, isToday, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import XLogo from '../../assets/Twitter-X-logo.png';
 import XLogoSelected from '../../assets/x-logo-selected.png';
-import { PERMISSIONS } from '../../entities/Permissions';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { googleSheetsService } from '../services/googleSheetsService';
@@ -27,9 +27,9 @@ const ContentCalendar = () => {
   const { confirm } = useConfirm();
   
   // Check permissions
-  const canCreateContent = hasPermission(PERMISSIONS.CREATE_CONTENT);
-  const canDeleteContent = hasPermission(PERMISSIONS.DELETE_CONTENT);
-  const canApproveContent = hasPermission(PERMISSIONS.APPROVE_CONTENT);
+  const canCreateContent = hasPermission(CAPABILITIES.CREATE_CONTENT);
+  const canDeleteContent = hasPermission(CAPABILITIES.DELETE_CONTENT);
+  const canApproveContent = hasPermission(CAPABILITIES.APPROVE_CONTENT);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);

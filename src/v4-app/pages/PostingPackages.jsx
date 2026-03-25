@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
+import { usePermissions } from '../contexts/PermissionsContext';
 import { createPortal } from 'react-dom';
 import { 
   Users, 
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
-import { PERMISSIONS } from '../../entities/Permissions';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../../config/apiKeys';
 import { supabaseService } from '../../services/supabaseService';
@@ -55,11 +55,11 @@ export default function PostingPackages() {
   const [searchParams] = useSearchParams();
   const { currentUser, hasPermission } = useAuth();
   const { confirm } = useConfirm();
-  const { hasFeaturePermission } = usePermissions();
-  
+  const { hasCapability } = usePermissions();
+
   // Check permissions
-  const canManagePackages = hasPermission(PERMISSIONS.MANAGE_POSTING_PACKAGES);
-  const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
+  const canManagePackages = hasPermission(CAPABILITIES.MANAGE_POSTING_PACKAGES);
+  const canViewFinancials = hasCapability(CAPABILITIES.VIEW_FINANCIALS);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

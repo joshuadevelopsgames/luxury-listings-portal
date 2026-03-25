@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
+import { usePermissions } from '../contexts/PermissionsContext';
 import Calendar from '../../components/ui/calendar';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
-import { PERMISSIONS } from '../../entities/Permissions';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { supabaseService } from '../../services/supabaseService';
 import { timeOffNotifications } from '../services/timeOffNotificationService';
 import { calculateBusinessDays, getLeaveTypeDisplayLabel } from '../../utils/timeOffHelpers';
@@ -45,15 +45,15 @@ import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 
 const HRCalendar = () => {
   const { currentUser, hasPermission } = useAuth();
-  const { hasFeaturePermission } = usePermissions();
+  const { hasCapability } = usePermissions();
   // Approve time off: Users & Permissions feature "Approve Time Off" OR legacy isTimeOffAdmin on user doc
-  const canApproveByFeature = hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
+  const canApproveByFeature = hasCapability(CAPABILITIES.APPROVE_TIME_OFF);
   const [firestoreTimeOffAdmin, setFirestoreTimeOffAdmin] = useState(false);
   const isTimeOffAdmin = canApproveByFeature || firestoreTimeOffAdmin;
 
-  const canManageLeave = hasPermission(PERMISSIONS.MANAGE_LEAVE_REQUESTS);
-  const canApproveLeave = hasPermission(PERMISSIONS.APPROVE_LEAVE);
-  const canViewHRData = hasPermission(PERMISSIONS.VIEW_HR_DATA);
+  const canManageLeave = hasPermission(CAPABILITIES.MANAGE_LEAVE_REQUESTS);
+  const canApproveLeave = hasPermission(CAPABILITIES.APPROVE_LEAVE);
+  const canViewHRData = hasPermission(CAPABILITIES.VIEW_HR_DATA);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showNotesModal, setShowNotesModal] = useState(null); // 'approve' or 'reject' or null
   const [processingRequest, setProcessingRequest] = useState(null);

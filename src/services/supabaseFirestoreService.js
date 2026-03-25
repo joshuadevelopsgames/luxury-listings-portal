@@ -254,6 +254,11 @@ class SupabaseService {
       pagePermissions: Array.isArray(p.page_permissions) ? p.page_permissions : [],
       featurePermissions: Array.isArray(p.feature_permissions) ? p.feature_permissions : [],
       customPermissions: Array.isArray(p.custom_permissions) ? p.custom_permissions : [],
+      // Merged capabilities: single source of truth for all action permissions
+      capabilities: [...new Set([
+        ...(Array.isArray(p.feature_permissions) ? p.feature_permissions : []),
+        ...(Array.isArray(p.custom_permissions) ? p.custom_permissions : []),
+      ])],
       leaveBalances: p.leave_balances || {},
       isTimeOffAdmin: p.is_time_off_admin || false,
       onboardingCompleted: p.onboarding_completed || false,
@@ -1762,12 +1767,15 @@ class SupabaseService {
   // ===== PAGE PERMISSIONS =====
 
   _mapPermissionsFromDoc(userData) {
-    if (!userData) return { pages: [], features: [], adminPermissions: false, version: 0 };
+    if (!userData) return { pages: [], features: [], capabilities: [], adminPermissions: false, version: 0 };
     const pages = Array.isArray(userData.pagePermissions) ? userData.pagePermissions
       : Array.isArray(userData.page_permissions) ? userData.page_permissions : [];
     const features = Array.isArray(userData.featurePermissions) ? userData.featurePermissions
       : Array.isArray(userData.feature_permissions) ? userData.feature_permissions : [];
-    return { pages, features, adminPermissions: false, version: userData.permissionsVersion || userData.permissions_version || 0 };
+    const customs = Array.isArray(userData.customPermissions) ? userData.customPermissions
+      : Array.isArray(userData.custom_permissions) ? userData.custom_permissions : [];
+    const capabilities = [...new Set([...features, ...customs])];
+    return { pages, features, capabilities, adminPermissions: false, version: userData.permissionsVersion || userData.permissions_version || 0 };
   }
 
   getUserPermissions(userEmail, options = {}) {

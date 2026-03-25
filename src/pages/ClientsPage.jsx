@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ClientProfilesList from '../components/client/ClientProfilesList';
 import { Users, FolderOpen, Plus } from 'lucide-react';
-import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
+import { usePermissions } from '../contexts/PermissionsContext';
+import { CAPABILITIES } from '../entities/Capabilities';
 
 const ClientsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabParam === 'internal' ? 'internal' : 'profiles');
-  const { hasFeaturePermission } = usePermissions();
-  const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
+  const { hasCapability } = usePermissions();
+  const canManageClients = hasCapability(CAPABILITIES.MANAGE_CLIENTS);
 
   // Sync URL with tab (e.g. /clients?tab=internal)
   useEffect(() => {

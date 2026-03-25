@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
+import { usePermissions } from '../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { supabaseService } from '../../services/supabaseService';
@@ -132,9 +133,9 @@ const groupReportsByYearMonth = (reportList) => {
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
   const { currentUser, isViewingAs } = useAuth();
-  const { isSystemAdmin, hasFeaturePermission, loading: permissionsLoading } = usePermissions();
+  const { isSystemAdmin, hasCapability, loading: permissionsLoading } = usePermissions();
   const { confirm } = useConfirm();
-  const effectiveIsAdmin = isSystemAdmin || hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_REPORTS);
+  const effectiveIsAdmin = isSystemAdmin || hasCapability(CAPABILITIES.VIEW_ALL_REPORTS);
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
@@ -636,7 +637,7 @@ const InstagramReportsPage = () => {
           >
             Internal
           </button>
-          {hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_INSTAGRAM_REPORTS) && (
+          {hasCapability(CAPABILITIES.MANAGE_INSTAGRAM_REPORTS) && (
             <button
               type="button"
               onClick={() => setActiveTab('archive')}

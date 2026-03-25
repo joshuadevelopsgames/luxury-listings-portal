@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
-import { FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import {
   X,
   Mail,
@@ -52,10 +52,10 @@ const ClientDetailModal = ({
   showManagerAssignment = false
 }) => {
   const { currentUser } = useAuth();
-  const { hasPermission, hasFeaturePermission } = usePermissions();
-  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
-  const canEdit = hasPermission('clients');
-  const canAssignManagers = hasPermission('assign_managers');
+  const { hasCapability } = usePermissions();
+  const canManageEmployeeProfiles = hasCapability(CAPABILITIES.MANAGE_EMPLOYEE_PROFILES);
+  const canEdit = hasCapability(CAPABILITIES.MANAGE_CLIENTS);
+  const canAssignManagers = hasCapability(CAPABILITIES.ASSIGN_CLIENT_MANAGERS);
   
   const [localClient, setLocalClient] = useState(client);
   const [isEditing, setIsEditing] = useState(false);

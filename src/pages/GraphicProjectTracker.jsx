@@ -10,9 +10,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Calendar,
   Clock,
   CheckCircle2,
@@ -33,7 +33,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
+import { usePermissions } from '../contexts/PermissionsContext';
+import { CAPABILITIES } from '../entities/Capabilities';
 import { useConfirm } from '../contexts/ConfirmContext';
 
 // Import data for one-time Excel import
@@ -105,8 +106,8 @@ const GRAPHIC_TEAM = [
 
 const GraphicProjectTracker = () => {
   const { currentUser } = useAuth();
-  const { hasFeaturePermission } = usePermissions();
-  const canManageGraphicProjects = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_GRAPHIC_PROJECTS);
+  const { hasCapability } = usePermissions();
+  const canManageGraphicProjects = hasCapability(CAPABILITIES.MANAGE_GRAPHIC_PROJECTS);
   const { confirm } = useConfirm();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);

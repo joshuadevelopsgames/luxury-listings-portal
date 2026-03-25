@@ -281,6 +281,11 @@ export function AuthProvider({ children }) {
     setChatbotResetTrigger((prev) => prev + 1);
   }
 
+  /**
+   * @deprecated Use usePermissions().hasPageAccess() or usePermissions().hasCapability() instead.
+   * AuthContext should only handle authentication, not authorization.
+   * Kept for backwards compatibility during migration.
+   */
   function hasPermission(permission) {
     return resolvePermission({
       permission,

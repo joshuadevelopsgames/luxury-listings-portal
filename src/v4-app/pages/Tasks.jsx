@@ -35,7 +35,7 @@ import { DailyTask } from '../../entities/DailyTask';
 import { supabaseService } from '../../services/supabaseService';
 import { reminderService } from '../services/reminderService';
 import { format } from 'date-fns';
-import { PERMISSIONS } from '../../entities/Permissions';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { parseNaturalLanguageDate } from '../../utils/dateParser';
 import { getVancouverToday, getVancouverTodayMidnight } from '../../utils/vancouverTime';
 
@@ -167,9 +167,9 @@ const TasksPage = () => {
   // If user can access the Tasks page (module enabled), they can create tasks
   // No separate feature permission needed - module access = full access
   const canCreateTasks = true;
-  const canAssignTasks = rolePerms.canAssignTasks === true || hasPermission(PERMISSIONS.ASSIGN_TASKS);
-  const canViewAllTasks = rolePerms.canViewAllTasks === true || hasPermission(PERMISSIONS.VIEW_ALL_TASKS);
-  const canDeleteAnyTask = hasPermission(PERMISSIONS.DELETE_ANY_TASK);
+  const canAssignTasks = rolePerms.canAssignTasks === true || hasPermission(CAPABILITIES.ASSIGN_TASKS);
+  const canViewAllTasks = rolePerms.canViewAllTasks === true || hasPermission(CAPABILITIES.VIEW_ALL_TASKS);
+  const canDeleteAnyTask = hasPermission(CAPABILITIES.DELETE_ANY_TASK);
   const [showForm, setShowForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);

@@ -5,6 +5,7 @@ import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@d
 import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { useClients } from '../../contexts/ClientsContext';
 import { supabaseService } from '../../services/supabaseService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';

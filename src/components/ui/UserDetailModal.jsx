@@ -6,7 +6,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
+import { usePermissions } from '../../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import {
   X,
   Mail,
@@ -25,7 +26,6 @@ import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabaseService } from '../../services/supabaseService';
 import { toast } from 'react-hot-toast';
-import { PERMISSIONS } from '../../entities/Permissions';
 
 // Department options - keep in sync with PermissionsManager.jsx
 const DEPARTMENTS = [
@@ -58,14 +58,14 @@ const UserDetailModal = ({
   onClose,
   onUserUpdate = null
 }) => {
-  const { currentUser, hasPermission } = useAuth();
-  const { hasFeaturePermission } = usePermissions();
-  const canManageEmployeeProfiles = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_EMPLOYEE_PROFILES);
-  
+  const { currentUser } = useAuth();
+  const { hasCapability } = usePermissions();
+  const canManageEmployeeProfiles = hasCapability(CAPABILITIES.MANAGE_EMPLOYEE_PROFILES);
+
   // Permission checks
-  const canEditAnyName = hasPermission(PERMISSIONS.EDIT_ANY_NAME) || canManageEmployeeProfiles;
-  const canEditOwnName = hasPermission(PERMISSIONS.EDIT_OWN_NAME);
-  const canEditAnyProfile = hasPermission(PERMISSIONS.EDIT_ANY_PROFILE) || canManageEmployeeProfiles;
+  const canEditAnyName = hasCapability(CAPABILITIES.EDIT_ANY_NAME) || canManageEmployeeProfiles;
+  const canEditOwnName = hasCapability(CAPABILITIES.EDIT_OWN_NAME);
+  const canEditAnyProfile = hasCapability(CAPABILITIES.EDIT_ANY_PROFILE) || canManageEmployeeProfiles;
   const isOwnProfile = currentUser?.email?.toLowerCase() === user?.email?.toLowerCase();
   const canEdit = canEditAnyProfile || isOwnProfile;
   

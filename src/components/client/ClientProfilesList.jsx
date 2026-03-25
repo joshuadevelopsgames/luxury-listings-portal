@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { openEmailInGmail } from '../../utils/gmailCompose';
-import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
+import { usePermissions } from '../../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { 
   Users, 
   Mail, 
@@ -61,7 +62,7 @@ const XIcon = ({ className }) => (
 
 const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
   const { currentUser } = useAuth();
-  const { hasFeaturePermission } = usePermissions();
+  const { hasCapability } = usePermissions();
   const { confirm } = useConfirm();
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -106,9 +107,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
   const [possibleExistingMatches, setPossibleExistingMatches] = useState([]);
 
   // Permissions
-  const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
-  const canAssignManagers = hasFeaturePermission(FEATURE_PERMISSIONS.ASSIGN_CLIENT_MANAGERS);
-  const canEditPackages = hasFeaturePermission(FEATURE_PERMISSIONS.EDIT_CLIENT_PACKAGES);
+  const canManageClients = hasCapability(CAPABILITIES.MANAGE_CLIENTS);
+  const canAssignManagers = hasCapability(CAPABILITIES.ASSIGN_CLIENT_MANAGERS);
+  const canEditPackages = hasCapability(CAPABILITIES.EDIT_CLIENT_PACKAGES);
 
   // Load data once on mount (no real-time listener for performance)
   useEffect(() => {

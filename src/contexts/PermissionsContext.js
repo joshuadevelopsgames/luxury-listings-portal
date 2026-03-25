@@ -2,48 +2,39 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth } from './AuthContext';
 import { supabaseService } from '../services/supabaseService';
 import { isSystemAdmin as checkIsSystemAdmin, onSystemAdminsChange } from '../utils/systemAdmins';
-// getBaseModuleIds import removed - base modules now check explicit permissions
 
 const PermissionsContext = createContext();
 
-// Feature permissions - granular access within pages
-export const FEATURE_PERMISSIONS = {
-  VIEW_FINANCIALS: 'view_financials',      // See salary, compensation, financial data
-  MANAGE_USERS: 'manage_users',            // View users & permissions; only system admin can add/remove or change permissions
-  APPROVE_TIME_OFF: 'approve_time_off',    // Approve/deny time off requests
-  VIEW_ANALYTICS: 'view_analytics',        // Access to analytics dashboards
-  // Client Management
-  MANAGE_CLIENTS: 'manage_clients',        // Edit client info, remove clients
-  ASSIGN_CLIENT_MANAGERS: 'assign_client_managers', // Assign managers to clients
-  EDIT_CLIENT_PACKAGES: 'edit_client_packages',     // Edit package details
-  VIEW_ALL_REPORTS: 'view_all_reports',             // See and edit all Instagram reports (not just own)
-  APPROVE_CONTENT: 'approve_content',               // Read/update all content items (approval workflow)
-  // Admin Tools
-  MANAGE_CHATS: 'manage_chats',                     // View and respond to user chats
-  MANAGE_FEEDBACK: 'manage_feedback',               // View and manage bug reports and feature requests
-  MANAGE_GRAPHIC_PROJECTS: 'manage_graphic_projects', // Archive and delete graphic projects
-  MANAGE_RESOURCES: 'manage_resources',             // Create and edit resources
-  MANAGE_EMPLOYEE_PROFILES: 'manage_employee_profiles', // Edit all employee profile fields
-  VIEW_ALL_MODULES: 'view_all_modules',             // View all available modules in onboarding
-  MANAGE_WORKLOAD: 'manage_workload',               // Access workload management features
-  MANAGE_ALL_CLIENTS: 'manage_all_clients',         // Manage all clients (not just assigned)
-  VIEW_AUDIT_TRAIL: 'view_audit_trail',             // View audit information (created by, etc.)
-  MANAGE_INSTAGRAM_REPORTS: 'manage_instagram_reports', // Archive and manage all Instagram reports
-};
+/**
+ * @deprecated Import from '../entities/Capabilities' instead.
+ * Kept here only so existing `import { FEATURE_PERMISSIONS } from './PermissionsContext'`
+ * statements don't break until they're migrated.
+ */
+export { CAPABILITIES as FEATURE_PERMISSIONS } from '../entities/Capabilities';
 
 export function usePermissions() {
   return useContext(PermissionsContext);
 }
 
 /**
- * PermissionsProvider - Fetches permissions from Firestore on every page load
- * Always gets fresh data from server so admin changes take effect on refresh
- * Supports both page permissions and feature permissions (granular access)
+ * PermissionsProvider — the SINGLE authority for all authorization checks.
+ *
+ * Two concepts:
+ *   1. PAGE ACCESS  — which sidebar pages can a user see?
+ *      → hasPageAccess(pageId)
+ *   2. CAPABILITIES — what actions can a user take?
+ *      → hasCapability(capabilityId)
+ *
+ * System admins bypass all capability checks automatically.
+ * Demo view-only users can see all pages but have no capabilities.
+ *
+ * Deprecated aliases (`hasPermission`, `hasFeaturePermission`) are provided
+ * for backwards compatibility and will be removed in a future release.
  */
 export function PermissionsProvider({ children }) {
   const { currentUser } = useAuth();
-  const [permissions, setPermissions] = useState([]);
-  const [featurePermissions, setFeaturePermissions] = useState([]);
+  const [pages, setPages] = useState([]);
+  const [capabilities, setCapabilities] = useState([]);
   const [permissionsVersion, setPermissionsVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
@@ -54,11 +45,11 @@ export function PermissionsProvider({ children }) {
 
     try {
       const result = await supabaseService.getUserPermissions(currentUser.email);
-      const pagePerms = result?.pages || result || [];
-      const featurePerms = result?.features || [];
+      const pagePerms = Array.isArray(result?.pages) ? result.pages : (Array.isArray(result) ? result : []);
+      const caps = Array.isArray(result?.capabilities) ? result.capabilities : [];
 
-      setPermissions(Array.isArray(pagePerms) ? pagePerms : []);
-      setFeaturePermissions(Array.isArray(featurePerms) ? featurePerms : []);
+      setPages(pagePerms);
+      setCapabilities(caps);
       if (result?.version !== undefined) setPermissionsVersion(result.version);
     } catch (error) {
       console.error('Error refreshing permissions:', error);
@@ -67,55 +58,46 @@ export function PermissionsProvider({ children }) {
 
   useEffect(() => {
     if (!currentUser?.email) {
-      setPermissions([]);
-      setFeaturePermissions([]);
+      setPages([]);
+      setCapabilities([]);
       setLoading(false);
       setIsSystemAdmin(false);
       return;
     }
 
-    // Demo view-only: see all pages, no feature (edit) permissions
+    // Demo view-only: see all pages, no capabilities
     const isDemoViewOnly = !!currentUser.isDemoViewOnly;
     if (isDemoViewOnly) {
       setIsSystemAdmin(false);
-      setPermissions([]); // hasPermission will return true for all when isDemoViewOnly
-      setFeaturePermissions([]);
+      setPages([]);
+      setCapabilities([]);
       setLoading(false);
       return;
     }
 
-    // Subscribe to admin changes so isSystemAdmin updates when the admin list loads from Firestore
+    // Subscribe to admin changes
     const unsubscribeAdmins = onSystemAdminsChange((adminEmails) => {
       const adminStatus = adminEmails.includes(currentUser.email.toLowerCase());
       setIsSystemAdmin(adminStatus);
     });
 
-    // Check if system admin (dynamic from Firestore system_config/admins)
     const adminStatus = checkIsSystemAdmin(currentUser.email);
     setIsSystemAdmin(adminStatus);
 
-    // System admins now use the same permission-based logic as everyone else, 
-    // except for the Permissions UI which checks isSystemAdmin separately.
-    // So we proceed to load permissions even if adminStatus is true.
-
-    // Subscribe to permission changes. Only apply updates whose version >= current
-    // to prevent stale realtime events from overwriting newer data.
+    // Subscribe to permission changes with version-based stale rejection
     const sub = supabaseService.getUserPermissions(currentUser.email, {
       subscribe: true,
       onUpdate: (result) => {
         const incomingVersion = result?.version ?? 0;
         setPermissionsVersion((prevVersion) => {
           if (incomingVersion < prevVersion) {
-            // Stale update — ignore it
-            return prevVersion;
+            return prevVersion; // Stale — ignore
           }
-          // Newer or same version — apply the permissions
-          setPermissions(Array.isArray(result?.pages) ? result.pages : []);
-          setFeaturePermissions(Array.isArray(result?.features) ? result.features : []);
+          setPages(Array.isArray(result?.pages) ? result.pages : []);
+          setCapabilities(Array.isArray(result?.capabilities) ? result.capabilities : []);
           setLoading(false);
           return incomingVersion;
         });
-        // Always clear loading even if version was stale
         setLoading(false);
       }
     });
@@ -126,41 +108,56 @@ export function PermissionsProvider({ children }) {
     };
   }, [currentUser?.email]);
 
-  // Demo view-only: see all pages, no edit (handled in state: permissions/featurePermissions empty, isDemoViewOnly set in AuthContext)
   const isDemoViewOnly = !!currentUser?.isDemoViewOnly;
 
-  // Check if user has permission for a specific page
-  const hasPermission = (pageId) => {
-    // Demo view-only can see everything (all pages)
+  // ── Primary API ──────────────────────────────────────────────────────
+
+  /** Can the user see this sidebar page? */
+  const hasPageAccess = (pageId) => {
     if (isDemoViewOnly) return true;
-    
-    // Dashboard is always accessible
     if (pageId === 'dashboard') return true;
-    
-    // Check user's explicit permissions (including base modules)
-    // Base modules can now be disabled per-user, so check explicit permissions
-    return permissions.includes(pageId);
+    return pages.includes(pageId);
   };
 
-  // Check if user has a specific feature permission (granular access)
-  const hasFeaturePermission = (featureId) => {
-    // Demo view-only: no edit/manage features
+  /** Can the user perform this action? System admins pass all checks. */
+  const hasCapability = (capabilityId) => {
     if (isDemoViewOnly) return false;
-    
-    // Check user's feature permissions
-    return featurePermissions.includes(featureId);
+    if (isSystemAdmin) return true;
+    return capabilities.includes(capabilityId);
+  };
+
+  // ── Deprecated aliases (remove after full migration) ─────────────────
+
+  /** @deprecated Use hasPageAccess() */
+  const hasPermission = hasPageAccess;
+
+  /** @deprecated Use hasCapability() */
+  const hasFeaturePermission = (featureId) => {
+    // Old callers don't expect admin bypass, but new system provides it
+    if (isDemoViewOnly) return false;
+    if (isSystemAdmin) return true;
+    return capabilities.includes(featureId);
   };
 
   const value = {
-    permissions,
-    featurePermissions,
+    // New API
+    pages,
+    capabilities,
+    hasPageAccess,
+    hasCapability,
+
+    // Backwards compat (deprecated)
+    permissions: pages,
+    featurePermissions: capabilities,
+    hasPermission,
+    hasFeaturePermission,
+
+    // Metadata
     permissionsVersion,
     loading,
     isSystemAdmin,
     isDemoViewOnly,
-    hasPermission,
-    hasFeaturePermission,
-    refreshPermissions // Expose for manual refresh when needed
+    refreshPermissions,
   };
 
   return (

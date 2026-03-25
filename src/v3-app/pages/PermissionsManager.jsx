@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { usePendingUsers } from '../../contexts/PendingUsersContext';
 import { supabaseService } from '../../services/supabaseService';
-import { FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { 
   Shield, 
   Search, 
@@ -46,54 +46,54 @@ import { toast } from 'react-hot-toast';
 import { modules as moduleRegistry, getBaseModuleIds } from '../../modules/registry';
 import { USER_ROLES } from '../../entities/UserRoles';
 import { getSystemAdmins, isSystemAdmin as checkIsSystemAdmin } from '../../utils/systemAdmins';
-import { PERMISSIONS } from '../../entities/Permissions';
+import { usePermissions } from '../../contexts/PermissionsContext';
 import EmployeeLink from '../../components/ui/EmployeeLink';
 import EmployeeDetailsModal from '../../components/EmployeeDetailsModal';
 import OnlineIndicator, { isOnline } from '../../components/ui/OnlineIndicator';
 
 // Feature permissions with descriptions
 const ALL_FEATURES = {
-  [FEATURE_PERMISSIONS.VIEW_FINANCIALS]: { 
+  [CAPABILITIES.VIEW_FINANCIALS]: { 
     name: 'View Financial Data', 
     icon: DollarSign, 
     description: 'See salary, compensation, and other financial information' 
   },
-  [FEATURE_PERMISSIONS.MANAGE_USERS]: { 
+  [CAPABILITIES.MANAGE_USERS]: { 
     name: 'Manage Users', 
     icon: UserCog, 
     description: 'View Users & Permissions page. Only system administrators can add, remove, or change user permissions.' 
   },
-  [FEATURE_PERMISSIONS.APPROVE_TIME_OFF]: { 
+  [CAPABILITIES.APPROVE_TIME_OFF]: { 
     name: 'Approve Time Off', 
     icon: Clock, 
     description: 'Approve or deny employee time off requests' 
   },
-  [FEATURE_PERMISSIONS.VIEW_ANALYTICS]: { 
+  [CAPABILITIES.VIEW_ANALYTICS]: { 
     name: 'View Analytics', 
     icon: BarChart3, 
     description: 'Access analytics dashboards and reports' 
   },
-  [FEATURE_PERMISSIONS.MANAGE_CLIENTS]: { 
+  [CAPABILITIES.MANAGE_CLIENTS]: { 
     name: 'Manage Clients', 
     icon: Users, 
     description: 'Edit client info, remove clients from the system' 
   },
-  [FEATURE_PERMISSIONS.ASSIGN_CLIENT_MANAGERS]: { 
+  [CAPABILITIES.ASSIGN_CLIENT_MANAGERS]: { 
     name: 'Assign Client Managers', 
     icon: UserPlus, 
     description: 'Assign social media managers to clients' 
   },
-  [FEATURE_PERMISSIONS.EDIT_CLIENT_PACKAGES]: { 
+  [CAPABILITIES.EDIT_CLIENT_PACKAGES]: { 
     name: 'Edit Client Packages', 
     icon: Briefcase, 
     description: 'Edit package type, posts remaining, and payment status' 
   },
-  [FEATURE_PERMISSIONS.VIEW_ALL_REPORTS]: { 
+  [CAPABILITIES.VIEW_ALL_REPORTS]: { 
     name: 'See All Reports', 
     icon: BarChart3, 
     description: 'View and edit all Instagram analytics reports (not just your own)' 
   },
-  [FEATURE_PERMISSIONS.APPROVE_CONTENT]: { 
+  [CAPABILITIES.APPROVE_CONTENT]: { 
     name: 'Approve Content', 
     icon: Check, 
     description: 'View and approve/reject all team content items (approval workflow)' 
@@ -163,9 +163,10 @@ const getDepartmentForRole = (role) => {
 };
 
 const PermissionsManager = () => {
-  const { currentUser, hasPermission } = useAuth();
+  const { currentUser } = useAuth();
   const { startViewingAs } = useViewAs();
   const { pendingUsers, removePendingUser, refreshPendingUsers } = usePendingUsers();
+  const { hasPageAccess } = usePermissions();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -331,7 +332,7 @@ const PermissionsManager = () => {
       setSaving(userEmail);
       if (isSystemAdmin) await supabaseService.ensureEmailLowerClaim();
       const features = userFeaturePermissions[userEmail] || [];
-      const hasApproveTimeOff = features.includes(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
+      const hasApproveTimeOff = features.includes(CAPABILITIES.APPROVE_TIME_OFF);
       await supabaseService.setUserFullPermissions(userEmail, {
         pages: userPermissions[userEmail] || [],
         features
@@ -523,7 +524,7 @@ const PermissionsManager = () => {
     displayNameFor(user).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canApproveUsers = isSystemAdmin || hasPermission(PERMISSIONS.APPROVE_USERS); // isSystemAdmin kept for safety access to Permissions UI
+  const canApproveUsers = isSystemAdmin || hasPageAccess('users'); // isSystemAdmin kept for safety access to Permissions UI
   // Only system admins can add/remove users or change permissions; anyone with MANAGE_USERS can view
   const canEditPermissions = isSystemAdmin;
 
@@ -580,7 +581,7 @@ const PermissionsManager = () => {
     }
   };
 
-  const canAccess = isSystemAdmin || hasPermission(PERMISSIONS.MANAGE_USERS); // isSystemAdmin kept for safety access to Permissions UI
+  const canAccess = isSystemAdmin || hasPageAccess('users'); // isSystemAdmin kept for safety access to Permissions UI
   if (!canAccess) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">

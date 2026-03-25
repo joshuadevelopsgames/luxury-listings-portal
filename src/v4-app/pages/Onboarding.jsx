@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
+import { usePermissions } from '../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import { modules } from '../../modules/registry';
 import {
   CheckCircle2,
@@ -49,8 +50,8 @@ const SECTION_ORDER = ['Main', 'SMM', 'Content Team', 'Design Team', 'Sales Team
 
 const OnboardingPage = () => {
   const { currentUser, userData, mergeCurrentUser } = useAuth();
-  const { permissions, hasFeaturePermission, isSystemAdmin } = usePermissions();
-  const canViewAllModules = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_ALL_MODULES);
+  const { permissions, hasCapability, isSystemAdmin } = usePermissions();
+  const canViewAllModules = hasCapability(CAPABILITIES.VIEW_ALL_MODULES);
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [completing, setCompleting] = useState(false);

@@ -24,22 +24,24 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../contexts/PermissionsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { supabaseService } from '../services/supabaseService';
 import { USER_ROLES } from '../entities/UserRoles';
 import { supabase } from '../lib/supabase';
-import { PERMISSIONS, PERMISSION_CATEGORIES, PERMISSION_LABELS } from '../entities/Permissions';
+import { CAPABILITIES, CAPABILITY_CATEGORIES, CAPABILITY_LABELS } from '../entities/Capabilities';
 import EmployeeLink from '../components/ui/EmployeeLink';
 import { getSystemAdmins } from '../utils/systemAdmins';
 
 const UserManagement = () => {
-  const { currentUser, hasPermission, isSystemAdmin } = useAuth();
+  const { currentUser, isSystemAdmin } = useAuth();
+  const { hasCapability } = usePermissions();
   const { confirm } = useConfirm();
   const { pendingUsers, removePendingUser, approveUser, updatePendingUserRole, refreshPendingUsers } = usePendingUsers();
-  const canAddUser = isSystemAdmin || hasPermission(PERMISSIONS.APPROVE_USERS);
-  const canDeleteUser = isSystemAdmin || hasPermission(PERMISSIONS.DELETE_USERS);
+  const canAddUser = isSystemAdmin || hasCapability(CAPABILITIES.APPROVE_USERS);
+  const canDeleteUser = isSystemAdmin || hasCapability(CAPABILITIES.DELETE_USERS);
   const [approvedUsers, setApprovedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [firestoreStatus, setFirestoreStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
@@ -1174,7 +1176,7 @@ const UserManagement = () => {
     );
   };
 
-  if (!hasPermission('manage_users')) {
+  if (!hasCapability('manage_users')) {
     return (
       <div className="p-6">
         <Card>
@@ -1664,7 +1666,7 @@ const UserManagement = () => {
             
             <div className="space-y-6">
               {/* Permission Categories */}
-              {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => (
+              {Object.entries(CAPABILITY_CATEGORIES).map(([categoryKey, category]) => (
                 <div key={categoryKey} className="border-2 border-gray-200 rounded-xl p-5">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -1709,7 +1711,7 @@ const UserManagement = () => {
                         />
                         <div className="flex-1">
                           <div className="font-medium text-gray-900 text-sm">
-                            {PERMISSION_LABELS[permission]}
+                            {CAPABILITY_LABELS[permission]}
                           </div>
                         </div>
                       </label>
@@ -2223,7 +2225,7 @@ const UserManagement = () => {
               {/* Custom Permissions Tab */}
               <TabsContent value="permissions" className="space-y-4">
                 <div className="space-y-6">
-                  {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => (
+                  {Object.entries(CAPABILITY_CATEGORIES).map(([categoryKey, category]) => (
                     <div key={categoryKey} className="border-2 border-gray-200 rounded-xl p-5">
                       <div className="flex items-center justify-between mb-4">
                         <div>
@@ -2262,7 +2264,7 @@ const UserManagement = () => {
                             />
                             <div className="flex-1">
                               <div className="font-medium text-gray-900 text-sm">
-                                {PERMISSION_LABELS[permission]}
+                                {CAPABILITY_LABELS[permission]}
                               </div>
                             </div>
                           </label>
@@ -2508,7 +2510,7 @@ const UserManagement = () => {
                   Base Permissions
                 </label>
                 <div className="border border-gray-200 rounded-md p-4 max-h-60 overflow-y-auto">
-                  {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => (
+                  {Object.entries(CAPABILITY_CATEGORIES).map(([categoryKey, category]) => (
                     <div key={categoryKey} className="mb-4 last:mb-0">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">{category.name}</h4>
                       <div className="grid grid-cols-2 gap-2">
@@ -2526,7 +2528,7 @@ const UserManagement = () => {
                               })}
                               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
                             />
-                            <span className="text-gray-700">{PERMISSION_LABELS[permission]}</span>
+                            <span className="text-gray-700">{CAPABILITY_LABELS[permission]}</span>
                           </label>
                         ))}
                       </div>

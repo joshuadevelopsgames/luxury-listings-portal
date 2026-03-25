@@ -11,7 +11,7 @@ import NoPermission from './NoPermission';
  * @param {React.ReactNode} children - The page content to render if permitted
  */
 const PermissionRoute = ({ pageId, pageName, children }) => {
-  const { hasPermission, loading } = usePermissions();
+  const { hasPageAccess, loading } = usePermissions();
 
   // Loading state - show squares loader
   if (loading) {
@@ -55,7 +55,7 @@ const PermissionRoute = ({ pageId, pageName, children }) => {
   }
 
   // No permission
-  if (!hasPermission(pageId)) {
+  if (!hasPageAccess(pageId)) {
     return <NoPermission pageName={pageName} />;
   }
 

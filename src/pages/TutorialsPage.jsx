@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { User } from "../entities/User";
 import { Tutorial, TutorialProgress } from "../entities/index";
 import { useAuth } from "../contexts/AuthContext";
+import { usePermissions } from "../contexts/PermissionsContext";
 import { 
   BookOpen, 
   Clock, 
@@ -14,7 +15,7 @@ import {
 
 import TutorialCard from "../components/tutorials/TutorialCard";
 import TutorialViewer from "../components/tutorials/TutorialViewer";
-import { PERMISSIONS } from "../entities/Permissions";
+import { CAPABILITIES } from "../entities/Capabilities";
 
 const categoryColors = {
   strategy: "bg-[#0071e3]/10 text-[#0071e3]",
@@ -31,10 +32,11 @@ const categoryColors = {
 };
 
 export default function TutorialsPage() {
-  const { currentRole, hasPermission } = useAuth();
-  
+  const { currentRole } = useAuth();
+  const { hasCapability } = usePermissions();
+
   // Check permissions
-  const canManageTutorials = hasPermission(PERMISSIONS.MANAGE_TUTORIALS);
+  const canManageTutorials = hasCapability(CAPABILITIES.MANAGE_TUTORIALS);
   const [user, setUser] = useState(null);
   const [tutorials, setTutorials] = useState([]);
   const [progress, setProgress] = useState([]);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../contexts/PermissionsContext';
 import { 
   Calendar, Plus, Instagram, Facebook, Twitter, Linkedin, Youtube,
   Image, Video, FileText, Clock, Users, TrendingUp, Settings,
@@ -11,7 +12,7 @@ import {
 import { format, addDays, isToday, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import XLogo from '../assets/Twitter-X-logo.png';
 import XLogoSelected from '../assets/x-logo-selected.png';
-import { PERMISSIONS } from '../entities/Permissions';
+import { CAPABILITIES } from '../entities/Capabilities';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { googleSheetsService } from '../services/googleSheetsService';
@@ -23,13 +24,14 @@ import PostPreviewCard from '../components/content/PostPreviewCard';
 const MAX_MEDIA_PER_POST = 15;
 
 const ContentCalendar = () => {
-  const { currentUser, hasPermission } = useAuth();
+  const { currentUser } = useAuth();
   const { confirm } = useConfirm();
-  
+  const { hasCapability } = usePermissions();
+
   // Check permissions
-  const canCreateContent = hasPermission(PERMISSIONS.CREATE_CONTENT);
-  const canDeleteContent = hasPermission(PERMISSIONS.DELETE_CONTENT);
-  const canApproveContent = hasPermission(PERMISSIONS.APPROVE_CONTENT);
+  const canCreateContent = hasCapability(CAPABILITIES.CREATE_CONTENT);
+  const canDeleteContent = hasCapability(CAPABILITIES.DELETE_CONTENT);
+  const canApproveContent = hasCapability(CAPABILITIES.APPROVE_CONTENT);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);

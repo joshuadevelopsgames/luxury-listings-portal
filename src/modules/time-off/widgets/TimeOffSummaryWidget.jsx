@@ -7,14 +7,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Plus, AlertCircle, Users } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { usePermissions, FEATURE_PERMISSIONS } from '../../../contexts/PermissionsContext';
+import { usePermissions } from '../../../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../../entities/Capabilities';
 import { supabaseService } from '../../../services/supabaseService';
 
 const TimeOffSummaryWidget = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { hasFeaturePermission } = usePermissions();
-  const canApproveByFeature = hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
+  const { hasCapability } = usePermissions();
+  const canApproveByFeature = hasCapability(CAPABILITIES.APPROVE_TIME_OFF);
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [upcomingTimeOff, setUpcomingTimeOff] = useState(null);

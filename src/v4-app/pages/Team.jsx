@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
-import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
-import { PERMISSIONS } from '../../entities/Permissions';
+import { usePermissions } from '../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 import EmployeeDetailsModal from '../../components/EmployeeDetailsModal';
 import EmployeeLink from '../../components/ui/EmployeeLink';
 import { supabaseService } from '../../services/supabaseService';
@@ -42,7 +42,7 @@ import { getSystemAdmins } from '../../utils/systemAdmins';
 const TeamManagement = () => {
   const { currentUser, hasPermission } = useAuth();
   const { confirm } = useConfirm();
-  const { hasFeaturePermission, isSystemAdmin } = usePermissions();
+  const { hasCapability, isSystemAdmin } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -54,12 +54,12 @@ const TeamManagement = () => {
   const [migrationDone, setMigrationDone] = useState(false);
   
   // Permissions sourced exclusively from the Users & Permissions UI - no role-based fallbacks
-  const canRunLeaveMigration = hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
+  const canRunLeaveMigration = hasCapability(CAPABILITIES.APPROVE_TIME_OFF);
   const canViewLeaveBalance =
-    hasFeaturePermission(FEATURE_PERMISSIONS.APPROVE_TIME_OFF) ||
-    hasPermission(PERMISSIONS.MANAGE_USERS) ||
-    hasPermission(PERMISSIONS.VIEW_ALL_TIME_OFF) || hasPermission(PERMISSIONS.VIEW_HR_DATA);
-  const canViewFinancials = hasFeaturePermission(FEATURE_PERMISSIONS.VIEW_FINANCIALS);
+    hasCapability(CAPABILITIES.APPROVE_TIME_OFF) ||
+    hasPermission(CAPABILITIES.MANAGE_USERS) ||
+    hasPermission(CAPABILITIES.VIEW_ALL_TIME_OFF) || hasPermission(CAPABILITIES.VIEW_HR_DATA);
+  const canViewFinancials = hasCapability(CAPABILITIES.VIEW_FINANCIALS);
 
   // Team members loaded from Firestore
   const [teamMembers, setTeamMembers] = useState([]);

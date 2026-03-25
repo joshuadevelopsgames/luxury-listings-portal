@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Button } from './button';
 import { X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { PERMISSIONS } from '../../entities/Permissions';
+import { usePermissions } from '../../contexts/PermissionsContext';
+import { CAPABILITIES } from '../../entities/Capabilities';
 
 // Department options - keep in sync with PermissionsManager.jsx
 const DEPARTMENTS = [
@@ -20,13 +21,14 @@ const DEPARTMENTS = [
 ];
 
 export default function EditProfileModal({ isOpen, onClose, user, isAdmin, onSave }) {
-  const { hasPermission, currentUser } = useAuth();
+  const { currentUser } = useAuth();
+  const { hasCapability } = usePermissions();
   const [saving, setSaving] = useState(false);
-  
+
   // Check specific permissions
-  const canEditAnyName = hasPermission(PERMISSIONS.EDIT_ANY_NAME) || isAdmin;
-  const canEditOwnName = hasPermission(PERMISSIONS.EDIT_OWN_NAME);
-  const canEditAnyProfile = hasPermission(PERMISSIONS.EDIT_ANY_PROFILE) || isAdmin;
+  const canEditAnyName = hasCapability(CAPABILITIES.EDIT_ANY_NAME) || isAdmin;
+  const canEditOwnName = hasCapability(CAPABILITIES.EDIT_OWN_NAME);
+  const canEditAnyProfile = hasCapability(CAPABILITIES.EDIT_ANY_PROFILE) || isAdmin;
   
   // Debug logging
   console.log('🔐 EditProfileModal permissions check:', {
