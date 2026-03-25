@@ -134,7 +134,8 @@ const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
   const { isSystemAdmin, loading: permissionsLoading } = usePermissions();
   const { confirm } = useConfirm();
-  const effectiveIsAdmin = isSystemAdmin;
+  // Admin role users AND system admins can see all clients on this page
+  const effectiveIsAdmin = isSystemAdmin || currentUser?.role === 'admin';
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
