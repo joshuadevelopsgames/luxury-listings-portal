@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { usePermissions } from "../contexts/PermissionsContext";
-import { CAPABILITIES } from "../entities/Capabilities";
 import { toast } from "react-hot-toast";
 import AppSetupPage from "./AppSetupPage";
 import { USER_ROLES } from "../entities/UserRoles";
@@ -156,8 +155,8 @@ const categoryColors = {
 export default function ResourcesPage() {
   const navigate = useNavigate();
   const { currentRole } = useAuth();
-  const { hasCapability } = usePermissions();
-  const canManageResources = hasCapability(CAPABILITIES.MANAGE_RESOURCES);
+  // Page access = full access
+  const canManageResources = true;
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("resources");
   

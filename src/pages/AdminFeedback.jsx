@@ -4,8 +4,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { supabaseService } from '../services/supabaseService';
 import { 
   Bug, 
@@ -37,8 +35,6 @@ const STATUS_OPTIONS = [
 
 export default function AdminFeedback() {
   const { currentUser } = useAuth();
-  const { hasCapability } = usePermissions();
-  const { MANAGE_FEEDBACK } = CAPABILITIES;
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,14 +102,6 @@ export default function AdminFeedback() {
     features: feedback.filter(f => f.type === 'feature').length,
     open: feedback.filter(f => f.status === 'open').length
   }), [feedback]);
-
-  if (!hasCapability(CAPABILITIES.MANAGE_FEEDBACK)) {
-    return (
-      <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000] flex items-center justify-center">
-        <p className="text-[#86868b]">Access denied. Admin only.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000] p-6">

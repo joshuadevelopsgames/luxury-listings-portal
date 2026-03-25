@@ -124,11 +124,9 @@ const loadDisplayCache = () => {
       localStorage.removeItem(DISPLAY_CACHE_KEY);
       return null;
     }
-    // Strip permissions from legacy cache — never trust cached permissions
+    // Strip permissions from cache — never trust cached permissions
     if (parsed) {
       parsed.pagePermissions = [];
-      parsed.featurePermissions = [];
-      parsed.customPermissions = [];
     }
     return parsed;
   } catch (_) {
@@ -268,7 +266,6 @@ export function AuthProvider({ children }) {
       displayName: currentUser.displayName,
       avatar: currentUser.avatar,
       uid: currentUser.uid,
-      customPermissions: currentUser.customPermissions || [],
     };
 
     setCurrentUser(updatedUser);
@@ -276,16 +273,13 @@ export function AuthProvider({ children }) {
   }
 
   /**
-   * @deprecated Use usePermissions().hasPageAccess() or usePermissions().hasCapability() instead.
-   * AuthContext should only handle authentication, not authorization.
-   * Kept for backwards compatibility during migration.
+   * @deprecated Use usePermissions().hasPageAccess() instead.
+   * Kept for backwards compatibility.
    */
   function hasPermission(permission) {
     return resolvePermission({
       permission,
-      customPermissions: currentUser?.customPermissions || userData?.customPermissions || [],
       pagePermissions: currentUser?.pagePermissions || [],
-      featurePermissions: currentUser?.featurePermissions || [],
       isAdmin: isSystemAdmin(currentUser?.email),
     });
   }
@@ -500,9 +494,7 @@ export function AuthProvider({ children }) {
           bio: approvedUser.bio || roleUserData.bio,
           skills: approvedUser.skills || roleUserData.skills,
           stats: approvedUser.stats || roleUserData.stats,
-          customPermissions: Array.isArray(approvedUser.customPermissions) ? approvedUser.customPermissions : [],
           pagePermissions: Array.isArray(approvedUser.pagePermissions) ? approvedUser.pagePermissions : [],
-          featurePermissions: Array.isArray(approvedUser.featurePermissions) ? approvedUser.featurePermissions : [],
           isApproved: true,
           onboardingCompleted: approvedUser.onboardingCompleted,
         };
@@ -626,9 +618,7 @@ export function AuthProvider({ children }) {
           role: approvedUser.role || prev.role,
           primaryRole: approvedUser.primaryRole || prev.primaryRole,
           roles: approvedUser.roles || prev.roles,
-          customPermissions: approvedUser.customPermissions ?? prev.customPermissions ?? [],
           pagePermissions: approvedUser.pagePermissions ?? prev.pagePermissions ?? [],
-          featurePermissions: approvedUser.featurePermissions ?? prev.featurePermissions ?? [],
           adminPermissions: false,
           onboardingCompleted:
             approvedUser.onboardingCompleted !== undefined
@@ -686,9 +676,7 @@ export function AuthProvider({ children }) {
       if (isViewingAs && viewAs?.viewingAsUser) {
         return resolvePermission({
           permission,
-          customPermissions: effectiveUser?.customPermissions || [],
           pagePermissions: viewAs.viewAsPermissions || [],
-          featurePermissions: viewAs.viewAsFeaturePermissions || [],
           isAdmin: false,
         });
       }
@@ -728,9 +716,7 @@ export function useEffectiveAuth() {
       hasPermission: (permission) =>
         resolvePermission({
           permission,
-          customPermissions: viewingAsUser?.customPermissions || [],
           pagePermissions: viewAs.viewAsPermissions || [],
-          featurePermissions: viewAs.viewAsFeaturePermissions || [],
           isAdmin: false,
         }),
       isViewingAs: true,

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { createPortal } from 'react-dom';
 import {
   Users,
@@ -55,11 +54,9 @@ export default function PostingPackages() {
   const [searchParams] = useSearchParams();
   const { currentUser } = useAuth();
   const { confirm } = useConfirm();
-  const { hasCapability } = usePermissions();
-
-  // Check permissions
-  const canManagePackages = hasCapability(CAPABILITIES.MANAGE_POSTING_PACKAGES);
-  const canViewFinancials = hasCapability(CAPABILITIES.VIEW_FINANCIALS);
+  // Check permissions (all true since page access = full access)
+  const canManagePackages = true;
+  const canViewFinancials = true;
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

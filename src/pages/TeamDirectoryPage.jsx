@@ -3,7 +3,7 @@ import { Users, Mail, Search, RefreshCw, Building } from 'lucide-react';
 import { supabaseService } from '../services/supabaseService';
 import EmployeeLink from '../components/ui/EmployeeLink';
 import { getGmailComposeUrl } from '../utils/gmailCompose';
-import { getSystemAdmins } from '../utils/systemAdmins';
+import { getSystemAdmins, isSystemAdmin as checkIsSystemAdmin } from '../utils/systemAdmins';
 
 const ROLE_DISPLAY = {
   admin: 'Administrator',
@@ -158,7 +158,7 @@ export default function TeamDirectoryPage() {
                       {member.displayName || member.firstName || member.email?.split('@')[0] || 'Team Member'}
                     </EmployeeLink>
                   </p>
-                  {member.role === 'admin' && (member.email || '').toLowerCase() === 'jrsschroeder@gmail.com' ? (
+                  {checkIsSystemAdmin((member.email || '').toLowerCase()) ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#5856d6]/10 text-[#5856d6]">
                       System Administrator
                     </span>

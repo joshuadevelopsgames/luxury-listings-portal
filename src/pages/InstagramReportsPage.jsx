@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { supabaseService } from '../services/supabaseService';
@@ -133,9 +132,9 @@ const groupReportsByYearMonth = (reportList) => {
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
-  const { isSystemAdmin, hasCapability, loading: permissionsLoading } = usePermissions();
+  const { isSystemAdmin, loading: permissionsLoading } = usePermissions();
   const { confirm } = useConfirm();
-  const effectiveIsAdmin = isSystemAdmin || hasCapability(CAPABILITIES.VIEW_ALL_REPORTS);
+  const effectiveIsAdmin = isSystemAdmin;
   
   const [reports, setReports] = useState([]);
   const [allClients, setAllClients] = useState([]);
@@ -624,7 +623,7 @@ const InstagramReportsPage = () => {
         >
           Internal Accounts ({myInternalAccounts.length})
         </button>
-        {hasCapability(CAPABILITIES.MANAGE_INSTAGRAM_REPORTS) && (
+        {true && (
           <button
             type="button"
             onClick={() => setActiveTab('archive')}

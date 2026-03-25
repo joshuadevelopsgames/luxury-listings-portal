@@ -36,7 +36,6 @@ import { DailyTask } from '../entities/DailyTask';
 import { supabaseService } from '../services/supabaseService';
 import { reminderService } from '../services/reminderService';
 import { format } from 'date-fns';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { parseNaturalLanguageDate } from '../utils/dateParser';
 import { getVancouverToday, getVancouverTodayMidnight } from '../utils/vancouverTime';
 
@@ -162,16 +161,15 @@ const TasksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser, getCurrentRolePermissions } = useAuth();
   const { confirm } = useConfirm();
-  const { hasCapability } = usePermissions();
   const rolePerms = getCurrentRolePermissions?.()?.permissions || {};
   // currentUser is effective user (viewed user when View As)
 
-  // If user can access the Tasks page (module enabled), they can create tasks
-  // No separate feature permission needed - module access = full access
+  // If user can access the Tasks page (module enabled), they can do everything on it
+  // No separate feature permission needed - page access = full access
   const canCreateTasks = true;
-  const canAssignTasks = rolePerms.canAssignTasks === true || hasCapability(CAPABILITIES.ASSIGN_TASKS);
-  const canViewAllTasks = rolePerms.canViewAllTasks === true || hasCapability(CAPABILITIES.VIEW_ALL_TASKS);
-  const canDeleteAnyTask = hasCapability(CAPABILITIES.DELETE_ANY_TASK);
+  const canAssignTasks = true;
+  const canViewAllTasks = true;
+  const canDeleteAnyTask = true;
   const [showForm, setShowForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { modules } from '../modules/registry';
 import {
   CheckCircle2,
@@ -50,8 +49,8 @@ const SECTION_ORDER = ['Main', 'SMM', 'Content Team', 'Design Team', 'Sales Team
 
 const OnboardingPage = () => {
   const { currentUser, userData, mergeCurrentUser } = useAuth();
-  const { permissions, hasCapability, isSystemAdmin } = usePermissions();
-  const canViewAllModules = hasCapability(CAPABILITIES.VIEW_ALL_MODULES);
+  const { permissions, isSystemAdmin } = usePermissions();
+  const canViewAllModules = true;
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [completing, setCompleting] = useState(false);
@@ -108,7 +107,7 @@ const OnboardingPage = () => {
         };
       })
       .sort((a, b) => SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section));
-  }, [permissions, canViewAllModules, isSystemAdmin]);
+  }, [permissions, isSystemAdmin]);
 
   useEffect(() => {
     checkGoogleConnection();

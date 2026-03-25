@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import Calendar from '../components/ui/calendar';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
@@ -45,15 +44,12 @@ import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 
 const HRCalendar = () => {
   const { currentUser } = useAuth();
-  const { hasCapability } = usePermissions();
-  // Approve time off: Users & Permissions feature "Approve Time Off" OR legacy isTimeOffAdmin on user doc
-  const canApproveByFeature = hasCapability(CAPABILITIES.APPROVE_TIME_OFF);
+  // Page access = full access to all features on HR Calendar
   const [firestoreTimeOffAdmin, setFirestoreTimeOffAdmin] = useState(false);
-  const isTimeOffAdmin = canApproveByFeature || firestoreTimeOffAdmin;
-
-  const canManageLeave = hasCapability(CAPABILITIES.MANAGE_LEAVE_REQUESTS);
-  const canApproveLeave = hasCapability(CAPABILITIES.APPROVE_LEAVE);
-  const canViewHRData = hasCapability(CAPABILITIES.VIEW_HR_DATA);
+  const isTimeOffAdmin = true; // Approved can manage leave since on the page
+  const canManageLeave = true;
+  const canApproveLeave = true;
+  const canViewHRData = true;
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showNotesModal, setShowNotesModal] = useState(null); // 'approve' or 'reject' or null
   const [processingRequest, setProcessingRequest] = useState(null);

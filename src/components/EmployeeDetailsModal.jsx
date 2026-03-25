@@ -6,8 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import PersonCard from './PersonCard';
 import { supabaseService } from '../services/supabaseService';
 import {
@@ -46,8 +44,7 @@ const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
 const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, startInEditMode = false }) => {
   const { currentRole } = useAuth();
-  const { hasCapability } = usePermissions();
-  const canManageEmployeeProfiles = hasCapability(CAPABILITIES.MANAGE_EMPLOYEE_PROFILES);
+  const canManageEmployeeProfiles = true;
   const isHRManager = currentRole === 'hr_manager';
   const canEdit = isHRManager || canManageEmployeeProfiles;
   const canEditLeave = canEdit;

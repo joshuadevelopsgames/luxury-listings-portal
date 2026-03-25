@@ -5,13 +5,6 @@ import { isSystemAdmin as checkIsSystemAdmin, onSystemAdminsChange } from '../ut
 
 const PermissionsContext = createContext();
 
-/**
- * @deprecated Import from '../entities/Capabilities' instead.
- * Kept here only so existing `import { FEATURE_PERMISSIONS } from './PermissionsContext'`
- * statements don't break until they're migrated.
- */
-export { CAPABILITIES as FEATURE_PERMISSIONS } from '../entities/Capabilities';
-
 export function usePermissions() {
   return useContext(PermissionsContext);
 }
@@ -19,22 +12,17 @@ export function usePermissions() {
 /**
  * PermissionsProvider — the SINGLE authority for all authorization checks.
  *
- * Two concepts:
- *   1. PAGE ACCESS  — which sidebar pages can a user see?
- *      → hasPageAccess(pageId)
- *   2. CAPABILITIES — what actions can a user take?
- *      → hasCapability(capabilityId)
- *
- * System admins bypass all capability checks automatically.
- * Demo view-only users can see all pages but have no capabilities.
- *
- * Deprecated aliases (`hasPermission`, `hasFeaturePermission`) are provided
- * for backwards compatibility and will be removed in a future release.
+ * Simplified model (March 2026):
+ *   • PAGE ACCESS — which sidebar pages can a user see?
+ *     → hasPageAccess(pageId)
+ *   • If you have access to a page, you can do EVERYTHING on it.
+ *   • No feature/capability permissions — page access IS the permission.
+ *   • System admins bypass all checks automatically.
+ *   • Demo view-only users can see all pages but cannot make changes.
  */
 export function PermissionsProvider({ children }) {
   const { currentUser } = useAuth();
   const [pages, setPages] = useState([]);
-  const [capabilities, setCapabilities] = useState([]);
   const [permissionsVersion, setPermissionsVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
@@ -46,10 +34,7 @@ export function PermissionsProvider({ children }) {
     try {
       const result = await supabaseService.getUserPermissions(currentUser.email);
       const pagePerms = Array.isArray(result?.pages) ? result.pages : (Array.isArray(result) ? result : []);
-      const caps = Array.isArray(result?.capabilities) ? result.capabilities : [];
-
       setPages(pagePerms);
-      setCapabilities(caps);
       if (result?.version !== undefined) setPermissionsVersion(result.version);
     } catch (error) {
       console.error('Error refreshing permissions:', error);
@@ -59,18 +44,16 @@ export function PermissionsProvider({ children }) {
   useEffect(() => {
     if (!currentUser?.email) {
       setPages([]);
-      setCapabilities([]);
       setLoading(false);
       setIsSystemAdmin(false);
       return;
     }
 
-    // Demo view-only: see all pages, no capabilities
+    // Demo view-only: see all pages
     const isDemoViewOnly = !!currentUser.isDemoViewOnly;
     if (isDemoViewOnly) {
       setIsSystemAdmin(false);
       setPages([]);
-      setCapabilities([]);
       setLoading(false);
       return;
     }
@@ -84,37 +67,20 @@ export function PermissionsProvider({ children }) {
     const adminStatus = checkIsSystemAdmin(currentUser.email);
     setIsSystemAdmin(adminStatus);
 
-    // ── SEED from currentUser (AuthContext already fetched these) ──────
-    // This eliminates the waterfall: AuthContext fetch → wait → PermissionsContext fetch.
-    // We read the permissions AuthContext already put on currentUser and mark loading=false
-    // immediately, then subscribe for future realtime updates only.
+    // Seed from currentUser (AuthContext already fetched these)
     const seededPages = Array.isArray(currentUser.pagePermissions) ? currentUser.pagePermissions : [];
-    const seededCaps = Array.isArray(currentUser.capabilities)
-      ? currentUser.capabilities
-      : [...new Set([
-          ...(Array.isArray(currentUser.featurePermissions) ? currentUser.featurePermissions : []),
-          ...(Array.isArray(currentUser.customPermissions) ? currentUser.customPermissions : []),
-        ])];
     setPages(seededPages);
-    setCapabilities(seededCaps);
     setPermissionsVersion(currentUser.permissionsVersion || 0);
-    setLoading(false); // <-- immediate, no second fetch needed
+    setLoading(false);
 
-    // Subscribe to realtime updates for live permission changes (no initial fetch)
+    // Subscribe to realtime updates for live permission changes
     const unsub = supabaseService.onApprovedUserChange(currentUser.email, (user) => {
       if (!user) return;
       const incomingVersion = user.permissionsVersion || user.permissions_version || 0;
       setPermissionsVersion((prevVersion) => {
-        if (incomingVersion < prevVersion) {
-          return prevVersion; // Stale — ignore
-        }
+        if (incomingVersion < prevVersion) return prevVersion;
         const updatedPages = Array.isArray(user.pagePermissions) ? user.pagePermissions : [];
-        const updatedCaps = [...new Set([
-          ...(Array.isArray(user.featurePermissions) ? user.featurePermissions : []),
-          ...(Array.isArray(user.customPermissions) ? user.customPermissions : []),
-        ])];
         setPages(updatedPages);
-        setCapabilities(updatedCaps);
         return incomingVersion;
       });
     });
@@ -123,13 +89,10 @@ export function PermissionsProvider({ children }) {
       if (typeof unsub === 'function') unsub();
       unsubscribeAdmins();
     };
-    // Re-seed when Auth finishes hydrating (display cache has empty perms; same email).
   }, [
     currentUser?.email,
     currentUser?.permissionsVersion,
     currentUser?.pagePermissions,
-    currentUser?.featurePermissions,
-    currentUser?.customPermissions,
   ]);
 
   const isDemoViewOnly = !!currentUser?.isDemoViewOnly;
@@ -139,44 +102,41 @@ export function PermissionsProvider({ children }) {
   /** Can the user see this sidebar page? */
   const hasPageAccess = (pageId) => {
     if (isDemoViewOnly) return true;
-    if (isSystemAdmin) return true; // System admins can access all pages
+    if (isSystemAdmin) return true;
     if (pageId === 'dashboard') return true;
     return pages.includes(pageId);
   };
 
-  /** Can the user perform this action? System admins pass all checks. */
-  const hasCapability = (capabilityId) => {
+  // ── Backwards-compatible stubs ──────────────────────────────────────
+  // These always return true (for non-demo users with page access) since
+  // the new model grants full access to any page you can see.
+  // Kept temporarily so existing component code doesn't break before
+  // hasCapability() calls are cleaned out of individual pages.
+
+  /** @deprecated — always returns true for authenticated users (or admin). Page access = full access. */
+  const hasCapability = (_capabilityId) => {
     if (isDemoViewOnly) return false;
     if (isSystemAdmin) return true;
-    return capabilities.includes(capabilityId);
+    // Under the new model, if you have access to the page, you can do everything on it.
+    // The PermissionRoute already gates page access, so any capability check = true.
+    return true;
   };
-
-  // ── Deprecated aliases — TODO: remove by end of Q2 2026 ──────────────
-  // To clean up: search for `hasPermission(` and `hasFeaturePermission(` across
-  // the codebase and migrate each call site to hasPageAccess() / hasCapability().
-  // Once no call sites remain, delete these aliases and this entire block.
 
   /** @deprecated Use hasPageAccess() */
   const hasPermission = hasPageAccess;
-
-  /** @deprecated Use hasCapability() */
-  const hasFeaturePermission = (featureId) => {
-    // Old callers don't expect admin bypass, but new system provides it
-    if (isDemoViewOnly) return false;
-    if (isSystemAdmin) return true;
-    return capabilities.includes(featureId);
-  };
+  /** @deprecated Use hasPageAccess() */
+  const hasFeaturePermission = hasCapability;
 
   const value = {
-    // New API
+    // Primary API
     pages,
-    capabilities,
     hasPageAccess,
-    hasCapability,
 
-    // Backwards compat (deprecated)
+    // Backwards compat stubs (will be removed once page components are cleaned up)
+    capabilities: [],
+    hasCapability,
     permissions: pages,
-    featurePermissions: capabilities,
+    featurePermissions: [],
     hasPermission,
     hasFeaturePermission,
 

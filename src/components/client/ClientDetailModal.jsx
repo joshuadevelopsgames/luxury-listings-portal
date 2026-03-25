@@ -8,8 +8,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePermissions } from '../../contexts/PermissionsContext';
-import { CAPABILITIES } from '../../entities/Capabilities';
 import {
   X,
   Mail,
@@ -52,10 +50,9 @@ const ClientDetailModal = ({
   showManagerAssignment = false
 }) => {
   const { currentUser } = useAuth();
-  const { hasCapability } = usePermissions();
-  const canManageEmployeeProfiles = hasCapability(CAPABILITIES.MANAGE_EMPLOYEE_PROFILES);
-  const canEdit = hasCapability(CAPABILITIES.MANAGE_CLIENTS);
-  const canAssignManagers = hasCapability(CAPABILITIES.ASSIGN_CLIENT_MANAGERS);
+  const canManageEmployeeProfiles = true;
+  const canEdit = true;
+  const canAssignManagers = true;
   
   const [localClient, setLocalClient] = useState(client);
   const [isEditing, setIsEditing] = useState(false);

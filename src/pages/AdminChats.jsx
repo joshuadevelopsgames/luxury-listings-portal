@@ -4,8 +4,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { supabaseService } from '../services/supabaseService';
 import { 
   MessageSquare, 
@@ -21,8 +19,6 @@ import { format } from 'date-fns';
 
 export default function AdminChats() {
   const { currentUser } = useAuth();
-  const { hasCapability } = usePermissions();
-  const { MANAGE_CHATS } = CAPABILITIES;
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -103,14 +99,6 @@ export default function AdminChats() {
 
   const openChats = chats.filter(c => c.status === 'open');
   const closedChats = chats.filter(c => c.status === 'closed');
-
-  if (!hasCapability(CAPABILITIES.MANAGE_CHATS)) {
-    return (
-      <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000] flex items-center justify-center">
-        <p className="text-[#86868b]">Access denied. Admin only.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000] flex">

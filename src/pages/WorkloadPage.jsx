@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { useAuth } from '../contexts/AuthContext';
 import { supabaseService } from '../services/supabaseService';
 import { getSystemAdmins } from '../utils/systemAdmins';
@@ -72,8 +71,8 @@ function aggregatePackages(clients) {
 }
 
 export default function WorkloadPage() {
-  const { hasCapability } = usePermissions();
-  const canManageWorkload = hasCapability(CAPABILITIES.MANAGE_WORKLOAD);
+  // Page access = full access
+  const canManageWorkload = true;
   const { currentUser } = useAuth();
   const [clients, setClients] = useState([]);
   const [approvedUsers, setApprovedUsers] = useState([]);

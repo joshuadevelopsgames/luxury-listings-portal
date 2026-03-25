@@ -15,7 +15,6 @@ import { format, differenceInDays, parseISO, startOfMonth } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
 import { usePermissions } from '../../../contexts/PermissionsContext';
-import { CAPABILITIES } from '../../../entities/Capabilities';
 import { supabaseService } from '../../../services/supabaseService';
 import { openaiService } from '../../../services/openaiService';
 import PlatformIcons from '../../../components/PlatformIcons';
@@ -67,9 +66,9 @@ import {
 const MyClientsPage = () => {
   const navigate = useNavigate();
   const { currentUser, isViewingAs } = useAuth();
-  const { isSystemAdmin, hasCapability } = usePermissions();
+  const { isSystemAdmin } = usePermissions();
   const { clients: allClients, loading: clientsLoading, getClientById } = useClients();
-  const canManageAllClients = isSystemAdmin || hasCapability(CAPABILITIES.MANAGE_ALL_CLIENTS);
+  const canManageAllClients = isSystemAdmin;
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const { clientForModal, openClientCard, closeClientCard } = useOpenClientCard();

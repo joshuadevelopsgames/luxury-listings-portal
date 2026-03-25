@@ -42,7 +42,6 @@ import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
 import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
 import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS, normalizeLocation } from '../services/crmService';
 import { useCustomLocations } from '../contexts/CustomLocationsContext';
@@ -56,16 +55,16 @@ import { LocationSelect } from '../components/crm/LocationSelect';
 const CRMPage = () => {
   const navigate = useNavigate();
   const { currentUser, currentRole, isSystemAdmin: isAuthAdmin } = useAuth();
-  const { isSystemAdmin, hasCapability } = usePermissions();
+  const { isSystemAdmin } = usePermissions();
   const { confirm } = useConfirm();
   const { customLocationsWithMeta, removeCustomLocation, refresh } = useCustomLocations();
 
-  // Check permissions
-  const canManageCRM = hasCapability(CAPABILITIES.MANAGE_CRM);
-  const canManageLeads = hasCapability(CAPABILITIES.MANAGE_LEADS);
-  const canViewLeads = hasCapability(CAPABILITIES.VIEW_LEADS);
-  const canDeleteClients = hasCapability(CAPABILITIES.DELETE_CLIENTS);
-  const canViewAuditTrail = isSystemAdmin || hasCapability(CAPABILITIES.VIEW_AUDIT_TRAIL);
+  // Check permissions (all true since page access = full access, except audit trail which is admin-only)
+  const canManageCRM = true;
+  const canManageLeads = true;
+  const canViewLeads = true;
+  const canDeleteClients = true;
+  const canViewAuditTrail = isSystemAdmin;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

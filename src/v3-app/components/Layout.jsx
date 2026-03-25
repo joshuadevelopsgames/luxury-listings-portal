@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
-import { CAPABILITIES } from '../../entities/Capabilities';
 import { supabaseService } from '../../services/supabaseService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
@@ -54,7 +53,7 @@ import {
 const V3Layout = ({ basePath = '' }) => {
   const { currentUser, currentRole, logout } = useAuth();
   const { viewingAsUser, isViewingAs, stopViewingAs, viewAsPermissions } = useViewAs();
-  const { permissions: userPermissions, isSystemAdmin, hasCapability } = usePermissions();
+  const { permissions: userPermissions, isSystemAdmin } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -302,8 +301,8 @@ const V3Layout = ({ basePath = '' }) => {
       } else {
         sections.push({ title: 'Admin', items: [...adminItems] });
       }
-    } else if (!isViewingAs && hasCapability(CAPABILITIES.MANAGE_USERS)) {
-      // Manage Users (no system admin): show only Users & Permissions in Admin
+    } else if (!isViewingAs && isSystemAdmin) {
+      // System admin: show Permissions in Admin section
       let adminSection = sections.find(s => s.title === 'Admin');
       if (adminSection) {
         if (!adminSection.items.includes('permissions')) {

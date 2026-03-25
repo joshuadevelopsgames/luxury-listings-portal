@@ -34,7 +34,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import { useConfirm } from '../contexts/ConfirmContext';
 
 // Import data for one-time Excel import
@@ -106,8 +105,8 @@ const GRAPHIC_TEAM = [
 
 const GraphicProjectTracker = () => {
   const { currentUser } = useAuth();
-  const { hasCapability } = usePermissions();
-  const canManageGraphicProjects = hasCapability(CAPABILITIES.MANAGE_GRAPHIC_PROJECTS);
+  // Page access = full access
+  const canManageGraphicProjects = true;
   const { confirm } = useConfirm();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);

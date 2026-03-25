@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import PersonCard from '../components/PersonCard';
 import { supabaseService } from '../services/supabaseService';
 import { 
@@ -28,8 +26,7 @@ import { format, isValid } from 'date-fns';
 
 const EmployeeSelfService = () => {
   const { currentUser, currentRole, mergeCurrentUser } = useAuth();
-  const { hasCapability } = usePermissions();
-  const canManageEmployeeProfiles = hasCapability(CAPABILITIES.MANAGE_EMPLOYEE_PROFILES);
+  const canManageEmployeeProfiles = true;
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [employeeFirestoreId, setEmployeeFirestoreId] = useState(null);

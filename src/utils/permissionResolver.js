@@ -1,67 +1,48 @@
 /**
- * Unified Permission Resolver
+ * Simplified Permission Resolver (March 2026)
  *
- * Only what you set in Users & Permissions grants access (no role-based grants):
+ * Page access is the only permission boundary:
  *   1. System Admin → full access (always)
- *   2. Custom granular permissions (approved_users.customPermissions)
- *   3. Page permissions (approved_users.pagePermissions)
- *   4. Feature permissions (approved_users.featurePermissions)
+ *   2. Page permissions (approved_users.pagePermissions) → can see + do everything on the page
  *
- * Roles do NOT grant permissions; they are display-only. Toggles in the UI are the source of truth.
+ * Feature/custom permissions have been removed. If you can access a page, you
+ * have full control over everything on it.
  */
 
-import { PERMISSIONS } from '../entities/Permissions';
-
 /**
- * Unified permission check.
+ * Check if a user has a given permission (page access).
  *
  * @param {object} params
- * @param {string} params.permission - The permission to check (e.g. 'manage_clients', page ID like 'clients')
- * @param {string[]} params.customPermissions - User's customPermissions array
+ * @param {string} params.permission - The page ID to check
  * @param {string[]} params.pagePermissions - User's page permission IDs
- * @param {string[]} params.featurePermissions - User's feature permission IDs
  * @param {boolean} params.isAdmin - Whether user is a system admin
  * @returns {boolean}
  */
 export function resolvePermission({
   permission,
-  customPermissions = [],
   pagePermissions = [],
-  featurePermissions = [],
   isAdmin = false,
+  // Deprecated params kept for call-site compat (ignored)
+  customPermissions,
+  featurePermissions,
 }) {
-  // 1. System admin: always yes
   if (isAdmin) return true;
-
-  // 2. Custom granular permissions
-  if (customPermissions.includes(permission)) return true;
-
-  // 3. Page permissions
   if (pagePermissions.includes(permission)) return true;
-
-  // 4. Feature permissions (from PermissionsManager)
-  if (featurePermissions.includes(permission)) return true;
-
   return false;
 }
 
 /**
- * Get all effective permissions for a user (from UI only; no role grants).
+ * Get all effective permissions for a user.
  */
 export function getEffectivePermissions({
-  customPermissions = [],
   pagePermissions = [],
-  featurePermissions = [],
   isAdmin = false,
 }) {
   if (isAdmin) {
-    return {
-      pages: ['*'],
-      features: Object.values(PERMISSIONS),
-    };
+    return { pages: ['*'], features: [] };
   }
   return {
     pages: [...new Set(pagePermissions)],
-    features: [...new Set([...featurePermissions, ...customPermissions])],
+    features: [],
   };
 }

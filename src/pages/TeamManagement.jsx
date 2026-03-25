@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { CAPABILITIES } from '../entities/Capabilities';
 import EmployeeDetailsModal from '../components/EmployeeDetailsModal';
 import EmployeeLink from '../components/ui/EmployeeLink';
 import { supabaseService } from '../services/supabaseService';
@@ -42,7 +41,7 @@ import { getSystemAdmins } from '../utils/systemAdmins';
 const TeamManagement = () => {
   const { currentUser } = useAuth();
   const { confirm } = useConfirm();
-  const { hasCapability, isSystemAdmin } = usePermissions();
+  const { isSystemAdmin } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -53,13 +52,10 @@ const TeamManagement = () => {
   const [migratingLeave, setMigratingLeave] = useState(false);
   const [migrationDone, setMigrationDone] = useState(false);
 
-  // Permissions sourced exclusively from the Users & Permissions UI - no role-based fallbacks
-  const canRunLeaveMigration = hasCapability(CAPABILITIES.APPROVE_TIME_OFF);
-  const canViewLeaveBalance =
-    hasCapability(CAPABILITIES.APPROVE_TIME_OFF) ||
-    hasCapability(CAPABILITIES.MANAGE_USERS) ||
-    hasCapability(CAPABILITIES.VIEW_ALL_TIME_OFF) || hasCapability(CAPABILITIES.VIEW_HR_DATA);
-  const canViewFinancials = hasCapability(CAPABILITIES.VIEW_FINANCIALS);
+  // Page access = full access to all features
+  const canRunLeaveMigration = true;
+  const canViewLeaveBalance = true;
+  const canViewFinancials = true;
 
   // Team members loaded from Firestore
   const [teamMembers, setTeamMembers] = useState([]);

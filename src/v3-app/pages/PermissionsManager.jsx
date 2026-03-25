@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { usePendingUsers } from '../../contexts/PendingUsersContext';
 import { supabaseService } from '../../services/supabaseService';
-import { CAPABILITIES } from '../../entities/Capabilities';
 import { 
   Shield, 
   Search, 
@@ -50,55 +49,6 @@ import { usePermissions } from '../../contexts/PermissionsContext';
 import EmployeeLink from '../../components/ui/EmployeeLink';
 import EmployeeDetailsModal from '../../components/EmployeeDetailsModal';
 import OnlineIndicator, { isOnline } from '../../components/ui/OnlineIndicator';
-
-// Feature permissions with descriptions
-const ALL_FEATURES = {
-  [CAPABILITIES.VIEW_FINANCIALS]: { 
-    name: 'View Financial Data', 
-    icon: DollarSign, 
-    description: 'See salary, compensation, and other financial information' 
-  },
-  [CAPABILITIES.MANAGE_USERS]: { 
-    name: 'Manage Users', 
-    icon: UserCog, 
-    description: 'View Users & Permissions page. Only system administrators can add, remove, or change user permissions.' 
-  },
-  [CAPABILITIES.APPROVE_TIME_OFF]: { 
-    name: 'Approve Time Off', 
-    icon: Clock, 
-    description: 'Approve or deny employee time off requests' 
-  },
-  [CAPABILITIES.VIEW_ANALYTICS]: { 
-    name: 'View Analytics', 
-    icon: BarChart3, 
-    description: 'Access analytics dashboards and reports' 
-  },
-  [CAPABILITIES.MANAGE_CLIENTS]: { 
-    name: 'Manage Clients', 
-    icon: Users, 
-    description: 'Edit client info, remove clients from the system' 
-  },
-  [CAPABILITIES.ASSIGN_CLIENT_MANAGERS]: { 
-    name: 'Assign Client Managers', 
-    icon: UserPlus, 
-    description: 'Assign social media managers to clients' 
-  },
-  [CAPABILITIES.EDIT_CLIENT_PACKAGES]: { 
-    name: 'Edit Client Packages', 
-    icon: Briefcase, 
-    description: 'Edit package type, posts remaining, and payment status' 
-  },
-  [CAPABILITIES.VIEW_ALL_REPORTS]: { 
-    name: 'See All Reports', 
-    icon: BarChart3, 
-    description: 'View and edit all Instagram analytics reports (not just your own)' 
-  },
-  [CAPABILITIES.APPROVE_CONTENT]: { 
-    name: 'Approve Content', 
-    icon: Check, 
-    description: 'View and approve/reject all team content items (approval workflow)' 
-  },
-};
 
 // Build ALL_PAGES from module registry + additional pages
 const ALL_PAGES = {
@@ -176,7 +126,6 @@ const PermissionsManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedUser, setExpandedUser] = useState(null);
   const [userPermissions, setUserPermissions] = useState({});
-  const [userFeaturePermissions, setUserFeaturePermissions] = useState({});
   const [hasChanges, setHasChanges] = useState({});
   
   // Add user modal state
@@ -233,23 +182,19 @@ const PermissionsManager = () => {
 
         // Permissions are already on each profile from getApprovedUsers — avoid N+1 getUserPermissions calls
         const permissionsMap = {};
-        const featurePermissionsMap = {};
         const rolesMap = {};
         for (const user of allUsers) {
           const uEmail = user.email || user.id || '';
           try {
             const result = supabaseService.getPermissionsFromUserRecord(user);
             permissionsMap[uEmail] = result?.pages || [];
-            featurePermissionsMap[uEmail] = result?.features || [];
           } catch (e) {
             permissionsMap[uEmail] = [];
-            featurePermissionsMap[uEmail] = [];
           }
           rolesMap[uEmail] = user.primaryRole || user.role || user.roles?.[0] || 'social_media_manager';
         }
         setUserRoles(rolesMap);
         setUserPermissions(permissionsMap);
-        setUserFeaturePermissions(featurePermissionsMap);
       } catch (error) {
         console.error('Error loading users:', error);
         toast.error('Failed to load users');
@@ -282,27 +227,6 @@ const PermissionsManager = () => {
     setHasChanges(prev => ({ ...prev, [userEmail]: true }));
   };
 
-  // Toggle a feature permission for a user
-  const toggleFeaturePermission = (userEmail, featureId) => {
-    // Prevent modifying other system admins' permissions, but allow self-modification
-    const isOtherAdmin = SYSTEM_ADMINS.includes(userEmail.toLowerCase()) && currentUser?.email?.toLowerCase() !== userEmail.toLowerCase();
-    if (isOtherAdmin) {
-      toast.error("Cannot modify other system admin permissions");
-      return;
-    }
-
-    setUserFeaturePermissions(prev => {
-      const currentPerms = prev[userEmail] || [];
-      const newPerms = currentPerms.includes(featureId)
-        ? currentPerms.filter(id => id !== featureId)
-        : [...currentPerms, featureId];
-      
-      return { ...prev, [userEmail]: newPerms };
-    });
-
-    setHasChanges(prev => ({ ...prev, [userEmail]: true }));
-  };
-
   // Grant all pages to a user
   const grantAllPages = (userEmail) => {
     if (SYSTEM_ADMINS.includes(userEmail.toLowerCase())) return;
@@ -326,18 +250,15 @@ const PermissionsManager = () => {
     setHasChanges(prev => ({ ...prev, [userEmail]: true }));
   };
 
-  // Save permissions for a user (pages, features). Sync Approve Time Off to isTimeOffAdmin for notifications.
+  // Save permissions for a user (pages only).
   const saveUserPermissions = async (userEmail) => {
     try {
       setSaving(userEmail);
       if (isSystemAdmin) await supabaseService.ensureEmailLowerClaim();
-      const features = userFeaturePermissions[userEmail] || [];
-      const hasApproveTimeOff = features.includes(CAPABILITIES.APPROVE_TIME_OFF);
       await supabaseService.setUserFullPermissions(userEmail, {
         pages: userPermissions[userEmail] || [],
-        features
+        features: []
       });
-      await supabaseService.setTimeOffAdmin(userEmail, hasApproveTimeOff);
       toast.success(`Permissions saved for ${userEmail}`);
       setHasChanges(prev => ({ ...prev, [userEmail]: false }));
     } catch (error) {
@@ -435,13 +356,12 @@ const PermissionsManager = () => {
       };
 
       await supabaseService.addApprovedUser(userData);
-      
+
       // Default pages only; clients and other pages are enabled per user. Role is not used for permissions.
       await supabaseService.setUserFullPermissions(userData.email, { pages: DEFAULT_PAGES, features: [] });
-      
+
       setUsers(prev => [...prev, userData]);
       setUserPermissions(prev => ({ ...prev, [userData.email]: DEFAULT_PAGES }));
-      setUserFeaturePermissions(prev => ({ ...prev, [userData.email]: [] }));
 
       toast.success(`User ${newUserForm.displayName} added successfully`);
       setShowAddModal(false);
@@ -524,8 +444,8 @@ const PermissionsManager = () => {
     displayNameFor(user).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canApproveUsers = isSystemAdmin || hasPageAccess('users'); // isSystemAdmin kept for safety access to Permissions UI
-  // Only system admins can add/remove users or change permissions; anyone with MANAGE_USERS can view
+  const canApproveUsers = isSystemAdmin;
+  // Only system admins can add/remove users or change permissions
   const canEditPermissions = isSystemAdmin;
 
   const handleApprovePendingUser = async (pendingUser) => {
@@ -581,7 +501,7 @@ const PermissionsManager = () => {
     }
   };
 
-  const canAccess = isSystemAdmin || hasPageAccess('users'); // isSystemAdmin kept for safety access to Permissions UI
+  const canAccess = isSystemAdmin; // Only the system admin can access the Permissions page
   if (!canAccess) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -784,7 +704,7 @@ const PermissionsManager = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[13px] text-[#86868b]">
-                      {isAdmin ? 'Full Access' : `${perms.length} pages, ${(userFeaturePermissions[email] || []).length} features`}
+                      {isAdmin ? 'Full Access' : `${perms.length} pages`}
                     </span>
                     {isExpanded ? (
                       <ChevronDown className="w-5 h-5 text-[#86868b]" />
@@ -989,60 +909,6 @@ const PermissionsManager = () => {
                           })}
                         </div>
 
-                        {/* Feature Permissions Section */}
-                        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/5">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Shield className="w-4 h-4 text-[#af52de]" />
-                            <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Feature Permissions</span>
-                          </div>
-                          <p className="text-[12px] text-[#86868b] mb-3">
-                            Control what data and actions this user can access within pages.
-                          </p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {Object.entries(ALL_FEATURES).map(([featureId, feature]) => {
-                              const featurePerms = userFeaturePermissions[email] || [];
-                              const hasFeature = featurePerms.includes(featureId);
-                              const Icon = feature.icon;
-
-                              return (
-                                <button
-                                  key={featureId}
-                                  type="button"
-                                  onClick={() => canEditPermissions && toggleFeaturePermission(email, featureId)}
-                                  disabled={!canEditPermissions}
-                                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                                    !canEditPermissions ? 'cursor-default opacity-90' : 'cursor-pointer'
-                                  } ${
-                                    hasFeature
-                                      ? 'bg-[#af52de]/10 border-[#af52de]/30'
-                                      : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent hover:bg-black/5 dark:hover:bg-white/5'
-                                  }`}
-                                >
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                    hasFeature 
-                                      ? 'bg-[#af52de]/20' 
-                                      : 'bg-black/5 dark:bg-white/5'
-                                  }`}>
-                                    <Icon className={`w-4 h-4 ${hasFeature ? 'text-[#af52de]' : 'text-[#86868b]'}`} />
-                                  </div>
-                                  <div className="flex-1 text-left min-w-0">
-                                    <p className={`text-[13px] font-medium ${
-                                      hasFeature ? 'text-[#af52de]' : 'text-[#1d1d1f] dark:text-white'
-                                    }`}>
-                                      {feature.name}
-                                    </p>
-                                    <p className="text-[10px] text-[#86868b] truncate">
-                                      {feature.description}
-                                    </p>
-                                  </div>
-                                  {hasFeature && (
-                                    <Check className="w-4 h-4 flex-shrink-0 text-[#af52de]" />
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
 
                         {/* Remove User - System Admin only */}
                         {isSystemAdmin && (
