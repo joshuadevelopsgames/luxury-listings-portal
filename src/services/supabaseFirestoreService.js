@@ -2229,9 +2229,14 @@ class SupabaseService {
     try {
       // Match on owner_id (Supabase profile UUID) OR user_id_legacy (Firebase UID)
       // to support both migrated canvases and newly created ones.
-      const { data } = await supabase.from('canvases').select('*').or(`owner_id.eq.${userId},user_id_legacy.eq.${userId}`).order('updated_at', { ascending: false });
+      const { data, error } = await supabase.from('canvases').select('*').or(`owner_id.eq.${userId},user_id_legacy.eq.${userId}`).order('updated_at', { ascending: false });
+      if (error) {
+        console.error('[getCanvases] query error:', error.message, '| userId:', userId);
+        return [];
+      }
+      console.log('[getCanvases] returned', (data || []).length, 'rows for userId:', userId);
       return (data || []).map(r => ({ id: r.id, title: r.title, content: r.content || [], userId: r.user_id_legacy || r.owner_id, ownerId: r.owner_id, isShared: r.is_shared, sharedWith: r.shared_with || [], emoji: r.emoji || '📄', createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
-    } catch { return []; }
+    } catch (e) { console.error('[getCanvases] exception:', e); return []; }
   }
 
   async createCanvas(userId, canvas) {

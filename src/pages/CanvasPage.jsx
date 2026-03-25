@@ -379,11 +379,13 @@ export default function CanvasPage() {
   // Wait for authHydrated so the Supabase JWT is active before querying.
   // Without this, the query runs with an unauthenticated client and RLS blocks it.
   useEffect(() => {
+    console.log('[CanvasPage] fetch effect — userId:', userId, 'authHydrated:', authHydrated);
     if (!userId || !authHydrated) return;
     setLoading(true);
     supabaseService
       .getCanvases(userId)
       .then((list) => {
+        console.log('[CanvasPage] loaded', list.length, 'canvases for', userId);
         setCanvases(list);
         setActiveId(null);
       })
