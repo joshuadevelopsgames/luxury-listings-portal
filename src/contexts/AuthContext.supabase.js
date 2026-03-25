@@ -495,7 +495,8 @@ export function AuthProvider({ children }) {
       // of an error. Retry once after a short delay before treating the user as
       // not-approved and triggering a forced logout.
       if (!approvedUser) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        // RLS race: JWT may not be attached yet on a hard refresh. Wait briefly then retry.
+        await new Promise((resolve) => setTimeout(resolve, 400));
         supabaseService.clearProfileCache(emailNormalized);
         approvedUser = await supabaseService.getApprovedUserByEmail(emailNormalized);
       }
@@ -679,14 +680,28 @@ export function AuthProvider({ children }) {
   // [loading, authHydrated] in the deps, the timeout resets every time those
   // values change — meaning it never fires when the auth flow is slow, which
   // is exactly when we need it.
+  //
+  // We also check signInInProgressRef: if handleUserSignIn is actively running
+  // (e.g. waiting on the 400ms RLS-race retry + DB query), we give it an extra
+  // 3s grace period before force-unblocking. This prevents the timeout from
+  // firing mid-sign-in and releasing the app with empty permissions.
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setAuthHydrated((prev) => {
-        if (!prev) console.warn('Auth timeout — unblocking app after 5s');
-        return true;
-      });
-      setLoading(false);
-    }, 5000);
+    let timeout;
+    const scheduleTimeout = (delay) => {
+      timeout = setTimeout(() => {
+        if (signInInProgressRef.current) {
+          // Sign-in is still running — give it a bit more time before force-unblocking
+          scheduleTimeout(3000);
+          return;
+        }
+        setAuthHydrated((prev) => {
+          if (!prev) console.warn('Auth timeout — unblocking app after wait');
+          return true;
+        });
+        setLoading(false);
+      }, delay);
+    };
+    scheduleTimeout(5000);
     return () => clearTimeout(timeout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
