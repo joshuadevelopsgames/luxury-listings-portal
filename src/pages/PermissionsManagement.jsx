@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Shield, User, Check, X, Search, Save } from 'lucide-react';
 import { supabaseService } from '../services/supabaseService';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../contexts/PermissionsContext';
+import { getDefaultPagePermissions } from '../entities/UserRoles';
 import { toast } from 'react-hot-toast';
 
 // Available pages that can be granted permissions
@@ -21,15 +23,13 @@ const AVAILABLE_PAGES = [
 
 const PermissionsManagement = () => {
   const { currentUser } = useAuth();
+  const { isSystemAdmin } = usePermissions();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [userPermissions, setUserPermissions] = useState({});
   const [saving, setSaving] = useState(false);
-
-  // Check if user is system admin
-  const isSystemAdmin = currentUser?.email === 'jrsschroeder@gmail.com';
 
   useEffect(() => {
     if (!isSystemAdmin) {
@@ -69,6 +69,15 @@ const PermissionsManagement = () => {
         ? currentPermissions.filter(p => p !== pageId)
         : [...currentPermissions, pageId]
     }));
+  };
+
+  const handleResetToRoleDefaults = (userEmail) => {
+    const user = users.find(u => u.email === userEmail);
+    if (!user) return;
+    const role = user.role || user.primaryRole || 'content_director';
+    const defaults = getDefaultPagePermissions(role);
+    setUserPermissions(prev => ({ ...prev, [userEmail]: defaults }));
+    toast.success(`Reset to ${role} defaults — click Save to apply`);
   };
 
   const handleSavePermissions = async (userEmail) => {
@@ -238,7 +247,7 @@ const PermissionsManagement = () => {
                 ))}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-black/5 dark:border-white/10">
+              <div className="mt-6 pt-6 border-t border-black/5 dark:border-white/10 space-y-3">
                 <button
                   onClick={() => handleSavePermissions(selectedUser.email)}
                   disabled={saving}
@@ -246,6 +255,12 @@ const PermissionsManagement = () => {
                 >
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : 'Save Permissions'}
+                </button>
+                <button
+                  onClick={() => handleResetToRoleDefaults(selectedUser.email)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-transparent border border-black/10 dark:border-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                >
+                  Reset to Role Defaults
                 </button>
               </div>
             </div>

@@ -453,3 +453,28 @@ export function getUserByRole(role) {
 export function getAvailableRoles() {
   return Object.values(USER_ROLES);
 }
+
+/**
+ * Default page permissions per role.
+ * When a user is assigned a role, these pages are granted automatically
+ * unless the admin has customized their permissions.
+ */
+export const DEFAULT_PAGE_PERMISSIONS = {
+  [USER_ROLES.ADMIN]: ['dashboard', 'tasks', 'clients', 'posting-packages', 'instagram-reports', 'content-calendar', 'crm', 'hr-calendar', 'team', 'it-support', 'my-time-off'],
+  [USER_ROLES.DIRECTOR]: ['dashboard', 'tasks', 'clients', 'posting-packages', 'instagram-reports', 'content-calendar', 'crm', 'hr-calendar', 'team', 'my-time-off'],
+  [USER_ROLES.CONTENT_DIRECTOR]: ['dashboard', 'tasks', 'clients', 'posting-packages', 'instagram-reports', 'content-calendar', 'my-time-off'],
+  [USER_ROLES.SOCIAL_MEDIA_MANAGER]: ['dashboard', 'tasks', 'clients', 'posting-packages', 'instagram-reports', 'content-calendar', 'my-time-off'],
+  [USER_ROLES.GRAPHIC_DESIGNER]: ['dashboard', 'tasks', 'clients', 'my-time-off'],
+  [USER_ROLES.HR_MANAGER]: ['dashboard', 'tasks', 'hr-calendar', 'team', 'my-time-off'],
+  [USER_ROLES.SALES_MANAGER]: ['dashboard', 'tasks', 'clients', 'crm', 'my-time-off'],
+  [USER_ROLES.ASSISTANT]: ['dashboard', 'tasks', 'my-time-off'],
+  [USER_ROLES.PENDING]: ['dashboard'],
+};
+
+/**
+ * Get default page permissions for a role.
+ * Returns the page IDs that should be granted when this role is assigned.
+ */
+export function getDefaultPagePermissions(role) {
+  return DEFAULT_PAGE_PERMISSIONS[role] || DEFAULT_PAGE_PERMISSIONS[USER_ROLES.ASSISTANT] || ['dashboard'];
+}

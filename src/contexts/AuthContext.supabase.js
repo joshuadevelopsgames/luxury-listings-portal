@@ -11,7 +11,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
-import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
+import { USER_ROLES, getUserByRole, getRolePermissions, getDefaultPagePermissions } from '../entities/UserRoles';
 import { supabaseService } from '../services/supabaseService';
 import { appNavigate } from '../utils/navigation';
 import { useViewAs } from './ViewAsContext';
@@ -415,16 +415,25 @@ export function AuthProvider({ children }) {
           onboardingCompleted: approvedUser.onboardingCompleted,
         };
 
+        // If user has NO page permissions yet, apply role defaults and persist them
+        if (!mergedUser.pagePermissions.length) {
+          const defaults = getDefaultPagePermissions(roleToUse);
+          mergedUser.pagePermissions = defaults;
+          supabaseService.setUserPagePermissions(email, defaults).catch(() => {});
+        }
+
         setCurrentRole(roleToUse);
         setCurrentUser(mergedUser);
         setUserData(mergedUser);
         saveAuthToStorage(mergedUser);
 
         // Sync avatar + uid back to profiles
-        if (photoURL) {
-          supabaseService.updateApprovedUser(approvedUser.id || email, { avatar: photoURL }).catch(() => {});
+        const syncPayload = {};
+        if (photoURL) syncPayload.avatar = photoURL;
+        if (uid) syncPayload.uid = uid;
+        if (Object.keys(syncPayload).length) {
+          supabaseService.updateApprovedUser(approvedUser.id || email, syncPayload).catch(() => {});
         }
-        supabaseService.updateApprovedUser(approvedUser.id || email, { uid }).catch(() => {});
 
         // Navigate
         const currentPath = window.location.pathname;
@@ -505,7 +514,7 @@ export function AuthProvider({ children }) {
           role: approvedUser.role || prev.role,
           primaryRole: approvedUser.primaryRole || prev.primaryRole,
           roles: approvedUser.roles || prev.roles,
-          customPermissions: approvedUser.customPermissions || prev.customPermissions || [],
+          customPermissions: approvedUser.customPermissions ?? prev.customPermissions ?? [],
           pagePermissions: approvedUser.pagePermissions ?? prev.pagePermissions ?? [],
           featurePermissions: approvedUser.featurePermissions ?? prev.featurePermissions ?? [],
           adminPermissions: false,
