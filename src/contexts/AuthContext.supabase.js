@@ -147,7 +147,7 @@ export function AuthProvider({ children }) {
     try {
       // Supabase OAuth uses a redirect flow. We open the OAuth URL in a popup
       // manually to match the original UX as closely as possible.
-      const redirectTo = `${window.location.origin}/v4/auth/callback`;
+      const redirectTo = `${window.location.origin}/dashboard`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -315,8 +315,8 @@ export function AuthProvider({ children }) {
       setUserData(demoUser);
       saveAuthToStorage(demoUser);
       const currentPath = window.location.pathname;
-      if (currentPath === '/v4/login' || currentPath === '/v4' || currentPath === '/v4/') {
-        appNavigate('/v4/dashboard', { replace: true });
+      if (currentPath === '/login' || currentPath === '/') {
+        appNavigate('/dashboard', { replace: true });
       }
       return;
     }
@@ -434,33 +434,30 @@ export function AuthProvider({ children }) {
         if (currentPath.startsWith('/report/')) return;
 
         const onLoginOrHome =
-          currentPath === '/v4/login' ||
-          currentPath === '/v4' ||
-          currentPath === '/v4/' ||
           currentPath === '/login' ||
           currentPath === '/';
 
         if (onLoginOrHome) {
           if (mergedUser.onboardingCompleted) {
-            appNavigate('/v4/dashboard', { replace: true });
+            appNavigate('/dashboard', { replace: true });
           } else {
-            appNavigate('/v4/onboarding', { replace: true });
+            appNavigate('/onboarding', { replace: true });
           }
         } else if (!mergedUser.onboardingCompleted && !currentPath.includes('/onboarding')) {
-          appNavigate('/v4/onboarding', { replace: true });
+          appNavigate('/onboarding', { replace: true });
         }
       } else {
         // Not approved — sign out
         await logout();
         if (!window.location.pathname.includes('/login')) {
-          appNavigate('/v4/login?error=access_required', { replace: true });
+          appNavigate('/login?error=access_required', { replace: true });
         }
       }
     } catch (error) {
       console.error('Error checking user approval:', error);
       await logout();
       if (!window.location.pathname.includes('/login')) {
-        appNavigate('/v4/login?error=access_required', { replace: true });
+        appNavigate('/login?error=access_required', { replace: true });
       }
     }
   }

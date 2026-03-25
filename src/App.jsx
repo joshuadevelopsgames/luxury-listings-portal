@@ -81,9 +81,6 @@ if (typeof window !== 'undefined') {
   window.firestoreService = firestoreService; // For running migrations like assignMissingClientNumbers()
 }
 
-// V3 on Supabase — same UI, Supabase auth, accessible at /v4/* for testing
-const V4App = React.lazy(() => import('./V3SupabaseApp'));
-
 function CanvasRedirect() {
   const { search } = useLocation();
   return <Navigate to={`/workspaces${search}`} replace />;
@@ -168,16 +165,6 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <RouteErrorPage />,
     children: [
-      // V4 App (Supabase-first) — accessible at /v4/*
-      {
-        path: '/v4/*',
-        element: (
-          <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]"><div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" /></div>}>
-            <V4App />
-          </React.Suspense>
-        ),
-      },
-
       // Public Instagram reports first so /report/:id is never matched by protected catch-all
       { path: '/report/:publicLinkId', element: <PublicInstagramReportPage /> },
       { path: '/report-demo', element: <DemoInstagramReportPage /> },
