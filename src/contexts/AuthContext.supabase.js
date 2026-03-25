@@ -671,19 +671,24 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, [currentUser?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Safety timeout — if auth takes too long (e.g. Supabase WebSocket blocked),
-  // unblock the app so users aren't stuck on a spinner indefinitely.
-  // 5s is enough for any reasonable connection; the 10s original was too long.
+  // Safety timeout — if auth takes too long (e.g. Supabase WebSocket blocked,
+  // slow network, or RLS blocking the profile query), unblock the app so users
+  // aren't stuck on a spinner indefinitely.
+  //
+  // IMPORTANT: This must run ONCE on mount only (empty dep array). If we put
+  // [loading, authHydrated] in the deps, the timeout resets every time those
+  // values change — meaning it never fires when the auth flow is slow, which
+  // is exactly when we need it.
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (loading || !authHydrated) {
-        console.warn('Auth timeout — unblocking app after 5s');
-        setAuthHydrated(true);
-        setLoading(false);
-      }
+      setAuthHydrated((prev) => {
+        if (!prev) console.warn('Auth timeout — unblocking app after 5s');
+        return true;
+      });
+      setLoading(false);
     }, 5000);
     return () => clearTimeout(timeout);
-  }, [loading, authHydrated]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // CONTEXT VALUE

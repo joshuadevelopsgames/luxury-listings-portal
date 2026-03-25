@@ -45,17 +45,19 @@ export function PermissionsProvider({ children }) {
     }
   }, [currentUser?.email, isSystemAdmin]);
 
+  // Effect 1: Seed pages from currentUser and subscribe to realtime updates.
+  // Runs when the user changes or their permissions are updated by the DB.
   useEffect(() => {
     if (!currentUser?.email) {
       setPages([]);
-      setLoading(false);
       setIsSystemAdmin(false);
+      // No user at all — release loading so the app can redirect to /login
+      setLoading(false);
       return;
     }
 
     // Demo view-only: see all pages
-    const isDemoViewOnly = !!currentUser.isDemoViewOnly;
-    if (isDemoViewOnly) {
+    if (currentUser.isDemoViewOnly) {
       setIsSystemAdmin(false);
       setPages([]);
       setLoading(false);
@@ -64,30 +66,14 @@ export function PermissionsProvider({ children }) {
 
     // Subscribe to admin changes
     const unsubscribeAdmins = onSystemAdminsChange((adminEmails) => {
-      const adminStatus = adminEmails.includes(currentUser.email.toLowerCase());
-      setIsSystemAdmin(adminStatus);
+      setIsSystemAdmin(adminEmails.includes(currentUser.email.toLowerCase()));
     });
+    setIsSystemAdmin(checkIsSystemAdmin(currentUser.email));
 
-    const adminStatus = checkIsSystemAdmin(currentUser.email);
-    setIsSystemAdmin(adminStatus);
-
-    // Seed from currentUser (AuthContext already fetched these)
+    // Seed from currentUser (AuthContext already fetched these from the DB)
     const seededPages = Array.isArray(currentUser.pagePermissions) ? currentUser.pagePermissions : [];
     setPages(seededPages);
     setPermissionsVersion(currentUser.permissionsVersion || 0);
-
-    // Release loading as soon as AuthContext has completed its DB fetch.
-    // We no longer gate on seededPages.length > 0 because that caused a
-    // permanent spinner: the safety timeout in AuthContext sets authHydrated=true
-    // after 5s even when handleUserSignIn is still in-flight, so seededPages
-    // could still be [] when authHydrated flips — and loading would never clear.
-    //
-    // The "Access Denied" flash is prevented instead by PermissionRoute checking
-    // authHydrated directly: it keeps showing its spinner until authHydrated=true,
-    // at which point currentUser.pagePermissions is guaranteed to be populated.
-    if (authHydrated) {
-      setLoading(false);
-    }
 
     // Subscribe to realtime updates for live permission changes
     const unsub = supabaseService.onApprovedUserChange(currentUser.email, (user) => {
@@ -108,9 +94,21 @@ export function PermissionsProvider({ children }) {
   }, [
     currentUser?.email,
     currentUser?.permissionsVersion,
-    currentUser?.pagePermissions,
-    authHydrated,
+    // NOTE: pagePermissions is intentionally NOT in deps here — we don't want
+    // to re-subscribe to realtime every time permissions change. The realtime
+    // listener handles live updates. The initial seed happens on email change.
   ]);
+
+  // Effect 2: Release the loading gate as soon as AuthContext finishes its DB
+  // fetch (authHydrated=true). This is a SEPARATE effect so it always fires
+  // when authHydrated changes, regardless of whether currentUser.pagePermissions
+  // or permissionsVersion changed (which could be the same value as the cache,
+  // causing React to skip the combined effect and leaving loading=true forever).
+  useEffect(() => {
+    if (authHydrated) {
+      setLoading(false);
+    }
+  }, [authHydrated]);
 
   const isDemoViewOnly = !!currentUser?.isDemoViewOnly;
 
