@@ -57,7 +57,7 @@ export const ClientsProvider = ({ children }) => {
         
         // Store by client number if exists
         if (client.clientNumber) {
-          byName[client.clientNumber.toLowerCase()] = client;
+          byName[String(client.clientNumber).toLowerCase()] = client;
         }
       }
     });
