@@ -125,7 +125,7 @@ function dateStr(ts) {
 }
 
 export default function CanvasPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, authHydrated } = useAuth();
   const { confirm } = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -376,8 +376,10 @@ export default function CanvasPage() {
     [canvases, sharedCanvases, userId]
   );
 
+  // Wait for authHydrated so the Supabase JWT is active before querying.
+  // Without this, the query runs with an unauthenticated client and RLS blocks it.
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !authHydrated) return;
     setLoading(true);
     supabaseService
       .getCanvases(userId)
@@ -390,7 +392,7 @@ export default function CanvasPage() {
         toast.error('Failed to load workspaces');
       })
       .finally(() => setLoading(false));
-  }, [userId]);
+  }, [userId, authHydrated]);
 
   useEffect(() => {
     if (sidebarTab !== 'shared' || !userEmail) return;
