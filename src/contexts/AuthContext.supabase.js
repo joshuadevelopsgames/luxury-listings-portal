@@ -8,7 +8,7 @@
  *   import { AuthProvider, useAuth } from './contexts/AuthContext.supabase';
  */
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
@@ -16,10 +16,10 @@ import { firestoreService } from '../services/supabaseFirestoreService';
 import { appNavigate } from '../utils/navigation';
 import { useViewAs } from './ViewAsContext';
 import { resolvePermission } from '../utils/permissionResolver';
-// Import the SAME AuthContext object so Supabase AuthProvider overrides the Firebase one
-// for any sub-tree that mounts this provider — all V3 components using useAuth() will
-// transparently pick up Supabase state when rendered under V3SupabaseApp.
-import { AuthContext } from './AuthContext';
+
+// Define the context here so it can be exported and re-exported by AuthContext.js
+// after cutover without creating a circular dependency.
+export const AuthContext = createContext();
 
 // ============================================================================
 // SYSTEM ADMINS (Supabase-backed, mirrors systemAdmins.js without Firebase)
@@ -116,9 +116,8 @@ const loadAuthFromStorage = () => {
 // ============================================================================
 // AUTH CONTEXT
 // ============================================================================
-// AuthContext is imported from AuthContext.js — same singleton object.
-// This lets the Supabase AuthProvider override Firebase for child components
-// without any changes to V3 pages or layout.
+// AuthContext is defined and exported here (post-cutover AuthContext.js re-exports it).
+// All V3 components using useAuth() transparently use Supabase state.
 
 export function useAuth() {
   return useContext(AuthContext);
