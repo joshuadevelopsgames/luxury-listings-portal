@@ -3,7 +3,7 @@
  * Data is stored in Firestore shared doc (crm/data) so new leads show for all users.
  */
 
-import { auth } from '../firebase';
+import { supabase } from '../lib/supabase';
 import { supabaseService } from './supabaseService';
 
 // Type (SMM, PP, BOTH, N/A, DESIGN, PROD, CONSULT) - required for every contact
@@ -115,7 +115,8 @@ const DEFAULT_TAB = 'warmLeads';
  * @returns {Promise<Array<{ id: string, clientName: string, clientEmail: string, source: string }>>}
  */
 export async function getCrmLeadsForCurrentUser(uid) {
-  if (!auth.currentUser?.uid) return [];
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return [];
   try {
     const { warmLeads, contactedClients, coldLeads } = await supabaseService.getCrmData();
     const mapLead = (c, i, prefix) => ({
@@ -142,7 +143,8 @@ export async function getCrmLeadsForCurrentUser(uid) {
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
 export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
-  if (!auth.currentUser?.uid) {
+  const { data: { session: addSession } } = await supabase.auth.getSession();
+  if (!addSession?.user) {
     return { success: false, error: 'Not authenticated' };
   }
   const name = (contact.contactName || contact.clientName || '').trim();
@@ -197,7 +199,8 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
 export async function removeLeadFromCRM(leadId) {
-  if (!auth.currentUser?.uid) return { success: false, error: 'Not authenticated' };
+  const { data: { session: removeSession } } = await supabase.auth.getSession();
+  if (!removeSession?.user) return { success: false, error: 'Not authenticated' };
   try {
     const { warmLeads, contactedClients, coldLeads } = await supabaseService.getCrmData();
     await supabaseService.setCrmData({

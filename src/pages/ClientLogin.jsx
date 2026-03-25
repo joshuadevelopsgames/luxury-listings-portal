@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Mail, Lock, Shield, Calendar, MessageSquare, BarChart3, FileText } from 'lucide-react';
 import { supabaseService } from '../services/supabaseService';
-import { auth } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { supabase } from '../lib/supabase';
 import { createTestClient } from '../utils/createTestClient';
 import { getGmailComposeUrl } from '../utils/gmailCompose';
 
@@ -26,13 +25,18 @@ const ClientLogin = () => {
 
     try {
       if (isSignUp) {
-        // Create Firebase account first
+        // Create Supabase account first
         try {
-          await createUserWithEmailAndPassword(auth, email, password);
-          
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: `${window.location.origin}/client-portal` },
+          });
+          if (signUpError) throw signUpError;
+
           // After account creation, check if client exists
           const clients = await supabaseService.getClients();
-          const client = clients.find(c => 
+          const client = clients.find(c =>
             c.clientEmail?.toLowerCase() === email.toLowerCase()
           );
 
@@ -51,44 +55,42 @@ const ClientLogin = () => {
             try {
               await supabaseService.addPendingClient({
                 email: email,
-                clientName: email.split('@')[0], // Use email prefix as default name
+                clientName: email.split('@')[0],
                 status: 'pending'
               });
             } catch (error) {
               console.error('Error adding pending client:', error);
-              // Continue even if this fails
             }
             navigate('/client-waiting-for-approval');
           }
         } catch (error) {
           console.error('Sign-up error:', error);
-          if (error.code === 'auth/email-already-in-use') {
+          const msg = (error.message || '').toLowerCase();
+          if (msg.includes('already registered') || msg.includes('already exists')) {
             setError('An account already exists with this email. Please sign in instead. If you forgot your password, use "Forgot Password?" below.');
             setIsSignUp(false);
             setShowPasswordReset(true);
-          } else if (error.code === 'auth/weak-password') {
+          } else if (msg.includes('weak') || msg.includes('at least')) {
             setError('Password is too weak. Please use at least 6 characters.');
-          } else if (error.code === 'auth/operation-not-allowed') {
-            setError('Email/password authentication is not enabled. Please contact support or use Google sign-in.');
-          } else if (error.code === 'auth/invalid-email') {
+          } else if (msg.includes('invalid') && msg.includes('email')) {
             setError('Invalid email address. Please check and try again.');
           } else {
-            setError('Failed to create account. Error: ' + (error.message || error.code || 'Unknown error'));
+            setError('Failed to create account. Error: ' + (error.message || 'Unknown error'));
           }
         }
       } else {
-        // Sign in existing account
+        // Sign in existing account via Supabase
         try {
-          await signInWithEmailAndPassword(auth, email, password);
-          
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInError) throw signInError;
+
           // After sign in, check if client exists
           const clients = await supabaseService.getClients();
-          const client = clients.find(c => 
+          const client = clients.find(c =>
             c.clientEmail?.toLowerCase() === email.toLowerCase()
           );
 
           if (client) {
-            // Client exists, store info and redirect
             localStorage.setItem('clientAuth', JSON.stringify({
               email: email,
               clientId: client.id,
@@ -97,26 +99,21 @@ const ClientLogin = () => {
             }));
             navigate('/client-portal');
           } else {
-            // Signed in but client doesn't exist - redirect to waiting page
             navigate('/client-waiting-for-approval');
           }
         } catch (error) {
           console.error('Sign-in error:', error);
-          if (error.code === 'auth/user-not-found') {
-            setError('No account found. Please sign up first.');
-            setIsSignUp(true);
-          } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            setError('Incorrect password. Click "Forgot Password?" to reset it.');
+          const msg = (error.message || '').toLowerCase();
+          if (msg.includes('invalid login') || msg.includes('invalid email or password')) {
+            setError('Incorrect email or password. Click "Forgot Password?" to reset it.');
             setShowPasswordReset(true);
-          } else if (error.code === 'auth/invalid-email') {
-            setError('Invalid email address. Please check and try again.');
-          } else if (error.code === 'auth/operation-not-allowed') {
-            setError('Email/password authentication is not enabled. Please contact support.');
-          } else if (error.code === 'auth/too-many-requests') {
+          } else if (msg.includes('email not confirmed')) {
+            setError('Please confirm your email address before signing in.');
+          } else if (msg.includes('too many requests')) {
             setError('Too many failed attempts. Please try again later or reset your password.');
             setShowPasswordReset(true);
           } else {
-            setError('Failed to sign in. Error: ' + (error.message || error.code || 'Unknown error'));
+            setError('Failed to sign in. Error: ' + (error.message || 'Unknown error'));
           }
         }
       }
@@ -293,21 +290,22 @@ const ClientLogin = () => {
                             return;
                           }
                           console.log('Sending password reset email to:', emailToReset);
-                          await sendPasswordResetEmail(auth, emailToReset, {
-                            url: window.location.origin + '/client-password-reset',
-                            handleCodeInApp: false
+                          const { error: resetError } = await supabase.auth.resetPasswordForEmail(emailToReset, {
+                            redirectTo: window.location.origin + '/client-password-reset',
                           });
+                          if (resetError) throw resetError;
                           console.log('Password reset email sent successfully');
                           setResetSent(true);
                           setError('');
                         } catch (error) {
                           console.error('Password reset error:', error);
-                          if (error.code === 'auth/user-not-found') {
+                          const msg = (error.message || '').toLowerCase();
+                          if (msg.includes('not found') || msg.includes('no user')) {
                             setError('No account found with this email address.');
-                          } else if (error.code === 'auth/invalid-email') {
+                          } else if (msg.includes('invalid') && msg.includes('email')) {
                             setError('Invalid email address. Please check and try again.');
                           } else {
-                            setError('Failed to send reset email: ' + (error.message || error.code || 'Unknown error'));
+                            setError('Failed to send reset email: ' + (error.message || 'Unknown error'));
                           }
                         }
                       }}

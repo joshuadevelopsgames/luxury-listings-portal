@@ -8,7 +8,7 @@
  *   import { AuthProvider, useAuth } from './contexts/AuthContext.supabase';
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 import { USER_ROLES, getUserByRole, getRolePermissions, getDefaultPagePermissions } from '../entities/UserRoles';
@@ -131,6 +131,8 @@ export function AuthProvider({ children }) {
   const [currentRole, setCurrentRole] = useState(storedAuth?.role || USER_ROLES.CONTENT_DIRECTOR);
   const [loading, setLoading] = useState(!storedAuth);
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
+  // Guard: prevent realtime listener from overwriting permissions during initial sign-in
+  const signInInProgressRef = useRef(false);
 
   // Boot system-admin list + live listener
   useEffect(() => {
@@ -283,6 +285,15 @@ export function AuthProvider({ children }) {
 
   // Handle user sign-in logic (mirrors original handleUserSignIn)
   async function handleUserSignIn(supabaseUser) {
+    signInInProgressRef.current = true;
+    try {
+      return await _handleUserSignInInner(supabaseUser);
+    } finally {
+      signInInProgressRef.current = false;
+    }
+  }
+
+  async function _handleUserSignInInner(supabaseUser) {
     const { id: uid, email, user_metadata } = supabaseUser;
     const displayName = user_metadata?.full_name || user_metadata?.name || email;
     const photoURL = user_metadata?.avatar_url || user_metadata?.picture || null;
@@ -408,9 +419,9 @@ export function AuthProvider({ children }) {
           bio: approvedUser.bio || roleUserData.bio,
           skills: approvedUser.skills || roleUserData.skills,
           stats: approvedUser.stats || roleUserData.stats,
-          customPermissions: approvedUser.customPermissions || [],
-          pagePermissions: approvedUser.pagePermissions || [],
-          featurePermissions: approvedUser.featurePermissions || [],
+          customPermissions: Array.isArray(approvedUser.customPermissions) ? approvedUser.customPermissions : [],
+          pagePermissions: Array.isArray(approvedUser.pagePermissions) ? approvedUser.pagePermissions : [],
+          featurePermissions: Array.isArray(approvedUser.featurePermissions) ? approvedUser.featurePermissions : [],
           isApproved: true,
           onboardingCompleted: approvedUser.onboardingCompleted,
         };
@@ -498,6 +509,8 @@ export function AuthProvider({ children }) {
 
     const unsubscribe = supabaseService.onApprovedUserChange(currentUser.email, (approvedUser) => {
       if (!approvedUser) return;
+      // Don't overwrite permissions while handleUserSignIn is still running
+      if (signInInProgressRef.current) return;
       setCurrentUser((prev) => {
         if (!prev) return prev;
         const updated = {

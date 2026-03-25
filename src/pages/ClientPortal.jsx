@@ -20,8 +20,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { supabaseService } from '../services/supabaseService';
-import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
+import { supabase } from '../lib/supabase';
 import ClientCalendarApproval from '../components/client/ClientCalendarApproval';
 import ClientMessaging from '../components/client/ClientMessaging';
 import ClientAnalytics from '../components/client/ClientAnalytics';
@@ -91,19 +90,18 @@ const ClientPortal = () => {
         }
       }
 
-      // Fallback to Firebase auth user
+      // Fallback to Supabase auth session
       if (!emailToUse) {
-        unsubscribeAuth = auth.onAuthStateChanged((user) => {
-          if (!isMounted) return;
-          
-          if (user) {
-            setClientEmail(user.email);
-            loadClient(user.email);
-          } else {
-            // No user authenticated, redirect to login
-            navigate('/client-login');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          if (isMounted) {
+            setClientEmail(session.user.email);
+            await loadClient(session.user.email);
           }
-        });
+        } else {
+          // No user authenticated, redirect to login
+          navigate('/client-login');
+        }
         return;
       }
 
@@ -123,7 +121,7 @@ const ClientPortal = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       localStorage.removeItem('clientAuth');
       navigate('/client-login');
     } catch (error) {

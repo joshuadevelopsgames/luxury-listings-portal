@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Lock, CheckCircle, XCircle, Shield } from 'lucide-react';
-import { auth } from '../firebase';
-import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { supabase } from '../lib/supabase';
 
 const ClientPasswordReset = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,37 +13,28 @@ const ClientPasswordReset = () => {
   const [validating, setValidating] = useState(true);
   const [validCode, setValidCode] = useState(false);
 
-  const oobCode = searchParams.get('oobCode');
-  const mode = searchParams.get('mode');
-
   useEffect(() => {
-    // Verify the reset code is valid
-    const verifyCode = async () => {
-      if (!oobCode || mode !== 'resetPassword') {
-        setError('Invalid or missing reset link. Please request a new password reset.');
-        setValidating(false);
-        return;
-      }
-
-      try {
-        await verifyPasswordResetCode(auth, oobCode);
+    // Supabase sends a recovery link that sets the session automatically via
+    // the URL hash fragment. onAuthStateChange fires PASSWORD_RECOVERY when
+    // the user lands here from the reset email.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
         setValidCode(true);
-      } catch (error) {
-        console.error('Reset code verification error:', error);
-        if (error.code === 'auth/expired-action-code') {
-          setError('This password reset link has expired. Please request a new one.');
-        } else if (error.code === 'auth/invalid-action-code') {
-          setError('Invalid reset link. Please request a new password reset.');
-        } else {
-          setError('Error verifying reset link: ' + (error.message || 'Unknown error'));
-        }
-      } finally {
         setValidating(false);
       }
-    };
+    });
 
-    verifyCode();
-  }, [oobCode, mode]);
+    // Also check if there's already a session (e.g. page was refreshed after
+    // the recovery link was consumed)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setValidCode(true);
+      }
+      setValidating(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -61,32 +50,27 @@ const ClientPasswordReset = () => {
       return;
     }
 
-    if (!oobCode) {
-      setError('Invalid reset code. Please request a new password reset.');
-      return;
-    }
-
     try {
       setLoading(true);
-      await confirmPasswordReset(auth, oobCode, password);
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) throw updateError;
       setSuccess(true);
-      
+
       // Redirect to login after 3 seconds
       setTimeout(() => {
-        navigate('/client-login', { 
+        navigate('/client-login', {
           state: { message: 'Password reset successful! Please sign in with your new password.' }
         });
       }, 3000);
-    } catch (error) {
-      console.error('Password reset error:', error);
-      if (error.code === 'auth/expired-action-code') {
-        setError('This reset link has expired. Please request a new password reset.');
-      } else if (error.code === 'auth/invalid-action-code') {
-        setError('Invalid reset code. Please request a new password reset.');
-      } else if (error.code === 'auth/weak-password') {
+    } catch (err) {
+      console.error('Password reset error:', err);
+      const msg = (err.message || '').toLowerCase();
+      if (msg.includes('weak') || msg.includes('at least')) {
         setError('Password is too weak. Please use a stronger password.');
+      } else if (msg.includes('session') || msg.includes('expired') || msg.includes('invalid')) {
+        setError('This reset link has expired. Please request a new password reset.');
       } else {
-        setError('Failed to reset password: ' + (error.message || 'Unknown error'));
+        setError('Failed to reset password: ' + (err.message || 'Unknown error'));
       }
     } finally {
       setLoading(false);
@@ -251,4 +235,3 @@ const ClientPasswordReset = () => {
 };
 
 export default ClientPasswordReset;
-

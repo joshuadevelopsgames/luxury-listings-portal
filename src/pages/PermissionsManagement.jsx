@@ -92,7 +92,7 @@ const PermissionsManagement = () => {
         return;
       }
 
-      await supabaseService.setUserPagePermissions(userEmail, permissions);
+      await supabaseService.setUserPagePermissions(userEmail, permissions, { changedBy: currentUser?.email });
       toast.success(`Permissions saved for ${userEmail}`);
     } catch (error) {
       console.error('Error saving permissions:', error);

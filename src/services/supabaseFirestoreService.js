@@ -109,7 +109,13 @@ function realtimeListener(table, _filter, fetcher, callback) {
       const data = await fetcher();
       cacheSet(cacheKey, data);
       callback(data);
-    } catch { callback([]); }
+    } catch (err) {
+      // Don't call callback([]) — that wipes permissions/data to empty.
+      // Only deliver stale cache if available; otherwise silently skip.
+      const stale = cacheGet(cacheKey);
+      if (stale) callback(stale);
+      else console.warn(`realtimeListener: fetch failed for ${cacheKey}, skipping callback`, err);
+    }
   };
   entry.listeners.add(handler);
 
@@ -226,6 +232,8 @@ class SupabaseService {
       email: p.email || '',
       name: p.full_name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.email,
       displayName: p.full_name || p.email,
+      firstName: p.first_name || '',
+      lastName: p.last_name || '',
       role: p.role || 'team_member',
       isApproved: p.is_approved !== false,
       approvedAt: normalizeTs(p.approved_at),
@@ -236,10 +244,11 @@ class SupabaseService {
       department: p.department || '',
       phone: p.phone || '',
       bio: p.bio || '',
+      avatar: p.avatar_url || '',
       avatar_url: p.avatar_url || '',
-      pagePermissions: p.page_permissions || [],
-      featurePermissions: p.feature_permissions || [],
-      customPermissions: p.custom_permissions || [],
+      pagePermissions: Array.isArray(p.page_permissions) ? p.page_permissions : [],
+      featurePermissions: Array.isArray(p.feature_permissions) ? p.feature_permissions : [],
+      customPermissions: Array.isArray(p.custom_permissions) ? p.custom_permissions : [],
       leaveBalances: p.leave_balances || {},
       isTimeOffAdmin: p.is_time_off_admin || false,
       onboardingCompleted: p.onboarding_completed || false,
@@ -1748,7 +1757,11 @@ class SupabaseService {
 
   _mapPermissionsFromDoc(userData) {
     if (!userData) return { pages: [], features: [], adminPermissions: false };
-    return { pages: userData.pagePermissions || userData.page_permissions || [], features: userData.featurePermissions || userData.feature_permissions || [], adminPermissions: false };
+    const pages = Array.isArray(userData.pagePermissions) ? userData.pagePermissions
+      : Array.isArray(userData.page_permissions) ? userData.page_permissions : [];
+    const features = Array.isArray(userData.featurePermissions) ? userData.featurePermissions
+      : Array.isArray(userData.feature_permissions) ? userData.feature_permissions : [];
+    return { pages, features, adminPermissions: false };
   }
 
   getUserPermissions(userEmail, options = {}) {
@@ -1767,16 +1780,73 @@ class SupabaseService {
     return oneShot();
   }
 
-  async setUserPagePermissions(userEmail, pageIds) {
-    return this.updateApprovedUser(userEmail, { pagePermissions: pageIds });
+  async setUserPagePermissions(userEmail, pageIds, { changedBy = null } = {}) {
+    // Fetch old permissions for audit trail
+    const oldUser = await this.getApprovedUserByEmail(userEmail);
+    const oldPages = oldUser?.pagePermissions || [];
+    await this.updateApprovedUser(userEmail, { pagePermissions: pageIds });
+    // Log the change
+    this._logPermissionChange({
+      targetEmail: userEmail,
+      changedBy,
+      changeType: 'page_permissions',
+      oldValue: oldPages,
+      newValue: pageIds,
+    }).catch(() => {});
   }
 
-  async setUserFeaturePermissions(userEmail, featureIds) {
-    return this.updateApprovedUser(userEmail, { featurePermissions: featureIds });
+  async setUserFeaturePermissions(userEmail, featureIds, { changedBy = null } = {}) {
+    const oldUser = await this.getApprovedUserByEmail(userEmail);
+    const oldFeatures = oldUser?.featurePermissions || [];
+    await this.updateApprovedUser(userEmail, { featurePermissions: featureIds });
+    this._logPermissionChange({
+      targetEmail: userEmail,
+      changedBy,
+      changeType: 'feature_permissions',
+      oldValue: oldFeatures,
+      newValue: featureIds,
+    }).catch(() => {});
   }
 
-  async setUserFullPermissions(userEmail, { pages = [], features = [] } = {}) {
-    return this.updateApprovedUser(userEmail, { pagePermissions: pages, featurePermissions: features });
+  async setUserFullPermissions(userEmail, { pages = [], features = [] } = {}, { changedBy = null } = {}) {
+    const oldUser = await this.getApprovedUserByEmail(userEmail);
+    const oldPages = oldUser?.pagePermissions || [];
+    const oldFeatures = oldUser?.featurePermissions || [];
+    await this.updateApprovedUser(userEmail, { pagePermissions: pages, featurePermissions: features });
+    this._logPermissionChange({
+      targetEmail: userEmail,
+      changedBy,
+      changeType: 'full_permissions',
+      oldValue: { pages: oldPages, features: oldFeatures },
+      newValue: { pages, features },
+    }).catch(() => {});
+  }
+
+  /**
+   * Log a permission change to the permission_audit_log table.
+   * Fails silently if the table doesn't exist yet.
+   */
+  async _logPermissionChange({ targetEmail, changedBy, changeType, oldValue, newValue }) {
+    try {
+      const added = Array.isArray(newValue) && Array.isArray(oldValue)
+        ? newValue.filter(p => !oldValue.includes(p))
+        : [];
+      const removed = Array.isArray(newValue) && Array.isArray(oldValue)
+        ? oldValue.filter(p => !newValue.includes(p))
+        : [];
+      await supabase.from('permission_audit_log').insert([{
+        target_email: (targetEmail || '').toLowerCase().trim(),
+        changed_by: (changedBy || 'system').toLowerCase().trim(),
+        change_type: changeType,
+        old_value: oldValue,
+        new_value: newValue,
+        added,
+        removed,
+        created_at: new Date().toISOString(),
+      }]).then(() => {}, () => {}); // Supabase thenable, not a Promise
+    } catch (err) {
+      console.warn('Permission audit log write failed (table may not exist yet):', err.message);
+    }
   }
 
   onUserPagePermissionsChange(userEmail, callback) {

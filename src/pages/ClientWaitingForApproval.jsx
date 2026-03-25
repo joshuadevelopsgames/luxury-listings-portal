@@ -1,8 +1,7 @@
 import React from 'react';
 import { Mail, Clock, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
+import { supabase } from '../lib/supabase';
 import { getGmailComposeUrl } from '../utils/gmailCompose';
 
 const ClientWaitingForApproval = () => {
@@ -10,7 +9,7 @@ const ClientWaitingForApproval = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       localStorage.removeItem('clientAuth');
       navigate('/client-login');
     } catch (error) {

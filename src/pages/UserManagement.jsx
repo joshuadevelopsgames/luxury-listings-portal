@@ -29,7 +29,7 @@ import { toast } from 'react-hot-toast';
 import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { supabaseService } from '../services/supabaseService';
 import { USER_ROLES } from '../entities/UserRoles';
-import { auth } from '../firebase';
+import { supabase } from '../lib/supabase';
 import { PERMISSIONS, PERMISSION_CATEGORIES, PERMISSION_LABELS } from '../entities/Permissions';
 import EmployeeLink from '../components/ui/EmployeeLink';
 import { getSystemAdmins } from '../utils/systemAdmins';
@@ -861,22 +861,13 @@ const UserManagement = () => {
         throw new Error('User not authenticated');
       }
       
-      // Get Firebase auth user for token
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) {
-        throw new Error('Firebase user not found');
+      // Verify Supabase session is active
+      const { data: { session: supaSession } } = await supabase.auth.getSession();
+      if (!supaSession?.user) {
+        throw new Error('Supabase session not found — please log in again');
       }
-      
-      // Check authentication token and refresh if needed
-      const authToken = await firebaseUser.getIdToken(true); // Force refresh
-      console.log('🔍 Auth token exists:', !!authToken);
-      console.log('🔍 Firebase user email:', firebaseUser.email);
-      console.log('🔍 Firebase user UID:', firebaseUser.uid);
-      
-      // Verify token is valid
-      if (!authToken) {
-        throw new Error('Authentication token is invalid or expired');
-      }
+      console.log('🔍 Supabase session exists:', !!supaSession);
+      console.log('🔍 Supabase user email:', supaSession.user.email);
       
       // Test Firestore connection first
       console.log('🔍 Testing Firestore connection...');
@@ -1607,17 +1598,17 @@ const UserManagement = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        const firebaseUser = auth.currentUser;
-                        if (firebaseUser) {
-                          const token = await firebaseUser.getIdToken(true);
-                          toast.success('✅ Authentication token refreshed successfully!');
-                          console.log('✅ Token refreshed:', !!token);
+                        const { data: { session: refreshedSession }, error: refreshErr } = await supabase.auth.refreshSession();
+                        if (refreshErr) throw refreshErr;
+                        if (refreshedSession) {
+                          toast.success('✅ Authentication session refreshed successfully!');
+                          console.log('✅ Session refreshed:', !!refreshedSession);
                         } else {
-                          toast.error('❌ No user logged in');
+                          toast.error('❌ No active session');
                         }
                       } catch (error) {
-                        toast.error('❌ Failed to refresh token: ' + error.message);
-                        console.error('❌ Token refresh error:', error);
+                        toast.error('❌ Failed to refresh session: ' + error.message);
+                        console.error('❌ Session refresh error:', error);
                       }
                     }}
                     disabled={isProcessing}
