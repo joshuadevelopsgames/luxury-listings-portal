@@ -84,26 +84,43 @@ export function PermissionsProvider({ children }) {
     const adminStatus = checkIsSystemAdmin(currentUser.email);
     setIsSystemAdmin(adminStatus);
 
-    // Subscribe to permission changes with version-based stale rejection
-    const sub = supabaseService.getUserPermissions(currentUser.email, {
-      subscribe: true,
-      onUpdate: (result) => {
-        const incomingVersion = result?.version ?? 0;
-        setPermissionsVersion((prevVersion) => {
-          if (incomingVersion < prevVersion) {
-            return prevVersion; // Stale — ignore
-          }
-          setPages(Array.isArray(result?.pages) ? result.pages : []);
-          setCapabilities(Array.isArray(result?.capabilities) ? result.capabilities : []);
-          setLoading(false);
-          return incomingVersion;
-        });
-        setLoading(false);
-      }
+    // ── SEED from currentUser (AuthContext already fetched these) ──────
+    // This eliminates the waterfall: AuthContext fetch → wait → PermissionsContext fetch.
+    // We read the permissions AuthContext already put on currentUser and mark loading=false
+    // immediately, then subscribe for future realtime updates only.
+    const seededPages = Array.isArray(currentUser.pagePermissions) ? currentUser.pagePermissions : [];
+    const seededCaps = Array.isArray(currentUser.capabilities)
+      ? currentUser.capabilities
+      : [...new Set([
+          ...(Array.isArray(currentUser.featurePermissions) ? currentUser.featurePermissions : []),
+          ...(Array.isArray(currentUser.customPermissions) ? currentUser.customPermissions : []),
+        ])];
+    setPages(seededPages);
+    setCapabilities(seededCaps);
+    setPermissionsVersion(currentUser.permissionsVersion || 0);
+    setLoading(false); // <-- immediate, no second fetch needed
+
+    // Subscribe to realtime updates for live permission changes (no initial fetch)
+    const unsub = supabaseService.onApprovedUserChange(currentUser.email, (user) => {
+      if (!user) return;
+      const incomingVersion = user.permissionsVersion || user.permissions_version || 0;
+      setPermissionsVersion((prevVersion) => {
+        if (incomingVersion < prevVersion) {
+          return prevVersion; // Stale — ignore
+        }
+        const updatedPages = Array.isArray(user.pagePermissions) ? user.pagePermissions : [];
+        const updatedCaps = [...new Set([
+          ...(Array.isArray(user.featurePermissions) ? user.featurePermissions : []),
+          ...(Array.isArray(user.customPermissions) ? user.customPermissions : []),
+        ])];
+        setPages(updatedPages);
+        setCapabilities(updatedCaps);
+        return incomingVersion;
+      });
     });
 
     return () => {
-      sub?.unsubscribe?.();
+      if (typeof unsub === 'function') unsub();
       unsubscribeAdmins();
     };
   }, [currentUser?.email]);

@@ -1634,7 +1634,7 @@ class SupabaseService {
       const startDate = reportData.startDate ? (reportData.startDate instanceof Date ? reportData.startDate : new Date(reportData.startDate)) : null;
       const endDate = reportData.endDate ? (reportData.endDate instanceof Date ? reportData.endDate : new Date(reportData.endDate)) : null;
       const { data, error } = await supabase.from('instagram_reports').insert([{
-        user_id_legacy: user.id, user_email: user.email, client_id_legacy: reportData.clientId || null, client_name: reportData.clientName || '', title: reportData.title || '', date_range: reportData.dateRange || '', notes: reportData.notes || '', post_links: reportData.postLinks || [], metrics: reportData.metrics || null, report_type: reportData.reportType || null, source_report_ids: reportData.sourceReportIds || null, quarterly_breakdown: reportData.quarterlyBreakdown || null, public_link_id: publicLinkId, archived: false, year: startDate ? startDate.getFullYear() : null, month: startDate ? startDate.getMonth() + 1 : null, period_start: startDate ? startDate.toISOString().split('T')[0] : null, period_end: endDate ? endDate.toISOString().split('T')[0] : null, created_at: ts(), updated_at: ts()
+        user_id_legacy: user.id, created_by_id: user.id, user_email: user.email, client_id: reportData.clientId || null, client_id_legacy: reportData.clientId || null, client_name: reportData.clientName || '', title: reportData.title || '', date_range: reportData.dateRange || '', notes: reportData.notes || '', post_links: reportData.postLinks || [], metrics: reportData.metrics || null, report_type: reportData.reportType || null, source_report_ids: reportData.sourceReportIds || null, quarterly_breakdown: reportData.quarterlyBreakdown || null, public_link_id: publicLinkId, archived: false, year: startDate ? startDate.getFullYear() : null, month: startDate ? startDate.getMonth() + 1 : null, period_start: startDate ? startDate.toISOString().split('T')[0] : null, period_end: endDate ? endDate.toISOString().split('T')[0] : null, created_at: ts(), updated_at: ts()
       }]).select().single();
       if (error) throw error;
       cacheInvalidate('instagram_reports:');
@@ -1643,7 +1643,10 @@ class SupabaseService {
   }
 
   _mapReport(r) {
-    return { id: r.id, userId: r.user_id_legacy, userEmail: r.user_email, clientId: r.client_id_legacy, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], metrics: r.metrics, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
+    // Use client_id (UUID) first, fall back to client_id_legacy (Firebase ID)
+    const clientId = r.client_id || r.client_id_legacy || null;
+    const userId = r.created_by_id || r.user_id_legacy || null;
+    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], metrics: r.metrics, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
   }
 
   async getInstagramReports() {
@@ -1653,7 +1656,12 @@ class SupabaseService {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data } = await supabase.from('instagram_reports').select('*').eq('user_id_legacy', user.id).eq('archived', false).order('created_at', { ascending: false });
+      // Match by user_id_legacy OR created_by_id OR user_email (covers both
+      // migrated reports where user_id_legacy may be null, and new reports)
+      const { data } = await supabase.from('instagram_reports').select('*')
+        .eq('archived', false)
+        .or(`user_id_legacy.eq.${user.id},created_by_id.eq.${user.id},user_email.eq.${user.email}`)
+        .order('created_at', { ascending: false });
       return cacheSet(key, (data || []).map(r => this._mapReport(r)));
     } catch { return []; }
   }
@@ -1662,14 +1670,22 @@ class SupabaseService {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !clientId) return [];
-      const { data } = await supabase.from('instagram_reports').select('*').eq('client_id_legacy', clientId).eq('archived', false).order('created_at', { ascending: false });
+      // Match by client_id (UUID) or client_id_legacy (Firebase ID)
+      const { data } = await supabase.from('instagram_reports').select('*')
+        .eq('archived', false)
+        .or(`client_id.eq.${clientId},client_id_legacy.eq.${clientId}`)
+        .order('created_at', { ascending: false });
       return (data || []).map(r => this._mapReport(r));
     } catch { return []; }
   }
 
   async getClientInstagramReportHistory(clientId, maxReports = 6) {
     try {
-      const { data } = await supabase.from('instagram_reports').select('*').eq('client_id_legacy', clientId).eq('archived', false).order('created_at', { ascending: false }).limit(maxReports);
+      const { data } = await supabase.from('instagram_reports').select('*')
+        .eq('archived', false)
+        .or(`client_id.eq.${clientId},client_id_legacy.eq.${clientId}`)
+        .order('created_at', { ascending: false })
+        .limit(maxReports);
       return (data || []).map(r => this._mapReport(r));
     } catch { return []; }
   }
@@ -1729,12 +1745,16 @@ class SupabaseService {
     const fetcher = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const uid = userId || user?.id;
+      const email = user?.email;
       let q = supabase.from('instagram_reports').select('*').order('created_at', { ascending: false });
       if (archived) {
         q = q.eq('archived', true);
       } else {
         q = q.eq('archived', false);
-        if (!loadAll && uid) q = q.eq('user_id_legacy', uid);
+        // For non-loadAll, match by any user identifier (covers migrated + new reports)
+        if (!loadAll && uid) {
+          q = q.or(`user_id_legacy.eq.${uid},created_by_id.eq.${uid}${email ? `,user_email.eq.${email}` : ''}`);
+        }
       }
       const { data } = await q;
       let results = (data || []).map(r => this._mapReport(r));
