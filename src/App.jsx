@@ -179,12 +179,17 @@ function LoginPage() {
 // PROTECTED APP - Requires authentication
 // ============================================================================
 function ProtectedApp() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, authHydrated } = useAuth();
 
-  // Show spinner while auth is loading (no display cache) OR while an OAuth
-  // redirect is being processed (URL has #access_token=... hash fragment).
+  // Show spinner while:
+  //  1. Auth is loading (no display cache exists yet)
+  //  2. An OAuth redirect is being processed (URL has #access_token= hash)
+  //  3. We have no currentUser AND auth hasn't hydrated yet — this prevents
+  //     a premature redirect to /login while handleUserSignIn is still fetching
+  //     permissions from the DB (the window between displayCache being null and
+  //     the first onAuthStateChange → handleUserSignIn cycle completing).
   const hashHasAuthTokens = window.location.hash?.includes('access_token=');
-  if (loading || (!currentUser && hashHasAuthTokens)) {
+  if (loading || (!currentUser && hashHasAuthTokens) || (!authHydrated && !currentUser)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
         <div className="text-center">

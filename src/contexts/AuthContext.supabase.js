@@ -485,10 +485,20 @@ export function AuthProvider({ children }) {
     const emailNormalized = (email || '').trim().toLowerCase();
     supabaseService.clearProfileCache(emailNormalized);
     try {
-      const [approvedUser, savedRoleRaw] = await Promise.all([
+      let [approvedUser, savedRoleRaw] = await Promise.all([
         supabaseService.getApprovedUserByEmail(emailNormalized),
         supabaseService.getSystemConfig(`currentRole:${emailNormalized}`).catch(() => null),
       ]);
+      // If the profile query returned null it may be a race condition: on a hard
+      // refresh the Supabase session JWT can take a moment to attach to outgoing
+      // requests, so RLS blocks the SELECT and maybeSingle() returns null instead
+      // of an error. Retry once after a short delay before treating the user as
+      // not-approved and triggering a forced logout.
+      if (!approvedUser) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        supabaseService.clearProfileCache(emailNormalized);
+        approvedUser = await supabaseService.getApprovedUserByEmail(emailNormalized);
+      }
       if (approvedUser) {
         const assignedRoles =
           approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
