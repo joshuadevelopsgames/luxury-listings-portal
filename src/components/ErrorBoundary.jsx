@@ -35,17 +35,35 @@ class ErrorBoundary extends React.Component {
       return { hasError: false, error: null };
     }
     
-    // Handle chunk load errors - auto-reload the page
+    // Handle chunk load errors — purge SW cache then hard-reload
     if (error?.name === 'ChunkLoadError' || error?.message?.includes('Loading chunk')) {
-      console.warn('⚠️ ChunkLoadError detected, auto-reloading...');
+      console.warn('⚠️ ChunkLoadError detected — purging SW cache and reloading…');
       const lastReload = sessionStorage.getItem('chunk_reload');
       const now = Date.now();
-      if (!lastReload || (now - parseInt(lastReload)) > 10000) {
+      if (!lastReload || (now - parseInt(lastReload)) > 30000) {
         sessionStorage.setItem('chunk_reload', now.toString());
-        window.location.reload();
+        // Tell the SW to purge all caches, then hard-reload
+        if (navigator.serviceWorker?.controller) {
+          navigator.serviceWorker.controller.postMessage('purgeAndReload');
+          // Also listen for the SW's confirmation, then reload
+          navigator.serviceWorker.addEventListener('message', (evt) => {
+            if (evt.data === 'cachesPurged') window.location.reload();
+          });
+          // Fallback: reload after 2s even if SW doesn't respond
+          setTimeout(() => window.location.reload(), 2000);
+        } else {
+          // No SW controlling — just clear caches directly and reload
+          if ('caches' in window) {
+            caches.keys().then((names) =>
+              Promise.all(names.map((n) => caches.delete(n)))
+            ).then(() => window.location.reload());
+          } else {
+            window.location.reload();
+          }
+        }
         return { hasError: false, error: null };
       }
-      // If we already reloaded recently, show the error
+      // If we already tried recently, show the error with a manual reload button
       return { hasError: true, error, isChunkError: true };
     }
     
@@ -360,23 +378,39 @@ export function RouteErrorPage() {
 
   // Auto-reload on chunk errors (happens after deployments)
   React.useEffect(() => {
+    const isChunkError =
+      routeError?.name === 'ChunkLoadError' ||
+      errorMessage?.includes('Loading chunk') ||
+      errorMessage?.includes('Failed to fetch dynamically imported');
+
+    if (!isChunkError) return;
+
     const lastReload = sessionStorage.getItem('chunk_reload');
     const now = Date.now();
-    // Check if this looks like a chunk error based on the URL or recent errors
-    const isLikelyChunkError = window.location.href.includes('chunk') || 
-      document.querySelector('script[src*="chunk"]') !== null;
-    
-    if (isLikelyChunkError && (!lastReload || (now - parseInt(lastReload)) > 10000)) {
-      console.warn('Route error detected, attempting reload...');
+    if (!lastReload || (now - parseInt(lastReload)) > 30000) {
+      console.warn('⚠️ Route-level ChunkLoadError — purging SW cache and reloading…');
       sessionStorage.setItem('chunk_reload', now.toString());
-      window.location.reload();
+      // Purge caches then reload
+      if ('caches' in window) {
+        caches.keys().then((names) =>
+          Promise.all(names.map((n) => caches.delete(n)))
+        ).then(() => window.location.reload());
+      } else {
+        window.location.reload();
+      }
     }
-  }, []);
+  }, [routeError, errorMessage]);
 
   const handleReload = () => {
-    // Clear the chunk reload tracker to allow fresh reload
+    // Clear the chunk reload tracker and purge caches for a clean reload
     sessionStorage.removeItem('chunk_reload');
-    window.location.reload();
+    if ('caches' in window) {
+      caches.keys().then((names) =>
+        Promise.all(names.map((n) => caches.delete(n)))
+      ).then(() => window.location.reload());
+    } else {
+      window.location.reload();
+    }
   };
 
   const handleGoHome = () => {

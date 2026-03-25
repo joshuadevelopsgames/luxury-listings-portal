@@ -507,11 +507,12 @@ export function AuthProvider({ children }) {
           onboardingCompleted: approvedUser.onboardingCompleted,
         };
 
-        // If user has NO page permissions yet, apply role defaults and persist them
+        // If user has NO page permissions yet, apply role defaults IN-MEMORY ONLY.
+        // Do NOT write back to DB — that overwrites intentionally-empty permissions
+        // and causes the "random revocation" bug when roles change.
         if (!mergedUser.pagePermissions.length) {
           const defaults = getDefaultPagePermissions(roleToUse);
           mergedUser.pagePermissions = defaults;
-          supabaseService.setUserPagePermissions(email, defaults).catch(() => {});
         }
 
         setCurrentRole(roleToUse);

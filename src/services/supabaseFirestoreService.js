@@ -379,6 +379,13 @@ class SupabaseService {
       const { id: _ignored, ...safe } = updates || {};
       if (!Object.keys(safe).length) return;
       const emailKey = (email || '').trim().toLowerCase();
+
+      // Safety: log when permission fields are being modified — helps trace accidental overwrites
+      const permFields = ['pagePermissions', 'featurePermissions', 'customPermissions', 'role', 'isApproved'];
+      const touchedPerms = permFields.filter(f => safe[f] !== undefined);
+      if (touchedPerms.length) {
+        console.warn(`⚠️ updateApprovedUser(${emailKey}): modifying permission fields [${touchedPerms.join(', ')}]`);
+      }
       const payload = clean({
         ...(safe.name || safe.displayName ? { full_name: safe.name || safe.displayName } : {}),
         ...(safe.firstName ? { first_name: safe.firstName } : {}),

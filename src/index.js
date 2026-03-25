@@ -84,13 +84,17 @@ if ('serviceWorker' in navigator) {
       .register('/service-worker.js')
       .then((registration) => {
         console.log('✅ Service Worker registered:', registration.scope);
-        
-        // Check for updates
+
+        // Check for SW updates every 60s (catches new deploys quickly)
+        setInterval(() => registration.update(), 60 * 1000);
+
+        // When a new SW is installed, tell it to activate immediately
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('🔄 New service worker available');
+              console.log('🔄 New service worker installed — activating now');
+              newWorker.postMessage('skipWaiting');
             }
           });
         });
@@ -98,6 +102,23 @@ if ('serviceWorker' in navigator) {
       .catch((error) => {
         console.warn('⚠️ Service Worker registration failed:', error);
       });
+
+    // Listen for the SW's cache-purge confirmation (from ChunkLoadError recovery)
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data === 'cachesPurged') {
+        console.log('🗑️ SW caches purged — reloading for fresh assets');
+        window.location.reload();
+      }
+    });
+
+    // When a new SW takes over, reload to pick up fresh assets
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      console.log('🔄 New service worker activated — reloading page');
+      window.location.reload();
+    });
   });
 }
 

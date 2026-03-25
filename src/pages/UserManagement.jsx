@@ -29,7 +29,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { usePendingUsers } from '../contexts/PendingUsersContext';
 import { supabaseService } from '../services/supabaseService';
-import { USER_ROLES } from '../entities/UserRoles';
+import { USER_ROLES, getDefaultPagePermissions } from '../entities/UserRoles';
 import { supabase } from '../lib/supabase';
 import { CAPABILITIES, CAPABILITY_CATEGORIES, CAPABILITY_LABELS } from '../entities/Capabilities';
 import EmployeeLink from '../components/ui/EmployeeLink';
@@ -230,7 +230,8 @@ const UserManagement = () => {
         startDate: new Date().toISOString().split('T')[0],
         phone: pendingUser.phone || '',
         location: pendingUser.location || 'Remote',
-        avatar: pendingUser.avatar || ''
+        avatar: pendingUser.avatar || '',
+        pagePermissions: getDefaultPagePermissions('admin'),
       };
 
       console.log('🔍 Approved user data:', approvedUserData);
@@ -288,7 +289,8 @@ const UserManagement = () => {
         startDate: new Date().toISOString().split('T')[0],
         phone: pendingUser.phone || '',
         location: pendingUser.location || 'Remote',
-        avatar: pendingUser.avatar || ''
+        avatar: pendingUser.avatar || '',
+        pagePermissions: getDefaultPagePermissions(pendingUser.requestedRole || 'content_director'),
       };
 
       // Remove any undefined values to prevent Firestore errors
