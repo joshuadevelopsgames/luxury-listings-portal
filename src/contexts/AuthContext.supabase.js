@@ -47,21 +47,8 @@ async function loadSystemAdmins() {
 }
 
 function startAdminListener() {
-  // Poll every 60s as a lightweight fallback; real-time handled by postgres_changes
-  const interval = setInterval(async () => {
-    try {
-      const data = await supabaseService.getSystemConfig('admins');
-      if (data && Array.isArray(data.emails)) {
-        const updated = [...new Set([BOOTSTRAP_ADMIN, ...data.emails.map((e) => e.toLowerCase())])];
-        if (JSON.stringify(updated) !== JSON.stringify(_adminEmails)) {
-          _adminEmails = updated;
-          _notifyAdminListeners();
-        }
-      }
-    } catch (_) {}
-  }, 60000);
-
-  // Also subscribe via Supabase Realtime on system_config
+  // loadSystemAdmins() on app boot already fetches the initial admin list.
+  // Realtime handles all subsequent changes — no polling needed.
   const channel = supabase
     .channel('admin-config-watcher')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, async (payload) => {
@@ -74,7 +61,6 @@ function startAdminListener() {
     .subscribe();
 
   return () => {
-    clearInterval(interval);
     supabase.removeChannel(channel);
   };
 }
@@ -98,6 +84,7 @@ function isDemoViewOnly(email) {
 // realtime listener.
 const DISPLAY_CACHE_KEY = 'luxury_listings_display_cache';
 const AUTH_STORAGE_KEY = 'luxury_listings_auth_sb'; // legacy key — cleaned up on load
+const DISPLAY_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours — discard stale shell data
 
 const saveDisplayCache = (user) => {
   try {
@@ -131,6 +118,12 @@ const loadDisplayCache = () => {
     const stored = localStorage.getItem(DISPLAY_CACHE_KEY) || localStorage.getItem(AUTH_STORAGE_KEY);
     if (!stored) return null;
     const parsed = JSON.parse(stored);
+    // Discard cache older than 24 hours — stale name/avatar is worse than a brief
+    // loading state, and the auth flow will repopulate this within ~1 second anyway.
+    if (parsed?._cacheTimestamp && Date.now() - parsed._cacheTimestamp > DISPLAY_CACHE_MAX_AGE) {
+      localStorage.removeItem(DISPLAY_CACHE_KEY);
+      return null;
+    }
     // Strip permissions from legacy cache — never trust cached permissions
     if (parsed) {
       parsed.pagePermissions = [];
@@ -259,7 +252,8 @@ export function AuthProvider({ children }) {
     setCurrentRole(newRole);
 
     try {
-      await supabaseService.saveSystemConfig('currentRole', newRole);
+      // Key is scoped per-user so role switches on one account don't affect others
+      await supabaseService.saveSystemConfig(`currentRole:${currentUser.email.toLowerCase()}`, newRole);
     } catch (_) {}
 
     const roleUserData = getUserByRole(newRole);
@@ -420,7 +414,7 @@ export function AuthProvider({ children }) {
       supabaseService.bootstrapSystemAdmins(email).catch(() => {});
 
       const [savedRole, approved] = await Promise.all([
-        supabaseService.getSystemConfig('currentRole').catch(() => null),
+        supabaseService.getSystemConfig(`currentRole:${email.toLowerCase()}`).catch(() => null),
         supabaseService.getApprovedUserByEmail(email).catch(() => null),
       ]);
 
@@ -474,7 +468,7 @@ export function AuthProvider({ children }) {
     try {
       const [approvedUser, savedRoleRaw] = await Promise.all([
         supabaseService.getApprovedUserByEmail(emailNormalized),
-        supabaseService.getSystemConfig('currentRole').catch(() => null),
+        supabaseService.getSystemConfig(`currentRole:${emailNormalized}`).catch(() => null),
       ]);
       if (approvedUser) {
         const assignedRoles =
@@ -588,7 +582,7 @@ export function AuthProvider({ children }) {
     if (!currentUser) return;
     const loadCurrentRole = async () => {
       try {
-        const savedRole = await supabaseService.getSystemConfig('currentRole');
+        const savedRole = await supabaseService.getSystemConfig(`currentRole:${currentUser.email.toLowerCase()}`);
         if (savedRole && Object.values(USER_ROLES).includes(savedRole)) {
           setCurrentRole(savedRole);
         }

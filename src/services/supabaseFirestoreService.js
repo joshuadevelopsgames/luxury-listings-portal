@@ -38,6 +38,7 @@ const clean = (obj) => {
 // so stale data is never served after an actual write — only on read-only pages.
 const _cache = new Map();
 const CACHE_TTL = 300_000; // 5 minutes
+const CACHE_MAX_SIZE = 200; // evict oldest entry when limit is reached
 
 // ─── In-flight deduplication ─────────────────────────────────────────────────
 // If two listeners subscribe simultaneously (empty cache), only one fetch fires.
@@ -49,7 +50,16 @@ function cacheGet(key) {
   if (Date.now() > entry.exp) { _cache.delete(key); return null; }
   return entry.data;
 }
+function _cacheEvictOldest() {
+  let oldestKey = null;
+  let oldestExp = Infinity;
+  for (const [k, v] of _cache.entries()) {
+    if (v.exp < oldestExp) { oldestExp = v.exp; oldestKey = k; }
+  }
+  if (oldestKey) _cache.delete(oldestKey);
+}
 function cacheSet(key, data, ttl = CACHE_TTL) {
+  if (_cache.size >= CACHE_MAX_SIZE) _cacheEvictOldest();
   _cache.set(key, { data, exp: Date.now() + ttl });
   return data;
 }
@@ -299,6 +309,15 @@ class SupabaseService {
       const result = data ? this._profileToApprovedUser(data) : null;
       return cacheSet(key, result);
     } catch { return null; }
+  }
+
+  /** Bust the cached profile for a specific user — call before auth sign-in
+   *  so that handleUserSignIn always reads fresh permissions from the DB. */
+  clearProfileCache(email) {
+    if (!email) return;
+    const lower = email.trim().toLowerCase();
+    cacheInvalidate(`profiles:email:${lower}`);
+    cacheInvalidate('profiles:all');
   }
 
   async addApprovedUser(userData) {

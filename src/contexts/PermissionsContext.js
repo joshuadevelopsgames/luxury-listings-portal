@@ -144,7 +144,10 @@ export function PermissionsProvider({ children }) {
     return capabilities.includes(capabilityId);
   };
 
-  // ── Deprecated aliases (remove after full migration) ─────────────────
+  // ── Deprecated aliases — TODO: remove by end of Q2 2026 ──────────────
+  // To clean up: search for `hasPermission(` and `hasFeaturePermission(` across
+  // the codebase and migrate each call site to hasPageAccess() / hasCapability().
+  // Once no call sites remain, delete these aliases and this entire block.
 
   /** @deprecated Use hasPageAccess() */
   const hasPermission = hasPageAccess;
