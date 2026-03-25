@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePermissions } from '../../contexts/PermissionsContext';
+import { useAuth } from '../../contexts/AuthContext';
 import NoPermission from './NoPermission';
 
 /**
@@ -12,9 +13,15 @@ import NoPermission from './NoPermission';
  */
 const PermissionRoute = ({ pageId, pageName, children }) => {
   const { hasPageAccess, loading } = usePermissions();
+  const { authHydrated } = useAuth();
 
-  // Loading state - show squares loader
-  if (loading) {
+  // Keep showing the loader until BOTH:
+  //   1. PermissionsContext has finished seeding (loading=false), AND
+  //   2. AuthContext has completed its DB fetch (authHydrated=true).
+  // This prevents an "Access Denied" flash in the brief window where
+  // PermissionsContext releases loading but permissions are still empty
+  // (e.g. when the safety timeout fires before handleUserSignIn completes).
+  if (loading || !authHydrated) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="relative w-12 h-12 rotate-45">

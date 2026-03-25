@@ -76,18 +76,16 @@ export function PermissionsProvider({ children }) {
     setPages(seededPages);
     setPermissionsVersion(currentUser.permissionsVersion || 0);
 
-    // Only release loading once:
-    //   1. AuthContext has completed its DB fetch (authHydrated=true), AND
-    //   2. Permissions are actually populated — OR the user is a system admin
-    //      (who bypasses all checks) so an empty array is fine for them.
+    // Release loading as soon as AuthContext has completed its DB fetch.
+    // We no longer gate on seededPages.length > 0 because that caused a
+    // permanent spinner: the safety timeout in AuthContext sets authHydrated=true
+    // after 5s even when handleUserSignIn is still in-flight, so seededPages
+    // could still be [] when authHydrated flips — and loading would never clear.
     //
-    // This prevents PermissionRoute from flashing "Access Denied" during the
-    // window where authHydrated flips to true but currentUser.pagePermissions
-    // is still [] from the stripped display cache (e.g. TOKEN_REFRESHED race).
-    const userRoleVal = currentUser?.role || currentUser?.primaryRole;
-    const isAdminRoleUser = ADMIN_ROLES.includes(userRoleVal);
-    const permissionsReady = adminStatus || isAdminRoleUser || seededPages.length > 0;
-    if (authHydrated && permissionsReady) {
+    // The "Access Denied" flash is prevented instead by PermissionRoute checking
+    // authHydrated directly: it keeps showing its spinner until authHydrated=true,
+    // at which point currentUser.pagePermissions is guaranteed to be populated.
+    if (authHydrated) {
       setLoading(false);
     }
 
