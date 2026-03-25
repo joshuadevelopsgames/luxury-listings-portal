@@ -32,10 +32,12 @@ const clean = (obj) => {
 };
 
 // ─── Simple TTL cache ────────────────────────────────────────────────────────
-// Eliminates redundant refetches on navigation — entries expire after 30s.
+// Eliminates redundant refetches on navigation — entries expire after 5 min.
 // Write operations call cacheInvalidate() for the affected table.
+// Realtime subscriptions also call cacheInvalidate() on any live change,
+// so stale data is never served after an actual write — only on read-only pages.
 const _cache = new Map();
-const CACHE_TTL = 30_000;
+const CACHE_TTL = 300_000; // 5 minutes
 
 // ─── In-flight deduplication ─────────────────────────────────────────────────
 // If two listeners subscribe simultaneously (empty cache), only one fetch fires.
@@ -692,7 +694,7 @@ class SupabaseService {
     try {
       const { data } = await supabase.from('system_config').select('value').eq('key', key).maybeSingle();
       const val = data?.value ?? null;
-      return cacheSet(cacheKey, val, 60_000); // config changes rarely — 60s TTL
+      return cacheSet(cacheKey, val, 600_000); // config changes rarely — 10 min TTL
     } catch { return null; }
   }
 
@@ -1646,7 +1648,7 @@ class SupabaseService {
     // Use client_id (UUID) first, fall back to client_id_legacy (Firebase ID)
     const clientId = r.client_id || r.client_id_legacy || null;
     const userId = r.created_by_id || r.user_id_legacy || null;
-    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], metrics: r.metrics, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
+    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], metrics: r.metrics || r.raw_ocr_data, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
   }
 
   async getInstagramReports() {
