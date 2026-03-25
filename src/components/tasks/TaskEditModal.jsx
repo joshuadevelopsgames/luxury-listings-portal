@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadFile } from '../../services/storageService';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { 
@@ -224,12 +224,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     }
     setTaskAttachmentUploading(true);
     try {
-      const storage = getStorage();
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `task-attachments/${uid}/${task?.id || 'new'}/${Date.now()}_${file.name.slice(0, 40)}.${ext}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      const url = await uploadFile(path, file);
       const next = [...(editForm.attachments || []), url];
       setEditForm(prev => ({ ...prev, attachments: next }));
       if (task?.id) await DailyTask.update(task.id, { attachments: next });
@@ -256,12 +253,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     }
     setCommentUploading(true);
     try {
-      const storage = getStorage();
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `task-attachments/${uid}/${task?.id || 'draft'}/comments/${Date.now()}_${file.name.slice(0, 40)}.${ext}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      const url = await uploadFile(path, file);
       setCommentAttachmentUrls(prev => [...prev, url]);
       toast.success('Photo attached to comment');
     } catch (err) {

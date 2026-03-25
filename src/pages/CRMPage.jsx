@@ -41,7 +41,7 @@ import { supabaseService } from '../services/supabaseService';
 import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
 import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
 import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadFile } from '../services/storageService';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS, normalizeLocation } from '../services/crmService';
 import { useCustomLocations } from '../contexts/CustomLocationsContext';
@@ -486,12 +486,9 @@ const CRMPage = () => {
     }
     setUploadingScreenshot(true);
     try {
-      const storage = getStorage();
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `client-screenshots/${graduateScreenshotModal.clientId}/signup_${Date.now()}.${ext}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      const url = await uploadFile(path, file);
       const uploadedAt = new Date().toISOString();
       await supabaseService.updateClient(graduateScreenshotModal.clientId, {
         signupScreenshotUrl: url,

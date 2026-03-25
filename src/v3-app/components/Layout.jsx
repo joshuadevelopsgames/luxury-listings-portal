@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
@@ -8,7 +8,10 @@ import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
 import AnnouncementBanner from '../../components/AnnouncementBanner';
 import FeedbackButton from '../../components/ui/FeedbackButton';
-import ClientProfilesList from '../../components/client/ClientProfilesList';
+
+// Lazy-load ClientProfilesList — it pulls in Firebase Storage + ClientDetailModal (~250K)
+// Only needed when user clicks a client link outside the /clients page.
+const ClientProfilesList = lazy(() => import(/* webpackChunkName: "client-profiles" */ '../../components/client/ClientProfilesList'));
 import { modules, getBaseModuleIds, getNavItemsForModules } from '../../modules/registry';
 import { 
   Home, 
@@ -659,7 +662,11 @@ const V3Layout = ({ basePath = '' }) => {
       </div>
 
       {/* Global add-client modal when not on Clients page (e.g. from CRM) */}
-      {location.pathname !== '/clients' && <ClientProfilesList modalOnly />}
+      {location.pathname !== '/clients' && (
+        <Suspense fallback={null}>
+          <ClientProfilesList modalOnly />
+        </Suspense>
+      )}
 
       {/* Feedback & Support Button */}
       <FeedbackButton />

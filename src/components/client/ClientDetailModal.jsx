@@ -27,7 +27,7 @@ import {
   Upload,
   Camera
 } from 'lucide-react';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadFile } from '../../services/storageService';
 import { LocationSelect } from '../crm/LocationSelect';
 import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
@@ -118,12 +118,9 @@ const ClientDetailModal = ({
     }
     setUploadingPhoto(true);
     try {
-      const storage = getStorage();
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `client-photos/${localClient.id}/profile_${Date.now()}.${ext}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      const url = await uploadFile(path, file);
       setEditForm(prev => ({ ...prev, profilePhoto: url }));
       toast.success('Photo uploaded');
     } catch (err) {

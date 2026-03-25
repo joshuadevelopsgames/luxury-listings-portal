@@ -155,9 +155,21 @@ function RootLayout() {
 // LOGIN PAGE - Shows login, redirects if already authenticated
 // ============================================================================
 function LoginPage() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, authHydrated } = useAuth();
 
-  // Show login page immediately (even while loading)
+  // If auth is still loading or hydrating, show the login form (non-blocking).
+  // But if the URL hash contains auth tokens (OAuth redirect landing on /login),
+  // show a spinner instead — Supabase is processing the token exchange.
+  if ((loading || !authHydrated) && window.location.hash?.includes('access_token=')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#86868b] text-sm">Signing in...</p>
+        </div>
+      </div>
+    );
+  }
   if (loading) return <V3Login />;
   if (currentUser) return <Navigate to="/dashboard" replace />;
   return <V3Login />;
@@ -167,9 +179,12 @@ function LoginPage() {
 // PROTECTED APP - Requires authentication
 // ============================================================================
 function ProtectedApp() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, authHydrated } = useAuth();
 
-  if (loading) {
+  // While auth is loading OR the DB fetch hasn't completed yet, show spinner.
+  // This also covers the OAuth redirect case: the URL has #access_token=...
+  // and Supabase needs time to process the token before onAuthStateChange fires.
+  if (loading || !authHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
         <div className="text-center">

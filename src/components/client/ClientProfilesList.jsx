@@ -29,7 +29,7 @@ import {
   Loader2,
   Archive
 } from 'lucide-react';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadFile } from '../../services/storageService';
 import { supabaseService } from '../../services/supabaseService';
 import { LocationSelect } from '../crm/LocationSelect';
 import { format } from 'date-fns';

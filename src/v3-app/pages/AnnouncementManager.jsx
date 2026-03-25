@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabaseService } from '../../services/supabaseService';
 import { isSystemAdmin as checkIsSystemAdmin } from '../../utils/systemAdmins';
-import { Timestamp } from 'firebase/firestore';
+
 import {
   Megaphone,
   Plus,
@@ -123,7 +123,7 @@ const AnnouncementManager = () => {
         linkUrl: form.linkUrl.trim(),
         linkText: form.linkText.trim(),
         priority: Number(form.priority) || 0,
-        expiresAt: form.expiresAt ? Timestamp.fromDate(new Date(form.expiresAt)) : null,
+        expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
         createdBy: currentUser?.email,
       };
 

@@ -327,6 +327,10 @@ export function AuthProvider({ children }) {
           hasCompletedFullSignIn.current = true;
           setAuthHydrated(true); // DB fetch complete — permissions are fresh
           setLoading(false);
+          // Clean up OAuth tokens from URL hash (left by implicit flow redirect)
+          if (window.location.hash?.includes('access_token=')) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
           return;
         }
 
@@ -341,6 +345,10 @@ export function AuthProvider({ children }) {
         await handleUserSignIn(session.user);
         hasCompletedFullSignIn.current = true;
         setAuthHydrated(true); // DB fetch complete — permissions are fresh
+        // Clean up OAuth tokens from URL hash (left by implicit flow redirect)
+        if (window.location.hash?.includes('access_token=')) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
       } catch (error) {
         console.error('Auth state error:', error);
         // Only clear user on real auth failures, not transient network errors

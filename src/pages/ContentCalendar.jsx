@@ -16,7 +16,7 @@ import { toast } from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { googleSheetsService } from '../services/googleSheetsService';
 import { openaiService } from '../services/openaiService';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadFile } from '../services/storageService';
 import { supabaseService } from '../services/supabaseService';
 import PostPreviewCard from '../components/content/PostPreviewCard';
 
@@ -260,7 +260,6 @@ const ContentCalendar = () => {
       return;
     }
     setUploadingMedia(true);
-    const storage = getStorage();
     const uid = currentUser?.uid || (currentUser?.email || 'anon').replace(/[^a-zA-Z0-9]/g, '_');
     const itemId = editingContent?.id || `draft-${Date.now()}`;
     const newEntries = [];
@@ -269,9 +268,7 @@ const ContentCalendar = () => {
         const file = accepted[i];
         const ext = file.name.split('.').pop() || (file.type.startsWith('video') ? 'mp4' : 'jpg');
         const path = `content-calendar/${uid}/${itemId}/${(postForm.media?.length || 0) + i}_${file.name.slice(0, 40)}.${ext}`;
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
+        const url = await uploadFile(path, file);
         newEntries.push({ type: file.type.startsWith('video/') ? 'video' : 'image', url });
       }
       setPostForm(prev => ({
