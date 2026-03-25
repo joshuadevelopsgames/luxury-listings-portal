@@ -111,13 +111,26 @@ if ('serviceWorker' in navigator) {
       }
     });
 
-    // When a new SW takes over, reload to pick up fresh assets
+    // When a new SW takes over, reload to pick up fresh assets.
+    // IMPORTANT: Only auto-reload if the user is on the login page or the app
+    // hasn't rendered yet. If the app is already mounted and showing content,
+    // a hard reload mid-session interrupts the Supabase auth listener and leaves
+    // users stuck in a loading state until they log out. In that case we let the
+    // NewVersionNotifier toast prompt the user to refresh at a safe moment.
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (refreshing) return;
       refreshing = true;
-      console.log('🔄 New service worker activated — reloading page');
-      window.location.reload();
+      const path = window.location.pathname;
+      const isOnLoginOrRoot = path === '/login' || path === '/';
+      // Check if the React root has already rendered content
+      const appHasRendered = !!document.getElementById('root')?.firstChild;
+      if (isOnLoginOrRoot || !appHasRendered) {
+        console.log('🔄 New service worker activated — reloading page (safe: on login/root or app not yet rendered)');
+        window.location.reload();
+      } else {
+        console.log('🔄 New service worker activated — skipping auto-reload (app is mounted; NewVersionNotifier will prompt user)');
+      }
     });
   });
 }
