@@ -295,12 +295,44 @@ export function AuthProvider({ children }) {
   // ============================================================================
 
   useEffect(() => {
-    // onAuthStateChange fires with the current session on mount, then on every change.
-    // We use the event type to decide how much work to do:
-    //   SIGNED_IN       → full sign-in flow (fetch profile, apply defaults, sync)
-    //   INITIAL_SESSION  → session restored from storage — lightweight restore
-    //   TOKEN_REFRESHED  → access token rotated — no work needed
-    //   SIGNED_OUT       → clear everything
+    // ── Proactive session restore ──────────────────────────────────────
+    // onAuthStateChange can be delayed several seconds while Supabase
+    // refreshes an expired access token over the network. Meanwhile the
+    // safety timeout fires at 5s and unblocks the app with EMPTY
+    // permissions — causing "Access Denied" flashes and empty data.
+    //
+    // Fix: call getSession() immediately on mount. It returns the stored
+    // session from localStorage synchronously (even if the access token is
+    // expired). The Supabase client auto-refreshes expired tokens on the
+    // first DB query, so handleUserSignIn works fine with a stale token.
+    // This lets us start the sign-in flow ~instantly instead of waiting
+    // for onAuthStateChange.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (hasCompletedFullSignIn.current) return; // onAuthStateChange beat us
+      if (!session?.user) {
+        // No stored session — user is signed out. Unblock immediately.
+        setAuthHydrated(true);
+        setLoading(false);
+        return;
+      }
+      try {
+        console.log('[Auth] Proactive session restore — starting handleUserSignIn');
+        await handleUserSignIn(session.user);
+        hasCompletedFullSignIn.current = true;
+        setAuthHydrated(true);
+        setLoading(false);
+        console.log('[Auth] Proactive session restore — complete');
+        // Clean up OAuth tokens from URL hash
+        if (window.location.hash?.includes('access_token=')) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      } catch (err) {
+        console.warn('[Auth] Proactive restore failed, falling back to onAuthStateChange:', err.message);
+        // Don't unblock here — let onAuthStateChange or safety timeout handle it
+      }
+    });
+
+    // ── Standard auth listener (handles sign-in, sign-out, token refresh) ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
         if (event === 'SIGNED_OUT' || !session?.user) {
@@ -309,7 +341,7 @@ export function AuthProvider({ children }) {
           setUserData(null);
           setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
           hasCompletedFullSignIn.current = false;
-          setAuthHydrated(true); // No permissions needed for signed-out state
+          setAuthHydrated(true);
           setLoading(false);
           return;
         }
@@ -326,37 +358,34 @@ export function AuthProvider({ children }) {
           // fresh permissions from the DB before unblocking the app.
         }
 
-        if (event === 'SIGNED_IN') {
-          // Explicit sign-in: always do the full flow
-          await handleUserSignIn(session.user);
-          hasCompletedFullSignIn.current = true;
-          setAuthHydrated(true); // DB fetch complete — permissions are fresh
-          setLoading(false);
-          // Clean up OAuth tokens from URL hash (left by implicit flow redirect)
-          if (window.location.hash?.includes('access_token=')) {
-            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        // Skip if proactive restore already completed sign-in
+        if (hasCompletedFullSignIn.current) {
+          if (event === 'SIGNED_IN') {
+            // Explicit new sign-in (e.g. OAuth redirect) — always re-run
+            await handleUserSignIn(session.user);
+            setAuthHydrated(true);
+            setLoading(false);
+            if (window.location.hash?.includes('access_token=')) {
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+          } else {
+            // INITIAL_SESSION after proactive restore — already handled
+            setAuthHydrated(true);
+            setLoading(false);
           }
           return;
         }
 
-        // INITIAL_SESSION or other events
-        if (hasCompletedFullSignIn.current) {
-          // Already signed in this session — skip redundant re-fetch
-          setAuthHydrated(true);
-          setLoading(false);
-          return;
-        }
-        // First load: do full sign-in to get fresh permissions from DB
+        // First load via onAuthStateChange (proactive restore didn't run or failed)
+        console.log('[Auth] onAuthStateChange sign-in — event:', event);
         await handleUserSignIn(session.user);
         hasCompletedFullSignIn.current = true;
-        setAuthHydrated(true); // DB fetch complete — permissions are fresh
-        // Clean up OAuth tokens from URL hash (left by implicit flow redirect)
+        setAuthHydrated(true);
         if (window.location.hash?.includes('access_token=')) {
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
       } catch (error) {
         console.error('Auth state error:', error);
-        // Only clear user on real auth failures, not transient network errors
         const msg = (error.message || '').toLowerCase();
         const isAuthFailure = msg.includes('jwt') || msg.includes('token') ||
           msg.includes('not authorized') || msg.includes('invalid') ||
@@ -368,10 +397,9 @@ export function AuthProvider({ children }) {
           setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
           hasCompletedFullSignIn.current = false;
         } else {
-          // Transient error (network blip, Supabase outage) — keep cached state
           console.warn('Transient auth error — keeping cached state, will retry on next event');
         }
-        setAuthHydrated(true); // Unblock rendering even on error
+        setAuthHydrated(true);
       }
       setLoading(false);
     });
@@ -672,36 +700,30 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, [currentUser?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Safety timeout — if auth takes too long (e.g. Supabase WebSocket blocked,
-  // slow network, or RLS blocking the profile query), unblock the app so users
-  // aren't stuck on a spinner indefinitely.
+  // Safety timeout — last-resort fallback if both proactive restore AND
+  // onAuthStateChange fail to complete (e.g. Supabase is completely down,
+  // network is blocked, or an unexpected error swallows the promise).
   //
-  // IMPORTANT: This must run ONCE on mount only (empty dep array). If we put
-  // [loading, authHydrated] in the deps, the timeout resets every time those
-  // values change — meaning it never fires when the auth flow is slow, which
-  // is exactly when we need it.
-  //
-  // We also check signInInProgressRef: if handleUserSignIn is actively running
-  // (e.g. waiting on the 400ms RLS-race retry + DB query), we give it an extra
-  // 3s grace period before force-unblocking. This prevents the timeout from
-  // firing mid-sign-in and releasing the app with empty permissions.
+  // With the proactive getSession() restore above, this should almost never
+  // fire in normal operation. Kept as a safety net at 10s.
   useEffect(() => {
     let timeout;
     const scheduleTimeout = (delay) => {
       timeout = setTimeout(() => {
         if (signInInProgressRef.current) {
-          // Sign-in is still running — give it a bit more time before force-unblocking
-          scheduleTimeout(3000);
+          // Sign-in is actively running — give it more time
+          console.log('[Auth] Safety timeout: sign-in in progress, extending 4s…');
+          scheduleTimeout(4000);
           return;
         }
         setAuthHydrated((prev) => {
-          if (!prev) console.warn('Auth timeout — unblocking app after wait');
+          if (!prev) console.warn('[Auth] Safety timeout fired — unblocking app');
           return true;
         });
         setLoading(false);
       }, delay);
     };
-    scheduleTimeout(5000);
+    scheduleTimeout(10000);
     return () => clearTimeout(timeout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
