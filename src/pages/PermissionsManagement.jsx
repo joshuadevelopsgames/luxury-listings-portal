@@ -47,7 +47,7 @@ const PermissionsManagement = () => {
       
       const permissionsMap = {};
       for (const user of approvedUsers) {
-        const result = await supabaseService.getUserPermissions(user.email);
+        const result = supabaseService.getPermissionsFromUserRecord(user);
         permissionsMap[user.email] = result?.pages || [];
       }
       setUserPermissions(permissionsMap);

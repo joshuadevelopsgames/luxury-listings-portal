@@ -1856,6 +1856,11 @@ class SupabaseService {
     return { pages, features, capabilities, adminPermissions: false, version: userData.permissionsVersion || userData.permissions_version || 0 };
   }
 
+  /** Same shape as getUserPermissions() without extra network calls — use rows from getApprovedUsers(). */
+  getPermissionsFromUserRecord(user) {
+    return this._mapPermissionsFromDoc(user);
+  }
+
   getUserPermissions(userEmail, options = {}) {
     const { subscribe: wantSubscribe, onUpdate } = options;
     const normalizedEmail = (userEmail || '').toLowerCase().trim();

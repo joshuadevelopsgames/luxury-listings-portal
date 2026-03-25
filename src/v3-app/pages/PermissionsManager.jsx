@@ -231,14 +231,14 @@ const PermissionsManager = () => {
         const allUsers = [...approved, ...systemAdminUsers];
         setUsers(allUsers);
 
-        // Load permissions for each user (pages + features); use normalized email for keys
+        // Permissions are already on each profile from getApprovedUsers — avoid N+1 getUserPermissions calls
         const permissionsMap = {};
         const featurePermissionsMap = {};
         const rolesMap = {};
         for (const user of allUsers) {
           const uEmail = user.email || user.id || '';
           try {
-            const result = await supabaseService.getUserPermissions(uEmail);
+            const result = supabaseService.getPermissionsFromUserRecord(user);
             permissionsMap[uEmail] = result?.pages || [];
             featurePermissionsMap[uEmail] = result?.features || [];
           } catch (e) {
