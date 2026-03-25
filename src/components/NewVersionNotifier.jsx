@@ -54,7 +54,14 @@ export default function NewVersionNotifier() {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    window.location.reload(true);
+                    // Purge SW caches so reload fetches fresh index.html + chunks
+                    if ('caches' in window) {
+                      caches.keys().then((names) =>
+                        Promise.all(names.map((n) => caches.delete(n)))
+                      ).then(() => window.location.reload());
+                    } else {
+                      window.location.reload();
+                    }
                   }}
                   className="shrink-0 text-[13px] font-medium text-[#34c759] hover:text-[#30d158] underline"
                 >

@@ -24,51 +24,86 @@ import PermissionRoute from './v3-app/components/PermissionRoute';
 import { RouteErrorPage } from './components/ErrorBoundary';
 import './v3-app/styles/globals.css';
 
-// ── Lazy-loaded pages (split into separate chunks) ────────────────────────────
-const V3Dashboard             = React.lazy(() => import('./v3-app/components/Dashboard'));
-const PermissionsManager      = React.lazy(() => import('./v3-app/pages/PermissionsManager'));
-const AnnouncementManager     = React.lazy(() => import('./v3-app/pages/AnnouncementManager'));
+// ── Lazy import with auto-retry on chunk load failure ─────────────────────────
+// After a deploy, Vercel purges old chunk files. If a user's browser tries to
+// load a stale chunk filename, the import() 404s → ChunkLoadError. This wrapper
+// catches that, purges the SW cache, and does ONE hard reload so the browser
+// fetches the new index.html (with new chunk references).
+function lazyRetry(importFn) {
+  return React.lazy(() =>
+    importFn().catch((error) => {
+      // Only retry once per session to avoid infinite loops
+      const hasRetried = sessionStorage.getItem('lazyRetryDone');
+      if (!hasRetried) {
+        sessionStorage.setItem('lazyRetryDone', '1');
+        // Purge all SW caches so the reload fetches fresh assets
+        if ('caches' in window) {
+          caches.keys().then((names) =>
+            Promise.all(names.map((n) => caches.delete(n)))
+          ).then(() => window.location.reload());
+        } else {
+          window.location.reload();
+        }
+        // Return a never-resolving promise to prevent React from rendering an error
+        // while the page is reloading
+        return new Promise(() => {});
+      }
+      // Already retried — let it bubble to ErrorBoundary
+      throw error;
+    })
+  );
+}
 
-const TasksPage               = React.lazy(() => import('./pages/TasksPage'));
-const ClientsPage             = React.lazy(() => import('./pages/ClientsPage'));
-const PostingPackages         = React.lazy(() => import('./pages/PostingPackages'));
-const ContentCalendar         = React.lazy(() => import('./pages/ContentCalendar'));
-const ContentCalendarPostDue  = React.lazy(() => import('./pages/ContentCalendarPostDue'));
-const CRMPage                 = React.lazy(() => import('./pages/CRMPage'));
-const TeamManagement          = React.lazy(() => import('./pages/TeamManagement'));
-const HRCalendar              = React.lazy(() => import('./pages/HRCalendar'));
-const HRAnalytics             = React.lazy(() => import('./pages/HRAnalytics'));
-const ClientHealthPage        = React.lazy(() => import('./pages/ClientHealthPage'));
-const ITSupportPage           = React.lazy(() => import('./pages/ITSupportPage'));
-const FeedbackSupportPage     = React.lazy(() => import('./pages/FeedbackSupportPage'));
-const ResourcesPage           = React.lazy(() => import('./pages/ResourcesPage'));
-const FeaturesPage            = React.lazy(() => import('./pages/FeaturesPage'));
-const MyTimeOff               = React.lazy(() => import('./pages/MyTimeOff'));
-const EmployeeSelfService     = React.lazy(() => import('./pages/EmployeeSelfService'));
-const OnboardingPage          = React.lazy(() => import('./pages/OnboardingPage'));
-const ContentManagerMessage   = React.lazy(() => import('./pages/ContentManagerMessage'));
-const AdminMessage            = React.lazy(() => import('./pages/AdminMessage'));
-const DirectorMessage         = React.lazy(() => import('./pages/DirectorMessage'));
-const SocialMediaManagerMessage = React.lazy(() => import('./pages/SocialMediaManagerMessage'));
-const GraphicDesignerMessage  = React.lazy(() => import('./pages/GraphicDesignerMessage'));
-const HRManagerMessage        = React.lazy(() => import('./pages/HRManagerMessage'));
-const SalesManagerMessage     = React.lazy(() => import('./pages/SalesManagerMessage'));
-const InstagramReportsPage    = React.lazy(() => import('./pages/InstagramReportsPage'));
-const MetaCallback            = React.lazy(() => import('./pages/MetaCallback'));
-const WaitingForApproval      = React.lazy(() => import('./pages/WaitingForApproval'));
-const ClientLogin             = React.lazy(() => import('./pages/ClientLogin'));
-const ClientWaitingForApproval = React.lazy(() => import('./pages/ClientWaitingForApproval'));
-const ClientPasswordReset     = React.lazy(() => import('./pages/ClientPasswordReset'));
-const FirebaseAuthHandler     = React.lazy(() => import('./pages/FirebaseAuthHandler'));
-const PublicInstagramReportPage = React.lazy(() => import('./pages/PublicInstagramReportPage'));
-const DemoInstagramReportPage = React.lazy(() => import('./pages/DemoInstagramReportPage'));
-const NotificationsPage       = React.lazy(() => import('./pages/NotificationsPage'));
-const WorkloadPage            = React.lazy(() => import('./pages/WorkloadPage'));
-const TeamDirectoryPage       = React.lazy(() => import('./pages/TeamDirectoryPage'));
-const SlackCallback           = React.lazy(() => import('./pages/SlackCallback'));
-const GraphicProjectTracker   = React.lazy(() => import('./pages/GraphicProjectTracker'));
-const CanvasPage              = React.lazy(() => import('./pages/CanvasPage'));
-const MyClientsPage           = React.lazy(() => import('./modules/my-clients/pages/MyClientsPage'));
+// Clear the retry flag on successful page load so future deploys can retry again
+if (sessionStorage.getItem('lazyRetryDone')) {
+  sessionStorage.removeItem('lazyRetryDone');
+}
+
+// ── Lazy-loaded pages (split into separate chunks) ────────────────────────────
+const V3Dashboard             = lazyRetry(() => import('./v3-app/components/Dashboard'));
+const PermissionsManager      = lazyRetry(() => import('./v3-app/pages/PermissionsManager'));
+const AnnouncementManager     = lazyRetry(() => import('./v3-app/pages/AnnouncementManager'));
+
+const TasksPage               = lazyRetry(() => import('./pages/TasksPage'));
+const ClientsPage             = lazyRetry(() => import('./pages/ClientsPage'));
+const PostingPackages         = lazyRetry(() => import('./pages/PostingPackages'));
+const ContentCalendar         = lazyRetry(() => import('./pages/ContentCalendar'));
+const ContentCalendarPostDue  = lazyRetry(() => import('./pages/ContentCalendarPostDue'));
+const CRMPage                 = lazyRetry(() => import('./pages/CRMPage'));
+const TeamManagement          = lazyRetry(() => import('./pages/TeamManagement'));
+const HRCalendar              = lazyRetry(() => import('./pages/HRCalendar'));
+const HRAnalytics             = lazyRetry(() => import('./pages/HRAnalytics'));
+const ClientHealthPage        = lazyRetry(() => import('./pages/ClientHealthPage'));
+const ITSupportPage           = lazyRetry(() => import('./pages/ITSupportPage'));
+const FeedbackSupportPage     = lazyRetry(() => import('./pages/FeedbackSupportPage'));
+const ResourcesPage           = lazyRetry(() => import('./pages/ResourcesPage'));
+const FeaturesPage            = lazyRetry(() => import('./pages/FeaturesPage'));
+const MyTimeOff               = lazyRetry(() => import('./pages/MyTimeOff'));
+const EmployeeSelfService     = lazyRetry(() => import('./pages/EmployeeSelfService'));
+const OnboardingPage          = lazyRetry(() => import('./pages/OnboardingPage'));
+const ContentManagerMessage   = lazyRetry(() => import('./pages/ContentManagerMessage'));
+const AdminMessage            = lazyRetry(() => import('./pages/AdminMessage'));
+const DirectorMessage         = lazyRetry(() => import('./pages/DirectorMessage'));
+const SocialMediaManagerMessage = lazyRetry(() => import('./pages/SocialMediaManagerMessage'));
+const GraphicDesignerMessage  = lazyRetry(() => import('./pages/GraphicDesignerMessage'));
+const HRManagerMessage        = lazyRetry(() => import('./pages/HRManagerMessage'));
+const SalesManagerMessage     = lazyRetry(() => import('./pages/SalesManagerMessage'));
+const InstagramReportsPage    = lazyRetry(() => import('./pages/InstagramReportsPage'));
+const MetaCallback            = lazyRetry(() => import('./pages/MetaCallback'));
+const WaitingForApproval      = lazyRetry(() => import('./pages/WaitingForApproval'));
+const ClientLogin             = lazyRetry(() => import('./pages/ClientLogin'));
+const ClientWaitingForApproval = lazyRetry(() => import('./pages/ClientWaitingForApproval'));
+const ClientPasswordReset     = lazyRetry(() => import('./pages/ClientPasswordReset'));
+const FirebaseAuthHandler     = lazyRetry(() => import('./pages/FirebaseAuthHandler'));
+const PublicInstagramReportPage = lazyRetry(() => import('./pages/PublicInstagramReportPage'));
+const DemoInstagramReportPage = lazyRetry(() => import('./pages/DemoInstagramReportPage'));
+const NotificationsPage       = lazyRetry(() => import('./pages/NotificationsPage'));
+const WorkloadPage            = lazyRetry(() => import('./pages/WorkloadPage'));
+const TeamDirectoryPage       = lazyRetry(() => import('./pages/TeamDirectoryPage'));
+const SlackCallback           = lazyRetry(() => import('./pages/SlackCallback'));
+const GraphicProjectTracker   = lazyRetry(() => import('./pages/GraphicProjectTracker'));
+const CanvasPage              = lazyRetry(() => import('./pages/CanvasPage'));
+const MyClientsPage           = lazyRetry(() => import('./modules/my-clients/pages/MyClientsPage'));
 
 // Admin utilities — expose to console for migrations (must be after all imports)
 if (typeof window !== 'undefined') {
