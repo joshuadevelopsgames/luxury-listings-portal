@@ -89,7 +89,9 @@ const DISPLAY_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours — discard stale
 const saveDisplayCache = (user) => {
   try {
     if (user) {
-      // Only store what we need for the UI shell — NO permissions
+      // Store UI shell data + page permissions for instant render after refresh.
+      // Page permissions are just page IDs — safe to cache. They'll be refreshed
+      // from the DB within ~1 second by onAuthStateChange / realtime listener.
       localStorage.setItem(DISPLAY_CACHE_KEY, JSON.stringify({
         email: user.email,
         displayName: user.displayName,
@@ -102,6 +104,7 @@ const saveDisplayCache = (user) => {
         isApproved: user.isApproved,
         onboardingCompleted: user.onboardingCompleted,
         isDemoViewOnly: user.isDemoViewOnly,
+        pagePermissions: Array.isArray(user.pagePermissions) ? user.pagePermissions : [],
         _cacheTimestamp: Date.now(),
       }));
     } else {
@@ -124,10 +127,8 @@ const loadDisplayCache = () => {
       localStorage.removeItem(DISPLAY_CACHE_KEY);
       return null;
     }
-    // Strip permissions from cache — never trust cached permissions
-    if (parsed) {
-      parsed.pagePermissions = [];
-    }
+    // Page permissions from cache are used for instant render after refresh.
+    // They'll be overwritten by fresh DB data within ~1 second.
     return parsed;
   } catch (_) {
     return null;
