@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES, ROLE_PERMISSIONS } from '../../entities/UserRoles';
-import { getAllowedRolesForUser } from '../../entities/UserRoleMapping';
 import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield, Edit, UserCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EditProfileModal from './EditProfileModal';
 import { toast } from 'react-hot-toast';
 
 const RoleSwitcher = () => {
-  const { currentRole, switchRole, getCurrentRolePermissions, currentUser, refreshCurrentUser } = useAuth();
+  const { currentRole, switchRole, getCurrentRolePermissions, currentUser, refreshCurrentUser, isSystemAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  
+
   const currentRoleData = getCurrentRolePermissions() || { color: 'blue', displayName: 'Loading...' };
   
   const roleOptions = [
@@ -59,51 +58,27 @@ const RoleSwitcher = () => {
 
   // Get user's assigned roles (support both old single-role and new multi-role systems)
   const userAssignedRoles = currentUser?.roles || [currentUser?.primaryRole || currentUser?.role] || ['content_director'];
-  
-  // Safety check - ensure userAssignedRoles is always an array
   const safeUserAssignedRoles = Array.isArray(userAssignedRoles) ? userAssignedRoles : ['content_director'];
-  
-  // Admin users should always have access to all roles
-  // Check if the user is the admin user (jrsschroeder@gmail.com) - this should never change
-  const isAdminUser = currentUser?.email === 'jrsschroeder@gmail.com';
-  
-  // Admin users can always see all roles, regardless of current role
-  const shouldShowAllRoles = isAdminUser;
-  
-  // Debug logging
-  console.log('🔍 Role Switcher Debug:', {
-    userEmail: currentUser?.email,
-    isAdminUser,
-    shouldShowAllRoles,
-    currentRole,
-    userAssignedRoles: safeUserAssignedRoles,
-    filteredRoleOptionsCount: shouldShowAllRoles ? roleOptions.length : roleOptions.filter(option => safeUserAssignedRoles.includes(option.role)).length
-  });
-  
+
+  // System admins (from DB, not hardcoded) can always see and switch to all roles
+  const shouldShowAllRoles = isSystemAdmin;
+
   // Filter role options based on user's assigned roles
-  // For admin users, show all roles. For others, only show their assigned roles
-  const filteredRoleOptions = shouldShowAllRoles ? roleOptions : roleOptions.filter(option => 
-    safeUserAssignedRoles.includes(option.role)
-  );
+  const filteredRoleOptions = shouldShowAllRoles
+    ? roleOptions
+    : roleOptions.filter(option => safeUserAssignedRoles.includes(option.role));
 
   const handleRoleSwitch = (newRole) => {
-    console.log('🔄 Role Switcher - Switching to:', newRole);
-    
-    // For admin users, always allow role switching
-    if (isAdminUser) {
-      console.log('✅ Admin user - switching role');
+    if (isSystemAdmin) {
       switchRole(newRole);
       setIsOpen(false);
       return;
     }
-    
-    // For regular users, check if they have this role
+
     if (safeUserAssignedRoles.includes(newRole)) {
-      console.log('✅ User has this role - switching');
       switchRole(newRole);
       setIsOpen(false);
     } else {
-      console.log('❌ User does not have this role');
       toast.error('You do not have permission to switch to this role.');
     }
   };
@@ -179,10 +154,10 @@ const RoleSwitcher = () => {
         <div className="text-left">
           <div className="font-medium text-sm flex items-center gap-2">
             {currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'Profile'}
-            {currentUser?.email === 'jrsschroeder@gmail.com' && (
+            {isSystemAdmin && (
               <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Admin</span>
             )}
-            {!isAdminUser && safeUserAssignedRoles.length > 1 && (
+            {!isSystemAdmin && safeUserAssignedRoles.length > 1 && (
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                 {safeUserAssignedRoles.length} Roles
               </span>
@@ -217,22 +192,14 @@ const RoleSwitcher = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-semibold text-gray-900 truncate">
-                  {(() => {
-                    console.log('🔍 Role Switcher Name Display:', {
-                      displayName: currentUser?.displayName,
-                      firstName: currentUser?.firstName,
-                      lastName: currentUser?.lastName,
-                      willShow: currentUser?.displayName || `${currentUser?.firstName} ${currentUser?.lastName}`
-                    });
-                    return currentUser?.displayName || `${currentUser?.firstName} ${currentUser?.lastName}`;
-                  })()}
+                  {currentUser?.displayName || `${currentUser?.firstName} ${currentUser?.lastName}`}
                 </h3>
                 <p className="text-sm text-gray-600 truncate">{currentUser?.email}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
                     {currentUser?.department || 'General'}
                   </span>
-                  {currentUser?.email === 'jrsschroeder@gmail.com' && (
+                  {isSystemAdmin && (
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
                       Admin
                     </span>
@@ -327,7 +294,7 @@ const RoleSwitcher = () => {
           </div>
           
           <div className="px-4 py-3 bg-gray-50 rounded-b-lg border-t border-gray-200">
-            {currentUser?.email === 'jrsschroeder@gmail.com' ? (
+            {isSystemAdmin ? (
               <div className="text-xs text-gray-500">
                 <span className="font-medium text-red-600">Admin Access:</span> You can switch to any role and always return to admin.
               </div>
@@ -353,53 +320,34 @@ const RoleSwitcher = () => {
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         user={currentUser}
-        isAdmin={currentUser?.email === 'jrsschroeder@gmail.com'}
+        isAdmin={isSystemAdmin}
         onSave={async (updates) => {
           try {
-            console.log('💾 Saving profile updates:', updates);
-            console.log('📧 Current user email:', currentUser.email);
             const { supabaseService } = await import('../../services/firestoreService');
-            
-            // Update approved users collection
-            console.log('⏳ Updating approved users collection...');
+
             await supabaseService.updateApprovedUser(currentUser.email, updates);
-            console.log('✅ Updated approved users collection');
-            
+
             // Also update employee collection if it exists
             try {
-              console.log('⏳ Checking for employee record...');
               const employee = await supabaseService.getEmployeeByEmail(currentUser.email);
               if (employee) {
-                console.log('⏳ Updating employee collection...');
                 await supabaseService.updateEmployee(employee.id, updates);
-                console.log('✅ Updated employee collection');
-              } else {
-                console.log('ℹ️ No employee record found');
               }
-            } catch (employeeError) {
-              console.log('ℹ️ Employee record not found or not updated:', employeeError.message);
-            }
-            
-            // Wait a moment to ensure Firestore has committed
+            } catch (_) { /* employee record not found — non-fatal */ }
+
+            // Brief pause to let Supabase commit
             await new Promise(resolve => setTimeout(resolve, 500));
-            console.log('✅ All updates complete, refreshing user data...');
-            
-            toast.success('✅ Profile updated successfully!');
+
+            toast.success('Profile updated successfully!');
             setIsEditOpen(false);
-            
-            // Refresh user data from AuthContext instead of reloading page
+
             if (refreshCurrentUser) {
               await refreshCurrentUser();
-              console.log('✅ User data refreshed');
             } else {
-              // Fallback to page reload if refresh function not available
-              setTimeout(() => {
-                window.location.reload();
-              }, 500);
+              setTimeout(() => window.location.reload(), 500);
             }
           } catch (e) {
-            console.error('❌ Failed to update profile:', e);
-            console.error('❌ Error details:', e.message, e.stack);
+            console.error('Failed to update profile:', e);
             toast.error(`Failed to update profile: ${e.message || 'Unknown error'}`);
           }
         }}

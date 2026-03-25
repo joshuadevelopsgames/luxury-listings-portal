@@ -1,58 +1,50 @@
-// User Role Mapping for Real Authentication
-// This maps real Google accounts to their assigned roles
+// User Role Mapping
+//
+// Previously hardcoded with placeholder emails. Now derives everything from
+// the user's DB profile (currentUser.roles) so new team members work
+// automatically without touching this file.
+//
+// Email convention:
+//   • Team members: <firstname>@luxury-listings.com
+//   • Owner / bootstrap admin: jrsschroeder@gmail.com
 
-export const USER_ROLE_MAPPING = {
-  // Admin users - can switch between all profiles
-  'jrsschroeder@gmail.com': {
-    role: 'admin',
-    canSwitchProfiles: true,
-    allowedRoles: ['admin', 'content_director', 'social_media_manager', 'hr_manager', 'sales_manager']
-  },
-  
-  // Regular users - restricted to their assigned role
-  'joshua.mitchell@luxuryrealestate.com': {
-    role: 'content_director',
-    canSwitchProfiles: false,
-    allowedRoles: ['content_director']
-  },
-  
-  'michelle.chen@luxuryrealestate.com': {
-    role: 'social_media_manager',
-    canSwitchProfiles: false,
-    allowedRoles: ['social_media_manager']
-  },
-  
-  'matthew.rodriguez@luxuryrealestate.com': {
-    role: 'hr_manager',
-    canSwitchProfiles: false,
-    allowedRoles: ['hr_manager']
-  },
-  
-  'emily.watson@luxuryrealestate.com': {
-    role: 'sales_manager',
-    canSwitchProfiles: false,
-    allowedRoles: ['sales_manager']
+import { isSystemAdmin } from '../utils/systemAdmins';
+
+/**
+ * Get role mapping for any user based on their DB profile.
+ * System admins can always switch profiles and have all roles.
+ */
+export function getUserRoleMapping(email, currentUser = null) {
+  if (!email) return null;
+
+  if (isSystemAdmin(email)) {
+    return {
+      role: 'admin',
+      canSwitchProfiles: true,
+      allowedRoles: ['admin', 'content_director', 'social_media_manager', 'hr_manager', 'sales_manager'],
+    };
   }
-};
 
-// Helper function to get user role mapping
-export function getUserRoleMapping(email) {
-  return USER_ROLE_MAPPING[email] || null;
+  // Regular users — derive from their DB profile
+  const roles = currentUser?.roles || [currentUser?.primaryRole || currentUser?.role || 'content_director'];
+  return {
+    role: roles[0] || 'content_director',
+    canSwitchProfiles: roles.length > 1,
+    allowedRoles: roles,
+  };
 }
 
-// Helper function to check if user can switch to a specific role
-export function canUserSwitchToRole(email, targetRole) {
-  const mapping = getUserRoleMapping(email);
+/** Check if user can switch to a specific role */
+export function canUserSwitchToRole(email, targetRole, currentUser = null) {
+  const mapping = getUserRoleMapping(email, currentUser);
   if (!mapping) return false;
-  
   return mapping.canSwitchProfiles && mapping.allowedRoles.includes(targetRole);
 }
 
-// Helper function to get all allowed roles for a user
-export function getAllowedRolesForUser(email) {
-  const mapping = getUserRoleMapping(email);
+/** Get all allowed roles for a user */
+export function getAllowedRolesForUser(email, currentUser = null) {
+  const mapping = getUserRoleMapping(email, currentUser);
   if (!mapping) return [];
-  
   return mapping.allowedRoles;
 }
 

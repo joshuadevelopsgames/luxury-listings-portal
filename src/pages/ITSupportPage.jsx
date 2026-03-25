@@ -28,7 +28,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 
 const ITSupportPage = () => {
-  const { currentUser, currentRole } = useAuth();
+  const { currentUser, currentRole, isSystemAdmin } = useAuth();
   const navigate = useNavigate();
   const { confirm } = useConfirm();
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -92,7 +92,7 @@ const ITSupportPage = () => {
   const [pageSubmitting, setPageSubmitting] = useState(false);
 
   // IT Support can see all tickets - admin or if email is jrsschroeder@gmail.com
-  const isITSupport = currentRole === 'admin' || currentUser?.email === 'jrsschroeder@gmail.com';
+  const isITSupport = currentRole === 'admin' || isSystemAdmin;
 
   // Non-admins: redirect to the dedicated feedback/support page (no nav entry)
   useEffect(() => {

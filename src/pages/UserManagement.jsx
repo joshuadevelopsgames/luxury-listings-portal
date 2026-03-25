@@ -33,7 +33,7 @@ import { USER_ROLES } from '../entities/UserRoles';
 import { supabase } from '../lib/supabase';
 import { CAPABILITIES, CAPABILITY_CATEGORIES, CAPABILITY_LABELS } from '../entities/Capabilities';
 import EmployeeLink from '../components/ui/EmployeeLink';
-import { getSystemAdmins } from '../utils/systemAdmins';
+import { getSystemAdmins, isSystemAdmin as checkIsSystemAdmin } from '../utils/systemAdmins';
 
 const UserManagement = () => {
   const { currentUser, isSystemAdmin } = useAuth();
@@ -1353,7 +1353,7 @@ const UserManagement = () => {
                         <Eye className="w-4 h-4 mr-1" />
                         View
                       </Button>
-                      {user.email === 'jrsschroeder@gmail.com' ? (
+                      {checkIsSystemAdmin(user.email) ? (
                         <Button
                           size="sm"
                           onClick={() => handleApproveUserAsAdmin(user)}
