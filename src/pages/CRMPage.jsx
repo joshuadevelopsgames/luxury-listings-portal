@@ -534,6 +534,25 @@ const CRMPage = () => {
     }
   };
 
+  const togglePauseClient = async (client) => {
+    if (!client) return;
+    const paused = (client.approvalStatus || '').toLowerCase() === 'paused' || (client.approvalStatus || '').toLowerCase() === 'pending';
+    try {
+      if (paused) {
+        await supabaseService.resumeClient(client.id);
+        setExistingClients(prev => prev.map(c => c.id === client.id ? { ...c, approvalStatus: 'Approved' } : c));
+        showToast(`${client.clientName || 'Client'} resumed`);
+      } else {
+        await supabaseService.pauseClient(client.id);
+        setExistingClients(prev => prev.map(c => c.id === client.id ? { ...c, approvalStatus: 'Paused' } : c));
+        showToast(`${client.clientName || 'Client'} paused`);
+      }
+    } catch (error) {
+      console.error('Error toggling pause:', error);
+      showToast('Failed to update client', 'error');
+    }
+  };
+
   const getStatusColor = (status) => {
     const s = (status || '').toLowerCase();
     const colors = {
@@ -1492,6 +1511,7 @@ const CRMPage = () => {
             );
           }}
           onDelete={canDeleteClients ? deleteExistingClient : undefined}
+          onPause={canDeleteClients ? togglePauseClient : undefined}
           employees={clientModalEmployees}
           showManagerAssignment={true}
         />

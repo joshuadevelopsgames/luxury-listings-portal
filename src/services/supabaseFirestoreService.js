@@ -1218,6 +1218,34 @@ class SupabaseService {
     } catch (error) { console.error('❌ Error restoring client:', error); throw error; }
   }
 
+  /**
+   * Pause a client — sets approvalStatus to 'Paused'. UI greys the card out.
+   */
+  async pauseClient(clientId) {
+    try {
+      const { data: existing } = await supabase.from('clients').select('meta').eq('id', clientId).maybeSingle();
+      const meta = { ...(existing?.meta || {}), approvalStatus: 'Paused', pausedAt: new Date().toISOString() };
+      const { error } = await supabase.from('clients').update({ meta, updated_at: ts() }).eq('id', clientId);
+      if (error) throw error;
+      cacheInvalidate('clients:all'); cacheInvalidate('clients:all_with_archived');
+    } catch (error) { console.error('❌ Error pausing client:', error); throw error; }
+  }
+
+  /**
+   * Resume a paused client — sets approvalStatus back to 'Approved'.
+   */
+  async resumeClient(clientId) {
+    try {
+      const { data: existing } = await supabase.from('clients').select('meta').eq('id', clientId).maybeSingle();
+      const meta = { ...(existing?.meta || {}) };
+      delete meta.pausedAt;
+      meta.approvalStatus = 'Approved';
+      const { error } = await supabase.from('clients').update({ meta, updated_at: ts() }).eq('id', clientId);
+      if (error) throw error;
+      cacheInvalidate('clients:all'); cacheInvalidate('clients:all_with_archived');
+    } catch (error) { console.error('❌ Error resuming client:', error); throw error; }
+  }
+
   async mergeClientInto(keepId, mergeFromId) {
     try {
       await supabase.from('tasks').update({ client_id_legacy: keepId }).eq('client_id_legacy', mergeFromId);

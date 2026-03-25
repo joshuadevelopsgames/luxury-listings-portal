@@ -25,7 +25,9 @@ import {
   Instagram,
   ExternalLink,
   Upload,
-  Camera
+  Camera,
+  Pause,
+  Play
 } from 'lucide-react';
 import { uploadFile } from '../../services/storageService';
 import { LocationSelect } from '../crm/LocationSelect';
@@ -46,6 +48,7 @@ const ClientDetailModal = ({
   onClose,
   onClientUpdate = null,
   onDelete = null,
+  onPause = null,
   employees = [], // For manager assignment
   showManagerAssignment = false
 }) => {
@@ -243,6 +246,25 @@ const ClientDetailModal = ({
                   title="Edit client"
                 >
                   <Pencil className="w-4 h-4 text-[#0071e3]" />
+                </button>
+              )}
+              {onPause && !isEditing && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await onPause(localClient);
+                      const wasPaused = (localClient.approvalStatus || '').toLowerCase() === 'paused' || (localClient.approvalStatus || '').toLowerCase() === 'pending';
+                      setLocalClient(prev => ({ ...prev, approvalStatus: wasPaused ? 'Approved' : 'Paused' }));
+                    } catch (e) {
+                      toast.error(e?.message || 'Failed to update client');
+                    }
+                  }}
+                  className="p-2 rounded-xl hover:bg-[#ff9f0a]/10 transition-colors"
+                  title={((localClient.approvalStatus || '').toLowerCase() === 'paused' || (localClient.approvalStatus || '').toLowerCase() === 'pending') ? 'Resume client' : 'Pause client'}
+                >
+                  {((localClient.approvalStatus || '').toLowerCase() === 'paused' || (localClient.approvalStatus || '').toLowerCase() === 'pending')
+                    ? <Play className="w-4 h-4 text-[#34c759]" />
+                    : <Pause className="w-4 h-4 text-[#ff9f0a]" />}
                 </button>
               )}
               {onDelete && !isEditing && (

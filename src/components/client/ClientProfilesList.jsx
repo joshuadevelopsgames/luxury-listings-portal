@@ -27,7 +27,9 @@ import {
   Upload,
   Camera,
   Loader2,
-  Archive
+  Archive,
+  Pause,
+  Play
 } from 'lucide-react';
 import { uploadFile } from '../../services/storageService';
 import { supabaseService } from '../../services/supabaseService';
@@ -215,6 +217,23 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       toast.error('Failed to remove client');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleTogglePause = async (client) => {
+    const paused = isPaused(client);
+    try {
+      if (paused) {
+        await supabaseService.resumeClient(client.id);
+        toast.success(`${client.clientName || 'Client'} resumed`);
+      } else {
+        await supabaseService.pauseClient(client.id);
+        toast.success(`${client.clientName || 'Client'} paused`);
+      }
+      await loadData();
+    } catch (error) {
+      console.error('Error toggling pause:', error);
+      toast.error('Failed to update client');
     }
   };
 
@@ -706,6 +725,18 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          handleTogglePause(client);
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-[#ff9f0a]/10 transition-colors"
+                        title={isPaused(client) ? 'Resume client' : 'Pause client'}
+                      >
+                        {isPaused(client) ? <Play className="w-3.5 h-3.5 text-[#34c759]" /> : <Pause className="w-3.5 h-3.5 text-[#ff9f0a]" />}
+                      </button>
+                    )}
+                    {canManageClients && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setShowDeleteConfirm(client);
                         }}
                         className="p-1.5 rounded-lg hover:bg-[#ff3b30]/10 transition-colors"
@@ -741,6 +772,18 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       title="Edit client"
                     >
                       <Pencil className="w-3.5 h-3.5 text-[#0071e3]" />
+                    </button>
+                  )}
+                  {canManageClients && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTogglePause(client);
+                      }}
+                      className="p-2 rounded-lg bg-white dark:bg-[#2c2c2e] shadow-sm border border-black/5 dark:border-white/10 hover:bg-[#ff9f0a]/10 transition-colors"
+                      title={isPaused(client) ? 'Resume client' : 'Pause client'}
+                    >
+                      {isPaused(client) ? <Play className="w-3.5 h-3.5 text-[#34c759]" /> : <Pause className="w-3.5 h-3.5 text-[#ff9f0a]" />}
                     </button>
                   )}
                   {canManageClients && (
