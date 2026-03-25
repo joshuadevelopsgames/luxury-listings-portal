@@ -1343,7 +1343,9 @@ class SupabaseService {
 
   async createContentCalendar(data) {
     try {
-      const { data: row, error } = await supabase.from('content_calendars').insert([{ user_email: data.userEmail, name: data.name || 'Calendar', description: data.description || null, color: data.color || null, created_at: ts() }]).select().single();
+      const session = await supabase.auth.getSession();
+      const userId = session?.data?.session?.user?.id || null;
+      const { data: row, error } = await supabase.from('content_calendars').insert([{ user_id: userId, user_email: data.userEmail, name: data.name || 'Calendar', description: data.description || null, color: data.color || null, created_at: ts() }]).select().single();
       if (error) throw error;
       return { id: row.id, userEmail: row.user_email, name: row.name, description: row.description, color: row.color, createdAt: normalizeTs(row.created_at) };
     } catch (error) { throw error; }
