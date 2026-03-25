@@ -90,28 +90,61 @@ function isDemoViewOnly(email) {
 }
 
 // ============================================================================
-// LOCAL STORAGE — persist auth for instant restore on refresh
+// LOCAL STORAGE — lightweight display cache for instant shell rendering
 // ============================================================================
-const AUTH_STORAGE_KEY = 'luxury_listings_auth_sb';
+// IMPORTANT: This cache is ONLY for rendering the UI shell instantly on refresh
+// (name, avatar, role). Permissions are NEVER read from this cache for access
+// control — they always come fresh from the DB via handleUserSignIn or the
+// realtime listener.
+const DISPLAY_CACHE_KEY = 'luxury_listings_display_cache';
+const AUTH_STORAGE_KEY = 'luxury_listings_auth_sb'; // legacy key — cleaned up on load
 
-const saveAuthToStorage = (user) => {
+const saveDisplayCache = (user) => {
   try {
     if (user) {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      // Only store what we need for the UI shell — NO permissions
+      localStorage.setItem(DISPLAY_CACHE_KEY, JSON.stringify({
+        email: user.email,
+        displayName: user.displayName,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatar: user.avatar,
+        role: user.role,
+        primaryRole: user.primaryRole,
+        uid: user.uid,
+        isApproved: user.isApproved,
+        onboardingCompleted: user.onboardingCompleted,
+        isDemoViewOnly: user.isDemoViewOnly,
+        _cacheTimestamp: Date.now(),
+      }));
     } else {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(DISPLAY_CACHE_KEY);
     }
+    // Clean up legacy full-user cache
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   } catch (_) {}
 };
 
-const loadAuthFromStorage = () => {
+const loadDisplayCache = () => {
   try {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
+    // Try new cache first, fall back to legacy for seamless migration
+    const stored = localStorage.getItem(DISPLAY_CACHE_KEY) || localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    // Strip permissions from legacy cache — never trust cached permissions
+    if (parsed) {
+      parsed.pagePermissions = [];
+      parsed.featurePermissions = [];
+      parsed.customPermissions = [];
+    }
+    return parsed;
   } catch (_) {
     return null;
   }
 };
+
+// Backwards-compatible alias used in mergeCurrentUser and a few other places
+const saveAuthToStorage = saveDisplayCache;
 
 // ============================================================================
 // AUTH CONTEXT
@@ -124,15 +157,17 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const storedAuth = loadAuthFromStorage();
+  const displayCache = loadDisplayCache();
 
-  const [currentUser, setCurrentUser] = useState(storedAuth);
-  const [userData, setUserData] = useState(storedAuth);
-  const [currentRole, setCurrentRole] = useState(storedAuth?.role || USER_ROLES.CONTENT_DIRECTOR);
-  const [loading, setLoading] = useState(!storedAuth);
+  const [currentUser, setCurrentUser] = useState(displayCache);
+  const [userData, setUserData] = useState(displayCache);
+  const [currentRole, setCurrentRole] = useState(displayCache?.role || USER_ROLES.CONTENT_DIRECTOR);
+  const [loading, setLoading] = useState(!displayCache);
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
   // Guard: prevent realtime listener from overwriting permissions during initial sign-in
   const signInInProgressRef = useRef(false);
+  // Track whether we've done a full sign-in this session (vs just restoring)
+  const hasCompletedFullSignIn = useRef(false);
 
   // Boot system-admin list + live listener
   useEffect(() => {
@@ -261,21 +296,64 @@ export function AuthProvider({ children }) {
   // ============================================================================
 
   useEffect(() => {
-    // onAuthStateChange fires with the current session on mount, then on every change
+    // onAuthStateChange fires with the current session on mount, then on every change.
+    // We use the event type to decide how much work to do:
+    //   SIGNED_IN       → full sign-in flow (fetch profile, apply defaults, sync)
+    //   INITIAL_SESSION  → session restored from storage — lightweight restore
+    //   TOKEN_REFRESHED  → access token rotated — no work needed
+    //   SIGNED_OUT       → clear everything
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
-        if (session?.user) {
-          await handleUserSignIn(session.user);
-        } else {
-          saveAuthToStorage(null);
+        if (event === 'SIGNED_OUT' || !session?.user) {
+          saveDisplayCache(null);
           setCurrentUser(null);
           setUserData(null);
           setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+          hasCompletedFullSignIn.current = false;
+          setLoading(false);
+          return;
         }
+
+        if (event === 'TOKEN_REFRESHED') {
+          // Token was rotated — session is still valid, no re-fetch needed
+          setLoading(false);
+          return;
+        }
+
+        if (event === 'SIGNED_IN') {
+          // Explicit sign-in: always do the full flow
+          await handleUserSignIn(session.user);
+          hasCompletedFullSignIn.current = true;
+          setLoading(false);
+          return;
+        }
+
+        // INITIAL_SESSION or other events
+        if (hasCompletedFullSignIn.current) {
+          // Already signed in this session — skip redundant re-fetch
+          setLoading(false);
+          return;
+        }
+        // First load: do full sign-in to get fresh permissions from DB
+        await handleUserSignIn(session.user);
+        hasCompletedFullSignIn.current = true;
       } catch (error) {
         console.error('Auth state error:', error);
-        setCurrentUser(null);
-        setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+        // Only clear user on real auth failures, not transient network errors
+        const msg = (error.message || '').toLowerCase();
+        const isAuthFailure = msg.includes('jwt') || msg.includes('token') ||
+          msg.includes('not authorized') || msg.includes('invalid') ||
+          error.status === 401 || error.status === 403;
+        if (isAuthFailure) {
+          saveDisplayCache(null);
+          setCurrentUser(null);
+          setUserData(null);
+          setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
+          hasCompletedFullSignIn.current = false;
+        } else {
+          // Transient error (network blip, Supabase outage) — keep cached state
+          console.warn('Transient auth error — keeping cached state, will retry on next event');
+        }
       }
       setLoading(false);
     });

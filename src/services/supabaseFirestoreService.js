@@ -102,24 +102,29 @@ function realtimeListener(table, _filter, fetcher, callback) {
     promise.then(data => callback(data));
   }
 
-  // Register on shared table channel
+  // Register on shared table channel with debounce to collapse rapid-fire updates
   const entry = getTableChannel(table);
-  const handler = async () => {
-    try {
-      const data = await fetcher();
-      cacheSet(cacheKey, data);
-      callback(data);
-    } catch (err) {
-      // Don't call callback([]) — that wipes permissions/data to empty.
-      // Only deliver stale cache if available; otherwise silently skip.
-      const stale = cacheGet(cacheKey);
-      if (stale) callback(stale);
-      else console.warn(`realtimeListener: fetch failed for ${cacheKey}, skipping callback`, err);
-    }
+  let debounceTimer = null;
+  const handler = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      try {
+        const data = await fetcher();
+        cacheSet(cacheKey, data);
+        callback(data);
+      } catch (err) {
+        // Don't call callback([]) — that wipes permissions/data to empty.
+        // Only deliver stale cache if available; otherwise silently skip.
+        const stale = cacheGet(cacheKey);
+        if (stale) callback(stale);
+        else console.warn(`realtimeListener: fetch failed for ${cacheKey}, skipping callback`, err);
+      }
+    }, 300);
   };
   entry.listeners.add(handler);
 
   return () => {
+    clearTimeout(debounceTimer);
     entry.listeners.delete(handler);
     // Don't remove the channel itself — other listeners may still use it
   };
@@ -257,6 +262,7 @@ class SupabaseService {
       isRemote: p.is_remote || false,
       slackUserId: p.slack_user_id || null,
       slackWorkspaceId: p.slack_workspace_id || null,
+      permissionsVersion: p.permissions_version || 0,
     };
   }
 
@@ -1756,12 +1762,12 @@ class SupabaseService {
   // ===== PAGE PERMISSIONS =====
 
   _mapPermissionsFromDoc(userData) {
-    if (!userData) return { pages: [], features: [], adminPermissions: false };
+    if (!userData) return { pages: [], features: [], adminPermissions: false, version: 0 };
     const pages = Array.isArray(userData.pagePermissions) ? userData.pagePermissions
       : Array.isArray(userData.page_permissions) ? userData.page_permissions : [];
     const features = Array.isArray(userData.featurePermissions) ? userData.featurePermissions
       : Array.isArray(userData.feature_permissions) ? userData.feature_permissions : [];
-    return { pages, features, adminPermissions: false };
+    return { pages, features, adminPermissions: false, version: userData.permissionsVersion || userData.permissions_version || 0 };
   }
 
   getUserPermissions(userEmail, options = {}) {

@@ -44,20 +44,22 @@ export function PermissionsProvider({ children }) {
   const { currentUser } = useAuth();
   const [permissions, setPermissions] = useState([]);
   const [featurePermissions, setFeaturePermissions] = useState([]);
+  const [permissionsVersion, setPermissionsVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
 
   // Refresh permissions on demand (e.g., after admin changes)
   const refreshPermissions = useCallback(async () => {
     if (!currentUser?.email || currentUser?.isDemoViewOnly) return;
-    
+
     try {
       const result = await supabaseService.getUserPermissions(currentUser.email);
       const pagePerms = result?.pages || result || [];
       const featurePerms = result?.features || [];
-      
+
       setPermissions(Array.isArray(pagePerms) ? pagePerms : []);
       setFeaturePermissions(Array.isArray(featurePerms) ? featurePerms : []);
+      if (result?.version !== undefined) setPermissionsVersion(result.version);
     } catch (error) {
       console.error('Error refreshing permissions:', error);
     }
@@ -96,12 +98,24 @@ export function PermissionsProvider({ children }) {
     // except for the Permissions UI which checks isSystemAdmin separately.
     // So we proceed to load permissions even if adminStatus is true.
 
-    // Single API: subscribe so Firestore is source of truth; same resolution as "View as" when doc at canonical key is missing.
+    // Subscribe to permission changes. Only apply updates whose version >= current
+    // to prevent stale realtime events from overwriting newer data.
     const sub = supabaseService.getUserPermissions(currentUser.email, {
       subscribe: true,
       onUpdate: (result) => {
-        setPermissions(Array.isArray(result?.pages) ? result.pages : []);
-        setFeaturePermissions(Array.isArray(result?.features) ? result.features : []);
+        const incomingVersion = result?.version ?? 0;
+        setPermissionsVersion((prevVersion) => {
+          if (incomingVersion < prevVersion) {
+            // Stale update — ignore it
+            return prevVersion;
+          }
+          // Newer or same version — apply the permissions
+          setPermissions(Array.isArray(result?.pages) ? result.pages : []);
+          setFeaturePermissions(Array.isArray(result?.features) ? result.features : []);
+          setLoading(false);
+          return incomingVersion;
+        });
+        // Always clear loading even if version was stale
         setLoading(false);
       }
     });
@@ -140,6 +154,7 @@ export function PermissionsProvider({ children }) {
   const value = {
     permissions,
     featurePermissions,
+    permissionsVersion,
     loading,
     isSystemAdmin,
     isDemoViewOnly,
