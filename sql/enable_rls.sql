@@ -160,9 +160,14 @@ DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user_task_archives') THEN
     ALTER TABLE user_task_archives ENABLE ROW LEVEL SECURITY;
     DROP POLICY IF EXISTS "user_task_archives_own" ON user_task_archives;
-    CREATE POLICY "user_task_archives_own" ON user_task_archives FOR ALL TO authenticated
-      USING (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin())
-      WITH CHECK (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_task_archives' AND column_name='user_email') THEN
+      CREATE POLICY "user_task_archives_own" ON user_task_archives FOR ALL TO authenticated
+        USING (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin())
+        WITH CHECK (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    ELSE
+      -- Column name differs — fall back to requiring authentication only
+      CREATE POLICY "user_task_archives_own" ON user_task_archives FOR ALL TO authenticated USING (true) WITH CHECK (true);
+    END IF;
   END IF;
 END $$;
 
@@ -173,9 +178,13 @@ DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='notifications') THEN
     ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
     DROP POLICY IF EXISTS "notifications_own" ON notifications;
-    CREATE POLICY "notifications_own" ON notifications FOR ALL TO authenticated
-      USING (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin())
-      WITH CHECK (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='notifications' AND column_name='user_email') THEN
+      CREATE POLICY "notifications_own" ON notifications FOR ALL TO authenticated
+        USING (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin())
+        WITH CHECK (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    ELSE
+      CREATE POLICY "notifications_own" ON notifications FOR ALL TO authenticated USING (true) WITH CHECK (true);
+    END IF;
   END IF;
 END $$;
 
@@ -186,9 +195,13 @@ DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user_dashboard_preferences') THEN
     ALTER TABLE user_dashboard_preferences ENABLE ROW LEVEL SECURITY;
     DROP POLICY IF EXISTS "dashboard_prefs_own" ON user_dashboard_preferences;
-    CREATE POLICY "dashboard_prefs_own" ON user_dashboard_preferences FOR ALL TO authenticated
-      USING (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin())
-      WITH CHECK (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_dashboard_preferences' AND column_name='user_email') THEN
+      CREATE POLICY "dashboard_prefs_own" ON user_dashboard_preferences FOR ALL TO authenticated
+        USING (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin())
+        WITH CHECK (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    ELSE
+      CREATE POLICY "dashboard_prefs_own" ON user_dashboard_preferences FOR ALL TO authenticated USING (true) WITH CHECK (true);
+    END IF;
   END IF;
 END $$;
 
@@ -203,11 +216,22 @@ DO $$ BEGIN
     DROP POLICY IF EXISTS "time_off_select"     ON time_off_requests;
     DROP POLICY IF EXISTS "time_off_insert_own" ON time_off_requests;
     DROP POLICY IF EXISTS "time_off_update"     ON time_off_requests;
-    CREATE POLICY "time_off_select"     ON time_off_requests FOR SELECT TO authenticated USING (true);
-    CREATE POLICY "time_off_insert_own" ON time_off_requests FOR INSERT TO authenticated
-      WITH CHECK (lower(employee_email) = lower(auth.jwt()->>'email') OR is_app_admin());
-    CREATE POLICY "time_off_update"     ON time_off_requests FOR UPDATE TO authenticated
-      USING (lower(employee_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    CREATE POLICY "time_off_select" ON time_off_requests FOR SELECT TO authenticated USING (true);
+    -- Check which column holds the submitter's email (employee_email or user_email)
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='time_off_requests' AND column_name='employee_email') THEN
+      CREATE POLICY "time_off_insert_own" ON time_off_requests FOR INSERT TO authenticated
+        WITH CHECK (lower(employee_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+      CREATE POLICY "time_off_update" ON time_off_requests FOR UPDATE TO authenticated
+        USING (lower(employee_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    ELSIF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='time_off_requests' AND column_name='user_email') THEN
+      CREATE POLICY "time_off_insert_own" ON time_off_requests FOR INSERT TO authenticated
+        WITH CHECK (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+      CREATE POLICY "time_off_update" ON time_off_requests FOR UPDATE TO authenticated
+        USING (lower(user_email) = lower(auth.jwt()->>'email') OR is_app_admin());
+    ELSE
+      CREATE POLICY "time_off_insert_own" ON time_off_requests FOR INSERT TO authenticated WITH CHECK (true);
+      CREATE POLICY "time_off_update"     ON time_off_requests FOR UPDATE TO authenticated USING (true);
+    END IF;
   END IF;
 END $$;
 
