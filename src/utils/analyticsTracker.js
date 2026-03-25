@@ -12,7 +12,7 @@ function logUsageEvent(eventType, pagePath, value, userEmail) {
   const data = { page_path: pagePath, event_type: eventType, created_at: new Date().toISOString() };
   if (eventType === 'time_on_page' && value != null) data.value = value;
   if (userEmail) data.user_email = userEmail;
-  supabase.from('usage_events').insert([data]).catch(() => {});
+  supabase.from('usage_events').insert([data]).then(() => {}, () => {});
 }
 
 const PUBLIC_PATHS = ['/login', '/client-login', '/client-password-reset', '/client-waiting-for-approval', '/waiting-for-approval', '/__/auth/action'];
