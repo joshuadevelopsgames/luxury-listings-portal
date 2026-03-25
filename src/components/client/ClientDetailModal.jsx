@@ -23,6 +23,9 @@ import {
   Loader2,
   Globe,
   Instagram,
+  Facebook,
+  Linkedin,
+  Youtube,
   ExternalLink,
   Upload,
   Camera,
@@ -105,6 +108,7 @@ const ClientDetailModal = ({
       packageSize: localClient.packageSize || 12,
       postsRemaining: localClient.postsRemaining ?? 0,
       postsRemainingByPlatform,
+      platforms: localClient.platforms || { instagram: false, facebook: false, linkedin: false, youtube: false, tiktok: false, x: false },
       paymentStatus: localClient.paymentStatus || 'Pending',
       notes: localClient.notes || '',
       profilePhoto: localClient.profilePhoto || ''
@@ -391,6 +395,40 @@ const ClientDetailModal = ({
                     <option value="Custom">Custom</option>
                     <option value="Monthly">Monthly</option>
                   </select>
+                </div>
+                {/* Social Media Platforms */}
+                <div className="col-span-full">
+                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-2 block">Social Media Platforms</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { key: 'instagram', label: 'Instagram', icon: Instagram },
+                      { key: 'facebook', label: 'Facebook', icon: Facebook },
+                      { key: 'linkedin', label: 'LinkedIn', icon: Linkedin },
+                      { key: 'youtube', label: 'YouTube', icon: Youtube },
+                      { key: 'tiktok', label: 'TikTok', icon: null },
+                      { key: 'x', label: 'X', icon: null }
+                    ].map(({ key, label, icon: Icon }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setEditForm({
+                          ...editForm,
+                          platforms: {
+                            ...(editForm.platforms || {}),
+                            [key]: !(editForm.platforms || {})[key]
+                          }
+                        })}
+                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors ${
+                          (editForm.platforms || {})[key]
+                            ? 'bg-[#0071e3] text-white'
+                            : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                        }`}
+                      >
+                        {Icon && <Icon className="w-3.5 h-3.5" />}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {editForm.postsRemainingByPlatform && Object.keys(editForm.postsRemainingByPlatform).length > 0 ? (
                   <div className="col-span-full space-y-2">
