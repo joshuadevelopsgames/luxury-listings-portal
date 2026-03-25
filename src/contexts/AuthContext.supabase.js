@@ -466,7 +466,11 @@ export function AuthProvider({ children }) {
     }
 
     // Regular user: look up in profiles (approved_users)
+    // Always bust the profile cache before fetching — ensures DB changes
+    // (permissions, role, approval status) are reflected immediately without
+    // requiring a log-out/in cycle.
     const emailNormalized = (email || '').trim().toLowerCase();
+    supabaseService.clearProfileCache(emailNormalized);
     try {
       const [approvedUser, savedRoleRaw] = await Promise.all([
         supabaseService.getApprovedUserByEmail(emailNormalized),
@@ -555,9 +559,26 @@ export function AuthProvider({ children }) {
       }
     } catch (error) {
       console.error('Error checking user approval:', error);
-      await logout();
-      if (!window.location.pathname.includes('/login')) {
-        appNavigate('/login?error=access_required', { replace: true });
+      // Only force-logout on genuine auth failures (bad token, revoked access, 401/403).
+      // Transient network errors or Supabase outages should NOT log the user out —
+      // we keep whatever state was already set (display cache / previous currentUser).
+      const msg = (error.message || '').toLowerCase();
+      const isAuthFailure =
+        msg.includes('jwt') ||
+        msg.includes('token') ||
+        msg.includes('not authorized') ||
+        msg.includes('invalid') ||
+        msg.includes('not approved') ||
+        error.status === 401 ||
+        error.status === 403;
+      if (isAuthFailure) {
+        await logout();
+        if (!window.location.pathname.includes('/login')) {
+          appNavigate('/login?error=access_required', { replace: true });
+        }
+      } else {
+        // Transient error (network blip, Supabase outage) — keep cached state
+        console.warn('Transient error during sign-in check — keeping cached user state');
       }
     }
   }
