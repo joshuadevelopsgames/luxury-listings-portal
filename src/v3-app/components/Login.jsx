@@ -6,7 +6,7 @@ import { ArrowRight, Shield, Users, TrendingUp, Zap, Calendar, BarChart3, CheckS
 /**
  * V3 Login - Apple Design with Full Feature Preview
  */
-const V3Login = () => {
+const V3Login = ({ successPath = '/dashboard' }) => {
   const [loading, setLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,7 +31,7 @@ const V3Login = () => {
       setError('');
       setLoading(true);
       await signInWithGoogle();
-      navigate('/dashboard');
+      navigate(successPath);
     } catch (error) {
       setError('Unable to sign in. Please try again.');
     } finally {
@@ -50,7 +50,7 @@ const V3Login = () => {
       setError('');
       setEmailLoading(true);
       await signInWithEmail(email, password);
-      navigate('/dashboard');
+      navigate(successPath);
     } catch (error) {
       setError(error.message || 'Unable to sign in. Please try again.');
     } finally {

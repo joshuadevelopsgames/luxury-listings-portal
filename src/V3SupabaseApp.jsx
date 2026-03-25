@@ -117,9 +117,9 @@ function AuthCallback() {
 /** Login page: shows V3Login but redirects to /v4/dashboard if already authed */
 function LoginPage() {
   const { currentUser, loading } = useAuth();
-  if (loading) return <V3Login />;
+  if (loading) return <V3Login successPath="/v4/dashboard" />;
   if (currentUser) return <Navigate to="/v4/dashboard" replace />;
-  return <V3Login />;
+  return <V3Login successPath="/v4/dashboard" />;
 }
 
 /** Protected wrapper: requires Supabase auth */
@@ -129,7 +129,7 @@ function ProtectedApp() {
   if (loading) return <PageLoader />;
   if (!currentUser) return <Navigate to="/v4/login" replace />;
 
-  return <V3Layout />;
+  return <V3Layout basePath="/v4" />;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

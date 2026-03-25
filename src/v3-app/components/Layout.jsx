@@ -50,7 +50,7 @@ import {
  * V3 Layout - Apple Design System with Real Firestore Data
  * Full sidebar navigation with permission-based pages
  */
-const V3Layout = () => {
+const V3Layout = ({ basePath = '' }) => {
   const { currentUser, currentRole, logout } = useAuth();
   const { viewingAsUser, isViewingAs, stopViewingAs, viewAsPermissions } = useViewAs();
   const { permissions: userPermissions, isSystemAdmin, hasFeaturePermission } = usePermissions();
@@ -78,14 +78,14 @@ const V3Layout = () => {
   // On load/refresh: use Firestore (not cache) so onboarding shows when server says not completed
   useEffect(() => {
     if (!currentUser?.email || !currentUser?.isApproved) return;
-    if (location.pathname === '/onboarding') return;
+    if (location.pathname === `${basePath}/onboarding` || location.pathname === '/onboarding') return;
     if (currentUser?.onboardingCompleted === true) return;
 
     let cancelled = false;
     firestoreService.getApprovedUserByEmail(currentUser.email).then((approved) => {
       if (cancelled) return;
       if (approved?.onboardingCompleted === true) return;
-      navigate('/onboarding', { replace: true });
+      navigate(`${basePath}/onboarding`, { replace: true });
     });
     return () => { cancelled = true; };
   }, [currentUser?.email, currentUser?.isApproved, currentUser?.onboardingCompleted, location.pathname, navigate]);
@@ -196,31 +196,33 @@ const V3Layout = () => {
 
   // All available pages with their icons
   // Combines hardcoded pages with module registry
+  // basePath is prepended so /v4/* routing stays within the supabase sub-app
+  const p = (path) => `${basePath}${path}`;
   const allPages = {
-    'dashboard': { name: 'Dashboard', icon: Home, path: '/dashboard' },
+    'dashboard': { name: 'Dashboard', icon: Home, path: p('/dashboard') },
     // Base modules (always available)
-    'time-off': { name: 'My Time Off', icon: Calendar, path: '/my-time-off' },
-    'my-clients': { name: 'My Clients', icon: Users, path: '/my-clients' },
-    'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, path: '/instagram-reports' },
+    'time-off': { name: 'My Time Off', icon: Calendar, path: p('/my-time-off') },
+    'my-clients': { name: 'My Clients', icon: Users, path: p('/my-clients') },
+    'instagram-reports': { name: 'Instagram Analytics', icon: Instagram, path: p('/instagram-reports') },
     // Upgrade modules
-    'tasks': { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-    'canvas': { name: 'Workspaces', icon: FileText, path: '/workspaces' },
-    'clients': { name: 'Clients List', icon: User, path: '/clients' },
-    'posting-packages': { name: 'Posting Packages', icon: Briefcase, path: '/posting-packages' },
-    'content-calendar': { name: 'Content Calendar', icon: Calendar, path: '/content-calendar' },
-    'crm': { name: 'CRM', icon: Target, path: '/crm' },
-    'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: '/hr-calendar' },
-    'team': { name: 'Team Management', icon: Users, path: '/team' },
-    'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: '/hr-analytics' },
-    'client-health': { name: 'Client Health', icon: Activity, path: '/client-health' },
-    'system-admin': { name: 'System Admin', icon: ShieldCheck, path: '/system-admin' },
-    'permissions': { name: 'Users & Permissions', icon: Settings, path: '/permissions' },
-    'announcements': { name: 'Announcements', icon: Megaphone, path: '/announcements' },
-    'it-support': { name: 'IT Support', icon: Wrench, path: '/it-support' },
-    'resources': { name: 'Resources', icon: FileText, path: '/resources' },
-    'features': { name: 'Add-ons', icon: Sparkles, path: '/features' },
-    'workload': { name: 'Team Workload', icon: BarChart3, path: '/workload' },
-    'graphic-projects': { name: 'Team Projects', icon: Palette, path: '/graphic-projects' },
+    'tasks': { name: 'Tasks', icon: CheckSquare, path: p('/tasks') },
+    'canvas': { name: 'Workspaces', icon: FileText, path: p('/workspaces') },
+    'clients': { name: 'Clients List', icon: User, path: p('/clients') },
+    'posting-packages': { name: 'Posting Packages', icon: Briefcase, path: p('/posting-packages') },
+    'content-calendar': { name: 'Content Calendar', icon: Calendar, path: p('/content-calendar') },
+    'crm': { name: 'CRM', icon: Target, path: p('/crm') },
+    'hr-calendar': { name: 'HR Calendar', icon: Calendar, path: p('/hr-calendar') },
+    'team': { name: 'Team Management', icon: Users, path: p('/team') },
+    'hr-analytics': { name: 'HR Analytics', icon: TrendingUp, path: p('/hr-analytics') },
+    'client-health': { name: 'Client Health', icon: Activity, path: p('/client-health') },
+    'system-admin': { name: 'System Admin', icon: ShieldCheck, path: p('/system-admin') },
+    'permissions': { name: 'Users & Permissions', icon: Settings, path: p('/permissions') },
+    'announcements': { name: 'Announcements', icon: Megaphone, path: p('/announcements') },
+    'it-support': { name: 'IT Support', icon: Wrench, path: p('/it-support') },
+    'resources': { name: 'Resources', icon: FileText, path: p('/resources') },
+    'features': { name: 'Add-ons', icon: Sparkles, path: p('/features') },
+    'workload': { name: 'Team Workload', icon: BarChart3, path: p('/workload') },
+    'graphic-projects': { name: 'Team Projects', icon: Palette, path: p('/graphic-projects') },
   };
 
   // Navigation sections based on role/permissions - properly categorized
@@ -318,12 +320,12 @@ const V3Layout = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate(`${basePath}/login`);
   };
 
-  const isActive = (path) => location.pathname === path || (path === '/dashboard' && location.pathname === '/');
+  const isActive = (path) => location.pathname === path || (path === `${basePath}/dashboard` && (location.pathname === '/' || location.pathname === `${basePath}/`));
 
-  // Navigation handler
+  // Navigation handler — prepend basePath so /v4/* routes stay within /v4/
   const handleNavigation = useCallback((path) => {
     setSidebarOpen(false);
     navigate(path);
@@ -333,7 +335,7 @@ const V3Layout = () => {
   const isMichelle = currentUser?.email?.toLowerCase() === 'michelle@luxury-listings.com' ||
     (isViewingAs && viewingAsUser?.email?.toLowerCase() === 'michelle@luxury-listings.com');
 
-  const isFeaturesPage = location.pathname === '/features';
+  const isFeaturesPage = location.pathname === p('/features');
 
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''} ${isMichelle ? 'michelle-theme' : ''}`}>
@@ -373,7 +375,7 @@ const V3Layout = () => {
             {sidebarCollapsed ? (
               /* Collapsed: show logo and expand button stacked */
               <div className="flex flex-col items-center gap-2">
-                <Link to="/dashboard" className="w-10 h-10 flex items-center justify-center">
+                <Link to={p('/dashboard')} className="w-10 h-10 flex items-center justify-center">
                   <img 
                     src="/Luxury-listings-logo-CLR.png"
                     alt="Luxury Listings" 
@@ -391,7 +393,7 @@ const V3Layout = () => {
             ) : (
               /* Expanded: show full logo and collapse button */
               <>
-                <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
+                <Link to={p('/dashboard')} className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
                     <img 
                       src="/Luxury-listings-logo-CLR.png"
@@ -604,15 +606,15 @@ const V3Layout = () => {
                         <p className="text-[12px] text-[#86868b] truncate">{currentUser?.email}</p>
                       </div>
                       <div className="py-1">
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation('/self-service'); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/self-service')); }}>
                           <UserCircle className="w-4 h-4" strokeWidth={1.5} />
                           My Profile
                         </button>
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation('/my-time-off'); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/my-time-off')); }}>
                           <Clock className="w-4 h-4" strokeWidth={1.5} />
                           My Time Off
                         </button>
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation('/resources'); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/resources')); }}>
                           <FileText className="w-4 h-4" strokeWidth={1.5} />
                           Resources
                         </button>
