@@ -89,9 +89,9 @@ const DISPLAY_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours — discard stale
 const saveDisplayCache = (user) => {
   try {
     if (user) {
-      // Store UI shell data + page permissions for instant render after refresh.
-      // Page permissions are just page IDs — safe to cache. They'll be refreshed
-      // from the DB within ~1 second by onAuthStateChange / realtime listener.
+      // Only store display data for the UI shell — NO permissions.
+      // Permissions are never cached in localStorage to prevent stale access
+      // after an admin revokes a user's page access.
       localStorage.setItem(DISPLAY_CACHE_KEY, JSON.stringify({
         email: user.email,
         displayName: user.displayName,
@@ -104,7 +104,6 @@ const saveDisplayCache = (user) => {
         isApproved: user.isApproved,
         onboardingCompleted: user.onboardingCompleted,
         isDemoViewOnly: user.isDemoViewOnly,
-        pagePermissions: Array.isArray(user.pagePermissions) ? user.pagePermissions : [],
         _cacheTimestamp: Date.now(),
       }));
     } else {
@@ -127,8 +126,10 @@ const loadDisplayCache = () => {
       localStorage.removeItem(DISPLAY_CACHE_KEY);
       return null;
     }
-    // Page permissions from cache are used for instant render after refresh.
-    // They'll be overwritten by fresh DB data within ~1 second.
+    // Strip permissions — never serve stale cached permissions
+    if (parsed) {
+      parsed.pagePermissions = [];
+    }
     return parsed;
   } catch (_) {
     return null;
@@ -156,6 +157,10 @@ export function AuthProvider({ children }) {
   const [currentRole, setCurrentRole] = useState(displayCache?.role || USER_ROLES.CONTENT_DIRECTOR);
   const [loading, setLoading] = useState(!displayCache);
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
+  // True once the first onAuthStateChange → handleUserSignIn cycle has fetched
+  // real permissions from the DB. Until this is true, PermissionsContext should
+  // keep loading=true so PermissionRoute shows a spinner instead of "Access Denied".
+  const [authHydrated, setAuthHydrated] = useState(false);
   // Guard: prevent realtime listener from overwriting permissions during initial sign-in
   const signInInProgressRef = useRef(false);
   // Track whether we've done a full sign-in this session (vs just restoring)
@@ -304,12 +309,14 @@ export function AuthProvider({ children }) {
           setUserData(null);
           setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
           hasCompletedFullSignIn.current = false;
+          setAuthHydrated(true); // No permissions needed for signed-out state
           setLoading(false);
           return;
         }
 
         if (event === 'TOKEN_REFRESHED') {
           // Token was rotated — session is still valid, no re-fetch needed
+          setAuthHydrated(true); // Permissions already loaded from prior sign-in
           setLoading(false);
           return;
         }
@@ -318,6 +325,7 @@ export function AuthProvider({ children }) {
           // Explicit sign-in: always do the full flow
           await handleUserSignIn(session.user);
           hasCompletedFullSignIn.current = true;
+          setAuthHydrated(true); // DB fetch complete — permissions are fresh
           setLoading(false);
           return;
         }
@@ -325,12 +333,14 @@ export function AuthProvider({ children }) {
         // INITIAL_SESSION or other events
         if (hasCompletedFullSignIn.current) {
           // Already signed in this session — skip redundant re-fetch
+          setAuthHydrated(true);
           setLoading(false);
           return;
         }
         // First load: do full sign-in to get fresh permissions from DB
         await handleUserSignIn(session.user);
         hasCompletedFullSignIn.current = true;
+        setAuthHydrated(true); // DB fetch complete — permissions are fresh
       } catch (error) {
         console.error('Auth state error:', error);
         // Only clear user on real auth failures, not transient network errors
@@ -348,6 +358,7 @@ export function AuthProvider({ children }) {
           // Transient error (network blip, Supabase outage) — keep cached state
           console.warn('Transient auth error — keeping cached state, will retry on next event');
         }
+        setAuthHydrated(true); // Unblock rendering even on error
       }
       setLoading(false);
     });
@@ -692,6 +703,7 @@ export function AuthProvider({ children }) {
     isSystemAdmin: isSystemAdmin(currentUser?.email),
     isViewingAs: !!isViewingAs,
     viewingAsUser: viewAs?.viewingAsUser ?? null,
+    authHydrated,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

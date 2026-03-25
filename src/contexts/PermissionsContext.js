@@ -21,7 +21,7 @@ export function usePermissions() {
  *   • Demo view-only users can see all pages but cannot make changes.
  */
 export function PermissionsProvider({ children }) {
-  const { currentUser } = useAuth();
+  const { currentUser, authHydrated } = useAuth();
   const [pages, setPages] = useState([]);
   const [permissionsVersion, setPermissionsVersion] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,11 @@ export function PermissionsProvider({ children }) {
     const seededPages = Array.isArray(currentUser.pagePermissions) ? currentUser.pagePermissions : [];
     setPages(seededPages);
     setPermissionsVersion(currentUser.permissionsVersion || 0);
-    setLoading(false);
+    // Only stop loading once AuthContext has completed its DB fetch (authHydrated).
+    // This prevents PermissionRoute from blocking pages based on stale/empty cached permissions.
+    if (authHydrated) {
+      setLoading(false);
+    }
 
     // Subscribe to realtime updates for live permission changes
     const unsub = supabaseService.onApprovedUserChange(currentUser.email, (user) => {
@@ -93,6 +97,7 @@ export function PermissionsProvider({ children }) {
     currentUser?.email,
     currentUser?.permissionsVersion,
     currentUser?.pagePermissions,
+    authHydrated,
   ]);
 
   const isDemoViewOnly = !!currentUser?.isDemoViewOnly;
