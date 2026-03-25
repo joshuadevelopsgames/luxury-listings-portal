@@ -4,7 +4,16 @@
  * Optimized for speed with parallel processing and image compression
  */
 
-import Tesseract from 'tesseract.js';
+// Tesseract.js is ~44MB — dynamic-import it only when OCR is actually needed.
+// This keeps it out of the main bundle entirely.
+let _Tesseract = null;
+async function getTesseract() {
+  if (!_Tesseract) {
+    const mod = await import(/* webpackChunkName: "tesseract" */ 'tesseract.js');
+    _Tesseract = mod.default || mod;
+  }
+  return _Tesseract;
+}
 
 class InstagramOCRService {
   constructor() {
@@ -18,10 +27,11 @@ class InstagramOCRService {
    */
   async initialize() {
     if (this.isInitialized) return;
-    
+
+    const Tesseract = await getTesseract();
     console.log(`🔍 Initializing ${this.workerCount} OCR workers...`);
     const startTime = Date.now();
-    
+
     // Create workers in parallel
     const workerPromises = [];
     for (let i = 0; i < this.workerCount; i++) {

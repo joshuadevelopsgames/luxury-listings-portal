@@ -60,16 +60,18 @@ if (sessionStorage.getItem('lazyRetryDone')) {
 }
 
 // ── Lazy-loaded pages (split into separate chunks) ────────────────────────────
-const V3Dashboard             = lazyRetry(() => import('./v3-app/components/Dashboard'));
+// webpackPrefetch: true → browser downloads in idle time after initial load,
+// so navigating to these pages feels near-instant.
+const V3Dashboard             = lazyRetry(() => import(/* webpackPrefetch: true */ './v3-app/components/Dashboard'));
 const PermissionsManager      = lazyRetry(() => import('./v3-app/pages/PermissionsManager'));
 const AnnouncementManager     = lazyRetry(() => import('./v3-app/pages/AnnouncementManager'));
 
-const TasksPage               = lazyRetry(() => import('./pages/TasksPage'));
-const ClientsPage             = lazyRetry(() => import('./pages/ClientsPage'));
-const PostingPackages         = lazyRetry(() => import('./pages/PostingPackages'));
-const ContentCalendar         = lazyRetry(() => import('./pages/ContentCalendar'));
+const TasksPage               = lazyRetry(() => import(/* webpackPrefetch: true */ './pages/TasksPage'));
+const ClientsPage             = lazyRetry(() => import(/* webpackPrefetch: true */ './pages/ClientsPage'));
+const PostingPackages         = lazyRetry(() => import(/* webpackPrefetch: true */ './pages/PostingPackages'));
+const ContentCalendar         = lazyRetry(() => import(/* webpackPrefetch: true */ './pages/ContentCalendar'));
 const ContentCalendarPostDue  = lazyRetry(() => import('./pages/ContentCalendarPostDue'));
-const CRMPage                 = lazyRetry(() => import('./pages/CRMPage'));
+const CRMPage                 = lazyRetry(() => import(/* webpackPrefetch: true */ './pages/CRMPage'));
 const TeamManagement          = lazyRetry(() => import('./pages/TeamManagement'));
 const HRCalendar              = lazyRetry(() => import('./pages/HRCalendar'));
 const HRAnalytics             = lazyRetry(() => import('./pages/HRAnalytics'));

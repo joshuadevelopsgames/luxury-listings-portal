@@ -85,8 +85,8 @@ if ('serviceWorker' in navigator) {
       .then((registration) => {
         console.log('✅ Service Worker registered:', registration.scope);
 
-        // Check for SW updates every 60s (catches new deploys quickly)
-        setInterval(() => registration.update(), 60 * 1000);
+        // Check for SW updates every 5 minutes (catches new deploys without excessive polling)
+        setInterval(() => registration.update(), 5 * 60 * 1000);
 
         // When a new SW is installed, tell it to activate immediately
         registration.addEventListener('updatefound', () => {

@@ -1,9 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getRemoteConfig, fetchAndActivate, getValue } from 'firebase/remote-config';
 import { getAnalytics, logEvent } from 'firebase/analytics';
 
-// Firebase configuration (Auth + Analytics only — data layer is Supabase)
+// Firebase configuration (Remote Config + Analytics only — auth & data are Supabase)
 const firebaseConfig = {
   apiKey: "AIzaSyCNTi85Mc9Bpxiz_B9YKmQHsbkmkpaJzLQ",
   authDomain: "luxury-listings-portal-e56de.firebaseapp.com",
@@ -15,20 +14,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-
-// Configure Google provider to redirect to your custom domain
-googleProvider.setCustomParameters({
-  prompt: 'select_account',
-  redirect_uri: 'https://www.smmluxurylistings.info'
-});
-
-// Set custom OAuth scopes
-googleProvider.addScope('email');
-googleProvider.addScope('profile');
 
 // Initialize Remote Config
 export const remoteConfig = getRemoteConfig(app);
