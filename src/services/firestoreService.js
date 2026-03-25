@@ -1974,7 +1974,7 @@ class FirestoreService {
         type: 'client_merged',
         clientId: keepId,
         clientName: keep.clientName || keep.name || 'Unknown',
-        details: { mergedFromId, mergedFromName: mergeFrom.clientName || mergeFrom.name || 'Unknown' },
+        details: { mergedFromId: mergeFromId, mergedFromName: mergeFrom.clientName || mergeFrom.name || 'Unknown' },
         performedBy: auth.currentUser?.email || auth.currentUser?.uid || null,
         timestamp: new Date()
       });

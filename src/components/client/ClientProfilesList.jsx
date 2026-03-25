@@ -73,6 +73,8 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [showManagerAssignModal, setShowManagerAssignModal] = useState(false);
   // Default to card view on mobile, list on desktop
   const [viewMode, setViewMode] = useState(() => 
     typeof window !== 'undefined' && window.innerWidth < 640 ? 'card' : 'list'

@@ -1,79 +1,116 @@
-import React, { useEffect, useState } from 'react';
-import { clientsService } from '../services/clientsService';
-import { Search, Plus, AlertCircle, CheckCircle, Activity } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import ClientProfilesList from '../../components/client/ClientProfilesList';
+import { Users, FolderOpen, Plus } from 'lucide-react';
+import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 
-const HEALTH_BADGE = {
-  healthy: { label: 'Healthy', color: 'bg-green-50 text-green-700', icon: CheckCircle },
-  at_risk: { label: 'At Risk', color: 'bg-red-50 text-red-700', icon: AlertCircle },
-  monitor: { label: 'Monitor', color: 'bg-yellow-50 text-yellow-700', icon: Activity },
-};
+const ClientsPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam === 'internal' ? 'internal' : 'profiles');
+  const { hasFeaturePermission } = usePermissions();
+  const canManageClients = hasFeaturePermission(FEATURE_PERMISSIONS.MANAGE_CLIENTS);
 
-export default function Clients() {
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
+  // Sync URL with tab (e.g. /clients?tab=internal)
   useEffect(() => {
-    clientsService.getAll()
-      .then(setClients)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    if (tabParam === 'internal' && activeTab !== 'internal') setActiveTab('internal');
+    if (tabParam !== 'internal' && activeTab === 'internal' && !tabParam) setActiveTab('profiles');
+  }, [tabParam]);
+
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    if (value === 'internal') {
+      setSearchParams({ tab: 'internal' });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  // Listen for tab switch events
+  useEffect(() => {
+    const handleTabSwitch = (e) => {
+      setActiveTab(e.detail);
+    };
+    window.addEventListener('switchTab', handleTabSwitch);
+    return () => window.removeEventListener('switchTab', handleTabSwitch);
   }, []);
 
-  const filtered = clients.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Open add client modal when navigating from CRM (e.g. /clients?openAdd=1)
+  useEffect(() => {
+    if (searchParams.get('openAdd') === '1') {
+      setSearchParams({});
+      const t = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('openAddClientModal'));
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [searchParams]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-[22px] font-bold text-[#1d1d1f]">Clients</h1>
-        <button className="flex items-center gap-2 px-4 h-9 rounded-xl bg-[#0071e3] text-white text-[13px] font-semibold hover:bg-[#0077ed] transition-colors">
-          <Plus className="w-4 h-4" /> Add Client
-        </button>
+    <div className="space-y-6 sm:space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
+          Clients List
+        </h1>
+        <p className="text-[15px] sm:text-[17px] text-[#86868b]">
+          Manage SMM client profiles and internal accounts
+        </p>
+      </div>
+      
+      {/* Tab Navigation */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex gap-2 p-1 bg-black/5 dark:bg-white/10 rounded-xl">
+          <button
+            onClick={() => handleTabChange('profiles')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
+              activeTab === 'profiles'
+                ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Client Profiles
+          </button>
+          <button
+            onClick={() => handleTabChange('internal')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
+              activeTab === 'internal'
+                ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+            }`}
+          >
+            <FolderOpen className="w-4 h-4" />
+            Internal Accounts
+          </button>
+        </div>
+
+        {/* Add Client / Add Internal Account Button */}
+        {canManageClients && activeTab === 'profiles' && (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('openAddClientModal'))}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Client
+          </button>
+        )}
+        {canManageClients && activeTab === 'internal' && (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('openAddClientModal', { detail: { isInternal: true } }))}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Internal Account
+          </button>
+        )}
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search clients…"
-          className="w-full pl-9 pr-4 h-10 rounded-xl border border-gray-200 bg-white text-[13px] text-[#1d1d1f] focus:outline-none focus:border-[#0071e3] transition-colors"
-        />
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[1,2,3,4,5,6].map((i) => <div key={i} className="h-28 bg-gray-100 rounded-2xl animate-pulse" />)}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((client) => {
-            const health = HEALTH_BADGE[client.health_status] || HEALTH_BADGE.monitor;
-            const Icon = health.icon;
-            return (
-              <div key={client.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-[#0071e3]/30 hover:shadow-sm transition-all cursor-pointer">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[15px] font-semibold text-[#1d1d1f] truncate">{client.name}</p>
-                    <p className="text-[12px] text-[#86868b] mt-0.5 truncate">{client.account_manager?.full_name || 'Unassigned'}</p>
-                  </div>
-                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0 ${health.color}`}>
-                    <Icon className="w-3 h-3" />
-                    {health.label}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 mt-4 text-[12px] text-[#86868b]">
-                  <span>{client.platform || 'Instagram'}</span>
-                  <span>·</span>
-                  <span>{client.posts_per_month || '—'} posts/mo</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Tab Content */}
+      {activeTab === 'profiles' && <ClientProfilesList />}
+      {activeTab === 'internal' && <ClientProfilesList internalOnly />}
     </div>
   );
-}
+};
+
+export default ClientsPage;

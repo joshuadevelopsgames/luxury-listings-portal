@@ -6,6 +6,39 @@ import toast from 'react-hot-toast';
 import { firestoreService } from '../services/firestoreService';
 import { openaiService } from '../services/openaiService';
 import CanvasBlockEditor, { blockId } from './canvas/CanvasBlockEditor';
+import {
+  PencilRuler,
+  Plus,
+  Search,
+  X,
+  Menu,
+  RotateCcw,
+  RotateCw,
+  Download,
+  MoreHorizontal,
+  Copy,
+  Trash2,
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+  List,
+  ListOrdered,
+  CheckSquare,
+  Quote,
+  Code,
+  Lightbulb,
+  Minus,
+  Link2,
+  Heading1,
+  Heading2,
+  Heading3,
+  FolderOpen,
+  UserPlus,
+  History,
+  Keyboard,
+  Sparkles,
+} from 'lucide-react';
 
 function extractMentionedEmails(blocks) {
   const emails = new Set();
@@ -70,39 +103,6 @@ function searchBlocksInCanvases(canvasesList, query) {
   });
   return results.slice(0, 20);
 }
-import {
-  PencilRuler,
-  Plus,
-  Search,
-  X,
-  Menu,
-  RotateCcw,
-  RotateCw,
-  Download,
-  MoreHorizontal,
-  Copy,
-  Trash2,
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  List,
-  ListOrdered,
-  CheckSquare,
-  Quote,
-  Code,
-  Lightbulb,
-  Minus,
-  Link2,
-  Heading1,
-  Heading2,
-  Heading3,
-  FolderOpen,
-  UserPlus,
-  History,
-  Keyboard,
-  Sparkles,
-} from 'lucide-react';
 
 const EMOJIS = ['📄', '📝', '📋', '📑', '🗒️', '📌', '📎', '💡', '🎯', '🚀', '🔥', '⭐', '💎', '🎨', '📊', '📈', '🏆', '💼', '🧠', '❤️', '✅', '🌟', '🌈', '🔔', '⚡'];
 

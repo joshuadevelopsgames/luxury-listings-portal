@@ -105,3 +105,13 @@ export const crmService = {
     }, {});
   },
 };
+
+// Stub named exports for legacy / cross-module imports
+export const CLIENT_TYPE = { LEAD: 'lead', CLIENT: 'client', PROSPECT: 'prospect' };
+export const CLIENT_TYPE_OPTIONS = Object.values(CLIENT_TYPE);
+export const CRM_LOCATIONS = [];
+export const addContactToCRM = async () => {};
+export const getContactTypes = () => Object.values(CLIENT_TYPE);
+export const getCrmLeadsForCurrentUser = async () => [];
+export const normalizeLocation = (loc) => loc;
+export const removeLeadFromCRM = async () => {};

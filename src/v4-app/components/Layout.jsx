@@ -4,9 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { V4_SESSION_FIRST_PATH_KEY } from '../lib/welcomeStorage';
 import {
   Home, Users, Calendar, TrendingUp, Instagram, BarChart3,
-  Palette, Bell, Settings, LogOut, Menu, ChevronRight, Sun, Moon,
+  Palette, Bell, LogOut, Menu, ChevronRight, Sun, Moon,
   Briefcase, UserCheck, Clock, Search, Command, ChevronDown,
-  UserCircle, FileText, X,
+  UserCircle, Package, ListTodo, Activity, Headphones,
+  BookOpen, Sparkles, CalendarDays, PieChart, Shield, Megaphone,
+  Layout as LayoutIcon, MessageSquare, Users2, CalendarClock,
+  BadgeCheck, Contact, ClipboardCheck, Settings,
 } from 'lucide-react';
 
 /* ── Navigation sections (mirrors V3 grouping) ────────────────────────── */
@@ -15,6 +18,8 @@ const NAV_SECTIONS = [
     title: 'Dashboard',
     items: [
       { label: 'Dashboard', icon: Home, to: '/v4/dashboard' },
+      { label: 'Tasks', icon: ListTodo, to: '/v4/tasks' },
+      { label: 'Settings', icon: Settings, to: '/v4/settings' },
     ],
   },
   {
@@ -23,6 +28,8 @@ const NAV_SECTIONS = [
       { label: 'Clients', icon: Users, to: '/v4/clients' },
       { label: 'Instagram Reports', icon: Instagram, to: '/v4/instagram-reports' },
       { label: 'Content Calendar', icon: Calendar, to: '/v4/content-calendar' },
+      { label: 'Posting Packages', icon: Package, to: '/v4/posting-packages' },
+      { label: 'Client Health', icon: Activity, to: '/v4/client-health' },
     ],
   },
   {
@@ -44,6 +51,35 @@ const NAV_SECTIONS = [
       { label: 'Team', icon: UserCheck, to: '/v4/team' },
       { label: 'Workload', icon: Briefcase, to: '/v4/workload' },
       { label: 'Time Off', icon: Clock, to: '/v4/time-off' },
+      { label: 'HR Calendar', icon: CalendarDays, to: '/v4/hr-calendar' },
+      { label: 'HR Analytics', icon: PieChart, to: '/v4/hr-analytics' },
+      { label: 'My Clients', icon: Users2, to: '/v4/my-clients' },
+      { label: 'My Time Off', icon: CalendarClock, to: '/v4/my-time-off' },
+      { label: 'Self Service', icon: BadgeCheck, to: '/v4/self-service' },
+      { label: 'Team Directory', icon: Contact, to: '/v4/team-directory' },
+      { label: 'Onboarding', icon: ClipboardCheck, to: '/v4/onboarding' },
+    ],
+  },
+  {
+    title: 'Workspace',
+    items: [
+      { label: 'Canvas', icon: LayoutIcon, to: '/v4/canvas' },
+      { label: 'Resources', icon: BookOpen, to: '/v4/resources' },
+      { label: 'Features', icon: Sparkles, to: '/v4/features' },
+    ],
+  },
+  {
+    title: 'Support',
+    items: [
+      { label: 'IT Support', icon: Headphones, to: '/v4/it-support' },
+      { label: 'Feedback', icon: MessageSquare, to: '/v4/feedback' },
+    ],
+  },
+  {
+    title: 'Administration',
+    items: [
+      { label: 'Permissions', icon: Shield, to: '/v4/permissions' },
+      { label: 'Announcements', icon: Megaphone, to: '/v4/announcements' },
     ],
   },
 ];
@@ -367,7 +403,7 @@ export default function Layout() {
                           <UserCircle className="w-4 h-4" strokeWidth={1.5} />
                           My Profile
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => handleNav('/v4/time-off')}>
+                        <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => handleNav('/v4/my-time-off')}>
                           <Clock className="w-4 h-4" strokeWidth={1.5} />
                           My Time Off
                         </button>

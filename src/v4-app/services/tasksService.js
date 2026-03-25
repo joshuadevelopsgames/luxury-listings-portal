@@ -17,6 +17,16 @@ export const tasksService = {
     return data;
   },
 
+  async getAllMyTasks(userId) {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*, client:clients(id, name), assigned_to:profiles(id, full_name)')
+      .or(`assigned_to_id.eq.${userId},created_by_id.eq.${userId}`)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
   async getTodaysPriorities(userId) {
     const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase

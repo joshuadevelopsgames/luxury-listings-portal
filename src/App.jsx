@@ -81,8 +81,8 @@ if (typeof window !== 'undefined') {
   window.firestoreService = firestoreService; // For running migrations like assignMissingClientNumbers()
 }
 
-// V4 App — Supabase-first (lazy-loaded, zero impact on V3)
-const V4App = React.lazy(() => import('./v4-app/V4App'));
+// V3 on Supabase — same UI, Supabase auth, accessible at /v4/* for testing
+const V4App = React.lazy(() => import('./V3SupabaseApp'));
 
 function CanvasRedirect() {
   const { search } = useLocation();

@@ -49,7 +49,7 @@ const getDepartmentForRole = (role) => {
 // ============================================================================
 // AUTH CONTEXT
 // ============================================================================
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export function useAuth() {
   return useContext(AuthContext);

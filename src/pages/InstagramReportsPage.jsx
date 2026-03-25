@@ -9,6 +9,8 @@ import { openaiService } from '../services/openaiService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 // Fallback to browser-based OCR if Cloud Vision and AI extraction fail
 import { instagramOCRService } from '../services/instagramOCRService';
+import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
+import ClientLink from '../components/ui/ClientLink';
 import { 
   Instagram, 
   Plus, 
@@ -77,8 +79,6 @@ function dateFromYYYYMMDD(yyyyMmDd) {
   const d = new Date(yyyyMmDd + 'T12:00:00.000Z');
   return isNaN(d.getTime()) ? null : d;
 }
-import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
-import ClientLink from '../components/ui/ClientLink';
 
 // Normalize percentage for display (OCR sometimes loses decimal or misreads)
 const formatPercent = (value) => {

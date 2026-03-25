@@ -5,9 +5,9 @@ import { User, Lock, Bell, CheckCircle2 } from 'lucide-react';
 
 function Section({ title, children }) {
   return (
-    <div className="bg-white border border-[#e5e5ea] rounded-2xl overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-[#f5f5f7]">
-        <p className="text-[14px] font-semibold text-[#1d1d1f]">{title}</p>
+    <div className="bg-white dark:bg-[#2c2c2e] border border-[#e5e5ea] dark:border-white/10 rounded-2xl overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[#f5f5f7] dark:border-white/10">
+        <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{title}</p>
       </div>
       <div className="px-5 py-5 space-y-4">{children}</div>
     </div>
@@ -17,7 +17,7 @@ function Section({ title, children }) {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-[12px] font-medium text-[#86868b] mb-1">{label}</label>
+      <label className="block text-[12px] font-medium text-[#86868b] dark:text-[#aeaeb2] mb-1">{label}</label>
       {children}
     </div>
   );
@@ -74,7 +74,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-5 max-w-lg">
-      <h1 className="text-[22px] font-bold text-[#1d1d1f]">Settings</h1>
+      <h1 className="text-[22px] font-bold text-[#1d1d1f] dark:text-white">Settings</h1>
 
       {/* Profile info */}
       <Section title="Profile">
@@ -84,8 +84,8 @@ export default function Settings() {
               {(name || 'U').charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-[#1d1d1f]">{name || '—'}</p>
-              <p className="text-[12px] text-[#86868b] capitalize">{roleLabel}</p>
+              <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{name || '—'}</p>
+              <p className="text-[12px] text-[#86868b] dark:text-[#aeaeb2] capitalize">{roleLabel}</p>
             </div>
           </div>
           <Field label="Full Name">
@@ -93,25 +93,25 @@ export default function Settings() {
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Your name"
-              className="w-full border border-[#d2d2d7] rounded-lg px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#d2d2d7] dark:border-white/20 rounded-lg px-3 py-2 text-[14px] bg-white dark:bg-white/5 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </Field>
           <Field label="Email">
             <input
               value={user?.email ?? ''}
               disabled
-              className="w-full border border-[#d2d2d7] rounded-lg px-3 py-2 text-[14px] bg-[#f5f5f7] text-[#86868b] cursor-not-allowed"
+              className="w-full border border-[#d2d2d7] dark:border-white/20 rounded-lg px-3 py-2 text-[14px] bg-[#f5f5f7] dark:bg-white/10 text-[#86868b] dark:text-[#aeaeb2] cursor-not-allowed"
             />
           </Field>
           <Field label="Role">
             <input
               value={roleLabel}
               disabled
-              className="w-full border border-[#d2d2d7] rounded-lg px-3 py-2 text-[14px] bg-[#f5f5f7] text-[#86868b] capitalize cursor-not-allowed"
+              className="w-full border border-[#d2d2d7] dark:border-white/20 rounded-lg px-3 py-2 text-[14px] bg-[#f5f5f7] dark:bg-white/10 text-[#86868b] dark:text-[#aeaeb2] capitalize cursor-not-allowed"
             />
           </Field>
           {profileMsg && (
-            <div className={`flex items-center gap-2 text-[12px] px-3 py-2 rounded-lg ${profileMsg.startsWith('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
+            <div className={`flex items-center gap-2 text-[12px] px-3 py-2 rounded-lg ${profileMsg.startsWith('Error') ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400' : 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400'}`}>
               {!profileMsg.startsWith('Error') && <CheckCircle2 size={13} />}
               {profileMsg}
             </div>
@@ -135,7 +135,7 @@ export default function Settings() {
               value={newPass}
               onChange={e => setNewPass(e.target.value)}
               placeholder="At least 8 characters"
-              className="w-full border border-[#d2d2d7] rounded-lg px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#d2d2d7] dark:border-white/20 rounded-lg px-3 py-2 text-[14px] bg-white dark:bg-white/5 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </Field>
           <Field label="Confirm New Password">
@@ -144,11 +144,11 @@ export default function Settings() {
               value={confirmPass}
               onChange={e => setConfirmPass(e.target.value)}
               placeholder="Repeat new password"
-              className="w-full border border-[#d2d2d7] rounded-lg px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#d2d2d7] dark:border-white/20 rounded-lg px-3 py-2 text-[14px] bg-white dark:bg-white/5 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </Field>
           {passMsg && (
-            <div className={`flex items-center gap-2 text-[12px] px-3 py-2 rounded-lg ${passMsg.startsWith('Error') || passMsg.includes('match') || passMsg.includes('least') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
+            <div className={`flex items-center gap-2 text-[12px] px-3 py-2 rounded-lg ${passMsg.startsWith('Error') || passMsg.includes('match') || passMsg.includes('least') ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400' : 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400'}`}>
               {passMsg.startsWith('Password updated') && <CheckCircle2 size={13} />}
               {passMsg}
             </div>
@@ -156,7 +156,7 @@ export default function Settings() {
           <button
             type="submit"
             disabled={savingPass}
-            className="w-full py-2 rounded-lg bg-[#1d1d1f] text-white text-[14px] font-medium hover:bg-black disabled:opacity-50 transition-colors"
+            className="w-full py-2 rounded-lg bg-[#1d1d1f] dark:bg-white/90 dark:text-[#1d1d1f] text-white text-[14px] font-medium hover:bg-black dark:hover:bg-white disabled:opacity-50 transition-colors"
           >
             {savingPass ? 'Updating…' : 'Update Password'}
           </button>
@@ -167,16 +167,16 @@ export default function Settings() {
       <Section title="Account">
         <div className="space-y-2 text-[13px]">
           <div className="flex justify-between">
-            <span className="text-[#86868b]">User ID</span>
-            <span className="text-[#1d1d1f] font-mono text-[11px]">{user?.id?.slice(0, 8)}…</span>
+            <span className="text-[#86868b] dark:text-[#aeaeb2]">User ID</span>
+            <span className="text-[#1d1d1f] dark:text-white font-mono text-[11px]">{user?.id?.slice(0, 8)}…</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#86868b]">Member since</span>
-            <span className="text-[#1d1d1f]">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</span>
+            <span className="text-[#86868b] dark:text-[#aeaeb2]">Member since</span>
+            <span className="text-[#1d1d1f] dark:text-white">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#86868b]">Last sign in</span>
-            <span className="text-[#1d1d1f]">{user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : '—'}</span>
+            <span className="text-[#86868b] dark:text-[#aeaeb2]">Last sign in</span>
+            <span className="text-[#1d1d1f] dark:text-white">{user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : '—'}</span>
           </div>
         </div>
       </Section>

@@ -12,6 +12,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { PermissionsProvider } from './contexts/PermissionsContext';
+import { ConfirmProvider } from './contexts/ConfirmContext';
 
 import Layout    from './components/Layout';
 import Login     from './pages/Login';
@@ -29,6 +31,23 @@ const Workload          = React.lazy(() => import('./pages/Workload'));
 const TimeOff           = React.lazy(() => import('./pages/TimeOff'));
 const Notifications     = React.lazy(() => import('./pages/Notifications'));
 const Settings          = React.lazy(() => import('./pages/Settings'));
+const PostingPackages   = React.lazy(() => import('./pages/PostingPackages'));
+const Tasks             = React.lazy(() => import('./pages/Tasks'));
+const ClientHealth      = React.lazy(() => import('./pages/ClientHealth'));
+const ITSupport         = React.lazy(() => import('./pages/ITSupport'));
+const Resources         = React.lazy(() => import('./pages/Resources'));
+const Features          = React.lazy(() => import('./pages/Features'));
+const HRCalendar        = React.lazy(() => import('./pages/HRCalendar'));
+const HRAnalytics       = React.lazy(() => import('./pages/HRAnalytics'));
+const MyClients         = React.lazy(() => import('./pages/MyClients'));
+const MyTimeOff         = React.lazy(() => import('./pages/MyTimeOff'));
+const SelfService       = React.lazy(() => import('./pages/SelfService'));
+const TeamDirectory     = React.lazy(() => import('./pages/TeamDirectory'));
+const Onboarding        = React.lazy(() => import('./pages/Onboarding'));
+const FeedbackSupport   = React.lazy(() => import('./pages/FeedbackSupport'));
+const PermissionsManager = React.lazy(() => import('./pages/PermissionsManager'));
+const AnnouncementManager = React.lazy(() => import('./pages/AnnouncementManager'));
+const Canvas            = React.lazy(() => import('./pages/Canvas'));
 
 function PageLoader() {
   return (
@@ -38,8 +57,11 @@ function PageLoader() {
   );
 }
 
+const DEV_BYPASS = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost';
+
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  if (DEV_BYPASS) return children;
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/v4/login" replace />;
   return children;
@@ -48,12 +70,12 @@ function ProtectedRoute({ children }) {
 function V4Routes() {
   const { user, loading } = useAuth();
 
-  if (loading) return <PageLoader />;
+  if (!DEV_BYPASS && loading) return <PageLoader />;
 
   return (
     <React.Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route path="login" element={user ? <Navigate to="/v4/dashboard" replace /> : <Login />} />
+        <Route path="login" element={(DEV_BYPASS || user) ? <Navigate to="/v4/dashboard" replace /> : <Login />} />
 
         <Route
           element={
@@ -74,6 +96,23 @@ function V4Routes() {
           <Route path="workload"           element={<Workload />} />
           <Route path="time-off"           element={<TimeOff />} />
           <Route path="notifications"      element={<Notifications />} />
+          <Route path="tasks"                element={<Tasks />} />
+          <Route path="posting-packages"    element={<PostingPackages />} />
+          <Route path="client-health"      element={<ClientHealth />} />
+          <Route path="it-support"         element={<ITSupport />} />
+          <Route path="resources"          element={<Resources />} />
+          <Route path="features"           element={<Features />} />
+          <Route path="hr-calendar"        element={<HRCalendar />} />
+          <Route path="hr-analytics"       element={<HRAnalytics />} />
+          <Route path="my-clients"         element={<MyClients />} />
+          <Route path="my-time-off"        element={<MyTimeOff />} />
+          <Route path="self-service"       element={<SelfService />} />
+          <Route path="team-directory"     element={<TeamDirectory />} />
+          <Route path="onboarding"         element={<Onboarding />} />
+          <Route path="feedback"           element={<FeedbackSupport />} />
+          <Route path="permissions"        element={<PermissionsManager />} />
+          <Route path="announcements"      element={<AnnouncementManager />} />
+          <Route path="canvas"             element={<Canvas />} />
           <Route path="settings/*"         element={<Settings />} />
           <Route path="*"                  element={<Navigate to="dashboard" replace />} />
         </Route>
@@ -85,7 +124,11 @@ function V4Routes() {
 export default function V4App() {
   return (
     <AuthProvider>
-      <V4Routes />
+      <PermissionsProvider>
+        <ConfirmProvider>
+          <V4Routes />
+        </ConfirmProvider>
+      </PermissionsProvider>
     </AuthProvider>
   );
 }
