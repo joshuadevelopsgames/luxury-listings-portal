@@ -899,7 +899,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
               </div>
               <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Remove Client?</h2>
               <p className="text-[14px] text-[#86868b] mb-6">
-                Are you sure you want to remove <span className="font-medium text-[#1d1d1f] dark:text-white">{showDeleteConfirm.clientName || 'this client'}</span>? This action cannot be undone.
+                Are you sure you want to remove <span className="font-medium text-[#1d1d1f] dark:text-white">{showDeleteConfirm.clientName || 'this client'}</span>? The client will be removed from all views.
               </p>
               <div className="flex gap-3">
                 <button

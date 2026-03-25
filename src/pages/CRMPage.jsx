@@ -515,7 +515,7 @@ const CRMPage = () => {
     const name = client.clientName || client.name || 'this client';
     const confirmed = await confirm({
       title: 'Delete Client',
-      message: `Are you sure you want to permanently delete "${name}"? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${name}"? The client will be removed from all views.`,
       confirmText: 'Delete',
       variant: 'danger'
     });

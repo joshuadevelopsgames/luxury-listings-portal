@@ -1067,12 +1067,16 @@ class SupabaseService {
     };
   }
 
-  async getClients() {
-    const key = 'clients:all';
+  async getClients({ includeArchived = false } = {}) {
+    const key = includeArchived ? 'clients:all_with_archived' : 'clients:all';
     const cached = cacheGet(key);
     if (cached) return cached;
     try {
-      const { data, error } = await supabase.from('clients').select('*').order('client_name', { nullsLast: true });
+      let query = supabase.from('clients').select('*').order('client_name', { nullsLast: true });
+      if (!includeArchived) {
+        query = query.neq('status', 'archived');
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return cacheSet(key, (data || []).map(r => this._mapClient(r)));
     } catch (error) { console.error('❌ Error getting clients:', error); return []; }
@@ -1140,7 +1144,7 @@ class SupabaseService {
       })]).select().single();
       if (error) throw error;
       await this.logClientAdded(data.id, data.client_name || data.name, clientData.assignedManager, clientData.addedBy || null);
-      cacheInvalidate('clients:all');
+      cacheInvalidate('clients:all'); cacheInvalidate('clients:all_with_archived');
       return data.id;
     } catch (error) { console.error('❌ Error adding client:', error); throw error; }
   }
@@ -1174,8 +1178,44 @@ class SupabaseService {
       });
       const { error } = await supabase.from('clients').update(payload).eq('id', clientId);
       if (error) throw error;
-      cacheInvalidate('clients:all');
+      cacheInvalidate('clients:all'); cacheInvalidate('clients:all_with_archived');
     } catch (error) { console.error('❌ Error updating client:', error); throw error; }
+  }
+
+  /**
+   * Soft-delete: marks a client as archived instead of permanently removing the row.
+   * The UI treats this as "deleted" but data is preserved for audit / restore.
+   */
+  async deleteClient(clientId) {
+    try {
+      const { data: existing } = await supabase.from('clients').select('client_name, name, meta').eq('id', clientId).maybeSingle();
+      const meta = { ...(existing?.meta || {}), approvalStatus: 'Archived', archivedAt: new Date().toISOString() };
+      const { error } = await supabase.from('clients').update({ status: 'archived', meta, updated_at: ts() }).eq('id', clientId);
+      if (error) throw error;
+      cacheInvalidate('clients:all'); cacheInvalidate('clients:all_with_archived');
+      // Log the archive event
+      await this.logClientMovement({
+        clientId,
+        clientName: existing?.client_name || existing?.name || '',
+        type: 'archived',
+        performedBy: null,
+      });
+    } catch (error) { console.error('❌ Error archiving client:', error); throw error; }
+  }
+
+  /**
+   * Restore a previously archived client back to active status.
+   */
+  async restoreClient(clientId) {
+    try {
+      const { data: existing } = await supabase.from('clients').select('meta').eq('id', clientId).maybeSingle();
+      const meta = { ...(existing?.meta || {}) };
+      delete meta.archivedAt;
+      meta.approvalStatus = 'Approved';
+      const { error } = await supabase.from('clients').update({ status: 'active', meta, updated_at: ts() }).eq('id', clientId);
+      if (error) throw error;
+      cacheInvalidate('clients:all'); cacheInvalidate('clients:all_with_archived');
+    } catch (error) { console.error('❌ Error restoring client:', error); throw error; }
   }
 
   async mergeClientInto(keepId, mergeFromId) {
@@ -1183,7 +1223,7 @@ class SupabaseService {
       await supabase.from('tasks').update({ client_id_legacy: keepId }).eq('client_id_legacy', mergeFromId);
       await supabase.from('instagram_reports').update({ client_id_legacy: keepId }).eq('client_id_legacy', mergeFromId);
       await supabase.from('clients').delete().eq('id', mergeFromId);
-      cacheInvalidate('clients:all');
+      cacheInvalidate('clients:all'); cacheInvalidate('clients:all_with_archived');
     } catch (error) { console.error('❌ Error merging clients:', error); throw error; }
   }
 

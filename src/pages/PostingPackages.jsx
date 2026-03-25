@@ -858,17 +858,18 @@ export default function PostingPackages() {
 
   const deleteClient = async (client) => {
     if (!client) return;
-    
+
     const confirmed = await confirm({
       title: 'Delete Client',
-      message: `Are you sure you want to permanently delete ${client.clientName}? This action cannot be undone.`,
+      message: `Are you sure you want to delete ${client.clientName}? The client will be removed from all views.`,
       confirmText: 'Delete',
       variant: 'danger'
     });
     if (!confirmed) return;
-    
+
     setDeleteLoading({ ...deleteLoading, [client.id]: true });
     try {
+      await supabaseService.deleteClient(client.id);
       setClients(prevClients => prevClients.filter(c => c.id !== client.id));
       showToast(`${client.clientName} has been deleted successfully!`);
     } catch (error) {
@@ -881,7 +882,7 @@ export default function PostingPackages() {
 
   const restoreClient = async (archivedClient) => {
     if (!archivedClient) return;
-    
+
     const confirmed = await confirm({
       title: 'Restore Client',
       message: `Are you sure you want to restore ${archivedClient.clientName}? This will bring them back to the active client list.`,
@@ -889,10 +890,11 @@ export default function PostingPackages() {
       variant: 'default'
     });
     if (!confirmed) return;
-    
+
     setRestoreLoading({ ...restoreLoading, [archivedClient.id]: true });
     try {
-      const restored = { ...archivedClient, status: determineStatus(archivedClient.approvalStatus, archivedClient.paymentStatus, archivedClient.postsRemaining ?? 0) };
+      await supabaseService.restoreClient(archivedClient.id);
+      const restored = { ...archivedClient, status: determineStatus('Approved', archivedClient.paymentStatus, archivedClient.postsRemaining ?? 0) };
       setArchivedClients(prev => prev.filter(c => c.id !== archivedClient.id));
       setClients(prev => [...prev, restored]);
       showToast(`${archivedClient.clientName} has been restored successfully!`);

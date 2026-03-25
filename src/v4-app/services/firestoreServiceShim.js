@@ -718,7 +718,10 @@ export const firestoreService = {
   },
 
   async deleteClient(clientId) {
-    await supabase.from('clients').delete().eq('id', clientId);
+    // Soft-delete: archive instead of permanently removing
+    const { data: existing } = await supabase.from('clients').select('meta').eq('id', clientId).maybeSingle();
+    const meta = { ...(existing?.meta || {}), approvalStatus: 'Archived', archivedAt: new Date().toISOString() };
+    await supabase.from('clients').update({ status: 'archived', meta, updated_at: new Date().toISOString() }).eq('id', clientId);
     return { success: true };
   },
 

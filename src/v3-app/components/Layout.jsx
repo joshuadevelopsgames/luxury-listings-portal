@@ -8,12 +8,8 @@ import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
 import AnnouncementBanner from '../../components/AnnouncementBanner';
 import FeedbackButton from '../../components/ui/FeedbackButton';
-
-// Lazy-load ClientProfilesList — it pulls in Firebase Storage + ClientDetailModal (~250K)
-// Only needed when user clicks a client link outside the /clients page.
-const ClientProfilesList = lazy(() => import(/* webpackChunkName: "client-profiles" */ '../../components/client/ClientProfilesList'));
 import { modules, getBaseModuleIds, getNavItemsForModules } from '../../modules/registry';
-import { 
+import {
   Home, 
   CheckSquare, 
   Users, 
@@ -48,6 +44,10 @@ import {
   ShieldCheck,
   Megaphone
 } from 'lucide-react';
+
+// Lazy-load ClientProfilesList — it pulls in ClientDetailModal (~250K)
+// Only needed when user clicks a client link outside the /clients page.
+const ClientProfilesList = lazy(() => import(/* webpackChunkName: "client-profiles" */ '../../components/client/ClientProfilesList'));
 
 /**
  * V3 Layout - Apple Design System with Real Firestore Data
