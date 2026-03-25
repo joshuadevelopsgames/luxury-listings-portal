@@ -280,7 +280,7 @@ const HRCalendar = () => {
     startTime: req.startTime || '09:00',
     endTime: req.endTime || '17:00',
     isAllDay: req.isAllDay !== false,
-    days: req.days || 1,
+    days: req.days ?? req.daysRequested ?? 1,
     status: req.status || 'pending',
     reason: req.reason || '',
     location: req.location || '',

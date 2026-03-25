@@ -17,7 +17,7 @@ END $$;
 -- Step 2: Backfill employee_name from profiles (display_name or first_name + last_name)
 UPDATE time_off_requests tor
 SET employee_name = COALESCE(
-  p.display_name,
+  p.full_name,
   NULLIF(TRIM(CONCAT(p.first_name, ' ', p.last_name)), ''),
   SPLIT_PART(tor.user_email, '@', 1)
 )

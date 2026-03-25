@@ -777,7 +777,8 @@ class SupabaseService {
     if (!days && r.start_date && r.end_date) {
       const start = new Date(r.start_date);
       const end = new Date(r.end_date);
-      days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+      const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+      days = Math.max(1, diff + 1); // inclusive calendar days
     }
     return {
       id: r.id,
@@ -815,10 +816,10 @@ class SupabaseService {
     const needsName = [...new Set(requests.filter(r => !r.employeeName).map(r => r.userEmail).filter(Boolean))];
     if (!needsName.length) return requests;
     // Fetch display names from profiles in one query
-    const { data: profiles } = await supabase.from('profiles').select('email, display_name, first_name, last_name').in('email', needsName);
+    const { data: profiles } = await supabase.from('profiles').select('email, full_name, first_name, last_name').in('email', needsName);
     const nameMap = {};
     (profiles || []).forEach(p => {
-      const name = p.display_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || null;
+      const name = p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || null;
       if (name) nameMap[p.email.toLowerCase()] = name;
     });
     return requests.map(r => {

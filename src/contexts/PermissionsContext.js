@@ -123,7 +123,14 @@ export function PermissionsProvider({ children }) {
       if (typeof unsub === 'function') unsub();
       unsubscribeAdmins();
     };
-  }, [currentUser?.email]);
+    // Re-seed when Auth finishes hydrating (display cache has empty perms; same email).
+  }, [
+    currentUser?.email,
+    currentUser?.permissionsVersion,
+    currentUser?.pagePermissions,
+    currentUser?.featurePermissions,
+    currentUser?.customPermissions,
+  ]);
 
   const isDemoViewOnly = !!currentUser?.isDemoViewOnly;
 

@@ -100,7 +100,15 @@ export function PermissionsProvider({ children }) {
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, [currentUser?.uid, currentUser?.role, authIsAdmin]);
+    // Re-seed when profile permissions load (shell cache has empty perms; same uid).
+  }, [
+    currentUser?.uid,
+    currentUser?.role,
+    authIsAdmin,
+    currentUser?.pagePermissions,
+    currentUser?.featurePermissions,
+    currentUser?.customPermissions,
+  ]);
 
   const isDemoViewOnly = !!currentUser?.isDemoViewOnly;
 
