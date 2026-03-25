@@ -100,18 +100,39 @@ function realtimeListener(table, _filter, fetcher, callback) {
   // Serve from cache if fresh
   const cacheKey = `${table}:${_filter || 'all'}`;
   const cached = cacheGet(cacheKey);
-  if (cached) {
+  if (cached && cached.length > 0) {
     callback(cached);
   } else {
     // Reuse any in-flight request for this exact key
     let promise = _inFlight.get(cacheKey);
     if (!promise) {
       promise = fetcher()
-        .then(data => { cacheSet(cacheKey, data); _inFlight.delete(cacheKey); return data; })
+        .then(data => {
+          // Only cache non-empty results — empty results from a pre-auth query
+          // would stick for the full TTL and hide real data.
+          if (data && data.length > 0) cacheSet(cacheKey, data);
+          _inFlight.delete(cacheKey);
+          return data;
+        })
         .catch(() => { _inFlight.delete(cacheKey); return []; });
       _inFlight.set(cacheKey, promise);
     }
-    promise.then(data => callback(data));
+    promise.then(data => {
+      callback(data);
+      // If initial fetch returned empty, schedule a retry after 3s in case
+      // the Supabase session wasn't ready yet (RLS blocks anon → 0 rows).
+      if (!data || data.length === 0) {
+        setTimeout(async () => {
+          try {
+            const retryData = await fetcher();
+            if (retryData && retryData.length > 0) {
+              cacheSet(cacheKey, retryData);
+              callback(retryData);
+            }
+          } catch (_) { /* silent retry */ }
+        }, 3000);
+      }
+    });
   }
 
   // Register on shared table channel with debounce to collapse rapid-fire updates
@@ -847,11 +868,18 @@ class SupabaseService {
 
   async getAllLeaveRequests() {
     try {
+      // Verify authenticated session — RLS only allows 'authenticated' role
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn('[getAllLeaveRequests] No authenticated session — skipping query');
+        return [];
+      }
       const { data, error } = await supabase.from('time_off_requests').select('*').order('created_at', { ascending: false });
       if (error) throw error;
+      console.log('[getAllLeaveRequests] returned', (data || []).length, 'rows');
       const mapped = (data || []).map(r => this._mapLeaveRequest(r));
       return this._resolveLeaveRequestNames(mapped);
-    } catch { return []; }
+    } catch (err) { console.error('[getAllLeaveRequests] error:', err); return []; }
   }
 
   async submitLeaveRequest(requestData) {
