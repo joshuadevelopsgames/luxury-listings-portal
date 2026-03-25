@@ -1949,6 +1949,14 @@ class SupabaseService {
     } catch (error) { throw error; }
   }
 
+  async deleteAnnouncement(announcementId) {
+    try {
+      const { error } = await supabase.from('announcements').delete().eq('id', announcementId);
+      if (error) throw error;
+      cacheInvalidate('announcements');
+    } catch (error) { throw error; }
+  }
+
   // ===== CUSTOM ROLES =====
 
   async getCustomRoles() {
