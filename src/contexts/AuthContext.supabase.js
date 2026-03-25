@@ -315,10 +315,15 @@ export function AuthProvider({ children }) {
         }
 
         if (event === 'TOKEN_REFRESHED') {
-          // Token was rotated — session is still valid, no re-fetch needed
-          setAuthHydrated(true); // Permissions already loaded from prior sign-in
-          setLoading(false);
-          return;
+          if (hasCompletedFullSignIn.current) {
+            // Token rotated mid-session — permissions already loaded, no re-fetch needed
+            setAuthHydrated(true);
+            setLoading(false);
+            return;
+          }
+          // TOKEN_REFRESHED fired before INITIAL_SESSION on a hard refresh (token was
+          // near-expiry). Fall through to the full sign-in path below so we fetch
+          // fresh permissions from the DB before unblocking the app.
         }
 
         if (event === 'SIGNED_IN') {
@@ -656,15 +661,17 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, [currentUser?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Safety timeout — if auth takes too long, unblock the app
+  // Safety timeout — if auth takes too long (e.g. Supabase WebSocket blocked),
+  // unblock the app so users aren't stuck on a spinner indefinitely.
+  // 5s is enough for any reasonable connection; the 10s original was too long.
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (loading || !authHydrated) {
-        console.warn('Auth timeout — unblocking app');
+        console.warn('Auth timeout — unblocking app after 5s');
         setAuthHydrated(true);
         setLoading(false);
       }
-    }, 10000);
+    }, 5000);
     return () => clearTimeout(timeout);
   }, [loading, authHydrated]);
 

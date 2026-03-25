@@ -71,9 +71,17 @@ export function PermissionsProvider({ children }) {
     const seededPages = Array.isArray(currentUser.pagePermissions) ? currentUser.pagePermissions : [];
     setPages(seededPages);
     setPermissionsVersion(currentUser.permissionsVersion || 0);
-    // Only stop loading once AuthContext has completed its DB fetch (authHydrated).
-    // This prevents PermissionRoute from blocking pages based on stale/empty cached permissions.
-    if (authHydrated) {
+
+    // Only release loading once:
+    //   1. AuthContext has completed its DB fetch (authHydrated=true), AND
+    //   2. Permissions are actually populated — OR the user is a system admin
+    //      (who bypasses all checks) so an empty array is fine for them.
+    //
+    // This prevents PermissionRoute from flashing "Access Denied" during the
+    // window where authHydrated flips to true but currentUser.pagePermissions
+    // is still [] from the stripped display cache (e.g. TOKEN_REFRESHED race).
+    const permissionsReady = adminStatus || seededPages.length > 0;
+    if (authHydrated && permissionsReady) {
       setLoading(false);
     }
 
