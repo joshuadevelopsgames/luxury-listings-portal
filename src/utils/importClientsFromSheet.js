@@ -7,7 +7,7 @@
  *   importClients();
  */
 
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 
 // Full client data from the spreadsheet
 const CLIENTS_DATA = [
@@ -257,7 +257,7 @@ export const importClients = async () => {
   
   try {
     // Get existing clients to avoid duplicates
-    const existingClients = await firestoreService.getClients();
+    const existingClients = await supabaseService.getClients();
     const existingNames = new Set(
       existingClients.map(c => c.clientName?.toLowerCase()).filter(Boolean)
     );
@@ -268,7 +268,7 @@ export const importClients = async () => {
     console.log(`📋 Found ${existingClients.length} existing clients`);
     
     // Get approved users to find manager emails
-    const approvedUsers = await firestoreService.getApprovedUsers();
+    const approvedUsers = await supabaseService.getApprovedUsers();
     console.log(`👥 Found ${approvedUsers.length} approved users for manager lookup`);
     
     // Build manager email map
@@ -326,12 +326,12 @@ export const importClients = async () => {
             postsRemaining: existingClient.postsRemaining || DEFAULT_PACKAGE.packageSize
           };
           
-          await firestoreService.updateClient(existingClient.id, updateData);
+          await supabaseService.updateClient(existingClient.id, updateData);
           console.log(`🔄 Updated: ${clientData.clientName}`);
           updated++;
         } else {
           // Add new client
-          await firestoreService.addClient(clientRecord);
+          await supabaseService.addClient(clientRecord);
           console.log(`✅ Added: ${clientData.clientName} → ${clientData.assignedManagerName}`);
           added++;
         }

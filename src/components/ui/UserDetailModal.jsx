@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { toast } from 'react-hot-toast';
 import { PERMISSIONS } from '../../entities/Permissions';
 
@@ -134,13 +134,13 @@ const UserDetailModal = ({
       updates.bio = editForm.bio?.trim() || null;
 
       // Update approved user
-      await firestoreService.updateApprovedUser(localUser.email, updates);
+      await supabaseService.updateApprovedUser(localUser.email, updates);
       
       // Also try to update employee record if exists
       try {
-        const employee = await firestoreService.getEmployeeByEmail(localUser.email);
+        const employee = await supabaseService.getEmployeeByEmail(localUser.email);
         if (employee) {
-          await firestoreService.updateEmployee(employee.id, updates);
+          await supabaseService.updateEmployee(employee.id, updates);
         }
       } catch (empError) {
         console.log('No employee record to update');

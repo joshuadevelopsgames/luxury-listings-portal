@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 
 const PendingUsersContext = createContext();
 
@@ -35,7 +35,7 @@ export function PendingUsersProvider({ children }) {
     const listenerId = `pending-users-${Date.now()}-${Math.random()}`;
     listenerIdRef.current = listenerId;
     
-    const unsubscribe = firestoreService.onPendingUsersChange((users) => {
+    const unsubscribe = supabaseService.onPendingUsersChange((users) => {
       // Only process updates from this listener instance
       if (listenerIdRef.current !== listenerId) {
         console.log('📡 Ignoring update from old listener instance');
@@ -92,7 +92,7 @@ export function PendingUsersProvider({ children }) {
   // Function to add a new pending user
   const addPendingUser = async (user) => {
     try {
-      await firestoreService.addPendingUser(user);
+      await supabaseService.addPendingUser(user);
     } catch (error) {
       throw error;
     }
@@ -101,7 +101,7 @@ export function PendingUsersProvider({ children }) {
   // Function to remove a pending user (when approved or rejected)
   const removePendingUser = async (userId) => {
     try {
-      await firestoreService.removePendingUser(userId);
+      await supabaseService.removePendingUser(userId);
       // Update local state since real-time listener is disabled
       setPendingUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     } catch (error) {
@@ -114,7 +114,7 @@ export function PendingUsersProvider({ children }) {
     try {
       const user = pendingUsers.find(u => u.id === userId);
       if (user) {
-        await firestoreService.updatePendingUser(userId, { requestedRole: newRole });
+        await supabaseService.updatePendingUser(userId, { requestedRole: newRole });
       }
     } catch (error) {
       throw error;
@@ -124,7 +124,7 @@ export function PendingUsersProvider({ children }) {
   // Function to approve a user (remove from pending and add to approved)
   const approveUser = async (userId, approvedUserData) => {
     try {
-      await firestoreService.approveUser(userId, approvedUserData);
+      await supabaseService.approveUser(userId, approvedUserData);
       // Update local state since real-time listener is disabled
       setPendingUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     } catch (error) {

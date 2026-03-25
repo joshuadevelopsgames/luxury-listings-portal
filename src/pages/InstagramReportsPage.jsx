@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { openaiService } from '../services/openaiService';
 import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 // Fallback to browser-based OCR if Cloud Vision and AI extraction fail
@@ -161,7 +161,7 @@ const InstagramReportsPage = () => {
       if (!uid) { setReports([]); setLoading(false); }
       return () => {};
     }
-    const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
+    const unsubscribe = supabaseService.onInstagramReportsChange((data) => {
       setReports(data);
       setLoading(false);
     }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined });
@@ -175,7 +175,7 @@ const InstagramReportsPage = () => {
       return () => {};
     }
     setArchiveLoading(true);
-    const unsubscribe = firestoreService.onInstagramReportsChange((data) => {
+    const unsubscribe = supabaseService.onInstagramReportsChange((data) => {
       setArchivedReports(data);
       setArchiveLoading(false);
     }, { archived: true });
@@ -186,7 +186,7 @@ const InstagramReportsPage = () => {
   useEffect(() => {
     const loadClients = async () => {
       try {
-        const clientsList = await firestoreService.getClients();
+        const clientsList = await supabaseService.getClients();
         setAllClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
       } catch (error) {
         console.error('Error loading clients:', error);
@@ -338,7 +338,7 @@ const InstagramReportsPage = () => {
     };
     
     try {
-      await firestoreService.createInstagramReport(reportData);
+      await supabaseService.createInstagramReport(reportData);
       setGeneratingReport(null);
     } catch (error) {
       console.error('Error creating quarterly report:', error);
@@ -410,7 +410,7 @@ const InstagramReportsPage = () => {
     };
     
     try {
-      await firestoreService.createInstagramReport(reportData);
+      await supabaseService.createInstagramReport(reportData);
       setGeneratingReport(null);
     } catch (error) {
       console.error('Error creating yearly report:', error);
@@ -434,7 +434,7 @@ const InstagramReportsPage = () => {
     });
     if (!confirmed) return;
     try {
-      await firestoreService.deleteInstagramReport(report.id);
+      await supabaseService.deleteInstagramReport(report.id);
       toast.success('Report deleted');
     } catch (error) {
       console.error('Error deleting report:', error);
@@ -1105,7 +1105,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
     }
     const loadClients = async () => {
       try {
-        const clientsList = await firestoreService.getClients();
+        const clientsList = await supabaseService.getClients();
         const sortedClients = clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
         setClients(sortedClients);
         if (preSelectedClientId && !formData.clientName) {
@@ -1381,9 +1381,9 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       const metrics = formData.metrics ? JSON.parse(JSON.stringify(formData.metrics)) : null;
 
       if (report) {
-        await firestoreService.updateInstagramReport(report.id, { clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
+        await supabaseService.updateInstagramReport(report.id, { clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
       } else {
-        await firestoreService.createInstagramReport({ clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
+        await supabaseService.createInstagramReport({ clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
       }
       onSave();
     } catch (error) {

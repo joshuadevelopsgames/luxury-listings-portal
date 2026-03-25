@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
 import { useAuth } from '../../contexts/AuthContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { 
   Calendar, 
   Plane, 
@@ -28,13 +28,13 @@ const TimeOffWidget = () => {
     const loadData = async () => {
       if (!currentUser?.email) return;
       try {
-        const balances = await firestoreService.getUserLeaveBalances(currentUser.email);
+        const balances = await supabaseService.getUserLeaveBalances(currentUser.email);
         setLeaveBalances({
           vacation: { ...balances.vacation, remaining: balances.vacation.total - balances.vacation.used },
           sick: { ...balances.sick, remaining: balances.sick.total - balances.sick.used }
         });
         
-        const requests = await firestoreService.getLeaveRequests(currentUser.email);
+        const requests = await supabaseService.getLeaveRequests(currentUser.email);
         setPendingRequests(requests.filter(r => r.status === 'pending'));
         setUpcomingTimeOff(requests.filter(r => r.status === 'approved' && new Date(r.startDate) > new Date()));
       } catch (error) {

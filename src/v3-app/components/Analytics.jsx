@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Users, CheckCircle2, Clock, ArrowUpRight, Briefcase, ListTodo, Calendar, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { DailyTask } from '../../entities/DailyTask';
 import ClientLink from '../../components/ui/ClientLink';
 
@@ -26,8 +26,8 @@ const V3Analytics = () => {
       setLoading(true);
       const [tasksData, clientsData, teamData] = await Promise.all([
         currentUser?.email ? DailyTask.filter({ assigned_to: currentUser.email }, '-due_date') : [],
-        firestoreService.getClients(),
-        firestoreService.getApprovedUsers()
+        supabaseService.getClients(),
+        supabaseService.getApprovedUsers()
       ]);
       setTasks(tasksData || []);
       setClients(clientsData || []);

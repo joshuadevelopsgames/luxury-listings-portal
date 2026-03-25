@@ -15,7 +15,7 @@ import { format, differenceInDays, parseISO, startOfMonth } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../../../contexts/PermissionsContext';
-import { firestoreService } from '../../../services/firestoreService';
+import { supabaseService } from '../../../services/supabaseService';
 import { openaiService } from '../../../services/openaiService';
 import PlatformIcons from '../../../components/PlatformIcons';
 import ClientLink from '../../../components/ui/ClientLink';
@@ -115,7 +115,7 @@ const MyClientsPage = () => {
     const loadSnapshots = async () => {
       if (!currentUser?.email && !currentUser?.uid) return;
       try {
-        const snapshots = await firestoreService.getClientHealthSnapshots();
+        const snapshots = await supabaseService.getClientHealthSnapshots();
         setClientHealthSnapshots(snapshots);
         console.log(`📋 Loaded health snapshots for ${currentUser?.email}${isViewingAs ? ' (View As mode)' : ''}`);
       } catch (error) {
@@ -126,7 +126,7 @@ const MyClientsPage = () => {
   }, [currentUser?.email, currentUser?.uid, isViewingAs]);
 
   useEffect(() => {
-    firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
+    supabaseService.getApprovedUsers().then(setEmployees).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -136,7 +136,7 @@ const MyClientsPage = () => {
     }
     let cancelled = false;
     setPostLogHistoryLoading(true);
-    firestoreService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 })
+    supabaseService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 })
       .then((tasks) => {
         if (cancelled) return;
         setPostLogHistory(tasks);
@@ -167,10 +167,10 @@ const MyClientsPage = () => {
     try {
       setLogSaving(true);
       const update = getPostLogUpdate(platform);
-      await firestoreService.updateClient(client.id, update);
+      await supabaseService.updateClient(client.id, update);
       
       // Also create a task for history
-      await firestoreService.addTask({
+      await supabaseService.addTask({
         title: `Logged ${platform} post`,
         clientId: client.id,
         clientName: client.clientName,
@@ -489,7 +489,7 @@ const MyClientsPage = () => {
           client={clientForModal}
           onClose={closeClientCard}
           onUpdate={async (updates) => {
-            await firestoreService.updateClient(clientForModal.id, updates);
+            await supabaseService.updateClient(clientForModal.id, updates);
             toast.success('Client updated');
           }}
         />
@@ -503,15 +503,15 @@ const MyClientsPage = () => {
           history={postLogHistory}
           loading={postLogHistoryLoading}
           onUpdate={async (taskId, updates) => {
-            await firestoreService.updateTask(taskId, updates);
+            await supabaseService.updateTask(taskId, updates);
             // Refresh history
-            const tasks = await firestoreService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 });
+            const tasks = await supabaseService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 });
             setPostLogHistory(tasks);
           }}
           onDelete={async (taskId) => {
-            await firestoreService.deleteTask(taskId);
+            await supabaseService.deleteTask(taskId);
             // Refresh history
-            const tasks = await firestoreService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 });
+            const tasks = await supabaseService.getPostLogTasksByClient(editPostsClient.id, { limit: 500 });
             setPostLogHistory(tasks);
           }}
         />

@@ -1,19 +1,18 @@
 /**
  * Lightweight usage analytics for admins: page views + time on page + unique users per page.
- * Firebase Analytics + Firestore dual-write so System Admin page can show in-app stats. Non-blocking.
+ * Firebase Analytics + Supabase dual-write so System Admin page can show in-app stats. Non-blocking.
  */
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getAppAnalytics, logEvent, db } from '../firebase';
+import { getAppAnalytics, logEvent } from '../firebase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 function logUsageEvent(eventType, pagePath, value, userEmail) {
-  if (!db) return;
-  const data = { page_path: pagePath, event_type: eventType, timestamp: serverTimestamp() };
+  const data = { page_path: pagePath, event_type: eventType, created_at: new Date().toISOString() };
   if (eventType === 'time_on_page' && value != null) data.value = value;
   if (userEmail) data.user_email = userEmail;
-  addDoc(collection(db, 'usage_events'), data).catch(() => {});
+  supabase.from('usage_events').insert([data]).catch(() => {});
 }
 
 const PUBLIC_PATHS = ['/login', '/client-login', '/client-password-reset', '/client-waiting-for-approval', '/waiting-for-approval', '/__/auth/action'];
@@ -36,12 +35,11 @@ export function useAnalyticsTracker() {
   // On route change: log previous page duration (if any), then log new page_view and start timer
   useEffect(() => {
     const analytics = getAppAnalytics();
-    if (!analytics) return;
 
     const now = Date.now();
     if (prevPath.current != null && prevPath.current !== pathname && startedAt.current != null) {
       const durationSec = Math.round((now - startedAt.current) / 1000);
-      logEvent(analytics, 'time_on_page', { page_path: prevPath.current, value: durationSec });
+      if (analytics) logEvent(analytics, 'time_on_page', { page_path: prevPath.current, value: durationSec });
       logUsageEvent('time_on_page', prevPath.current, durationSec, userEmail);
     }
     prevPath.current = pathname;
@@ -49,7 +47,7 @@ export function useAnalyticsTracker() {
 
     if (isPublicPath(pathname)) return;
     const pageTitle = pathname === '/' || pathname === '/dashboard' ? 'Dashboard' : pathname.replace(/^\//, '').replace(/-/g, ' ');
-    logEvent(analytics, 'page_view', { page_path: pathname, page_title: pageTitle });
+    if (analytics) logEvent(analytics, 'page_view', { page_path: pathname, page_title: pageTitle });
     logUsageEvent('page_view', pathname, undefined, userEmail);
   }, [pathname, userEmail]);
 
@@ -58,10 +56,10 @@ export function useAnalyticsTracker() {
     const handleVisibility = () => {
       if (document.visibilityState !== 'hidden') return;
       const analytics = getAppAnalytics();
-      if (!analytics || !startedAt.current || !pathname) return;
+      if (!startedAt.current || !pathname) return;
       const durationSec = Math.round((Date.now() - startedAt.current) / 1000);
       if (durationSec > 0) {
-        logEvent(analytics, 'time_on_page', { page_path: pathname, value: durationSec });
+        if (analytics) logEvent(analytics, 'time_on_page', { page_path: pathname, value: durationSec });
         logUsageEvent('time_on_page', pathname, durationSec, userEmail);
       }
     };

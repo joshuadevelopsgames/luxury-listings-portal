@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { 
   User, 
   Mail, 
@@ -75,7 +75,7 @@ const PersonCard = ({
     try {
       // If employeeId is provided, save to Firestore
       if (employeeId) {
-        await firestoreService.updateEmployee(employeeId, editedData);
+        await supabaseService.updateEmployee(employeeId, editedData);
         console.log('✅ Employee data saved to Firestore');
       }
       

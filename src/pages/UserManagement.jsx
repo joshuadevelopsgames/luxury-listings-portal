@@ -27,7 +27,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { usePendingUsers } from '../contexts/PendingUsersContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { USER_ROLES } from '../entities/UserRoles';
 import { auth } from '../firebase';
 import { PERMISSIONS, PERMISSION_CATEGORIES, PERMISSION_LABELS } from '../entities/Permissions';
@@ -105,7 +105,7 @@ const UserManagement = () => {
       try {
         console.log('🔍 DEBUG: Starting loadApprovedUsers...');
         setLoading(true);
-        const users = await firestoreService.getApprovedUsers();
+        const users = await supabaseService.getApprovedUsers();
         const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
         const filtered = users.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
         console.log('🔍 DEBUG: Loaded approved users:', filtered.length);
@@ -132,7 +132,7 @@ const UserManagement = () => {
     
     const loadCustomRoles = async () => {
       try {
-        const roles = await firestoreService.getCustomRoles();
+        const roles = await supabaseService.getCustomRoles();
         setCustomRoles(roles);
         console.log('✅ Loaded custom roles:', roles.length);
       } catch (error) {
@@ -143,7 +143,7 @@ const UserManagement = () => {
     loadCustomRoles();
     
     // Set up real-time listener for custom roles
-    const unsubscribe = firestoreService.onCustomRolesChange((roles) => {
+    const unsubscribe = supabaseService.onCustomRolesChange((roles) => {
       setCustomRoles(roles);
     });
     
@@ -167,7 +167,7 @@ const UserManagement = () => {
     const listenerId = `approved-users-${Date.now()}-${Math.random()}`;
     approvedUsersListenerIdRef.current = listenerId;
     
-    const unsubscribe = firestoreService.onApprovedUsersChange((users) => {
+    const unsubscribe = supabaseService.onApprovedUsersChange((users) => {
       // Only process updates from this listener instance
       if (approvedUsersListenerIdRef.current !== listenerId) {
         console.log('📡 Ignoring approved users update from old listener instance');
@@ -297,7 +297,7 @@ const UserManagement = () => {
       });
 
       // Approve the user (this will move them from pending to approved)
-      await firestoreService.approveUser(pendingUser.id, approvedUserData);
+      await supabaseService.approveUser(pendingUser.id, approvedUserData);
       
       // Automatically grant Google Drive folder access based on role
       try {
@@ -393,7 +393,7 @@ const UserManagement = () => {
         throw new Error(`User ${userEmail} not found in approved users`);
       }
       
-      await firestoreService.updateApprovedUser(userEmail, updates);
+      await supabaseService.updateApprovedUser(userEmail, updates);
       console.log('✅ Approved user updated successfully');
       
       // Update local state immediately for better UX
@@ -438,7 +438,7 @@ const UserManagement = () => {
 
     try {
       console.log('🗑️ Deleting approved user:', userEmail);
-      await firestoreService.deleteApprovedUser(userEmail);
+      await supabaseService.deleteApprovedUser(userEmail);
       console.log('✅ Approved user deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting approved user:', error);
@@ -538,7 +538,7 @@ const UserManagement = () => {
       await refreshPendingUsers();
       
       // Load current approved users from Firestore (exclude system admins)
-      const rawApproved = await firestoreService.getApprovedUsers();
+      const rawApproved = await supabaseService.getApprovedUsers();
       const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
       const currentApprovedUsers = rawApproved.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
       
@@ -627,7 +627,7 @@ const UserManagement = () => {
     
     try {
       setIsProcessing(true);
-      await firestoreService.createCustomRole({
+      await supabaseService.createCustomRole({
         ...newRoleForm,
         id: newRoleForm.name.toLowerCase().replace(/\s+/g, '_')
       });
@@ -676,7 +676,7 @@ const UserManagement = () => {
     
     // Load page permissions (unified API)
     try {
-      const result = await firestoreService.getUserPermissions(user.email);
+      const result = await supabaseService.getUserPermissions(user.email);
       setUserPagePermissions(result?.pages || []);
     } catch (error) {
       console.error('Error loading page permissions:', error);
@@ -715,9 +715,9 @@ const UserManagement = () => {
       
       // Also update employee record
       try {
-        const employee = await firestoreService.getEmployeeByEmail(selectedUserForPermissions.email);
+        const employee = await supabaseService.getEmployeeByEmail(selectedUserForPermissions.email);
         if (employee) {
-          await firestoreService.updateEmployee(employee.id, {
+          await supabaseService.updateEmployee(employee.id, {
             customPermissions: selectedPermissions
           });
         }
@@ -781,12 +781,12 @@ const UserManagement = () => {
       console.log('💾 Saving new user to Firestore:', newUserData);
       
       // Add to approved users collection
-      await firestoreService.addApprovedUser(newUserData);
+      await supabaseService.addApprovedUser(newUserData);
       console.log('✅ User added to approved users');
       
       // Also create employee record
       try {
-        await firestoreService.addEmployee({
+        await supabaseService.addEmployee({
           ...newUserData,
           onboardingCompleted: false
         });
@@ -880,7 +880,7 @@ const UserManagement = () => {
       
       // Test Firestore connection first
       console.log('🔍 Testing Firestore connection...');
-      await firestoreService.testConnection();
+      await supabaseService.testConnection();
       
       // Update the user's roles in Firestore with retry logic
       let retryCount = 0;
@@ -2348,7 +2348,7 @@ const UserManagement = () => {
 
                     // Save page permissions
                     console.log('💾 Saving page permissions...');
-                    await firestoreService.setUserPagePermissions(managedUser.email, userPagePermissions);
+                    await supabaseService.setUserPagePermissions(managedUser.email, userPagePermissions);
                     console.log('✅ Page permissions saved');
 
                     // Save custom permissions

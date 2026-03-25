@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Info,
@@ -74,7 +74,7 @@ const AnnouncementBanner = ({ onHeightChange }) => {
   // Real-time listener
   useEffect(() => {
     if (!currentUser?.email) return;
-    const unsubscribe = firestoreService.onActiveAnnouncementsChange((items) => {
+    const unsubscribe = supabaseService.onActiveAnnouncementsChange((items) => {
       setAnnouncements(items);
     });
     return () => unsubscribe();

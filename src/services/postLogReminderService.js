@@ -6,7 +6,7 @@
  * - Admin: (A) <50% of weekly target logged; (B) last week of month and ≤30% of monthly posts logged (70%+ not logged).
  */
 
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 import { getVancouverWeekBounds, getVancouverMonthKey, isVancouverFriday, isVancouverLastWeekOfMonth } from '../utils/vancouverTime';
 
 const USER_REMINDER_STORAGE_KEY = 'post_log_reminder_week_sent';
@@ -54,7 +54,7 @@ class PostLogReminderService {
 
   async getAssignedClients(userEmail, userId) {
     try {
-      const allClients = await firestoreService.getClients();
+      const allClients = await supabaseService.getClients();
       const normalizedEmail = (userEmail || '').trim().toLowerCase();
       const normalizedUid = (userId || '').trim().toLowerCase();
       return allClients.filter(client => {
@@ -74,7 +74,7 @@ class PostLogReminderService {
     const startStr = start.toISOString().slice(0, 10);
     const endStr = end.toISOString().slice(0, 10);
     try {
-      const tasks = await firestoreService.getTasksByUser(userEmail);
+      const tasks = await supabaseService.getTasksByUser(userEmail);
       const byClient = {};
       for (const task of tasks) {
         if (task.task_type !== 'post_log' && !task.labels?.includes('client-post')) continue;
@@ -190,7 +190,7 @@ class PostLogReminderService {
         ? `Weekly post target not met for ${clientNames[0]}. Consider logging posts.`
         : `Weekly post target not met for: ${clientNames.slice(0, 5).join(', ')}${clientNames.length > 5 ? ` and ${clientNames.length - 5} more` : ''}. Consider logging posts.`;
     try {
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail,
         type: 'post_log_reminder_week',
         title: 'Log your posts',
@@ -222,8 +222,8 @@ class PostLogReminderService {
 
   /** Get team members who need support: (A) <50% weekly posts, (B) last week of month and ≤50% monthly. */
   async getTeamMembersNeedingSupport() {
-    const users = await firestoreService.getApprovedUsers();
-    const admins = await firestoreService.getTimeOffAdmins();
+    const users = await supabaseService.getApprovedUsers();
+    const admins = await supabaseService.getTimeOffAdmins();
     const adminEmails = new Set((admins || []).map(a => (a.email || a.id || '').toLowerCase()).filter(Boolean));
     const list = [];
     for (const user of users || []) {
@@ -246,7 +246,7 @@ class PostLogReminderService {
   /** Notify all time-off admins about team members needing support. */
   async notifyAdminsTeamNeedsSupport(entries) {
     if (!entries || entries.length === 0) return { notified: 0 };
-    const admins = await firestoreService.getTimeOffAdmins();
+    const admins = await supabaseService.getTimeOffAdmins();
     if (!admins?.length) return { notified: 0 };
     const parts = entries.map(e => {
       const weekly = e.behindWeekly.length ? `${e.displayName}: <50% of weekly target (posts remaining ÷ 4) for ${e.behindWeekly.map(c => c.name).join(', ')}` : null;
@@ -259,7 +259,7 @@ class PostLogReminderService {
       for (const admin of admins) {
         const to = admin.email || admin.id;
         if (!to) continue;
-        await firestoreService.createNotification({
+        await supabaseService.createNotification({
           userEmail: to,
           type: 'team_post_log_support',
           title,

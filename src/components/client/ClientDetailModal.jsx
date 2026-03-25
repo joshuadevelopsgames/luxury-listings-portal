@@ -33,7 +33,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { LocationSelect } from '../crm/LocationSelect';
 import { openGmailWithComposeTo } from '../../utils/gmailCompose';
 import { format } from 'date-fns';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, normalizeLocation } from '../../services/crmService';
 import { toast } from 'react-hot-toast';
 import PlatformIcons from '../PlatformIcons';
@@ -160,7 +160,7 @@ const ClientDetailModal = ({
 
     setSaving(true);
     try {
-      await firestoreService.updateClient(localClient.id, payload);
+      await supabaseService.updateClient(localClient.id, payload);
       const updatedClient = { ...localClient, ...payload };
       setLocalClient(updatedClient);
       if (onClientUpdate) onClientUpdate(updatedClient);
@@ -178,13 +178,13 @@ const ClientDetailModal = ({
     setAssigningManager(true);
     try {
       const previousManager = localClient.assignedManager || null;
-      await firestoreService.updateClient(localClient.id, { assignedManager: managerEmail || null });
+      await supabaseService.updateClient(localClient.id, { assignedManager: managerEmail || null });
       if (managerEmail && !emailRegex.test(managerEmail)) {
         toast.error("Invalid manager email address.");
         setAssigningManager(false);
         return;
       }
-      await firestoreService.logClientReassignment(localClient.id, localClient.clientName || localClient.name, previousManager, managerEmail || null, currentUser?.email);
+      await supabaseService.logClientReassignment(localClient.id, localClient.clientName || localClient.name, previousManager, managerEmail || null, currentUser?.email);
       const updatedClient = { ...localClient, assignedManager: managerEmail || null };
       setLocalClient(updatedClient);
       if (onClientUpdate) onClientUpdate(updatedClient);

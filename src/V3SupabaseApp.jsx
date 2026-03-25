@@ -6,7 +6,7 @@
  *
  * Auth layer:  AuthContext.supabase.js  (Supabase Auth)
  * Data layer:  supabaseFirestoreService (same API as firestoreService)
- *              → pages still import { firestoreService } from './services/firestoreService'
+ *              → pages still import { supabaseService } from './services/supabaseService'
  *                After the data migration runs (Phase 5), swap that one file to complete cutover.
  *
  * Registered in App.jsx at path '/v4/*' (replaces old V4App).

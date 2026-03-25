@@ -358,20 +358,20 @@ const RoleSwitcher = () => {
           try {
             console.log('💾 Saving profile updates:', updates);
             console.log('📧 Current user email:', currentUser.email);
-            const { firestoreService } = await import('../../services/firestoreService');
+            const { supabaseService } = await import('../../services/firestoreService');
             
             // Update approved users collection
             console.log('⏳ Updating approved users collection...');
-            await firestoreService.updateApprovedUser(currentUser.email, updates);
+            await supabaseService.updateApprovedUser(currentUser.email, updates);
             console.log('✅ Updated approved users collection');
             
             // Also update employee collection if it exists
             try {
               console.log('⏳ Checking for employee record...');
-              const employee = await firestoreService.getEmployeeByEmail(currentUser.email);
+              const employee = await supabaseService.getEmployeeByEmail(currentUser.email);
               if (employee) {
                 console.log('⏳ Updating employee collection...');
-                await firestoreService.updateEmployee(employee.id, updates);
+                await supabaseService.updateEmployee(employee.id, updates);
                 console.log('✅ Updated employee collection');
               } else {
                 console.log('ℹ️ No employee record found');

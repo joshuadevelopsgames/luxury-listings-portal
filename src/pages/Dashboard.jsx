@@ -6,7 +6,7 @@ import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../contexts/AuthContext";
-import { firestoreService } from "../services/firestoreService";
+import { supabaseService } from "../services/supabaseService";
 import { remoteConfigService } from "../services/remoteConfigService";
 import { instagramReportReminderService } from "../services/instagramReportReminderService";
 import { postLogReminderService } from "../services/postLogReminderService";
@@ -73,7 +73,7 @@ export default function Dashboard() {
           console.log('✅ Remote Config initialized for admin dashboard');
           
           // Fetch approved users only (pending users disabled)
-          const approvedUsers = await firestoreService.getApprovedUsers();
+          const approvedUsers = await supabaseService.getApprovedUsers();
           const configValues = remoteConfigService.getAllValues();
           
           setAdminStats({
@@ -180,7 +180,7 @@ export default function Dashboard() {
       console.log('📊 Loading admin statistics...');
       
       // Get approved users count (pending users disabled)
-      const approvedUsers = await firestoreService.getApprovedUsers();
+      const approvedUsers = await supabaseService.getApprovedUsers();
       
       // Get system uptime from Remote Config
       let systemUptime = '99.9%';

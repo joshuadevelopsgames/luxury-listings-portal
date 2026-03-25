@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { AlertCircle, CheckCircle, Database, ArrowRight, Bug } from 'lucide-react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 
 const MigrationBanner = () => {
   const [showBanner, setShowBanner] = useState(false);
@@ -25,7 +25,7 @@ const MigrationBanner = () => {
     setDebugInfo('Testing Firestore connection...');
     try {
       // Use the new test connection method
-      const result = await firestoreService.testConnection();
+      const result = await supabaseService.testConnection();
       if (result.success) {
         setDebugInfo(`✅ Firestore connection successful! Database: ${result.databaseName}, App: ${result.appName}`);
       } else {
@@ -42,7 +42,7 @@ const MigrationBanner = () => {
     setMigrationError(null);
     
     try {
-      await firestoreService.migrateFromLocalStorage();
+      await supabaseService.migrateFromLocalStorage();
       setMigrationComplete(true);
       localStorage.setItem('firestore-migration-complete', 'true');
       

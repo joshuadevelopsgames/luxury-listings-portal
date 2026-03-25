@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
@@ -30,7 +30,7 @@ const NotificationsPage = () => {
       return;
     }
 
-    const unsubscribe = firestoreService.onNotificationsChange(
+    const unsubscribe = supabaseService.onNotificationsChange(
       currentUser.email,
       (notifs) => {
         setNotifications(notifs || []);
@@ -54,7 +54,7 @@ const NotificationsPage = () => {
   const handleNotificationClick = async (notification) => {
     // Mark as read
     if (!notification.read) {
-      await firestoreService.markNotificationRead(notification.id);
+      await supabaseService.markNotificationRead(notification.id);
     }
 
     // Navigate to link if provided
@@ -65,7 +65,7 @@ const NotificationsPage = () => {
 
   const handleMarkAllRead = async () => {
     try {
-      await firestoreService.markAllNotificationsRead(currentUser.email);
+      await supabaseService.markAllNotificationsRead(currentUser.email);
       if (unreadCount > 0) setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch (e) {
       console.error('Mark all read failed:', e);
@@ -74,13 +74,13 @@ const NotificationsPage = () => {
 
   const handleDeleteNotification = async (notificationId, e) => {
     e.stopPropagation();
-    await firestoreService.deleteNotification(notificationId);
+    await supabaseService.deleteNotification(notificationId);
   };
 
   const handleClearAll = async () => {
     // Delete all notifications
     for (const notification of notifications) {
-      await firestoreService.deleteNotification(notification.id);
+      await supabaseService.deleteNotification(notification.id);
     }
   };
 

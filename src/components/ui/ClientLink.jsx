@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import ClientDetailModal from '../client/ClientDetailModal';
 
 const ClientLink = ({ 
@@ -28,7 +28,7 @@ const ClientLink = ({
   // Load employees for manager assignment when modal opens
   useEffect(() => {
     if (isOpen && employees.length === 0) {
-      firestoreService.getApprovedUsers().then(users => {
+      supabaseService.getApprovedUsers().then(users => {
         setEmployees(users);
       }).catch(console.error);
     }

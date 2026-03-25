@@ -32,7 +32,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 import { DailyTask } from '../../entities/DailyTask';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import { reminderService } from '../services/reminderService';
 import { format } from 'date-fns';
 import { PERMISSIONS } from '../../entities/Permissions';
@@ -476,7 +476,7 @@ const TasksPage = () => {
     const loadUsers = async () => {
       try {
         console.log('👥 Loading users for task requests...');
-        const approvedUsers = await firestoreService.getApprovedUsers();
+        const approvedUsers = await supabaseService.getApprovedUsers();
         console.log('👥 Total approved users from Firestore:', approvedUsers.length, approvedUsers);
         
         // Filter out current user
@@ -521,7 +521,7 @@ const TasksPage = () => {
 
     const loadTaskRequests = async () => {
       try {
-        const requests = await firestoreService.getTaskRequests(currentUser.email);
+        const requests = await supabaseService.getTaskRequests(currentUser.email);
         const pendingRequests = (requests || []).filter(r => r.status === 'pending');
         setTaskRequests(pendingRequests);
       } catch (error) {
@@ -535,7 +535,7 @@ const TasksPage = () => {
   // Load sent request count for Outbox tab (lightweight)
   useEffect(() => {
     if (!currentUser?.email) return;
-    firestoreService.getSentTaskRequests(currentUser.email).then((r) => setSentRequests(r || []));
+    supabaseService.getSentTaskRequests(currentUser.email).then((r) => setSentRequests(r || []));
   }, [currentUser?.email]);
 
   // Load full outbox (sent requests + task statuses) when user opens Outbox tab
@@ -545,14 +545,14 @@ const TasksPage = () => {
     const loadOutboxDetails = async () => {
       setOutboxLoading(true);
       try {
-        const requests = await firestoreService.getSentTaskRequests(currentUser.email);
+        const requests = await supabaseService.getSentTaskRequests(currentUser.email);
         setSentRequests(requests || []);
         const map = {};
         await Promise.all(
           (requests || [])
             .filter((r) => r.status === 'accepted' && r.taskId)
             .map(async (r) => {
-              const task = await firestoreService.getTaskById(r.taskId);
+              const task = await supabaseService.getTaskById(r.taskId);
               if (task) map[r.id] = task;
             })
         );
@@ -607,8 +607,8 @@ const TasksPage = () => {
   useEffect(() => {
     if (!currentUser?.email) return;
     Promise.all([
-      firestoreService.getArchivedTaskIds(currentUser.email),
-      firestoreService.getArchivedRequestIds(currentUser.email)
+      supabaseService.getArchivedTaskIds(currentUser.email),
+      supabaseService.getArchivedRequestIds(currentUser.email)
     ]).then(([taskIds, requestIds]) => {
       setArchivedTaskIds(new Set(taskIds || []));
       setArchivedRequestIds(new Set(requestIds || []));
@@ -621,7 +621,7 @@ const TasksPage = () => {
 
     const loadUnread = async () => {
       try {
-        const notifs = await firestoreService.getNotifications(currentUser.email);
+        const notifs = await supabaseService.getNotifications(currentUser.email);
         const outboxTypes = ['task_accepted', 'task_completed'];
         const unread = (notifs || []).filter(
           (n) => !n.read && outboxTypes.includes(n.type)
@@ -916,14 +916,14 @@ const TasksPage = () => {
 
       // If this task is linked to an outbox request, refresh outbox so sender sees updated status
       if (updatedTask.taskRequestId && currentUser?.email) {
-        const requests = await firestoreService.getSentTaskRequests(currentUser.email);
+        const requests = await supabaseService.getSentTaskRequests(currentUser.email);
         setSentRequests(requests || []);
         const map = {};
         await Promise.all(
           (requests || [])
             .filter((r) => r.status === 'accepted' && r.taskId)
             .map(async (r) => {
-              const t = await firestoreService.getTaskById(r.taskId);
+              const t = await supabaseService.getTaskById(r.taskId);
               if (t) map[r.id] = t;
             })
         );
@@ -958,7 +958,7 @@ const TasksPage = () => {
     try {
       const toUser = availableUsers.find(u => u.email === requestForm.toUserEmail);
       
-      await firestoreService.createTaskRequest({
+      await supabaseService.createTaskRequest({
         fromUserEmail: currentUser.email,
         fromUserName: `${currentUser.firstName} ${currentUser.lastName}`,
         toUserEmail: requestForm.toUserEmail,
@@ -979,7 +979,7 @@ const TasksPage = () => {
         taskDueDate: ''
       });
       // Refresh outbox count
-      const sent = await firestoreService.getSentTaskRequests(currentUser.email);
+      const sent = await supabaseService.getSentTaskRequests(currentUser.email);
       setSentRequests(sent || []);
     } catch (error) {
       console.error('❌ Error sending task request:', error);
@@ -995,7 +995,7 @@ const TasksPage = () => {
     
     try {
       setProcessingRequestId(request.id);
-      await firestoreService.acceptTaskRequest(request.id, request);
+      await supabaseService.acceptTaskRequest(request.id, request);
       
       // Remove from local state immediately
       setTaskRequests(prev => prev.filter(r => r.id !== request.id));
@@ -1018,7 +1018,7 @@ const TasksPage = () => {
     try {
       setProcessingRequestId(request.id);
       setDeclineRequestModal(prev => ({ ...prev, open: false, request: null }));
-      await firestoreService.rejectTaskRequest(request.id, request, reason || '');
+      await supabaseService.rejectTaskRequest(request.id, request, reason || '');
       setTaskRequests(prev => prev.filter(r => r.id !== request.id));
       toast.success('Task request declined.');
     } catch (error) {
@@ -1032,7 +1032,7 @@ const TasksPage = () => {
   const handleArchiveTask = async (taskId) => {
     if (!currentUser?.email) return;
     try {
-      await firestoreService.archiveTaskForUser(currentUser.email, taskId);
+      await supabaseService.archiveTaskForUser(currentUser.email, taskId);
       setArchivedTaskIds((prev) => new Set([...prev, taskId]));
       toast.success('Task archived');
     } catch (error) {
@@ -1044,7 +1044,7 @@ const TasksPage = () => {
   const handleUnarchiveTask = async (taskId) => {
     if (!currentUser?.email) return;
     try {
-      await firestoreService.unarchiveTaskForUser(currentUser.email, taskId);
+      await supabaseService.unarchiveTaskForUser(currentUser.email, taskId);
       setArchivedTaskIds((prev) => {
         const next = new Set(prev);
         next.delete(taskId);
@@ -1060,7 +1060,7 @@ const TasksPage = () => {
   const handleArchiveRequest = async (requestId) => {
     if (!currentUser?.email) return;
     try {
-      await firestoreService.archiveRequestForUser(currentUser.email, requestId);
+      await supabaseService.archiveRequestForUser(currentUser.email, requestId);
       setArchivedRequestIds((prev) => new Set([...prev, requestId]));
       toast.success('Request archived');
     } catch (error) {
@@ -1072,13 +1072,13 @@ const TasksPage = () => {
   const handleUnarchiveRequest = async (requestId) => {
     if (!currentUser?.email) return;
     try {
-      await firestoreService.unarchiveRequestForUser(currentUser.email, requestId);
+      await supabaseService.unarchiveRequestForUser(currentUser.email, requestId);
       setArchivedRequestIds((prev) => {
         const next = new Set(prev);
         next.delete(requestId);
         return next;
       });
-      const requests = await firestoreService.getSentTaskRequests(currentUser.email);
+      const requests = await supabaseService.getSentTaskRequests(currentUser.email);
       setSentRequests(requests || []);
       toast.success('Request restored from archive');
     } catch (error) {
@@ -1105,7 +1105,7 @@ const TasksPage = () => {
     try {
       const designer = GRAPHIC_TEAM.find(m => m.email === projectRequestForm.toUserEmail);
       
-      await firestoreService.createProjectRequest({
+      await supabaseService.createProjectRequest({
         fromUserEmail: currentUser.email,
         fromUserName: currentUser.displayName || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email,
         toUserEmail: projectRequestForm.toUserEmail,
@@ -1525,7 +1525,7 @@ const TasksPage = () => {
                           const confirmed = await confirm({ title: 'Remove from outbox', message: 'Remove this request? The assignee will keep the task if it was already accepted.', confirmText: 'Remove', variant: 'danger' });
                           if (!confirmed) return;
                           try {
-                            await firestoreService.deleteTaskRequest(req.id);
+                            await supabaseService.deleteTaskRequest(req.id);
                             setArchivedRequestIds((prev) => { const n = new Set(prev); n.delete(req.id); return n; });
                             toast.success('Request removed');
                           } catch (err) {

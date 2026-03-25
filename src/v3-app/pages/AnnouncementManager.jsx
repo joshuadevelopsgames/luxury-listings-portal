@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { isSystemAdmin as checkIsSystemAdmin } from '../../utils/systemAdmins';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -73,7 +73,7 @@ const AnnouncementManager = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const items = await firestoreService.getAnnouncements();
+        const items = await supabaseService.getAnnouncements();
         setAnnouncements(items);
       } catch (e) {
         toast.error('Failed to load announcements');
@@ -128,11 +128,11 @@ const AnnouncementManager = () => {
       };
 
       if (editingId) {
-        await firestoreService.updateAnnouncement(editingId, payload);
+        await supabaseService.updateAnnouncement(editingId, payload);
         setAnnouncements(prev => prev.map(a => a.id === editingId ? { ...a, ...payload, id: editingId } : a));
         toast.success('Announcement updated');
       } else {
-        const { id } = await firestoreService.createAnnouncement(payload);
+        const { id } = await supabaseService.createAnnouncement(payload);
         setAnnouncements(prev => [{ ...payload, id }, ...prev]);
         toast.success('Announcement created');
       }
@@ -147,7 +147,7 @@ const AnnouncementManager = () => {
   const toggleActive = async (a) => {
     try {
       const newActive = !a.active;
-      await firestoreService.updateAnnouncement(a.id, { active: newActive });
+      await supabaseService.updateAnnouncement(a.id, { active: newActive });
       setAnnouncements(prev => prev.map(x => x.id === a.id ? { ...x, active: newActive } : x));
       toast.success(newActive ? 'Announcement activated' : 'Announcement deactivated');
     } catch {
@@ -159,7 +159,7 @@ const AnnouncementManager = () => {
     if (!deleteTarget) return;
     try {
       setDeleting(true);
-      await firestoreService.deleteAnnouncement(deleteTarget.id);
+      await supabaseService.deleteAnnouncement(deleteTarget.id);
       setAnnouncements(prev => prev.filter(a => a.id !== deleteTarget.id));
       toast.success('Announcement deleted');
       setDeleteTarget(null);

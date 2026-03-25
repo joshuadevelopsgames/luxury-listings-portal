@@ -4,7 +4,7 @@
  */
 
 import { auth } from '../firebase';
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 
 // Type (SMM, PP, BOTH, N/A, DESIGN, PROD, CONSULT) - required for every contact
 export const CLIENT_TYPE = {
@@ -117,7 +117,7 @@ const DEFAULT_TAB = 'warmLeads';
 export async function getCrmLeadsForCurrentUser(uid) {
   if (!auth.currentUser?.uid) return [];
   try {
-    const { warmLeads, contactedClients, coldLeads } = await firestoreService.getCrmData();
+    const { warmLeads, contactedClients, coldLeads } = await supabaseService.getCrmData();
     const mapLead = (c, i, prefix) => ({
       id: String(c.id ?? `${prefix}-${i}`),
       clientName: (c.contactName || c.clientName || c.name || '').trim() || '—',
@@ -158,7 +158,7 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
   if (!email) return { success: false, error: 'Email is required for CRM' };
 
   try {
-    const { warmLeads, contactedClients, coldLeads } = await firestoreService.getCrmData();
+    const { warmLeads, contactedClients, coldLeads } = await supabaseService.getCrmData();
     const primaryContact = contact.primaryContact && (contact.primaryContact.name || contact.primaryContact.email || contact.primaryContact.phone || contact.primaryContact.role)
       ? { name: contact.primaryContact.name || '', email: contact.primaryContact.email || '', phone: contact.primaryContact.phone || '', role: contact.primaryContact.role || '' }
       : null;
@@ -183,7 +183,7 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
     if (tab === 'warmLeads') warmLeads.unshift(newLead);
     else if (tab === 'contactedClients') contactedClients.unshift(newLead);
     else coldLeads.unshift(newLead);
-    await firestoreService.setCrmData({ warmLeads, contactedClients, coldLeads });
+    await supabaseService.setCrmData({ warmLeads, contactedClients, coldLeads });
     return { success: true };
   } catch (err) {
     console.error('CRM addContactToCRM error:', err);
@@ -199,8 +199,8 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
 export async function removeLeadFromCRM(leadId) {
   if (!auth.currentUser?.uid) return { success: false, error: 'Not authenticated' };
   try {
-    const { warmLeads, contactedClients, coldLeads } = await firestoreService.getCrmData();
-    await firestoreService.setCrmData({
+    const { warmLeads, contactedClients, coldLeads } = await supabaseService.getCrmData();
+    await supabaseService.setCrmData({
       warmLeads: warmLeads.filter(l => l.id !== leadId),
       contactedClients: contactedClients.filter(l => l.id !== leadId),
       coldLeads: coldLeads.filter(l => l.id !== leadId)

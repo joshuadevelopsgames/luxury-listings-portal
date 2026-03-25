@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { openaiService } from '../services/openaiService';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
@@ -42,9 +42,9 @@ const ClientHealthPage = () => {
     try {
       setLoading(true);
       const [clientsList, snapMap, usersList] = await Promise.all([
-        firestoreService.getClients(),
-        firestoreService.getClientHealthSnapshots(),
-        firestoreService.getApprovedUsers()
+        supabaseService.getClients(),
+        supabaseService.getClientHealthSnapshots(),
+        supabaseService.getApprovedUsers()
       ]);
       setClients(clientsList);
       setSnapshots(snapMap);
@@ -96,7 +96,7 @@ const ClientHealthPage = () => {
     if (refreshingId) return;
     setRefreshingId(client.id);
     try {
-      const reports = await firestoreService.getClientInstagramReportHistory(client.id, 6);
+      const reports = await supabaseService.getClientInstagramReportHistory(client.id, 6);
       const reportHistory = reports?.length
         ? reports.map((r) => ({
             dateRange: r.dateRange || `${r.startDate || ''} - ${r.endDate || ''}`,

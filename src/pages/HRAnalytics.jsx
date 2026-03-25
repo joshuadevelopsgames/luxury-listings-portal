@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -55,7 +55,7 @@ const HRAnalytics = () => {
     const loadAnalytics = async () => {
       try {
         setLoading(true);
-        const users = await firestoreService.getApprovedUsers();
+        const users = await supabaseService.getApprovedUsers();
         const totalEmployees = users.length;
         const activeEmployees = users.filter(u => u.status !== 'inactive').length;
         
@@ -71,7 +71,7 @@ const HRAnalytics = () => {
           teamOverview: { ...prev.teamOverview, totalEmployees, activeEmployees, retentionRate: totalEmployees > 0 ? (activeEmployees / totalEmployees) * 100 : 0 },
           departmentPerformance: Object.keys(deptCounts).reduce((acc, dept) => ({ ...acc, [dept]: { headcount: deptCounts[dept], avgRating: 0, turnover: 0, satisfaction: 0 } }), {})
         }));
-        const movements = await firestoreService.getClientMovements({ limitCount: 100 });
+        const movements = await supabaseService.getClientMovements({ limitCount: 100 });
         setClientMovements(movements);
       } catch (error) {
         console.error('Error loading analytics:', error);

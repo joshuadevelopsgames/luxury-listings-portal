@@ -4,7 +4,7 @@
  * New leave requests notify only Michelle and Matthew (email + in-app).
  */
 
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 import { LEAVE_REQUEST_NOTIFY_ADMIN_EMAILS } from '../utils/vancouverTime';
 
 export const timeOffNotifications = {
@@ -14,12 +14,12 @@ export const timeOffNotifications = {
    */
   async notifyNewRequest(request) {
     try {
-      const admins = await firestoreService.getTimeOffAdmins();
+      const admins = await supabaseService.getTimeOffAdmins();
       const notifyEmails = new Set(LEAVE_REQUEST_NOTIFY_ADMIN_EMAILS);
       const recipients = admins.filter((a) => notifyEmails.has((a.email || a.id || '').toLowerCase()));
 
       const promises = recipients.map((admin) =>
-        firestoreService.createNotification({
+        supabaseService.createNotification({
           userEmail: admin.email || admin.id,
           type: 'time_off_request',
           title: 'New Time Off Request',
@@ -50,7 +50,7 @@ export const timeOffNotifications = {
    */
   async notifyApproved(request, approvedBy) {
     try {
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail: request.employeeEmail,
         type: 'time_off_approved',
         title: 'Time Off Approved',
@@ -79,7 +79,7 @@ export const timeOffNotifications = {
   async notifyRejected(request, rejectedBy, reason = null) {
     try {
       const reasonText = reason ? ` Reason: ${reason}` : '';
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail: request.employeeEmail,
         type: 'time_off_rejected',
         title: 'Time Off Request Rejected',
@@ -115,7 +115,7 @@ export const timeOffNotifications = {
       }
 
       const reasonText = reason ? ` Reason: ${reason}` : '';
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail: request.employeeEmail,
         type: 'time_off_cancelled',
         title: 'Time Off Cancelled',
@@ -145,7 +145,7 @@ export const timeOffNotifications = {
    */
   async notifyLeaveRequestEdited(request, editedBy, changesSummary = '') {
     try {
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail: request.employeeEmail,
         type: 'time_off_edited',
         title: 'Leave Request Updated',
@@ -174,7 +174,7 @@ export const timeOffNotifications = {
    */
   async notifyBalanceChange(userEmail, changedBy, balanceType, oldValue, newValue) {
     try {
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail,
         type: 'leave_balance_updated',
         title: 'Leave Balance Updated',

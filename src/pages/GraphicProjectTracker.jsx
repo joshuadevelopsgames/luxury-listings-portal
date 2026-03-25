@@ -39,7 +39,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 // Import data for one-time Excel import
 import jasmineProjectsData from '../data/graphic-projects-import.json';
 import joneProjectsData from '../data/jone-projects-full.json';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { toast } from 'react-hot-toast';
 import { format, parseISO, getYear } from 'date-fns';
 
@@ -196,7 +196,7 @@ const GraphicProjectTracker = () => {
     
     const loadRequests = async () => {
       try {
-        const requests = await firestoreService.getProjectRequests(currentUser.email);
+        const requests = await supabaseService.getProjectRequests(currentUser.email);
         const pendingRequests = (requests || []).filter(r => r.status === 'pending');
         setProjectRequests(pendingRequests);
       } catch (error) {
@@ -215,7 +215,7 @@ const GraphicProjectTracker = () => {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const data = await firestoreService.getGraphicProjects();
+      const data = await supabaseService.getGraphicProjects();
       setProjects(data);
       
       // Calculate available years from data
@@ -324,7 +324,7 @@ const GraphicProjectTracker = () => {
         createdAt: new Date().toISOString()
       };
       
-      await firestoreService.addGraphicProject(projectData);
+      await supabaseService.addGraphicProject(projectData);
       toast.success('Project added!');
       setShowAddModal(false);
       resetForm();
@@ -352,7 +352,7 @@ const GraphicProjectTracker = () => {
         updatedBy: currentUser?.email || ''
       };
       
-      await firestoreService.updateGraphicProject(editingProject.id, projectData);
+      await supabaseService.updateGraphicProject(editingProject.id, projectData);
       toast.success('Project updated!');
       setShowEditModal(false);
       setEditingProject(null);
@@ -376,7 +376,7 @@ const GraphicProjectTracker = () => {
     if (!confirmed) return;
     
     try {
-      await firestoreService.deleteGraphicProject(project.id);
+      await supabaseService.deleteGraphicProject(project.id);
       toast.success('Project deleted');
       loadProjects();
     } catch (error) {
@@ -412,7 +412,7 @@ const GraphicProjectTracker = () => {
     let deleted = 0;
     for (const project of projects) {
       try {
-        await firestoreService.deleteGraphicProject(project.id);
+        await supabaseService.deleteGraphicProject(project.id);
         deleted++;
         if (deleted % 20 === 0) {
           toast.loading(`Deleting... ${deleted}/${projects.length}`, { id: 'import-toast' });
@@ -444,7 +444,7 @@ const GraphicProjectTracker = () => {
           createdBy: currentUser.email
         };
         
-        await firestoreService.addGraphicProject(projectData);
+        await supabaseService.addGraphicProject(projectData);
         imported++;
         
         if (imported % 20 === 0) {
@@ -516,7 +516,7 @@ const GraphicProjectTracker = () => {
           createdBy: currentUser.email
         };
         
-        await firestoreService.addGraphicProject(projectData);
+        await supabaseService.addGraphicProject(projectData);
         imported++;
         
         // Update progress every 10 items
@@ -588,7 +588,7 @@ const GraphicProjectTracker = () => {
     let updated = 0;
     for (const project of toReassign) {
       try {
-        await firestoreService.updateGraphicProject(project.id, {
+        await supabaseService.updateGraphicProject(project.id, {
           assignedTo: 'jone@smmluxurylistings.com',
           updatedAt: new Date().toISOString()
         });
@@ -608,7 +608,7 @@ const GraphicProjectTracker = () => {
 
   const handleStatusChange = async (project, newStatus) => {
     try {
-      await firestoreService.updateGraphicProject(project.id, { 
+      await supabaseService.updateGraphicProject(project.id, { 
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
@@ -640,7 +640,7 @@ const GraphicProjectTracker = () => {
     try {
       const designer = GRAPHIC_TEAM.find(m => m.email === requestForm.toUserEmail);
       
-      await firestoreService.createProjectRequest({
+      await supabaseService.createProjectRequest({
         fromUserEmail: currentUser.email,
         fromUserName: currentUser.displayName || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email,
         toUserEmail: requestForm.toUserEmail,
@@ -676,7 +676,7 @@ const GraphicProjectTracker = () => {
     
     try {
       setProcessingRequestId(request.id);
-      await firestoreService.acceptProjectRequest(request.id, request);
+      await supabaseService.acceptProjectRequest(request.id, request);
       
       setProjectRequests(prev => prev.filter(r => r.id !== request.id));
       toast.success('Project request accepted!');
@@ -695,7 +695,7 @@ const GraphicProjectTracker = () => {
     try {
       setProcessingRequestId(request.id);
       setDeclineRequestModal(prev => ({ ...prev, open: false, request: null }));
-      await firestoreService.rejectProjectRequest(request.id, request, reason || '');
+      await supabaseService.rejectProjectRequest(request.id, request, reason || '');
       setProjectRequests(prev => prev.filter(r => r.id !== request.id));
       toast.success('Project request declined');
     } catch (error) {

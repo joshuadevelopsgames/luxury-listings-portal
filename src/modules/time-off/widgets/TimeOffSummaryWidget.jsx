@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Plus, AlertCircle, Users } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../../../contexts/PermissionsContext';
-import { firestoreService } from '../../../services/firestoreService';
+import { supabaseService } from '../../../services/supabaseService';
 
 const TimeOffSummaryWidget = () => {
   const navigate = useNavigate();
@@ -33,15 +33,15 @@ const TimeOffSummaryWidget = () => {
       if (!currentUser?.email) return;
       
       try {
-        const adminStatus = await firestoreService.isTimeOffAdmin(currentUser.email);
+        const adminStatus = await supabaseService.isTimeOffAdmin(currentUser.email);
         setFirestoreTimeOffAdmin(!!adminStatus);
         
         // Load user's leave balances
-        const userBalances = await firestoreService.getUserLeaveBalances(currentUser.email);
+        const userBalances = await supabaseService.getUserLeaveBalances(currentUser.email);
         setBalances(userBalances);
         
         // Load user's requests
-        const requests = await firestoreService.getLeaveRequests(currentUser.email);
+        const requests = await supabaseService.getLeaveRequests(currentUser.email);
         
         // Count user's pending requests
         const pending = requests.filter(r => r.status === 'pending');
@@ -53,7 +53,7 @@ const TimeOffSummaryWidget = () => {
         setUpcomingTimeOff(upcoming);
         
         if (canApproveByFeature || adminStatus) {
-          const allRequests = await firestoreService.getAllLeaveRequests();
+          const allRequests = await supabaseService.getAllLeaveRequests();
           const allPending = allRequests.filter(r => r.status === 'pending');
           setPendingApprovals(allPending.length);
         }

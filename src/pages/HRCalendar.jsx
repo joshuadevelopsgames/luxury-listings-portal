@@ -6,7 +6,7 @@ import Calendar from '../components/ui/calendar';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 import { PERMISSIONS } from '../entities/Permissions';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { timeOffNotifications } from '../services/timeOffNotificationService';
 import { calculateBusinessDays, getLeaveTypeDisplayLabel } from '../utils/timeOffHelpers';
 import { LEAVE_CALENDAR_SYNC_EMAILS } from '../utils/vancouverTime';
@@ -103,7 +103,7 @@ const HRCalendar = () => {
     const checkAdminStatus = async () => {
       if (!currentUser?.email) return;
       try {
-        const adminStatus = await firestoreService.isTimeOffAdmin(currentUser.email);
+        const adminStatus = await supabaseService.isTimeOffAdmin(currentUser.email);
         setFirestoreTimeOffAdmin(!!adminStatus);
       } catch (error) {
         console.error('Error checking admin status:', error);
@@ -116,7 +116,7 @@ const HRCalendar = () => {
   const loadUsersWithBalances = async () => {
     setLoadingUsers(true);
     try {
-      const users = await firestoreService.getAllUsersWithLeaveBalances();
+      const users = await supabaseService.getAllUsersWithLeaveBalances();
       setAllUsers(users);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -140,7 +140,7 @@ const HRCalendar = () => {
     if (!editingUser) return;
     setSavingBalances(true);
     try {
-      await firestoreService.updateUserLeaveBalances(editingUser.email, editBalances);
+      await supabaseService.updateUserLeaveBalances(editingUser.email, editBalances);
       
       // Send notification to user
       await timeOffNotifications.notifyBalanceChange(
@@ -300,7 +300,7 @@ const HRCalendar = () => {
   useEffect(() => {
     if (!currentUser?.email) return;
 
-    const unsubscribe = firestoreService.onLeaveRequestsChange(
+    const unsubscribe = supabaseService.onLeaveRequestsChange(
       (requests) => {
         const formatted = (requests || []).map(formatLeaveRequest);
         setLeaveRequests(formatted);
@@ -318,7 +318,7 @@ const HRCalendar = () => {
     const loadTeamMembers = async () => {
       try {
         if (isTimeOffAdmin) {
-          const users = await firestoreService.getAllUsersWithLeaveBalances();
+          const users = await supabaseService.getAllUsersWithLeaveBalances();
           if (users && users.length > 0) {
             const formattedMembers = users.map((user, index) => ({
               id: index + 1,
@@ -335,7 +335,7 @@ const HRCalendar = () => {
             setTeamMembers(formattedMembers);
           }
         } else {
-          const users = await firestoreService.getApprovedUsers();
+          const users = await supabaseService.getApprovedUsers();
           if (users && users.length > 0) {
             setTeamMembers(users.map((user, index) => ({
               id: index + 1,
@@ -383,12 +383,12 @@ const HRCalendar = () => {
       
       // Use enhanced method with history tracking
       console.log('📤 Updating status in Firestore...');
-      await firestoreService.updateLeaveRequestStatusEnhanced(requestId, 'approved', currentUser?.email, notes);
+      await supabaseService.updateLeaveRequestStatusEnhanced(requestId, 'approved', currentUser?.email, notes);
       console.log('✅ Firestore updated successfully');
       
       // Deduct from employee's leave balance
       try {
-        await firestoreService.deductLeaveBalance(
+        await supabaseService.deductLeaveBalance(
           request.employeeId || request.employeeEmail,
           request.type,
           request.days || 1,
@@ -414,7 +414,7 @@ const HRCalendar = () => {
         try {
           const result = await googleCalendarService.createLeaveEvent(request);
           if (result?.id) {
-            await firestoreService.setLeaveRequestCalendarEventIdForEmail(requestId, currentUser.email, result.id);
+            await supabaseService.setLeaveRequestCalendarEventIdForEmail(requestId, currentUser.email, result.id);
           }
           toast.dismiss('approve-request');
           toast.success('Leave approved & added to your Google Calendar!');
@@ -469,7 +469,7 @@ const HRCalendar = () => {
       const request = leaveRequests.find(r => r.id === requestId);
       
       // Use enhanced method with history tracking
-      await firestoreService.updateLeaveRequestStatusEnhanced(requestId, 'rejected', currentUser?.email, reason);
+      await supabaseService.updateLeaveRequestStatusEnhanced(requestId, 'rejected', currentUser?.email, reason);
       
       // Send notification to employee
       if (request) {
@@ -508,7 +508,7 @@ const HRCalendar = () => {
   const handleArchiveRequest = async (requestId) => {
     setArchiving(requestId);
     try {
-      await firestoreService.archiveLeaveRequest(requestId, currentUser.email);
+      await supabaseService.archiveLeaveRequest(requestId, currentUser.email);
       setLeaveRequests(prev => 
         prev.map(req => req.id === requestId ? { ...req, archived: true } : req)
       );
@@ -525,7 +525,7 @@ const HRCalendar = () => {
   const handleUnarchiveRequest = async (requestId) => {
     setArchiving(requestId);
     try {
-      await firestoreService.unarchiveLeaveRequest(requestId, currentUser.email);
+      await supabaseService.unarchiveLeaveRequest(requestId, currentUser.email);
       setLeaveRequests(prev => 
         prev.map(req => req.id === requestId ? { ...req, archived: false } : req)
       );
@@ -542,7 +542,7 @@ const HRCalendar = () => {
   const handleDeleteRequest = async (requestId) => {
     setDeleting(requestId);
     try {
-      await firestoreService.deleteLeaveRequest(requestId);
+      await supabaseService.deleteLeaveRequest(requestId);
       setLeaveRequests(prev => prev.filter(req => req.id !== requestId));
       toast.success('Request permanently deleted');
       setShowDeleteConfirm(null);
@@ -591,7 +591,7 @@ const HRCalendar = () => {
     setSavingEditLeave(true);
     try {
       const days = editLeaveForm.days ?? calculateBusinessDays(editLeaveForm.startDate, editLeaveForm.endDate);
-      await firestoreService.updateLeaveRequestApproved(
+      await supabaseService.updateLeaveRequestApproved(
         editingLeaveRequest.id,
         { ...editLeaveForm, days },
         currentUser.email

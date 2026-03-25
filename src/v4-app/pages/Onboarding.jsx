@@ -20,7 +20,7 @@ import {
   Phone,
   Briefcase
 } from 'lucide-react';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 
@@ -69,7 +69,7 @@ const OnboardingPage = () => {
       return;
     }
     let cancelled = false;
-    firestoreService.getApprovedUserByEmail(currentUser.email).then((approved) => {
+    supabaseService.getApprovedUserByEmail(currentUser.email).then((approved) => {
       if (cancelled) return;
       if (approved?.onboardingCompleted === true) {
         mergeCurrentUser({ onboardingCompleted: true, onboardingCompletedDate: approved.onboardingCompletedDate });
@@ -151,7 +151,7 @@ const OnboardingPage = () => {
     const completedAt = new Date().toISOString();
     try {
       // 1. Persist onboarding state first (approved_users); use auth email as-is so Firestore rule matches
-      await firestoreService.updateApprovedUser(authEmail, {
+      await supabaseService.updateApprovedUser(authEmail, {
         onboardingCompleted: true,
         onboardingCompletedDate: completedAt
       });
@@ -172,11 +172,11 @@ const OnboardingPage = () => {
         roles: currentUser?.roles ?? userData?.roles ?? []
       };
 
-      const existingEmployee = await firestoreService.getEmployeeByEmail(authEmail);
+      const existingEmployee = await supabaseService.getEmployeeByEmail(authEmail);
       if (existingEmployee) {
-        await firestoreService.updateEmployee(existingEmployee.id, employeeData);
+        await supabaseService.updateEmployee(existingEmployee.id, employeeData);
       } else {
-        await firestoreService.addEmployee(employeeData);
+        await supabaseService.addEmployee(employeeData);
       }
 
       toast.success('🎉 Welcome aboard! Let\'s get started!');

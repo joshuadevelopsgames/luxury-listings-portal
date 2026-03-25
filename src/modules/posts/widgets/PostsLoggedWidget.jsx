@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useClients } from '../../../contexts/ClientsContext';
-import { firestoreService } from '../../../services/firestoreService';
+import { supabaseService } from '../../../services/supabaseService';
 import { getPostLogUpdate, getPostsRemaining } from '../../../utils/clientPostsUtils';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -80,7 +80,7 @@ const PostsLoggedWidget = () => {
       if (!currentUser?.email) return;
       const myClientIds = new Set(clients.map(c => c.id));
       try {
-        const allTasks = await firestoreService.getTasksByUser(currentUser.email);
+        const allTasks = await supabaseService.getTasksByUser(currentUser.email);
         const today = format(new Date(), 'yyyy-MM-dd');
         const todaysPosts = allTasks.filter(task => {
           const isClientPost = task.labels?.includes('client-post');
@@ -143,9 +143,9 @@ const PostsLoggedWidget = () => {
       task_type: 'post_log',
       clientId: client.id
     };
-    const taskId = await firestoreService.addTask(taskData);
+    const taskId = await supabaseService.addTask(taskData);
     const update = getPostLogUpdate(client, platform, 1);
-    await firestoreService.updateClient(client.id, update);
+    await supabaseService.updateClient(client.id, update);
     setPostsToday(prev => [...prev, { ...taskData, id: taskId }]);
     return client.clientName;
   };
@@ -159,9 +159,9 @@ const PostsLoggedWidget = () => {
     if (!client) return;
     setLogging(true);
     try {
-      await firestoreService.deleteTask(task.id);
+      await supabaseService.deleteTask(task.id);
       const update = getPostLogUpdate(client, platform, -1);
-      await firestoreService.updateClient(clientId, update);
+      await supabaseService.updateClient(clientId, update);
       setPostsToday(prev => prev.filter(t => t.id !== task.id));
       toast.success(`Removed 1 ${platform} post for ${client.clientName}`);
     } catch (error) {

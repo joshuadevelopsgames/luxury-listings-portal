@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { getPostsUsed } from '../../utils/clientPostsUtils';
 import { toast } from 'react-hot-toast';
 
@@ -31,7 +31,7 @@ export default function EditPostsLoggedModal({ client, onClose, onSaved }) {
         updates.postsRemainingByPlatform = null;
         updates.postsUsedByPlatform = null;
       }
-      await firestoreService.updateClient(client.id, updates);
+      await supabaseService.updateClient(client.id, updates);
       toast.success(`Updated posts logged for ${client.clientName || 'client'}`);
       onSaved?.();
       onClose();

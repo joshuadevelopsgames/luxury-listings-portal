@@ -10,7 +10,7 @@
  * 5. Token stored in Firestore per user
  */
 
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 
 // Slack OAuth configuration
 const SLACK_CLIENT_ID = process.env.REACT_APP_SLACK_CLIENT_ID;
@@ -141,7 +141,7 @@ class SlackOAuthService {
    */
   async storeUserToken(userEmail, tokenData) {
     try {
-      await firestoreService.setSlackConnection(userEmail, tokenData);
+      await supabaseService.setSlackConnection(userEmail, tokenData);
     } catch (error) {
       console.error('Error storing Slack token:', error);
       throw error;
@@ -153,7 +153,7 @@ class SlackOAuthService {
    */
   async getUserToken(userEmail) {
     try {
-      const connection = await firestoreService.getSlackConnection(userEmail);
+      const connection = await supabaseService.getSlackConnection(userEmail);
       return connection?.accessToken || null;
     } catch (error) {
       console.error('Error getting Slack token:', error);
@@ -174,7 +174,7 @@ class SlackOAuthService {
    */
   async getConnectionInfo(userEmail) {
     try {
-      return await firestoreService.getSlackConnection(userEmail);
+      return await supabaseService.getSlackConnection(userEmail);
     } catch (error) {
       console.error('Error getting Slack connection:', error);
       return null;
@@ -186,7 +186,7 @@ class SlackOAuthService {
    */
   async disconnectUser(userEmail) {
     try {
-      await firestoreService.removeSlackConnection(userEmail);
+      await supabaseService.removeSlackConnection(userEmail);
       this.accessToken = null;
       this.currentUserEmail = null;
       console.log('✅ Slack disconnected for user:', userEmail);

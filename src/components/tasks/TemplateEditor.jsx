@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Edit, Trash2, Save, Sparkles, Share2 } from 'lucide-react';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
@@ -48,7 +48,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
     let cancelled = false;
     setShareUsersLoading(true);
     setShareEmail('');
-    firestoreService.getApprovedUsers()
+    supabaseService.getApprovedUsers()
       .then((users) => {
         if (cancelled) return;
         const alreadyShared = (shareModal.sharedWith || []).map((e) => String(e).toLowerCase().trim());
@@ -69,7 +69,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
       return;
     }
     try {
-      const list = await firestoreService.getTaskTemplates(userEmail);
+      const list = await supabaseService.getTaskTemplates(userEmail);
       setTemplates(list);
     } catch (error) {
       console.error('Error loading templates:', error);
@@ -90,10 +90,10 @@ const TemplateEditor = ({ onClose, currentUser }) => {
     }
     try {
       if (editingTemplate) {
-        await firestoreService.updateTaskTemplate(editingTemplate.id, formData);
+        await supabaseService.updateTaskTemplate(editingTemplate.id, formData);
         toast.success('Template updated successfully!');
       } else {
-        await firestoreService.createTaskTemplate({ ...formData, ownerEmail: userEmail });
+        await supabaseService.createTaskTemplate({ ...formData, ownerEmail: userEmail });
         toast.success('Template created successfully!');
       }
       await loadTemplates();
@@ -110,7 +110,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
     const confirmed = await confirm({ title: 'Delete template', message: 'Are you sure you want to delete this template?', confirmText: 'Delete', variant: 'danger' });
     if (!confirmed) return;
     try {
-      await firestoreService.deleteTaskTemplate(templateId);
+      await supabaseService.deleteTaskTemplate(templateId);
       toast.success('Template deleted successfully!');
       await loadTemplates();
     } catch (error) {
@@ -127,7 +127,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
     const toEmail = shareEmail.trim();
     setSharing(true);
     try {
-      await firestoreService.shareTaskTemplateWith(shareModal.id, toEmail, userEmail);
+      await supabaseService.shareTaskTemplateWith(shareModal.id, toEmail, userEmail);
       toast.success(`Template shared. They'll get a notification.`);
       setShareModal(null);
       setShareEmail('');

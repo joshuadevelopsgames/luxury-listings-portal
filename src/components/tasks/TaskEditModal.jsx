@@ -26,7 +26,7 @@ import { DailyTask } from '../../entities/DailyTask';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { openEmailInGmail } from '../../utils/gmailCompose';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 
 const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], onNavigate, onTaskCreated }) => {
   const { currentUser } = useAuth();
@@ -64,7 +64,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   const [approvedUsers, setApprovedUsers] = useState([]);
 
   useEffect(() => {
-    firestoreService.getApprovedUsers().then(setApprovedUsers).catch(() => setApprovedUsers([]));
+    supabaseService.getApprovedUsers().then(setApprovedUsers).catch(() => setApprovedUsers([]));
   }, []);
 
   const mentionFilter = newComment.includes('@') ? newComment.slice(newComment.lastIndexOf('@') + 1) : '';
@@ -415,7 +415,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     const excerpt = commentText.replace(/<[^>]+>/g, ' ').slice(0, 60) + (commentText.length > 60 ? '…' : '');
     for (const email of mentionedEmails) {
       if (email && email !== currentEmail) {
-        firestoreService.createNotification({
+        supabaseService.createNotification({
           userEmail: email,
           type: 'task_comment_mention',
           title: 'Mentioned you in a task comment',

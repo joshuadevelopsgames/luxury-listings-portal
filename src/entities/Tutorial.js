@@ -439,7 +439,7 @@ export class Tutorial {
             },
             {
               title: "Service Layer Implementation",
-              content: "Request AI to 'Create a firestoreService with CRUD operations and real-time listeners.' AI will build src/services/firestoreService.js with methods for get/add/update/delete operations, onSnapshot listeners for real-time updates, and proper error handling. Include methods for user management (approveUser, rejectUser), role assignment, and data validation. AI will provide TypeScript interfaces and proper error handling patterns for production use."
+              content: "Request AI to 'Create a firestoreService with CRUD operations and real-time listeners.' AI will build src/services/supabaseService.js with methods for get/add/update/delete operations, onSnapshot listeners for real-time updates, and proper error handling. Include methods for user management (approveUser, rejectUser), role assignment, and data validation. AI will provide TypeScript interfaces and proper error handling patterns for production use."
             }
           ]
         }

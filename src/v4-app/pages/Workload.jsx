@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import { getSystemAdmins } from '../../utils/systemAdmins';
 import { BarChart3, ChevronDown, ChevronUp, Users, ArrowRight, Camera } from 'lucide-react';
 import PlatformIcons, { PLATFORMS } from '../../components/PlatformIcons';
@@ -83,13 +83,13 @@ export default function WorkloadPage() {
   // Live client data so edits (e.g. posts remaining, package size) in client profile update here
   useEffect(() => {
     let mounted = true;
-    const unsubClients = firestoreService.onClientsChange((clientsData) => {
+    const unsubClients = supabaseService.onClientsChange((clientsData) => {
       if (mounted) {
         setClients(clientsData);
         setLoading(false);
       }
     });
-    firestoreService.getApprovedUsers().then((usersData) => {
+    supabaseService.getApprovedUsers().then((usersData) => {
       if (!mounted) return;
       const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
       const filtered = (usersData || []).filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
@@ -156,8 +156,8 @@ export default function WorkloadPage() {
   const handleReassign = async (clientId, newManagerEmail) => {
     const client = clients.find(c => c.id === clientId);
     try {
-      await firestoreService.updateClient(clientId, { assignedManager: newManagerEmail || null });
-      await firestoreService.logClientReassignment(clientId, client?.clientName, client?.assignedManager || null, newManagerEmail || null, currentUser?.email);
+      await supabaseService.updateClient(clientId, { assignedManager: newManagerEmail || null });
+      await supabaseService.logClientReassignment(clientId, client?.clientName, client?.assignedManager || null, newManagerEmail || null, currentUser?.email);
       setClients(prev => prev.map(c =>
         c.id === clientId ? { ...c, assignedManager: newManagerEmail || null } : c
       ));

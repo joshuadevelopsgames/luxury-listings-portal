@@ -1,11 +1,11 @@
 /**
  * firestoreServiceShim.js
  *
- * Drop-in replacement for V3 firestoreService.
+ * Drop-in replacement for V3 supabaseService.
  * Same method names & return shapes, backed by Supabase instead of Firestore.
  *
  * Usage in V4 pages:
- *   import { firestoreService } from '../services/firestoreServiceShim';
+ *   import { supabaseService } from '../../services/supabaseService';
  */
 
 import { supabase } from '../lib/supabase';
@@ -406,7 +406,7 @@ export const firestoreService = {
   onUserTasksChange(userEmail, callback) {
     return realtimeListen('tasks', null, callback, {
       fetcher: async () => {
-        const result = await firestoreService.getTasksByUser(userEmail);
+        const result = await supabaseService.getTasksByUser(userEmail);
         return result;
       }
     });
@@ -633,7 +633,7 @@ export const firestoreService = {
 
   onLeaveRequestsChange(callback, userEmail) {
     return realtimeListen('time_off_requests', null, callback, {
-      fetcher: async () => (userEmail ? firestoreService.getLeaveRequestsByUser(userEmail) : firestoreService.getAllLeaveRequests()),
+      fetcher: async () => (userEmail ? supabaseService.getLeaveRequestsByUser(userEmail) : supabaseService.getAllLeaveRequests()),
     });
   },
 
@@ -796,7 +796,7 @@ export const firestoreService = {
 
   onClientsChange(callback) {
     return realtimeListen('clients', null, callback, {
-      fetcher: () => firestoreService.getClients(),
+      fetcher: () => supabaseService.getClients(),
     });
   },
 
@@ -825,7 +825,7 @@ export const firestoreService = {
 
   onCrmDataChange(callback) {
     return realtimeListen('crm_data', null, callback, {
-      fetcher: () => firestoreService.getCrmData(),
+      fetcher: () => supabaseService.getCrmData(),
     });
   },
 
@@ -887,7 +887,7 @@ export const firestoreService = {
 
   onSupportTicketsChange(callback, userEmail) {
     return realtimeListen('support_tickets', null, callback, {
-      fetcher: async () => (userEmail ? firestoreService.getSupportTicketsByUser(userEmail) : firestoreService.getAllSupportTickets()),
+      fetcher: async () => (userEmail ? supabaseService.getSupportTicketsByUser(userEmail) : supabaseService.getAllSupportTickets()),
     });
   },
 
@@ -936,7 +936,7 @@ export const firestoreService = {
 
   onNotificationsChange(userEmail, callback) {
     return realtimeListen('notifications', null, callback, {
-      fetcher: () => firestoreService.getNotifications(userEmail),
+      fetcher: () => supabaseService.getNotifications(userEmail),
     });
   },
 
@@ -1050,7 +1050,7 @@ export const firestoreService = {
       .single();
     if (error) throw error;
     // Create notification
-    await firestoreService.createNotification({ userEmail: requestData.toUserEmail, type: 'task_request', title: 'New Task Request', message: `You received a task request: ${requestData.title}`, link: '/v4/tasks' });
+    await supabaseService.createNotification({ userEmail: requestData.toUserEmail, type: 'task_request', title: 'New Task Request', message: `You received a task request: ${requestData.title}`, link: '/v4/tasks' });
     return { success: true, id: data.id };
   },
 
@@ -1067,13 +1067,13 @@ export const firestoreService = {
 
   onTaskRequestsChange(userEmail, callback) {
     return realtimeListen('task_requests', null, callback, {
-      fetcher: () => firestoreService.getTaskRequests(userEmail),
+      fetcher: () => supabaseService.getTaskRequests(userEmail),
     });
   },
 
   async acceptTaskRequest(requestId, requestData) {
     // Create a task from the request
-    const taskId = await firestoreService.addTask({
+    const taskId = await supabaseService.addTask({
       title: requestData.title,
       description: requestData.description,
       assigned_to: requestData.toUserEmail || requestData.assigned_to,
@@ -1095,7 +1095,7 @@ export const firestoreService = {
 
   onSentTaskRequestsChange(userEmail, callback) {
     return realtimeListen('task_requests', null, callback, {
-      fetcher: () => firestoreService.getSentTaskRequests(userEmail),
+      fetcher: () => supabaseService.getSentTaskRequests(userEmail),
     });
   },
 
@@ -1134,17 +1134,17 @@ export const firestoreService = {
 
   onTaskTemplatesChange(userEmail, callback) {
     // Poll-based (matches V3 behavior which also polls)
-    const fetcher = () => firestoreService.getTaskTemplates(userEmail);
+    const fetcher = () => supabaseService.getTaskTemplates(userEmail);
     fetcher().then(callback);
     const interval = setInterval(() => fetcher().then(callback), 5000);
     return () => clearInterval(interval);
   },
 
   async initializeDefaultTemplates(defaultTemplates, userEmail) {
-    const existing = await firestoreService.getTaskTemplates(userEmail);
+    const existing = await supabaseService.getTaskTemplates(userEmail);
     if (existing.length > 0) return;
     for (const t of defaultTemplates) {
-      await firestoreService.createTaskTemplate({ ...t, ownerEmail: userEmail });
+      await supabaseService.createTaskTemplate({ ...t, ownerEmail: userEmail });
     }
   },
 
@@ -1202,7 +1202,7 @@ export const firestoreService = {
 
   onMessagesChange(clientId, callback) {
     return realtimeListen('client_messages', `client_id=eq.${clientId}`, callback, {
-      fetcher: () => firestoreService.getMessagesByClient(clientId),
+      fetcher: () => supabaseService.getMessagesByClient(clientId),
     });
   },
 
@@ -1252,7 +1252,7 @@ export const firestoreService = {
 
   onPendingClientsChange(callback) {
     return realtimeListen('pending_clients', null, callback, {
-      fetcher: () => firestoreService.getPendingClients(),
+      fetcher: () => supabaseService.getPendingClients(),
     });
   },
 
@@ -1392,7 +1392,7 @@ export const firestoreService = {
           const { data } = await supabase.from('instagram_reports').select('*, client:clients(name, client_name)').order('created_at', { ascending: false });
           return (data || []).map(igReportToV3);
         }
-        return firestoreService.getInstagramReports();
+        return supabaseService.getInstagramReports();
       },
     });
   },
@@ -1430,7 +1430,7 @@ export const firestoreService = {
 
     if (options.subscribe && options.onUpdate) {
       // Return an object with unsubscribe
-      const unsub = firestoreService.onApprovedUserChange(userEmail, (user) => {
+      const unsub = supabaseService.onApprovedUserChange(userEmail, (user) => {
         options.onUpdate({
           pages: user?.pagePermissions || [],
           features: user?.featurePermissions || [],
@@ -1459,7 +1459,7 @@ export const firestoreService = {
   },
 
   onUserPagePermissionsChange(userEmail, callback) {
-    return firestoreService.onApprovedUserChange(userEmail, (user) => {
+    return supabaseService.onApprovedUserChange(userEmail, (user) => {
       callback(user?.pagePermissions || []);
     });
   },
@@ -1547,7 +1547,7 @@ export const firestoreService = {
 
   onActiveAnnouncementsChange(callback) {
     return realtimeListen('announcements', null, callback, {
-      fetcher: () => firestoreService.getActiveAnnouncements(),
+      fetcher: () => supabaseService.getActiveAnnouncements(),
     });
   },
 
@@ -1582,7 +1582,7 @@ export const firestoreService = {
 
   onCustomRolesChange(callback) {
     return realtimeListen('custom_roles', null, callback, {
-      fetcher: () => firestoreService.getCustomRoles(),
+      fetcher: () => supabaseService.getCustomRoles(),
     });
   },
 
@@ -1667,7 +1667,7 @@ export const firestoreService = {
   async bulkImportGraphicProjects(projects) {
     const ids = [];
     for (const p of projects) {
-      const id = await firestoreService.addGraphicProject(p);
+      const id = await supabaseService.addGraphicProject(p);
       ids.push(id);
     }
     return ids;
@@ -1697,7 +1697,7 @@ export const firestoreService = {
   },
 
   async acceptProjectRequest(requestId, requestData) {
-    const projectId = await firestoreService.addGraphicProject(requestData);
+    const projectId = await supabaseService.addGraphicProject(requestData);
     await supabase.from('project_requests').update({ status: 'accepted', created_project_id: projectId }).eq('id', requestId);
     return projectId;
   },
@@ -1764,7 +1764,7 @@ export const firestoreService = {
 
   subscribeToFeedbackChat(chatId, callback) {
     return realtimeListen('feedback_chats', `id=eq.${chatId}`, callback, {
-      fetcher: () => firestoreService.getFeedbackChatById(chatId),
+      fetcher: () => supabaseService.getFeedbackChatById(chatId),
     });
   },
 
@@ -1920,7 +1920,7 @@ export const firestoreService = {
   },
 
   async saveSystemUptime(value) {
-    return firestoreService.saveSystemConfig('systemUptime', value);
+    return supabaseService.saveSystemConfig('systemUptime', value);
   },
 
   async bootstrapSystemAdmins() { /* handled via profiles.role */ },
@@ -1933,7 +1933,7 @@ export const firestoreService = {
   onSystemConfigChange(key, callback) {
     return realtimeListen('system_config', `key=eq.${key}`, callback, {
       fetcher: async () => {
-        const val = await firestoreService.getSystemConfig(key);
+        const val = await supabaseService.getSystemConfig(key);
         return val;
       },
     });

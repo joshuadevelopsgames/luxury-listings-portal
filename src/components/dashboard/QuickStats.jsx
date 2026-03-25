@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { 
   BookOpen, 
   CheckCircle2, 
@@ -28,7 +28,7 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
     const loadHrMetrics = async () => {
       if (currentRole === 'hr_manager') {
         try {
-          const requests = await firestoreService.getAllLeaveRequests();
+          const requests = await supabaseService.getAllLeaveRequests();
           const pending = requests.filter(r => r.status === 'pending').length;
           const today = new Date().toISOString().split('T')[0];
           const absences = requests.filter(r => r.status === 'approved' && r.startDate <= today && r.endDate >= today).length;

@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { 
   MessageSquare, 
   Send, 
@@ -44,7 +44,7 @@ export default function AdminChats() {
   const loadChats = async () => {
     setLoading(true);
     try {
-      const data = await firestoreService.getAllFeedbackChats();
+      const data = await supabaseService.getAllFeedbackChats();
       setChats(data || []);
     } catch (error) {
       console.error('Error loading chats:', error);
@@ -56,7 +56,7 @@ export default function AdminChats() {
 
   const loadChatDetail = async (chatId) => {
     try {
-      const chat = await firestoreService.getFeedbackChatById(chatId);
+      const chat = await supabaseService.getFeedbackChatById(chatId);
       setSelectedChat(chat);
     } catch (error) {
       console.error('Error loading chat:', error);
@@ -69,7 +69,7 @@ export default function AdminChats() {
 
     setSending(true);
     try {
-      await firestoreService.addFeedbackChatMessage(selectedChat.id, {
+      await supabaseService.addFeedbackChatMessage(selectedChat.id, {
         message: message.trim(),
         senderEmail: currentUser?.email || 'joshua@smmluxurylistings.com',
         senderName: 'Joshua'
@@ -88,7 +88,7 @@ export default function AdminChats() {
 
   const handleCloseChat = async (chatId) => {
     try {
-      await firestoreService.closeFeedbackChat(chatId);
+      await supabaseService.closeFeedbackChat(chatId);
       toast.success('Chat closed');
       if (selectedChat?.id === chatId) {
         await loadChatDetail(chatId);

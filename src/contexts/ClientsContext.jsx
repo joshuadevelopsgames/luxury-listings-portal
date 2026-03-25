@@ -8,7 +8,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 
 const ClientsContext = createContext(null);
 
@@ -26,7 +26,7 @@ export const ClientsProvider = ({ children }) => {
 
   // Load clients and subscribe to changes
   useEffect(() => {
-    const unsubscribe = firestoreService.onClientsChange((clientsList) => {
+    const unsubscribe = supabaseService.onClientsChange((clientsList) => {
       setClients(clientsList);
       setLoading(false);
     });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Calendar, MoreHorizontal, RefreshCw, Users } from 'lucide-react';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { format } from 'date-fns';
 import EmployeeLink from '../../components/ui/EmployeeLink';
 import { getSystemAdmins } from '../../utils/systemAdmins';
@@ -29,7 +29,7 @@ const V3Team = () => {
   const loadTeam = async () => {
     try {
       setLoading(true);
-      const raw = await firestoreService.getApprovedUsers();
+      const raw = await supabaseService.getApprovedUsers();
       const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
       const filtered = (raw || []).filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
       setTeam(filtered);

@@ -31,7 +31,7 @@ import {
   Archive
 } from 'lucide-react';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { LocationSelect } from '../crm/LocationSelect';
 import { format } from 'date-fns';
 import ClientContractsSection from './ClientContractsSection';
@@ -131,8 +131,8 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
     try {
       setLoading(true);
       const [clientsData, employeesData] = await Promise.all([
-        firestoreService.getClients(),
-        firestoreService.getApprovedUsers()
+        supabaseService.getClients(),
+        supabaseService.getApprovedUsers()
       ]);
       const list = clientsData || [];
       setClients(list);
@@ -207,7 +207,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
   const handleDeleteClient = async (clientId) => {
     try {
       setDeleting(true);
-      await firestoreService.deleteClient(clientId);
+      await supabaseService.deleteClient(clientId);
       toast.success('Client removed successfully');
       setShowDeleteConfirm(null);
       if (clientForModal?.id === clientId) closeClientCard();
@@ -266,7 +266,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       lastContact: new Date().toISOString().split('T')[0],
       postedOn: 'Luxury Listings'
     };
-    await firestoreService.addClient(newClient);
+    await supabaseService.addClient(newClient);
     const crmResult = await addContactToCRM({
       clientName: newClient.clientName,
       clientEmail: newClient.clientEmail,
@@ -610,7 +610,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       customPrice: 0,
                       overduePosts: 0
                     };
-                    await firestoreService.addClient(testClient);
+                    await supabaseService.addClient(testClient);
                     toast.success('Test client created!');
                     await loadData();
                   } catch (error) {
@@ -988,7 +988,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                           setMerging(true);
                           try {
                             for (const other of others) {
-                              const result = await firestoreService.mergeClientInto(keepId, other.id);
+                              const result = await supabaseService.mergeClientInto(keepId, other.id);
                               if (!result.success) {
                                 toast.error(`Merge failed: ${result.error}`);
                                 break;

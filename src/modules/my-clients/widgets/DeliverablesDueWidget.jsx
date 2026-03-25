@@ -9,7 +9,7 @@ import { useClients } from '../../../contexts/ClientsContext';
 import ClientDetailModal from '../../../components/client/ClientDetailModal';
 import { useOpenClientCard } from '../../../hooks/useOpenClientCard';
 import EditPostsLoggedModal from '../../../components/ui/EditPostsLoggedModal';
-import { firestoreService } from '../../../services/firestoreService';
+import { supabaseService } from '../../../services/supabaseService';
 import { getPostsRemaining } from '../../../utils/clientPostsUtils';
 
 const DeliverablesDueWidget = () => {
@@ -21,7 +21,7 @@ const DeliverablesDueWidget = () => {
 
   React.useEffect(() => {
     if (clientForModal && employees.length === 0) {
-      firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
+      supabaseService.getApprovedUsers().then(setEmployees).catch(() => {});
     }
   }, [clientForModal]);
 

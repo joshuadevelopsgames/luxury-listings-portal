@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../contexts/PermissionsContext';
 import { useClients } from '../../contexts/ClientsContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';
 import ClientLink from '../../components/ui/ClientLink';
 import { getBaseModuleIds, getAllModuleIds } from '../../modules/registry';
@@ -133,7 +133,7 @@ const V3Dashboard = () => {
       return;
     }
     let cancelled = false;
-    firestoreService.getDashboardPreferences(currentUser.uid).then((prefs) => {
+    supabaseService.getDashboardPreferences(currentUser.uid).then((prefs) => {
       if (cancelled) return;
       setPrefsLoaded(true);
       if (!prefs) return;
@@ -145,8 +145,8 @@ const V3Dashboard = () => {
 
   const saveDashboardPreferences = useCallback(async (updates) => {
     if (!currentUser?.uid || isViewingAs) return;
-    const prefs = await firestoreService.getDashboardPreferences(currentUser.uid).catch(() => null) || {};
-    await firestoreService.setDashboardPreferences(currentUser.uid, { ...prefs, ...updates });
+    const prefs = await supabaseService.getDashboardPreferences(currentUser.uid).catch(() => null) || {};
+    await supabaseService.setDashboardPreferences(currentUser.uid, { ...prefs, ...updates });
   }, [currentUser?.uid, isViewingAs]);
 
   const handleMainContentDragEnd = useCallback((event) => {
@@ -161,7 +161,7 @@ const V3Dashboard = () => {
       let v = 0;
       const next = prev.map((id) => (mainContentVisibility[id] ? newVisible[v++] : id));
       if (currentUser?.uid && !isViewingAs) {
-        firestoreService.setDashboardPreferences(currentUser.uid, { mainContentOrder: next }).catch(console.error);
+        supabaseService.setDashboardPreferences(currentUser.uid, { mainContentOrder: next }).catch(console.error);
       }
       return next;
     });
@@ -171,7 +171,7 @@ const V3Dashboard = () => {
     setMainContentOrder(DEFAULT_MAIN_CONTENT_BLOCK_ORDER);
     setWidgetOrder(null);
     if (currentUser?.uid && !isViewingAs) {
-      firestoreService.setDashboardPreferences(currentUser.uid, {
+      supabaseService.setDashboardPreferences(currentUser.uid, {
         mainContentOrder: null,
         widgetOrder: null
       }).catch(console.error);
@@ -190,13 +190,13 @@ const V3Dashboard = () => {
         if (currentUser?.email) {
           // Try to get user's tasks first
           try {
-            allTasks = await firestoreService.getTasksByUser(currentUser.email);
+            allTasks = await supabaseService.getTasksByUser(currentUser.email);
           } catch (e) {
             // Fallback to all tasks
-            allTasks = await firestoreService.getTasks();
+            allTasks = await supabaseService.getTasks();
           }
         } else {
-          allTasks = await firestoreService.getTasks();
+          allTasks = await supabaseService.getTasks();
         }
 
         setTasks(allTasks);
@@ -675,7 +675,7 @@ const V3Dashboard = () => {
           onWidgetOrderChange={(nextOrder) => {
             setWidgetOrder(nextOrder);
             if (currentUser?.uid && !isViewingAs) {
-              firestoreService.setDashboardPreferences(currentUser.uid, { widgetOrder: nextOrder }).catch(console.error);
+              supabaseService.setDashboardPreferences(currentUser.uid, { widgetOrder: nextOrder }).catch(console.error);
             }
           }}
         />

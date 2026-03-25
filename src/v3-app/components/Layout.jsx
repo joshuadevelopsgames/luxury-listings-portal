@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
 import AnnouncementBanner from '../../components/AnnouncementBanner';
@@ -67,9 +67,9 @@ const V3Layout = ({ basePath = '' }) => {
     hasCheckedMonthlyReset.current = true;
     const now = new Date();
     const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    firestoreService.getLastPostsResetMonth().then((last) => {
+    supabaseService.getLastPostsResetMonth().then((last) => {
       if (last && last >= currentYearMonth) return;
-      firestoreService.runMonthlyPostsReset().then((r) => {
+      supabaseService.runMonthlyPostsReset().then((r) => {
         if (r.didReset) console.log(`📅 Monthly posts renewed for ${r.yearMonth} (${r.clientCount} clients)`);
       });
     });
@@ -82,7 +82,7 @@ const V3Layout = ({ basePath = '' }) => {
     if (currentUser?.onboardingCompleted === true) return;
 
     let cancelled = false;
-    firestoreService.getApprovedUserByEmail(currentUser.email).then((approved) => {
+    supabaseService.getApprovedUserByEmail(currentUser.email).then((approved) => {
       if (cancelled) return;
       if (approved?.onboardingCompleted === true) return;
       navigate(`${basePath}/onboarding`, { replace: true });

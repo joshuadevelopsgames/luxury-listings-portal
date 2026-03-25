@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { isSystemAdmin as checkIsSystemAdmin, onSystemAdminsChange } from '../utils/systemAdmins';
 // getBaseModuleIds import removed - base modules now check explicit permissions
 
@@ -52,7 +52,7 @@ export function PermissionsProvider({ children }) {
     if (!currentUser?.email || currentUser?.isDemoViewOnly) return;
     
     try {
-      const result = await firestoreService.getUserPermissions(currentUser.email);
+      const result = await supabaseService.getUserPermissions(currentUser.email);
       const pagePerms = result?.pages || result || [];
       const featurePerms = result?.features || [];
       
@@ -97,7 +97,7 @@ export function PermissionsProvider({ children }) {
     // So we proceed to load permissions even if adminStatus is true.
 
     // Single API: subscribe so Firestore is source of truth; same resolution as "View as" when doc at canonical key is missing.
-    const sub = firestoreService.getUserPermissions(currentUser.email, {
+    const sub = supabaseService.getUserPermissions(currentUser.email, {
       subscribe: true,
       onUpdate: (result) => {
         setPermissions(Array.isArray(result?.pages) ? result.pages : []);

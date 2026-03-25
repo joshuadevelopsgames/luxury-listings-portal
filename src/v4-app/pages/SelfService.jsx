@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import PersonCard from '../../components/PersonCard';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import { 
   Calendar, 
   User, 
@@ -61,7 +61,7 @@ const EmployeeSelfService = () => {
       
       try {
         // Get the employee from Firestore
-        const employee = await firestoreService.getEmployeeByEmail(currentUser.email);
+        const employee = await supabaseService.getEmployeeByEmail(currentUser.email);
         if (employee) {
           setEmployeeFirestoreId(employee.id);
           // Store the actual employee data from Firestore
@@ -84,7 +84,7 @@ const EmployeeSelfService = () => {
         
         // If no employeeId yet, calculate based on position in approved users list
         if (!employee?.employeeId) {
-          const allUsers = await firestoreService.getApprovedUsers();
+          const allUsers = await supabaseService.getApprovedUsers();
           // Sort by createdAt to ensure consistent ordering
           const sortedUsers = [...allUsers].sort((a, b) => {
             const dateA = a.createdAt?.toDate?.() || new Date(0);
@@ -100,7 +100,7 @@ const EmployeeSelfService = () => {
         }
 
         // Leave balances from Firestore (same source as My Time Off page)
-        const balances = await firestoreService.getUserLeaveBalances(currentUser.email);
+        const balances = await supabaseService.getUserLeaveBalances(currentUser.email);
         if (!cancelled) setLeaveBalances(balances);
       } catch (error) {
         console.error('❌ Error loading employee data:', error);
@@ -174,12 +174,12 @@ const EmployeeSelfService = () => {
           ...updatedData,
           email: currentUser.email
         };
-        const result = await firestoreService.addEmployee(newEmployee);
+        const result = await supabaseService.addEmployee(newEmployee);
         setEmployeeFirestoreId(result.id);
         console.log('✅ Employee created in Firestore:', result.id);
       } else {
         // Update existing employee
-        await firestoreService.updateEmployee(employeeFirestoreId, updatedData);
+        await supabaseService.updateEmployee(employeeFirestoreId, updatedData);
         console.log('✅ Employee updated in Firestore');
       }
 
@@ -191,7 +191,7 @@ const EmployeeSelfService = () => {
       if (displayName) profileUpdates.displayName = displayName;
       if (updatedData.position !== undefined) profileUpdates.position = updatedData.position;
       if (Object.keys(profileUpdates).length > 0) {
-        await firestoreService.updateApprovedUser(currentUser.email, profileUpdates);
+        await supabaseService.updateApprovedUser(currentUser.email, profileUpdates);
         // Update header immediately (needed for system admins — they don't have the approved_user listener)
         mergeCurrentUser(profileUpdates);
       }

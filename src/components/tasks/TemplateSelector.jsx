@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, CheckCircle2, Sparkles, Edit } from 'lucide-react';
 import { TASK_TEMPLATES } from '../../data/taskTemplates';
 import { DailyTask } from '../../entities/DailyTask';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { toast } from 'react-hot-toast';
 
 const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated }) => {
@@ -21,10 +21,10 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated
         return;
       }
       try {
-        let list = await firestoreService.getTaskTemplates(userEmail);
+        let list = await supabaseService.getTaskTemplates(userEmail);
         if (list.length === 0) {
-          await firestoreService.initializeDefaultTemplates(TASK_TEMPLATES, userEmail);
-          list = await firestoreService.getTaskTemplates(userEmail);
+          await supabaseService.initializeDefaultTemplates(TASK_TEMPLATES, userEmail);
+          list = await supabaseService.getTaskTemplates(userEmail);
         }
         setTemplates(list);
       } catch (error) {

@@ -15,7 +15,7 @@ import NewVersionNotifier from './components/NewVersionNotifier';
 
 // Admin utilities - expose to console for easy access
 import { importClients } from './utils/importClientsFromSheet';
-import { firestoreService } from './services/firestoreService';
+import { supabaseService } from './services/supabaseService';
 
 // ── Always-needed (critical path) ────────────────────────────────────────────
 import V3Layout from './v3-app/components/Layout';
@@ -73,7 +73,7 @@ const MyClientsPage           = React.lazy(() => import('./modules/my-clients/pa
 // Admin utilities — expose to console for migrations (must be after all imports)
 if (typeof window !== 'undefined') {
   window.importClients = importClients;
-  window.firestoreService = firestoreService;
+  window.supabaseService = supabaseService;
 }
 
 // ── Shared loading fallback ───────────────────────────────────────────────────

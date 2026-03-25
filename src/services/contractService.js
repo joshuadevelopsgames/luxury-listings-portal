@@ -2,7 +2,7 @@
 // Handles contract file uploads to Google Drive and metadata storage in Google Sheets
 
 import { API_KEYS, GOOGLE_SHEETS_CONFIG, GOOGLE_DRIVE_CONFIG } from '../config/apiKeys';
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 
 class ContractService {
   constructor() {
@@ -62,7 +62,7 @@ class ContractService {
    */
   async saveContractMetadata(contractData) {
     try {
-      const contractId = await firestoreService.addContract(contractData);
+      const contractId = await supabaseService.addContract(contractData);
       console.log('✅ Contract metadata saved:', contractId);
       return contractId;
     } catch (error) {
@@ -164,7 +164,7 @@ class ContractService {
    */
   async getClientContracts(clientId) {
     try {
-      return await firestoreService.getContractsByClient(clientId);
+      return await supabaseService.getContractsByClient(clientId);
     } catch (error) {
       console.error('Error getting client contracts:', error);
       return [];
@@ -178,7 +178,7 @@ class ContractService {
    */
   async getContract(contractId) {
     try {
-      return await firestoreService.getContractById(contractId);
+      return await supabaseService.getContractById(contractId);
     } catch (error) {
       console.error('Error getting contract:', error);
       throw error;
@@ -192,7 +192,7 @@ class ContractService {
    */
   async updateContract(contractId, updates) {
     try {
-      await firestoreService.updateContract(contractId, {
+      await supabaseService.updateContract(contractId, {
         ...updates,
         updatedAt: new Date().toISOString()
       });
@@ -208,7 +208,7 @@ class ContractService {
    */
   async deleteContract(contractId) {
     try {
-      await firestoreService.deleteContract(contractId);
+      await supabaseService.deleteContract(contractId);
     } catch (error) {
       console.error('Error deleting contract:', error);
       throw error;

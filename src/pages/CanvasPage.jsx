@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { openaiService } from '../services/openaiService';
 import CanvasBlockEditor, { blockId } from './canvas/CanvasBlockEditor';
 import {
@@ -206,12 +206,12 @@ export default function CanvasPage() {
         persistBlocksTimerRef.current = null;
         if (activeId && (userId || activeCanvas?.userId)) {
           const ownerId = activeCanvas?.userId ?? userId;
-          firestoreService.updateCanvas(ownerId, activeId, { blocks }).catch((err) => {
+          supabaseService.updateCanvas(ownerId, activeId, { blocks }).catch((err) => {
             console.error('Canvas save error (blocks):', err);
             toast.error('Failed to save');
           });
           if (isOwner) {
-            firestoreService.saveCanvasHistorySnapshot(activeId, {
+            supabaseService.saveCanvasHistorySnapshot(activeId, {
               blocks,
               title: activeCanvas?.title,
               createdBy: userEmail,
@@ -237,7 +237,7 @@ export default function CanvasPage() {
                   break;
                 }
               }
-              firestoreService.createNotification({
+              supabaseService.createNotification({
                 userEmail: email,
                 type: 'workspace_mention',
                 title: 'Mentioned you in a workspace',
@@ -249,7 +249,7 @@ export default function CanvasPage() {
           }
           for (const email of prevEmails) {
             if (email && !newEmails.has(email)) {
-              firestoreService.deleteWorkspaceMentionNotifications(email, activeId).catch(() => {});
+              supabaseService.deleteWorkspaceMentionNotifications(email, activeId).catch(() => {});
             }
           }
         }
@@ -294,7 +294,7 @@ export default function CanvasPage() {
       setCanvases((prev) => [c, ...prev]);
       setActiveId(c.id);
       toast.success('Workspace created');
-      firestoreService.createCanvas(userId, c).catch((err) => {
+      supabaseService.createCanvas(userId, c).catch((err) => {
         console.error('Canvas create error:', err);
         toast.error('Failed to save workspace');
       });
@@ -311,7 +311,7 @@ export default function CanvasPage() {
       }
       const prev = canvases.find((x) => x.id === activeId);
       if (userId && activeId && prev?.blocks) {
-        firestoreService.updateCanvas(userId, activeId, { blocks: prev.blocks }).catch((err) => {
+        supabaseService.updateCanvas(userId, activeId, { blocks: prev.blocks }).catch((err) => {
         console.error('Canvas save error (openCanvas):', err);
       });
       }
@@ -336,7 +336,7 @@ export default function CanvasPage() {
       });
       if (!ok || !ownerId) return;
       try {
-        await firestoreService.deleteCanvas(ownerId, id);
+        await supabaseService.deleteCanvas(ownerId, id);
         setCanvases((prev) => prev.filter((x) => x.id !== id));
         setSharedCanvases((prev) => prev.filter((x) => x.id !== id));
         if (activeId === id) setActiveId(null);
@@ -367,7 +367,7 @@ export default function CanvasPage() {
       };
       setCanvases((prev) => [c, ...prev]);
       setActiveId(c.id);
-      firestoreService.createCanvas(userId, c).catch((err) => {
+      supabaseService.createCanvas(userId, c).catch((err) => {
         console.error('Canvas duplicate error:', err);
         toast.error('Failed to duplicate workspace');
       });
@@ -406,7 +406,7 @@ export default function CanvasPage() {
   }, [sidebarTab, userEmail]);
 
   useEffect(() => {
-    firestoreService.getApprovedUsers().then(setApprovedUsers).catch(() => setApprovedUsers([]));
+    supabaseService.getApprovedUsers().then(setApprovedUsers).catch(() => setApprovedUsers([]));
   }, []);
 
   useEffect(() => {
@@ -419,7 +419,7 @@ export default function CanvasPage() {
     const inMine = canvases.some((c) => c.id === id);
     const inShared = sharedCanvases.some((c) => c.id === id);
     if (!inMine && !inShared) {
-      firestoreService.getCanvasById(id).then((c) => {
+      supabaseService.getCanvasById(id).then((c) => {
         if (!c) return;
         if (c.userId === userId) setCanvases((prev) => [c, ...prev]);
         else setSharedCanvases((prev) => [c, ...prev]);
@@ -479,7 +479,7 @@ export default function CanvasPage() {
       if (sharedCanvases.some((c) => c.id === activeId)) {
         setSharedCanvases((prev) => prev.map((c) => (c.id === activeId ? { ...c, ...patch, updated: Date.now() } : c)));
       }
-      firestoreService.updateCanvas(ownerId, activeId, patch).catch((err) => {
+      supabaseService.updateCanvas(ownerId, activeId, patch).catch((err) => {
         console.error('Canvas save error (meta):', err);
         toast.error('Failed to save');
       });
@@ -538,12 +538,12 @@ export default function CanvasPage() {
     if (ownerId !== userId) return;
     setShareSubmitting(true);
     try {
-      await firestoreService.shareCanvas(userId, activeId, { email, role: 'editor' });
+      await supabaseService.shareCanvas(userId, activeId, { email, role: 'editor' });
       setShareCollaborators((prev) => [...prev.filter((c) => c.email !== email), { email, role: 'editor' }]);
       setShareSelectedUser('');
       const workspaceTitle = activeCanvas?.title || 'Untitled workspace';
       const inviterName = currentUser?.displayName || currentUser?.firstName || userEmail?.split('@')[0] || 'Someone';
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail: email,
         type: 'workspace_shared',
         title: 'Workspace shared with you',
@@ -610,7 +610,7 @@ export default function CanvasPage() {
     const ownerId = activeCanvas.userId ?? userId;
     if (ownerId !== userId && !canvases.some((c) => c.id === activeId)) return;
     try {
-      const { blocks } = await firestoreService.restoreCanvasVersion(ownerId, activeId, versionId);
+      const { blocks } = await supabaseService.restoreCanvasVersion(ownerId, activeId, versionId);
       pushUndo(activeCanvas.blocks);
       setCanvases((prev) => prev.map((c) => (c.id === activeId ? { ...c, blocks, updated: Date.now() } : c)));
       if (sharedCanvases.some((c) => c.id === activeId)) {
@@ -630,7 +630,7 @@ export default function CanvasPage() {
     const ownerId = activeCanvas.userId ?? userId;
     if (ownerId !== userId) return;
     try {
-      await firestoreService.unshareCanvas(userId, activeId, email);
+      await supabaseService.unshareCanvas(userId, activeId, email);
       setShareCollaborators((prev) => prev.filter((c) => c.email !== email));
       toast.success('Removed collaborator');
     } catch (err) {
@@ -991,7 +991,7 @@ export default function CanvasPage() {
                         setHistoryLoading(true);
                         setHistoryVersions([]);
                         if (activeId) {
-                          firestoreService.getCanvasHistory(activeId).then((v) => {
+                          supabaseService.getCanvasHistory(activeId).then((v) => {
                             setHistoryVersions(v);
                           }).catch(() => setHistoryVersions([])).finally(() => setHistoryLoading(false));
                         }
@@ -1007,7 +1007,7 @@ export default function CanvasPage() {
                         setShareModalOpen(true);
                         setShareSelectedUser('');
                         if (activeId) {
-                          firestoreService.getCanvasById(activeId).then((c) => {
+                          supabaseService.getCanvasById(activeId).then((c) => {
                             setShareCollaborators(c?.sharedWith || []);
                           }).catch(() => setShareCollaborators([]));
                         }
@@ -1061,7 +1061,7 @@ export default function CanvasPage() {
                               setShareModalOpen(true);
                               setShareSelectedUser('');
                               if (activeId) {
-                                firestoreService.getCanvasById(activeId).then((c) => {
+                                supabaseService.getCanvasById(activeId).then((c) => {
                                   setShareCollaborators(c?.sharedWith || []);
                                 }).catch(() => setShareCollaborators([]));
                               }

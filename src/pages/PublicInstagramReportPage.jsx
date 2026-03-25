@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { 
   Instagram, 
   Calendar, 
@@ -60,7 +60,7 @@ const PublicInstagramReportPage = () => {
   useEffect(() => {
     const loadReport = async () => {
       try {
-        const data = await firestoreService.getInstagramReportByPublicLink(publicLinkId);
+        const data = await supabaseService.getInstagramReportByPublicLink(publicLinkId);
         if (data) {
           setReport(data);
         } else {

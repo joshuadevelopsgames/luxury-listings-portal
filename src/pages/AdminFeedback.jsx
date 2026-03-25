@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { 
   Bug, 
   Lightbulb, 
@@ -52,7 +52,7 @@ export default function AdminFeedback() {
   const loadFeedback = async () => {
     setLoading(true);
     try {
-      const data = await firestoreService.getAllFeedback();
+      const data = await supabaseService.getAllFeedback();
       setFeedback(data || []);
     } catch (error) {
       console.error('Error loading feedback:', error);
@@ -64,7 +64,7 @@ export default function AdminFeedback() {
 
   const handleStatusChange = async (feedbackId, newStatus) => {
     try {
-      await firestoreService.updateFeedbackStatus(feedbackId, newStatus);
+      await supabaseService.updateFeedbackStatus(feedbackId, newStatus);
       setFeedback(prev => prev.map(f => 
         f.id === feedbackId ? { ...f, status: newStatus } : f
       ));

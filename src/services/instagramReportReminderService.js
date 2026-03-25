@@ -4,7 +4,7 @@
  * On the 1st of each month (Vancouver), checks if users have created reports for their clients.
  */
 
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 import { getVancouverMonthKey, getVancouverToday } from '../utils/vancouverTime';
 
 const REMINDER_STORAGE_KEY = 'instagram_report_reminder_sent';
@@ -53,7 +53,7 @@ class InstagramReportReminderService {
    */
   async getAssignedClients(userEmail, userId) {
     try {
-      const allClients = await firestoreService.getClients();
+      const allClients = await supabaseService.getClients();
       const normalizedEmail = (userEmail || '').trim().toLowerCase();
       const normalizedUid = (userId || '').trim().toLowerCase();
       
@@ -76,7 +76,7 @@ class InstagramReportReminderService {
     if (assignedClients.length === 0) return [];
 
     // Get all reports for the current user
-    const reports = await firestoreService.getInstagramReports();
+    const reports = await supabaseService.getInstagramReports();
     
     // Get current month boundaries
     const now = new Date();
@@ -128,7 +128,7 @@ class InstagramReportReminderService {
     }
 
     try {
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail,
         type: 'instagram_report_reminder',
         title: 'Monthly Instagram Reports Due',

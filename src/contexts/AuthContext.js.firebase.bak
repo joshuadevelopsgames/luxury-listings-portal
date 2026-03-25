@@ -1,98 +1,19 @@
-/**
- * AuthContext.supabase.js
- *
- * Drop-in replacement for AuthContext.js — identical useAuth() shape,
- * backed by Supabase Auth instead of Firebase Auth.
- *
- * Usage: swap the import in V3SupabaseApp.jsx:
- *   import { AuthProvider, useAuth } from './contexts/AuthContext.supabase';
- */
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { supabase } from '../lib/supabase';
+import { signInWithPopup, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 import { USER_ROLES, getUserByRole, getRolePermissions } from '../entities/UserRoles';
-import { supabaseService } from '../services/supabaseService';
+import { firestoreService } from '../services/firestoreService';
 import { appNavigate } from '../utils/navigation';
 import { useViewAs } from './ViewAsContext';
+import { googleCalendarService } from '../services/googleCalendarService';
+import { isSystemAdmin, isDemoViewOnly, loadSystemAdmins, startAdminListener } from '../utils/systemAdmins';
 import { resolvePermission } from '../utils/permissionResolver';
 
-// Define the context here so it can be exported and re-exported by AuthContext.js
-// after cutover without creating a circular dependency.
-export const AuthContext = createContext();
-
 // ============================================================================
-// SYSTEM ADMINS (Supabase-backed, mirrors systemAdmins.js without Firebase)
+// LOCAL STORAGE - Persist auth state for faster page loads
 // ============================================================================
-const BOOTSTRAP_ADMIN = 'jrsschroeder@gmail.com';
-const DEMO_VIEW_ONLY_EMAILS = ['demo@luxurylistings.app'];
-
-let _adminEmails = [BOOTSTRAP_ADMIN];
-let _adminListeners = [];
-
-function _notifyAdminListeners() {
-  _adminListeners.forEach((cb) => cb(_adminEmails));
-}
-
-async function loadSystemAdmins() {
-  try {
-    const data = await supabaseService.getSystemConfig('admins');
-    if (data && Array.isArray(data.emails)) {
-      _adminEmails = [...new Set([BOOTSTRAP_ADMIN, ...data.emails.map((e) => e.toLowerCase())])];
-    }
-  } catch (e) {
-    console.warn('Could not load system admins, using bootstrap admin:', e.message);
-  }
-  _notifyAdminListeners();
-}
-
-function startAdminListener() {
-  // Poll every 60s as a lightweight fallback; real-time handled by postgres_changes
-  const interval = setInterval(async () => {
-    try {
-      const data = await supabaseService.getSystemConfig('admins');
-      if (data && Array.isArray(data.emails)) {
-        const updated = [...new Set([BOOTSTRAP_ADMIN, ...data.emails.map((e) => e.toLowerCase())])];
-        if (JSON.stringify(updated) !== JSON.stringify(_adminEmails)) {
-          _adminEmails = updated;
-          _notifyAdminListeners();
-        }
-      }
-    } catch (_) {}
-  }, 60000);
-
-  // Also subscribe via Supabase Realtime on system_config
-  const channel = supabase
-    .channel('admin-config-watcher')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, async (payload) => {
-      if (payload?.new?.key === 'admins') {
-        const emails = payload?.new?.value?.emails || [];
-        _adminEmails = [...new Set([BOOTSTRAP_ADMIN, ...emails.map((e) => e.toLowerCase())])];
-        _notifyAdminListeners();
-      }
-    })
-    .subscribe();
-
-  return () => {
-    clearInterval(interval);
-    supabase.removeChannel(channel);
-  };
-}
-
-function isSystemAdmin(email) {
-  if (!email) return false;
-  return _adminEmails.includes(email.toLowerCase());
-}
-
-function isDemoViewOnly(email) {
-  if (!email) return false;
-  return DEMO_VIEW_ONLY_EMAILS.includes(email.toLowerCase());
-}
-
-// ============================================================================
-// LOCAL STORAGE — persist auth for instant restore on refresh
-// ============================================================================
-const AUTH_STORAGE_KEY = 'luxury_listings_auth_sb';
+const AUTH_STORAGE_KEY = 'luxury_listings_auth';
 
 const saveAuthToStorage = (user) => {
   try {
@@ -101,38 +22,50 @@ const saveAuthToStorage = (user) => {
     } else {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
-  } catch (_) {}
+  } catch (e) { /* silent */ }
 };
 
 const loadAuthFromStorage = () => {
   try {
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
     return stored ? JSON.parse(stored) : null;
-  } catch (_) {
+  } catch (e) {
     return null;
   }
+};
+
+// Helper to get department for a role
+const getDepartmentForRole = (role) => {
+  const departments = {
+    'admin': 'Administration',
+    'content_director': 'Content & Creative',
+    'social_media_manager': 'Marketing',
+    'hr_manager': 'Human Resources',
+    'sales_manager': 'Sales'
+  };
+  return departments[role] || 'General';
 };
 
 // ============================================================================
 // AUTH CONTEXT
 // ============================================================================
-// AuthContext is defined and exported here (post-cutover AuthContext.js re-exports it).
-// All V3 components using useAuth() transparently use Supabase state.
+export const AuthContext = createContext();
 
 export function useAuth() {
   return useContext(AuthContext);
 }
 
 export function AuthProvider({ children }) {
+  // Initialize from localStorage for instant restore on refresh
   const storedAuth = loadAuthFromStorage();
-
+  
   const [currentUser, setCurrentUser] = useState(storedAuth);
   const [userData, setUserData] = useState(storedAuth);
   const [currentRole, setCurrentRole] = useState(storedAuth?.role || USER_ROLES.CONTENT_DIRECTOR);
-  const [loading, setLoading] = useState(!storedAuth);
+  const [loading, setLoading] = useState(!storedAuth); // No loading if we have cached auth
   const [chatbotResetTrigger, setChatbotResetTrigger] = useState(0);
 
-  // Boot system-admin list + live listener
+  // Load system admins from Firestore on mount + start real-time listener
   useEffect(() => {
     loadSystemAdmins();
     const unsubscribeAdmins = startAdminListener();
@@ -142,70 +75,84 @@ export function AuthProvider({ children }) {
   // ============================================================================
   // AUTH METHODS
   // ============================================================================
-
+  
   async function signInWithGoogle() {
     try {
-      // Supabase OAuth uses a redirect flow. We open the OAuth URL in a popup
-      // manually to match the original UX as closely as possible.
-      const redirectTo = `${window.location.origin}/dashboard`;
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo,
-          queryParams: { access_type: 'offline', prompt: 'consent' },
-        },
-      });
-
-      if (error) throw error;
-      return data;
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Get the Google OAuth credential which includes the access token
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        const userEmail = result.user.email;
+        console.log('🔐 Got Google access token during sign-in for:', userEmail);
+        
+        // Store the token for Google Calendar use (expires in 1 hour)
+        // The googleCalendarService will use this for calendar operations
+        const tokenKey = `google_calendar_token_${userEmail}`;
+        const expiryKey = `google_calendar_token_expiry_${userEmail}`;
+        const expiryTime = Date.now() + (3600 * 1000); // 1 hour
+        
+        localStorage.setItem(tokenKey, credential.accessToken);
+        localStorage.setItem(expiryKey, expiryTime.toString());
+        
+        console.log('✅ Calendar access token stored for:', userEmail);
+        
+        // Try to initialize calendar service with the new token
+        try {
+          await googleCalendarService.tryAutoReconnect(userEmail);
+          console.log('✅ Google Calendar auto-connected on sign-in');
+        } catch (calError) {
+          console.warn('⚠️ Could not auto-connect calendar:', calError);
+        }
+      }
+      
+      return result;
     } catch (error) {
-      console.error('Google sign-in error:', error);
+      console.error('Sign-in error:', error);
       throw error;
     }
   }
 
   async function signInWithEmail(email, password) {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        // Map Supabase error messages to user-friendly equivalents
-        const msg = error.message?.toLowerCase() || '';
-        if (msg.includes('invalid login credentials') || msg.includes('invalid email or password')) {
-          throw new Error('Invalid email or password. Please check your credentials.');
-        }
-        if (msg.includes('email not confirmed')) {
-          throw new Error('Please confirm your email address before signing in.');
-        }
-        if (msg.includes('too many requests')) {
-          throw new Error('Too many failed attempts. Please try again later.');
-        }
-        throw new Error(error.message);
-      }
+      const result = await signInWithEmailAndPassword(auth, email, password);
       console.log('✅ Email sign-in successful for:', email);
-      return data;
+      return result;
     } catch (error) {
       console.error('Email sign-in error:', error);
+      // Provide user-friendly error messages
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email address.');
+      } else if (error.code === 'auth/wrong-password') {
+        throw new Error('Incorrect password. Please try again.');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address.');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many failed attempts. Please try again later.');
+      } else if (error.code === 'auth/invalid-credential') {
+        throw new Error('Invalid email or password. Please check your credentials.');
+      }
       throw error;
     }
   }
 
-  async function logout() {
+  function logout() {
     saveAuthToStorage(null);
     setCurrentUser(null);
     setUserData(null);
     setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
-    await supabase.auth.signOut();
+    return signOut(auth);
   }
 
   async function switchRole(newRole) {
     if (!currentUser?.email) return;
-
+    
+    // Demo view-only cannot switch roles
     if (currentUser?.isDemoViewOnly) {
       toast.error('Demo account cannot change roles.');
       return;
     }
-
+    // System admins can switch to any role
     if (!isSystemAdmin(currentUser.email)) {
       const assignedRoles = currentUser.roles || [currentUser.primaryRole || currentUser.role] || ['content_director'];
       if (!assignedRoles.includes(newRole)) {
@@ -213,18 +160,20 @@ export function AuthProvider({ children }) {
         return;
       }
     }
-
+    
     if (!Object.values(USER_ROLES).includes(newRole)) {
       toast.error(`Invalid role: ${newRole}`);
       return;
     }
 
     setCurrentRole(newRole);
-
+    
+    // Save to Firestore
     try {
-      await supabaseService.saveSystemConfig('currentRole', newRole);
-    } catch (_) {}
-
+      await firestoreService.saveSystemConfig('currentRole', newRole);
+    } catch (e) { /* silent */ }
+    
+    // Update user with new role data
     const roleUserData = getUserByRole(newRole);
     const updatedUser = {
       ...currentUser,
@@ -237,11 +186,15 @@ export function AuthProvider({ children }) {
       displayName: currentUser.displayName,
       avatar: currentUser.avatar,
       uid: currentUser.uid,
-      customPermissions: currentUser.customPermissions || [],
+      customPermissions: currentUser.customPermissions || []
     };
-
+    
     setCurrentUser(updatedUser);
-    setChatbotResetTrigger((prev) => prev + 1);
+    setChatbotResetTrigger(prev => prev + 1);
+  }
+
+  function getCurrentRolePermissions() {
+    return getRolePermissions(currentRole);
   }
 
   function hasPermission(permission) {
@@ -255,39 +208,39 @@ export function AuthProvider({ children }) {
   }
 
   // ============================================================================
-  // SUPABASE AUTH LISTENER
+  // FIREBASE AUTH LISTENER
   // ============================================================================
-
+  
   useEffect(() => {
-    // onAuthStateChange fires with the current session on mount, then on every change
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        if (session?.user) {
-          await handleUserSignIn(session.user);
+        if (firebaseUser) {
+          // User is signed in
+          await handleUserSignIn(firebaseUser);
         } else {
+          // User signed out
           saveAuthToStorage(null);
           setCurrentUser(null);
           setUserData(null);
           setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
         }
       } catch (error) {
-        console.error('Auth state error:', error);
+        console.error('Auth error:', error);
         setCurrentUser(null);
         setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
       }
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => unsubscribe();
+  }, []);
 
-  // Handle user sign-in logic (mirrors original handleUserSignIn)
-  async function handleUserSignIn(supabaseUser) {
-    const { id: uid, email, user_metadata } = supabaseUser;
-    const displayName = user_metadata?.full_name || user_metadata?.name || email;
-    const photoURL = user_metadata?.avatar_url || user_metadata?.picture || null;
+  // Handle user sign-in logic
+  async function handleUserSignIn(firebaseUser) {
+    const { uid, email, displayName, photoURL } = firebaseUser;
+    const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
-    // Demo view-only
+    // Demo view-only: see everything, no edit; skip Firestore approval
     if (isDemoViewOnly(email)) {
       const roleUserData = getUserByRole(USER_ROLES.CONTENT_DIRECTOR);
       const demoUser = {
@@ -308,7 +261,7 @@ export function AuthProvider({ children }) {
         stats: roleUserData.stats,
         isApproved: true,
         onboardingCompleted: true,
-        isDemoViewOnly: true,
+        isDemoViewOnly: true
       };
       setCurrentRole(USER_ROLES.CONTENT_DIRECTOR);
       setCurrentUser(demoUser);
@@ -321,19 +274,23 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // System admin
+    // System admin - full access; merge in saved profile from approved_users if present
     if (isSystemAdmin(email)) {
-      supabaseService.bootstrapSystemAdmins(email).catch(() => {});
+      // Ensure system_config/admins doc exists (bootstrap on first admin sign-in)
+      firestoreService.bootstrapSystemAdmins(email).catch(() => {});
 
-      const [savedRole, approved] = await Promise.all([
-        supabaseService.getSystemConfig('currentRole').catch(() => null),
-        supabaseService.getApprovedUserByEmail(email).catch(() => null),
-      ]);
-
-      const roleToUse =
-        savedRole && Object.values(USER_ROLES).includes(savedRole) ? savedRole : USER_ROLES.ADMIN;
+      let savedRole;
+      try {
+        savedRole = await firestoreService.getSystemConfig('currentRole');
+      } catch (e) {
+        savedRole = null;
+      }
+      
+      const roleToUse = savedRole && Object.values(USER_ROLES).includes(savedRole) 
+        ? savedRole 
+        : USER_ROLES.ADMIN;
+      
       const roleUserData = getUserByRole(roleToUse);
-
       const adminUser = {
         uid,
         email,
@@ -342,7 +299,7 @@ export function AuthProvider({ children }) {
         lastName: displayName?.split(' ').slice(1).join(' ') || roleUserData.lastName,
         position: roleUserData.position,
         role: roleToUse,
-        roles: Object.values(USER_ROLES),
+        roles: Object.values(USER_ROLES), // Admin can access all roles
         primaryRole: USER_ROLES.ADMIN,
         department: roleUserData.department,
         startDate: roleUserData.startDate,
@@ -351,18 +308,22 @@ export function AuthProvider({ children }) {
         skills: roleUserData.skills,
         stats: roleUserData.stats,
         isApproved: true,
-        onboardingCompleted: true,
+        onboardingCompleted: true
       };
 
-      // Sync profile from approved_users / profiles
-      if (approved) {
-        if (approved.displayName) adminUser.displayName = approved.displayName;
-        if (approved.firstName != null) adminUser.firstName = approved.firstName;
-        if (approved.lastName != null) adminUser.lastName = approved.lastName;
-        if (approved.position != null) adminUser.position = approved.position;
-        if (approved.department) adminUser.department = approved.department;
-        if (approved.avatar) adminUser.avatar = approved.avatar;
-      }
+      // Persist: load saved profile from approved_users (My Profile writes here); sync uid for view-as
+      let approvedDocId;
+      try {
+        const approved = await firestoreService.getApprovedUserByEmail(email);
+        approvedDocId = approved?.id;
+        if (approved?.displayName) adminUser.displayName = approved.displayName;
+        if (approved?.firstName != null) adminUser.firstName = approved.firstName;
+        if (approved?.lastName != null) adminUser.lastName = approved.lastName;
+        if (approved?.position != null) adminUser.position = approved.position;
+        if (approved?.department) adminUser.department = approved.department;
+        if (approved?.avatar) adminUser.avatar = approved.avatar;
+      } catch (e) { /* ignore */ }
+       if (approvedDocId && emailRegex.test(approvedDocId)) firestoreService.updateApprovedUser(approvedDocId, { uid }).catch(() => {});
 
       setCurrentRole(roleToUse);
       setCurrentUser(adminUser);
@@ -371,33 +332,31 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Regular user: look up in profiles (approved_users)
+    // Single lookup: normalize email (canonical = lowercase), then one service call (1 read if found, 1 collection read only if not).
     const emailNormalized = (email || '').trim().toLowerCase();
     try {
-      const [approvedUser, savedRoleRaw] = await Promise.all([
-        supabaseService.getApprovedUserByEmail(emailNormalized),
-        supabaseService.getSystemConfig('currentRole').catch(() => null),
-      ]);
+      const approvedUser = await firestoreService.getApprovedUserByEmail(emailNormalized);
       if (approvedUser) {
-        const assignedRoles =
-          approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
+        // Any user in approved_users is allowed to access (ignore isApproved flag)
+        const assignedRoles = approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
         const primaryRole = assignedRoles[0] || 'content_director';
-
-        let savedRole = savedRoleRaw;
-
-        const roleToUse =
-          savedRole && assignedRoles.includes(savedRole) ? savedRole : primaryRole;
+        
+        let savedRole;
+        try {
+          savedRole = await firestoreService.getSystemConfig('currentRole');
+        } catch (e) {
+          savedRole = null;
+        }
+        
+        const roleToUse = savedRole && assignedRoles.includes(savedRole) ? savedRole : primaryRole;
         const roleUserData = getUserByRole(roleToUse);
-
+        
         const mergedUser = {
           uid,
           email,
           displayName: approvedUser.displayName || displayName || roleUserData.displayName,
           firstName: approvedUser.firstName || displayName?.split(' ')[0] || roleUserData.firstName,
-          lastName:
-            approvedUser.lastName ||
-            displayName?.split(' ').slice(1).join(' ') ||
-            roleUserData.lastName,
+          lastName: approvedUser.lastName || displayName?.split(' ').slice(1).join(' ') || roleUserData.lastName,
           position: approvedUser.position || roleUserData.position,
           role: roleToUse,
           roles: assignedRoles,
@@ -412,48 +371,49 @@ export function AuthProvider({ children }) {
           pagePermissions: approvedUser.pagePermissions || [],
           featurePermissions: approvedUser.featurePermissions || [],
           isApproved: true,
-          onboardingCompleted: approvedUser.onboardingCompleted,
+          onboardingCompleted: approvedUser.onboardingCompleted
         };
-
+        
         setCurrentRole(roleToUse);
         setCurrentUser(mergedUser);
         setUserData(mergedUser);
         saveAuthToStorage(mergedUser);
+        
+        // Sync Gmail profile photo and uid to approved_users (uid used for view-as dashboard prefs)
+        const docId = approvedUser.id || email;
+         if (emailRegex.test(docId)) {
+           if (photoURL) firestoreService.updateApprovedUser(docId, { avatar: photoURL }).catch(() => {});
+           firestoreService.updateApprovedUser(docId, { uid }).catch(() => {});
+         }
 
-        // Sync avatar + uid back to profiles
-        if (photoURL) {
-          supabaseService.updateApprovedUser(approvedUser.id || email, { avatar: photoURL }).catch(() => {});
-        }
-        supabaseService.updateApprovedUser(approvedUser.id || email, { uid }).catch(() => {});
-
-        // Navigate
+        // Navigate based on status (only redirect to onboarding after they're past login)
+        // Never redirect when viewing a public report link (no auth required for /report/:id)
         const currentPath = window.location.pathname;
         if (currentPath.startsWith('/report/')) return;
 
-        const onLoginOrHome =
-          currentPath === '/login' ||
-          currentPath === '/';
-
+        const onLoginOrHome = currentPath === '/login' || currentPath === '/';
         if (onLoginOrHome) {
           if (mergedUser.onboardingCompleted) {
             appNavigate('/dashboard', { replace: true });
           } else {
             appNavigate('/onboarding', { replace: true });
           }
-        } else if (!mergedUser.onboardingCompleted && !currentPath.includes('/onboarding')) {
+        } else if (!mergedUser.onboardingCompleted && currentPath !== '/onboarding') {
           appNavigate('/onboarding', { replace: true });
         }
       } else {
-        // Not approved — sign out
+        // Not in approved_users: hard-block access (no pending approval flow).
+        // Sign the user out and send them back to login with an error flag.
         await logout();
-        if (!window.location.pathname.includes('/login')) {
+        if (window.location.pathname !== '/login') {
           appNavigate('/login?error=access_required', { replace: true });
         }
       }
     } catch (error) {
       console.error('Error checking user approval:', error);
+      // Don't leave user stuck (e.g. network/Google callback hiccup). Treat as not approved and send to login so they can retry.
       await logout();
-      if (!window.location.pathname.includes('/login')) {
+      if (window.location.pathname !== '/login') {
         appNavigate('/login?error=access_required', { replace: true });
       }
     }
@@ -462,35 +422,40 @@ export function AuthProvider({ children }) {
   // Load saved role when user changes
   useEffect(() => {
     if (!currentUser) return;
+
     const loadCurrentRole = async () => {
       try {
-        const savedRole = await supabaseService.getSystemConfig('currentRole');
+        const savedRole = await firestoreService.getSystemConfig('currentRole');
         if (savedRole && Object.values(USER_ROLES).includes(savedRole)) {
           setCurrentRole(savedRole);
         }
-      } catch (_) {}
+      } catch (e) { /* silent */ }
     };
-    loadCurrentRole();
-  }, [currentUser?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Presence ping
+    loadCurrentRole();
+  }, [currentUser]);
+
+  // Presence: ping lastSeenAt on load and every 2 min so Users & Permissions can show "last online"
   useEffect(() => {
     if (!currentUser?.email || currentUser?.isDemoViewOnly || !currentUser?.isApproved) return;
-    supabaseService.updateLastSeen(currentUser.email).catch(() => {});
+    firestoreService.updateLastSeen(currentUser.email).catch(() => {});
     const interval = setInterval(() => {
-      supabaseService.updateLastSeen(currentUser.email).catch(() => {});
+      firestoreService.updateLastSeen(currentUser.email).catch(() => {});
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, [currentUser?.email, currentUser?.isDemoViewOnly, currentUser?.isApproved]);
 
-  // Listen for profile changes in real time
+  // Listen for profile changes from Firestore (My Profile writes to approved_users; applies to all users with a doc)
   useEffect(() => {
     if (!currentUser?.email) return;
 
-    const unsubscribe = supabaseService.onApprovedUserChange(currentUser.email, (approvedUser) => {
+    const unsubscribe = firestoreService.onApprovedUserChange(currentUser.email, (approvedUser) => {
       if (!approvedUser) return;
-      setCurrentUser((prev) => {
+      
+      // Update current user with new profile data
+      setCurrentUser(prev => {
         if (!prev) return prev;
+        
         const updated = {
           ...prev,
           displayName: approvedUser.displayName || prev.displayName,
@@ -509,37 +474,37 @@ export function AuthProvider({ children }) {
           pagePermissions: approvedUser.pagePermissions ?? prev.pagePermissions ?? [],
           featurePermissions: approvedUser.featurePermissions ?? prev.featurePermissions ?? [],
           adminPermissions: false,
-          onboardingCompleted:
-            approvedUser.onboardingCompleted !== undefined
-              ? approvedUser.onboardingCompleted
-              : prev.onboardingCompleted,
-          onboardingCompletedDate:
-            approvedUser.onboardingCompletedDate ?? prev.onboardingCompletedDate,
+          onboardingCompleted: approvedUser.onboardingCompleted !== undefined ? approvedUser.onboardingCompleted : prev.onboardingCompleted,
+          onboardingCompletedDate: approvedUser.onboardingCompletedDate ?? prev.onboardingCompletedDate
         };
+        
+        // Also update localStorage cache
         saveAuthToStorage(updated);
         return updated;
       });
-      setUserData((prev) => (prev ? { ...prev, ...approvedUser } : approvedUser));
+      
+      setUserData(prev => prev ? { ...prev, ...approvedUser } : approvedUser);
     });
 
     return () => unsubscribe();
-  }, [currentUser?.email]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentUser?.email]);
 
-  // Safety timeout
+  // Safety timeout - show app after 10s even if auth is stuck
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (loading) {
-        console.warn('Auth timeout — showing app');
+        console.warn('Auth timeout - showing app');
         setLoading(false);
       }
     }, 10000);
+
     return () => clearTimeout(timeout);
   }, [loading]);
 
   // ============================================================================
   // CONTEXT VALUE
   // ============================================================================
-
+  
   const mergeCurrentUser = (partial) => {
     setCurrentUser((prev) => {
       if (!prev) return prev;
@@ -584,44 +549,50 @@ export function AuthProvider({ children }) {
     viewingAsUser: viewAs?.viewingAsUser ?? null,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 /**
- * useEffectiveAuth — identical to the original, respects View As mode.
+ * useEffectiveAuth - Hook that returns the effective user (viewed user if in View As mode)
+ * Use this in components that should respect View As mode
  */
 export function useEffectiveAuth() {
-  const authCtx = useAuth();
+  const auth = useAuth();
+  
+  // Get ViewAs context - returns safe defaults if not available
   const viewAs = useViewAs();
-
+  
   if (viewAs?.isViewingAs && viewAs?.viewingAsUser) {
     const viewingAsUser = viewAs.viewingAsUser;
     return {
-      ...authCtx,
+      ...auth,
       currentUser: {
         ...viewingAsUser,
-        _realUser: authCtx.realUser,
-        _isViewingAs: true,
+        _realUser: auth.realUser,
+        _isViewingAs: true
       },
-      currentRole: viewAs.viewAsRole || authCtx.currentRole,
-      hasPermission: (permission) =>
-        resolvePermission({
-          permission,
-          customPermissions: viewingAsUser?.customPermissions || [],
-          pagePermissions: viewAs.viewAsPermissions || [],
-          featurePermissions: viewAs.viewAsFeaturePermissions || [],
-          isAdmin: false,
-        }),
+      currentRole: viewAs.viewAsRole || auth.currentRole,
+      hasPermission: (permission) => resolvePermission({
+        permission,
+        customPermissions: viewingAsUser?.customPermissions || [],
+        pagePermissions: viewAs.viewAsPermissions || [],
+        featurePermissions: viewAs.viewAsFeaturePermissions || [],
+        isAdmin: false,
+      }),
       isViewingAs: true,
-      realUser: authCtx.currentUser,
-      viewingAsUser: viewAs.viewingAsUser,
+      realUser: auth.currentUser,
+      viewingAsUser: viewAs.viewingAsUser
     };
   }
-
+  
   return {
-    ...authCtx,
+    ...auth,
     isViewingAs: false,
-    realUser: authCtx.currentUser,
-    viewingAsUser: null,
+    realUser: auth.currentUser,
+    viewingAsUser: null
   };
 }

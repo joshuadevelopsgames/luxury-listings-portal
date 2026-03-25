@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Mail, Search, RefreshCw, Building } from 'lucide-react';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import EmployeeLink from '../../components/ui/EmployeeLink';
 import { getGmailComposeUrl } from '../../utils/gmailCompose';
 import { getSystemAdmins } from '../../utils/systemAdmins';
@@ -43,7 +43,7 @@ export default function TeamDirectoryPage() {
   const loadTeam = async () => {
     try {
       setLoading(true);
-      const users = await firestoreService.getApprovedUsers();
+      const users = await supabaseService.getApprovedUsers();
       const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
       const filtered = (users || []).filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
       setTeam(filtered);

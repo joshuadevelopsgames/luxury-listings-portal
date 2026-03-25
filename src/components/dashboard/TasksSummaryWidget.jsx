@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckSquare, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 
 const TasksSummaryWidget = () => {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const TasksSummaryWidget = () => {
       if (!currentUser?.email) return;
       
       try {
-        const tasks = await firestoreService.getTasksByUser(currentUser.email);
+        const tasks = await supabaseService.getTasksByUser(currentUser.email);
         const today = new Date().toDateString();
         
         setStats({

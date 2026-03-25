@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { timeOffNotifications } from '../services/timeOffNotificationService';
 import { 
@@ -113,7 +113,7 @@ const MyTimeOff = () => {
     setError(null);
 
     // Set up real-time listener - automatically updates when data changes in Firestore
-    const unsubscribe = firestoreService.onLeaveRequestsChange(
+    const unsubscribe = supabaseService.onLeaveRequestsChange(
       (requests) => {
         console.log('📥 Leave requests updated (real-time):', requests?.length || 0);
         setMyRequests(requests || []);
@@ -147,7 +147,7 @@ const MyTimeOff = () => {
     const loadLeaveBalances = async () => {
       try {
         // Load balances from user's Firestore document
-        const storedBalances = await firestoreService.getUserLeaveBalances(currentUser.email);
+        const storedBalances = await supabaseService.getUserLeaveBalances(currentUser.email);
         
         // Calculate pending from current requests
         const pendingCounts = { vacation: 0, sick: 0 };
@@ -189,7 +189,7 @@ const MyTimeOff = () => {
 
       setCheckingConflicts(true);
       try {
-        const conflicts = await firestoreService.getTeamLeaveConflicts(
+        const conflicts = await supabaseService.getTeamLeaveConflicts(
           leaveForm.startDate,
           leaveForm.endDate,
           currentUser.email
@@ -227,7 +227,7 @@ const MyTimeOff = () => {
             } else {
               const result = await googleCalendarService.createLeaveEvent(request);
               if (result?.id) {
-                await firestoreService.setLeaveRequestRequesterCalendarEventId(request.id, result.id);
+                await supabaseService.setLeaveRequestRequesterCalendarEventId(request.id, result.id);
               }
             }
           } catch (_) {}
@@ -350,7 +350,7 @@ const MyTimeOff = () => {
       };
 
       // Use enhanced submission with history tracking
-      const result = await firestoreService.submitLeaveRequestEnhanced(newRequest);
+      const result = await supabaseService.submitLeaveRequestEnhanced(newRequest);
       
       if (result.success) {
         console.log('✅ Leave request submitted to Firestore:', result.id);
@@ -381,7 +381,7 @@ const MyTimeOff = () => {
     setCancelling(request.id);
     
     try {
-      await firestoreService.cancelLeaveRequest(request.id, currentUser.email, 'Cancelled by employee');
+      await supabaseService.cancelLeaveRequest(request.id, currentUser.email, 'Cancelled by employee');
       toast.success('Request cancelled');
       // Real-time listener will auto-update the requests list
     } catch (error) {
@@ -397,7 +397,7 @@ const MyTimeOff = () => {
     setArchiving(request.id);
     
     try {
-      await firestoreService.archiveLeaveRequest(request.id, currentUser.email);
+      await supabaseService.archiveLeaveRequest(request.id, currentUser.email);
       toast.success('Request archived');
     } catch (error) {
       console.error('❌ Error archiving request:', error);
@@ -412,7 +412,7 @@ const MyTimeOff = () => {
     setArchiving(request.id);
     
     try {
-      await firestoreService.unarchiveLeaveRequest(request.id, currentUser.email);
+      await supabaseService.unarchiveLeaveRequest(request.id, currentUser.email);
       toast.success('Request restored');
     } catch (error) {
       console.error('❌ Error restoring request:', error);
@@ -449,7 +449,7 @@ const MyTimeOff = () => {
           } else {
             const result = await googleCalendarService.createLeaveEvent(request);
             if (result?.id) {
-              await firestoreService.setLeaveRequestRequesterCalendarEventId(request.id, result.id);
+              await supabaseService.setLeaveRequestRequesterCalendarEventId(request.id, result.id);
               added++;
             }
           }

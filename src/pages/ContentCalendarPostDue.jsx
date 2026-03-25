@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import PostPreviewCard from '../components/content/PostPreviewCard';
 import { toast } from 'react-hot-toast';
 import { ArrowLeft, Copy, ExternalLink } from 'lucide-react';
@@ -28,7 +28,7 @@ export default function ContentCalendarPostDue() {
       return;
     }
     let cancelled = false;
-    firestoreService.getContentItem(id).then((data) => {
+    supabaseService.getContentItem(id).then((data) => {
       if (cancelled) return;
       if (!data || data.userEmail !== currentUser.email) {
         setItem(null);
@@ -57,7 +57,7 @@ export default function ContentCalendarPostDue() {
 
   const markPublished = async () => {
     if (!item?.id) return;
-    await firestoreService.updateContentItem(item.id, { status: 'published' });
+    await supabaseService.updateContentItem(item.id, { status: 'published' });
     setItem(prev => prev ? { ...prev, status: 'published' } : null);
     toast.success('Marked as published');
   };

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 
 const ViewAsContext = createContext();
 
@@ -50,7 +50,7 @@ export function ViewAsProvider({ children }) {
       return;
     }
 
-    const unsubscribe = firestoreService.onApprovedUserChange(viewingAsUser.email, (approvedUser) => {
+    const unsubscribe = supabaseService.onApprovedUserChange(viewingAsUser.email, (approvedUser) => {
       if (!approvedUser) {
         setViewAsPermissions([]);
         setViewAsFeaturePermissions([]);

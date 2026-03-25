@@ -1,7 +1,7 @@
 // Bulk add clients with their assigned account managers
 // This can be run from the browser console or imported
 
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { toast } from 'react-hot-toast';
 
 const CLIENTS_BY_MANAGER = {
@@ -78,7 +78,7 @@ export const bulkAddClients = async () => {
     console.log('🚀 Starting bulk client import...');
     
     // Get approved users to find manager emails
-    const approvedUsers = await firestoreService.getApprovedUsers();
+    const approvedUsers = await supabaseService.getApprovedUsers();
     console.log('📋 Found approved users:', approvedUsers.length);
     
     // Find manager emails
@@ -94,7 +94,7 @@ export const bulkAddClients = async () => {
     }
     
     // First, get all existing clients to avoid duplicates
-    const existingClients = await firestoreService.getClients();
+    const existingClients = await supabaseService.getClients();
     const existingEmails = new Set(
       existingClients.map(c => c.clientEmail?.toLowerCase()).filter(Boolean)
     );
@@ -148,7 +148,7 @@ export const bulkAddClients = async () => {
             overduePosts: 0
           };
           
-          await firestoreService.addClient(clientData);
+          await supabaseService.addClient(clientData);
           console.log(`✅ Added: ${clientName} → ${managerName}`);
           added++;
           

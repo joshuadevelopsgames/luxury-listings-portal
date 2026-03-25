@@ -8,12 +8,12 @@ class FirebaseApiService {
   }
 
   // Get approved users via API
-  // Note: This is a legacy method. Use firestoreService.getApprovedUsers() for real data.
+  // Note: This is a legacy method. Use supabaseService.getApprovedUsers() for real data.
   async getApprovedUsers() {
     try {
       console.log('🔍 API: Getting approved users...');
       // Return empty array - real data comes from Firestore
-      console.log('ℹ️ API: Use firestoreService.getApprovedUsers() for real data');
+      console.log('ℹ️ API: Use supabaseService.getApprovedUsers() for real data');
       return [];
     } catch (error) {
       console.error('❌ API: Error getting approved users:', error);

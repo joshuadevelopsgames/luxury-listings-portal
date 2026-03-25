@@ -23,7 +23,7 @@ import {
   Bell
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
 
@@ -105,7 +105,7 @@ const ITSupportPage = () => {
   useEffect(() => {
     if (!currentUser?.email || feedbackCard !== 'chat' || isITSupport) return;
     let cancelled = false;
-    firestoreService.getFeedbackChats(currentUser.email).then((chats) => {
+    supabaseService.getFeedbackChats(currentUser.email).then((chats) => {
       if (!cancelled) setPageUserChats(chats || []);
     });
     return () => { cancelled = true; };
@@ -119,7 +119,7 @@ const ITSupportPage = () => {
     }
     setPageSubmitting(true);
     try {
-      await firestoreService.createFeedback({
+      await supabaseService.createFeedback({
         type: 'bug',
         title: pageBugForm.title,
         description: pageBugForm.description,
@@ -148,7 +148,7 @@ const ITSupportPage = () => {
     }
     setPageSubmitting(true);
     try {
-      await firestoreService.createFeedback({
+      await supabaseService.createFeedback({
         type: 'feature',
         title: pageFeatureForm.title,
         description: pageFeatureForm.description,
@@ -177,14 +177,14 @@ const ITSupportPage = () => {
     }
     setPageSubmitting(true);
     try {
-      const chatId = await firestoreService.createFeedbackChat({
+      const chatId = await supabaseService.createFeedbackChat({
         userEmail: currentUser?.email,
         userName: currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
         initialMessage: pageChatMessage
       });
       toast.success('Chat started! The developer will be notified.');
       setPageChatMessage('');
-      const chat = await firestoreService.getFeedbackChatById(chatId);
+      const chat = await supabaseService.getFeedbackChatById(chatId);
       setPageSelectedChat(chat);
       setPageUserChats((prev) => [chat, ...prev]);
     } catch (e) {
@@ -200,13 +200,13 @@ const ITSupportPage = () => {
     if (!pageChatMessage.trim() || !pageSelectedChat) return;
     setPageSubmitting(true);
     try {
-      await firestoreService.addFeedbackChatMessage(pageSelectedChat.id, {
+      await supabaseService.addFeedbackChatMessage(pageSelectedChat.id, {
         message: pageChatMessage,
         senderEmail: currentUser?.email,
         senderName: currentUser?.displayName || currentUser?.firstName || 'User'
       });
       setPageChatMessage('');
-      const updated = await firestoreService.getFeedbackChatById(pageSelectedChat.id);
+      const updated = await supabaseService.getFeedbackChatById(pageSelectedChat.id);
       setPageSelectedChat(updated);
       setPageUserChats((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
     } catch (e) {
@@ -225,8 +225,8 @@ const ITSupportPage = () => {
       if (!isPolling) setLoadingFeedback(true);
       try {
         const [feedback, chats] = await Promise.all([
-          firestoreService.getAllFeedback(),
-          firestoreService.getAllFeedbackChats()
+          supabaseService.getAllFeedback(),
+          supabaseService.getAllFeedbackChats()
         ]);
         
         // Check for new items (only after initial load)
@@ -273,7 +273,7 @@ const ITSupportPage = () => {
   useEffect(() => {
     if (!isITSupport || activeAdminTab !== 'bugs') return;
     setLoadingErrorReports(true);
-    firestoreService.getErrorReports()
+    supabaseService.getErrorReports()
       .then((list) => { setErrorReports(list || []); })
       .catch(() => setErrorReports([]))
       .finally(() => setLoadingErrorReports(false));
@@ -295,7 +295,7 @@ const ITSupportPage = () => {
     }, 5000);
 
     try {
-      const unsubscribe = firestoreService.onTicketCommentsChange(selectedTicket.id, (comments) => {
+      const unsubscribe = supabaseService.onTicketCommentsChange(selectedTicket.id, (comments) => {
         clearTimeout(timeoutId);
         console.log('💬 Comments loaded:', comments.length, comments);
         setTicketComments(comments);
@@ -327,7 +327,7 @@ const ITSupportPage = () => {
     }, 5000);
 
     try {
-      const unsubscribe = firestoreService.onSupportTicketsChange((tickets) => {
+      const unsubscribe = supabaseService.onSupportTicketsChange((tickets) => {
         clearTimeout(timeoutId);
         console.log('📡 Support tickets updated:', tickets.length);
         // If IT Support, show all tickets, else show only user's tickets
@@ -413,7 +413,7 @@ const ITSupportPage = () => {
         status: 'pending'
       };
 
-      const result = await firestoreService.submitSupportTicket(newTicket);
+      const result = await supabaseService.submitSupportTicket(newTicket);
       
       if (result.success) {
         console.log('✅ Support ticket submitted:', result.id);
@@ -605,7 +605,7 @@ const ITSupportPage = () => {
         notes: closingNotes
       });
       
-      await firestoreService.updateSupportTicketStatus(ticketId, newStatus, resolvedBy, closingNotes);
+      await supabaseService.updateSupportTicketStatus(ticketId, newStatus, resolvedBy, closingNotes);
       console.log('✅ Ticket status updated successfully');
       
       // Close the modal after status update
@@ -649,7 +649,7 @@ const ITSupportPage = () => {
     if (!confirmed) return;
     setDeletingTicketId(ticketId);
     try {
-      await firestoreService.deleteSupportTicket(ticketId);
+      await supabaseService.deleteSupportTicket(ticketId);
       setMyTickets(prev => prev.filter(t => t.id !== ticketId));
       if (selectedTicket?.id === ticketId) setSelectedTicket(null);
       toast.success('Support ticket deleted');
@@ -679,7 +679,7 @@ const ITSupportPage = () => {
       
       console.log('💬 Comment data:', commentData);
       
-      const result = await firestoreService.addTicketComment(selectedTicket.id, commentData);
+      const result = await supabaseService.addTicketComment(selectedTicket.id, commentData);
       
       console.log('✅ Comment added successfully:', result);
       setNewComment('');
@@ -710,7 +710,7 @@ const ITSupportPage = () => {
   // Update feedback status
   const handleFeedbackStatusUpdate = async (feedbackId, newStatus) => {
     try {
-      await firestoreService.updateFeedbackStatus(feedbackId, newStatus);
+      await supabaseService.updateFeedbackStatus(feedbackId, newStatus);
       setFeedbackItems(prev => prev.map(f => 
         f.id === feedbackId ? { ...f, status: newStatus } : f
       ));
@@ -728,14 +728,14 @@ const ITSupportPage = () => {
     if (!chatReply.trim() || !selectedChat) return;
     
     try {
-      await firestoreService.addFeedbackChatMessage(selectedChat.id, {
+      await supabaseService.addFeedbackChatMessage(selectedChat.id, {
         message: chatReply.trim(),
         senderEmail: currentUser?.email,
         senderName: `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'IT Support'
       });
       
       // Reload chat
-      const updatedChat = await firestoreService.getFeedbackChatById(selectedChat.id);
+      const updatedChat = await supabaseService.getFeedbackChatById(selectedChat.id);
       setSelectedChat(updatedChat);
       setFeedbackChats(prev => prev.map(c => 
         c.id === selectedChat.id ? updatedChat : c
@@ -750,7 +750,7 @@ const ITSupportPage = () => {
   // Close chat
   const handleCloseChat = async (chatId) => {
     try {
-      await firestoreService.closeFeedbackChat(chatId);
+      await supabaseService.closeFeedbackChat(chatId);
       setFeedbackChats(prev => prev.map(c => 
         c.id === chatId ? { ...c, status: 'closed' } : c
       ));
@@ -775,7 +775,7 @@ const ITSupportPage = () => {
     
     setDeletingFeedbackId(feedbackId);
     try {
-      await firestoreService.deleteFeedback(feedbackId);
+      await supabaseService.deleteFeedback(feedbackId);
       setFeedbackItems(prev => prev.filter(f => f.id !== feedbackId));
       setSelectedFeedback(null);
       toast.success('Feedback deleted');
@@ -790,7 +790,7 @@ const ITSupportPage = () => {
   // Archive chat
   const handleArchiveChat = async (chatId) => {
     try {
-      await firestoreService.archiveFeedbackChat(chatId);
+      await supabaseService.archiveFeedbackChat(chatId);
       setFeedbackChats(prev => prev.map(c => 
         c.id === chatId ? { ...c, status: 'archived' } : c
       ));
@@ -814,7 +814,7 @@ const ITSupportPage = () => {
     if (!confirmed) return;
     setDeletingErrorReportId(reportId);
     try {
-      await firestoreService.deleteErrorReport(reportId);
+      await supabaseService.deleteErrorReport(reportId);
       setErrorReports(prev => prev.filter(r => r.id !== reportId));
       toast.success('Error report deleted');
     } catch (error) {
@@ -837,7 +837,7 @@ const ITSupportPage = () => {
     
     setDeletingChatId(chatId);
     try {
-      await firestoreService.deleteFeedbackChat(chatId);
+      await supabaseService.deleteFeedbackChat(chatId);
       setFeedbackChats(prev => prev.filter(c => c.id !== chatId));
       setSelectedChat(null);
       toast.success('Chat deleted');
@@ -1028,10 +1028,10 @@ const ITSupportPage = () => {
                               key={c.id}
                               type="button"
                               onClick={async () => {
-                                const chat = await firestoreService.getFeedbackChatById(c.id);
+                                const chat = await supabaseService.getFeedbackChatById(c.id);
                                 setPageSelectedChat(chat);
                                 if (chat.status === 'open') {
-                                  firestoreService.updateFeedbackChatUserLastRead(c.id).catch(() => {});
+                                  supabaseService.updateFeedbackChatUserLastRead(c.id).catch(() => {});
                                 }
                               }}
                               className="w-full text-left px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15"
@@ -1586,7 +1586,7 @@ const ITSupportPage = () => {
                   <div 
                     key={chat.id}
                     onClick={async () => {
-                      const fullChat = await firestoreService.getFeedbackChatById(chat.id);
+                      const fullChat = await supabaseService.getFeedbackChatById(chat.id);
                       setSelectedChat(fullChat);
                     }}
                     className={`p-4 rounded-xl cursor-pointer transition-all ${

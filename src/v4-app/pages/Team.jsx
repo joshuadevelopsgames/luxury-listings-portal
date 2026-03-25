@@ -5,7 +5,7 @@ import { usePermissions, FEATURE_PERMISSIONS } from '../contexts/PermissionsCont
 import { PERMISSIONS } from '../../entities/Permissions';
 import EmployeeDetailsModal from '../../components/EmployeeDetailsModal';
 import EmployeeLink from '../../components/ui/EmployeeLink';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import { 
   Users, 
   Plus, 
@@ -75,7 +75,7 @@ const TeamManagement = () => {
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
-        const raw = await firestoreService.getApprovedUsers();
+        const raw = await supabaseService.getApprovedUsers();
         const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
         const users = raw.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
         const sortedUsers = [...users].sort((a, b) => {
@@ -85,7 +85,7 @@ const TeamManagement = () => {
         });
         const formattedMembers = await Promise.all(sortedUsers.map(async (user, index) => {
           const email = user.email || user.id;
-          const leaveBalance = canViewLeaveBalance ? await firestoreService.getUserLeaveBalances(email) : { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } };
+          const leaveBalance = canViewLeaveBalance ? await supabaseService.getUserLeaveBalances(email) : { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } };
           return {
             ...user,
             id: user.id || index + 1,
@@ -189,11 +189,11 @@ const TeamManagement = () => {
     if (!confirmed) return;
     setMigratingLeave(true);
     try {
-      const result = await firestoreService.migrateLeaveBalances();
+      const result = await supabaseService.migrateLeaveBalances();
       toast.success(`Migration complete! Updated ${result.updated} users, skipped ${result.skipped}.`);
       setMigrationDone(true);
       // Reload team members to reflect changes (exclude system admins)
-      const raw = await firestoreService.getApprovedUsers();
+      const raw = await supabaseService.getApprovedUsers();
       const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
       const users = raw.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
       const sortedUsers = [...users].sort((a, b) => {

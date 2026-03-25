@@ -17,7 +17,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { googleSheetsService } from '../services/googleSheetsService';
 import { openaiService } from '../services/openaiService';
 import { getStorage, ref, uploadBytes, getDownloadURL } from '../lib/firebaseStub';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import PostPreviewCard from '../../components/content/PostPreviewCard';
 
 const MAX_MEDIA_PER_POST = 15;
@@ -80,8 +80,8 @@ const ContentCalendar = () => {
     const load = async () => {
       const email = currentUser.email;
       const [cals, items] = await Promise.all([
-        firestoreService.getContentCalendars(email),
-        firestoreService.getContentItems(email)
+        supabaseService.getContentCalendars(email),
+        supabaseService.getContentItems(email)
       ]);
       if (cancelled) return;
       if (cals.length === 0) {
@@ -90,10 +90,10 @@ const ContentCalendar = () => {
           { id: 'client-ll', name: 'Luxury Listings' }
         ];
         for (const def of defaultNames) {
-          const res = await firestoreService.createContentCalendar({ userEmail: email, name: def.name });
+          const res = await supabaseService.createContentCalendar({ userEmail: email, name: def.name });
           cals.push({ id: res.id, name: def.name });
         }
-        const refetched = await firestoreService.getContentCalendars(email);
+        const refetched = await supabaseService.getContentCalendars(email);
         if (!cancelled) {
           setCalendars(refetched);
           setSelectedCalendarId(refetched[0]?.id ?? 'default');
@@ -112,8 +112,8 @@ const ContentCalendar = () => {
           if (storedItems) parsedItems = JSON.parse(storedItems);
         } catch (_) {}
         if (parsedCals.length || parsedItems.length) {
-          await firestoreService.migrateContentCalendarFromLocalStorage(email, parsedItems, parsedCals);
-          const refetchedItems = await firestoreService.getContentItems(email);
+          await supabaseService.migrateContentCalendarFromLocalStorage(email, parsedItems, parsedCals);
+          const refetchedItems = await supabaseService.getContentItems(email);
           if (!cancelled) setContentItems(refetchedItems);
         } else {
           setContentItems([]);
@@ -201,7 +201,7 @@ const ContentCalendar = () => {
     const media = (postForm.media || []).slice(0, MAX_MEDIA_PER_POST);
 
     if (editingContent) {
-      await firestoreService.updateContentItem(editingContent.id, {
+      await supabaseService.updateContentItem(editingContent.id, {
         calendarId: selectedCalendarId,
         title: postForm.title,
         description: postForm.description,
@@ -212,11 +212,11 @@ const ContentCalendar = () => {
         tags,
         media
       });
-      const updated = await firestoreService.getContentItems(currentUser.email);
+      const updated = await supabaseService.getContentItems(currentUser.email);
       setContentItems(updated);
       setEditingContent(null);
     } else {
-      const { id } = await firestoreService.createContentItem({
+      const { id } = await supabaseService.createContentItem({
         userEmail: currentUser.email,
         calendarId: selectedCalendarId,
         title: postForm.title,
@@ -228,7 +228,7 @@ const ContentCalendar = () => {
         tags,
         media
       });
-      const updated = await firestoreService.getContentItems(currentUser.email);
+      const updated = await supabaseService.getContentItems(currentUser.email);
       setContentItems(updated);
     }
 
@@ -332,9 +332,9 @@ const ContentCalendar = () => {
       toast.error('You need DELETE_CONTENT permission to delete content');
       return;
     }
-    await firestoreService.deleteContentItem(contentId);
+    await supabaseService.deleteContentItem(contentId);
     if (currentUser?.email) {
-      const updated = await firestoreService.getContentItems(currentUser.email);
+      const updated = await supabaseService.getContentItems(currentUser.email);
       setContentItems(updated);
     }
   };
@@ -389,9 +389,9 @@ const ContentCalendar = () => {
       toast.error('Calendar name cannot be empty');
       return;
     }
-    await firestoreService.updateContentCalendar(editingCalendarId, { name: editingCalendarName.trim() });
+    await supabaseService.updateContentCalendar(editingCalendarId, { name: editingCalendarName.trim() });
     if (currentUser?.email) {
-      const refetched = await firestoreService.getContentCalendars(currentUser.email);
+      const refetched = await supabaseService.getContentCalendars(currentUser.email);
       setCalendars(refetched);
     }
     toast.success('Calendar renamed!');
@@ -415,13 +415,13 @@ const ContentCalendar = () => {
 
     const itemsInCalendar = contentItems.filter(item => item.calendarId === calendarId);
     for (const item of itemsInCalendar) {
-      await firestoreService.deleteContentItem(item.id);
+      await supabaseService.deleteContentItem(item.id);
     }
-    await firestoreService.deleteContentCalendar(calendarId);
+    await supabaseService.deleteContentCalendar(calendarId);
     if (currentUser?.email) {
       const [refetchedCals, refetchedItems] = await Promise.all([
-        firestoreService.getContentCalendars(currentUser.email),
-        firestoreService.getContentItems(currentUser.email)
+        supabaseService.getContentCalendars(currentUser.email),
+        supabaseService.getContentItems(currentUser.email)
       ]);
       setCalendars(refetchedCals);
       setContentItems(refetchedItems);
@@ -613,7 +613,7 @@ const ContentCalendar = () => {
 
       if (currentUser?.email && importedContent.length) {
         for (const item of importedContent) {
-          await firestoreService.createContentItem({
+          await supabaseService.createContentItem({
             userEmail: currentUser.email,
             calendarId: item.calendarId,
             title: item.title,
@@ -626,7 +626,7 @@ const ContentCalendar = () => {
             media: item.media || []
           });
         }
-        const updated = await firestoreService.getContentItems(currentUser.email);
+        const updated = await supabaseService.getContentItems(currentUser.email);
         setContentItems(updated);
       } else if (importedContent.length) {
         setContentItems(prev => [...prev, ...importedContent]);
@@ -800,9 +800,9 @@ const ContentCalendar = () => {
 
       let newCalendarId;
       if (currentUser?.email) {
-        const res = await firestoreService.createContentCalendar({ userEmail: currentUser.email, name: newCalendarName });
+        const res = await supabaseService.createContentCalendar({ userEmail: currentUser.email, name: newCalendarName });
         newCalendarId = res.id;
-        const refetchedCals = await firestoreService.getContentCalendars(currentUser.email);
+        const refetchedCals = await supabaseService.getContentCalendars(currentUser.email);
         setCalendars(refetchedCals);
       } else {
         newCalendarId = `cal-${Date.now()}`;
@@ -950,7 +950,7 @@ const ContentCalendar = () => {
 
       if (currentUser?.email && importedContent.length) {
         for (const item of importedContent) {
-          await firestoreService.createContentItem({
+          await supabaseService.createContentItem({
             userEmail: currentUser.email,
             calendarId: item.calendarId,
             title: item.title,
@@ -963,7 +963,7 @@ const ContentCalendar = () => {
             media: item.media || []
           });
         }
-        const updated = await firestoreService.getContentItems(currentUser.email);
+        const updated = await supabaseService.getContentItems(currentUser.email);
         setContentItems(updated);
       } else if (importedContent.length) {
         setContentItems(prev => [...prev, ...importedContent]);

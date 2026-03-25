@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useViewAs } from '../../contexts/ViewAsContext';
 import { usePendingUsers } from '../../contexts/PendingUsersContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { FEATURE_PERMISSIONS } from '../../contexts/PermissionsContext';
 import { 
   Shield, 
@@ -217,7 +217,7 @@ const PermissionsManager = () => {
     const loadUsers = async () => {
       try {
         setLoading(true);
-        const approved = await firestoreService.getApprovedUsers();
+        const approved = await supabaseService.getApprovedUsers();
         const adminSet = new Set(SYSTEM_ADMINS.map(e => e.toLowerCase()));
         // Deduplicate: if a system admin is already in approved_users, don't add them again
         const approvedEmails = new Set(approved.map(u => (u.email || u.id || '').toLowerCase()));
@@ -237,7 +237,7 @@ const PermissionsManager = () => {
         for (const user of allUsers) {
           const uEmail = user.email || user.id || '';
           try {
-            const result = await firestoreService.getUserPermissions(uEmail);
+            const result = await supabaseService.getUserPermissions(uEmail);
             permissionsMap[uEmail] = result?.pages || [];
             featurePermissionsMap[uEmail] = result?.features || [];
           } catch (e) {
@@ -329,14 +329,14 @@ const PermissionsManager = () => {
   const saveUserPermissions = async (userEmail) => {
     try {
       setSaving(userEmail);
-      if (isSystemAdmin) await firestoreService.ensureEmailLowerClaim();
+      if (isSystemAdmin) await supabaseService.ensureEmailLowerClaim();
       const features = userFeaturePermissions[userEmail] || [];
       const hasApproveTimeOff = features.includes(FEATURE_PERMISSIONS.APPROVE_TIME_OFF);
-      await firestoreService.setUserFullPermissions(userEmail, {
+      await supabaseService.setUserFullPermissions(userEmail, {
         pages: userPermissions[userEmail] || [],
         features
       });
-      await firestoreService.setTimeOffAdmin(userEmail, hasApproveTimeOff);
+      await supabaseService.setTimeOffAdmin(userEmail, hasApproveTimeOff);
       toast.success(`Permissions saved for ${userEmail}`);
       setHasChanges(prev => ({ ...prev, [userEmail]: false }));
     } catch (error) {
@@ -359,7 +359,7 @@ const PermissionsManager = () => {
 
     try {
       setSavingRole(userEmail);
-      await firestoreService.updateApprovedUser(userEmail, {
+      await supabaseService.updateApprovedUser(userEmail, {
         role: newRole,
         primaryRole: newRole,
         roles: [newRole]
@@ -433,10 +433,10 @@ const PermissionsManager = () => {
         avatar: ''
       };
 
-      await firestoreService.addApprovedUser(userData);
+      await supabaseService.addApprovedUser(userData);
       
       // Default pages only; clients and other pages are enabled per user. Role is not used for permissions.
-      await firestoreService.setUserFullPermissions(userData.email, { pages: DEFAULT_PAGES, features: [] });
+      await supabaseService.setUserFullPermissions(userData.email, { pages: DEFAULT_PAGES, features: [] });
       
       setUsers(prev => [...prev, userData]);
       setUserPermissions(prev => ({ ...prev, [userData.email]: DEFAULT_PAGES }));
@@ -472,7 +472,7 @@ const PermissionsManager = () => {
       setRemovingUser(true);
       
       // Remove from approved users
-      await firestoreService.removeApprovedUser(userToRemove.email);
+      await supabaseService.removeApprovedUser(userToRemove.email);
       
       // Update local state
       setUsers(prev => prev.filter(u => u.email !== userToRemove.email));
@@ -553,8 +553,8 @@ const PermissionsManager = () => {
       Object.keys(approvedUserData).forEach(key => {
         if (approvedUserData[key] === undefined) delete approvedUserData[key];
       });
-      await firestoreService.approveUser(pendingUser.id, approvedUserData);
-      await firestoreService.setUserFullPermissions(approvedUserData.email, { pages: DEFAULT_PAGES, features: [] });
+      await supabaseService.approveUser(pendingUser.id, approvedUserData);
+      await supabaseService.setUserFullPermissions(approvedUserData.email, { pages: DEFAULT_PAGES, features: [] });
       await refreshPendingUsers();
       setRefreshCount((c) => c + 1);
       toast.success(`${approvedUserData.email} approved`);

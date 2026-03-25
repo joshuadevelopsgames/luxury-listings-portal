@@ -1,7 +1,7 @@
 // Utility to create a test client for joshua@luxury-listings.com
 // This can be called from the browser console: window.createTestClient()
 
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 
 export const createTestClient = async () => {
   try {
@@ -23,7 +23,7 @@ export const createTestClient = async () => {
     };
 
     // Check if client already exists
-    const clients = await firestoreService.getClients();
+    const clients = await supabaseService.getClients();
     const existingClient = clients.find(c => 
       c.clientEmail?.toLowerCase() === testClient.clientEmail.toLowerCase()
     );
@@ -34,7 +34,7 @@ export const createTestClient = async () => {
     }
 
     // Create new client
-    const result = await firestoreService.addClient(testClient);
+    const result = await supabaseService.addClient(testClient);
     console.log('✅ Test client created successfully:', result);
     return result;
   } catch (error) {

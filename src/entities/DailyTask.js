@@ -1,4 +1,4 @@
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { getVancouverTodayMidnight, vancouverDateToLocalMidnight } from '../utils/vancouverTime';
 
 export class DailyTask {
@@ -41,7 +41,7 @@ export class DailyTask {
   // Get all tasks for a user
   static async getTasksForUser(userEmail) {
     try {
-      const tasks = await firestoreService.getTasksByUser(userEmail);
+      const tasks = await supabaseService.getTasksByUser(userEmail);
       return tasks.map(task => new DailyTask(task));
     } catch (error) {
       console.error('Error getting tasks for user:', error);
@@ -52,7 +52,7 @@ export class DailyTask {
   // Create a new task
   static async create(taskData) {
     try {
-      const taskId = await firestoreService.addTask(taskData);
+      const taskId = await supabaseService.addTask(taskData);
       return new DailyTask({ id: taskId, ...taskData });
     } catch (error) {
       console.error('Error creating task:', error);
@@ -63,7 +63,7 @@ export class DailyTask {
   // Update a task
   static async update(taskId, updates) {
     try {
-      await firestoreService.updateTask(taskId, updates);
+      await supabaseService.updateTask(taskId, updates);
       return { success: true, id: taskId };
     } catch (error) {
       console.error('Error updating task:', error);
@@ -74,7 +74,7 @@ export class DailyTask {
   // Delete a task
   static async delete(taskId) {
     try {
-      await firestoreService.deleteTask(taskId);
+      await supabaseService.deleteTask(taskId);
       return { success: true, id: taskId };
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -85,7 +85,7 @@ export class DailyTask {
   // Get a task by ID
   static async findById(taskId) {
     try {
-      const allTasks = await firestoreService.getTasks();
+      const allTasks = await supabaseService.getTasks();
       const task = allTasks.find(t => t.id === taskId);
       return task ? new DailyTask(task) : null;
     } catch (error) {
@@ -97,7 +97,7 @@ export class DailyTask {
   // Filter tasks with various criteria
   static async filter(filters = {}, sortBy = null) {
     try {
-      let tasks = await firestoreService.getTasks();
+      let tasks = await supabaseService.getTasks();
       
       // Apply filters
       if (filters.assigned_to) {
@@ -132,7 +132,7 @@ export class DailyTask {
 
   // Subscribe to real-time task changes for a user
   static onUserTasksChange(userEmail, callback) {
-    return firestoreService.onUserTasksChange(userEmail, (tasks) => {
+    return supabaseService.onUserTasksChange(userEmail, (tasks) => {
       const dailyTasks = tasks.map(task => new DailyTask(task));
       callback(dailyTasks);
     });
@@ -241,7 +241,7 @@ export class DailyTask {
   // ===== RECURRING TASK METHODS =====
   
   static async createRecurringTask(taskData, recurringPattern) {
-    const taskId = await firestoreService.addTask({
+    const taskId = await supabaseService.addTask({
       ...taskData,
       recurring: recurringPattern,
       is_recurring_template: true

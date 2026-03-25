@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Trash2, Star, Flag, Calendar, Users, Zap, Repeat, CheckCircle2 } from 'lucide-react';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
@@ -80,7 +80,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
 
   const loadCustomFilters = async () => {
     try {
-      const filters = await firestoreService.getSmartFilters(currentUser.email);
+      const filters = await supabaseService.getSmartFilters(currentUser.email);
       setCustomFilters(filters);
     } catch (error) {
       console.error('Error loading filters:', error);
@@ -93,7 +93,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
     if (!confirmed) return;
 
     try {
-      await firestoreService.deleteSmartFilter(filterId);
+      await supabaseService.deleteSmartFilter(filterId);
       toast.success('Filter deleted!');
       await loadCustomFilters();
     } catch (error) {

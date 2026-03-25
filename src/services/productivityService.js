@@ -1,4 +1,4 @@
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 
 /**
  * Productivity tracking service

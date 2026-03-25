@@ -37,7 +37,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import { exportCrmToXlsx } from '../../utils/exportCrmToXlsx';
 import { importCrmFromXlsxFile } from '../../utils/importCrmFromXlsx';
 import { mergeCrmDuplicates } from '../../utils/mergeCrmDuplicates';
@@ -173,7 +173,7 @@ const CRMPage = () => {
   const loadStoredData = async () => {
     if (!currentUser?.uid) return;
     try {
-      const { warmLeads: w, contactedClients: c, coldLeads: cold } = await firestoreService.getCrmData();
+      const { warmLeads: w, contactedClients: c, coldLeads: cold } = await supabaseService.getCrmData();
       setWarmLeads(w);
       setContactedClients(c);
       setColdLeads(cold);
@@ -192,7 +192,7 @@ const CRMPage = () => {
   const loadExistingClients = async () => {
     setLoadingExistingClients(true);
     try {
-      const clients = await firestoreService.getClients();
+      const clients = await supabaseService.getClients();
       setExistingClients(clients.map(normalizeExistingClient));
     } catch (error) {
       console.error('Error loading existing clients:', error);
@@ -205,7 +205,7 @@ const CRMPage = () => {
   // Subscribe to clients collection changes so new/approved clients show up
   useEffect(() => {
     setLoadingExistingClients(true);
-    const unsubscribe = firestoreService.onClientsChange((clients) => {
+    const unsubscribe = supabaseService.onClientsChange((clients) => {
       setExistingClients(clients.map(normalizeExistingClient));
       setLoadingExistingClients(false);
     });
@@ -215,7 +215,7 @@ const CRMPage = () => {
   // Load employees when client detail modal opens (for manager assignment, same as ClientLink)
   useEffect(() => {
     if (selectedClient && selectedItemType === 'client' && clientModalEmployees.length === 0) {
-      firestoreService.getApprovedUsers().then(setClientModalEmployees).catch(console.error);
+      supabaseService.getApprovedUsers().then(setClientModalEmployees).catch(console.error);
     }
     if (!selectedClient || selectedItemType !== 'client') {
       setClientModalEmployees([]);
@@ -226,7 +226,7 @@ const CRMPage = () => {
   useEffect(() => {
     if (!currentUser?.uid) return;
     loadStoredData();
-    const unsubscribe = firestoreService.onCrmDataChange(({ warmLeads: w, contactedClients: c, coldLeads: cold }) => {
+    const unsubscribe = supabaseService.onCrmDataChange(({ warmLeads: w, contactedClients: c, coldLeads: cold }) => {
       setWarmLeads(w);
       setContactedClients(c);
       setColdLeads(cold);
@@ -343,7 +343,7 @@ const CRMPage = () => {
   const saveCRMDataToFirebase = async (override) => {
     if (!currentUser?.uid) throw new Error('You must be signed in to save CRM data');
     const data = override ?? { warmLeads, contactedClients, coldLeads };
-    await firestoreService.setCrmData({
+    await supabaseService.setCrmData({
       warmLeads: data.warmLeads ?? [],
       contactedClients: data.contactedClients ?? [],
       coldLeads: data.coldLeads ?? []
@@ -462,7 +462,7 @@ const CRMPage = () => {
         customPrice: 0,
         overduePosts: 0
       };
-      const result = await firestoreService.addClient(clientData);
+      const result = await supabaseService.addClient(clientData);
       if (!result?.id) throw new Error('Failed to create client');
       setSelectedClient(null);
       setSelectedItemType(null);
@@ -494,7 +494,7 @@ const CRMPage = () => {
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
       const uploadedAt = new Date().toISOString();
-      await firestoreService.updateClient(graduateScreenshotModal.clientId, {
+      await supabaseService.updateClient(graduateScreenshotModal.clientId, {
         signupScreenshotUrl: url,
         signupScreenshotUploadedAt: uploadedAt
       });
@@ -525,7 +525,7 @@ const CRMPage = () => {
     });
     if (!confirmed) return;
     try {
-      await firestoreService.deleteClient(client.id);
+      await supabaseService.deleteClient(client.id);
       setExistingClients(prev => prev.filter(c => c.id !== client.id));
       showToast(`Client "${name}" deleted successfully!`);
       if (selectedClient?.id === client.id && selectedItemType === 'client') {

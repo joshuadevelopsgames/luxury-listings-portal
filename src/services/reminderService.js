@@ -1,4 +1,4 @@
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 
 /**
  * Reminder Service
@@ -37,7 +37,7 @@ class ReminderService {
    */
   async checkDueReminders(userEmail) {
     try {
-      const tasks = await firestoreService.getTasksByUser(userEmail);
+      const tasks = await supabaseService.getTasksByUser(userEmail);
       const now = new Date();
 
       for (const task of tasks) {
@@ -60,7 +60,7 @@ class ReminderService {
               r.id === reminder.id ? { ...r, sent: true, sentAt: now.toISOString() } : r
             );
             
-            await firestoreService.updateTask(task.id, { reminders: updatedReminders });
+            await supabaseService.updateTask(task.id, { reminders: updatedReminders });
           }
         }
       }
@@ -129,7 +129,7 @@ class ReminderService {
       }
 
       // Create notification in Firestore
-      await firestoreService.createNotification({
+      await supabaseService.createNotification({
         userEmail: userEmail,
         type: 'task_reminder',
         title: '🔔 Task Reminder',

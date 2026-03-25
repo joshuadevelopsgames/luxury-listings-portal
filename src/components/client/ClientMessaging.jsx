@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { MessageSquare, Send, User, Clock } from 'lucide-react';
 import { format } from 'date-fns';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 
 const ClientMessaging = ({ clientId, clientEmail }) => {
   const [messages, setMessages] = useState([]);
@@ -16,8 +16,8 @@ const ClientMessaging = ({ clientId, clientEmail }) => {
   useEffect(() => {
     loadMessages();
     // Set up real-time listener for messages if method exists
-    if (firestoreService.onMessagesChange) {
-      const unsubscribe = firestoreService.onMessagesChange(clientId, (updatedMessages) => {
+    if (supabaseService.onMessagesChange) {
+      const unsubscribe = supabaseService.onMessagesChange(clientId, (updatedMessages) => {
         setMessages(updatedMessages);
       });
       return () => unsubscribe();
@@ -29,7 +29,7 @@ const ClientMessaging = ({ clientId, clientEmail }) => {
       setLoading(true);
       // Load messages for this client
       // TODO: Implement getMessagesByClientId in firestoreService
-      const clientMessages = await firestoreService.getMessagesByClient(clientId);
+      const clientMessages = await supabaseService.getMessagesByClient(clientId);
       setMessages(clientMessages || []);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -61,7 +61,7 @@ const ClientMessaging = ({ clientId, clientEmail }) => {
       };
 
       // Save message
-      await firestoreService.createMessage(message);
+      await supabaseService.createMessage(message);
       
       // Also save to localStorage as backup
       const stored = localStorage.getItem(`messages_${clientId}`);

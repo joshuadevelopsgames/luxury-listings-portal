@@ -28,7 +28,7 @@ import {
   Archive
 } from 'lucide-react';
 import { GOOGLE_SHEETS_CONFIG, GOOGLE_SHEETS_API } from '../../config/googleSheets';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import ClientLink from '../ui/ClientLink';
 import ClientDetailModal from '../client/ClientDetailModal';
 import { useOpenClientCard } from '../../hooks/useOpenClientCard';
@@ -60,7 +60,7 @@ const ClientCheckIn = () => {
 
   useEffect(() => {
     if (clientForModal && employees.length === 0) {
-      firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
+      supabaseService.getApprovedUsers().then(setEmployees).catch(() => {});
     }
   }, [clientForModal]);
 

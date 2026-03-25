@@ -23,16 +23,16 @@ export class User {
     return diffDays;
   }
 
-  // Note: Use firestoreService.getApprovedUsers() for real data
+  // Note: Use supabaseService.getApprovedUsers() for real data
   // This method returns null - use AuthContext for current user
   static async me() {
     console.warn('User.me() is deprecated. Use AuthContext for current user data.');
     return null;
   }
 
-  // Note: Use firestoreService.getApprovedUsers() for real data
+  // Note: Use supabaseService.getApprovedUsers() for real data
   static async list() {
-    console.warn('User.list() is deprecated. Use firestoreService.getApprovedUsers() for real data.');
+    console.warn('User.list() is deprecated. Use supabaseService.getApprovedUsers() for real data.');
     return [];
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { Bell, Check, X, MessageSquare, Calendar, CheckCircle, AlertCircle, Instagram, Bug, Lightbulb } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -22,7 +22,7 @@ const NotificationsCenter = () => {
     }
 
     // Set up real-time listener - automatically updates when notifications are created/updated
-    const unsubscribe = firestoreService.onNotificationsChange(
+    const unsubscribe = supabaseService.onNotificationsChange(
       currentUser.email,
       (notifs) => {
         setNotifications(notifs || []);
@@ -43,7 +43,7 @@ const NotificationsCenter = () => {
   const handleNotificationClick = async (notification) => {
     // Mark as read
     if (!notification.read) {
-      await firestoreService.markNotificationRead(notification.id);
+      await supabaseService.markNotificationRead(notification.id);
     }
 
     // Navigate to link if provided
@@ -55,7 +55,7 @@ const NotificationsCenter = () => {
 
   const handleMarkAllRead = async () => {
     try {
-      await firestoreService.markAllNotificationsRead(currentUser.email);
+      await supabaseService.markAllNotificationsRead(currentUser.email);
       if (unreadCount > 0) setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch (e) {
       console.error('Mark all read failed:', e);
@@ -64,7 +64,7 @@ const NotificationsCenter = () => {
 
   const handleDeleteNotification = async (notificationId, e) => {
     e.stopPropagation();
-    await firestoreService.deleteNotification(notificationId);
+    await supabaseService.deleteNotification(notificationId);
   };
 
   const getNotificationIcon = (type) => {

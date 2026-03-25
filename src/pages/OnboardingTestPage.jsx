@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { RefreshCw, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
 
@@ -53,18 +53,18 @@ const OnboardingTestPage = () => {
       console.log('🔄 Resetting onboarding for:', userEmail);
 
       // Try to get the employee document first
-      const employee = await firestoreService.getEmployeeByEmail(userEmail);
+      const employee = await supabaseService.getEmployeeByEmail(userEmail);
       
       if (employee) {
         // Update existing employee document
-        await firestoreService.updateEmployee(userEmail, {
+        await supabaseService.updateEmployee(userEmail, {
           onboardingCompleted: false,
           onboardingCompletedDate: null
         });
       } else {
         // Create new employee document if it doesn't exist
         console.log('📝 Employee document not found, creating new one...');
-        await firestoreService.addEmployee({
+        await supabaseService.addEmployee({
           email: userEmail,
           firstName: currentUser?.firstName || currentUser?.displayName?.split(' ')[0] || 'User',
           lastName: currentUser?.lastName || currentUser?.displayName?.split(' ').slice(1).join(' ') || '',

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import {
   DndContext,
   closestCenter,
@@ -104,7 +104,7 @@ function FormBlock({ data, blockId, canvasId, currentUserEmail, currentUserName,
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!canvasId || !blockId) return;
-    firestoreService.addCanvasFormResponse(canvasId, blockId, currentUserEmail || null, currentUserName || null, formValues).then(() => {
+    supabaseService.addCanvasFormResponse(canvasId, blockId, currentUserEmail || null, currentUserName || null, formValues).then(() => {
       setFormSubmitted(true);
     }).catch(() => {});
   };
@@ -263,7 +263,7 @@ function ReportBlock({ block, onContentChange }) {
   useEffect(() => {
     if (!data.publicLinkId && reports.length === 0) {
       setLoadingReports(true);
-      firestoreService.getInstagramReports().then((list) => {
+      supabaseService.getInstagramReports().then((list) => {
         setReports(list.filter((r) => r.publicLinkId));
         setLoadingReports(false);
       }).catch(() => setLoadingReports(false));
@@ -1496,7 +1496,7 @@ function CanvasBlockEditorInner({
 
   useEffect(() => {
     if (!openCommentBlockId || !canvasId) return;
-    firestoreService.getBlockComments(canvasId, openCommentBlockId).then((data) => {
+    supabaseService.getBlockComments(canvasId, openCommentBlockId).then((data) => {
       setBlockDataMap((prev) => ({ ...prev, [openCommentBlockId]: data }));
     });
   }, [openCommentBlockId, canvasId]);
@@ -1508,8 +1508,8 @@ function CanvasBlockEditorInner({
 
   const handleToggleReaction = useCallback((blockId, emoji) => {
     if (!canvasId || !blockId || !currentUserEmail) return;
-    firestoreService.toggleBlockReaction(canvasId, blockId, emoji, currentUserEmail).then(() => {
-      firestoreService.getBlockComments(canvasId, blockId).then((data) => {
+    supabaseService.toggleBlockReaction(canvasId, blockId, emoji, currentUserEmail).then(() => {
+      supabaseService.getBlockComments(canvasId, blockId).then((data) => {
         setBlockDataMap((prev) => ({ ...prev, [blockId]: data }));
       });
     });
@@ -1521,7 +1521,7 @@ function CanvasBlockEditorInner({
     if (!openCommentBlockId || !canvasId || !commentInput.trim() || !currentUserEmail) return;
     setCommentSubmitting(true);
     try {
-      const newComment = await firestoreService.addBlockComment(canvasId, openCommentBlockId, {
+      const newComment = await supabaseService.addBlockComment(canvasId, openCommentBlockId, {
         user: currentUserEmail,
         userName: currentUserName || currentUserEmail,
         text: commentInput.trim(),

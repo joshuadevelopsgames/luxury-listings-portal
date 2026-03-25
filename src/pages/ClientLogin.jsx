@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Mail, Lock, Shield, Calendar, MessageSquare, BarChart3, FileText } from 'lucide-react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { auth } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { createTestClient } from '../utils/createTestClient';
@@ -31,7 +31,7 @@ const ClientLogin = () => {
           await createUserWithEmailAndPassword(auth, email, password);
           
           // After account creation, check if client exists
-          const clients = await firestoreService.getClients();
+          const clients = await supabaseService.getClients();
           const client = clients.find(c => 
             c.clientEmail?.toLowerCase() === email.toLowerCase()
           );
@@ -49,7 +49,7 @@ const ClientLogin = () => {
             // Account created but client doesn't exist yet
             // Add to pending clients for admin approval
             try {
-              await firestoreService.addPendingClient({
+              await supabaseService.addPendingClient({
                 email: email,
                 clientName: email.split('@')[0], // Use email prefix as default name
                 status: 'pending'
@@ -82,7 +82,7 @@ const ClientLogin = () => {
           await signInWithEmailAndPassword(auth, email, password);
           
           // After sign in, check if client exists
-          const clients = await firestoreService.getClients();
+          const clients = await supabaseService.getClients();
           const client = clients.find(c => 
             c.clientEmail?.toLowerCase() === email.toLowerCase()
           );

@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { FileText, Download, Calendar, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 
 const ClientReports = ({ clientId, clientEmail }) => {
   const [reports, setReports] = useState([]);
@@ -21,7 +21,7 @@ const ClientReports = ({ clientId, clientEmail }) => {
       setLoading(true);
       // Load monthly reports for this client
       // TODO: Implement getReportsByClientId in firestoreService
-      const clientReports = await firestoreService.getReportsByClient(clientId);
+      const clientReports = await supabaseService.getReportsByClient(clientId);
       
       if (clientReports && clientReports.length > 0) {
         setReports(clientReports);

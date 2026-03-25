@@ -1,7 +1,7 @@
 // User Meta Connections Service
 // Manages individual user connections to Instagram and Facebook
 
-import { firestoreService } from './firestoreService';
+import { supabaseService } from './supabaseService';
 
 class UserMetaConnections {
   constructor() {
@@ -23,7 +23,7 @@ class UserMetaConnections {
         isActive: true
       };
 
-      await firestoreService.saveDocument(this.collection, userEmail, connection);
+      await supabaseService.saveDocument(this.collection, userEmail, connection);
       console.log('✅ User Meta connection saved:', userEmail);
       return { success: true };
     } catch (error) {
@@ -35,7 +35,7 @@ class UserMetaConnections {
   // Get user's Meta connection data
   async getUserConnection(userEmail) {
     try {
-      const connection = await firestoreService.getDocument(this.collection, userEmail);
+      const connection = await supabaseService.getDocument(this.collection, userEmail);
       if (connection && connection.isActive) {
         // Update last used timestamp
         await this.updateLastUsed(userEmail);
@@ -51,7 +51,7 @@ class UserMetaConnections {
   // Update last used timestamp
   async updateLastUsed(userEmail) {
     try {
-      await firestoreService.updateDocument(this.collection, userEmail, {
+      await supabaseService.updateDocument(this.collection, userEmail, {
         lastUsed: new Date().toISOString()
       });
     } catch (error) {
@@ -73,7 +73,7 @@ class UserMetaConnections {
   // Disconnect user's Meta account
   async disconnectUser(userEmail) {
     try {
-      await firestoreService.updateDocument(this.collection, userEmail, {
+      await supabaseService.updateDocument(this.collection, userEmail, {
         isActive: false,
         disconnectedAt: new Date().toISOString()
       });
@@ -123,7 +123,7 @@ class UserMetaConnections {
   // Get all active connections (for admin purposes)
   async getAllActiveConnections() {
     try {
-      const connections = await firestoreService.getCollection(this.collection);
+      const connections = await supabaseService.getCollection(this.collection);
       return connections.filter(conn => conn.isActive);
     } catch (error) {
       console.error('❌ Failed to get all active connections:', error);
@@ -134,7 +134,7 @@ class UserMetaConnections {
   // Refresh user's access token (if needed)
   async refreshUserToken(userEmail, newTokenData) {
     try {
-      await firestoreService.updateDocument(this.collection, userEmail, {
+      await supabaseService.updateDocument(this.collection, userEmail, {
         accessToken: newTokenData.accessToken,
         tokenExpiresAt: newTokenData.expiresIn ? 
           new Date(Date.now() + newTokenData.expiresIn * 1000).toISOString() : null,

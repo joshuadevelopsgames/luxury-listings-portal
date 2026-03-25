@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { 
   Calendar, 
   User, 
@@ -26,7 +26,7 @@ const HRQuickActions = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const allRequests = await firestoreService.getAllLeaveRequests();
+        const allRequests = await supabaseService.getAllLeaveRequests();
         const pending = allRequests.filter(r => r.status === 'pending').slice(0, 5).map(r => ({
           id: r.id,
           employeeName: r.employeeName || r.employeeEmail,

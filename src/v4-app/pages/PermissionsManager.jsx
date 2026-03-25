@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, User, Check, X, Search, Save } from 'lucide-react';
-import { firestoreService } from '../services/firestoreServiceShim';
+import { supabaseService } from '../../services/supabaseService';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -42,12 +42,12 @@ const PermissionsManagement = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const approvedUsers = await firestoreService.getApprovedUsers();
+      const approvedUsers = await supabaseService.getApprovedUsers();
       setUsers(approvedUsers);
       
       const permissionsMap = {};
       for (const user of approvedUsers) {
-        const result = await firestoreService.getUserPermissions(user.email);
+        const result = await supabaseService.getUserPermissions(user.email);
         permissionsMap[user.email] = result?.pages || [];
       }
       setUserPermissions(permissionsMap);
@@ -83,7 +83,7 @@ const PermissionsManagement = () => {
         return;
       }
 
-      await firestoreService.setUserPagePermissions(userEmail, permissions);
+      await supabaseService.setUserPagePermissions(userEmail, permissions);
       toast.success(`Permissions saved for ${userEmail}`);
     } catch (error) {
       console.error('Error saving permissions:', error);

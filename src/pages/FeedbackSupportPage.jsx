@@ -13,7 +13,7 @@ import {
   MessageSquare,
   ArrowRight,
 } from 'lucide-react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { toast } from 'react-hot-toast';
 
 export default function FeedbackSupportPage() {
@@ -29,7 +29,7 @@ export default function FeedbackSupportPage() {
   useEffect(() => {
     if (!currentUser?.email || feedbackCard !== 'chat') return;
     let cancelled = false;
-    firestoreService.getFeedbackChats(currentUser.email).then((chats) => {
+    supabaseService.getFeedbackChats(currentUser.email).then((chats) => {
       if (!cancelled) setPageUserChats(chats || []);
     });
     return () => { cancelled = true; };
@@ -42,7 +42,7 @@ export default function FeedbackSupportPage() {
     }
     setPageSubmitting(true);
     try {
-      await firestoreService.createFeedback({
+      await supabaseService.createFeedback({
         type: 'bug',
         title: pageBugForm.title,
         description: pageBugForm.description,
@@ -70,7 +70,7 @@ export default function FeedbackSupportPage() {
     }
     setPageSubmitting(true);
     try {
-      await firestoreService.createFeedback({
+      await supabaseService.createFeedback({
         type: 'feature',
         title: pageFeatureForm.title,
         description: pageFeatureForm.description,
@@ -98,14 +98,14 @@ export default function FeedbackSupportPage() {
     }
     setPageSubmitting(true);
     try {
-      const chatId = await firestoreService.createFeedbackChat({
+      const chatId = await supabaseService.createFeedbackChat({
         userEmail: currentUser?.email,
         userName: currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
         initialMessage: pageChatMessage
       });
       toast.success('Chat started! The developer will be notified.');
       setPageChatMessage('');
-      const chat = await firestoreService.getFeedbackChatById(chatId);
+      const chat = await supabaseService.getFeedbackChatById(chatId);
       setPageSelectedChat(chat);
       setPageUserChats((prev) => [chat, ...prev]);
     } catch (e) {
@@ -120,13 +120,13 @@ export default function FeedbackSupportPage() {
     if (!pageChatMessage.trim() || !pageSelectedChat) return;
     setPageSubmitting(true);
     try {
-      await firestoreService.addFeedbackChatMessage(pageSelectedChat.id, {
+      await supabaseService.addFeedbackChatMessage(pageSelectedChat.id, {
         message: pageChatMessage,
         senderEmail: currentUser?.email,
         senderName: currentUser?.displayName || currentUser?.firstName || 'User'
       });
       setPageChatMessage('');
-      const updated = await firestoreService.getFeedbackChatById(pageSelectedChat.id);
+      const updated = await supabaseService.getFeedbackChatById(pageSelectedChat.id);
       setPageSelectedChat(updated);
       setPageUserChats((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
     } catch (e) {
@@ -304,10 +304,10 @@ export default function FeedbackSupportPage() {
                               key={c.id}
                               type="button"
                               onClick={async () => {
-                                const chat = await firestoreService.getFeedbackChatById(c.id);
+                                const chat = await supabaseService.getFeedbackChatById(c.id);
                                 setPageSelectedChat(chat);
                                 if (chat.status === 'open') {
-                                  firestoreService.updateFeedbackChatUserLastRead(c.id).catch(() => {});
+                                  supabaseService.updateFeedbackChatUserLastRead(c.id).catch(() => {});
                                 }
                               }}
                               className="w-full text-left px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15"

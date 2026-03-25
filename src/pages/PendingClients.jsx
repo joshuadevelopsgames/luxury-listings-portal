@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, CheckCircle, XCircle, Calendar } from 'lucide-react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { addContactToCRM, CLIENT_TYPE } from '../services/crmService';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
@@ -16,7 +16,7 @@ const PendingClients = () => {
     loadPendingClients();
     
     // Set up real-time listener
-    const unsubscribe = firestoreService.onPendingClientsChange((clients) => {
+    const unsubscribe = supabaseService.onPendingClientsChange((clients) => {
       setPendingClients(clients);
     });
 
@@ -26,7 +26,7 @@ const PendingClients = () => {
   const loadPendingClients = async () => {
     try {
       setLoading(true);
-      const clients = await firestoreService.getPendingClients();
+      const clients = await supabaseService.getPendingClients();
       setPendingClients(clients);
     } catch (error) {
       console.error('Error loading pending clients:', error);
@@ -68,8 +68,8 @@ const PendingClients = () => {
         overduePosts: 0
       };
 
-      await firestoreService.addClient(clientData);
-      await firestoreService.removePendingClient(pendingClient.id);
+      await supabaseService.addClient(clientData);
+      await supabaseService.removePendingClient(pendingClient.id);
       await addContactToCRM({
         clientName: clientData.clientName,
         clientEmail: clientData.clientEmail,
@@ -99,7 +99,7 @@ const PendingClients = () => {
 
     try {
       setProcessing({ ...processing, [pendingClient.id]: true });
-      await firestoreService.removePendingClient(pendingClient.id);
+      await supabaseService.removePendingClient(pendingClient.id);
       toast.success(`${pendingClient.email} removed from pending list`);
     } catch (error) {
       console.error('Error rejecting client:', error);

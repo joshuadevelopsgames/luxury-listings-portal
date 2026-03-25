@@ -18,7 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { format, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 
 const ClientCalendarApproval = ({ clientId, clientEmail }) => {
   const [contentItems, setContentItems] = useState([]);

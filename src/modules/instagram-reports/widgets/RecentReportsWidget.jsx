@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Instagram, ExternalLink, Plus, Copy, Check } from 'lucide-react';
-import { firestoreService } from '../../../services/firestoreService';
+import { supabaseService } from '../../../services/supabaseService';
 
 const RecentReportsWidget = () => {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ const RecentReportsWidget = () => {
   useEffect(() => {
     const loadReports = async () => {
       try {
-        const allReports = await firestoreService.getInstagramReports();
+        const allReports = await supabaseService.getInstagramReports();
         setReports(allReports.slice(0, 4)); // Show latest 4
       } catch (error) {
         console.error('Error loading reports:', error);

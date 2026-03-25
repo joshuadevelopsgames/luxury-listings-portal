@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouteError } from 'react-router-dom';
 import { AlertTriangle, RefreshCw, Home, ChevronDown, Bug, Send, CheckCircle, Mail } from 'lucide-react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { getCapturedLogs, getLogsAsString, getSystemInfo } from '../utils/consoleCapture';
 import { openEmailInGmail } from '../utils/gmailCompose';
 
@@ -127,7 +127,7 @@ class ErrorBoundary extends React.Component {
       };
 
       // Submit to Firestore (for backup/viewing in console)
-      const firestoreResult = await firestoreService.submitErrorReport(report);
+      const firestoreResult = await supabaseService.submitErrorReport(report);
       console.log('Firestore result:', firestoreResult);
 
       // Send email via FormSubmit (free email service)
@@ -428,7 +428,7 @@ export function RouteErrorPage() {
       };
 
       // Submit to Firestore (for backup/viewing in console)
-      const firestoreResult = await firestoreService.submitErrorReport(report);
+      const firestoreResult = await supabaseService.submitErrorReport(report);
       console.log('Firestore result:', firestoreResult);
 
       // Send email via FormSubmit (free email service)

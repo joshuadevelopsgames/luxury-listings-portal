@@ -26,7 +26,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { PERMISSIONS } from '../entities/Permissions';
 import { toast } from 'react-hot-toast';
 import { API_KEYS, GOOGLE_SHEETS_CONFIG } from '../config/apiKeys';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import PlatformIcons from '../components/PlatformIcons';
 import ClientLink from '../components/ui/ClientLink';
 import ClientDetailModal from '../components/client/ClientDetailModal';
@@ -140,12 +140,12 @@ export default function PostingPackages() {
 
   useEffect(() => {
     if (clientForModal && employees.length === 0) {
-      firestoreService.getApprovedUsers().then(setEmployees).catch(() => {});
+      supabaseService.getApprovedUsers().then(setEmployees).catch(() => {});
     }
   }, [clientForModal]);
 
   useEffect(() => {
-    firestoreService.getClients().then(setCrmClients).catch(() => setCrmClients([]));
+    supabaseService.getClients().then(setCrmClients).catch(() => setCrmClients([]));
   }, []);
 
   useEffect(() => {

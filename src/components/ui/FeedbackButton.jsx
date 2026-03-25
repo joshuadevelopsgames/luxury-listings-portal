@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { 
   MessageCircle, 
   Bug, 
@@ -265,7 +265,7 @@ export default function FeedbackButton() {
     if (!currentUser?.email) return;
     setLoadingChats(true);
     try {
-      const chats = await firestoreService.getFeedbackChats(currentUser.email);
+      const chats = await supabaseService.getFeedbackChats(currentUser.email);
       setMyChats(chats || []);
     } catch (error) {
       console.error('Error loading chats:', error);
@@ -277,13 +277,13 @@ export default function FeedbackButton() {
   // Load chat detail with messages
   const loadChatDetail = async (chatId, markRead = false) => {
     try {
-      const chat = await firestoreService.getFeedbackChatById(chatId);
+      const chat = await supabaseService.getFeedbackChatById(chatId);
       setSelectedChat(chat);
       setActiveChat(chat);
       if (markRead) {
         try {
-          await firestoreService.updateFeedbackChatUserLastRead(chatId);
-          const updated = await firestoreService.getFeedbackChatById(chatId);
+          await supabaseService.updateFeedbackChatUserLastRead(chatId);
+          const updated = await supabaseService.getFeedbackChatById(chatId);
           setSelectedChat(updated);
           setActiveChat(updated);
           setMyChats(prev => prev.map(c => c.id === chatId ? updated : c));
@@ -302,7 +302,7 @@ export default function FeedbackButton() {
     setLoadingChats(true);
     try {
       // Check for existing open chat
-      const chats = await firestoreService.getFeedbackChats(currentUser.email);
+      const chats = await supabaseService.getFeedbackChats(currentUser.email);
       const openChat = chats?.find(c => c.status === 'open');
       
       if (openChat) {
@@ -328,7 +328,7 @@ export default function FeedbackButton() {
       chatUnsubscribeRef.current();
       chatUnsubscribeRef.current = null;
     }
-    chatUnsubscribeRef.current = firestoreService.subscribeToFeedbackChat(chatId, (chat) => {
+    chatUnsubscribeRef.current = supabaseService.subscribeToFeedbackChat(chatId, (chat) => {
       if (!chat) return;
       setSelectedChat(chat);
       setActiveChat(chat);
@@ -368,7 +368,7 @@ export default function FeedbackButton() {
       // Load the saved chat in background
       (async () => {
         try {
-          const chat = await firestoreService.getFeedbackChatById(savedChatId);
+          const chat = await supabaseService.getFeedbackChatById(savedChatId);
           if (chat && chat.status === 'open') {
             setActiveChat(chat);
             setSelectedChat(chat);
@@ -391,7 +391,7 @@ export default function FeedbackButton() {
   // Load myChats in background so unread badge can show (e.g. when minimized)
   useEffect(() => {
     if (!currentUser?.email) return;
-    firestoreService.getFeedbackChats(currentUser.email).then(setMyChats).catch(() => {});
+    supabaseService.getFeedbackChats(currentUser.email).then(setMyChats).catch(() => {});
   }, [currentUser?.email]);
 
   // Handle opening the panel
@@ -403,8 +403,8 @@ export default function FeedbackButton() {
       setSelectedChat(activeChat);
       setView('chat-detail');
       startChatSubscription(activeChat.id);
-      firestoreService.updateFeedbackChatUserLastRead(activeChat.id).then(() => {
-        firestoreService.getFeedbackChatById(activeChat.id).then((updated) => {
+      supabaseService.updateFeedbackChatUserLastRead(activeChat.id).then(() => {
+        supabaseService.getFeedbackChatById(activeChat.id).then((updated) => {
           setSelectedChat(updated);
           setActiveChat(updated);
           setMyChats(prev => prev.map(c => c.id === activeChat.id ? updated : c));
@@ -473,7 +473,7 @@ export default function FeedbackButton() {
       // Get console logs (limit to recent 300)
       const consoleLogs = consoleLogRef.current.slice(-300);
 
-      await firestoreService.createFeedback({
+      await supabaseService.createFeedback({
         type: 'bug',
         title: bugForm.title,
         description: bugForm.description,
@@ -518,7 +518,7 @@ export default function FeedbackButton() {
 
     setIsSubmitting(true);
     try {
-      await firestoreService.createFeedback({
+      await supabaseService.createFeedback({
         type: 'feature',
         title: featureForm.title,
         description: featureForm.description,
@@ -555,7 +555,7 @@ export default function FeedbackButton() {
 
     setIsSubmitting(true);
     try {
-      const chatId = await firestoreService.createFeedbackChat({
+      const chatId = await supabaseService.createFeedbackChat({
         userEmail: currentUser?.email,
         userName: currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
         initialMessage: chatMessage
@@ -584,7 +584,7 @@ export default function FeedbackButton() {
 
     setIsSubmitting(true);
     try {
-      await firestoreService.addFeedbackChatMessage(selectedChat.id, {
+      await supabaseService.addFeedbackChatMessage(selectedChat.id, {
         message: chatMessage,
         senderEmail: currentUser?.email,
         senderName: currentUser?.displayName || currentUser?.firstName || 'User'

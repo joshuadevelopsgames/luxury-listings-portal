@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Filter, Save, Trash2, Star } from 'lucide-react';
-import { firestoreService } from '../../services/firestoreService';
+import { supabaseService } from '../../services/supabaseService';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
@@ -28,7 +28,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
 
   const loadFilters = async () => {
     try {
-      const userFilters = await firestoreService.getSmartFilters(currentUser.email);
+      const userFilters = await supabaseService.getSmartFilters(currentUser.email);
       setFilters(userFilters);
     } catch (error) {
       console.error('Error loading filters:', error);
@@ -43,10 +43,10 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
 
     try {
       if (editingFilter) {
-        await firestoreService.updateSmartFilter(editingFilter.id, formData);
+        await supabaseService.updateSmartFilter(editingFilter.id, formData);
         toast.success('Filter updated!');
       } else {
-        await firestoreService.createSmartFilter({
+        await supabaseService.createSmartFilter({
           ...formData,
           userEmail: currentUser.email
         });
@@ -68,7 +68,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
     if (!confirmed) return;
 
     try {
-      await firestoreService.deleteSmartFilter(filterId);
+      await supabaseService.deleteSmartFilter(filterId);
       toast.success('Filter deleted!');
       await loadFilters();
     } catch (error) {

@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { FEATURE_PERMISSIONS } from '../contexts/PermissionsContext';
 import PersonCard from './PersonCard';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import {
   Users,
   Edit,
@@ -74,7 +74,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
       }
       if (!base.leaveBalance && canViewLeaveBalance) {
         try {
-          const leaveBalance = await firestoreService.getUserLeaveBalances(base.email);
+          const leaveBalance = await supabaseService.getUserLeaveBalances(base.email);
           if (!cancelled) setEmployee({ ...base, leaveBalance });
         } catch (e) {
           if (!cancelled) setEmployee({ ...base, leaveBalance: { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } } });
@@ -134,7 +134,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
     setSaving(true);
     try {
       const displayName = `${editProfileForm.firstName} ${editProfileForm.lastName}`.trim();
-      await firestoreService.updateApprovedUser(employee.email, {
+      await supabaseService.updateApprovedUser(employee.email, {
         firstName: editProfileForm.firstName,
         lastName: editProfileForm.lastName,
         displayName: displayName || employee.name,
@@ -145,7 +145,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
         manager: editProfileForm.manager,
         startDate: editProfileForm.startDate
       });
-      await firestoreService.updateUserLeaveBalances(employee.email, editLeaveForm);
+      await supabaseService.updateUserLeaveBalances(employee.email, editLeaveForm);
       const nextLeave = {
         vacation: { ...editLeaveForm.vacation, remaining: editLeaveForm.vacation.total - editLeaveForm.vacation.used },
         sick: { ...editLeaveForm.sick, remaining: editLeaveForm.sick.total - editLeaveForm.sick.used }
@@ -352,10 +352,10 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                      toast.error("Invalid employee email. Cannot save changes.");
                      throw new Error("Invalid employee email");
                    }
-                   await firestoreService.updateApprovedUser(employee.email, { ...updatedData, displayName: `${updatedData.firstName || ''} ${updatedData.lastName || ''}`.trim(), location: updatedData.address ?? updatedData.location });
-                  const emp = await firestoreService.getEmployeeByEmail(employee.email);
-                  if (emp) await firestoreService.updateEmployee(emp.id, updatedData);
-                  else await firestoreService.addEmployee({ firstName: updatedData.firstName, lastName: updatedData.lastName, email: employee.email, ...updatedData });
+                   await supabaseService.updateApprovedUser(employee.email, { ...updatedData, displayName: `${updatedData.firstName || ''} ${updatedData.lastName || ''}`.trim(), location: updatedData.address ?? updatedData.location });
+                  const emp = await supabaseService.getEmployeeByEmail(employee.email);
+                  if (emp) await supabaseService.updateEmployee(emp.id, updatedData);
+                  else await supabaseService.addEmployee({ firstName: updatedData.firstName, lastName: updatedData.lastName, email: employee.email, ...updatedData });
                   onEmployeeUpdate?.({ ...employee, ...updatedData });
                 } catch (e) {
                   console.error(e);

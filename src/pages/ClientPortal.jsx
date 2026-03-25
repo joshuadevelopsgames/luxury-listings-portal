@@ -19,7 +19,7 @@ import {
   Globe,
   LogOut
 } from 'lucide-react';
-import { firestoreService } from '../services/firestoreService';
+import { supabaseService } from '../services/supabaseService';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import ClientCalendarApproval from '../components/client/ClientCalendarApproval';
@@ -44,7 +44,7 @@ const ClientPortal = () => {
         if (!isMounted) return;
         setLoading(true);
         // Find client by email
-        const clients = await firestoreService.getClients();
+        const clients = await supabaseService.getClients();
         const client = clients.find(c => 
           c.clientEmail?.toLowerCase() === email.toLowerCase()
         );
