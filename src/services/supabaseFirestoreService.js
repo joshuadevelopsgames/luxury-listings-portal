@@ -2227,16 +2227,18 @@ class SupabaseService {
 
   async getCanvases(userId) {
     try {
-      const { data } = await supabase.from('canvases').select('*').eq('user_id_legacy', userId).order('updated_at', { ascending: false });
-      return (data || []).map(r => ({ id: r.id, title: r.title, content: r.content || [], userId: r.user_id_legacy, ownerId: r.owner_id, isShared: r.is_shared, sharedWith: r.shared_with || [], createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
+      // Match on owner_id (Supabase profile UUID) OR user_id_legacy (Firebase UID)
+      // to support both migrated canvases and newly created ones.
+      const { data } = await supabase.from('canvases').select('*').or(`owner_id.eq.${userId},user_id_legacy.eq.${userId}`).order('updated_at', { ascending: false });
+      return (data || []).map(r => ({ id: r.id, title: r.title, content: r.content || [], userId: r.user_id_legacy || r.owner_id, ownerId: r.owner_id, isShared: r.is_shared, sharedWith: r.shared_with || [], emoji: r.emoji || '📄', createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
     } catch { return []; }
   }
 
   async createCanvas(userId, canvas) {
     try {
-      const { data, error } = await supabase.from('canvases').insert([{ title: canvas.title || 'Untitled', content: canvas.content || [], user_id_legacy: userId, is_shared: canvas.isShared || false, shared_with: canvas.sharedWith || [], created_at: ts(), updated_at: ts() }]).select().single();
+      const { data, error } = await supabase.from('canvases').insert([{ title: canvas.title || 'Untitled', content: canvas.content || [], owner_id: userId, user_id_legacy: userId, is_shared: canvas.isShared || false, shared_with: canvas.sharedWith || [], emoji: canvas.emoji || '📄', created_at: ts(), updated_at: ts() }]).select().single();
       if (error) throw error;
-      return { id: data.id, title: data.title, content: data.content, userId, isShared: data.is_shared, sharedWith: data.shared_with, createdAt: normalizeTs(data.created_at) };
+      return { id: data.id, title: data.title, content: data.content, userId, ownerId: data.owner_id, isShared: data.is_shared, sharedWith: data.shared_with, emoji: data.emoji, createdAt: normalizeTs(data.created_at) };
     } catch (error) { throw error; }
   }
 
