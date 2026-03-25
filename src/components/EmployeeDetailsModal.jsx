@@ -62,6 +62,8 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
     sick: { total: 3, used: 0 }
   });
   const [saving, setSaving] = useState(false);
+  const [isEditingLeave, setIsEditingLeave] = useState(false);
+  const [savingLeave, setSavingLeave] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +176,27 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
       toast.error('Failed to save changes');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveLeaveOnly = async () => {
+    if (!employee?.email) return;
+    setSavingLeave(true);
+    try {
+      await supabaseService.updateUserLeaveBalances(employee.email, editLeaveForm);
+      const nextLeave = {
+        vacation: { ...editLeaveForm.vacation, remaining: editLeaveForm.vacation.total - editLeaveForm.vacation.used },
+        sick: { ...editLeaveForm.sick, remaining: editLeaveForm.sick.total - editLeaveForm.sick.used }
+      };
+      setEmployee((prev) => ({ ...prev, leaveBalance: nextLeave }));
+      onEmployeeUpdate?.({ ...employee, leaveBalance: nextLeave });
+      toast.success('Leave balance updated');
+      setIsEditingLeave(false);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update leave balance');
+    } finally {
+      setSavingLeave(false);
     }
   };
 
@@ -369,32 +392,136 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
             {canViewLeaveBalance && (
             <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
               <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5ac8fa] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
-                    <Calendar className="w-4 h-4 text-white" strokeWidth={1.5} />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5ac8fa] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                      <Calendar className="w-4 h-4 text-white" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Leave Balance</h3>
                   </div>
-                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Leave Balance</h3>
+                  {canEditLeave && (
+                    isEditingLeave ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingLeave(false)}
+                          disabled={savingLeave}
+                          className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={saveLeaveOnly}
+                          disabled={savingLeave}
+                          className="px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          {savingLeave ? (
+                            <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</>
+                          ) : 'Save'}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditLeaveForm({
+                            vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
+                            sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 }
+                          });
+                          setIsEditingLeave(true);
+                        }}
+                        className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        title="Edit leave balance"
+                      >
+                        <Edit className="w-4 h-4 text-[#86868b]" strokeWidth={1.5} />
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-5 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl">
-                    <p className="text-[32px] font-semibold text-[#0071e3]">{employee.leaveBalance?.vacation?.remaining ?? 0}</p>
-                    <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Vacation Days</p>
-                    <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.vacation?.used ?? 0} of {employee.leaveBalance?.vacation?.total ?? 15}</p>
-                    <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#0071e3] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.vacation?.remaining ?? 0) / (employee.leaveBalance?.vacation?.total || 1)) * 100}%` }} />
+                {isEditingLeave ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
+                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Vacation</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
+                          <input
+                            type="number" min="0"
+                            value={editLeaveForm.vacation.total}
+                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, total: parseInt(e.target.value, 10) || 0 } }))}
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <input
+                            type="number" min="0"
+                            value={editLeaveForm.vacation.used}
+                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, used: parseInt(e.target.value, 10) || 0 } }))}
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-[#86868b] mt-2">
+                        Remaining: <span className="font-semibold text-[#0071e3]">{editLeaveForm.vacation.total - editLeaveForm.vacation.used}</span> days
+                      </p>
+                    </div>
+                    <div className="bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 rounded-full bg-[#ff3b30]" />
+                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Sick</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
+                          <input
+                            type="number" min="0"
+                            value={editLeaveForm.sick.total}
+                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, total: parseInt(e.target.value, 10) || 0 } }))}
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <input
+                            type="number" min="0"
+                            value={editLeaveForm.sick.used}
+                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, used: parseInt(e.target.value, 10) || 0 } }))}
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-[#86868b] mt-2">
+                        Remaining: <span className="font-semibold text-[#ff3b30]">{editLeaveForm.sick.total - editLeaveForm.sick.used}</span> days
+                      </p>
                     </div>
                   </div>
-                  <div className="text-center p-5 bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 rounded-xl">
-                    <p className="text-[32px] font-semibold text-[#ff3b30]">{employee.leaveBalance?.sick?.remaining ?? 0}</p>
-                    <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Sick Days</p>
-                    <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.sick?.used ?? 0} of {employee.leaveBalance?.sick?.total ?? 3}</p>
-                    <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#ff3b30] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.sick?.remaining ?? 0) / (employee.leaveBalance?.sick?.total || 1)) * 100}%` }} />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="text-center p-5 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-[#0071e3]">{employee.leaveBalance?.vacation?.remaining ?? 0}</p>
+                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Vacation Days</p>
+                      <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.vacation?.used ?? 0} of {employee.leaveBalance?.vacation?.total ?? 15}</p>
+                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#0071e3] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.vacation?.remaining ?? 0) / (employee.leaveBalance?.vacation?.total || 1)) * 100}%` }} />
+                      </div>
+                    </div>
+                    <div className="text-center p-5 bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-[#ff3b30]">{employee.leaveBalance?.sick?.remaining ?? 0}</p>
+                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Sick Days</p>
+                      <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.sick?.used ?? 0} of {employee.leaveBalance?.sick?.total ?? 3}</p>
+                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#ff3b30] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.sick?.remaining ?? 0) / (employee.leaveBalance?.sick?.total || 1)) * 100}%` }} />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
             )}
