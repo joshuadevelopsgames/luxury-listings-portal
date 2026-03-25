@@ -4,6 +4,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { supabaseService } from '../services/supabaseService';
+import { supabase } from '../lib/supabase';
 import { openaiService } from '../services/openaiService';
 import CanvasBlockEditor, { blockId } from './canvas/CanvasBlockEditor';
 import {
@@ -376,25 +377,75 @@ export default function CanvasPage() {
     [canvases, sharedCanvases, userId]
   );
 
-  // Wait for authHydrated so the Supabase JWT is active before querying.
-  // Without this, the query runs with an unauthenticated client and RLS blocks it.
+  // Wait for authHydrated AND a real Supabase JWT session before querying.
+  // Without this, the query runs with an unauthenticated client and RLS blocks it,
+  // silently returning 0 rows instead of the user's actual canvases.
   useEffect(() => {
     console.log('[CanvasPage] fetch effect — userId:', userId, 'authHydrated:', authHydrated);
+
+    // If auth has resolved but there's no user, stop loading (they're signed out)
+    if (authHydrated && !userId) {
+      setLoading(false);
+      return;
+    }
+
+    // Still waiting for auth — keep showing spinner
     if (!userId || !authHydrated) return;
-    setLoading(true);
-    supabaseService
-      .getCanvases(userId)
-      .then((list) => {
-        console.log('[CanvasPage] loaded', list.length, 'canvases for', userId);
-        setCanvases(list);
-        setActiveId(null);
-      })
-      .catch((err) => {
-        console.error('Canvas load error:', err);
-        toast.error('Failed to load workspaces');
-      })
-      .finally(() => setLoading(false));
+
+    let cancelled = false;
+
+    async function loadCanvases() {
+      setLoading(true);
+
+      // Wait for a real Supabase session (JWT) — authHydrated may fire before
+      // the supabase-js client has actually restored the session from storage.
+      let session = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { data } = await supabase.auth.getSession();
+        session = data?.session;
+        if (session || cancelled) break;
+        console.log(`[CanvasPage] No session yet, retry ${attempt + 1}/5…`);
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+
+      if (cancelled) return;
+
+      if (!session) {
+        console.warn('[CanvasPage] No Supabase session after retries — cannot load canvases');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const list = await supabaseService.getCanvases(userId);
+        if (!cancelled) {
+          console.log('[CanvasPage] loaded', list.length, 'canvases for', userId);
+          setCanvases(list);
+          setActiveId(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Canvas load error:', err);
+          toast.error('Failed to load workspaces');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadCanvases();
+    return () => { cancelled = true; };
   }, [userId, authHydrated]);
+
+  // Safety: never show the loading spinner for more than 12 seconds
+  useEffect(() => {
+    if (!loading) return;
+    const timeout = setTimeout(() => {
+      console.warn('[CanvasPage] Loading timeout — forcing spinner off after 12s');
+      setLoading(false);
+    }, 12000);
+    return () => clearTimeout(timeout);
+  }, [loading]);
 
   useEffect(() => {
     if (sidebarTab !== 'shared' || !userEmail) return;
