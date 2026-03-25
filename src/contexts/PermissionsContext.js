@@ -132,6 +132,7 @@ export function PermissionsProvider({ children }) {
   /** Can the user see this sidebar page? */
   const hasPageAccess = (pageId) => {
     if (isDemoViewOnly) return true;
+    if (isSystemAdmin) return true; // System admins can access all pages
     if (pageId === 'dashboard') return true;
     return pages.includes(pageId);
   };
