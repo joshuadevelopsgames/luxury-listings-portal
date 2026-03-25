@@ -325,10 +325,10 @@ export function AuthProvider({ children }) {
     if (isSystemAdmin(email)) {
       firestoreService.bootstrapSystemAdmins(email).catch(() => {});
 
-      let savedRole = null;
-      try {
-        savedRole = await firestoreService.getSystemConfig('currentRole');
-      } catch (_) {}
+      const [savedRole, approved] = await Promise.all([
+        firestoreService.getSystemConfig('currentRole').catch(() => null),
+        firestoreService.getApprovedUserByEmail(email).catch(() => null),
+      ]);
 
       const roleToUse =
         savedRole && Object.values(USER_ROLES).includes(savedRole) ? savedRole : USER_ROLES.ADMIN;
@@ -355,17 +355,14 @@ export function AuthProvider({ children }) {
       };
 
       // Sync profile from approved_users / profiles
-      try {
-        const approved = await firestoreService.getApprovedUserByEmail(email);
-        if (approved) {
-          if (approved.displayName) adminUser.displayName = approved.displayName;
-          if (approved.firstName != null) adminUser.firstName = approved.firstName;
-          if (approved.lastName != null) adminUser.lastName = approved.lastName;
-          if (approved.position != null) adminUser.position = approved.position;
-          if (approved.department) adminUser.department = approved.department;
-          if (approved.avatar) adminUser.avatar = approved.avatar;
-        }
-      } catch (_) {}
+      if (approved) {
+        if (approved.displayName) adminUser.displayName = approved.displayName;
+        if (approved.firstName != null) adminUser.firstName = approved.firstName;
+        if (approved.lastName != null) adminUser.lastName = approved.lastName;
+        if (approved.position != null) adminUser.position = approved.position;
+        if (approved.department) adminUser.department = approved.department;
+        if (approved.avatar) adminUser.avatar = approved.avatar;
+      }
 
       setCurrentRole(roleToUse);
       setCurrentUser(adminUser);
@@ -377,16 +374,16 @@ export function AuthProvider({ children }) {
     // Regular user: look up in profiles (approved_users)
     const emailNormalized = (email || '').trim().toLowerCase();
     try {
-      const approvedUser = await firestoreService.getApprovedUserByEmail(emailNormalized);
+      const [approvedUser, savedRoleRaw] = await Promise.all([
+        firestoreService.getApprovedUserByEmail(emailNormalized),
+        firestoreService.getSystemConfig('currentRole').catch(() => null),
+      ]);
       if (approvedUser) {
         const assignedRoles =
           approvedUser.roles || [approvedUser.primaryRole || approvedUser.role] || ['content_director'];
         const primaryRole = assignedRoles[0] || 'content_director';
 
-        let savedRole = null;
-        try {
-          savedRole = await firestoreService.getSystemConfig('currentRole');
-        } catch (_) {}
+        let savedRole = savedRoleRaw;
 
         const roleToUse =
           savedRole && assignedRoles.includes(savedRole) ? savedRole : primaryRole;

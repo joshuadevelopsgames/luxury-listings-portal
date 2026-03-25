@@ -31,17 +31,77 @@ const clean = (obj) => {
   return out;
 };
 
-/** Realtime: fetch + subscribe pattern. Returns unsubscribe fn. */
-function realtimeListener(table, filter, fetcher, callback) {
-  fetcher().then(callback).catch(() => callback([]));
-  const channelName = `${table}-${filter || 'all'}-${Date.now()}`;
+// ─── Simple TTL cache ────────────────────────────────────────────────────────
+// Eliminates redundant refetches on navigation — entries expire after 30s.
+// Write operations call cacheInvalidate() for the affected table.
+const _cache = new Map();
+const CACHE_TTL = 30_000;
+
+function cacheGet(key) {
+  const entry = _cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.exp) { _cache.delete(key); return null; }
+  return entry.data;
+}
+function cacheSet(key, data, ttl = CACHE_TTL) {
+  _cache.set(key, { data, exp: Date.now() + ttl });
+  return data;
+}
+function cacheInvalidate(prefix) {
+  for (const k of _cache.keys()) {
+    if (k.startsWith(prefix)) _cache.delete(k);
+  }
+}
+
+// ─── Shared per-table realtime channels ─────────────────────────────────────
+// Instead of one WebSocket per listener, all listeners for the same table
+// share a single channel. Reduces 22 WebSocket connections to ~10.
+const _tableChannels = new Map(); // table → { channel, listeners: Set<fn> }
+
+function getTableChannel(table) {
+  if (_tableChannels.has(table)) return _tableChannels.get(table);
+  const listeners = new Set();
   const channel = supabase
-    .channel(channelName)
-    .on('postgres_changes', { event: '*', schema: 'public', table }, async () => {
-      try { callback(await fetcher()); } catch { callback([]); }
+    .channel(`shared-${table}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table }, (payload) => {
+      cacheInvalidate(table); // bust cache on any change
+      listeners.forEach(fn => fn(payload));
     })
     .subscribe();
-  return () => { try { supabase.removeChannel(channel); } catch {} };
+  const entry = { channel, listeners };
+  _tableChannels.set(table, entry);
+  return entry;
+}
+
+/** Realtime: fetch + subscribe pattern. Returns unsubscribe fn.
+ *  All callers for the same table share one WebSocket channel. */
+function realtimeListener(table, _filter, fetcher, callback) {
+  // Serve from cache if fresh, otherwise fetch
+  const cacheKey = `${table}:${_filter || 'all'}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) {
+    callback(cached);
+  } else {
+    fetcher()
+      .then(data => { cacheSet(cacheKey, data); callback(data); })
+      .catch(() => callback([]));
+  }
+
+  // Register on shared table channel
+  const entry = getTableChannel(table);
+  const handler = async () => {
+    try {
+      const data = await fetcher();
+      cacheSet(cacheKey, data);
+      callback(data);
+    } catch { callback([]); }
+  };
+  entry.listeners.add(handler);
+
+  return () => {
+    entry.listeners.delete(handler);
+    // Don't remove the channel itself — other listeners may still use it
+  };
 }
 
 // ─── SupabaseService ──────────────────────────────────────────────────────────
@@ -177,10 +237,13 @@ class SupabaseService {
   }
 
   async getApprovedUsers() {
+    const key = 'profiles:all';
+    const cached = cacheGet(key);
+    if (cached) return cached;
     try {
       const { data, error } = await supabase.from('profiles').select('*');
       if (error) throw error;
-      return (data || []).map(p => this._profileToApprovedUser(p));
+      return cacheSet(key, (data || []).map(p => this._profileToApprovedUser(p)));
     } catch (error) {
       console.error('❌ Error getting approved users:', error);
       return [];
@@ -189,11 +252,15 @@ class SupabaseService {
 
   async getApprovedUserByEmail(email) {
     if (!email) return null;
+    const lower = email.trim().toLowerCase();
+    const key = `profiles:email:${lower}`;
+    const cached = cacheGet(key);
+    if (cached !== null) return cached;
     try {
-      const lower = email.trim().toLowerCase();
       const { data, error } = await supabase.from('profiles').select('*').ilike('email', lower).maybeSingle();
       if (error) throw error;
-      return data ? this._profileToApprovedUser(data) : null;
+      const result = data ? this._profileToApprovedUser(data) : null;
+      return cacheSet(key, result);
     } catch { return null; }
   }
 
@@ -233,6 +300,7 @@ class SupabaseService {
         const { error } = await supabase.from('profiles').upsert({ ...payload, created_at: ts() }, { onConflict: 'email' });
         if (error) throw error;
       }
+      cacheInvalidate('profiles:');
     } catch (error) {
       console.error('❌ Error adding approved user:', error);
       throw error;
@@ -278,6 +346,7 @@ class SupabaseService {
       });
       const { error } = await supabase.from('profiles').update(payload).ilike('email', emailKey);
       if (error) throw error;
+      cacheInvalidate('profiles:');
     } catch (error) {
       console.error('❌ Error updating approved user:', error);
       throw error;
@@ -555,6 +624,7 @@ class SupabaseService {
     try {
       const { error } = await supabase.from('system_config').upsert({ key, value, updated_at: ts() }, { onConflict: 'key' });
       if (error) throw error;
+      cacheInvalidate(`system_config:${key}`);
     } catch (error) { throw error; }
   }
 
@@ -570,9 +640,13 @@ class SupabaseService {
   }
 
   async getSystemConfig(key) {
+    const cacheKey = `system_config:${key}`;
+    const cached = cacheGet(cacheKey);
+    if (cached !== null) return cached;
     try {
       const { data } = await supabase.from('system_config').select('value').eq('key', key).maybeSingle();
-      return data?.value ?? null;
+      const val = data?.value ?? null;
+      return cacheSet(cacheKey, val, 60_000); // config changes rarely — 60s TTL
     } catch { return null; }
   }
 
@@ -883,10 +957,13 @@ class SupabaseService {
   }
 
   async getClients() {
+    const key = 'clients:all';
+    const cached = cacheGet(key);
+    if (cached) return cached;
     try {
       const { data, error } = await supabase.from('clients').select('*').order('client_name', { nullsLast: true });
       if (error) throw error;
-      return (data || []).map(r => this._mapClient(r));
+      return cacheSet(key, (data || []).map(r => this._mapClient(r)));
     } catch (error) { console.error('❌ Error getting clients:', error); return []; }
   }
 
@@ -952,6 +1029,7 @@ class SupabaseService {
       })]).select().single();
       if (error) throw error;
       await this.logClientAdded(data.id, data.client_name || data.name, clientData.assignedManager, clientData.addedBy || null);
+      cacheInvalidate('clients:all');
       return data.id;
     } catch (error) { console.error('❌ Error adding client:', error); throw error; }
   }
@@ -985,6 +1063,7 @@ class SupabaseService {
       });
       const { error } = await supabase.from('clients').update(payload).eq('id', clientId);
       if (error) throw error;
+      cacheInvalidate('clients:all');
     } catch (error) { console.error('❌ Error updating client:', error); throw error; }
   }
 
@@ -993,6 +1072,7 @@ class SupabaseService {
       await supabase.from('tasks').update({ client_id_legacy: keepId }).eq('client_id_legacy', mergeFromId);
       await supabase.from('instagram_reports').update({ client_id_legacy: keepId }).eq('client_id_legacy', mergeFromId);
       await supabase.from('clients').delete().eq('id', mergeFromId);
+      cacheInvalidate('clients:all');
     } catch (error) { console.error('❌ Error merging clients:', error); throw error; }
   }
 
