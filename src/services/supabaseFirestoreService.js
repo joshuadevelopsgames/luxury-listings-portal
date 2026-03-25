@@ -772,14 +772,25 @@ class SupabaseService {
   // ===== LEAVE REQUESTS =====
 
   _mapLeaveRequest(r) {
+    // Compute days from date range as fallback if days_requested is missing
+    let days = r.days_requested;
+    if (!days && r.start_date && r.end_date) {
+      const start = new Date(r.start_date);
+      const end = new Date(r.end_date);
+      days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+    }
     return {
       id: r.id,
       userEmail: r.user_email,
+      employeeEmail: r.user_email,
+      employeeName: r.employee_name || null, // resolved by fetcher or stored on submit
+      userName: r.employee_name || null,
       leaveType: r.leave_type || r.type,
       type: r.leave_type || r.type,
       startDate: r.start_date,
       endDate: r.end_date,
-      daysRequested: r.days_requested,
+      daysRequested: days,
+      days, // alias expected by HRCalendar.jsx
       status: r.status,
       reason: r.reason || r.notes,
       notes: r.reason || r.notes,
@@ -797,11 +808,32 @@ class SupabaseService {
     };
   }
 
+  /** Bulk-resolve employee names for a list of leave requests from profiles cache */
+  async _resolveLeaveRequestNames(requests) {
+    if (!requests.length) return requests;
+    // Collect unique emails that need name resolution
+    const needsName = [...new Set(requests.filter(r => !r.employeeName).map(r => r.userEmail).filter(Boolean))];
+    if (!needsName.length) return requests;
+    // Fetch display names from profiles in one query
+    const { data: profiles } = await supabase.from('profiles').select('email, display_name, first_name, last_name').in('email', needsName);
+    const nameMap = {};
+    (profiles || []).forEach(p => {
+      const name = p.display_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || null;
+      if (name) nameMap[p.email.toLowerCase()] = name;
+    });
+    return requests.map(r => {
+      if (r.employeeName) return r;
+      const resolved = nameMap[(r.userEmail || '').toLowerCase()] || r.userEmail?.split('@')[0] || 'Unknown';
+      return { ...r, employeeName: resolved, userName: resolved };
+    });
+  }
+
   async getLeaveRequestsByUser(userEmail) {
     try {
       const { data, error } = await supabase.from('time_off_requests').select('*').eq('user_email', userEmail).order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map(r => this._mapLeaveRequest(r));
+      const mapped = (data || []).map(r => this._mapLeaveRequest(r));
+      return this._resolveLeaveRequestNames(mapped);
     } catch (error) { console.error('❌ Error getting leave requests:', error); return []; }
   }
 
@@ -809,7 +841,8 @@ class SupabaseService {
     try {
       const { data, error } = await supabase.from('time_off_requests').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map(r => this._mapLeaveRequest(r));
+      const mapped = (data || []).map(r => this._mapLeaveRequest(r));
+      return this._resolveLeaveRequestNames(mapped);
     } catch { return []; }
   }
 
@@ -817,6 +850,7 @@ class SupabaseService {
     try {
       const { data, error } = await supabase.from('time_off_requests').insert([clean({
         user_email: requestData.userEmail,
+        employee_name: requestData.employeeName || null,
         leave_type: requestData.leaveType || requestData.type,
         type: requestData.leaveType || requestData.type,
         start_date: requestData.startDate,
@@ -858,7 +892,8 @@ class SupabaseService {
       let q = supabase.from('time_off_requests').select('*').eq('status', 'approved').lte('start_date', endDate).gte('end_date', startDate);
       if (excludeEmail) q = q.neq('user_email', excludeEmail);
       const { data } = await q;
-      return (data || []).map(r => this._mapLeaveRequest(r));
+      const mapped = (data || []).map(r => this._mapLeaveRequest(r));
+      return this._resolveLeaveRequestNames(mapped);
     } catch { return []; }
   }
 
