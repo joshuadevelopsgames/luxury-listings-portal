@@ -179,12 +179,12 @@ function LoginPage() {
 // PROTECTED APP - Requires authentication
 // ============================================================================
 function ProtectedApp() {
-  const { currentUser, loading, authHydrated } = useAuth();
+  const { currentUser, loading } = useAuth();
 
-  // While auth is loading OR the DB fetch hasn't completed yet, show spinner.
-  // This also covers the OAuth redirect case: the URL has #access_token=...
-  // and Supabase needs time to process the token before onAuthStateChange fires.
-  if (loading || !authHydrated) {
+  // Show spinner while auth is loading (no display cache) OR while an OAuth
+  // redirect is being processed (URL has #access_token=... hash fragment).
+  const hashHasAuthTokens = window.location.hash?.includes('access_token=');
+  if (loading || (!currentUser && hashHasAuthTokens)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
         <div className="text-center">

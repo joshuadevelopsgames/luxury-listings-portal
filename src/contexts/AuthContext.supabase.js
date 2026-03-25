@@ -656,16 +656,17 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, [currentUser?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Safety timeout
+  // Safety timeout — if auth takes too long, unblock the app
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (loading) {
-        console.warn('Auth timeout — showing app');
+      if (loading || !authHydrated) {
+        console.warn('Auth timeout — unblocking app');
+        setAuthHydrated(true);
         setLoading(false);
       }
     }, 10000);
     return () => clearTimeout(timeout);
-  }, [loading]);
+  }, [loading, authHydrated]);
 
   // ============================================================================
   // CONTEXT VALUE
