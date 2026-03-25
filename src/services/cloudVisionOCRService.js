@@ -1,34 +1,14 @@
 /**
  * Cloud Vision OCR Service
- * Uses Firebase Cloud Function + Google Cloud Vision API for fast OCR
- * Much faster than browser-based Tesseract.js (~5-10 seconds total vs 90+ seconds)
+ * Uses Supabase Edge Function (extract-instagram-metrics) for fast OCR
+ * Replaces Firebase Cloud Function + Google Cloud Vision API
  */
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import app from '../firebase';
+import { invokeEdgeFunction } from './edgeFunctionService';
 
 class CloudVisionOCRService {
-  constructor() {
-    this.functions = null;
-    this.processScreenshotsFunction = null;
-  }
-
   /**
-   * Initialize Firebase Functions
-   */
-  initialize() {
-    if (!this.functions) {
-      this.functions = getFunctions(app);
-      this.processScreenshotsFunction = httpsCallable(
-        this.functions, 
-        'processInstagramScreenshots',
-        { timeout: 120000 } // 2 minute timeout
-      );
-    }
-  }
-
-  /**
-   * Resize image to max dimension for faster upload + Vision API (smaller = faster)
+   * Resize image to max dimension for faster upload (smaller = faster)
    */
   async compressForUpload(file, maxWidth = 1024) {
     return new Promise((resolve, reject) => {
@@ -87,23 +67,21 @@ class CloudVisionOCRService {
   }
 
   /**
-   * Process screenshots using Cloud Vision API
+   * Process screenshots using Supabase Edge Function (GPT-4o-mini vision)
    * @param {Array} images - Array of { localFile, url } objects
    * @param {Function} onProgress - Progress callback
    * @returns {Promise<Object>} Extracted metrics
    */
   async processScreenshots(images, onProgress = null) {
-    this.initialize();
-
     const startTime = Date.now();
-    console.log(`🚀 Starting Cloud Vision OCR for ${images.length} images...`);
+    console.log(`🚀 Starting AI OCR for ${images.length} images...`);
 
     if (onProgress) {
       onProgress(0, images.length, 'Preparing images...');
     }
 
     try {
-      // Convert images to the format expected by the Cloud Function
+      // Convert images to the format expected by the Edge Function
       const imageData = await Promise.all(
         images.map(async (img, index) => {
           if (img.localFile || img instanceof File || img instanceof Blob) {
@@ -118,35 +96,32 @@ class CloudVisionOCRService {
       );
 
       if (onProgress) {
-        onProgress(0, images.length, 'Processing with Cloud Vision...');
+        onProgress(0, images.length, 'Processing with AI Vision...');
       }
 
-      // Call Cloud Function
-      const result = await this.processScreenshotsFunction({ images: imageData });
+      // Call Supabase Edge Function
+      const result = await invokeEdgeFunction('extract-instagram-metrics', { images: imageData });
 
       if (onProgress) {
         onProgress(images.length, images.length, 'Complete!');
       }
 
       const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-      console.log(`✅ Cloud Vision OCR complete in ${totalTime}s`);
-      console.log(`📊 Found metrics:`, Object.keys(result.data.metrics || {}).length, 'fields');
+      console.log(`✅ AI OCR complete in ${totalTime}s`);
+      console.log(`📊 Found metrics:`, Object.keys(result.metrics || {}).length, 'fields');
 
-      return result.data.metrics || {};
+      return result.metrics || {};
     } catch (error) {
-      console.error('Cloud Vision OCR error:', error);
-      
-      // If Cloud Function fails, fall back to providing empty metrics
-      // User can still enter manually
+      console.error('AI OCR error:', error);
       throw new Error(`OCR processing failed: ${error.message}. You can still enter metrics manually.`);
     }
   }
 
   /**
-   * No cleanup needed for Cloud Functions
+   * No cleanup needed for Edge Functions
    */
   async terminate() {
-    // No-op - Cloud Functions don't need client-side cleanup
+    // No-op
   }
 }
 

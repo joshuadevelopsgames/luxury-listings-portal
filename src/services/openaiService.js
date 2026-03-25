@@ -1,23 +1,16 @@
 /**
  * OpenAI Service for AI-powered features
  * Used for smart column mapping in Google Sheets imports
- * 
- * SECURITY: Instagram metrics extraction now uses secure Cloud Functions
- * to prevent API key exposure and add rate limiting.
+ *
+ * SECURITY: AI extraction, caption generation, health prediction, and
+ * canvas assist all run via Supabase Edge Functions to keep API keys
+ * server-side and enforce rate limits.
  */
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { invokeEdgeFunction } from './edgeFunctionService';
 
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-
-// Initialize Firebase Functions for secure API calls
-let functions = null;
-try {
-  functions = getFunctions();
-} catch (e) {
-  console.warn('Firebase Functions not initialized, will fall back to direct API calls');
-}
 
 class OpenAIService {
   /**
@@ -365,168 +358,18 @@ Return ONLY the JSON array, no other text.`;
 
     if (onProgress) onProgress(0, images.length, 'Analyzing with AI (secure)...');
 
-    // Try to use secure Cloud Function first
-    if (functions) {
-      try {
-        const extractMetrics = httpsCallable(functions, 'extractInstagramMetricsAI');
-        const result = await extractMetrics({ images: imageData });
-        
-        if (result.data.success) {
-          if (onProgress) onProgress(images.length, images.length, 'Complete!');
-          const provider = result.data.provider || 'openrouter';
-          console.log(`✅ AI extraction (${provider}):`, Object.keys(result.data.metrics).length, 'fields');
-          console.log(`📊 Rate limit remaining: ${result.data.rateLimitRemaining}`);
-          return result.data.metrics;
-        }
-      } catch (error) {
-        // Check if it's a rate limit error
-        if (error.code === 'functions/resource-exhausted') {
-          console.warn('⚠️ Rate limit exceeded:', error.message);
-          throw new Error(`Rate limit exceeded: ${error.message}`);
-        }
-        
-        // In production, never fall back to direct API (key would be exposed, CORS blocks anyway)
-        const isProduction = typeof window !== 'undefined' &&
-          /smmluxurylistings\.info$/i.test(window.location?.hostname || '');
-        if (isProduction) {
-          console.warn('⚠️ Cloud Function failed (production):', error.message);
-          throw error;
-        }
-        // Development only: fall back to direct API if configured
-        console.warn('⚠️ Cloud Function failed, checking for fallback:', error.message);
-        if (!OPENAI_API_KEY) {
-          throw error;
-        }
-        console.log('🔄 Falling back to direct API call (development mode)');
-      }
-    }
-
-    // Fallback to direct API call (development only; never in production)
-    const isProduction = typeof window !== 'undefined' &&
-      /smmluxurylistings\.info$/i.test(window.location?.hostname || '');
-    if (isProduction || !OPENAI_API_KEY) {
-      throw new Error('AI extraction is not available right now. Please try again or enter metrics manually. If this persists, contact support.');
-    }
-
-    console.warn('⚠️ Using direct OpenAI API call - this should only happen in development');
-
-    // Convert images to base64 data URLs for direct API
-    const imageContents = await Promise.all(
-      images.map(async (img) => {
-        const base64 = await this.imageToBase64(img);
-        return {
-          type: 'image_url',
-          image_url: { url: base64, detail: 'high' }
-        };
-      })
-    );
-
-    const prompt = `Extract ALL metrics from these Instagram Insights screenshots. Return ONLY valid JSON.
-
-IMPORTANT: Look carefully at the visual layout. Numbers belong to the label they're visually associated with (inside donut charts, next to labels, etc.).
-
-Extract these fields (use null if not visible):
-{
-  "dateRange": "Jan 1 - Jan 31" or similar,
-  
-  // VIEWS
-  "views": number (the big number in/near "Views" donut),
-  "viewsFromAdsPercent": number (e.g. "72.2% from ads"),
-  "viewsFollowerPercent": number,
-  "viewsNonFollowerPercent": number,
-  "viewsContentBreakdown": [{"type": "Posts/Reels/Stories", "percentage": number}],
-  
-  // INTERACTIONS
-  "interactions": number (the big number in/near "Interactions" donut),
-  "interactionsFromAdsPercent": number (e.g. "22.8% from ads"),
-  "interactionsFollowerPercent": number,
-  "interactionsNonFollowerPercent": number,
-  "interactionsContentBreakdown": [{"type": "Reels/Posts/Stories", "percentage": number}],
-  "likes": number,
-  "comments": number,
-  "shares": number,
-  "saves": number,
-  "reposts": number,
-  
-  // REACH & PROFILE
-  "accountsReached": number,
-  "accountsReachedChange": "+X%" or "-X%",
-  "profileActivity": number (total profile activity),
-  "profileActivityChange": "+X%" or "-X%",
-  "profileVisits": number,
-  "profileVisitsChange": "+X%" or "-X%",
-  "externalLinkTaps": number,
-  "externalLinkTapsChange": "+X%" or "-X%",
-  
-  // FOLLOWERS
-  "followers": number (total follower count),
-  "followerChange": number (net change in follower count, e.g. 25 or -37; use integer not percentage string),
-  "growth": {"overall": number, "follows": number, "unfollows": number},
-  
-  // DEMOGRAPHICS (if visible)
-  "topCities": [{"name": "City", "percentage": number}],
-  "ageRanges": [{"range": "25-34", "percentage": number}],
-  "gender": {"men": number, "women": number},
-  
-  // TOP CONTENT (if visible)
-  "topContent": [{"views": "83K", "date": "Jan 5"}],
-  "topReels": [{"likes": 271, "date": "Jan 9"}]
-}
-
-Return ONLY the JSON object, no markdown or explanation.`;
-
+    // Use Supabase Edge Function
     try {
-      const response = await fetch(OPENAI_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini', // Using mini for cost-effectiveness (~10x cheaper than gpt-4o)
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                ...imageContents
-              ]
-            }
-          ],
-          max_tokens: 2000,
-          temperature: 0.1
-        })
-      });
+      const result = await invokeEdgeFunction('extract-instagram-metrics', { images: imageData });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ OpenAI API error:', errorData);
-        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      if (result.success) {
+        if (onProgress) onProgress(images.length, images.length, 'Complete!');
+        console.log(`✅ AI extraction (${result.provider || 'edge'}):`, Object.keys(result.metrics).length, 'fields');
+        return result.metrics;
       }
-
-      const data = await response.json();
-      let content = data.choices[0].message.content;
-      
-      // Strip markdown code fences if present
-      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      
-      const metrics = JSON.parse(content);
-      
-      // Clean up null values
-      const cleaned = {};
-      for (const [key, value] of Object.entries(metrics)) {
-        if (value !== null && value !== undefined) {
-          cleaned[key] = value;
-        }
-      }
-
-      if (onProgress) onProgress(images.length, images.length, 'Complete!');
-      
-      console.log('✅ Direct OpenAI extraction:', Object.keys(cleaned).length, 'fields');
-      return cleaned;
-
+      throw new Error(result.error || 'Extraction returned no data');
     } catch (error) {
-      console.error('❌ Direct OpenAI extraction failed:', error);
+      console.error('❌ AI extraction failed:', error);
       throw error;
     }
   }
@@ -536,18 +379,9 @@ Return ONLY the JSON object, no markdown or explanation.`;
    * @returns {Promise<Object>} - Rate limit status
    */
   async getRateLimitStatus() {
-    if (!functions) {
-      return { error: 'Functions not initialized' };
-    }
-    
-    try {
-      const getRateLimit = httpsCallable(functions, 'getRateLimitStatus');
-      const result = await getRateLimit();
-      return result.data;
-    } catch (error) {
-      console.error('Failed to get rate limit status:', error);
-      return { error: error.message };
-    }
+    // Rate limits are now handled per-function inside each Edge Function.
+    // This method is kept for backward compatibility but returns a stub.
+    return { remaining: 50, maxPerHour: 50, maxPerDay: 200 };
   }
 
   /**
@@ -592,15 +426,11 @@ Return ONLY the JSON object, no markdown or explanation.`;
    * Uses Cloud Function (OpenRouter/OpenAI). Returns summary text for report notes.
    */
   async generateReportSummary(metrics, { dateRange = '', clientName = '' } = {}) {
-    if (!functions) {
-      throw new Error('Firebase Functions not initialized');
+    const result = await invokeEdgeFunction('generate-report-summary', { metrics, dateRange, clientName });
+    if (result?.success && result?.summary) {
+      return result.summary;
     }
-    const generateSummary = httpsCallable(functions, 'generateReportSummary');
-    const result = await generateSummary({ metrics, dateRange, clientName });
-    if (result.data?.success && result.data?.summary) {
-      return result.data.summary;
-    }
-    throw new Error(result.data?.error || 'Summary generation failed');
+    throw new Error(result?.error || 'Summary generation failed');
   }
 
   /**
@@ -613,28 +443,23 @@ Return ONLY the JSON object, no markdown or explanation.`;
    * @returns {Promise<{caption: string, hashtags: string[]}>}
    */
   async generateCaption(description, platform = 'instagram', tone = 'luxury') {
-    if (!functions) {
-      throw new Error('Firebase Functions not initialized');
-    }
-
     if (!description || description.trim().length < 3) {
       throw new Error('Please provide a description of the content (at least 3 characters)');
     }
 
     console.log(`✍️ Generating ${platform} caption...`);
 
-    const generateCaptionFn = httpsCallable(functions, 'generateCaption');
-    const result = await generateCaptionFn({ description, platform, tone });
+    const result = await invokeEdgeFunction('generate-caption', { description, platform, tone });
 
-    if (result.data?.success) {
-      console.log(`✅ Caption generated (${result.data.rateLimitRemaining} requests remaining)`);
+    if (result?.success) {
+      console.log('✅ Caption generated');
       return {
-        caption: result.data.caption,
-        hashtags: result.data.hashtags || []
+        caption: result.caption,
+        hashtags: result.hashtags || []
       };
     }
 
-    throw new Error(result.data?.error || 'Caption generation failed');
+    throw new Error(result?.error || 'Caption generation failed');
   }
 
   /**
@@ -661,10 +486,6 @@ Return ONLY the JSON object, no markdown or explanation.`;
    * @returns {Promise<{status: string, churnRisk: number, reason: string, action: string}>}
    */
   async predictClientHealth(clientData, reportHistory = null) {
-    if (!functions) {
-      throw new Error('Firebase Functions not initialized');
-    }
-
     if (!clientData || typeof clientData !== 'object') {
       throw new Error('Client data is required');
     }
@@ -673,20 +494,23 @@ Return ONLY the JSON object, no markdown or explanation.`;
     const reportCount = reportHistory?.length || 0;
     console.log(`🔍 Predicting health for client: ${clientName} (${reportCount} reports for trend analysis)`);
 
-    const predictHealthFn = httpsCallable(functions, 'predictClientHealth');
-    const result = await predictHealthFn({ clientData, reportHistory });
+    const result = await invokeEdgeFunction('run-health-check', {
+      client_id: clientData.id || null,
+      clientData,
+      reportHistory,
+    });
 
-    if (result.data?.success) {
-      console.log(`✅ Health predicted: ${result.data.status} (${result.data.churnRisk}% risk)`);
+    if (result?.success || result?.status) {
+      console.log(`✅ Health predicted: ${result.status} (${result.churnRisk}% risk)`);
       return {
-        status: result.data.status,
-        churnRisk: result.data.churnRisk,
-        reason: result.data.reason,
-        action: result.data.action
+        status: result.status,
+        churnRisk: result.churnRisk,
+        reason: result.reason,
+        action: result.action
       };
     }
 
-    throw new Error(result.data?.error || 'Health prediction failed');
+    throw new Error(result?.error || 'Health prediction failed');
   }
 
   /**
@@ -697,13 +521,11 @@ Return ONLY the JSON object, no markdown or explanation.`;
    * @returns {Promise<string>} - Revised text
    */
   async canvasAssist(action, blockText) {
-    if (!functions) {
-      throw new Error('Firebase is not initialized. AI assist requires the app to be connected.');
-    }
-    const canvasAssistFn = httpsCallable(functions, 'canvasAssist');
-    const result = await canvasAssistFn({ action, blockText: blockText || '' });
-    const text = result?.data?.text ?? '';
-    return text;
+    const result = await invokeEdgeFunction('canvas-assist', {
+      action,
+      content: blockText || '',
+    });
+    return result?.result ?? result?.text ?? '';
   }
 }
 

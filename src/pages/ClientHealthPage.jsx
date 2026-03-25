@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabaseService } from '../services/supabaseService';
 import { openaiService } from '../services/openaiService';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { invokeEdgeFunction } from '../services/edgeFunctionService';
 import {
   Activity,
   RefreshCw,
@@ -24,8 +24,6 @@ import {
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import ClientLink from '../components/ui/ClientLink';
-
-const functions = getFunctions();
 
 const ClientHealthPage = () => {
   const { currentUser } = useAuth();
@@ -80,9 +78,8 @@ const ClientHealthPage = () => {
   const runBulk = async () => {
     try {
       setRunningBulk(true);
-      const runBulkFn = httpsCallable(functions, 'runBulkHealthPrediction');
-      const result = await runBulkFn();
-      toast.success(`Updated ${result.data?.processed ?? 0} clients`);
+      const result = await invokeEdgeFunction('run-health-check', {});
+      toast.success(`Updated ${result?.processed ?? 0} clients`);
       await loadData();
     } catch (err) {
       console.error('Bulk health run failed:', err);
