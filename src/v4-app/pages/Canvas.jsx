@@ -379,7 +379,7 @@ export default function CanvasPage() {
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
-    firestoreService
+    supabaseService
       .getCanvases(userId)
       .then((list) => {
         setCanvases(list);
@@ -395,7 +395,7 @@ export default function CanvasPage() {
   useEffect(() => {
     if (sidebarTab !== 'shared' || !userEmail) return;
     setSharedLoading(true);
-    firestoreService
+    supabaseService
       .getCanvasesSharedWith(userEmail)
       .then(setSharedCanvases)
       .catch((err) => {
