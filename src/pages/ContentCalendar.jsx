@@ -100,7 +100,7 @@ const ContentCalendar = () => {
   const [contentItems, setContentItems] = useState([]);
   const [editingContent, setEditingContent] = useState(null);
   const [calendars, setCalendars] = useState([]);
-  const [selectedCalendarId, setSelectedCalendarId] = useState('default');
+  const [selectedCalendarId, setSelectedCalendarId] = useState(null);
   const [showAddCalendar, setShowAddCalendar] = useState(false);
   const [newCalendarName, setNewCalendarName] = useState('');
   const [editingCalendarId, setEditingCalendarId] = useState(null);
@@ -176,11 +176,11 @@ const ContentCalendar = () => {
         const refetched = await supabaseService.getContentCalendars(email);
         if (!cancelled) {
           setCalendars(refetched);
-          setSelectedCalendarId(refetched[0]?.id ?? 'default');
+          setSelectedCalendarId(refetched[0]?.id ?? null);
         }
       } else {
         setCalendars(cals);
-        setSelectedCalendarId(cals[0]?.id ?? 'default');
+        setSelectedCalendarId(cals[0]?.id ?? null);
       }
       if (items.length === 0) {
         const storedItems = localStorage.getItem(`content_items_${email}`);
@@ -292,6 +292,7 @@ const ContentCalendar = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!currentUser?.email) return;
+    if (!selectedCalendarId) { toast.error('Please select a calendar first'); return; }
     const tags = postForm.tags.split(',').map(tag => tag.trim()).filter(Boolean);
     const media = (postForm.media || []).slice(0, MAX_MEDIA_PER_POST);
 
@@ -510,6 +511,7 @@ const ContentCalendar = () => {
     const dateStr = over.id; // format: 'yyyy-MM-dd'
     const asset = libraryAssets.find(a => a.id === assetId);
     if (!asset) return;
+    if (!selectedCalendarId) { toast.error('Please select a calendar first'); return; }
 
     // Parse the dropped date
     let droppedDate;
@@ -605,7 +607,7 @@ const ContentCalendar = () => {
       setCalendars(refetchedCals);
       setContentItems(refetchedItems);
       if (selectedCalendarId === calendarId && refetchedCals.length) {
-        setSelectedCalendarId(refetchedCals.find(c => c.id !== calendarId)?.id ?? refetchedCals[0]?.id ?? 'default');
+        setSelectedCalendarId(refetchedCals.find(c => c.id !== calendarId)?.id ?? refetchedCals[0]?.id ?? null);
       }
     }
     toast.success(`Deleted "${calendarName}"`);
@@ -1316,7 +1318,7 @@ const ContentCalendar = () => {
             }`}
           >
             <Folder className="w-4 h-4" />
-            <span>{calendars.find(c => c.id === selectedCalendarId)?.name || 'Calendars'}</span>
+            <span>{(selectedCalendarId && calendars.find(c => c.id === selectedCalendarId)?.name) || 'Select Calendar'}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showCalendarsDropdown ? 'rotate-180' : ''}`} />
           </button>
           {showCalendarsDropdown && (
@@ -1330,7 +1332,7 @@ const ContentCalendar = () => {
                   const isActive = cal.id === selectedCalendarId;
                   const isEditing = editingCalendarId === cal.id;
                   const isLinking = linkingCalendarId === cal.id;
-                  const isDefault = cal.id === 'default' || cal.id === 'client-ll';
+                  const isDefault = false; // all calendars are user-created with real UUIDs
                   return (
                     <div key={cal.id} className={`px-3 py-2.5 rounded-xl border transition-all ${isActive ? 'border-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/20' : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}>
                       {isEditing ? (
