@@ -306,7 +306,7 @@ export default function ClientWorkspace() {
       // 3. Fire-and-forget background scrape to enrich the listing
       if (created?.id) {
         const listingId = created.id;
-        const urlToScrape = created.listingUrl || '';  // captured before state reset
+        const urlToScrape = created.listing_url || created.listingUrl || '';  // raw Supabase row uses snake_case
         setScrapingIds((prev) => new Set(prev).add(listingId));
         openaiService.scrapeListing(urlToScrape)
           .then(async (scraped) => {
