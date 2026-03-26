@@ -647,8 +647,8 @@ class InstagramOCRService {
     }
 
     // Fallback: in locations section, any "Name(s) number%" (line-start or word-boundary so OCR without newlines still matches)
-    const uiWords = new Set(['all', 'followers', 'non-followers', 'nonfollowers', 'posts', 'cities', 'countries', 'top', 'locations', 'stories', 'reels', 'by', 'content', 'type', 'where', 'your', 'are', 'from', 'indie', 'men', 'women']);
-    const nonCitySubstrings = ['indie', 'reels', 'posts', 'stories', ' li']; // names containing these are not cities
+    const uiWords = new Set(['all', 'followers', 'non-followers', 'nonfollowers', 'posts', 'cities', 'countries', 'top', 'locations', 'stories', 'reels', 'by', 'content', 'type', 'where', 'your', 'are', 'from', 'indie', 'men', 'women', 'gender', 'country', 'age', 'male', 'female']);
+    const nonCitySubstrings = ['indie', 'reels', 'posts', 'stories', ' li', 'gender', 'country', 'age men', 'age women']; // names containing these are not cities
     const lineStartRe = /(?:^|\n)\s*([A-Za-z][A-Za-z\s\-']{1,40}?)\s+([0-9]+(?:[.,][0-9]+)?)\s*%/g;
     let genMatch;
     const rejectName = (n, nLower) => {
@@ -656,6 +656,9 @@ class InstagramOCRService {
       if (uiWords.has(nLower) || /\d/.test(n)) return true;
       if (nLower.endsWith(' -') || n.endsWith(' -')) return true;
       if (nonCitySubstrings.some(s => nLower.includes(s))) return true;
+      // Reject multi-word strings that contain UI tab words (e.g. "Gender Country Age Men CE")
+      const words = nLower.split(/\s+/);
+      if (words.some(w => ['gender', 'country', 'age', 'male', 'female'].includes(w))) return true;
       return false;
     };
     while ((genMatch = lineStartRe.exec(section)) !== null) {

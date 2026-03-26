@@ -86,37 +86,50 @@ Deno.serve(async (req) => {
       },
     }));
 
-    const prompt = `Extract ALL metrics from these Instagram Insights screenshots. Return ONLY valid JSON.
+    const prompt = `You are an expert at reading Instagram Insights screenshots. Extract metrics and return ONLY a valid JSON object — no markdown, no explanation.
 
-IMPORTANT: Look carefully at the visual layout. Numbers belong to the label they're visually associated with (inside donut charts, next to labels, etc.).
+CRITICAL FIELD DEFINITIONS (read carefully to avoid mixing up similar fields):
 
-Extract these fields (use null if not visible):
+1. "views" — The total view count shown in the Views donut chart (e.g. 8,378). NOT the same as interactions or accounts reached.
+2. "interactions" — The total interaction count shown in the Interactions donut chart (e.g. 259). This is the number INSIDE the Interactions circle. NOT accounts reached (1,288).
+3. "accountsReached" — Labeled "Accounts reached" (e.g. 1,288). Separate from interactions.
+4. "profileVisits" — Labeled "Profile visits" under "Profile activity" (e.g. 62).
+5. "followers" — The current follower count (e.g. 86). NOT a percentage.
+6. "likes", "comments", "shares", "saves", "reposts" — Individual engagement counts shown as icons or labels.
+7. "viewsFollowerPercent" — The "Followers" percentage shown in the VIEWS section (e.g. 56.1%). This is about what % of VIEWS came from followers.
+8. "viewsNonFollowerPercent" — The "Non-followers" percentage in the VIEWS section (e.g. 43.9%).
+9. "interactionsFollowerPercent" — The "Followers" percentage shown in the INTERACTIONS section (e.g. 86.6%). This is about what % of INTERACTIONS came from followers.
+10. "gender" — Look ONLY at the Gender tab in the Audience section. "men" = Men % (e.g. 36.3), "women" = Women % (e.g. 63.7). Do NOT use the Country or Age tabs.
+11. "topCities" — Look ONLY at the Country tab showing city/country names with percentages. IGNORE tab labels like "Gender", "Country", "Age" — only extract actual place names.
+12. "followerChange" — Net follower change number (e.g. -37), shown in Follower Growth section.
+13. "growth" — {"overall": net change, "follows": new follows count, "unfollows": unfollows count}.
+
+JSON schema (use null for any field not visible):
 {
-  "dateRange": "Jan 1 - Jan 31" or similar,
+  "dateRange": "Jan 1 - Jan 31",
   "views": number,
-  "viewsFromAdsPercent": number,
   "viewsFollowerPercent": number,
   "viewsNonFollowerPercent": number,
   "interactions": number,
-  "interactionsFromAdsPercent": number,
+  "interactionsFollowerPercent": number,
   "likes": number,
   "comments": number,
   "shares": number,
   "saves": number,
+  "reposts": number,
   "accountsReached": number,
   "accountsReachedChange": "+X%" or "-X%",
   "profileVisits": number,
   "profileVisitsChange": "+X%" or "-X%",
   "followers": number,
-  "followerChange": "+X%" or "-X%",
+  "followerChange": number,
   "growth": {"overall": number, "follows": number, "unfollows": number},
-  "topCities": [{"name": "City", "percentage": number}],
+  "topCities": [{"name": "CityName", "percentage": number}],
   "ageRanges": [{"range": "25-34", "percentage": number}],
-  "gender": {"men": number, "women": number},
-  "topContent": [{"views": "83K", "date": "Jan 5"}]
+  "gender": {"men": number, "women": number}
 }
 
-Return ONLY the JSON object, no markdown or explanation.`;
+Return ONLY the JSON object.`;
 
     const body = {
       messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, ...imageContents] }],
