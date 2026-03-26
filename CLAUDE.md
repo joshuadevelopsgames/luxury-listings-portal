@@ -27,7 +27,7 @@ Also update `Brain/02 - Patterns & Gotchas.md` if you hit a new bug or learned a
 - **AI extraction prompts must say "ONLY if explicitly shown"** — no hallucinating metrics
 - **Modals inside modals need `createPortal(document.body)`** — z-index won't save you otherwise
 - **Placeholder values use "—"** — never example numbers like `764`
-- **Git: always `git pull --rebase` before pushing** — remote is often ahead; take higher build number on `version.json` conflicts
+- **Git: NO rebasing ever** — use `git stash && git pull origin main && git stash pop && git push`; take higher build number on `version.json` merge conflicts
 - **AI summary is 500 chars max, first-person social media manager voice**
 
 ## Project Location
