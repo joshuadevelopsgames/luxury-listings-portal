@@ -23,7 +23,6 @@ import {
   MapPin,
   Building,
   GraduationCap,
-  Star,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -134,7 +133,6 @@ const TeamManagement = () => {
     totalMembers: teamMembers.length,
     activeMembers: teamMembers.filter(m => m.status === 'active').length,
     probationMembers: teamMembers.filter(m => m.status === 'probation').length,
-    averageRating: (teamMembers.reduce((sum, m) => sum + m.performance.rating, 0) / teamMembers.length).toFixed(1),
     totalSalary: teamMembers.reduce((sum, m) => sum + m.salary, 0),
     averageTenure: Math.round(teamMembers.reduce((sum, m) => sum + differenceInDays(new Date(), new Date(m.startDate)), 0) / teamMembers.length)
   };
@@ -161,12 +159,6 @@ const TeamManagement = () => {
       case 'inactive': return <XCircle className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
-  };
-
-  const getPerformanceColor = (rating) => {
-    if (rating >= 4.5) return 'text-green-600 dark:text-green-400';
-    if (rating >= 4.0) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
   };
 
   const openEmployeeModal = (employee) => {
@@ -289,18 +281,6 @@ const TeamManagement = () => {
         <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[12px] font-medium text-[#86868b]">Avg Rating</p>
-              <p className="text-[24px] font-semibold text-[#ff9500] mt-1">{teamStats.averageRating}</p>
-            </div>
-            <div className="p-2.5 rounded-full bg-[#ff9500]/10">
-              <Star className="w-5 h-5 text-[#ff9500]" />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
-          <div className="flex items-center justify-between">
-            <div>
               <p className="text-[12px] font-medium text-[#86868b]">Avg Tenure</p>
               <p className="text-[24px] font-semibold text-[#af52de] mt-1">{teamStats.averageTenure}d</p>
             </div>
@@ -413,7 +393,6 @@ const TeamManagement = () => {
               <tr className="border-b border-black/5 dark:border-white/10">
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Employee</th>
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Department</th>
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Performance</th>
                 {canViewLeaveBalance && <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Leave Balance</th>}
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Status</th>
                 <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Actions</th>
@@ -450,19 +429,6 @@ const TeamManagement = () => {
                     <div>
                       <p className="text-[13px] text-[#1d1d1f] dark:text-white">{member.department}</p>
                       <p className="text-[11px] text-[#86868b]">Since {safeFormatDate(member.startDate, 'MMM yyyy')}</p>
-                    </div>
-                  </td>
-                  
-                  <td className="py-4 px-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1">
-                        <Star className={`w-3.5 h-3.5 ${getPerformanceColor(member.performance.rating)}`} />
-                        <span className={`text-[13px] font-medium ${getPerformanceColor(member.performance.rating)}`}>
-                          {member.performance.rating}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[#86868b]">{member.performance.projectsCompleted} projects</p>
-                      <p className="text-[10px] text-[#86868b]">{member.performance.onTimeDelivery}% on time</p>
                     </div>
                   </td>
                   
