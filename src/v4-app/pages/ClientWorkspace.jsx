@@ -261,29 +261,45 @@ export default function ClientWorkspace() {
   const saveListing = async () => {
     if (!newListingUrl.trim()) return;
     setSavingListing(true);
+
+    // Hard 8s timeout on the DB insert — if Supabase doesn't respond, we fail fast
+    const withTimeout = (promise, ms, label) =>
+      Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+        ),
+      ]);
+
     try {
       // 1. Save immediately with just the URL — no waiting for scraper
-      const created = await supabaseService.createClientListing({
-        clientId,
-        listingUrl: newListingUrl.trim(),
-        sourceDomain: '',
-        title: '',
-        address: '',
-        price: '',
-        beds: '',
-        baths: '',
-        squareFeet: '',
-        description: newListingDesc.trim(),
-        notes: newListingNotes.trim(),
-        rawPayload: {},
-      });
+      console.log('[saveListing] inserting listing for client', clientId);
+      const created = await withTimeout(
+        supabaseService.createClientListing({
+          clientId,
+          listingUrl: newListingUrl.trim(),
+          sourceDomain: '',
+          title: '',
+          address: '',
+          price: '',
+          beds: '',
+          baths: '',
+          squareFeet: '',
+          description: newListingDesc.trim(),
+          notes: newListingNotes.trim(),
+          rawPayload: {},
+        }),
+        8000,
+        'createClientListing'
+      );
+      console.log('[saveListing] insert result:', created);
 
       // 2. Reset form + navigate immediately
       setNewListingUrl('');
       setNewListingDesc('');
       setNewListingNotes('');
       setShowAddListing(false);
-      await loadBase();
+      await withTimeout(loadBase(), 8000, 'loadBase');
       if (created?.id) setSelectedListingId(created.id);
       toast.success('Listing added — scraping details…');
 
