@@ -2347,7 +2347,13 @@ class SupabaseService {
 
       // Match on owner_id (Supabase profile UUID) OR user_id_legacy (Firebase UID)
       // to support both migrated canvases and newly created ones.
-      const { data, error } = await supabase.from('canvases').select('*').or(`owner_id.eq.${userId},user_id_legacy.eq.${userId}`).order('updated_at', { ascending: false });
+      // IMPORTANT: owner_id is a UUID column — passing a non-UUID (e.g. email) crashes
+      // the entire or() query with "invalid input syntax for type uuid".
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+      const orClause = isUuid
+        ? `owner_id.eq.${userId},user_id_legacy.eq.${userId}`
+        : `user_id_legacy.eq.${userId}`;
+      const { data, error } = await supabase.from('canvases').select('*').or(orClause).order('updated_at', { ascending: false });
       if (error) {
         console.error('[getCanvases] query error:', error.message, '| userId:', userId);
         return [];
