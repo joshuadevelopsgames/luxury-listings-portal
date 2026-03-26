@@ -1633,12 +1633,20 @@ class SupabaseService {
   }
 
   async createClientListing(data) {
-    // Bypass the Supabase JS client entirely — use direct fetch() to PostgREST.
-    // This eliminates any internal auth waiting/locking the client may do.
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    // ZERO calls to supabase.auth.* — getSession() hangs indefinitely.
+    // Read JWT directly from localStorage instead.
     const url = process.env.REACT_APP_SUPABASE_URL;
     const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+    let token = anonKey;
+    try {
+      const storageKey = `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        token = parsed?.access_token || parsed?.currentSession?.access_token || anonKey;
+      }
+    } catch { /* fall back to anon key */ }
 
     const payload = {
       client_id: data.clientId,
@@ -1655,7 +1663,7 @@ class SupabaseService {
       updated_at: ts(),
     };
 
-    console.log('[createClientListing] direct POST to PostgREST', { hasToken: !!token });
+    console.log('[createClientListing] direct POST (no getSession)', { hasToken: token !== anonKey });
     const t0 = Date.now();
 
     const resp = await fetch(`${url}/rest/v1/client_listings`, {
@@ -1663,7 +1671,7 @@ class SupabaseService {
       headers: {
         'Content-Type': 'application/json',
         'apikey': anonKey,
-        'Authorization': `Bearer ${token || anonKey}`,
+        'Authorization': `Bearer ${token}`,
         'Prefer': 'return=representation',
       },
       body: JSON.stringify(payload),
