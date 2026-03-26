@@ -540,7 +540,7 @@ export default function ClientWorkspace() {
               <input
                 value={newListingUrl}
                 onChange={(e) => setNewListingUrl(e.target.value)}
-                placeholder="Listing URL (Zillow, MLS…)"
+                placeholder="Zillow listing URL (best results) or any MLS link"
                 className={INPUT}
               />
               <textarea
