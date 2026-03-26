@@ -29,8 +29,7 @@ import {
   UserPlus,
   UserMinus,
   BarChart3,
-  PieChart,
-  Activity
+  PieChart
 } from 'lucide-react';
 import { format, differenceInDays, isToday, isPast } from 'date-fns';
 import { safeFormatDate } from '../utils/dateUtils';
@@ -48,11 +47,8 @@ const TeamManagement = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [migratingLeave, setMigratingLeave] = useState(false);
-  const [migrationDone, setMigrationDone] = useState(false);
 
   // Page access = full access to all features
-  const canRunLeaveMigration = true;
   const canViewLeaveBalance = true;
   const canViewFinancials = true;
 
@@ -166,52 +162,6 @@ const TeamManagement = () => {
     setShowEmployeeModal(true);
   };
 
-  // Migrate all users' leave balances to new structure (sick=3, remove personal)
-  const handleMigrateLeavBalances = async () => {
-    const confirmed = await confirm({
-      title: 'Migrate leave balances',
-      message: "This will set all users' sick days to 3 and remove personal days. Continue?",
-      confirmText: 'Continue',
-      variant: 'danger'
-    });
-    if (!confirmed) return;
-    setMigratingLeave(true);
-    try {
-      const result = await supabaseService.migrateLeaveBalances();
-      toast.success(`Migration complete! Updated ${result.updated} users, skipped ${result.skipped}.`);
-      setMigrationDone(true);
-      // Reload team members to reflect changes (exclude system admins)
-      const raw = await supabaseService.getApprovedUsers();
-      const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
-      const users = raw.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
-      const sortedUsers = [...users].sort((a, b) => {
-        const dateA = a.createdAt?.toDate?.() || new Date(0);
-        const dateB = b.createdAt?.toDate?.() || new Date(0);
-        return dateA - dateB;
-      });
-      const formattedMembers = sortedUsers.map((user, index) => ({
-        id: user.id,
-        name: user.displayName || user.firstName + ' ' + user.lastName || 'Team Member',
-        email: user.email,
-        role: user.role || 'employee',
-        department: user.department || 'General',
-        position: user.position || user.role || 'Team Member',
-        status: user.status || 'active',
-        startDate: user.startDate || user.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-        employeeId: generateEmployeeId(index),
-        leaveBalance: user.leaveBalances || { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } },
-        performance: user.performance || 4.0,
-        skills: user.skills || []
-      }));
-      setTeamMembers(formattedMembers);
-    } catch (error) {
-      console.error('Error migrating leave balances:', error);
-      toast.error('Failed to migrate leave balances');
-    } finally {
-      setMigratingLeave(false);
-    }
-  };
-
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
@@ -221,26 +171,6 @@ const TeamManagement = () => {
           <p className="text-[15px] sm:text-[17px] text-[#86868b] mt-1">Manage your team, track performance, and oversee employee development</p>
         </div>
         <div className="flex gap-2">
-          {canRunLeaveMigration && !migrationDone && (
-            <button 
-              onClick={handleMigrateLeavBalances}
-              disabled={migratingLeave}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[14px] font-medium hover:bg-[#ff9500]/20 transition-colors disabled:opacity-50"
-              title="Set all users' sick days to 3 and remove personal days"
-            >
-              {migratingLeave ? (
-                <>
-                  <Activity className="w-4 h-4 animate-spin shrink-0" />
-                  <span className="hidden sm:inline">Migrating...</span>
-                </>
-              ) : (
-                <>
-                  <Activity className="w-4 h-4 shrink-0" />
-                  <span>Set Sick Days to 3</span>
-                </>
-              )}
-            </button>
-          )}
           <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export Team Data</span>
