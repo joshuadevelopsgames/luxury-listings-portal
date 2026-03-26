@@ -1896,6 +1896,9 @@ class SupabaseService {
         processed.period_end = d.toISOString().split('T')[0];
         delete processed.endDate;
       }
+      if (updates.clientId !== undefined) { processed.client_id = updates.clientId; processed.client_id_legacy = updates.clientId; delete processed.clientId; }
+      if (updates.clientName !== undefined) { processed.client_name = updates.clientName; delete processed.clientName; }
+      if (updates.dateRange !== undefined) { processed.date_range = updates.dateRange; delete processed.dateRange; }
       if (updates.postLinks !== undefined) { processed.post_links = updates.postLinks; delete processed.postLinks; }
       if (updates.reportType !== undefined) { processed.report_type = updates.reportType; delete processed.reportType; }
       if (updates.screenshots !== undefined) { processed.screenshot_urls = updates.screenshots; delete processed.screenshots; }
