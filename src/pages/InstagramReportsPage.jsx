@@ -2553,11 +2553,12 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
         document.body
       )}
       {/* Live Preview Modal */}
-      {showPreview && (
+      {showPreview && createPortal(
         <ReportPreviewModal
           report={formData}
           onClose={() => setShowPreview(false)}
-        />
+        />,
+        document.body
       )}
     </>
   );
@@ -2610,7 +2611,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
   const sourceCount = report.sourceReportIds?.length;
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col border border-black/5 dark:border-white/10">
         {/* Preview Header — type-specific colors */}
         <div className={`px-6 py-3 border-b border-gray-200 dark:border-white/10 flex items-center justify-between text-white ${

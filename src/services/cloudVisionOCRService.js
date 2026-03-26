@@ -142,7 +142,7 @@ CRITICAL RULES:
 - Return ONLY the JSON object, no markdown, no explanation.
 - IMPORTANT: "likes", "comments", "shares", "saves", "reposts" should ONLY be included if Instagram shows an explicit interaction-type breakdown screen listing those individual counts. If only a total "Interactions" number is shown, do NOT populate these fields — a single total does NOT imply individual breakdowns.
 - For "topCities" and "topCountries": include ALL cities/countries you can read from any screenshot, not just the top one.
-- For "ageRanges": include ALL age brackets visible across any screenshot (including 55-64, 65+).
+- For "ageRanges": include ALL age brackets visible across any screenshot. Instagram typically shows: 13-17, 18-24, 25-34, 35-44, 45-54, 55-64, 65+. Look carefully for 55-64 — it is often shown in smaller text at the bottom of the age chart and is easy to miss. Do NOT skip it if it appears.
 - For "activeTimes": extract from the "Most active times" bar chart if visible — record each time slot and relative bar height (0-100).
 
 Use these exact field names (include ONLY fields you can actually see):
