@@ -318,7 +318,8 @@ export default function ClientWorkspace() {
             });
           });
       }
-    } catch {
+    } catch (err) {
+      console.error('[saveListing] failed:', err);
       toast.error('Failed to save listing');
     } finally {
       setSavingListing(false);
