@@ -9,8 +9,14 @@ import { supabase } from '../lib/supabase';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
+// Functions that call slow external APIs get a longer client-side timeout.
+const SLOW_FUNCTIONS = new Set(['scrape-listing', 'rank-listing-photos']);
+const DEFAULT_TIMEOUT_MS = 20_000;   // 20s for fast functions
+const SLOW_TIMEOUT_MS    = 50_000;   // 50s for Apify / vision APIs
+
 /**
  * Helper — calls a Supabase Edge Function with the current user's JWT.
+ * Includes a client-side AbortController timeout so the UI never hangs forever.
  */
 async function callEdgeFunction(name, body = {}) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -18,24 +24,38 @@ async function callEdgeFunction(name, body = {}) {
     throw new Error('Not authenticated');
   }
 
+  const timeoutMs = SLOW_FUNCTIONS.has(name) ? SLOW_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   const url = `${SUPABASE_URL}/functions/v1/${name}`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
-      'apikey': process.env.REACT_APP_SUPABASE_ANON_KEY,
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': process.env.REACT_APP_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok || data.error) {
-    throw new Error(data.error || `Edge function ${name} failed (${response.status})`);
+    if (!response.ok || data.error) {
+      throw new Error(data.error || `Edge function ${name} failed (${response.status})`);
+    }
+
+    return data;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Edge function ${name} timed out after ${timeoutMs / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-
-  return data;
 }
 
 // ── AI Caption Generation ────────────────────────────────────────────────────

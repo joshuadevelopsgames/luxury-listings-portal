@@ -56,9 +56,9 @@ async function scrapeWithApify(listingUrl: string): Promise<Record<string, unkno
 
   const ACTOR = 'maxcopell~zillow-detail-scraper';
 
-  // 1. Start the run (synchronous wait up to 120s)
+  // 1. Start the run (synchronous wait up to 40s — client timeout is 50s)
   const runResp = await fetch(
-    `https://api.apify.com/v2/acts/${ACTOR}/runs?token=${token}&waitForFinish=120`,
+    `https://api.apify.com/v2/acts/${ACTOR}/runs?token=${token}&waitForFinish=40`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
