@@ -639,10 +639,16 @@ const InstagramReportsPage = () => {
       variant: 'danger'
     });
     if (!confirmed) return;
+
+    // Optimistically remove from UI immediately
+    setReports(prev => prev.filter(r => r.id !== report.id));
+    setArchivedReports(prev => prev.filter(r => r.id !== report.id));
+
     try {
       await supabaseService.deleteInstagramReport(report.id);
-      toast.success('Report deleted');
     } catch (error) {
+      // Restore on failure
+      setReports(prev => [...prev, report]);
       console.error('Error deleting report:', error);
       toast.error('Failed to delete report. Please try again.');
     }
