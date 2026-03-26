@@ -1633,32 +1633,53 @@ class SupabaseService {
   }
 
   async createClientListing(data) {
-    try {
-      // Skip explicit getSession() — it can hang for 10+ seconds when the auth
-      // token is refreshing. The Supabase client attaches the JWT automatically.
-      const { data: row, error } = await supabase
-        .from('client_listings')
-        .insert([clean({
-          client_id: data.clientId,
-          listing_url: data.listingUrl,
-          source_domain: data.sourceDomain,
-          title: data.title || null,
-          description: data.description || null,
-          address: data.address || null,
-          price: data.price || null,
-          beds: data.beds || null,
-          baths: data.baths || null,
-          square_feet: data.squareFeet || null,
-          notes: data.notes || null,
-          raw_payload: data.rawPayload || {},
-          created_at: ts(),
-          updated_at: ts(),
-        })])
-        .select('*')
-        .single();
-      if (error) throw error;
-      return row;
-    } catch (error) { throw error; }
+    // Bypass the Supabase JS client entirely — use direct fetch() to PostgREST.
+    // This eliminates any internal auth waiting/locking the client may do.
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    const url = process.env.REACT_APP_SUPABASE_URL;
+    const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+    const payload = {
+      client_id: data.clientId,
+      listing_url: data.listingUrl,
+      source_domain: data.sourceDomain || null,
+      title: data.title || null,
+      description: data.description || null,
+      address: data.address || null,
+      price: data.price || null,
+      beds: data.beds || null,
+      baths: data.baths || null,
+      square_feet: data.squareFeet || null,
+      created_at: ts(),
+      updated_at: ts(),
+    };
+
+    console.log('[createClientListing] direct POST to PostgREST', { hasToken: !!token });
+    const t0 = Date.now();
+
+    const resp = await fetch(`${url}/rest/v1/client_listings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': anonKey,
+        'Authorization': `Bearer ${token || anonKey}`,
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const elapsed = Date.now() - t0;
+    console.log(`[createClientListing] response ${resp.status} in ${elapsed}ms`);
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      console.error('[createClientListing] error:', err);
+      throw new Error(`Insert failed (${resp.status}): ${err}`);
+    }
+
+    const rows = await resp.json();
+    return Array.isArray(rows) ? rows[0] : rows;
   }
 
   async getClientAssetFolders(clientId) {
