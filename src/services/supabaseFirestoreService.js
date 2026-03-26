@@ -1614,6 +1614,7 @@ class SupabaseService {
       const { error } = await supabase
         .from('client_listings')
         .update(clean({
+          source_domain: data.sourceDomain,
           title: data.title,
           description: data.description,
           address: data.address,
@@ -1623,6 +1624,7 @@ class SupabaseService {
           square_feet: data.squareFeet,
           notes: data.notes,
           status: data.status,
+          raw_payload: data.rawPayload,
           updated_at: ts(),
         }))
         .eq('id', id);
