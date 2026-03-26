@@ -627,13 +627,13 @@ const ClientDetailModal = ({
                   )}
                   {localClient.instagramHandle && (
                     <a 
-                      href={`https://instagram.com/${localClient.instagramHandle}`}
+                      href={`https://instagram.com/${(localClient.instagramHandle || '').replace(/^@+/, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E1306C]/5 text-[13px] text-[#E1306C] hover:bg-[#E1306C]/10 transition-colors"
                     >
                       <Instagram className="w-4 h-4" />
-                      @{localClient.instagramHandle}
+                      @{(localClient.instagramHandle || '').replace(/^@+/, '')}
                     </a>
                   )}
                 </div>

@@ -758,7 +758,7 @@ const InstagramReportsPage = () => {
                           {client.instagramHandle && (
                             <span className="text-[12px] text-[#86868b] flex items-center gap-1">
                               <Instagram className="w-3 h-3" />
-                              @{client.instagramHandle}
+                              @{(client.instagramHandle || '').replace(/^@+/, '')}
                             </span>
                           )}
                         </div>
