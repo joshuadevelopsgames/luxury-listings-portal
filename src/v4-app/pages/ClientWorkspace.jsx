@@ -273,7 +273,6 @@ export default function ClientWorkspace() {
 
     try {
       // 1. Save immediately with just the URL — no waiting for scraper
-      console.log('[saveListing] inserting listing for client', clientId);
       const created = await withTimeout(
         supabaseService.createClientListing({
           clientId,
@@ -289,17 +288,16 @@ export default function ClientWorkspace() {
           notes: newListingNotes.trim(),
           rawPayload: {},
         }),
-        8000,
+        15000,
         'createClientListing'
       );
-      console.log('[saveListing] insert result:', created);
 
       // 2. Reset form + navigate immediately
       setNewListingUrl('');
       setNewListingDesc('');
       setNewListingNotes('');
       setShowAddListing(false);
-      await withTimeout(loadBase(), 8000, 'loadBase');
+      await withTimeout(loadBase(), 15000, 'loadBase');
       if (created?.id) setSelectedListingId(created.id);
       toast.success('Listing added — scraping details…');
 
