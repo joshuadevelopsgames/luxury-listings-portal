@@ -12,16 +12,16 @@ import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 import { instagramOCRService } from '../services/instagramOCRService';
 import { getInstagramEmbedUrl } from '../../utils/instagramEmbed';
 import ClientLink from '../../components/ui/ClientLink';
-import { 
-  Instagram, 
-  Plus, 
-  Upload, 
-  Link as LinkIcon, 
-  Copy, 
-  Check, 
-  Trash2, 
-  Eye, 
-  Edit, 
+import {
+  Instagram,
+  Plus,
+  Upload,
+  Link as LinkIcon,
+  Copy,
+  Check,
+  Trash2,
+  Eye,
+  Edit,
   X,
   Image,
   Calendar,
@@ -51,6 +51,11 @@ import {
   CalendarDays,
   FileBarChart,
   Archive,
+  Search,
+  GitCompare,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
 } from 'lucide-react';
 import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, getMonth, parseISO, isWithinInterval } from 'date-fns';
 
@@ -130,6 +135,81 @@ const groupReportsByYearMonth = (reportList) => {
   });
 };
 
+// ─── Report completion helper ───────────────────────────────────────────────
+// Returns 'complete' | 'partial' | 'incomplete' based on key metric presence
+const getReportCompletionStatus = (metrics) => {
+  if (!metrics || typeof metrics !== 'object') return 'incomplete';
+  const keyFields = ['followers', 'accountsReached', 'interactions', 'followerChange'];
+  const filled = keyFields.filter(f => metrics[f] != null && metrics[f] !== '').length;
+  if (filled >= 4) return 'complete';
+  if (filled >= 2) return 'partial';
+  return 'incomplete';
+};
+
+// ─── Tiny SVG sparkline ─────────────────────────────────────────────────────
+const Sparkline = ({ values, width = 64, height = 22, color = '#34c759' }) => {
+  if (!values || values.length < 2) return null;
+  const nums = values.map(Number).filter(n => !isNaN(n));
+  if (nums.length < 2) return null;
+  const min = Math.min(...nums);
+  const max = Math.max(...nums);
+  const range = max - min || 1;
+  const pts = nums.map((v, i) => {
+    const x = (i / (nums.length - 1)) * width;
+    const y = height - 2 - ((v - min) / range) * (height - 4);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const trend = nums[nums.length - 1] - nums[0];
+  const lineColor = trend >= 0 ? '#34c759' : '#ff3b30';
+  return (
+    <svg width={width} height={height} className="overflow-visible flex-shrink-0" aria-hidden>
+      <polyline
+        points={pts.join(' ')}
+        fill="none"
+        stroke={lineColor}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {/* end dot */}
+      <circle
+        cx={pts[pts.length - 1].split(',')[0]}
+        cy={pts[pts.length - 1].split(',')[1]}
+        r="2.5"
+        fill={lineColor}
+      />
+    </svg>
+  );
+};
+
+// ─── Delta badge ─────────────────────────────────────────────────────────────
+const Delta = ({ current, previous, label, prefix = '', suffix = '' }) => {
+  if (current == null || previous == null) return null;
+  const curr = Number(current);
+  const prev = Number(previous);
+  if (isNaN(curr) || isNaN(prev)) return null;
+  const diff = curr - prev;
+  const pct = prev !== 0 ? ((diff / Math.abs(prev)) * 100).toFixed(1) : null;
+  const isPos = diff > 0;
+  const isZero = diff === 0;
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
+      <span className="text-[12px] text-[#86868b]">{label}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-[12px] font-medium text-[#1d1d1f] dark:text-white">
+          {prefix}{curr.toLocaleString()}{suffix}
+        </span>
+        {!isZero && (
+          <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${isPos ? 'bg-[#34c759]/10 text-[#1a7a2e]  dark:text-[#34c759]' : 'bg-[#ff3b30]/10 text-[#cc2200] dark:text-[#ff3b30]'}`}>
+            {isPos ? '+' : ''}{diff.toLocaleString()}{pct ? ` (${pct}%)` : ''}
+          </span>
+        )}
+        {isZero && <span className="text-[11px] text-[#86868b]">—</span>}
+      </div>
+    </div>
+  );
+};
+
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
   const { currentUser, isViewingAs } = useAuth();
@@ -154,6 +234,9 @@ const InstagramReportsPage = () => {
   const [generatingReport, setGeneratingReport] = useState(null); // { clientId, type: 'quarterly' | 'yearly' }
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedQuarter, setSelectedQuarter] = useState(getQuarter(new Date()));
+
+  // Search/filter
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load reports - admins see all, others see only their own; when View As, load by effective user.
   useEffect(() => {
@@ -273,6 +356,15 @@ const InstagramReportsPage = () => {
     }
     return clientsWithReports.filter(({ client }) => !client.isInternal);
   }, [clientsWithReports, activeTab]);
+
+  // Apply search filter on top of the tab filter
+  const filteredClientsForTab = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return clientsWithReportsForTab;
+    return clientsWithReportsForTab.filter(({ client }) =>
+      (client.clientName || client.name || '').toLowerCase().includes(q)
+    );
+  }, [clientsWithReportsForTab, searchQuery]);
 
   // Get reports for a specific time period
   const getReportsForPeriod = (clientId, startDate, endDate) => {
@@ -450,83 +542,141 @@ const InstagramReportsPage = () => {
   };
 
   // Report card component. archiveMode: hide Edit/Delete (for Archive tab).
-  const ReportCard = ({ report, compact = false, archiveMode = false }) => (
-    <div className={`rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10 overflow-hidden ${compact ? '' : 'hover:shadow-sm'} transition-all`}>
-      <div className={`${compact ? 'p-3' : 'p-4'} flex items-center justify-between gap-3`}>
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg bg-[#1d1d1f] dark:bg-[#3a3a3c] flex items-center justify-center flex-shrink-0`}>
-            {report.reportType === 'quarterly' ? (
-              <CalendarDays className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} strokeWidth={1.5} />
-            ) : report.reportType === 'yearly' ? (
-              <FileBarChart className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} strokeWidth={1.5} />
-            ) : (
-              <BarChart3 className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} strokeWidth={1.5} />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className={`${compact ? 'text-[14px]' : 'text-[16px]'} font-medium text-[#1d1d1f] dark:text-white truncate`}>
-                {report.title || report.reportTitle}
-              </h4>
-              {report.reportType && (
-                <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 font-semibold border border-[#0071e3]/30 text-[#0071e3] bg-[#0071e3]/5`}>
-                  {report.reportType === 'yearly' ? 'Annual' : 'Quarterly'}
-                </span>
+  // compareWith: previous monthly report for MoM comparison panel.
+  const ReportCard = ({ report, compact = false, archiveMode = false, compareWith = null }) => {
+    const [showCompare, setShowCompare] = useState(false);
+    const completionStatus = getReportCompletionStatus(report.metrics);
+    const isMonthly = !report.reportType || report.reportType === 'monthly';
+
+    const CompletionBadge = () => {
+      if (completionStatus === 'complete') return (
+        <span className="flex items-center gap-1 text-[10px] font-medium text-[#1a7a2e] dark:text-[#34c759] bg-[#34c759]/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+          <CheckCircle2 className="w-3 h-3" strokeWidth={2} />
+          Complete
+        </span>
+      );
+      if (completionStatus === 'partial') return (
+        <span className="flex items-center gap-1 text-[10px] font-medium text-[#b45309] dark:text-[#ff9500] bg-[#ff9500]/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+          <AlertTriangle className="w-3 h-3" strokeWidth={2} />
+          Partial
+        </span>
+      );
+      return (
+        <span className="flex items-center gap-1 text-[10px] font-medium text-[#cc2200] dark:text-[#ff3b30] bg-[#ff3b30]/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+          <XCircle className="w-3 h-3" strokeWidth={2} />
+          No data
+        </span>
+      );
+    };
+
+    return (
+      <div className={`rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10 overflow-hidden ${compact ? '' : 'hover:shadow-sm'} transition-all`}>
+        <div className={`${compact ? 'p-3' : 'p-4'} flex items-center justify-between gap-3`}>
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg bg-[#1d1d1f] dark:bg-[#3a3a3c] flex items-center justify-center flex-shrink-0`}>
+              {report.reportType === 'quarterly' ? (
+                <CalendarDays className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} strokeWidth={1.5} />
+              ) : report.reportType === 'yearly' ? (
+                <FileBarChart className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} strokeWidth={1.5} />
+              ) : (
+                <BarChart3 className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-white`} strokeWidth={1.5} />
               )}
             </div>
-            <p className={`${compact ? 'text-[11px]' : 'text-[12px]'} text-[#86868b] truncate`}>
-              {report.dateRange}
-            </p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className={`${compact ? 'text-[14px]' : 'text-[16px]'} font-medium text-[#1d1d1f] dark:text-white truncate`}>
+                  {report.title || report.reportTitle}
+                </h4>
+                {report.reportType && (
+                  <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 font-semibold border border-[#0071e3]/30 text-[#0071e3] bg-[#0071e3]/5">
+                    {report.reportType === 'yearly' ? 'Annual' : 'Quarterly'}
+                  </span>
+                )}
+                <CompletionBadge />
+              </div>
+              <p className={`${compact ? 'text-[11px]' : 'text-[12px]'} text-[#86868b] truncate`}>
+                {report.dateRange}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {isMonthly && compareWith && (
+              <button
+                type="button"
+                onClick={() => setShowCompare(v => !v)}
+                className={`${compact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg text-[12px] font-medium transition-colors inline-flex items-center gap-1 ${showCompare ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#86868b] hover:text-[#0071e3] hover:bg-[#0071e3]/10'}`}
+                title="Compare with previous"
+              >
+                <GitCompare className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} strokeWidth={1.5} />
+                <span className="hidden sm:inline">Compare</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => handleCopyLink(report.publicLinkId)}
+              className={`${compact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg text-[12px] font-medium text-[#86868b] hover:text-[#0071e3] hover:bg-[#0071e3]/10 transition-colors inline-flex items-center gap-1`}
+              title="Copy link"
+            >
+              {copiedLink === report.publicLinkId ? (
+                <Check className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-[#0071e3]`} strokeWidth={1.5} />
+              ) : (
+                <Copy className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} strokeWidth={1.5} />
+              )}
+              <span className="hidden sm:inline">{copiedLink === report.publicLinkId ? 'Copied' : 'Share'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => window.open(`${window.location.origin}/report/${report.publicLinkId}`, '_blank')}
+              className={`${compact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg text-[12px] font-medium text-[#86868b] hover:text-[#0071e3] hover:bg-[#0071e3]/10 transition-colors inline-flex items-center gap-1`}
+              title="View"
+            >
+              <Eye className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} strokeWidth={1.5} />
+              <span className="hidden sm:inline">View</span>
+            </button>
+            {!archiveMode && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditingReport(report)}
+                  className={`${compact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg text-[12px] font-medium text-[#86868b] hover:text-[#0071e3] hover:bg-[#0071e3]/10 transition-colors inline-flex items-center gap-1`}
+                  title="Edit"
+                >
+                  <Edit className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} strokeWidth={1.5} />
+                  <span className="hidden sm:inline">Edit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteReport(report)}
+                  className={`${compact ? 'p-1.5' : 'p-2'} rounded-sm text-[#b45309] hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors`}
+                  title="Delete"
+                >
+                  <Trash2 className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={1.5} />
+                </button>
+              </>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => handleCopyLink(report.publicLinkId)}
-            className={`${compact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg text-[12px] font-medium text-[#86868b] hover:text-[#0071e3] hover:bg-[#0071e3]/10 transition-colors inline-flex items-center gap-1`}
-            title="Copy link"
-          >
-            {copiedLink === report.publicLinkId ? (
-              <Check className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-[#0071e3]`} strokeWidth={1.5} />
-            ) : (
-              <Copy className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} strokeWidth={1.5} />
-            )}
-            <span className="hidden sm:inline">{copiedLink === report.publicLinkId ? 'Copied' : 'Share'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => window.open(`${window.location.origin}/report/${report.publicLinkId}`, '_blank')}
-            className={`${compact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg text-[12px] font-medium text-[#86868b] hover:text-[#0071e3] hover:bg-[#0071e3]/10 transition-colors inline-flex items-center gap-1`}
-            title="View"
-          >
-            <Eye className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} strokeWidth={1.5} />
-            <span className="hidden sm:inline">View</span>
-          </button>
-          {!archiveMode && (
-            <>
-              <button
-                type="button"
-                onClick={() => setEditingReport(report)}
-                className={`${compact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg text-[12px] font-medium text-[#86868b] hover:text-[#0071e3] hover:bg-[#0071e3]/10 transition-colors inline-flex items-center gap-1`}
-                title="Edit"
-              >
-                <Edit className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} strokeWidth={1.5} />
-                <span className="hidden sm:inline">Edit</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDeleteReport(report)}
-                className={`${compact ? 'p-1.5' : 'p-2'} rounded-sm text-[#b45309] hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors`}
-                title="Delete"
-              >
-                <Trash2 className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={1.5} />
-              </button>
-            </>
-          )}
-        </div>
+
+        {/* MoM Comparison Panel */}
+        {showCompare && compareWith && (
+          <div className="border-t border-black/5 dark:border-white/10 px-4 py-3 bg-[#f5f5f7] dark:bg-[#1c1c1e]">
+            <p className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <GitCompare className="w-3.5 h-3.5" />
+              vs. {compareWith.title || compareWith.dateRange || 'Previous Report'}
+            </p>
+            <div className="space-y-0">
+              <Delta current={report.metrics?.followers} previous={compareWith.metrics?.followers} label="Followers" />
+              <Delta current={report.metrics?.followerChange} previous={compareWith.metrics?.followerChange} label="Net Growth" prefix="+" />
+              <Delta current={report.metrics?.accountsReached} previous={compareWith.metrics?.accountsReached} label="Accounts Reached" />
+              <Delta current={report.metrics?.interactions} previous={compareWith.metrics?.interactions} label="Interactions" />
+              <Delta current={report.metrics?.profileVisits} previous={compareWith.metrics?.profileVisits} label="Profile Visits" />
+              <Delta current={report.metrics?.views} previous={compareWith.metrics?.views} label="Views" />
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Stats summary - only count reports for MY clients
   const myClientIds = new Set(myClients.map(c => c.id));
@@ -611,6 +761,29 @@ const InstagramReportsPage = () => {
           </p>
         </div>
       </div>
+
+      {/* Search / Filter */}
+      {activeTab !== 'archive' && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b] pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search clients…"
+            className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 transition-all"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className="flex items-center justify-between gap-4">
@@ -706,9 +879,17 @@ const InstagramReportsPage = () => {
             {effectiveIsAdmin ? 'No clients exist in the system yet.' : 'Contact your admin to get clients assigned to you.'}
           </p>
         </div>
+      ) : filteredClientsForTab.length === 0 && searchQuery ? (
+        <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-10 text-center">
+          <Search className="w-12 h-12 mx-auto text-[#86868b] opacity-30 mb-3" />
+          <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">No results for "{searchQuery}"</h3>
+          <button type="button" onClick={() => setSearchQuery('')} className="mt-3 text-[13px] font-medium text-[#0071e3] hover:underline">
+            Clear search
+          </button>
+        </div>
             ) : (
         <div className="space-y-3">
-          {clientsWithReportsForTab.map(({ client, reports: clientReports }) => {
+          {filteredClientsForTab.map(({ client, reports: clientReports }) => {
             const isExpanded = expandedClient === client.id;
             const monthlyReports = clientReports.filter(r => !r.reportType || r.reportType === 'monthly');
             const quarterlyReports = clientReports.filter(r => r.reportType === 'quarterly');
@@ -764,7 +945,21 @@ const InstagramReportsPage = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
+                      {/* Follower sparkline: pull follower values from monthly reports, oldest→newest */}
+                      {(() => {
+                        const monthlyOnly = clientReports.filter(r => !r.reportType || r.reportType === 'monthly');
+                        const followerVals = [...monthlyOnly]
+                          .reverse()
+                          .map(r => r.metrics?.followers)
+                          .filter(v => v != null && !isNaN(Number(v)));
+                        return followerVals.length >= 2 ? (
+                          <div className="hidden sm:flex flex-col items-end gap-0.5">
+                            <Sparkline values={followerVals} width={56} height={20} />
+                            <span className="text-[10px] text-[#86868b]">followers</span>
+                          </div>
+                        ) : null;
+                      })()}
                       {isExpanded ? (
                         <ChevronUp className="w-5 h-5 text-[#86868b]" />
                       ) : (
@@ -896,18 +1091,30 @@ const InstagramReportsPage = () => {
                                 <BarChart3 className="w-3.5 h-3.5" />
                                 Monthly Reports ({monthlyReports.length})
                               </h4>
-                              {groupReportsByYearMonth(monthlyReports).map(({ year, month, reports: groupReports }) => (
-                                <div key={`m-${year}-${month}`} className="mb-4">
-                                  <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
-                                    {format(new Date(year, month - 1, 1), 'MMMM yyyy')}
-                                  </p>
-                                  <div className="space-y-2">
-                                    {groupReports.map(report => (
-                                      <ReportCard key={report.id} report={report} compact />
-                                    ))}
+                              {(() => {
+                                // Sort all monthly reports oldest→newest so we can find prev per report
+                                const sortedMonthly = [...monthlyReports].sort((a, b) => {
+                                  const da = a.startDate ? new Date(a.startDate) : a.createdAt?.toDate?.() || new Date(0);
+                                  const db = b.startDate ? new Date(b.startDate) : b.createdAt?.toDate?.() || new Date(0);
+                                  return da - db;
+                                });
+                                const findPrev = (report) => {
+                                  const idx = sortedMonthly.findIndex(r => r.id === report.id);
+                                  return idx > 0 ? sortedMonthly[idx - 1] : null;
+                                };
+                                return groupReportsByYearMonth(monthlyReports).map(({ year, month, reports: groupReports }) => (
+                                  <div key={`m-${year}-${month}`} className="mb-4">
+                                    <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
+                                      {format(new Date(year, month - 1, 1), 'MMMM yyyy')}
+                                    </p>
+                                    <div className="space-y-2">
+                                      {groupReports.map(report => (
+                                        <ReportCard key={report.id} report={report} compact compareWith={findPrev(report)} />
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ));
+                              })()}
                             </div>
                           )}
                         </>
@@ -1535,7 +1742,21 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 <input
                   type="date"
                   value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  onChange={(e) => {
+                    const newStart = e.target.value;
+                    setFormData(prev => {
+                      let newTitle = prev.title;
+                      if (!prev.title && newStart) {
+                        const d = new Date(newStart + 'T12:00:00');
+                        if (!isNaN(d)) {
+                          const month = d.toLocaleString('en-US', { month: 'long' });
+                          const year = d.getFullYear();
+                          newTitle = `Performance Report - ${month} ${year}`;
+                        }
+                      }
+                      return { ...prev, startDate: newStart, title: newTitle };
+                    });
+                  }}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>

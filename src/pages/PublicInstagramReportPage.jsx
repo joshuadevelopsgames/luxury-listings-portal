@@ -110,10 +110,10 @@ const PublicInstagramReportPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f7ff' }}>
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading your report...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-purple-500 mx-auto" />
+          <p className="mt-4 text-gray-500 text-sm">Loading your report...</p>
         </div>
       </div>
     );
@@ -121,13 +121,13 @@ const PublicInstagramReportPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#f8f7ff' }}>
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
-            <AlertCircle className="w-8 h-8 text-red-600" />
+          <div className="w-16 h-16 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-4">
+            <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Report Not Found</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-500 text-sm">
             This report may have been removed or the link is invalid.
           </p>
         </div>
@@ -136,71 +136,84 @@ const PublicInstagramReportPage = () => {
   }
 
   return (
-    <div className={`min-h-screen ${
-      report.reportType === 'yearly' ? 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50' :
-      report.reportType === 'quarterly' ? 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50' :
-      'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50'
-    }`}>
+    <div className="min-h-screen" style={{ background: '#f8f7ff' }}>
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/Luxury-listings-logo-CLR.png" alt="Luxury Listings" className="w-10 h-10 object-contain" />
-              <div>
-                <h1 className="font-semibold text-gray-900">Instagram Analytics</h1>
-                <p className="text-xs text-gray-500">Powered by Luxury Listings</p>
-              </div>
+      <header className="bg-white/90 backdrop-blur-lg border-b border-gray-200/60 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center gap-3">
+            <img src="/Luxury-listings-logo-CLR.png" alt="Luxury Listings" className="h-8 w-auto object-contain" />
+            <div>
+              <p className="text-sm font-semibold text-gray-900 leading-tight">Luxury Listings</p>
+              <p className="text-xs text-gray-400 leading-tight">Instagram Analytics Report</p>
             </div>
-            <a
-              href="https://www.smmluxurylistings.info"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
-            >
-              Learn More <ExternalLink className="w-3 h-3" />
-            </a>
           </div>
         </div>
       </header>
 
-      {/* Hero Section — type-specific for quarterly/yearly */}
+      {/* Hero Section — dark premium style */}
       {(() => {
         const isQuarterly = report.reportType === 'quarterly';
         const isYearly = report.reportType === 'yearly';
         const isAggregated = isQuarterly || isYearly;
         const sourceCount = report.sourceReportIds?.length;
+        // Derive a display title: if the stored title is blank or a generic placeholder, format a nice one
+        const displayTitle = (() => {
+          const t = (report.title || '').trim();
+          if (!t || t.toLowerCase() === 'monthly report' || t.toLowerCase() === 'instagram report') {
+            // Try to derive from dateRange e.g. "Jan 1 - Jan 31" → "Performance Report — January 2025"
+            if (report.dateRange) {
+              const match = report.dateRange.match(/([A-Za-z]+)\s+\d+/);
+              if (match) return `Performance Report — ${match[1]}`;
+            }
+            return 'Performance Report';
+          }
+          return t;
+        })();
+        const accentColor = isYearly ? '#818cf8' : isQuarterly ? '#34d399' : '#c084fc';
         return (
-      <div className="relative overflow-hidden">
-        <div className={`absolute inset-0 ${
-          isYearly ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500' :
-          isQuarterly ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500' :
-          'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500'
-        }`} />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjLTItNC00LTItNC0ycy0yIDItMiA0YzAgMiAyIDQgMiA0czIgMiA0IDJjMiA0IDQgMiA0IDJzMi0yIDItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10" />
-        
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 pb-24 sm:pb-32">
+      <div className="relative overflow-hidden" style={{ background: '#0d0d14' }}>
+        {/* Subtle noise texture overlay */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        }} />
+        {/* Accent gradient orb */}
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-20 blur-[80px]"
+          style={{ background: `radial-gradient(ellipse, ${accentColor} 0%, transparent 70%)` }} />
+
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 pb-36 sm:pb-44">
           <div className="text-center text-white">
-            <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm">
-                <Calendar className="w-4 h-4" />
-                <span className="text-sm font-medium">{report.dateRange}</span>
-              </div>
-              {isYearly && <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">Annual Report</span>}
-              {isQuarterly && <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">Quarterly Report</span>}
+
+            {/* "Prepared for" label */}
+            <div className="mb-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-1.5" style={{ color: accentColor }}>
+                Prepared for
+              </p>
+              <p className="text-2xl sm:text-3xl font-bold text-white">
+                {report.clientName}
+              </p>
             </div>
-            
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-              {report.title}
+
+            {/* Main title */}
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white/95 mb-5 tracking-tight">
+              {displayTitle}
             </h1>
-            
-            <div className="flex flex-col items-center gap-1 text-white/90 mb-8">
-              <div className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                <span className="text-lg">{report.clientName}</span>
+
+            {/* Badges row */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm">
+                <Calendar className="w-3.5 h-3.5 text-white/70" />
+                <span className="text-sm text-white/90">{report.dateRange}</span>
               </div>
+              {isYearly && (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full border border-indigo-400/30 bg-indigo-500/20 text-sm text-indigo-200 font-medium">Annual Report</span>
+              )}
+              {isQuarterly && (
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/20 text-sm text-emerald-200 font-medium">Quarterly Report</span>
+              )}
               {isAggregated && sourceCount != null && sourceCount > 0 && (
-                <p className="text-sm text-white/80">Aggregated from {sourceCount} monthly report{sourceCount !== 1 ? 's' : ''}</p>
+                <span className="text-xs text-white/50 px-2">
+                  Aggregated from {sourceCount} monthly report{sourceCount !== 1 ? 's' : ''}
+                </span>
               )}
             </div>
           </div>
@@ -208,67 +221,87 @@ const PublicInstagramReportPage = () => {
 
         {/* Wave Decoration */}
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill={isYearly ? 'rgb(238, 242, 255)' : isQuarterly ? 'rgb(236, 253, 245)' : 'rgb(250, 245, 255)'} />
+          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path d="M0 80L60 70C120 60 240 40 360 30C480 20 600 20 720 25C840 30 960 40 1080 45C1200 50 1320 50 1380 50L1440 50V80H0Z" fill="#f8f7ff" />
           </svg>
         </div>
       </div>
         );
       })()}
 
-      {/* Key Metrics Overview */}
-      {report.metrics && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { 
-                icon: Eye, 
-                label: 'Total Views', 
-                value: report.metrics.views?.toLocaleString() || '—', 
-                color: 'from-purple-500 to-purple-600',
-                subtext: (report.metrics.views != null && report.metrics.viewsFollowerPercent != null) ? `${report.metrics.viewsFollowerPercent}% from followers` : null
-              },
-              { 
-                icon: Users, 
-                label: 'Followers', 
-                value: report.metrics.followers?.toLocaleString() || '—', 
-                color: 'from-pink-500 to-pink-600',
-                subtext: (() => { const fc = report.metrics.followerChange; if (fc == null) return null; const n = parseInt(fc); if (!isNaN(n)) return `${n > 0 ? '+' : ''}${n}`; return String(fc); })(),
-                subtextColor: (() => { const fc = report.metrics.followerChange; const n = parseInt(fc); return (!isNaN(n) ? n : Number(fc)) > 0 ? 'text-green-600' : 'text-red-500'; })()
-              },
-              { 
-                icon: Heart, 
-                label: 'Interactions', 
-                value: report.metrics.interactions?.toLocaleString() || '—', 
-                color: 'from-orange-500 to-orange-600',
-                subtext: (report.metrics.interactions != null && report.metrics.interactionsFollowerPercent != null) ? `${report.metrics.interactionsFollowerPercent}% from followers` : null
-              },
-              { 
-                icon: MousePointer, 
-                label: 'Profile Visits', 
-                value: report.metrics.profileVisits?.toLocaleString() || '—', 
-                color: 'from-blue-500 to-blue-600',
-                subtext: (report.metrics.profileVisits != null && report.metrics.profileVisitsChange) ? `${report.metrics.profileVisitsChange}` : null,
-                subtextColor: report.metrics.profileVisitsChange?.startsWith('+') ? 'text-green-600' : 'text-red-500'
-              },
-            ].map((stat, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-2xl shadow-lg p-5 transform hover:-translate-y-1 transition-all duration-300"
-              >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-3`}>
-                  <stat.icon className="w-6 h-6 text-white" />
+      {/* Key Metrics — 4 equal hero-style cards */}
+      {report.metrics && (() => {
+        const m = report.metrics;
+        const followerChangeVal = (() => { const fc = m.followerChange; if (fc == null) return null; const n = parseInt(fc); return isNaN(n) ? String(fc) : `${n > 0 ? '+' : ''}${n}`; })();
+        const followerChangePosNeg = (() => { const fc = m.followerChange; const n = parseInt(fc); return !isNaN(n) ? n : Number(fc); })();
+
+        const cards = [
+          m.accountsReached != null ? {
+            icon: Users, label: 'Accounts Reached',
+            value: m.accountsReached.toLocaleString(),
+            badge: m.accountsReachedChange,
+            badgePos: m.accountsReachedChange?.startsWith('+'),
+            iconGradient: 'from-violet-600 to-purple-700',
+          } : null,
+          m.followers != null ? {
+            icon: Users, label: 'Total Followers',
+            value: m.followers.toLocaleString(),
+            badge: followerChangeVal,
+            badgePos: followerChangePosNeg >= 0,
+            iconGradient: 'from-pink-600 to-rose-700',
+          } : null,
+          m.views != null ? {
+            icon: Eye, label: 'Total Views',
+            value: m.views.toLocaleString(),
+            badge: m.viewsFollowerPercent != null ? `${m.viewsFollowerPercent}% followers` : null,
+            badgeNeutral: true,
+            iconGradient: 'from-violet-500 to-indigo-600',
+          } : null,
+          m.interactions != null ? {
+            icon: Heart, label: 'Interactions',
+            value: m.interactions.toLocaleString(),
+            badge: null,
+            iconGradient: 'from-orange-500 to-red-600',
+          } : (m.profileVisits != null ? {
+            icon: MousePointer, label: 'Profile Visits',
+            value: m.profileVisits.toLocaleString(),
+            badge: m.profileVisitsChange,
+            badgePos: m.profileVisitsChange?.startsWith('+'),
+            iconGradient: 'from-blue-500 to-indigo-600',
+          } : null),
+        ].filter(Boolean);
+
+        return (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 relative z-10">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {cards.map((card, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-purple-100/60 p-5 flex flex-col"
+                  style={{ boxShadow: '0 8px 30px rgba(124,58,237,0.09), 0 2px 8px rgba(0,0,0,0.05)' }}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${card.iconGradient} flex items-center justify-center flex-shrink-0`}>
+                      <card.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-400 leading-tight">{card.label}</span>
+                  </div>
+                  <p className="text-4xl font-black text-gray-900 tracking-tight leading-none mb-2"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {card.value}
+                  </p>
+                  {card.badge && (
+                    <span className={`inline-flex items-center gap-1 text-xs font-semibold w-fit px-2 py-0.5 rounded-full ${
+                      card.badgeNeutral ? 'bg-violet-50 text-violet-700' :
+                      card.badgePos ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                    }`}>
+                      {!card.badgeNeutral && (card.badgePos ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />)}
+                      {card.badge}
+                    </span>
+                  )}
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-gray-500">{stat.label}</p>
-                {stat.subtext && (
-                  <p className={`text-xs mt-1 ${stat.subtextColor || 'text-gray-400'}`}>{stat.subtext}</p>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Quarterly breakdown — yearly reports only */}
       {report.reportType === 'yearly' && report.quarterlyBreakdown && report.quarterlyBreakdown.length > 0 && (
@@ -758,22 +791,21 @@ const PublicInstagramReportPage = () => {
       )}
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img 
-                src="/Luxury-listings-logo-CLR.png" 
-                alt="Luxury Listings" 
-                className="h-8 w-auto"
-              />
-              <div>
-                <p className="font-semibold text-gray-900">Luxury Listings</p>
-                <p className="text-xs text-gray-500">Social Media Management</p>
-              </div>
+      <footer style={{ background: '#0d0d14' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex flex-col items-center text-center gap-4">
+            <img
+              src="/Luxury-listings-logo-WHT.png"
+              alt="Luxury Listings"
+              className="h-10 w-auto object-contain opacity-80"
+            />
+            <div>
+              <p className="text-sm font-semibold text-white/80 tracking-wide">Luxury Listings</p>
+              <p className="text-xs text-white/40 mt-0.5">Social Media Management</p>
             </div>
-            <p className="text-sm text-gray-500">
-              Report generated on {report.createdAt?.toDate ? format(report.createdAt.toDate(), 'MMMM d, yyyy') : 'Unknown'}
+            <div className="w-12 h-px bg-white/10 my-1" />
+            <p className="text-xs text-white/30">
+              Report generated {report.createdAt?.toDate ? format(report.createdAt.toDate(), 'MMMM d, yyyy') : ''}
             </p>
           </div>
         </div>
