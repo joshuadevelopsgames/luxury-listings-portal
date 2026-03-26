@@ -1,17 +1,42 @@
 /**
  * Edge Function Service
  *
- * Calls Supabase Edge Functions by explicitly retrieving the user's JWT
- * from the session and passing it as an Authorization header via fetch.
- * This is more reliable than supabase.functions.invoke() which depends on
- * the client's internal session state (which can be stale after page reload
- * or when the custom navigator-lock bypass in src/lib/supabase.js is active).
+ * Calls Supabase Edge Functions with an explicit Authorization header.
+ *
+ * Root cause of 401 errors: the custom lock bypass in src/lib/supabase.js
+ *   lock: (name, acquireTimeout, fn) => fn()
+ * causes supabase.auth.getSession() to occasionally return null even when
+ * the user IS signed in — the lock-free execution means the session isn't
+ * guaranteed to be loaded from localStorage before the first getSession() call.
+ *
+ * Fix: subscribe to onAuthStateChange at module load time and keep a
+ * module-level token cache. This token is always fresh because Supabase
+ * fires onAuthStateChange on every session change (sign-in, refresh, etc.).
+ * getSession() is used as a secondary fallback for the initial call.
  */
 
 import { supabase } from '../lib/supabase';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+// ─── Module-level token cache ───────────────────────────────────────────────
+// Populated immediately from any existing session, then kept up-to-date
+// via onAuthStateChange.
+let _cachedToken = null;
+
+// Seed from existing session on module load (best-effort, async)
+supabase.auth.getSession().then(({ data: { session } }) => {
+  if (session?.access_token && !_cachedToken) {
+    _cachedToken = session.access_token;
+  }
+});
+
+// Keep token fresh on every auth event (sign-in, token refresh, sign-out)
+supabase.auth.onAuthStateChange((_event, session) => {
+  _cachedToken = session?.access_token || null;
+});
+// ────────────────────────────────────────────────────────────────────────────
 
 /**
  * Invoke a Supabase Edge Function.
@@ -21,20 +46,24 @@ const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
  * @returns {Promise<any>} - Parsed JSON response data
  */
 export async function invokeEdgeFunction(fnName, body = {}, timeoutMs = 60000) {
-  // Explicitly get the session so we can attach the JWT ourselves.
-  // supabase.functions.invoke() should do this automatically, but the
-  // custom lock: (name, timeout, fn) => fn() in src/lib/supabase.js can
-  // cause it to miss the token if called before the session is resolved.
-  const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData?.session?.access_token;
+  // 1. Use the cached token if available (most reliable path)
+  // 2. Fall back to a fresh getSession() call
+  let accessToken = _cachedToken;
+  if (!accessToken) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    accessToken = sessionData?.session?.access_token || null;
+    if (accessToken) _cachedToken = accessToken; // warm the cache
+  }
+
+  if (!accessToken) {
+    throw new Error('Not authenticated — please sign in and try again.');
+  }
 
   const headers = {
     'Content-Type': 'application/json',
     'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${accessToken}`,
   };
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
 
   const url = `${SUPABASE_URL}/functions/v1/${fnName}`;
 

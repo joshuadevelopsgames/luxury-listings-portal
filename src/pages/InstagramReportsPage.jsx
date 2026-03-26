@@ -145,6 +145,7 @@ const getReportCompletionStatus = (metrics) => {
 };
 
 // ─── Tiny SVG sparkline ─────────────────────────────────────────────────────
+let _sparklineId = 0;
 const Sparkline = ({ values, width = 64, height = 22 }) => {
   if (!values || values.length < 2) return null;
   const nums = values.map(Number).filter(n => !isNaN(n));
@@ -152,17 +153,39 @@ const Sparkline = ({ values, width = 64, height = 22 }) => {
   const min = Math.min(...nums);
   const max = Math.max(...nums);
   const range = max - min || 1;
-  const pts = nums.map((v, i) => {
-    const x = (i / (nums.length - 1)) * width;
-    const y = height - 2 - ((v - min) / range) * (height - 4);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
+  const pts = nums.map((v, i) => ({
+    x: (i / (nums.length - 1)) * width,
+    y: height - 4 - ((v - min) / range) * (height - 8),
+  }));
   const trend = nums[nums.length - 1] - nums[0];
   const lineColor = trend >= 0 ? '#34c759' : '#ff3b30';
+  const gradId = `spk-${++_sparklineId}`;
+  const polyPoints = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaPath =
+    `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} ` +
+    pts.slice(1).map(p => `L ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') +
+    ` L ${pts[pts.length - 1].x.toFixed(1)},${height} L ${pts[0].x.toFixed(1)},${height} Z`;
   return (
     <svg width={width} height={height} className="overflow-visible flex-shrink-0" aria-hidden>
-      <polyline points={pts.join(' ')} fill="none" stroke={lineColor} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={pts[pts.length - 1].split(',')[0]} cy={pts[pts.length - 1].split(',')[1]} r="2.5" fill={lineColor} />
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* gradient area fill */}
+      <path d={areaPath} fill={`url(#${gradId})`} />
+      {/* line */}
+      <polyline points={polyPoints} fill="none" stroke={lineColor} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+      {/* data point dots */}
+      {pts.map((p, i) => (
+        <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)}
+          r={i === pts.length - 1 ? 2.5 : 1.5}
+          fill={i === pts.length - 1 ? lineColor : 'transparent'}
+          stroke={lineColor}
+          strokeWidth="1.5"
+        />
+      ))}
     </svg>
   );
 };
@@ -1023,18 +1046,26 @@ const InstagramReportsPage = () => {
                                   const idx = sortedMonthly.findIndex(r => r.id === report.id);
                                   return idx > 0 ? sortedMonthly[idx - 1] : null;
                                 };
-                                return groupReportsByYearMonth(monthlyReports).map(({ year, month, reports: groupReports }) => (
-                                  <div key={`m-${year}-${month}`} className="mb-4">
-                                    <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
-                                      {format(new Date(year, month - 1, 1), 'MMMM yyyy')}
-                                    </p>
-                                    <div className="space-y-2">
-                                      {groupReports.map(report => (
-                                        <ReportCard key={report.id} report={report} compact compareWith={findPrev(report)} />
-                                      ))}
+                                return groupReportsByYearMonth(monthlyReports).map(({ year, month, reports: groupReports }) => {
+                                  // Newest report first within each month group
+                                  const sortedGroup = [...groupReports].sort((a, b) => {
+                                    const da = a.startDate ? new Date(a.startDate) : a.createdAt?.toDate?.() || new Date(0);
+                                    const db = b.startDate ? new Date(b.startDate) : b.createdAt?.toDate?.() || new Date(0);
+                                    return db - da;
+                                  });
+                                  return (
+                                    <div key={`m-${year}-${month}`} className="mb-4">
+                                      <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
+                                        {format(new Date(year, month - 1, 1), 'MMMM yyyy')}
+                                      </p>
+                                      <div className="space-y-2">
+                                        {sortedGroup.map(report => (
+                                          <ReportCard key={report.id} report={report} compact compareWith={findPrev(report)} />
+                                        ))}
+                                      </div>
                                     </div>
-                                  </div>
-                                ));
+                                  );
+                                });
                               })()}
                             </div>
                           )}
