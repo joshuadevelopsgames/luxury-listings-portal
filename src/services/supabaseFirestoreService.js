@@ -1632,29 +1632,37 @@ class SupabaseService {
 
   async createClientListing(data) {
     try {
+      console.log('[createClientListing] getting session…');
       const session = await supabase.auth.getSession();
       const userId = session?.data?.session?.user?.id || null;
+      console.log('[createClientListing] session OK, userId:', userId);
+
+      const payload = clean({
+        client_id: data.clientId,
+        listing_url: data.listingUrl,
+        source_domain: data.sourceDomain,
+        title: data.title || null,
+        description: data.description || null,
+        address: data.address || null,
+        price: data.price || null,
+        beds: data.beds || null,
+        baths: data.baths || null,
+        square_feet: data.squareFeet || null,
+        notes: data.notes || null,
+        raw_payload: data.rawPayload || {},
+        created_by_id: userId,
+        created_at: ts(),
+        updated_at: ts(),
+      });
+      console.log('[createClientListing] inserting…', Object.keys(payload));
+
       const { data: row, error } = await supabase
         .from('client_listings')
-        .insert([clean({
-          client_id: data.clientId,
-          listing_url: data.listingUrl,
-          source_domain: data.sourceDomain,
-          title: data.title || null,
-          description: data.description || null,
-          address: data.address || null,
-          price: data.price || null,
-          beds: data.beds || null,
-          baths: data.baths || null,
-          square_feet: data.squareFeet || null,
-          notes: data.notes || null,
-          raw_payload: data.rawPayload || {},
-          created_by_id: userId,
-          created_at: ts(),
-          updated_at: ts(),
-        })])
+        .insert([payload])
         .select('*')
         .single();
+
+      console.log('[createClientListing] result:', row ? 'OK' : 'null', 'error:', error?.message || 'none');
       if (error) throw error;
       return row;
     } catch (error) { throw error; }
