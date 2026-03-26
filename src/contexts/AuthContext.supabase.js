@@ -76,6 +76,22 @@ function isDemoViewOnly(email) {
 }
 
 // ============================================================================
+// HELPERS
+// ============================================================================
+/**
+ * Wraps a promise with a timeout. If the promise doesn't resolve/reject within
+ * `ms` milliseconds, the timeout rejects with a TimeoutError. This prevents
+ * Supabase queries from hanging indefinitely during sign-in.
+ */
+function withTimeout(promise, ms, label = 'operation') {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`[Auth] ${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+// ============================================================================
 // LOCAL STORAGE — lightweight display cache for instant shell rendering
 // ============================================================================
 // IMPORTANT: This cache is ONLY for rendering the UI shell instantly on refresh
@@ -513,20 +529,37 @@ export function AuthProvider({ children }) {
     const emailNormalized = (email || '').trim().toLowerCase();
     supabaseService.clearProfileCache(emailNormalized);
     try {
-      let [approvedUser, savedRoleRaw] = await Promise.all([
-        supabaseService.getApprovedUserByEmail(emailNormalized),
-        supabaseService.getSystemConfig(`currentRole:${emailNormalized}`).catch(() => null),
-      ]);
+      let profileFetchTimedOut = false;
+      let [approvedUser, savedRoleRaw] = await withTimeout(
+        Promise.all([
+          supabaseService.getApprovedUserByEmail(emailNormalized),
+          supabaseService.getSystemConfig(`currentRole:${emailNormalized}`).catch(() => null),
+        ]),
+        5000,
+        'profile fetch'
+      ).catch((err) => {
+        console.warn('[Auth] Profile fetch timed out or failed:', err.message);
+        profileFetchTimedOut = true;
+        return [null, null];
+      });
       // If the profile query returned null it may be a race condition: on a hard
       // refresh the Supabase session JWT can take a moment to attach to outgoing
       // requests, so RLS blocks the SELECT and maybeSingle() returns null instead
       // of an error. Retry once after a short delay before treating the user as
       // not-approved and triggering a forced logout.
-      if (!approvedUser) {
+      if (!approvedUser && !profileFetchTimedOut) {
         // RLS race: JWT may not be attached yet on a hard refresh. Wait briefly then retry.
         await new Promise((resolve) => setTimeout(resolve, 400));
         supabaseService.clearProfileCache(emailNormalized);
-        approvedUser = await supabaseService.getApprovedUserByEmail(emailNormalized);
+        approvedUser = await withTimeout(
+          supabaseService.getApprovedUserByEmail(emailNormalized),
+          5000,
+          'profile retry'
+        ).catch((err) => {
+          console.warn('[Auth] Profile retry timed out or failed:', err.message);
+          profileFetchTimedOut = true;
+          return null;
+        });
       }
       if (approvedUser) {
         const assignedRoles =
@@ -601,6 +634,38 @@ export function AuthProvider({ children }) {
         } else if (!mergedUser.onboardingCompleted && !currentPath.includes('/onboarding')) {
           appNavigate('/onboarding', { replace: true });
         }
+      } else if (profileFetchTimedOut) {
+        // The profile fetch timed out (Supabase slow/unreachable) — don't log the user
+        // out. Apply role-based defaults from the display cache so pages are accessible,
+        // then let the safety timeout unblock the app. The user can refresh to retry.
+        console.warn('[Auth] Profile fetch timed out — applying role defaults from display cache');
+        const cachedRole = loadDisplayCache()?.role || USER_ROLES.CONTENT_DIRECTOR;
+        const roleUserData = getUserByRole(cachedRole);
+        const fallbackUser = {
+          uid,
+          email,
+          displayName: displayName || roleUserData.displayName,
+          firstName: displayName?.split(' ')[0] || roleUserData.firstName,
+          lastName: displayName?.split(' ').slice(1).join(' ') || roleUserData.lastName,
+          position: roleUserData.position,
+          role: cachedRole,
+          roles: [cachedRole],
+          primaryRole: cachedRole,
+          department: roleUserData.department,
+          startDate: roleUserData.startDate,
+          avatar: photoURL || roleUserData.avatar,
+          bio: roleUserData.bio,
+          skills: roleUserData.skills,
+          stats: roleUserData.stats,
+          pagePermissions: getDefaultPagePermissions(cachedRole),
+          isApproved: true,
+          onboardingCompleted: true,
+          _fromTimeoutFallback: true,
+        };
+        setCurrentRole(cachedRole);
+        setCurrentUser(fallbackUser);
+        setUserData(fallbackUser);
+        // Don't save to storage — this is a temporary fallback only
       } else {
         // Not approved — sign out
         await logout();
@@ -708,22 +773,39 @@ export function AuthProvider({ children }) {
   // fire in normal operation. Kept as a safety net at 10s.
   useEffect(() => {
     let timeout;
+    // Hard deadline: force-unblock after 12s no matter what.
+    // This prevents the app from being stuck forever if handleUserSignIn hangs
+    // (e.g. a Supabase query that never resolves/rejects).
+    const HARD_DEADLINE_MS = 12000;
+    const startedAt = Date.now();
+    const forceUnblock = () => {
+      console.warn('[Auth] Force-unblocking app — sign-in took too long');
+      setAuthHydrated(true);
+      setLoading(false);
+    };
     const scheduleTimeout = (delay) => {
       timeout = setTimeout(() => {
+        const elapsed = Date.now() - startedAt;
+        if (signInInProgressRef.current && elapsed < HARD_DEADLINE_MS) {
+          // Sign-in is still running and we haven't hit the hard deadline yet —
+          // give it a bit more time.
+          console.log('[Auth] Safety timeout: sign-in in progress, extending…');
+          scheduleTimeout(2000);
+          return;
+        }
         if (signInInProgressRef.current) {
-          // Sign-in is actively running — give it more time
-          console.log('[Auth] Safety timeout: sign-in in progress, extending 4s…');
-          scheduleTimeout(4000);
+          // Hard deadline reached — sign-in is hanging, force-unblock.
+          forceUnblock();
           return;
         }
         setAuthHydrated((prev) => {
-          if (!prev) console.warn('[Auth] Safety timeout fired — unblocking app');
+          if (!prev) console.warn('[Auth] Safety timeout — unblocking app after wait');
           return true;
         });
         setLoading(false);
       }, delay);
     };
-    scheduleTimeout(10000);
+    scheduleTimeout(5000);
     return () => clearTimeout(timeout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

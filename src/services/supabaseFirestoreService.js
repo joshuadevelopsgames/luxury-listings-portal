@@ -11,6 +11,19 @@ import { supabase } from '../lib/supabase';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Race a promise against a timeout. If the promise doesn't settle within `ms`
+ * milliseconds the timeout rejects, preventing hanging fetches from blocking
+ * the UI indefinitely.
+ */
+function withFetchTimeout(promise, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`fetch timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 const ts = () => new Date().toISOString();
 
 /** Normalize any timestamp value to ISO string */
@@ -106,7 +119,7 @@ function realtimeListener(table, _filter, fetcher, callback) {
     // Reuse any in-flight request for this exact key
     let promise = _inFlight.get(cacheKey);
     if (!promise) {
-      promise = fetcher()
+      promise = withFetchTimeout(fetcher(), 8000)
         .then(data => {
           // Only cache non-empty results — empty results from a pre-auth query
           // would stick for the full TTL and hide real data.
