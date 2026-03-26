@@ -19,12 +19,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(parsed.toString(), {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; SMMLuxuryBot/1.0)',
-        Accept: 'text/html,application/xhtml+xml',
-      },
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    let response;
+    try {
+      response = await fetch(parsed.toString(), {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      });
+    } finally {
+      clearTimeout(timer);
+    }
     if (!response.ok) {
       // Some listing sites block bot/user-agent scraping (403/429/etc).
       // Return a soft-success so saving the listing link can continue.

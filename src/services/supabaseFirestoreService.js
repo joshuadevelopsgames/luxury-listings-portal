@@ -1662,6 +1662,31 @@ class SupabaseService {
     } catch (error) { throw error; }
   }
 
+  async updateClientListing(listingId, data) {
+    if (!listingId) throw new Error('Missing listingId');
+    try {
+      const updates = clean({
+        title: data.title,
+        description: data.description,
+        address: data.address,
+        price: data.price,
+        beds: data.beds,
+        baths: data.baths,
+        square_feet: data.squareFeet,
+        raw_payload: data.rawPayload,
+        updated_at: ts(),
+      });
+      const { data: row, error } = await supabase
+        .from('client_listings')
+        .update(updates)
+        .eq('id', listingId)
+        .select('*')
+        .single();
+      if (error) throw error;
+      return row;
+    } catch (error) { throw error; }
+  }
+
   async getClientAssetFolders(clientId) {
     if (!clientId) return [];
     try {
