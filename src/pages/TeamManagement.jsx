@@ -81,7 +81,7 @@ const TeamManagement = () => {
         });
         const formattedMembers = await Promise.all(sortedUsers.map(async (user, index) => {
           const email = user.email || user.id;
-          const leaveBalance = canViewLeaveBalance ? await supabaseService.getUserLeaveBalances(email) : { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 } };
+          const leaveBalance = canViewLeaveBalance ? await supabaseService.getUserLeaveBalances(email) : { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 }, remote: { total: 10, used: 0, remaining: 10 } };
           return {
             ...user,
             id: user.id || index + 1,
@@ -487,9 +487,21 @@ const TeamManagement = () => {
                             <span>{member.leaveBalance.sick.remaining}/{member.leaveBalance.sick.total}</span>
                           </div>
                           <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-[#ff3b30] rounded-full transition-all"
                               style={{ width: `${(member.leaveBalance.sick.remaining / member.leaveBalance.sick.total) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-[#86868b] mb-1">
+                            <span>Remote</span>
+                            <span>{member.leaveBalance.remote?.remaining ?? 0}/{member.leaveBalance.remote?.total ?? 10}</span>
+                          </div>
+                          <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-[#5856d6] rounded-full transition-all"
+                              style={{ width: `${member.leaveBalance.remote?.total ? (member.leaveBalance.remote.remaining / member.leaveBalance.remote.total) * 100 : 100}%` }}
                             />
                           </div>
                         </div>

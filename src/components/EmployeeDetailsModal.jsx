@@ -56,7 +56,8 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
   const [editProfileForm, setEditProfileForm] = useState({ firstName: '', lastName: '', department: '', phone: '', location: '', position: '', manager: '', startDate: '' });
   const [editLeaveForm, setEditLeaveForm] = useState({
     vacation: { total: 15, used: 0 },
-    sick: { total: 3, used: 0 }
+    sick: { total: 3, used: 0 },
+    remote: { total: 10, used: 0 }
   });
   const [saving, setSaving] = useState(false);
   const [isEditingLeave, setIsEditingLeave] = useState(false);
@@ -101,7 +102,8 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
     });
     setEditLeaveForm({
       vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
-      sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 }
+      sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 },
+      remote: { total: employee.leaveBalance?.remote?.total ?? 10, used: employee.leaveBalance?.remote?.used ?? 0 }
     });
   }, [employee?.email, isEditMode]);
 
@@ -119,7 +121,8 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
     });
     setEditLeaveForm({
       vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
-      sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 }
+      sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 },
+      remote: { total: employee.leaveBalance?.remote?.total ?? 10, used: employee.leaveBalance?.remote?.used ?? 0 }
     });
     setIsEditMode(true);
   };
@@ -308,7 +311,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                     <Calendar className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
                     <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Leave Balance</h4>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
@@ -342,6 +345,23 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                         </div>
                       </div>
                       <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days</p>
+                    </div>
+                    <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 rounded-full bg-[#5856d6]" />
+                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Remote</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
+                          <input type="number" min="0" value={editLeaveForm.remote.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]" />
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <input type="number" min="0" value={editLeaveForm.remote.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]" />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.remote.total - editLeaveForm.remote.used} days</p>
                     </div>
                   </div>
                 </div>
@@ -439,7 +459,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
               </div>
               <div className="p-6">
                 {isEditingLeave ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
@@ -498,9 +518,38 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                         Remaining: <span className="font-semibold text-[#ff3b30]">{editLeaveForm.sick.total - editLeaveForm.sick.used}</span> days
                       </p>
                     </div>
+                    <div className="bg-[#5856d6]/5 dark:bg-[#5856d6]/10 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 rounded-full bg-[#5856d6]" />
+                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Remote</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
+                          <input
+                            type="number" min="0"
+                            value={editLeaveForm.remote.total}
+                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, total: parseInt(e.target.value, 10) || 0 } }))}
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <input
+                            type="number" min="0"
+                            value={editLeaveForm.remote.used}
+                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, used: parseInt(e.target.value, 10) || 0 } }))}
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-[#86868b] mt-2">
+                        Remaining: <span className="font-semibold text-[#5856d6]">{editLeaveForm.remote.total - editLeaveForm.remote.used}</span> days
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center p-5 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl">
                       <p className="text-[32px] font-semibold text-[#0071e3]">{employee.leaveBalance?.vacation?.remaining ?? 0}</p>
                       <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Vacation Days</p>
@@ -515,6 +564,14 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                       <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.sick?.used ?? 0} of {employee.leaveBalance?.sick?.total ?? 3}</p>
                       <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
                         <div className="h-full bg-[#ff3b30] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.sick?.remaining ?? 0) / (employee.leaveBalance?.sick?.total || 1)) * 100}%` }} />
+                      </div>
+                    </div>
+                    <div className="text-center p-5 bg-[#5856d6]/5 dark:bg-[#5856d6]/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-[#5856d6]">{employee.leaveBalance?.remote?.remaining ?? 0}</p>
+                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Remote Days</p>
+                      <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.remote?.used ?? 0} of {employee.leaveBalance?.remote?.total ?? 10}</p>
+                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#5856d6] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.remote?.remaining ?? 0) / (employee.leaveBalance?.remote?.total || 1)) * 100}%` }} />
                       </div>
                     </div>
                   </div>
