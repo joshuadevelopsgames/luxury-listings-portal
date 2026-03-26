@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { DndContext, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
@@ -69,6 +69,23 @@ function SortableMainBlock({ id, span, isEditMode, renderBlock }) {
       </div>
     </div>
   );
+}
+
+function AnimatedStat({ value }) {
+  const prevValueRef = useRef(value);
+  const [bump, setBump] = useState(false);
+
+  useEffect(() => {
+    if (prevValueRef.current !== value) {
+      setBump(true);
+      const t = setTimeout(() => setBump(false), 450);
+      prevValueRef.current = value;
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [value]);
+
+  return <span className={bump ? 'kpi-bump inline-block' : 'inline-block'}>{value}</span>;
 }
 
 const V3Dashboard = () => {
@@ -312,10 +329,10 @@ const V3Dashboard = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-12 bg-black/5 dark:bg-white/5 rounded-2xl animate-pulse" />
+        <div className="h-12 rounded-2xl skeleton-shimmer" />
         <div className="grid grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 bg-black/5 dark:bg-white/5 rounded-2xl animate-pulse" />
+            <div key={i} className="h-28 rounded-2xl skeleton-shimmer" />
           ))}
         </div>
       </div>
@@ -656,11 +673,11 @@ const V3Dashboard = () => {
           { label: 'Due Today', value: todaysTasks.length, icon: Calendar, color: 'text-[#ff3b30]', show: hasTasksModule },
           { label: 'Completed', value: tasks.filter(t => t.status === 'completed').length, icon: CheckCircle2, color: 'text-[#34c759]', show: hasTasksModule },
         ].filter(item => item.show).map((item, idx) => (
-          <div key={idx} className="p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-md hover:shadow-black/10 dark:hover:shadow-black/30 transition-all cursor-pointer group isolate">
+          <div key={idx} className="stagger-in ui-transition ui-lift p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 cursor-pointer group isolate">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
               <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${item.color}`} strokeWidth={1.5} />
             </div>
-            <p className="text-[22px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{item.value}</p>
+            <p className="text-[22px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]"><AnimatedStat value={item.value} /></p>
             <p className="text-[11px] sm:text-[13px] text-[#86868b]">{item.label}</p>
           </div>
         ))}
@@ -704,7 +721,7 @@ const V3Dashboard = () => {
           {visibleMainContentBlocks.map((blockId) => (
             <div
               key={blockId}
-              className={`min-h-0 ${DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'md:col-span-2 lg:col-span-2' : ''}`}
+              className={`stagger-in min-h-0 ${DEFAULT_MAIN_CONTENT_SPANS[blockId] === 2 ? 'md:col-span-2 lg:col-span-2' : ''}`}
             >
               <div className="widget-scroll min-h-0 overflow-auto">
                 {renderMainContentBlock(blockId)}
@@ -721,7 +738,7 @@ const V3Dashboard = () => {
           <Link
             key={idx}
             to={action.path}
-            className="p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-md hover:shadow-black/10 dark:hover:shadow-black/30 hover:scale-[1.02] active:scale-[0.98] transition-all group isolate"
+            className="stagger-in ui-transition ui-lift p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:scale-[1.02] active:scale-[0.98] group isolate"
           >
             <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 transition-transform`}>
               <action.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" strokeWidth={1.5} />

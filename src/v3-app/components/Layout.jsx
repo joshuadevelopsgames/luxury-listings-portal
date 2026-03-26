@@ -103,69 +103,39 @@ const V3Layout = ({ basePath = '' }) => {
     return hour >= 17 || hour < 6;
   };
 
-  // Manual toggle overrides time-of-day until the next 6 AM or 5 PM Vancouver
-  const getMsUntilNextTimeOfDaySwitch = () => {
-    const hour = getVancouverHour();
-    let hoursUntil = 0;
-    if (hour < 6) hoursUntil = 6 - hour;
-    else if (hour < 17) hoursUntil = 17 - hour;
-    else hoursUntil = (24 - hour) + 6;
-    return hoursUntil * 60 * 60 * 1000;
-  };
-
-  // Initialize dark mode from localStorage or time-based default
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('themeMode') || 'auto');
   const [darkMode, setDarkMode] = useState(() => {
-    const stored = localStorage.getItem('darkModeOverride');
-    if (stored) {
-      const { darkMode: savedMode, expiresAt } = JSON.parse(stored);
-      if (Date.now() < expiresAt) {
-        return savedMode;
-      }
-      // Expired - clear it
-      localStorage.removeItem('darkModeOverride');
-    }
+    const storedThemeMode = localStorage.getItem('themeMode') || 'auto';
+    if (storedThemeMode === 'dark') return true;
+    if (storedThemeMode === 'light') return false;
     return isAfter5PMVancouver();
-  });
-  
-  const [manualOverrideUntil, setManualOverrideUntil] = useState(() => {
-    const stored = localStorage.getItem('darkModeOverride');
-    if (stored) {
-      const { expiresAt } = JSON.parse(stored);
-      if (Date.now() < expiresAt) {
-        return expiresAt;
-      }
-    }
-    return null;
   });
   
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const handleDarkModeToggle = () => {
-    const next = !darkMode;
-    const expiresAt = Date.now() + getMsUntilNextTimeOfDaySwitch();
-    setDarkMode(next);
-    setManualOverrideUntil(expiresAt);
-    // Save to localStorage so it persists across refresh
-    localStorage.setItem('darkModeOverride', JSON.stringify({ darkMode: next, expiresAt }));
+    const nextMode = themeMode === 'auto' ? 'dark' : themeMode === 'dark' ? 'light' : 'auto';
+    localStorage.setItem('themeMode', nextMode);
+    setThemeMode(nextMode);
+    if (nextMode === 'auto') {
+      setDarkMode(isAfter5PMVancouver());
+      return;
+    }
+    setDarkMode(nextMode === 'dark');
   };
 
-  // Auto-switch dark mode at 6 AM / 5 PM Vancouver; manual toggle overrides until next switch
+  // Auto-switch dark mode at 6 AM / 5 PM Vancouver when in Auto theme mode
   useEffect(() => {
     const checkTime = () => {
-      const now = Date.now();
-      if (manualOverrideUntil != null && now >= manualOverrideUntil) {
-        setManualOverrideUntil(null);
-        setDarkMode(isAfter5PMVancouver());
-        localStorage.removeItem('darkModeOverride');
-      } else if (manualOverrideUntil == null) {
+      if (themeMode === 'auto') {
         setDarkMode(isAfter5PMVancouver());
       }
     };
 
     const interval = setInterval(checkTime, 60000);
     return () => clearInterval(interval);
-  }, [manualOverrideUntil]);
+  }, [themeMode]);
 
   // Sync theme-color meta tag with dark mode for Safari status bar
   useEffect(() => {
@@ -557,8 +527,11 @@ const V3Layout = ({ basePath = '' }) => {
               <button
                 onClick={handleDarkModeToggle}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                title={`Theme: ${themeMode === 'auto' ? 'Auto' : themeMode === 'dark' ? 'Dark' : 'Light'}`}
               >
-                {darkMode ? (
+                {themeMode === 'auto' ? (
+                  <Command className="w-[18px] h-[18px] text-[#86868b]" strokeWidth={1.5} />
+                ) : darkMode ? (
                   <Sun className="w-[18px] h-[18px] text-[#f5f5f7]" strokeWidth={1.5} />
                 ) : (
                   <Moon className="w-[18px] h-[18px] text-[#1d1d1f]" strokeWidth={1.5} />

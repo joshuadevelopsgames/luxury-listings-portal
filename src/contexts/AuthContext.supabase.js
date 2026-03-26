@@ -26,6 +26,7 @@ export const AuthContext = createContext();
 // ============================================================================
 const BOOTSTRAP_ADMIN = 'jrsschroeder@gmail.com';
 const DEMO_VIEW_ONLY_EMAILS = ['demo@luxurylistings.app'];
+const DEV_BYPASS_ENABLED = process.env.NODE_ENV === 'development';
 
 let _adminEmails = [BOOTSTRAP_ADMIN];
 let _adminListeners = [];
@@ -182,6 +183,37 @@ export function AuthProvider({ children }) {
   // Track whether we've done a full sign-in this session (vs just restoring)
   const hasCompletedFullSignIn = useRef(false);
 
+  const applyDevBypassUser = () => {
+    const devRole = USER_ROLES.ADMIN;
+    const roleUserData = getUserByRole(devRole);
+    const devUser = {
+      uid: 'dev-bypass-user',
+      email: 'dev@localhost',
+      displayName: 'Dev User',
+      firstName: 'Dev',
+      lastName: 'User',
+      position: roleUserData.position,
+      role: devRole,
+      roles: Object.values(USER_ROLES),
+      primaryRole: devRole,
+      department: roleUserData.department,
+      startDate: roleUserData.startDate,
+      avatar: roleUserData.avatar,
+      bio: roleUserData.bio,
+      skills: roleUserData.skills,
+      stats: roleUserData.stats,
+      pagePermissions: getDefaultPagePermissions(devRole),
+      isApproved: true,
+      onboardingCompleted: true,
+      isDevBypass: true,
+    };
+    setCurrentRole(devRole);
+    setCurrentUser(devUser);
+    setUserData(devUser);
+    setAuthHydrated(true);
+    setLoading(false);
+  };
+
   // Boot system-admin list + live listener
   useEffect(() => {
     loadSystemAdmins();
@@ -311,6 +343,11 @@ export function AuthProvider({ children }) {
   // ============================================================================
 
   useEffect(() => {
+    if (DEV_BYPASS_ENABLED) {
+      applyDevBypassUser();
+      return undefined;
+    }
+
     // ── Proactive session restore ──────────────────────────────────────
     // onAuthStateChange can be delayed several seconds while Supabase
     // refreshes an expired access token over the network. Meanwhile the
@@ -913,7 +950,7 @@ export function AuthProvider({ children }) {
     chatbotResetTrigger,
     mergeCurrentUser,
     realUser: currentUser,
-    isSystemAdmin: isSystemAdmin(currentUser?.email),
+    isSystemAdmin: DEV_BYPASS_ENABLED ? true : isSystemAdmin(currentUser?.email),
     isViewingAs: !!isViewingAs,
     viewingAsUser: viewAs?.viewingAsUser ?? null,
     authHydrated,

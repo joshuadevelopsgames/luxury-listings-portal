@@ -17,7 +17,7 @@
  *   For full in-app navigation under /v4/, the final cutover step remounts everything at /.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
@@ -80,7 +80,7 @@ import SlackCallback from './pages/SlackCallback';
 import GraphicProjectTracker from './pages/GraphicProjectTracker';
 import CanvasPage from './pages/CanvasPage';
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
-import ClientWorkspace from './v4-app/pages/ClientWorkspace';
+const ClientWorkspace = lazy(() => import('./v4-app/pages/ClientWorkspace'));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

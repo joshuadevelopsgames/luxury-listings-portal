@@ -357,7 +357,7 @@ const MyClientsPage = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/v4/my-clients/${client.id}`);
+                        navigate(`/my-clients/${client.id}`);
                       }}
                       className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3]/10 text-[#0071e3] hover:bg-[#0071e3]/20 text-[12px] font-medium transition-colors shadow-sm"
                     >

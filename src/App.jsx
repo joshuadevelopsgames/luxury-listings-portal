@@ -24,6 +24,8 @@ import PermissionRoute from './v3-app/components/PermissionRoute';
 import { RouteErrorPage } from './components/ErrorBoundary';
 import './v3-app/styles/globals.css';
 
+const DEV_FORCE_BYPASS_LOGIN = process.env.NODE_ENV === 'development';
+
 // ── Lazy import with auto-retry on chunk load failure ─────────────────────────
 // After a deploy, Vercel purges old chunk files. If a user's browser tries to
 // load a stale chunk filename, the import() 404s → ChunkLoadError. This wrapper
@@ -106,6 +108,7 @@ const SlackCallback           = lazyRetry(() => import('./pages/SlackCallback'))
 const GraphicProjectTracker   = lazyRetry(() => import('./pages/GraphicProjectTracker'));
 const CanvasPage              = lazyRetry(() => import('./pages/CanvasPage'));
 const MyClientsPage           = lazyRetry(() => import('./modules/my-clients/pages/MyClientsPage'));
+const ClientWorkspace         = lazyRetry(() => import('./v4-app/pages/ClientWorkspace'));
 
 // Admin utilities — expose to console for migrations (must be after all imports)
 if (typeof window !== 'undefined') {
@@ -125,6 +128,13 @@ function PageSpinner() {
 function CanvasRedirect() {
   const { search } = useLocation();
   return <Navigate to={`/workspaces${search}`} replace />;
+}
+
+function LegacyV4Redirect() {
+  const { pathname, search, hash } = useLocation();
+  const stripped = pathname.replace(/^\/v4/, '') || '/';
+  const target = stripped === '/' ? '/dashboard' : stripped;
+  return <Navigate to={`${target}${search}${hash}`} replace />;
 }
 
 // ============================================================================
@@ -155,6 +165,8 @@ function RootLayout() {
 // LOGIN PAGE - Shows login, redirects if already authenticated
 // ============================================================================
 function LoginPage() {
+  if (DEV_FORCE_BYPASS_LOGIN) return <Navigate to="/dashboard" replace />;
+
   const { currentUser, loading, authHydrated } = useAuth();
 
   // If auth is still loading or hydrating, show the login form (non-blocking).
@@ -180,6 +192,14 @@ function LoginPage() {
 // ============================================================================
 function ProtectedApp() {
   const { currentUser, loading, authHydrated } = useAuth();
+
+  if (DEV_FORCE_BYPASS_LOGIN) {
+    return (
+      <Suspense fallback={<PageSpinner />}>
+        <V3Layout />
+      </Suspense>
+    );
+  }
 
   // Show spinner while auth is still loading. Once authHydrated is true,
   // the auth flow has definitively completed (either successfully with a
@@ -236,6 +256,7 @@ const router = createBrowserRouter([
 
       // OAuth callbacks
       { path: '/slack-callback', element: <Suspense fallback={<PageSpinner />}><SlackCallback /></Suspense> },
+      { path: '/v4/*', element: <LegacyV4Redirect /> },
 
       // Protected app routes (requires auth)
       {
@@ -247,6 +268,7 @@ const router = createBrowserRouter([
 
           { path: 'tasks',           element: <PermissionRoute pageId="tasks" pageName="Tasks"><TasksPage /></PermissionRoute> },
           { path: 'my-clients',      element: <PermissionRoute pageId="my-clients" pageName="My Clients"><MyClientsPage /></PermissionRoute> },
+          { path: 'my-clients/:clientId', element: <PermissionRoute pageId="my-clients" pageName="My Clients"><ClientWorkspace /></PermissionRoute> },
           { path: 'clients',         element: <PermissionRoute pageId="clients" pageName="Client Management"><ClientsPage /></PermissionRoute> },
           { path: 'posting-packages', element: <PermissionRoute pageId="posting-packages" pageName="Posting Packages"><PostingPackages /></PermissionRoute> },
           { path: 'pending-clients', element: <Navigate to="/clients?tab=pending" replace /> },

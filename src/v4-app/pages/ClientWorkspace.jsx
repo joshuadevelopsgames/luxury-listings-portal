@@ -180,7 +180,7 @@ export default function ClientWorkspace() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <button onClick={() => navigate('/v4/my-clients')} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[13px]">
+        <button onClick={() => navigate('/my-clients')} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[13px]">
           <ArrowLeft className="w-4 h-4" /> Back to My Clients
         </button>
         <h1 className="text-[24px] font-bold text-[#1d1d1f] dark:text-white">

@@ -10,6 +10,14 @@ initConsoleCapture();
 
 // Add global error handler
 window.addEventListener('error', (event) => {
+  const isNonErrorObject = event.error && typeof event.error === 'object' && !(event.error instanceof Error);
+  if (isNonErrorObject) {
+    // Some runtime layers throw plain objects in dev; prevent noisy crash overlay.
+    event.preventDefault();
+    console.error('⚠️ Global non-Error object thrown:', event.error);
+    return;
+  }
+
   const message = event.error?.message || event.message || '';
   
   // Suppress Firebase/Firestore internal errors
@@ -34,6 +42,13 @@ window.addEventListener('error', (event) => {
 
 window.addEventListener('unhandledrejection', (event) => {
   const reason = event.reason?.message || event.reason?.toString() || '';
+  const isNonErrorObject = event.reason && typeof event.reason === 'object' && !(event.reason instanceof Error);
+  if (isNonErrorObject) {
+    // Some SDK/network layers reject with plain objects in dev; avoid crashing overlay.
+    event.preventDefault();
+    console.error('⚠️ Unhandled non-Error rejection object:', event.reason);
+    return;
+  }
   
   // Suppress Firebase/Firestore internal errors
   if (reason.includes('FIRESTORE') && reason.includes('INTERNAL ASSERTION')) {
@@ -80,6 +95,16 @@ if (!rootElement) {
 // Register Service Worker for PWA functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    if (process.env.NODE_ENV === 'development') {
+      // Dev should always load freshest JS/CSS; no SW caching.
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((r) => r.unregister())))
+        .catch((error) => {
+          console.warn('⚠️ Failed to unregister service workers in development:', error);
+        });
+      return;
+    }
+
     navigator.serviceWorker
       .register('/service-worker.js')
       .then((registration) => {
