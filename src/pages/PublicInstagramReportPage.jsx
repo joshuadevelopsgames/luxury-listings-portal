@@ -31,6 +31,24 @@ import {
 import { format } from 'date-fns';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
 
+// ─── Compact number formatter (50000 → "50K", 1200000 → "1.2M") ────────────
+const formatCompact = (value) => {
+  if (value == null) return '—';
+  const n = Number(value);
+  if (isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) {
+    const m = abs / 1_000_000;
+    return `${sign}${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  if (abs >= 10_000) {
+    const k = abs / 1_000;
+    return `${sign}${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}K`;
+  }
+  return n.toLocaleString();
+};
+
 // Normalize percentage for display (OCR sometimes loses decimal or misreads)
 const formatPercent = (value) => {
   if (value == null || value === '') return '—';
@@ -238,33 +256,33 @@ const PublicInstagramReportPage = () => {
         const cards = [
           m.accountsReached != null ? {
             icon: Users, label: 'Accounts Reached',
-            value: m.accountsReached.toLocaleString(),
+            value: formatCompact(m.accountsReached),
             badge: m.accountsReachedChange,
             badgePos: m.accountsReachedChange?.startsWith('+'),
             iconGradient: 'from-violet-600 to-purple-700',
           } : null,
           m.followers != null ? {
             icon: Users, label: 'Total Followers',
-            value: m.followers.toLocaleString(),
+            value: formatCompact(m.followers),
             badge: followerChangeVal,
             badgePos: followerChangePosNeg >= 0,
             iconGradient: 'from-pink-600 to-rose-700',
           } : null,
           m.views != null ? {
             icon: Eye, label: 'Total Views',
-            value: m.views.toLocaleString(),
+            value: formatCompact(m.views),
             badge: m.viewsFollowerPercent != null ? `${m.viewsFollowerPercent}% followers` : null,
             badgeNeutral: true,
             iconGradient: 'from-violet-500 to-indigo-600',
           } : null,
           m.interactions != null ? {
             icon: Heart, label: 'Interactions',
-            value: m.interactions.toLocaleString(),
+            value: formatCompact(m.interactions),
             badge: null,
             iconGradient: 'from-orange-500 to-red-600',
           } : (m.profileVisits != null ? {
             icon: MousePointer, label: 'Profile Visits',
-            value: m.profileVisits.toLocaleString(),
+            value: formatCompact(m.profileVisits),
             badge: m.profileVisitsChange,
             badgePos: m.profileVisitsChange?.startsWith('+'),
             iconGradient: 'from-blue-500 to-indigo-600',
@@ -329,9 +347,9 @@ const PublicInstagramReportPage = () => {
                     </div>
                     {hasData ? (
                       <div className="space-y-2 text-sm">
-                        {m.views != null && <div className="flex justify-between"><span className="text-gray-500">Views</span><span className="font-medium">{m.views.toLocaleString()}</span></div>}
-                        {m.interactions != null && <div className="flex justify-between"><span className="text-gray-500">Interactions</span><span className="font-medium">{m.interactions.toLocaleString()}</span></div>}
-                        {m.profileVisits != null && <div className="flex justify-between"><span className="text-gray-500">Profile visits</span><span className="font-medium">{m.profileVisits.toLocaleString()}</span></div>}
+                        {m.views != null && <div className="flex justify-between"><span className="text-gray-500">Views</span><span className="font-medium">{formatCompact(m.views)}</span></div>}
+                        {m.interactions != null && <div className="flex justify-between"><span className="text-gray-500">Interactions</span><span className="font-medium">{formatCompact(m.interactions)}</span></div>}
+                        {m.profileVisits != null && <div className="flex justify-between"><span className="text-gray-500">Profile visits</span><span className="font-medium">{formatCompact(m.profileVisits)}</span></div>}
                       </div>
                     ) : (
                       <p className="text-xs text-gray-400">No data</p>
@@ -411,7 +429,7 @@ const PublicInstagramReportPage = () => {
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                               <span className="text-gray-500 text-sm font-medium">Views</span>
-                              <span className="text-3xl font-bold text-gray-900 mt-0.5">{report.metrics.views != null ? report.metrics.views.toLocaleString() : '—'}</span>
+                              <span className="text-3xl font-bold text-gray-900 mt-0.5">{formatCompact(report.metrics.views)}</span>
                             </div>
                           </div>
                           <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
@@ -462,7 +480,7 @@ const PublicInstagramReportPage = () => {
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                             <span className="text-gray-500 text-sm font-medium">Interactions</span>
-                            <span className="text-3xl font-bold text-gray-900 mt-0.5">{report.metrics.interactions.toLocaleString()}</span>
+                            <span className="text-3xl font-bold text-gray-900 mt-0.5">{formatCompact(report.metrics.interactions)}</span>
                           </div>
                         </div>
                         <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
@@ -635,31 +653,31 @@ const PublicInstagramReportPage = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                     {report.metrics.likes != null && (
                       <div className="bg-gray-100 rounded-xl p-4 text-center">
-                        <div className="text-xl font-bold text-gray-900">{report.metrics.likes.toLocaleString()}</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCompact(report.metrics.likes)}</div>
                         <p className="text-xs text-gray-500 mt-1">Likes</p>
                       </div>
                     )}
                     {report.metrics.comments != null && (
                       <div className="bg-gray-100 rounded-xl p-4 text-center">
-                        <div className="text-xl font-bold text-gray-900">{report.metrics.comments.toLocaleString()}</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCompact(report.metrics.comments)}</div>
                         <p className="text-xs text-gray-500 mt-1">Comments</p>
                       </div>
                     )}
                     {report.metrics.shares != null && (
                       <div className="bg-gray-100 rounded-xl p-4 text-center">
-                        <div className="text-xl font-bold text-gray-900">{report.metrics.shares.toLocaleString()}</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCompact(report.metrics.shares)}</div>
                         <p className="text-xs text-gray-500 mt-1">Shares</p>
                       </div>
                     )}
                     {report.metrics.saves != null && (
                       <div className="bg-gray-100 rounded-xl p-4 text-center">
-                        <div className="text-xl font-bold text-gray-900">{report.metrics.saves.toLocaleString()}</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCompact(report.metrics.saves)}</div>
                         <p className="text-xs text-gray-500 mt-1">Saves</p>
                       </div>
                     )}
                     {report.metrics.reposts != null && (
                       <div className="bg-gray-100 rounded-xl p-4 text-center">
-                        <div className="text-xl font-bold text-gray-900">{report.metrics.reposts.toLocaleString()}</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCompact(report.metrics.reposts)}</div>
                         <p className="text-xs text-gray-500 mt-1">Reposts</p>
                       </div>
                     )}

@@ -342,32 +342,102 @@ Return ONLY the JSON array, no other text.`;
    * @returns {Promise<Object>} - Extracted metrics
    */
   async extractInstagramMetrics(images, onProgress = null) {
-    console.log(`🤖 Extracting Instagram metrics with AI (OpenRouter/OpenAI) (${images.length} images)...`);
+    console.log(`🤖 Extracting Instagram metrics with AI (direct OpenAI Vision) (${images.length} images)...`);
+
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key is not configured. Please add REACT_APP_OPENAI_API_KEY to your environment variables.');
+    }
 
     if (onProgress) onProgress(0, images.length, 'Preparing images...');
 
-    // Convert images to base64 for Cloud Function
-    const imageData = await Promise.all(
+    // Convert images to base64 data URLs for OpenAI Vision
+    const base64Images = await Promise.all(
       images.map(async (img) => {
-        const base64 = await this.imageToBase64(img);
-        // Extract just the base64 part (remove data:image/...;base64, prefix)
-        const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
-        return { base64: base64Data };
+        const dataUrl = await this.imageToBase64(img);
+        return dataUrl;
       })
     );
 
-    if (onProgress) onProgress(0, images.length, 'Analyzing with AI (secure)...');
+    if (onProgress) onProgress(0, images.length, 'Analyzing with AI Vision...');
 
-    // Use Supabase Edge Function
+    // Build content array with all images for GPT-4o Vision
+    const imageContent = base64Images.map((dataUrl) => ({
+      type: 'image_url',
+      image_url: { url: dataUrl, detail: 'high' },
+    }));
+
+    const systemPrompt = `You are an expert at extracting Instagram analytics metrics from screenshots.
+Analyze ALL provided screenshots and extract every metric you can find.
+Return a single JSON object combining data from all images. Use these exact field names:
+
+{
+  "followers": <number>,
+  "followerChange": <number, positive or negative>,
+  "accountsReached": <number>,
+  "accountsReachedChange": "<string, e.g. '+12.4%'>",
+  "views": <number>,
+  "viewsFollowerPercent": <number, 0-100>,
+  "nonFollowerPercent": <number, 0-100>,
+  "interactions": <number>,
+  "interactionsFollowerPercent": <number, 0-100>,
+  "profileVisits": <number>,
+  "profileVisitsChange": "<string, e.g. '+8.2%'>",
+  "likes": <number>,
+  "comments": <number>,
+  "shares": <number>,
+  "saves": <number>,
+  "reposts": <number>,
+  "growth": { "follows": <number>, "unfollows": <number>, "overall": <number> },
+  "topCities": [ { "name": "<string>", "percentage": <number> }, ... ],
+  "ageRanges": [ { "range": "<string, e.g. '18-24'>", "percentage": <number> }, ... ],
+  "gender": { "men": <number, percentage>, "women": <number, percentage> },
+  "contentBreakdown": [ { "type": "<string, e.g. 'Reels'>", "percentage": <number> }, ... ],
+  "activeTimes": [ { "hour": "<string>", "activity": <number, 0-100> }, ... ]
+}
+
+Rules:
+- Only include fields you can actually find in the screenshots. Omit fields with no data.
+- Numbers should be plain integers (no commas, no strings) unless the field type is string.
+- For percentage changes, keep the sign and % symbol as a string.
+- Combine data from multiple screenshots into one object. If the same field appears in multiple screenshots, prefer the most detailed or complete version.
+- Return ONLY the JSON object, no markdown, no explanation.`;
+
     try {
-      const result = await invokeEdgeFunction('extract-instagram-metrics', { images: imageData });
+      const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: [
+              { type: 'text', text: `Extract all Instagram analytics metrics from these ${images.length} screenshot(s).` },
+              ...imageContent,
+            ]},
+          ],
+          temperature: 0.1,
+          max_tokens: 2000,
+          response_format: { type: 'json_object' },
+        }),
+      });
 
-      if (result.success) {
-        if (onProgress) onProgress(images.length, images.length, 'Complete!');
-        console.log(`✅ AI extraction (${result.provider || 'edge'}):`, Object.keys(result.metrics).length, 'fields');
-        return result.metrics;
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `OpenAI API error (${response.status})`);
       }
-      throw new Error(result.error || 'Extraction returned no data');
+
+      const data = await response.json();
+      const raw = data.choices?.[0]?.message?.content;
+      if (!raw) throw new Error('No response from OpenAI Vision');
+
+      const metrics = JSON.parse(raw);
+
+      if (onProgress) onProgress(images.length, images.length, 'Complete!');
+      console.log(`✅ AI extraction (direct OpenAI Vision):`, Object.keys(metrics).length, 'fields');
+      return metrics;
     } catch (error) {
       console.error('❌ AI extraction failed:', error);
       throw error;

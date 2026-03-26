@@ -144,7 +144,25 @@ const getReportCompletionStatus = (metrics) => {
   return 'incomplete';
 };
 
-// ─── Tiny SVG sparkline ─────────────────────────────────────────────────────
+// ─── Compact number formatter (50000 → "50K", 1200000 → "1.2M") ────────────
+const formatCompact = (value) => {
+  if (value == null) return '—';
+  const n = Number(value);
+  if (isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) {
+    const m = abs / 1_000_000;
+    return `${sign}${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  if (abs >= 10_000) {
+    const k = abs / 1_000;
+    return `${sign}${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}K`;
+  }
+  return n.toLocaleString();
+};
+
+// ─── Tiny SVG sparkline with trend arrow ────────────────────────────────────
 let _sparklineId = 0;
 const Sparkline = ({ values, width = 64, height = 22 }) => {
   if (!values || values.length < 2) return null;
@@ -153,39 +171,56 @@ const Sparkline = ({ values, width = 64, height = 22 }) => {
   const min = Math.min(...nums);
   const max = Math.max(...nums);
   const range = max - min || 1;
+  const pad = 3;
+  const arrowW = 8; // reserve space on right for arrow tip
+  const chartW = width - arrowW;
   const pts = nums.map((v, i) => ({
-    x: (i / (nums.length - 1)) * width,
-    y: height - 4 - ((v - min) / range) * (height - 8),
+    x: pad + (i / (nums.length - 1)) * (chartW - pad * 2),
+    y: pad + ((max - v) / range) * (height - pad * 2),
   }));
   const trend = nums[nums.length - 1] - nums[0];
   const lineColor = trend >= 0 ? '#34c759' : '#ff3b30';
   const gradId = `spk-${++_sparklineId}`;
-  const polyPoints = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const areaPath =
-    `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} ` +
-    pts.slice(1).map(p => `L ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') +
-    ` L ${pts[pts.length - 1].x.toFixed(1)},${height} L ${pts[0].x.toFixed(1)},${height} Z`;
+
+  // Build smooth path (catmull-rom → cubic bezier for smoothness)
+  const linePath = pts.map((p, i) => (i === 0 ? `M ${p.x.toFixed(1)},${p.y.toFixed(1)}` : `L ${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join(' ');
+  const areaPath = linePath + ` L ${pts[pts.length - 1].x.toFixed(1)},${height} L ${pts[0].x.toFixed(1)},${height} Z`;
+
+  // Arrow tip at end of line
+  const last = pts[pts.length - 1];
+  const prev = pts[pts.length - 2];
+  const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+  const tipX = last.x + 6;
+  const tipY = last.y + Math.sin(angle) * 6;
+  const a1 = angle + Math.PI * 0.78;
+  const a2 = angle - Math.PI * 0.78;
+  const arrowSize = 4.5;
+
   return (
     <svg width={width} height={height} className="overflow-visible flex-shrink-0" aria-hidden>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+          <stop offset="0%" stopColor={lineColor} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
         </linearGradient>
       </defs>
       {/* gradient area fill */}
       <path d={areaPath} fill={`url(#${gradId})`} />
       {/* line */}
-      <polyline points={polyPoints} fill="none" stroke={lineColor} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-      {/* data point dots */}
+      <path d={linePath} fill="none" stroke={lineColor} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {/* small dots at each data point */}
       {pts.map((p, i) => (
         <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)}
-          r={i === pts.length - 1 ? 2.5 : 1.5}
-          fill={i === pts.length - 1 ? lineColor : 'transparent'}
-          stroke={lineColor}
-          strokeWidth="1.5"
+          r={1.2}
+          fill={lineColor}
+          opacity={i === 0 || i === pts.length - 1 ? 1 : 0.4}
         />
       ))}
+      {/* arrowhead at end */}
+      <polygon
+        points={`${tipX.toFixed(1)},${tipY.toFixed(1)} ${(tipX + Math.cos(a1) * arrowSize).toFixed(1)},${(tipY + Math.sin(a1) * arrowSize).toFixed(1)} ${(tipX + Math.cos(a2) * arrowSize).toFixed(1)},${(tipY + Math.sin(a2) * arrowSize).toFixed(1)}`}
+        fill={lineColor}
+      />
     </svg>
   );
 };
@@ -204,10 +239,10 @@ const Delta = ({ current, previous, label, prefix = '' }) => {
     <div className="flex items-center justify-between py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
       <span className="text-[12px] text-[#86868b]">{label}</span>
       <div className="flex items-center gap-2">
-        <span className="text-[12px] font-medium text-[#1d1d1f] dark:text-white">{prefix}{curr.toLocaleString()}</span>
+        <span className="text-[12px] font-medium text-[#1d1d1f] dark:text-white">{prefix}{formatCompact(curr)}</span>
         {!isZero && (
           <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${isPos ? 'bg-[#34c759]/10 text-[#1a7a2e] dark:text-[#34c759]' : 'bg-[#ff3b30]/10 text-[#cc2200] dark:text-[#ff3b30]'}`}>
-            {isPos ? '+' : ''}{diff.toLocaleString()}{pct ? ` (${pct}%)` : ''}
+            {isPos ? '+' : ''}{formatCompact(diff)}{pct ? ` (${pct}%)` : ''}
           </span>
         )}
         {isZero && <span className="text-[11px] text-[#86868b]">—</span>}
@@ -2537,29 +2572,29 @@ const ReportPreviewModal = ({ report, onClose }) => {
                   { 
                     icon: Eye, 
                     label: 'Total Views', 
-                    value: report.metrics.views?.toLocaleString() || '—', 
+                    value: formatCompact(report.metrics.views),
                     color: 'from-purple-500 to-purple-600',
                     subtext: (report.metrics.views != null && report.metrics.viewsFollowerPercent != null) ? `${report.metrics.viewsFollowerPercent}% from followers` : null
                   },
-                  { 
-                    icon: Users, 
-                    label: 'Followers', 
-                    value: report.metrics.followers?.toLocaleString() || '—', 
+                  {
+                    icon: Users,
+                    label: 'Followers',
+                    value: formatCompact(report.metrics.followers),
                     color: 'from-pink-500 to-pink-600',
                     subtext: (() => { const fc = report.metrics.followerChange; if (fc == null) return null; const n = parseInt(fc); if (!isNaN(n)) return `${n > 0 ? '+' : ''}${n}`; return String(fc); })(),
                     subtextColor: (() => { const fc = report.metrics.followerChange; const n = parseInt(fc); return (!isNaN(n) ? n : Number(fc)) > 0 ? 'text-green-600' : 'text-red-500'; })()
                   },
-                  { 
-                    icon: Heart, 
-                    label: 'Interactions', 
-                    value: report.metrics.interactions?.toLocaleString() || '—', 
+                  {
+                    icon: Heart,
+                    label: 'Interactions',
+                    value: formatCompact(report.metrics.interactions),
                     color: 'from-orange-500 to-orange-600',
                     subtext: (report.metrics.interactions != null && report.metrics.interactionsFollowerPercent != null) ? `${report.metrics.interactionsFollowerPercent}% from followers` : null
                   },
-                  { 
-                    icon: MousePointer, 
-                    label: 'Profile Visits', 
-                    value: report.metrics.profileVisits?.toLocaleString() || '—', 
+                  {
+                    icon: MousePointer,
+                    label: 'Profile Visits',
+                    value: formatCompact(report.metrics.profileVisits), 
                     color: 'from-blue-500 to-blue-600',
                     subtext: (report.metrics.profileVisits != null && report.metrics.profileVisitsChange) ? `${report.metrics.profileVisitsChange}` : null,
                     subtextColor: report.metrics.profileVisitsChange?.startsWith?.('+') ? 'text-green-600' : 'text-red-500'
@@ -2611,9 +2646,9 @@ const ReportPreviewModal = ({ report, onClose }) => {
                         </div>
                         {hasData ? (
                           <div className="space-y-2 text-sm">
-                            {m.views != null && <div className="flex justify-between"><span className="text-gray-500">Views</span><span className="font-medium">{m.views.toLocaleString()}</span></div>}
-                            {m.interactions != null && <div className="flex justify-between"><span className="text-gray-500">Interactions</span><span className="font-medium">{m.interactions.toLocaleString()}</span></div>}
-                            {m.profileVisits != null && <div className="flex justify-between"><span className="text-gray-500">Profile visits</span><span className="font-medium">{m.profileVisits.toLocaleString()}</span></div>}
+                            {m.views != null && <div className="flex justify-between"><span className="text-gray-500">Views</span><span className="font-medium">{formatCompact(m.views)}</span></div>}
+                            {m.interactions != null && <div className="flex justify-between"><span className="text-gray-500">Interactions</span><span className="font-medium">{formatCompact(m.interactions)}</span></div>}
+                            {m.profileVisits != null && <div className="flex justify-between"><span className="text-gray-500">Profile visits</span><span className="font-medium">{formatCompact(m.profileVisits)}</span></div>}
                           </div>
                         ) : (
                           <p className="text-xs text-gray-400">No data</p>
@@ -2668,7 +2703,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                                 </svg>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                   <span className="text-gray-500 text-sm font-medium">Views</span>
-                                  <span className="text-3xl font-bold text-gray-900 mt-0.5">{report.metrics.views != null ? report.metrics.views.toLocaleString() : '—'}</span>
+                                  <span className="text-3xl font-bold text-gray-900 mt-0.5">{formatCompact(report.metrics.views)}</span>
                                 </div>
                               </div>
                               <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
@@ -2719,7 +2754,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                               </svg>
                               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                 <span className="text-gray-500 text-sm font-medium">Interactions</span>
-                                <span className="text-3xl font-bold text-gray-900 mt-0.5">{report.metrics.interactions.toLocaleString()}</span>
+                                <span className="text-3xl font-bold text-gray-900 mt-0.5">{formatCompact(report.metrics.interactions)}</span>
                               </div>
                             </div>
                             <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
@@ -2884,31 +2919,31 @@ const ReportPreviewModal = ({ report, onClose }) => {
                       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                         {report.metrics.likes != null && (
                           <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{report.metrics.likes.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.likes)}</div>
                             <p className="text-[10px] text-gray-500 mt-0.5">Likes</p>
                           </div>
                         )}
                         {report.metrics.comments != null && (
                           <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{report.metrics.comments.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.comments)}</div>
                             <p className="text-[10px] text-gray-500 mt-0.5">Comments</p>
                           </div>
                         )}
                         {report.metrics.shares != null && (
                           <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{report.metrics.shares.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.shares)}</div>
                             <p className="text-[10px] text-gray-500 mt-0.5">Shares</p>
                           </div>
                         )}
                         {report.metrics.saves != null && (
                           <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{report.metrics.saves.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.saves)}</div>
                             <p className="text-[10px] text-gray-500 mt-0.5">Saves</p>
                           </div>
                         )}
                         {report.metrics.reposts != null && (
                           <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{report.metrics.reposts.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.reposts)}</div>
                             <p className="text-[10px] text-gray-500 mt-0.5">Reposts</p>
                           </div>
                         )}
