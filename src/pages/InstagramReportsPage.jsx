@@ -2015,7 +2015,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.views || ''}
                           onChange={(e) => updateMetric('views', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="16493"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2025,7 +2025,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.followers || ''}
                           onChange={(e) => updateMetric('followers', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="6649"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2035,7 +2035,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.interactions || ''}
                           onChange={(e) => updateMetric('interactions', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="25"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2045,7 +2045,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.profileVisits || ''}
                           onChange={(e) => updateMetric('profileVisits', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="907"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2055,7 +2055,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.accountsReached || ''}
                           onChange={(e) => updateMetric('accountsReached', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="858"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2065,7 +2065,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.likes || ''}
                           onChange={(e) => updateMetric('likes', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="764"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2075,7 +2075,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.comments || ''}
                           onChange={(e) => updateMetric('comments', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="37"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2085,7 +2085,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.reposts || ''}
                           onChange={(e) => updateMetric('reposts', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="20"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2138,7 +2138,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.viewsFollowerPercent || ''}
                           onChange={(e) => updateMetric('viewsFollowerPercent', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="52.9"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2148,7 +2148,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.followerChange ?? ''}
                           onChange={(e) => { const v = parseInt(e.target.value); updateMetric('followerChange', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="-37"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2158,7 +2158,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.profileVisitsChange || ''}
                           onChange={(e) => updateMetric('profileVisitsChange', e.target.value)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="+147.1%"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2169,7 +2169,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.interactionsFollowerPercent || ''}
                           onChange={(e) => updateMetric('interactionsFollowerPercent', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="94.5"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2179,7 +2179,17 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.accountsReachedChange || ''}
                           onChange={(e) => updateMetric('accountsReachedChange', e.target.value)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="-34.3%"
+                          placeholder="—"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">External Link Taps</label>
+                        <input
+                          type="number"
+                          value={formData.metrics?.externalLinkTaps ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('externalLinkTaps', isNaN(v) ? null : v); }}
+                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2210,7 +2220,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.gender?.men || ''}
                           onChange={(e) => updateNestedMetric('gender', 'men', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="52"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2221,7 +2231,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.gender?.women || ''}
                           onChange={(e) => updateNestedMetric('gender', 'women', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="48"
+                          placeholder="—"
                         />
                       </div>
                     </div>
@@ -2240,7 +2250,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.growth?.overall || ''}
                           onChange={(e) => updateNestedMetric('growth', 'overall', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="-37"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2250,7 +2260,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.growth?.follows || ''}
                           onChange={(e) => updateNestedMetric('growth', 'follows', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="6724"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2260,7 +2270,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.growth?.unfollows || ''}
                           onChange={(e) => updateNestedMetric('growth', 'unfollows', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="6761"
+                          placeholder="—"
                         />
                       </div>
                     </div>
@@ -2299,6 +2309,48 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           />
                           <button
                             onClick={() => removeArrayItem('topCities', idx)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Top Countries */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <MapPin className="w-4 h-4" /> Top Countries
+                      </h5>
+                      <button
+                        onClick={() => addArrayItem('topCountries', { name: '', percentage: 0 })}
+                        className="text-xs text-purple-600 hover:text-purple-700"
+                      >
+                        + Add Country
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {(formData.metrics?.topCountries || []).map((country, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={country.name}
+                            onChange={(e) => updateArrayMetric('topCountries', idx, 'name', e.target.value)}
+                            className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                            placeholder="Country name"
+                          />
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={country.percentage}
+                            onChange={(e) => updateArrayMetric('topCountries', idx, 'percentage', parseFloat(e.target.value) || 0)}
+                            className="w-20 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                            placeholder="%"
+                          />
+                          <button
+                            onClick={() => removeArrayItem('topCountries', idx)}
                             className="p-2 text-red-500 hover:bg-red-50 rounded"
                           >
                             <Trash2 className="w-4 h-4" />

@@ -140,6 +140,10 @@ CRITICAL RULES:
 - For percentage changes, keep the sign and % symbol as a string.
 - Combine data from multiple screenshots. If the same metric appears in multiple screenshots, use the most detailed version.
 - Return ONLY the JSON object, no markdown, no explanation.
+- IMPORTANT: "likes", "comments", "shares", "saves", "reposts" should ONLY be included if Instagram shows an explicit interaction-type breakdown screen listing those individual counts. If only a total "Interactions" number is shown, do NOT populate these fields — a single total does NOT imply individual breakdowns.
+- For "topCities" and "topCountries": include ALL cities/countries you can read from any screenshot, not just the top one.
+- For "ageRanges": include ALL age brackets visible across any screenshot (including 55-64, 65+).
+- For "activeTimes": extract from the "Most active times" bar chart if visible — record each time slot and relative bar height (0-100).
 
 Use these exact field names (include ONLY fields you can actually see):
 
@@ -154,19 +158,21 @@ Use these exact field names (include ONLY fields you can actually see):
   "interactionsFollowerPercent": <number, the "Followers" percentage under the Interactions section>,
   "profileVisits": <number>,
   "profileVisitsChange": "<string, ONLY if shown>",
-  "likes": <number>,
-  "comments": <number>,
-  "shares": <number>,
-  "saves": <number>,
-  "reposts": <number>,
+  "externalLinkTaps": <number, ONLY if explicitly shown as "External link taps" or similar>,
+  "likes": <number, ONLY if an explicit interaction breakdown screen shows this count>,
+  "comments": <number, ONLY if an explicit interaction breakdown screen shows this count>,
+  "shares": <number, ONLY if an explicit interaction breakdown screen shows this count>,
+  "saves": <number, ONLY if an explicit interaction breakdown screen shows this count>,
+  "reposts": <number, ONLY if an explicit interaction breakdown screen shows this count>,
   "follows": <number under "Follows" in profile activity, ONLY if shown>,
   "growth": { "follows": <number>, "unfollows": <number>, "overall": <number> },
   "topCities": [ { "name": "<string>", "percentage": <number> } ],
+  "topCountries": [ { "name": "<string>", "percentage": <number> } ],
   "ageRanges": [ { "range": "<string>", "percentage": <number> } ],
   "gender": { "men": <number>, "women": <number> },
   "topSourcesOfViews": [ { "source": "<string, e.g. 'Profile'>", "percentage": <number> } ],
   "contentBreakdown": [ { "type": "<string>", "percentage": <number> } ],
-  "activeTimes": [ { "hour": "<string>", "activity": <number, 0-100> } ]
+  "activeTimes": [ { "hour": "<string, e.g. '9a'>", "activity": <number, 0-100 relative bar height> } ]
 }`;
 
       const response = await fetch(API_URL, {

@@ -383,6 +383,10 @@ CRITICAL RULES:
 - For percentage changes, keep the sign and % symbol as a string.
 - Combine data from multiple screenshots. If the same metric appears in multiple screenshots, use the most detailed version.
 - Return ONLY the JSON object, no markdown, no explanation.
+- IMPORTANT: "likes", "comments", "shares", "saves", "reposts" should ONLY be included if Instagram shows an explicit interaction-type breakdown screen listing those individual counts. If only a total "Interactions" number is shown, do NOT populate these fields — a single total does NOT imply individual breakdowns.
+- For "topCities" and "topCountries": include ALL cities/countries you can read from any screenshot, not just the top one.
+- For "ageRanges": include ALL age brackets visible across any screenshot (including 55-64, 65+).
+- For "activeTimes": extract from the "Most active times" bar chart if visible — record each time slot and relative bar height (0-100).
 
 Use these exact field names (include ONLY fields you can actually see):
 
@@ -397,19 +401,21 @@ Use these exact field names (include ONLY fields you can actually see):
   "interactionsFollowerPercent": <number, the "Followers" percentage under the Interactions section>,
   "profileVisits": <number>,
   "profileVisitsChange": "<string, ONLY if shown>",
-  "likes": <number>,
-  "comments": <number>,
-  "shares": <number>,
-  "saves": <number>,
-  "reposts": <number>,
+  "externalLinkTaps": <number, ONLY if explicitly shown as "External link taps" or similar>,
+  "likes": <number, ONLY if an explicit interaction breakdown screen shows this count>,
+  "comments": <number, ONLY if an explicit interaction breakdown screen shows this count>,
+  "shares": <number, ONLY if an explicit interaction breakdown screen shows this count>,
+  "saves": <number, ONLY if an explicit interaction breakdown screen shows this count>,
+  "reposts": <number, ONLY if an explicit interaction breakdown screen shows this count>,
   "follows": <number under "Follows" in profile activity, ONLY if shown>,
   "growth": { "follows": <number>, "unfollows": <number>, "overall": <number> },
   "topCities": [ { "name": "<string>", "percentage": <number> }, ... ],
+  "topCountries": [ { "name": "<string>", "percentage": <number> }, ... ],
   "ageRanges": [ { "range": "<string, e.g. '18-24'>", "percentage": <number> }, ... ],
   "gender": { "men": <number, percentage>, "women": <number, percentage> },
   "topSourcesOfViews": [ { "source": "<string, e.g. 'Profile'>", "percentage": <number> }, ... ],
   "contentBreakdown": [ { "type": "<string, e.g. 'Reels'>", "percentage": <number> }, ... ],
-  "activeTimes": [ { "hour": "<string>", "activity": <number, 0-100> }, ... ]
+  "activeTimes": [ { "hour": "<string, e.g. '9a'>", "activity": <number, 0-100 relative bar height> }, ... ]
 }`;
 
     try {
@@ -526,15 +532,14 @@ Use these exact field names (include ONLY fields you can actually see):
    * Generate a short client-facing analytics summary from extracted Instagram metrics.
    */
   async generateReportSummary(metrics, { dateRange = '', clientName = '' } = {}) {
-    const prompt = `You are a social-media analytics expert writing for a luxury real estate marketing agency.
-Given these Instagram metrics for ${clientName || 'the client'} (${dateRange || 'recent period'}):
+    const prompt = `Here are the Instagram analytics for ${clientName || 'this account'} covering ${dateRange || 'the recent period'}:
 ${JSON.stringify(metrics, null, 2)}
 
-Write a concise 3-5 sentence professional summary highlighting key performance, notable growth areas, and any areas needing attention. Use specific numbers. Keep it client-friendly and positive but honest.`;
+Write a 3–5 sentence summary in the first-person voice of their dedicated social media manager delivering a client check-in. Speak directly to the client — conversational, confident, and positive but candid. Lead with the most meaningful wins or trends, reference specific numbers, and flag any metrics worth watching without being alarming. Sound like a knowledgeable strategist who has their back, not a report generator.`;
     return this._callAI([
-      { role: 'system', content: 'You write concise, data-driven Instagram analytics summaries for luxury real estate clients.' },
+      { role: 'system', content: 'You are a sharp, client-facing social media strategist at a luxury real estate marketing agency. You write concise, insightful performance summaries that feel personal and informed — like a trusted advisor giving a quick debrief, not a data dump.' },
       { role: 'user', content: prompt },
-    ], { temperature: 0.5, maxTokens: 500 });
+    ], { temperature: 0.65, maxTokens: 500 });
   }
 
   /**
