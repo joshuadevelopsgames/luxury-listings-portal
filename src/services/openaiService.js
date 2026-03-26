@@ -535,7 +535,7 @@ Use these exact field names (include ONLY fields you can actually see):
     const prompt = `Here are the Instagram analytics for ${clientName || 'this account'} covering ${dateRange || 'the recent period'}:
 ${JSON.stringify(metrics, null, 2)}
 
-Write a 3–5 sentence summary in the first-person voice of their dedicated social media manager delivering a client check-in. Speak directly to the client — conversational, confident, and positive but candid. Lead with the most meaningful wins or trends, reference specific numbers, and flag any metrics worth watching without being alarming. Sound like a knowledgeable strategist who has their back, not a report generator.`;
+Write a 3–5 sentence summary in the first-person voice of their dedicated social media manager delivering a client check-in. Speak directly to the client — conversational, confident, and positive but candid. Lead with the most meaningful wins or trends, reference specific numbers, and flag any metrics worth watching without being alarming. Sound like a knowledgeable strategist who has their back, not a report generator. Keep the total response under 500 characters.`;
     return this._callAI([
       { role: 'system', content: 'You are a sharp, client-facing social media strategist at a luxury real estate marketing agency. You write concise, insightful performance summaries that feel personal and informed — like a trusted advisor giving a quick debrief, not a data dump.' },
       { role: 'user', content: prompt },
