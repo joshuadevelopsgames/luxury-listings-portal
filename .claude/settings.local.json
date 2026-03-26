@@ -20,7 +20,7 @@
       "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless=new --disable-gpu --no-sandbox --print-to-pdf=\"/Users/joshua/smmluxurylistings/subscription-agreement.pdf\" --no-pdf-header-footer \"http://localhost:4400/subscription-agreement.html\")",
       "Bash(open:*)",
       "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless=new --disable-gpu --no-sandbox --print-to-pdf=\"/Users/joshua/Desktop/subscription-agreement.pdf\" --no-pdf-header-footer \"file:///Users/joshua/smmluxurylistings/subscription-agreement.html\")",
-      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless=new --disable-gpu --no-sandbox --print-to-pdf=\"/Users/joshua/Desktop/Invoice-001-Luxury-Listings-March-2026.pdf\" --no-pdf-header-footer \"file:///Users/joshua/smmluxurylistings/invoice-march-2026.html\")",
+      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless=new --disable-gpu --no-sandbox --print-to-pdf=\"/Users/joshua/Desktop/Invoice-001-Luxury-Listings-April-2026.pdf\" --no-pdf-header-footer \"file:///Users/joshua/smmluxurylistings/invoice-april-2026.html\")",
       "Bash(gh repo:*)",
       "Bash(gh api:*)",
       "Read(//Users/joshua/**)",

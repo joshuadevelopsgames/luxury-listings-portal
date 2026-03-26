@@ -1749,6 +1749,14 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') }));
       const metrics = formData.metrics ? JSON.parse(JSON.stringify(formData.metrics)) : null;
 
+      // Guard against oversized payloads (Supabase PostgREST limit ~10MB, warn >200KB)
+      const payloadSize = new Blob([JSON.stringify({ clientId, clientName, title, dateRange, notes, postLinks, metrics })]).size;
+      if (payloadSize > 500_000) {
+        toast.error(`Report data is too large (${Math.round(payloadSize / 1024)}KB). Try shortening the notes or reducing metrics data.`);
+        setSaving(false);
+        return;
+      }
+
       let savedPublicLinkId;
       if (report) {
         await supabaseService.updateInstagramReport(report.id, { clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
@@ -1947,8 +1955,12 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Add insights, highlights, and recommendations for the client — or use the button above to generate an AI summary from your metrics."
                 rows={3}
+                maxLength={5000}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
               />
+              <p className={`text-xs mt-1 text-right ${(formData.notes?.length || 0) > 4500 ? 'text-orange-500' : 'text-gray-400'}`}>
+                {formData.notes?.length || 0} / 5,000
+              </p>
             </div>
 
             {/* Screenshots for reading numbers only (not attached to report) */}
