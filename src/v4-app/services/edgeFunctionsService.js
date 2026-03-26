@@ -108,6 +108,19 @@ export async function canvasAssist({ action, content, tone }) {
   return result;
 }
 
+// ── Listing Scraper ───────────────────────────────────────────────────────────
+
+/**
+ * Scrape a listing URL for structured property data.
+ * Zillow → Apify actor. Everything else → OG tags + GPT-4o-mini extraction.
+ * @param {string} url
+ * @returns {Promise<{ title, address, price, beds, baths, squareFeet, description, sourceDomain, photos, provider }>}
+ */
+export async function scrapeListing(url) {
+  const result = await callEdgeFunction('scrape-listing', { url });
+  return result;
+}
+
 // ── Listing Photo Ranking ──────────────────────────────────────────────────────
 
 /**
@@ -127,4 +140,5 @@ export default {
   runHealthCheck,
   canvasAssist,
   rankListingPhotos,
+  scrapeListing,
 };

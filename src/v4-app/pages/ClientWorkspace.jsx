@@ -260,25 +260,25 @@ export default function ClientWorkspace() {
     if (!newListingUrl.trim()) return;
     setSavingListing(true);
     try {
+      // Scrape via edge function (Apify for Zillow, OG+GPT for everything else)
       let scraped = {};
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 4000);
-        const res = await fetch(
-          `/api/scrape-listing?url=${encodeURIComponent(newListingUrl.trim())}`,
-          { signal: controller.signal }
-        );
-        clearTimeout(timeout);
-        if (res.ok) scraped = await res.json();
-      } catch { /* non-fatal — route missing or timed out */ }
+        scraped = await openaiService.scrapeListing(newListingUrl.trim()) || {};
+      } catch { /* non-fatal */ }
+
       const created = await supabaseService.createClientListing({
         clientId,
         listingUrl: newListingUrl.trim(),
         sourceDomain: scraped.sourceDomain || '',
         title: scraped.title || '',
+        address: scraped.address || '',
+        price: scraped.price || '',
+        beds: scraped.beds || '',
+        baths: scraped.baths || '',
+        squareFeet: scraped.squareFeet || '',
         description: newListingDesc.trim() || scraped.description || '',
         notes: newListingNotes.trim(),
-        rawPayload: scraped || {},
+        rawPayload: scraped,
       });
       setNewListingUrl('');
       setNewListingDesc('');

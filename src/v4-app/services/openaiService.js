@@ -5,7 +5,7 @@
  * (see edgeFunctionsService.js).
  */
 
-import { generateCaption, generateReportSummary, canvasAssist, runHealthCheck, rankListingPhotos } from './edgeFunctionsService';
+import { generateCaption, generateReportSummary, canvasAssist, runHealthCheck, rankListingPhotos, scrapeListing } from './edgeFunctionsService';
 
 export const openaiService = {
   async generateCaption(prompt, options = {}) {
@@ -69,6 +69,20 @@ export const openaiService = {
     } catch (e) {
       console.warn('[V4] rankListingPhotos edge function not available:', e.message);
       throw e;
+    }
+  },
+
+  /**
+   * Scrape a listing URL for structured property data.
+   * @param {string} url
+   * @returns {Promise<{ title, address, price, beds, baths, squareFeet, description, sourceDomain, photos }>}
+   */
+  async scrapeListing(url) {
+    try {
+      return await scrapeListing(url);
+    } catch (e) {
+      console.warn('[V4] scrapeListing failed:', e.message);
+      return {};
     }
   },
 };
