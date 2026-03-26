@@ -12,7 +12,8 @@ export const API_KEYS = {
   // ImgBB API Key (for image uploads)
   IMGBB_API_KEY: process.env.REACT_APP_IMGBB_API_KEY || '1e52042b16f9d095084295e32d073030',
   
-  // OpenAI API Key (for AI features)
+  // AI API Keys (OpenRouter preferred, OpenAI fallback)
+  OPENROUTER_API_KEY: process.env.REACT_APP_OPENROUTER_API_KEY || '',
   OPENAI_API_KEY: process.env.REACT_APP_OPENAI_API_KEY || '',
 };
 

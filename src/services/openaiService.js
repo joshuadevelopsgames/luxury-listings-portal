@@ -7,7 +7,6 @@
  * server-side and enforce rate limits.
  */
 
-import { invokeEdgeFunction } from './edgeFunctionService';
 
 // Use OpenRouter (CORS-friendly) with fallback to OpenAI direct
 const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
@@ -499,111 +498,96 @@ Rules:
     });
   }
 
+  // ─── Helper: direct OpenRouter/OpenAI call (bypasses edge functions for reliability) ───
+  async _callAI(messages, { model = null, temperature = 0.7, maxTokens = 1000, json = false } = {}) {
+    if (!API_KEY) throw new Error('API key is not configured.');
+    const chosenModel = model || (OPENROUTER_API_KEY ? 'openai/gpt-4o-mini' : 'gpt-4o-mini');
+    const body = { model: chosenModel, messages, temperature, max_tokens: maxTokens };
+    if (json) body.response_format = { type: 'json_object' };
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+        ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`AI request failed: ${res.status}`);
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '';
+  }
+
   /**
    * Generate a short client-facing analytics summary from extracted Instagram metrics.
-   * Uses Cloud Function (OpenRouter/OpenAI). Returns summary text for report notes.
    */
   async generateReportSummary(metrics, { dateRange = '', clientName = '' } = {}) {
-    const result = await invokeEdgeFunction('generate-report-summary', { metrics, dateRange, clientName });
-    if (result?.success && result?.summary) {
-      return result.summary;
-    }
-    throw new Error(result?.error || 'Summary generation failed');
+    const prompt = `You are a social-media analytics expert writing for a luxury real estate marketing agency.
+Given these Instagram metrics for ${clientName || 'the client'} (${dateRange || 'recent period'}):
+${JSON.stringify(metrics, null, 2)}
+
+Write a concise 3-5 sentence professional summary highlighting key performance, notable growth areas, and any areas needing attention. Use specific numbers. Keep it client-friendly and positive but honest.`;
+    return this._callAI([
+      { role: 'system', content: 'You write concise, data-driven Instagram analytics summaries for luxury real estate clients.' },
+      { role: 'user', content: prompt },
+    ], { temperature: 0.5, maxTokens: 500 });
   }
 
   /**
    * Generate a social media caption with hashtags for luxury real estate content.
-   * Uses Cloud Function (OpenRouter/OpenAI).
-   *
-   * @param {string} description - Description of the content to post about
-   * @param {string} platform - Target platform: 'instagram', 'facebook', 'linkedin', 'twitter', 'youtube'
-   * @param {string} tone - Tone of the caption: 'luxury' (default), 'casual', 'professional'
-   * @returns {Promise<{caption: string, hashtags: string[]}>}
    */
   async generateCaption(description, platform = 'instagram', tone = 'luxury') {
     if (!description || description.trim().length < 3) {
       throw new Error('Please provide a description of the content (at least 3 characters)');
     }
-
     console.log(`✍️ Generating ${platform} caption...`);
-
-    const result = await invokeEdgeFunction('generate-caption', { description, platform, tone });
-
-    if (result?.success) {
+    const raw = await this._callAI([
+      { role: 'system', content: `You generate ${tone} social media captions for luxury real estate content on ${platform}. Return JSON: { "caption": "...", "hashtags": ["...", ...] }` },
+      { role: 'user', content: `Write a ${tone} ${platform} caption for: ${description}` },
+    ], { temperature: 0.8, maxTokens: 500, json: true });
+    try {
+      const parsed = JSON.parse(raw);
       console.log('✅ Caption generated');
-      return {
-        caption: result.caption,
-        hashtags: result.hashtags || []
-      };
+      return { caption: parsed.caption || raw, hashtags: parsed.hashtags || [] };
+    } catch {
+      return { caption: raw, hashtags: [] };
     }
-
-    throw new Error(result?.error || 'Caption generation failed');
   }
 
   /**
    * Predict client health/churn risk based on multiple factors.
-   * Uses Cloud Function (OpenRouter/OpenAI).
-   *
-   * Enhanced to analyze Instagram report trends for better churn prediction:
-   * - Follower growth/loss
-   * - Engagement trends (views, interactions)
-   * - Deliverable completion rates
-   *
-   * @param {Object} clientData - Client data object with health indicators
-   * @param {string} clientData.clientName - Client name
-   * @param {number} clientData.postsRemaining - Posts remaining in package
-   * @param {number} clientData.packageSize - Total package size
-   * @param {number} clientData.postsUsed - Posts used so far
-   * @param {string} clientData.paymentStatus - 'Paid', 'Pending', 'Overdue'
-   * @param {string} clientData.packageType - Type of package
-   * @param {number} clientData.daysSinceContact - Days since last contact
-   * @param {number} clientData.daysUntilRenewal - Days until contract renewal
-   * @param {string} clientData.lastPostDate - Date of last post
-   * @param {string} clientData.notes - Any notes about the client
-   * @param {Array} reportHistory - Optional array of Instagram reports for trend analysis
-   * @returns {Promise<{status: string, churnRisk: number, reason: string, action: string}>}
    */
   async predictClientHealth(clientData, reportHistory = null) {
-    if (!clientData || typeof clientData !== 'object') {
-      throw new Error('Client data is required');
-    }
-
+    if (!clientData || typeof clientData !== 'object') throw new Error('Client data is required');
     const clientName = clientData.clientName || 'Unknown';
-    const reportCount = reportHistory?.length || 0;
-    console.log(`🔍 Predicting health for client: ${clientName} (${reportCount} reports for trend analysis)`);
-
-    const result = await invokeEdgeFunction('run-health-check', {
-      client_id: clientData.id || null,
-      clientData,
-      reportHistory,
-    });
-
-    if (result?.success || result?.status) {
+    console.log(`🔍 Predicting health for client: ${clientName}`);
+    const raw = await this._callAI([
+      { role: 'system', content: 'You are a client-health analyst for a social media marketing agency. Analyze the data and return JSON: { "status": "Healthy|At Risk|Critical", "churnRisk": <0-100>, "reason": "...", "action": "..." }' },
+      { role: 'user', content: `Analyze churn risk for ${clientName}:\n${JSON.stringify(clientData, null, 2)}\n\nInstagram report history (${reportHistory?.length || 0} reports):\n${reportHistory ? JSON.stringify(reportHistory.slice(0, 6).map(r => ({ dateRange: r.dateRange, metrics: r.metrics })), null, 2) : 'None'}` },
+    ], { temperature: 0.3, maxTokens: 500, json: true });
+    try {
+      const result = JSON.parse(raw);
       console.log(`✅ Health predicted: ${result.status} (${result.churnRisk}% risk)`);
-      return {
-        status: result.status,
-        churnRisk: result.churnRisk,
-        reason: result.reason,
-        action: result.action
-      };
+      return { status: result.status, churnRisk: result.churnRisk, reason: result.reason, action: result.action };
+    } catch {
+      throw new Error('Health prediction returned invalid response');
     }
-
-    throw new Error(result?.error || 'Health prediction failed');
   }
 
   /**
    * AI assist for workspace blocks: summarize, expand, or change tone.
-   * Uses Cloud Function so the API key stays server-side (no CORS, no key exposure).
-   * @param {string} action - 'summarize' | 'expand' | 'professional' | 'casual'
-   * @param {string} blockText - Plain text content (strip HTML before calling)
-   * @returns {Promise<string>} - Revised text
    */
   async canvasAssist(action, blockText) {
-    const result = await invokeEdgeFunction('canvas-assist', {
-      action,
-      content: blockText || '',
-    });
-    return result?.result ?? result?.text ?? '';
+    const instructions = {
+      summarize: 'Summarize the following text concisely while keeping key points.',
+      expand: 'Expand the following text with more detail and supporting points.',
+      professional: 'Rewrite the following text in a professional, polished tone.',
+      casual: 'Rewrite the following text in a friendly, conversational tone.',
+    };
+    return this._callAI([
+      { role: 'system', content: instructions[action] || 'Rewrite the following text.' },
+      { role: 'user', content: blockText || '' },
+    ], { temperature: 0.6, maxTokens: 1000 });
   }
 }
 

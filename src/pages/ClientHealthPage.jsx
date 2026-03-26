@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabaseService } from '../services/supabaseService';
 import { openaiService } from '../services/openaiService';
-import { invokeEdgeFunction } from '../services/edgeFunctionService';
+// Edge functions removed — AI calls go through openaiService (OpenRouter)
 import {
   Activity,
   RefreshCw,
@@ -78,8 +78,28 @@ const ClientHealthPage = () => {
   const runBulk = async () => {
     try {
       setRunningBulk(true);
-      const result = await invokeEdgeFunction('run-health-check', {});
-      toast.success(`Updated ${result?.processed ?? 0} clients`);
+      // Process each client through OpenRouter instead of edge function
+      const allClients = await supabaseService.getClients();
+      let processed = 0;
+      for (const client of allClients) {
+        try {
+          const reports = await supabaseService.getClientInstagramReportHistory(client.id, 6);
+          const reportHistory = reports?.length
+            ? reports.map((r) => ({ dateRange: r.dateRange, startDate: r.startDate, metrics: r.metrics || {} }))
+            : null;
+          const clientData = {
+            clientName: client.clientName || 'Unknown',
+            postsRemaining: client.postsRemaining ?? 0,
+            packageSize: client.packageSize ?? 12,
+            postsUsed: client.postsUsed ?? 0,
+            paymentStatus: client.paymentStatus || 'unknown',
+            packageType: client.packageType || 'unknown',
+          };
+          await openaiService.predictClientHealth(clientData, reportHistory);
+          processed++;
+        } catch (e) { console.warn(`Health check failed for ${client.clientName}:`, e); }
+      }
+      toast.success(`Updated ${processed} clients`);
       await loadData();
     } catch (err) {
       console.error('Bulk health run failed:', err);

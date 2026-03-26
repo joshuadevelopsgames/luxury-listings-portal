@@ -74,7 +74,7 @@ class AIService {
   async getResponse(userMessage, userRole = null) {
     try {
       // Check if OpenAI API key is available
-      if (!process.env.REACT_APP_OPENAI_API_KEY) {
+      if (!process.env.REACT_APP_OPENROUTER_API_KEY && !process.env.REACT_APP_OPENAI_API_KEY) {
         // Fallback to rule-based responses if no API key
         return this.generateRuleBasedResponse(userMessage, userRole);
       }
@@ -95,15 +95,19 @@ class AIService {
       // Create the system prompt that keeps AI focused on the software
       const systemPrompt = this.createSystemPrompt(userRole);
       
-      // Make API call to OpenAI
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Use OpenRouter (CORS-friendly) with fallback to OpenAI
+      const orKey = process.env.REACT_APP_OPENROUTER_API_KEY;
+      const apiKey = orKey || process.env.REACT_APP_OPENAI_API_KEY;
+      const apiUrl = orKey ? 'https://openrouter.ai/api/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
+          'Authorization': `Bearer ${apiKey}`,
+          ...(orKey ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {}),
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: orKey ? 'openai/gpt-4o-mini' : 'gpt-4o-mini',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage }
