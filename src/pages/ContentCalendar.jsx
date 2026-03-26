@@ -1377,7 +1377,26 @@ const ContentCalendar = () => {
                   <div className="space-y-2">
                     <input value={newCalendarName} onChange={(e) => setNewCalendarName(e.target.value)} placeholder="Calendar name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
                     <div className="flex gap-2">
-                      <button onClick={() => { const name = newCalendarName.trim(); if (!name) return; const id = `cal-${Date.now()}`; setCalendars(prev => [...prev, { id, name }]); setSelectedCalendarId(id); setNewCalendarName(''); setShowAddCalendar(false); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed]">Create</button>
+                      <button onClick={async () => {
+                        const name = newCalendarName.trim();
+                        if (!name) return;
+                        try {
+                          if (currentUser?.email) {
+                            const res = await supabaseService.createContentCalendar({ userEmail: currentUser.email, name });
+                            const refetchedCals = await supabaseService.getContentCalendars(currentUser.email);
+                            setCalendars(refetchedCals);
+                            setSelectedCalendarId(res.id);
+                          } else {
+                            const id = `cal-${Date.now()}`;
+                            setCalendars(prev => [...prev, { id, name }]);
+                            setSelectedCalendarId(id);
+                          }
+                          setNewCalendarName('');
+                          setShowAddCalendar(false);
+                        } catch (e) {
+                          toast.error(e?.message || 'Failed to create calendar');
+                        }
+                      }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed]">Create</button>
                       <button onClick={() => { setShowAddCalendar(false); setNewCalendarName(''); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
                     </div>
                   </div>
