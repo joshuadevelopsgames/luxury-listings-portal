@@ -1111,9 +1111,15 @@ const InstagramReportsPage = () => {
                               {(() => {
                                 // Sort by the report's date range (period covered), not creation time
                                 const sortedMonthly = [...monthlyReports].sort((a, b) => getReportSortDate(a) - getReportSortDate(b));
+                                console.log('[COMPARE_DEBUG_V2] sortedMonthly order:', sortedMonthly.map(r => ({
+                                  title: r.title, dateRange: r.dateRange, startDate: r.startDate,
+                                  sortDate: getReportSortDate(r)?.toISOString?.(), id: r.id
+                                })));
                                 const findPrev = (report) => {
                                   const idx = sortedMonthly.findIndex(r => r.id === report.id);
-                                  return idx > 0 ? sortedMonthly[idx - 1] : null;
+                                  const prev = idx > 0 ? sortedMonthly[idx - 1] : null;
+                                  console.log('[COMPARE_DEBUG_V2] findPrev for', report.title, '→ idx=', idx, '→ prev=', prev?.title || 'NULL');
+                                  return prev;
                                 };
                                 return groupReportsByYearMonth(monthlyReports).map(({ year, month, reports: groupReports }) => {
                                   // Newest report first within each month group
