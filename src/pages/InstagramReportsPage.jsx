@@ -3071,7 +3071,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 )}
 
                 {/* Most active times */}
-                {m.activeTimes && m.activeTimes.length > 0 && (
+                {m.activeTimes && m.activeTimes.length > 0 && m.activeTimes.some(t => (t.activity ?? 0) > 0) && (
                   <div className="mt-8">
                     <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Clock className="w-4 h-4 text-purple-500" />Most active times</h3>
                     <div className="flex items-end justify-between gap-1 h-28">

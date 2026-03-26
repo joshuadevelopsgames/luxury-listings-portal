@@ -686,7 +686,7 @@ const PublicInstagramReportPage = () => {
               )}
 
               {/* Most active times */}
-              {report.metrics.activeTimes && report.metrics.activeTimes.length > 0 && (
+              {report.metrics.activeTimes && report.metrics.activeTimes.length > 0 && report.metrics.activeTimes.some(t => (t.activity ?? 0) > 0) && (
                 <div className="mt-8">
                   <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-purple-500" />
