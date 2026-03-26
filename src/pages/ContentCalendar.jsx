@@ -7,8 +7,11 @@ import {
   Image, Video, FileText, Clock, Users, TrendingUp, Settings,
   ExternalLink, Filter, Download, RefreshCw, CheckCircle, AlertCircle, Pause, Play,
   X, Edit, Trash2, Eye, CalendarDays, Folder, FolderPlus, FileSpreadsheet, Upload,
-  Check, MoreVertical, Link as LinkIcon, ChevronLeft, ChevronRight
+  Check, MoreVertical, Link as LinkIcon, ChevronLeft, ChevronRight,
+  Library, GripVertical, ChevronDown
 } from 'lucide-react';
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { format, addDays, isToday, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import XLogo from '../assets/Twitter-X-logo.png';
 import XLogoSelected from '../assets/x-logo-selected.png';
@@ -21,6 +24,66 @@ import { supabaseService } from '../services/supabaseService';
 import PostPreviewCard from '../components/content/PostPreviewCard';
 
 const MAX_MEDIA_PER_POST = 15;
+
+// ─── DroppableDay: a calendar cell that accepts library asset drops ───────────
+const DroppableDay = ({ dateKey, isCurrentMonth, isToday: isTodayProp, onDoubleClick, activeDragId, children }) => {
+  const { setNodeRef, isOver } = useDroppable({ id: dateKey });
+  return (
+    <div
+      ref={setNodeRef}
+      onDoubleClick={onDoubleClick}
+      className={[
+        'min-h-[120px] p-2 rounded-lg border cursor-pointer transition-all',
+        !isCurrentMonth
+          ? 'bg-black/[0.02] dark:bg-white/5 text-[#86868b] border-transparent'
+          : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[#1d1d1f] dark:text-white',
+        isTodayProp ? 'bg-[#0071e3]/10 dark:bg-[#0071e3]/20 border-[#0071e3]/30' : '',
+        isOver && activeDragId ? 'ring-2 ring-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/15 border-[#0071e3]/40' : ''
+      ].join(' ')}
+    >
+      {children}
+    </div>
+  );
+};
+
+// ─── LibraryAssetTile: a draggable thumbnail in the Content Library ───────────
+const LibraryAssetTile = ({ asset, isActive, onRemove }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: asset.id });
+  const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined;
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={[
+        'relative group aspect-square rounded-xl overflow-hidden bg-black/5 dark:bg-white/10 cursor-grab active:cursor-grabbing transition-all',
+        isDragging ? 'opacity-40 scale-95' : 'hover:ring-2 hover:ring-[#0071e3]/60'
+      ].join(' ')}
+      title={asset.name}
+    >
+      {asset.type?.startsWith('video/') ? (
+        <div className="w-full h-full flex items-center justify-center bg-black/20">
+          <Video className="w-6 h-6 text-white" />
+        </div>
+      ) : (
+        <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
+      )}
+      {/* Remove button */}
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onRemove(asset.id); }}
+        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+      >
+        <X className="w-3 h-3" />
+      </button>
+      {/* Drag handle indicator */}
+      <div className="absolute bottom-0.5 left-0.5 opacity-0 group-hover:opacity-60 transition-opacity">
+        <GripVertical className="w-3 h-3 text-white" />
+      </div>
+    </div>
+  );
+};
 
 const ContentCalendar = () => {
   const { currentUser } = useAuth();
@@ -45,6 +108,24 @@ const ContentCalendar = () => {
   const [refreshingCalendarId, setRefreshingCalendarId] = useState(null);
   const [linkingCalendarId, setLinkingCalendarId] = useState(null);
   const [linkSheetUrl, setLinkSheetUrl] = useState('');
+
+  // ─── Header dropdown popovers ────────────────────────────────────────────────
+  const [showCalendarsDropdown, setShowCalendarsDropdown] = useState(false);
+  const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
+  const calendarsDropdownRef = useRef(null);
+  const filtersDropdownRef = useRef(null);
+
+  // ─── Content Library ─────────────────────────────────────────────────────────
+  const [libraryAssets, setLibraryAssets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('content_library_assets') || '[]'); } catch { return []; }
+  });
+  const [libraryDragOver, setLibraryDragOver] = useState(false);
+  const [uploadingLibrary, setUploadingLibrary] = useState(false);
+  const libraryFileInputRef = useRef(null);
+
+  // ─── DnD sensors ─────────────────────────────────────────────────────────────
+  const [activeDragId, setActiveDragId] = useState(null); // id of asset being dragged
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   // Import from Sheets state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -124,6 +205,21 @@ const ContentCalendar = () => {
     load();
     return () => { cancelled = true; };
   }, [currentUser?.email]);
+
+  // Outside-click dismissal for header dropdowns
+  useEffect(() => {
+    const handler = (e) => {
+      if (calendarsDropdownRef.current && !calendarsDropdownRef.current.contains(e.target)) setShowCalendarsDropdown(false);
+      if (filtersDropdownRef.current && !filtersDropdownRef.current.contains(e.target)) setShowFiltersDropdown(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Persist library assets to localStorage
+  useEffect(() => {
+    localStorage.setItem('content_library_assets', JSON.stringify(libraryAssets));
+  }, [libraryAssets]);
 
   const [postForm, setPostForm] = useState({
     title: '',
@@ -371,6 +467,93 @@ const ContentCalendar = () => {
 
   const prevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  // ========== CONTENT LIBRARY ==========
+
+  const handleLibraryFileDrop = async (e) => {
+    e.preventDefault();
+    setLibraryDragOver(false);
+    const files = Array.from(e.dataTransfer?.files || e.target?.files || []);
+    if (!files.length) return;
+    setUploadingLibrary(true);
+    try {
+      const uploaded = await Promise.all(files.map(async (file) => {
+        const url = await uploadFile(`content-library/${currentUser?.email || 'shared'}/${Date.now()}-${file.name}`, file);
+        return { id: `lib-${Date.now()}-${Math.random().toString(36).slice(2)}`, url, name: file.name, type: file.type, size: file.size, addedAt: new Date().toISOString() };
+      }));
+      setLibraryAssets(prev => [...prev, ...uploaded]);
+      toast.success(`${uploaded.length} file${uploaded.length > 1 ? 's' : ''} added to Content Library`);
+    } catch (err) {
+      toast.error('Upload failed: ' + err.message);
+    } finally {
+      setUploadingLibrary(false);
+    }
+  };
+
+  const handleLibraryFileInput = (e) => handleLibraryFileDrop(e);
+
+  const handleRemoveLibraryAsset = (id) => {
+    setLibraryAssets(prev => prev.filter(a => a.id !== id));
+  };
+
+  // DnD: drag an asset from the library onto a calendar day
+  const handleDragStart = (event) => {
+    setActiveDragId(event.active.id);
+  };
+
+  const handleDragEnd = async (event) => {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const assetId = active.id;
+    const dateStr = over.id; // format: 'yyyy-MM-dd'
+    const asset = libraryAssets.find(a => a.id === assetId);
+    if (!asset) return;
+
+    // Parse the dropped date
+    let droppedDate;
+    try { droppedDate = new Date(dateStr + 'T12:00:00'); } catch { return; }
+
+    // Check if there's already a post on that day in the selected calendar
+    const existingPosts = contentItems.filter(item =>
+      item.calendarId === selectedCalendarId && isSameDay(new Date(item.scheduledDate), droppedDate)
+    );
+
+    if (existingPosts.length > 0) {
+      // Append the asset to the first post on that day
+      const post = existingPosts[0];
+      const updatedMedia = [...(post.media || []), { url: asset.url, name: asset.name, type: asset.type }];
+      try {
+        await supabaseService.updateContentItem(post.id, { media: updatedMedia });
+        setContentItems(prev => prev.map(i => i.id === post.id ? { ...i, media: updatedMedia } : i));
+        toast.success(`Photo appended to "${post.title}"`);
+      } catch (err) {
+        toast.error('Failed to append photo: ' + err.message);
+      }
+    } else {
+      // Create a new draft post with this asset on the dropped date
+      const newPost = {
+        calendarId: selectedCalendarId,
+        userEmail: currentUser?.email,
+        title: asset.name.replace(/\.[^.]+$/, '') || 'New Post',
+        description: '',
+        platform: 'instagram',
+        contentType: asset.type?.startsWith('video/') ? 'video' : 'image',
+        scheduledDate: droppedDate.toISOString(),
+        status: 'draft',
+        tags: '',
+        media: [{ url: asset.url, name: asset.name, type: asset.type }],
+        notes: ''
+      };
+      try {
+        const created = await supabaseService.createContentItem(newPost);
+        setContentItems(prev => [...prev, { ...newPost, id: created.id }]);
+        toast.success('New draft post created from library asset');
+      } catch (err) {
+        toast.error('Failed to create post: ' + err.message);
+      }
+    }
   };
 
   // ========== CALENDAR MANAGEMENT ==========
@@ -1121,141 +1304,64 @@ const ContentCalendar = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        {/* Left: Calendars panel */}
-        <div className="lg:sticky lg:top-20 h-fit">
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-            <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
-              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
-                <Folder className="w-4 h-4 text-[#0071e3]" /> Calendars
-              </h3>
-            </div>
-            <div className="p-4 space-y-3">
-              <div className="space-y-2">
+      {/* ── FULL-WIDTH TOOLBAR (Calendars + Filters as header dropdowns) ─── */}
+      <div className="flex flex-wrap items-center gap-2">
+
+        {/* Calendars dropdown */}
+        <div className="relative" ref={calendarsDropdownRef}>
+          <button
+            onClick={() => { setShowCalendarsDropdown(v => !v); setShowFiltersDropdown(false); }}
+            className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors border ${
+              showCalendarsDropdown ? 'bg-[#0071e3]/10 border-[#0071e3]/30 text-[#0071e3]' : 'bg-white dark:bg-[#2d2d2d] border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white hover:bg-[#f5f5f7] dark:hover:bg-[#3d3d3d]'
+            }`}
+          >
+            <Folder className="w-4 h-4" />
+            <span>{calendars.find(c => c.id === selectedCalendarId)?.name || 'Calendars'}</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showCalendarsDropdown ? 'rotate-180' : ''}`} />
+          </button>
+          {showCalendarsDropdown && (
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#1d1d1f] rounded-2xl border border-black/10 dark:border-white/10 shadow-xl z-50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-black/5 dark:border-white/10">
+                <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">Calendars</h4>
+              </div>
+              <div className="p-3 space-y-1.5 max-h-72 overflow-y-auto">
                 {calendars.map((cal) => {
                   const count = contentItems.filter(ci => ci.calendarId === cal.id).length;
                   const isActive = cal.id === selectedCalendarId;
                   const isEditing = editingCalendarId === cal.id;
                   const isLinking = linkingCalendarId === cal.id;
                   const isDefault = cal.id === 'default' || cal.id === 'client-ll';
-                  
                   return (
-                    <div
-                      key={cal.id}
-                      className={`px-3 py-2.5 rounded-xl border transition-all ${
-                        isActive ? 'border-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/20' : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'
-                      }`}
-                    >
+                    <div key={cal.id} className={`px-3 py-2.5 rounded-xl border transition-all ${isActive ? 'border-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/20' : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}>
                       {isEditing ? (
-                        // Edit name mode
                         <div className="flex items-center gap-2">
-                          <input
-                            value={editingCalendarName}
-                            onChange={(e) => setEditingCalendarName(e.target.value)}
-                            className="flex-1 h-8 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveCalendarName();
-                              if (e.key === 'Escape') handleCancelEditCalendar();
-                            }}
-                          />
-                          <button
-                            onClick={handleSaveCalendarName}
-                            className="p-1.5 hover:bg-[#34c759]/20 rounded-lg transition-colors"
-                            title="Save"
-                          >
-                            <Check className="w-4 h-4 text-[#34c759]" />
-                          </button>
-                          <button
-                            onClick={handleCancelEditCalendar}
-                            className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg transition-colors"
-                            title="Cancel"
-                          >
-                            <X className="w-4 h-4 text-[#ff3b30]" />
-                          </button>
+                          <input value={editingCalendarName} onChange={(e) => setEditingCalendarName(e.target.value)} className="flex-1 h-8 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCalendarName(); if (e.key === 'Escape') handleCancelEditCalendar(); }} />
+                          <button onClick={handleSaveCalendarName} className="p-1.5 hover:bg-[#34c759]/20 rounded-lg"><Check className="w-4 h-4 text-[#34c759]" /></button>
+                          <button onClick={handleCancelEditCalendar} className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg"><X className="w-4 h-4 text-[#ff3b30]" /></button>
                         </div>
                       ) : isLinking ? (
-                        // Link sheet URL mode
                         <div className="space-y-2">
-                          <input
-                            value={linkSheetUrl}
-                            onChange={(e) => setLinkSheetUrl(e.target.value)}
-                            className="w-full h-8 px-3 text-[12px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                            placeholder="Paste Google Sheets URL..."
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveLinkSheet();
-                              if (e.key === 'Escape') handleCancelLinkSheet();
-                            }}
-                          />
+                          <input value={linkSheetUrl} onChange={(e) => setLinkSheetUrl(e.target.value)} className="w-full h-8 px-3 text-[12px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" placeholder="Paste Google Sheets URL..." autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLinkSheet(); if (e.key === 'Escape') handleCancelLinkSheet(); }} />
                           <div className="flex gap-2">
-                            <button
-                              onClick={handleSaveLinkSheet}
-                              className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors"
-                            >
-                              Link
-                            </button>
-                            <button
-                              onClick={handleCancelLinkSheet}
-                              className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                            >
-                              Cancel
-                            </button>
+                            <button onClick={handleSaveLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-[#0071e3] text-white hover:bg-[#0077ed]">Link</button>
+                            <button onClick={handleCancelLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
                           </div>
                         </div>
                       ) : (
-                        // View mode
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setSelectedCalendarId(cal.id)}
-                            className="flex-1 flex items-center justify-between text-left min-w-0"
-                          >
-                            <span className={`truncate text-[13px] ${isActive ? 'text-[#0071e3] dark:text-white font-medium' : 'text-[#1d1d1f] dark:text-white'}`}>
-                              {cal.name}
-                            </span>
-                            <span className={`ml-2 text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${
-                              isActive ? 'bg-[#0071e3] text-white' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'
-                            }`}>
-                              {count}
-                            </span>
+                          <button onClick={() => { setSelectedCalendarId(cal.id); setShowCalendarsDropdown(false); }} className="flex-1 flex items-center justify-between text-left min-w-0">
+                            <span className={`truncate text-[13px] ${isActive ? 'text-[#0071e3] font-medium' : 'text-[#1d1d1f] dark:text-white'}`}>{cal.name}</span>
+                            <span className={`ml-2 text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${isActive ? 'bg-[#0071e3] text-white' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'}`}>{count}</span>
                           </button>
-                          
                           {!isDefault && (
-                            <div className="flex gap-1 flex-shrink-0">
+                            <div className="flex gap-0.5 flex-shrink-0">
                               {cal.sheetUrl ? (
-                                <button
-                                  onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl, cal.sheetTitle)}
-                                  disabled={refreshingCalendarId === cal.id}
-                                  className={`p-1.5 hover:bg-[#34c759]/20 rounded-lg transition-colors ${
-                                    refreshingCalendarId === cal.id ? 'animate-spin' : ''
-                                  }`}
-                                  title={`Refresh from Google Sheets${cal.lastImported ? '\nLast updated: ' + new Date(cal.lastImported).toLocaleString() : ''}`}
-                                >
-                                  <RefreshCw className="w-3.5 h-3.5 text-[#34c759]" />
-                                </button>
+                                <button onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl, cal.sheetTitle)} disabled={refreshingCalendarId === cal.id} className={`p-1.5 hover:bg-[#34c759]/20 rounded-lg ${refreshingCalendarId === cal.id ? 'animate-spin' : ''}`}><RefreshCw className="w-3.5 h-3.5 text-[#34c759]" /></button>
                               ) : (
-                                <button
-                                  onClick={() => handleLinkSheet(cal.id)}
-                                  className="p-1.5 hover:bg-[#af52de]/20 rounded-lg transition-colors"
-                                  title="Link to Google Sheet for auto-refresh"
-                                >
-                                  <LinkIcon className="w-3.5 h-3.5 text-[#af52de]" />
-                                </button>
+                                <button onClick={() => handleLinkSheet(cal.id)} className="p-1.5 hover:bg-[#af52de]/20 rounded-lg"><LinkIcon className="w-3.5 h-3.5 text-[#af52de]" /></button>
                               )}
-                              <button
-                                onClick={() => handleEditCalendar(cal.id, cal.name)}
-                                className="p-1.5 hover:bg-[#0071e3]/20 rounded-lg transition-colors"
-                                title="Rename calendar"
-                              >
-                                <Edit className="w-3.5 h-3.5 text-[#0071e3]" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCalendar(cal.id, cal.name)}
-                                className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg transition-colors"
-                                title="Delete calendar"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" />
-                              </button>
+                              <button onClick={() => handleEditCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-[#0071e3]/20 rounded-lg"><Edit className="w-3.5 h-3.5 text-[#0071e3]" /></button>
+                              <button onClick={() => handleDeleteCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg"><Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" /></button>
                             </div>
                           )}
                         </div>
@@ -1264,89 +1370,72 @@ const ContentCalendar = () => {
                   );
                 })}
               </div>
-
-              {showAddCalendar ? (
-                <div className="space-y-2">
-                  <input
-                    value={newCalendarName}
-                    onChange={(e) => setNewCalendarName(e.target.value)}
-                    placeholder="Client/Calendar name"
-                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        const name = newCalendarName.trim();
-                        if (!name) return;
-                        const id = `cal-${Date.now()}`;
-                        setCalendars(prev => [...prev, { id, name }]);
-                        setSelectedCalendarId(id);
-                        setNewCalendarName('');
-                        setShowAddCalendar(false);
-                      }}
-                      className="px-4 py-2 text-[13px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors"
-                    >
-                      Create
-                    </button>
-                    <button 
-                      onClick={() => { setShowAddCalendar(false); setNewCalendarName(''); }}
-                      className="px-4 py-2 text-[13px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                    >
-                      Cancel
-                    </button>
+              <div className="px-3 pb-3">
+                {showAddCalendar ? (
+                  <div className="space-y-2">
+                    <input value={newCalendarName} onChange={(e) => setNewCalendarName(e.target.value)} placeholder="Calendar name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <div className="flex gap-2">
+                      <button onClick={() => { const name = newCalendarName.trim(); if (!name) return; const id = `cal-${Date.now()}`; setCalendars(prev => [...prev, { id, name }]); setSelectedCalendarId(id); setNewCalendarName(''); setShowAddCalendar(false); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed]">Create</button>
+                      <button onClick={() => { setShowAddCalendar(false); setNewCalendarName(''); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setShowAddCalendar(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  <FolderPlus className="w-4 h-4" /> New Calendar
-                </button>
-              )}
-              <p className="text-[11px] text-[#86868b]">Posts you create will be saved in the selected calendar.</p>
+                ) : (
+                  <button onClick={() => setShowAddCalendar(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                    <FolderPlus className="w-4 h-4" /> New Calendar
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Right: Main content */}
-        <div className="space-y-6">
-          {/* Top bar: filters as dropdowns */}
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 px-5 py-3 flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[#86868b]" />
-              <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Filters</span>
+        {/* Filters dropdown */}
+        <div className="relative" ref={filtersDropdownRef}>
+          <button
+            onClick={() => { setShowFiltersDropdown(v => !v); setShowCalendarsDropdown(false); }}
+            className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors border ${
+              (filterPlatform !== 'all' || filterStatus !== 'all')
+                ? 'bg-[#0071e3]/10 border-[#0071e3]/30 text-[#0071e3]'
+                : 'bg-white dark:bg-[#2d2d2d] border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white hover:bg-[#f5f5f7] dark:hover:bg-[#3d3d3d]'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            <span>Filters{(filterPlatform !== 'all' || filterStatus !== 'all') ? ' •' : ''}</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showFiltersDropdown ? 'rotate-180' : ''}`} />
+          </button>
+          {showFiltersDropdown && (
+            <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#1d1d1f] rounded-2xl border border-black/10 dark:border-white/10 shadow-xl z-50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
+                <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">Filters</h4>
+                {(filterPlatform !== 'all' || filterStatus !== 'all') && (
+                  <button onClick={() => { setFilterPlatform('all'); setFilterStatus('all'); }} className="text-[11px] text-[#0071e3] hover:underline">Clear all</button>
+                )}
+              </div>
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-medium text-[#86868b] mb-1.5">Platform</label>
+                  <select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none">
+                    <option value="all">All Platforms</option>
+                    {platforms.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-[#86868b] mb-1.5">Status</label>
+                  <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none">
+                    <option value="all">All Status</option>
+                    {statuses.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-2">
-                <span className="text-[12px] text-[#86868b] whitespace-nowrap">Platform</span>
-                <select
-                  value={filterPlatform}
-                  onChange={(e) => setFilterPlatform(e.target.value)}
-                  className="h-9 min-w-[140px] px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none"
-                >
-                  <option value="all">All Platforms</option>
-                  {platforms.map(platform => (
-                    <option key={platform.id} value={platform.id}>{platform.name}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex items-center gap-2">
-                <span className="text-[12px] text-[#86868b] whitespace-nowrap">Status</span>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="h-9 min-w-[120px] px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none"
-                >
-                  <option value="all">All Status</option>
-                  {statuses.map(status => (
-                    <option key={status.id} value={status.id}>{status.name}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          </div>
+          )}
+        </div>
+      </div>
 
+      {/* ── FULL-WIDTH CALENDAR + CONTENT LIBRARY ─────────────────────────── */}
+      <div className="space-y-6">
+        {/* ── DND CONTEXT wraps calendar + library ── */}
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
       {/* Calendar View */}
       <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
         <div className="px-5 py-4 border-b border-black/5 dark:border-white/10 flex justify-between items-center">
@@ -1378,20 +1467,20 @@ const ContentCalendar = () => {
               </div>
             ))}
             
-            {/* Calendar days */}
+            {/* Calendar days — each is a drop target for library assets */}
             {getCalendarDays().map((date, index) => {
               const dayContent = getContentForDate(date);
               const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
+              const dateKey = format(date, 'yyyy-MM-dd');
               
               return (
-                <div
+                <DroppableDay
                   key={index}
-                  className={`min-h-[100px] p-2 rounded-lg border cursor-pointer transition-all ${
-                    !isCurrentMonth 
-                      ? 'bg-black/[0.02] dark:bg-white/5 text-[#86868b] border-transparent' 
-                      : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[#1d1d1f] dark:text-white'
-                  } ${isToday(date) ? 'bg-[#0071e3]/10 dark:bg-[#0071e3]/20 border-[#0071e3]/30' : ''}`}
+                  dateKey={dateKey}
+                  isCurrentMonth={isCurrentMonth}
+                  isToday={isToday(date)}
                   onDoubleClick={() => isCurrentMonth && handleDateDoubleClick(date)}
+                  activeDragId={activeDragId}
                 >
                   <div className={`text-[12px] font-medium mb-1 ${isToday(date) ? 'text-[#0071e3]' : ''}`}>
                     {format(date, 'd')}
@@ -1424,11 +1513,11 @@ const ContentCalendar = () => {
                           <div
                             key={content.id}
                             className={`text-[10px] p-1 rounded-md overflow-hidden ${getStatusColor(content.status)}`}
-title={`${content.title}${getContentThumbUrl(content) ? '\n📎 ' + (getContentThumbUrl(content) || '').substring(0, 50) : ''}`}
+                            title={content.title}
                           >
                             {getContentThumbUrl(content) ? (
                               <img
-                                  src={getContentThumbUrl(content)}
+                                src={getContentThumbUrl(content)}
                                 alt={content.title}
                                 className="w-full h-10 object-cover rounded mb-1"
                                 onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.remove('hidden'); }}
@@ -1446,95 +1535,103 @@ title={`${content.title}${getContentThumbUrl(content) ? '\n📎 ' + (getContentT
                       </>
                     )}
                   </div>
-                </div>
+                </DroppableDay>
               );
             })}
           </div>
         </div>
       </div>
 
-      {/* Content List */}
+
+      {/* ── CONTENT LIBRARY ──────────────────────────────────────────────── */}
       <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
-          <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
-            Content Items ({filteredContent.length})
-          </h3>
-        </div>
-        <div className="p-4">
-          <div className="space-y-3">
-            {filteredContent.length === 0 ? (
-              <div className="text-center py-12">
-                <CalendarDays className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
-                <p className="text-[15px] text-[#86868b]">No content items yet</p>
-                <p className="text-[13px] text-[#86868b] mt-1">Double-click a date to add content</p>
-              </div>
-            ) : (
-              filteredContent.map(content => {
-                const PlatformIcon = getPlatformIcon(content.platform);
-                return (
-                  <div key={content.id} className="flex items-center justify-between p-4 rounded-xl border border-black/5 dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/5 transition-colors">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      {/* Image Preview */}
-                      {getContentThumbUrl(content) && (
-                        <div className="flex-shrink-0">
-                          <img 
-                            src={getContentThumbUrl(content)} 
-                            alt={content.title}
-                            className="w-20 h-20 object-cover rounded-xl border border-black/5 dark:border-white/10"
-                            onError={(e) => e.target.style.display = 'none'}
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Platform Icon */}
-                      <div className={`flex-shrink-0 p-2.5 rounded-xl ${getStatusColor(content.status)}`}>
-                        <PlatformIcon className="w-5 h-5 text-white" />
-                      </div>
-                      
-                      {/* Content Details */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">{content.title}</h3>
-                        <p className="text-[12px] text-[#86868b] line-clamp-2 mt-0.5">{content.description}</p>
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <span className="text-[11px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white font-medium">
-                            {content.contentType}
-                          </span>
-                          <span className={`text-[11px] px-2 py-0.5 rounded-md text-white font-medium ${getStatusColor(content.status)}`}>
-                            {content.status}
-                          </span>
-                          <span className="text-[11px] text-[#86868b]">
-                            {format(new Date(content.scheduledDate), 'MMM d, yyyy')}
-                          </span>
-                          {content.notes && (
-                            <span className="text-[11px] text-[#86868b] truncate">
-                              📝 {content.notes}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                      <button 
-                        onClick={() => handleEdit(content)}
-                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                      >
-                        <Edit className="w-4 h-4 text-[#1d1d1f] dark:text-white" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(content.id)}
-                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-[#ff3b30]/20 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4 text-[#ff3b30]" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
+          <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
+            <Library className="w-4 h-4 text-[#0071e3]" />
+            Content Library
+            {libraryAssets.length > 0 && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#0071e3]/10 text-[#0071e3] font-medium">{libraryAssets.length}</span>
             )}
+          </h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => libraryFileInputRef.current?.click()}
+              disabled={uploadingLibrary}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              {uploadingLibrary ? 'Uploading...' : 'Add Photos'}
+            </button>
+            <input
+              ref={libraryFileInputRef}
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={handleLibraryFileInput}
+            />
           </div>
         </div>
+
+        {/* Drop zone + asset grid */}
+        <div
+          className={`p-4 min-h-[160px] transition-colors ${libraryDragOver ? 'bg-[#0071e3]/5 border-2 border-dashed border-[#0071e3]/40' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setLibraryDragOver(true); }}
+          onDragLeave={() => setLibraryDragOver(false)}
+          onDrop={handleLibraryFileDrop}
+        >
+          {libraryAssets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-32 text-center">
+              <Upload className="w-8 h-8 text-[#86868b] mb-2" />
+              <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Drop photos &amp; videos here</p>
+              <p className="text-[12px] text-[#86868b] mt-1">or click <span className="text-[#0071e3] cursor-pointer" onClick={() => libraryFileInputRef.current?.click()}>Add Photos</span> to upload</p>
+              <p className="text-[11px] text-[#86868b] mt-2">Drag any asset onto a calendar date to create or append to a post</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
+              {libraryAssets.map((asset) => (
+                <LibraryAssetTile
+                  key={asset.id}
+                  asset={asset}
+                  isActive={activeDragId === asset.id}
+                  onRemove={handleRemoveLibraryAsset}
+                />
+              ))}
+              {/* Add more button */}
+              <button
+                onClick={() => libraryFileInputRef.current?.click()}
+                className="aspect-square rounded-xl border-2 border-dashed border-black/10 dark:border-white/10 flex items-center justify-center hover:border-[#0071e3]/40 hover:bg-[#0071e3]/5 transition-colors group"
+              >
+                <Plus className="w-5 h-5 text-[#86868b] group-hover:text-[#0071e3]" />
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="px-5 pb-3">
+          <p className="text-[11px] text-[#86868b]">Drag any asset onto a calendar date to schedule it. Dropping on a date that already has a post will append the photo to that post.</p>
+        </div>
+      </div>
+
+      {/* DragOverlay — shows the asset thumbnail while dragging */}
+      <DragOverlay>
+        {activeDragId ? (() => {
+          const asset = libraryAssets.find(a => a.id === activeDragId);
+          if (!asset) return null;
+          return (
+            <div className="w-16 h-16 rounded-xl overflow-hidden shadow-2xl ring-2 ring-[#0071e3] opacity-90">
+              {asset.type?.startsWith('video/') ? (
+                <div className="w-full h-full bg-black/20 flex items-center justify-center">
+                  <Video className="w-6 h-6 text-white" />
+                </div>
+              ) : (
+                <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
+              )}
+            </div>
+          );
+        })() : null}
+      </DragOverlay>
+
+      </DndContext>
       </div>
 
       {/* Add/Edit Content Modal */}
@@ -2217,8 +2314,6 @@ title={`${content.title}${getContentThumbUrl(content) ? '\n📎 ' + (getContentT
         </div>,
         document.body
       )}
-        </div>
-      </div>
     </div>
   );
 };
