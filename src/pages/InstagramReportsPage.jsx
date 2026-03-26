@@ -36,6 +36,7 @@ import {
   MapPin,
   Users,
   TrendingUp,
+  TrendingDown,
   Heart,
   MousePointer,
   MessageCircle,
@@ -322,6 +323,9 @@ const InstagramReportsPage = () => {
   const [archivedReports, setArchivedReports] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
   
+  // Share link popup after save
+  const [sharePopupLink, setSharePopupLink] = useState(null); // publicLinkId string
+
   // Aggregated report generation state
   const [generatingReport, setGeneratingReport] = useState(null); // { clientId, type: 'quarterly' | 'yearly' }
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -1229,12 +1233,61 @@ const InstagramReportsPage = () => {
             setEditingReport(null);
             setPreSelectedClientId(null);
           }}
-          onSave={() => {
+          onSave={(publicLinkId) => {
             setShowCreateModal(false);
             setEditingReport(null);
             setPreSelectedClientId(null);
+            if (publicLinkId) setSharePopupLink(publicLinkId);
           }}
         />
+      )}
+
+      {/* Share Link Popup — shown after creating or saving a report */}
+      {sharePopupLink && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                <LinkIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Report saved!</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Share this link with your client</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 mb-4">
+              <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">
+                {`${window.location.origin}/report/${sharePopupLink}`}
+              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/report/${sharePopupLink}`);
+                  toast.success('Link copied!');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors flex-shrink-0"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                Copy
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => window.open(`${window.location.origin}/report/${sharePopupLink}`, '_blank')}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Preview
+              </button>
+              <button
+                onClick={() => setSharePopupLink(null)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm font-medium transition-colors"
+              >
+                <Check className="w-4 h-4" />
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Generate Report Modal */}
@@ -1696,15 +1749,25 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') }));
       const metrics = formData.metrics ? JSON.parse(JSON.stringify(formData.metrics)) : null;
 
+      let savedPublicLinkId;
       if (report) {
         await supabaseService.updateInstagramReport(report.id, { clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
+        savedPublicLinkId = report.publicLinkId;
       } else {
-        await supabaseService.createInstagramReport({ clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
+        const result = await supabaseService.createInstagramReport({ clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
+        savedPublicLinkId = result?.publicLinkId;
       }
-      onSave();
+      onSave(savedPublicLinkId);
     } catch (error) {
       console.error('Error saving report:', error);
-      toast.error('Failed to save report. Please try again.');
+      const msg = error?.message || '';
+      if (msg.includes('503') || msg.toLowerCase().includes('service unavailable')) {
+        toast.error('Supabase is temporarily unavailable (503). Please wait a moment and try again.');
+      } else if (msg.includes('413') || msg.toLowerCase().includes('too large') || msg.toLowerCase().includes('payload')) {
+        toast.error('Report data is too large to save. Try removing some screenshots and retry.');
+      } else {
+        toast.error(msg || 'Failed to save report. Please try again.');
+      }
     } finally {
       setSaving(false);
     }
@@ -2570,17 +2633,14 @@ const ReportPreviewModal = ({ report, onClose }) => {
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const screenshots = report.screenshots || [];
+
   const openLightbox = (index) => {
     if (screenshots[index]) {
       setLightboxIndex(index);
       setLightboxImage(screenshots[index]);
     }
   };
-
-  const closeLightbox = () => {
-    setLightboxImage(null);
-  };
-
+  const closeLightbox = () => setLightboxImage(null);
   const navigateLightbox = (direction) => {
     const newIndex = lightboxIndex + direction;
     if (newIndex >= 0 && newIndex < screenshots.length) {
@@ -2589,7 +2649,6 @@ const ReportPreviewModal = ({ report, onClose }) => {
     }
   };
 
-  // Handle keyboard navigation in lightbox
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (lightboxImage) {
@@ -2600,7 +2659,6 @@ const ReportPreviewModal = ({ report, onClose }) => {
         onClose();
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxImage, lightboxIndex]);
@@ -2610,645 +2668,374 @@ const ReportPreviewModal = ({ report, onClose }) => {
   const isAggregated = isQuarterly || isYearly;
   const sourceCount = report.sourceReportIds?.length;
 
-  return (
-    <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col border border-black/5 dark:border-white/10">
-        {/* Preview Header — type-specific colors */}
-        <div className={`px-6 py-3 border-b border-gray-200 dark:border-white/10 flex items-center justify-between text-white ${
-          isYearly ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600' :
-          isQuarterly ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500' :
-          'bg-gradient-to-r from-purple-600 to-pink-600'
-        }`}>
-          <div className="flex items-center gap-3">
-            {isYearly ? <FileBarChart className="w-5 h-5" /> : isQuarterly ? <CalendarDays className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            <span className="font-medium">Report Preview</span>
-            {isYearly && <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs">Annual</span>}
-            {isQuarterly && <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs">Quarterly</span>}
-            {!isAggregated && <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs">Live</span>}
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  const fmtPct = (value) => {
+    if (value == null || value === '') return '—';
+    const n = Number(value);
+    if (Number.isNaN(n)) return '—';
+    const normalized = n > 100 && n < 1000 ? n / 10 : n;
+    return Math.min(100, Math.max(0, normalized)).toFixed(1);
+  };
+  const nonFollowersPct = (followersPercent, storedNonFollowers) => {
+    const followers = followersPercent != null ? Number(followersPercent) : null;
+    const stored = storedNonFollowers != null ? Number(storedNonFollowers) : null;
+    if (stored != null && stored <= 100 && !Number.isNaN(stored)) return fmtPct(stored);
+    if (followers != null && !Number.isNaN(followers)) return fmtPct(100 - followers);
+    return fmtPct(stored);
+  };
 
-        {/* Preview Content - Scrollable */}
-        <div className={`flex-1 overflow-y-auto text-[#1d1d1f] dark:text-[#e5e5e7] ${
-          isYearly ? 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-pink-950/30' :
-          isQuarterly ? 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-cyan-950/30' :
-          'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-purple-950/40 dark:via-pink-950/30 dark:to-orange-950/30'
-        }`}>
-          {/* Hero Section — type-specific gradient */}
-          <div className="relative overflow-hidden">
-            <div className={`absolute inset-0 ${
-              isYearly ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500' :
-              isQuarterly ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500' :
-              'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500'
-            }`} />
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjLTItNC00LTItNC0ycy0yIDItMiA0YzAgMiAyIDQgMiA0czIgMiA0IDJjMiA0IDQgMiA0IDJzMi0yIDItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10" />
-            
-            <div className="relative max-w-4xl mx-auto px-6 py-12 sm:py-16 pb-20 sm:pb-24">
-              <div className="text-center text-white">
-                <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm">
-                    <Calendar className="w-4 h-4" />
-                    <span className="text-sm font-medium">{report.dateRange || 'Date Range'}</span>
-                  </div>
-                  {isYearly && <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">Annual Report</span>}
-                  {isQuarterly && <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">Quarterly Report</span>}
-                </div>
-                
-                <h1 className="text-3xl sm:text-4xl font-bold mb-3">
-                  {report.title || 'Report Title'}
-                </h1>
-                
-                <div className="flex flex-col items-center gap-1 text-white/90 mb-6">
-                  <div className="flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    <span className="text-lg">{report.clientName || 'Client Name'}</span>
-                  </div>
-                  {isAggregated && sourceCount != null && sourceCount > 0 && (
-                    <p className="text-sm text-white/80">Aggregated from {sourceCount} monthly report{sourceCount !== 1 ? 's' : ''}</p>
-                  )}
-                </div>
+  const displayTitle = (() => {
+    const t = (report.title || '').trim();
+    if (!t || t.toLowerCase() === 'monthly report' || t.toLowerCase() === 'instagram report') {
+      if (report.dateRange) {
+        const match = report.dateRange.match(/([A-Za-z]+)\s+\d+/);
+        if (match) return `Performance Report — ${match[1]}`;
+      }
+      return 'Performance Report';
+    }
+    return t;
+  })();
+
+  const accentColor = isYearly ? '#818cf8' : isQuarterly ? '#34d399' : '#c084fc';
+  const m = report.metrics || {};
+
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col" style={{ background: 'rgba(0,0,0,0.85)' }}>
+      {/* Thin preview banner */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[#0d0d14] border-b border-white/10">
+        <div className="flex items-center gap-2 text-white/60 text-xs font-medium uppercase tracking-widest">
+          <Eye className="w-3.5 h-3.5" />
+          Live Preview — this is how the report will look to your client
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Scrollable report content — mirrors PublicInstagramReportPage exactly */}
+      <div className="flex-1 overflow-y-auto" style={{ background: '#f8f7ff' }}>
+
+        {/* Header */}
+        <header className="bg-white/90 backdrop-blur-lg border-b border-gray-200/60 sticky top-0 z-30 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center gap-3">
+              <img src="/Luxury-listings-logo-CLR.png" alt="Luxury Listings" className="h-8 w-auto object-contain" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900 leading-tight">Luxury Listings</p>
+                <p className="text-xs text-gray-400 leading-tight">Instagram Analytics Report</p>
               </div>
             </div>
+          </div>
+        </header>
 
-            {/* Wave Decoration */}
-            <div className="absolute bottom-0 left-0 right-0">
-              <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 80L60 70C120 60 240 40 360 30C480 20 600 20 720 25C840 30 960 40 1080 45C1200 50 1320 50 1380 50L1440 50V80H1380C1320 80 1200 80 1080 80C960 80 840 80 720 80C600 80 480 80 360 80C240 80 120 80 60 80H0Z" fill={isYearly ? 'rgb(238, 242, 255)' : isQuarterly ? 'rgb(236, 253, 245)' : 'rgb(250, 245, 255)'} />
-              </svg>
+        {/* Hero */}
+        <div className="relative overflow-hidden" style={{ background: '#0d0d14' }}>
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }} />
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-20 blur-[80px]"
+            style={{ background: `radial-gradient(ellipse, ${accentColor} 0%, transparent 70%)` }} />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 pb-36 sm:pb-44">
+            <div className="text-center text-white">
+              <div className="mb-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-1.5" style={{ color: accentColor }}>Prepared for</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{report.clientName || 'Client Name'}</p>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white/95 mb-5 tracking-tight">{displayTitle}</h1>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm">
+                  <Calendar className="w-3.5 h-3.5 text-white/70" />
+                  <span className="text-sm text-white/90">{report.dateRange || 'Date Range'}</span>
+                </div>
+                {isYearly && <span className="inline-flex items-center px-3 py-1.5 rounded-full border border-indigo-400/30 bg-indigo-500/20 text-sm text-indigo-200 font-medium">Annual Report</span>}
+                {isQuarterly && <span className="inline-flex items-center px-3 py-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/20 text-sm text-emerald-200 font-medium">Quarterly Report</span>}
+                {isAggregated && sourceCount > 0 && <span className="text-xs text-white/50 px-2">Aggregated from {sourceCount} monthly report{sourceCount !== 1 ? 's' : ''}</span>}
+              </div>
             </div>
           </div>
+          <div className="absolute bottom-0 left-0 right-0">
+            <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+              <path d="M0 80L60 70C120 60 240 40 360 30C480 20 600 20 720 25C840 30 960 40 1080 45C1200 50 1320 50 1380 50L1440 50V80H0Z" fill="#f8f7ff" />
+            </svg>
+          </div>
+        </div>
 
-          {/* Key Metrics Overview — match public report layout */}
-          {report.metrics && (
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
+        {/* Key Metrics cards */}
+        {report.metrics && (() => {
+          const followerChangeVal = (() => { const fc = m.followerChange; if (fc == null) return null; const n = parseInt(fc); return isNaN(n) ? String(fc) : `${n > 0 ? '+' : ''}${n}`; })();
+          const followerChangePosNeg = (() => { const fc = m.followerChange; const n = parseInt(fc); return !isNaN(n) ? n : Number(fc); })();
+          const cards = [
+            m.accountsReached != null ? { icon: Users, label: 'Accounts Reached', value: formatCompact(m.accountsReached), badge: m.accountsReachedChange, badgePos: m.accountsReachedChange?.startsWith('+'), iconGradient: 'from-violet-600 to-purple-700' } : null,
+            m.followers != null ? { icon: Users, label: 'Total Followers', value: formatCompact(m.followers), badge: followerChangeVal, badgePos: followerChangePosNeg >= 0, iconGradient: 'from-pink-600 to-rose-700' } : null,
+            m.views != null ? { icon: Eye, label: 'Total Views', value: formatCompact(m.views), badge: m.viewsFollowerPercent != null ? `${m.viewsFollowerPercent}% followers` : null, badgeNeutral: true, iconGradient: 'from-violet-500 to-indigo-600' } : null,
+            m.interactions != null ? { icon: Heart, label: 'Interactions', value: formatCompact(m.interactions), badge: null, iconGradient: 'from-orange-500 to-red-600' } : (m.profileVisits != null ? { icon: MousePointer, label: 'Profile Visits', value: formatCompact(m.profileVisits), badge: m.profileVisitsChange, badgePos: m.profileVisitsChange?.startsWith('+'), iconGradient: 'from-blue-500 to-indigo-600' } : null),
+          ].filter(Boolean);
+          return (
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 relative z-10">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
-                  { 
-                    icon: Eye, 
-                    label: 'Total Views', 
-                    value: formatCompact(report.metrics.views),
-                    color: 'from-purple-500 to-purple-600',
-                    subtext: (report.metrics.views != null && report.metrics.viewsFollowerPercent != null) ? `${report.metrics.viewsFollowerPercent}% from followers` : null
-                  },
-                  {
-                    icon: Users,
-                    label: 'Followers',
-                    value: formatCompact(report.metrics.followers),
-                    color: 'from-pink-500 to-pink-600',
-                    subtext: (() => { const fc = report.metrics.followerChange; if (fc == null) return null; const n = parseInt(fc); if (!isNaN(n)) return `${n > 0 ? '+' : ''}${n}`; return String(fc); })(),
-                    subtextColor: (() => { const fc = report.metrics.followerChange; const n = parseInt(fc); return (!isNaN(n) ? n : Number(fc)) > 0 ? 'text-green-600' : 'text-red-500'; })()
-                  },
-                  {
-                    icon: Heart,
-                    label: 'Interactions',
-                    value: formatCompact(report.metrics.interactions),
-                    color: 'from-orange-500 to-orange-600',
-                    subtext: (report.metrics.interactions != null && report.metrics.interactionsFollowerPercent != null) ? `${report.metrics.interactionsFollowerPercent}% from followers` : null
-                  },
-                  {
-                    icon: MousePointer,
-                    label: 'Profile Visits',
-                    value: formatCompact(report.metrics.profileVisits), 
-                    color: 'from-blue-500 to-blue-600',
-                    subtext: (report.metrics.profileVisits != null && report.metrics.profileVisitsChange) ? `${report.metrics.profileVisitsChange}` : null,
-                    subtextColor: report.metrics.profileVisitsChange?.startsWith?.('+') ? 'text-green-600' : 'text-red-500'
-                  },
-                ].map((stat, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-2xl shadow-lg p-5"
-                  >
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-3`}>
-                      <stat.icon className="w-6 h-6 text-white" />
+                {cards.map((card, i) => (
+                  <div key={i} className="bg-white rounded-2xl border border-purple-100/60 p-5 flex flex-col" style={{ boxShadow: '0 8px 30px rgba(124,58,237,0.09), 0 2px 8px rgba(0,0,0,0.05)' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${card.iconGradient} flex items-center justify-center flex-shrink-0`}>
+                        <card.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 leading-tight">{card.label}</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                    <p className="text-sm text-gray-500">{stat.label}</p>
-                    {stat.subtext && (
-                      <p className={`text-xs mt-1 ${stat.subtextColor || 'text-gray-400'}`}>{stat.subtext}</p>
+                    <p className="text-4xl font-black text-gray-900 tracking-tight leading-none mb-2" style={{ fontVariantNumeric: 'tabular-nums' }}>{card.value}</p>
+                    {card.badge && (
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold w-fit px-2 py-0.5 rounded-full ${card.badgeNeutral ? 'bg-violet-50 text-violet-700' : card.badgePos ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                        {!card.badgeNeutral && (card.badgePos ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />)}
+                        {card.badge}
+                      </span>
                     )}
                   </div>
                 ))}
               </div>
             </div>
-          )}
+          );
+        })()}
 
-          {/* Quarterly breakdown — yearly reports only */}
-          {isYearly && report.quarterlyBreakdown && report.quarterlyBreakdown.length > 0 && (
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-indigo-500" />
-                    Quarterly breakdown
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-0.5">Performance by quarter</p>
-                </div>
-                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {report.quarterlyBreakdown.map((q) => {
-                    const m = q.metrics;
-                    const hasData = m && (m.views != null || m.interactions != null || m.profileVisits != null);
-                    return (
-                      <div
-                        key={q.quarter}
-                        className={`rounded-xl border-2 p-4 ${
-                          hasData ? 'bg-gray-50/80 border-indigo-100' : 'bg-gray-50/50 border-gray-100'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="font-bold text-indigo-600">Q{q.quarter}</span>
-                          {q.reportCount != null && <span className="text-xs text-gray-500">{q.reportCount} report{q.reportCount !== 1 ? 's' : ''}</span>}
-                        </div>
-                        {hasData ? (
-                          <div className="space-y-2 text-sm">
-                            {m.views != null && <div className="flex justify-between"><span className="text-gray-500">Views</span><span className="font-medium">{formatCompact(m.views)}</span></div>}
-                            {m.interactions != null && <div className="flex justify-between"><span className="text-gray-500">Interactions</span><span className="font-medium">{formatCompact(m.interactions)}</span></div>}
-                            {m.profileVisits != null && <div className="flex justify-between"><span className="text-gray-500">Profile visits</span><span className="font-medium">{formatCompact(m.profileVisits)}</span></div>}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-400">No data</p>
-                        )}
+        {/* Quarterly breakdown — yearly only */}
+        {isYearly && report.quarterlyBreakdown && report.quarterlyBreakdown.length > 0 && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-indigo-500" />Quarterly breakdown</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Performance by quarter</p>
+              </div>
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {report.quarterlyBreakdown.map((q) => {
+                  const qm = q.metrics;
+                  const hasData = qm && (qm.views != null || qm.interactions != null || qm.profileVisits != null);
+                  return (
+                    <div key={q.quarter} className={`rounded-xl border-2 p-4 ${hasData ? 'bg-gray-50/80 border-indigo-100' : 'bg-gray-50/50 border-gray-100'}`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-bold text-indigo-600">Q{q.quarter}</span>
+                        {q.reportCount != null && <span className="text-xs text-gray-500">{q.reportCount} report{q.reportCount !== 1 ? 's' : ''}</span>}
                       </div>
-                    );
-                  })}
-                </div>
+                      {hasData ? (
+                        <div className="space-y-2 text-sm">
+                          {qm.views != null && <div className="flex justify-between"><span className="text-gray-500">Views</span><span className="font-medium">{formatCompact(qm.views)}</span></div>}
+                          {qm.interactions != null && <div className="flex justify-between"><span className="text-gray-500">Interactions</span><span className="font-medium">{formatCompact(qm.interactions)}</span></div>}
+                          {qm.profileVisits != null && <div className="flex justify-between"><span className="text-gray-500">Profile visits</span><span className="font-medium">{formatCompact(qm.profileVisits)}</span></div>}
+                        </div>
+                      ) : <p className="text-xs text-gray-400">No data</p>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Notes Section — match public report */}
-          {report.notes && (
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-12">
-              <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-purple-500" />
-                  Report Highlights
-                </h2>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {report.notes}
-                </p>
-              </div>
+        {/* Notes / Report Highlights */}
+        {report.notes && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+            <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-purple-500" />
+                Report Highlights
+              </h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{report.notes}</p>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Insights — match public report layout */}
-          {report.metrics && (
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-10">
-              <div className="rounded-2xl overflow-hidden bg-white border border-gray-200 text-gray-900 shadow-lg">
-                <div className="p-6 sm:p-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Insights</h2>
-                  <p className="text-sm text-gray-500 mb-6">{report.dateRange}</p>
+        {/* Insights */}
+        {report.metrics && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+            <div className="rounded-2xl overflow-hidden bg-white border border-gray-200 text-gray-900 shadow-lg">
+              <div className="p-6 sm:p-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Insights</h2>
+                <p className="text-sm text-gray-500 mb-6">{report.dateRange}</p>
 
-                  {/* Circular bars: Views & Interactions. Single circle = centered; two = grid. Top cities beside Views. */}
-                  {(() => {
-                    const hasViews = report.metrics.views != null || report.metrics.viewsFollowerPercent != null;
-                    const hasInteractions = report.metrics.interactions != null;
-                    const hasTopCities = report.metrics.topCities && report.metrics.topCities.length > 0;
-                    const oneCircle = [hasViews, hasInteractions].filter(Boolean).length === 1;
-                    return (
-                      <div className={oneCircle ? 'flex justify-center mb-10' : 'grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12 mb-10'}>
-                        {hasViews && (
-                          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
-                            <div className="flex flex-col items-center flex-shrink-0">
-                              <div className="relative w-[200px] h-[200px]">
-                                <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
-                                  <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
-                                  <circle cx="100" cy="100" r="78" fill="none" stroke="#9C27B0" strokeWidth="28" strokeDasharray={`${(report.metrics.viewsFollowerPercent ?? 50) * 4.9} 490`} strokeLinecap="round" />
-                                  <circle cx="100" cy="100" r="78" fill="none" stroke="#E040FB" strokeWidth="28" strokeDasharray={`${(100 - (report.metrics.viewsFollowerPercent ?? 50)) * 4.9} 490`} strokeDashoffset={`-${(report.metrics.viewsFollowerPercent ?? 50) * 4.9}`} strokeLinecap="round" />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                  <span className="text-gray-500 text-sm font-medium">Views</span>
-                                  <span className="text-3xl font-bold text-gray-900 mt-0.5">{formatCompact(report.metrics.views)}</span>
-                                </div>
-                              </div>
-                              <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-3 h-3 rounded-full bg-[#9C27B0]" />
-                                  <span className="text-sm text-gray-600">Followers</span>
-                                  <span className="text-sm font-semibold text-gray-900">{formatPercent(report.metrics.viewsFollowerPercent)}%</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="w-3 h-3 rounded-full bg-[#E040FB]" />
-                                  <span className="text-sm text-gray-600">Non-followers</span>
-                                  <span className="text-sm font-semibold text-gray-900">{nonFollowersPercent(report.metrics.viewsFollowerPercent, report.metrics.nonFollowerPercent)}%</span>
-                                </div>
-                              </div>
-                            </div>
-                            {hasTopCities && (
-                              <div className="min-w-0 flex-1 max-w-xs sm:max-w-sm">
-                                <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                  <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                                  Top locations
-                                </h3>
-                                <div className="space-y-3">
-                                  {report.metrics.topCities.map((city, idx) => {
-                                    const maxPct = report.metrics.topCities[0]?.percentage || 100;
-                                    const barPct = Math.min(100, (city.percentage / maxPct) * 100);
-                                    return (
-                                      <div key={idx} className="flex items-center gap-3">
-                                        <span className="text-sm text-gray-700 w-28 flex-shrink-0 truncate">{city.name}</span>
-                                        <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden min-w-0">
-                                          <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-900 w-12 text-right flex-shrink-0">{city.percentage}%</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {hasInteractions && (
+                {/* Views & Interactions circles */}
+                {(() => {
+                  const hasViews = m.views != null || m.viewsFollowerPercent != null;
+                  const hasInteractions = m.interactions != null;
+                  const hasTopCities = m.topCities && m.topCities.length > 0;
+                  const oneCircle = [hasViews, hasInteractions].filter(Boolean).length === 1;
+                  return (
+                    <div className={oneCircle ? 'flex justify-center mb-10' : 'grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12 mb-10'}>
+                      {hasViews && (
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
                           <div className="flex flex-col items-center flex-shrink-0">
                             <div className="relative w-[200px] h-[200px]">
                               <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
                                 <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
-                                <circle cx="100" cy="100" r="78" fill="none" stroke="#E040FB" strokeWidth="28" strokeDasharray={`${((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50) * 4.9} 490`} strokeLinecap="round" />
-                                <circle cx="100" cy="100" r="78" fill="none" stroke="#7C4DFF" strokeWidth="28" strokeDasharray={`${(100 - ((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50)) * 4.9} 490`} strokeDashoffset={`-${((report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent) ?? 50) * 4.9}`} strokeLinecap="round" />
+                                <circle cx="100" cy="100" r="78" fill="none" stroke="#9C27B0" strokeWidth="28" strokeDasharray={`${(m.viewsFollowerPercent ?? 50) * 4.9} 490`} strokeLinecap="round" />
+                                <circle cx="100" cy="100" r="78" fill="none" stroke="#E040FB" strokeWidth="28" strokeDasharray={`${(100 - (m.viewsFollowerPercent ?? 50)) * 4.9} 490`} strokeDashoffset={`-${(m.viewsFollowerPercent ?? 50) * 4.9}`} strokeLinecap="round" />
                               </svg>
                               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-gray-500 text-sm font-medium">Interactions</span>
-                                <span className="text-3xl font-bold text-gray-900 mt-0.5">{formatCompact(report.metrics.interactions)}</span>
+                                <span className="text-gray-500 text-sm font-medium">Views</span>
+                                <span className="text-3xl font-bold text-gray-900 mt-0.5">{formatCompact(m.views)}</span>
                               </div>
                             </div>
                             <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-[#E040FB]" />
-                                <span className="text-sm text-gray-600">Followers</span>
-                                <span className="text-sm font-semibold text-gray-900">{formatPercent(report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent)}%</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-[#7C4DFF]" />
-                                <span className="text-sm text-gray-600">Non-followers</span>
-                                <span className="text-sm font-semibold text-gray-900">{nonFollowersPercent(report.metrics.interactionsFollowerPercent ?? report.metrics.viewsFollowerPercent, null)}%</span>
-                              </div>
+                              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#9C27B0]" /><span className="text-sm text-gray-600">Followers</span><span className="text-sm font-semibold text-gray-900">{fmtPct(m.viewsFollowerPercent)}%</span></div>
+                              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#E040FB]" /><span className="text-sm text-gray-600">Non-followers</span><span className="text-sm font-semibold text-gray-900">{nonFollowersPct(m.viewsFollowerPercent, m.nonFollowerPercent)}%</span></div>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Top locations (standalone when no Views circle) */}
-                  {report.metrics.topCities && report.metrics.topCities.length > 0 && (report.metrics.views == null && report.metrics.viewsFollowerPercent == null) && (
-                    <div className="mt-8">
-                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-purple-500" />
-                        Top locations
-                      </h3>
-                      <div className="space-y-3">
-                        {report.metrics.topCities.map((city, idx) => {
-                          const maxPct = report.metrics.topCities[0]?.percentage || 100;
-                          const barPct = Math.min(100, (city.percentage / maxPct) * 100);
-                          return (
-                            <div key={idx} className="flex items-center gap-3">
-                              <span className="text-sm text-gray-700 w-28 flex-shrink-0">{city.name}</span>
-                              <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
+                          {hasTopCities && (
+                            <div className="min-w-0 flex-1 max-w-xs sm:max-w-sm">
+                              <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />Top locations</h3>
+                              <div className="space-y-3">
+                                {m.topCities.map((city, idx) => {
+                                  const maxPct = m.topCities[0]?.percentage || 100;
+                                  const barPct = Math.min(100, (city.percentage / maxPct) * 100);
+                                  return (
+                                    <div key={idx} className="flex items-center gap-3">
+                                      <span className="text-sm text-gray-700 w-28 flex-shrink-0 truncate">{city.name}</span>
+                                      <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden min-w-0"><div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
+                                      <span className="text-sm font-medium text-gray-900 w-12 text-right flex-shrink-0">{city.percentage}%</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                              <span className="text-sm font-medium text-gray-900 w-12 text-right">{city.percentage}%</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Age range */}
-                  {report.metrics.ageRanges && report.metrics.ageRanges.length > 0 && (
-                    <div className="mt-8">
-                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Users className="w-4 h-4 text-purple-500" />
-                        Age range
-                      </h3>
-                      <div className="space-y-3">
-                        {report.metrics.ageRanges.map((range, idx) => {
-                          const barPct = Math.min(100, range.percentage ?? 0);
-                          return (
-                            <div key={idx} className="flex items-center gap-3">
-                              <span className="text-sm text-gray-700 w-16 flex-shrink-0">{range.range}</span>
-                              <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
-                              </div>
-                              <span className="text-sm font-medium text-gray-900 w-12 text-right">{range.percentage}%</span>
+                          )}
+                        </div>
+                      )}
+                      {hasInteractions && (
+                        <div className="flex flex-col items-center flex-shrink-0">
+                          <div className="relative w-[200px] h-[200px]">
+                            <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90 w-full h-full">
+                              <circle cx="100" cy="100" r="78" fill="none" stroke="#e5e7eb" strokeWidth="28" />
+                              <circle cx="100" cy="100" r="78" fill="none" stroke="#E040FB" strokeWidth="28" strokeDasharray={`${((m.interactionsFollowerPercent ?? m.viewsFollowerPercent) ?? 50) * 4.9} 490`} strokeLinecap="round" />
+                              <circle cx="100" cy="100" r="78" fill="none" stroke="#7C4DFF" strokeWidth="28" strokeDasharray={`${(100 - ((m.interactionsFollowerPercent ?? m.viewsFollowerPercent) ?? 50)) * 4.9} 490`} strokeDashoffset={`-${((m.interactionsFollowerPercent ?? m.viewsFollowerPercent) ?? 50) * 4.9}`} strokeLinecap="round" />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                              <span className="text-gray-500 text-sm font-medium">Interactions</span>
+                              <span className="text-3xl font-bold text-gray-900 mt-0.5">{formatCompact(m.interactions)}</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* By content type */}
-                  {report.metrics.contentBreakdown && report.metrics.contentBreakdown.length > 0 && (
-                    <div className="mt-8">
-                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-purple-500" />
-                        By content type
-                      </h3>
-                      <div className="space-y-3">
-                        {report.metrics.contentBreakdown.map((item, idx) => {
-                          const barPct = Math.min(100, item.percentage ?? 0);
-                          return (
-                            <div key={idx} className="flex items-center gap-3">
-                              <span className="text-sm text-gray-700 w-16 flex-shrink-0">{item.type}</span>
-                              <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} />
-                              </div>
-                              <span className="text-sm font-medium text-gray-900 w-12 text-right">{item.percentage}%</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Gender */}
-                  {report.metrics.gender && (report.metrics.gender.men != null || report.metrics.gender.women != null) && (
-                    <div className="mt-8">
-                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-purple-500" />
-                        Gender
-                      </h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-gray-600">Men</span>
-                            <span className="font-medium text-gray-900">{report.metrics.gender.men ?? 0}%</span>
                           </div>
-                          <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-[#E040FB]" style={{ width: `${report.metrics.gender.men ?? 0}%` }} />
+                          <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
+                            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#E040FB]" /><span className="text-sm text-gray-600">Followers</span><span className="text-sm font-semibold text-gray-900">{fmtPct(m.interactionsFollowerPercent ?? m.viewsFollowerPercent)}%</span></div>
+                            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#7C4DFF]" /><span className="text-sm text-gray-600">Non-followers</span><span className="text-sm font-semibold text-gray-900">{nonFollowersPct(m.interactionsFollowerPercent ?? m.viewsFollowerPercent, null)}%</span></div>
                           </div>
                         </div>
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-gray-600">Women</span>
-                            <span className="font-medium text-gray-900">{report.metrics.gender.women ?? 0}%</span>
-                          </div>
-                          <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-[#9C27B0]" style={{ width: `${report.metrics.gender.women ?? 0}%` }} />
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                  )}
+                  );
+                })()}
 
-                  {/* Growth */}
-                  {report.metrics.growth && (report.metrics.growth.follows != null || report.metrics.growth.unfollows != null || report.metrics.growth.overall !== undefined) && (
-                    <div className="mt-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <TrendingUp className="w-3.5 h-3.5 text-purple-500" />
-                        Growth
-                      </h3>
-                      {(() => {
-                        const follows = report.metrics.growth.follows ?? 0;
-                        const unfollows = report.metrics.growth.unfollows ?? 0;
-                        const netChange = report.metrics.growth.overall !== undefined ? report.metrics.growth.overall : (follows - unfollows);
+                {/* Top cities standalone */}
+                {m.topCities && m.topCities.length > 0 && (m.views == null && m.viewsFollowerPercent == null) && (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-purple-500" />Top locations</h3>
+                    <div className="space-y-3">
+                      {m.topCities.map((city, idx) => {
+                        const maxPct = m.topCities[0]?.percentage || 100;
+                        const barPct = Math.min(100, (city.percentage / maxPct) * 100);
                         return (
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="bg-gray-100 rounded-lg p-3 text-center">
-                              <div className={`text-lg font-bold ${netChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{netChange >= 0 ? '+' : ''}{netChange.toLocaleString()}</div>
-                              <p className="text-[10px] text-gray-500 mt-0.5">Overall</p>
-                            </div>
-                            <div className="bg-gray-100 rounded-lg p-3 text-center">
-                              <div className="text-lg font-bold text-emerald-600">{follows.toLocaleString()}</div>
-                              <p className="text-[10px] text-gray-500 mt-0.5">Follows</p>
-                            </div>
-                            <div className="bg-gray-100 rounded-lg p-3 text-center">
-                              <div className="text-lg font-bold text-red-600">{unfollows.toLocaleString()}</div>
-                              <p className="text-[10px] text-gray-500 mt-0.5">Unfollows</p>
-                            </div>
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className="text-sm text-gray-700 w-28 flex-shrink-0">{city.name}</span>
+                            <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
+                            <span className="text-sm font-medium text-gray-900 w-12 text-right">{city.percentage}%</span>
                           </div>
                         );
-                      })()}
+                      })}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Engagement: likes, comments, shares, saves, reposts */}
-                  {(report.metrics.likes != null || report.metrics.comments != null || report.metrics.shares != null || report.metrics.saves != null || report.metrics.reposts != null) && (
-                    <div className="mt-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Heart className="w-3.5 h-3.5 text-purple-500" />
-                        By interaction
-                      </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                        {report.metrics.likes != null && (
-                          <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.likes)}</div>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Likes</p>
-                          </div>
-                        )}
-                        {report.metrics.comments != null && (
-                          <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.comments)}</div>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Comments</p>
-                          </div>
-                        )}
-                        {report.metrics.shares != null && (
-                          <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.shares)}</div>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Shares</p>
-                          </div>
-                        )}
-                        {report.metrics.saves != null && (
-                          <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.saves)}</div>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Saves</p>
-                          </div>
-                        )}
-                        {report.metrics.reposts != null && (
-                          <div className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-gray-900">{formatCompact(report.metrics.reposts)}</div>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Reposts</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Most active times */}
-                  {report.metrics.activeTimes && report.metrics.activeTimes.length > 0 && (
-                    <div className="mt-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-purple-500" />
-                        Most active times
-                      </h3>
-                      <div className="flex items-end justify-between gap-0.5 h-20">
-                        {report.metrics.activeTimes.map((time, idx) => (
-                          <div key={idx} className="flex-1 flex flex-col items-center min-w-0">
-                            <div className="w-full max-w-[16px] mx-auto bg-[#E040FB] rounded-t transition-all duration-300" style={{ height: `${Math.max(4, time.activity || 0)}%` }} />
-                            <span className="text-[9px] text-gray-500 mt-1 truncate w-full text-center">{time.hour}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Detailed Metrics Section — match public report */}
-          {report.metrics && (
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                
-                {/* Content Performance */}
-                {report.metrics.contentBreakdown && report.metrics.contentBreakdown.length > 0 && (
-                  <div className="bg-white rounded-xl shadow-lg p-5">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-purple-500" />
-                      Content Performance
-                    </h3>
+                {/* Top countries */}
+                {m.topCountries && m.topCountries.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-purple-500" />Top countries</h3>
                     <div className="space-y-3">
-                      {report.metrics.contentBreakdown.map((item, idx) => (
-                        <div key={idx}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-600">{item.type}</span>
-                            <span className="font-medium text-gray-900">{item.percentage}%</span>
+                      {m.topCountries.map((country, idx) => {
+                        const maxPct = m.topCountries[0]?.percentage || 100;
+                        const barPct = Math.min(100, (country.percentage / maxPct) * 100);
+                        return (
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className="text-sm text-gray-700 w-28 flex-shrink-0">{country.name}</span>
+                            <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#9C27B0] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
+                            <span className="text-sm font-medium text-gray-900 w-12 text-right">{country.percentage}%</span>
                           </div>
-                          <div className="w-full bg-gray-100 rounded-full h-2">
-                            <div 
-                              className="h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
-                              style={{ width: `${item.percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* Top Locations */}
-                {report.metrics.topCities && report.metrics.topCities.length > 0 && (
-                  <div className="bg-white rounded-xl shadow-lg p-5">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-pink-500" />
-                      Top Locations
-                    </h3>
-                    <div className="space-y-2">
-                      {report.metrics.topCities.map((city, idx) => (
-                        <div key={idx} className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">{city.name}</span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-100 rounded-full h-2">
-                              <div 
-                                className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-500"
-                                style={{ width: `${(city.percentage / (report.metrics.topCities[0]?.percentage || 100)) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-medium text-gray-900 w-10 text-right">{city.percentage}%</span>
+                {/* Age range */}
+                {m.ageRanges && m.ageRanges.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Users className="w-4 h-4 text-purple-500" />Age range</h3>
+                    <div className="space-y-3">
+                      {m.ageRanges.map((range, idx) => {
+                        const barPct = Math.min(100, range.percentage ?? 0);
+                        return (
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className="text-sm text-gray-700 w-16 flex-shrink-0">{range.range}</span>
+                            <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
+                            <span className="text-sm font-medium text-gray-900 w-12 text-right">{range.percentage}%</span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* Age Demographics */}
-                {report.metrics.ageRanges && report.metrics.ageRanges.length > 0 && (
-                  <div className="bg-white rounded-xl shadow-lg p-5">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Users className="w-4 h-4 text-blue-500" />
-                      Age Distribution
-                    </h3>
-                    <div className="space-y-2">
-                      {(() => {
-                        return report.metrics.ageRanges.map((range, idx) => (
-                        <div key={idx} className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">{range.range}</span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-100 rounded-full h-2">
-                              <div 
-                                className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
-                                style={{ width: `${Math.min(100, range.percentage ?? 0)}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-medium text-gray-900 w-10 text-right">{range.percentage}%</span>
+                {/* Content breakdown */}
+                {m.contentBreakdown && m.contentBreakdown.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-purple-500" />By content type</h3>
+                    <div className="space-y-3">
+                      {m.contentBreakdown.map((item, idx) => {
+                        const barPct = Math.min(100, item.percentage ?? 0);
+                        return (
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>
+                            <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
+                            <span className="text-sm font-medium text-gray-900 w-12 text-right">{item.percentage}%</span>
                           </div>
-                        </div>
-                      ));
-                      })()}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* Gender Split */}
-                {report.metrics.gender && (report.metrics.gender.men || report.metrics.gender.women) && (
-                  <div className="bg-white rounded-xl shadow-lg p-5">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-orange-500" />
-                      Audience Gender
-                    </h3>
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-600">Men</span>
-                          <span className="font-medium text-gray-900">{report.metrics.gender.men}%</span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-3">
-                          <div 
-                            className="h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
-                            style={{ width: `${report.metrics.gender.men}%` }}
-                          />
-                        </div>
+                {/* Gender */}
+                {m.gender && (m.gender.men != null || m.gender.women != null) && (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Activity className="w-4 h-4 text-purple-500" />Gender</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex justify-between text-sm mb-2"><span className="text-gray-600">Men</span><span className="font-medium text-gray-900">{m.gender.men ?? 0}%</span></div>
+                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#E040FB]" style={{ width: `${m.gender.men ?? 0}%` }} /></div>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-600">Women</span>
-                          <span className="font-medium text-gray-900">{report.metrics.gender.women}%</span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-3">
-                          <div 
-                            className="h-3 rounded-full bg-gradient-to-r from-pink-400 to-pink-600"
-                            style={{ width: `${report.metrics.gender.women}%` }}
-                          />
-                        </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2"><span className="text-gray-600">Women</span><span className="font-medium text-gray-900">{m.gender.women ?? 0}%</span></div>
+                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#9C27B0]" style={{ width: `${m.gender.women ?? 0}%` }} /></div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Growth Metrics */}
-                {report.metrics.growth && (report.metrics.growth.overall !== undefined || report.metrics.growth.follows || report.metrics.growth.unfollows) && (
-                  <div className="bg-white rounded-xl shadow-lg p-5 lg:col-span-2">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-green-500" />
-                      Follower Growth
-                    </h3>
+                {/* Growth */}
+                {m.growth && (m.growth.follows != null || m.growth.unfollows != null || m.growth.overall !== undefined) && (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-purple-500" />Growth</h3>
                     {(() => {
-                      // Auto-calculate net change if we have follows and unfollows
-                      const follows = report.metrics.growth.follows || 0;
-                      const unfollows = report.metrics.growth.unfollows || 0;
-                      const netChange = report.metrics.growth.overall !== undefined && report.metrics.growth.overall !== 0
-                        ? report.metrics.growth.overall 
-                        : (follows - unfollows);
-                      
+                      const follows = m.growth.follows ?? 0;
+                      const unfollows = m.growth.unfollows ?? 0;
+                      const netChange = m.growth.overall != null ? m.growth.overall : (follows - unfollows);
                       return (
                         <div className="grid grid-cols-3 gap-4">
-                          <div className="text-center p-3 bg-gray-50 rounded-lg">
-                            <div className={`text-2xl font-bold ${netChange >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                              {netChange >= 0 ? '+' : ''}{netChange.toLocaleString()}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">Net Change</p>
+                          <div className="bg-gray-100 rounded-xl p-4 text-center">
+                            <div className={`text-xl font-bold ${netChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{netChange >= 0 ? '+' : ''}{Number(netChange).toLocaleString()}</div>
+                            <p className="text-xs text-gray-500 mt-1">Overall</p>
                           </div>
-                          <div className="text-center p-3 bg-green-50 rounded-lg">
-                            <div className="flex items-center justify-center gap-1">
-                              <UserPlus className="w-4 h-4 text-green-600" />
-                              <span className="text-2xl font-bold text-green-600">{follows.toLocaleString()}</span>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">New Follows</p>
+                          <div className="bg-gray-100 rounded-xl p-4 text-center">
+                            <div className="text-xl font-bold text-emerald-600">{follows.toLocaleString()}</div>
+                            <p className="text-xs text-gray-500 mt-1">Follows</p>
                           </div>
-                          <div className="text-center p-3 bg-red-50 rounded-lg">
-                            <div className="flex items-center justify-center gap-1">
-                              <UserMinus className="w-4 h-4 text-red-500" />
-                              <span className="text-2xl font-bold text-red-500">{unfollows.toLocaleString()}</span>
-                            </div>
+                          <div className="bg-gray-100 rounded-xl p-4 text-center">
+                            <div className="text-xl font-bold text-red-600">{unfollows.toLocaleString()}</div>
                             <p className="text-xs text-gray-500 mt-1">Unfollows</p>
                           </div>
                         </div>
@@ -3256,184 +3043,123 @@ const ReportPreviewModal = ({ report, onClose }) => {
                     })()}
                   </div>
                 )}
-              </div>
-            </div>
-          )}
 
-          {/* Instagram Content - embedded posts (match public report) */}
-          {report.postLinks && report.postLinks.length > 0 && (
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Instagram Content
-                </h2>
-                <p className="text-gray-600 text-sm">
-                  Featured posts and reels from this period
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                {report.postLinks.map((link, index) => {
-                  const embedUrl = getInstagramEmbedUrl(link.url);
-                  return (
-                    <div
-                      key={index}
-                      className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col"
-                    >
-                      {embedUrl ? (
-                        <div className="w-full max-w-[400px] mx-auto">
-                          <div className="rounded-t-2xl overflow-hidden bg-gray-100">
-                            <iframe
-                              src={embedUrl}
-                              title={link.label || `Instagram post ${index + 1}`}
-                              className="w-full border-0"
-                              style={{ minHeight: 480 }}
-                              allow="encrypted-media"
-                              loading="lazy"
-                            />
-                          </div>
+                {/* By interaction */}
+                {(m.likes != null || m.comments != null || m.shares != null || m.saves != null || m.reposts != null) && (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Heart className="w-4 h-4 text-purple-500" />By interaction</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                      {m.likes != null && <div className="bg-gray-100 rounded-xl p-4 text-center"><div className="text-xl font-bold text-gray-900">{formatCompact(m.likes)}</div><p className="text-xs text-gray-500 mt-1">Likes</p></div>}
+                      {m.comments != null && <div className="bg-gray-100 rounded-xl p-4 text-center"><div className="text-xl font-bold text-gray-900">{formatCompact(m.comments)}</div><p className="text-xs text-gray-500 mt-1">Comments</p></div>}
+                      {m.shares != null && <div className="bg-gray-100 rounded-xl p-4 text-center"><div className="text-xl font-bold text-gray-900">{formatCompact(m.shares)}</div><p className="text-xs text-gray-500 mt-1">Shares</p></div>}
+                      {m.saves != null && <div className="bg-gray-100 rounded-xl p-4 text-center"><div className="text-xl font-bold text-gray-900">{formatCompact(m.saves)}</div><p className="text-xs text-gray-500 mt-1">Saves</p></div>}
+                      {m.reposts != null && <div className="bg-gray-100 rounded-xl p-4 text-center"><div className="text-xl font-bold text-gray-900">{formatCompact(m.reposts)}</div><p className="text-xs text-gray-500 mt-1">Reposts</p></div>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Most active times */}
+                {m.activeTimes && m.activeTimes.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Clock className="w-4 h-4 text-purple-500" />Most active times</h3>
+                    <div className="flex items-end justify-between gap-1 h-28">
+                      {m.activeTimes.map((time, idx) => (
+                        <div key={idx} className="flex-1 flex flex-col items-center min-w-0">
+                          <div className="w-full max-w-[24px] mx-auto bg-[#E040FB] rounded-t transition-all duration-300" style={{ height: `${Math.max(4, time.activity || 0)}%` }} />
+                          <span className="text-[10px] text-gray-500 mt-2 truncate w-full text-center">{time.hour}</span>
                         </div>
-                      ) : (
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group flex items-center gap-4 p-5 flex-shrink-0"
-                        >
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                            <Instagram className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-gray-900 truncate group-hover:text-purple-600">
-                              {link.label || 'View post'}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">{link.url}</p>
-                          </div>
-                          <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        </a>
-                      )}
-                      {(link.label && embedUrl) && (
-                        <p className="px-5 pt-2 text-sm font-medium text-gray-900">{link.label}</p>
-                      )}
-                      {link.comment && (
-                        <p className="p-5 pt-2 text-sm text-gray-600 whitespace-pre-wrap border-t border-gray-100">
-                          {link.comment}
-                        </p>
-                      )}
+                      ))}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Legacy screenshots gallery */}
-          {report.screenshots && report.screenshots.length > 0 && (
-            <div className="max-w-4xl mx-auto px-6 py-8">
-              <div className="grid grid-cols-2 gap-4">
-                {report.screenshots.map((screenshot, index) => (
-                  <div
-                    key={index}
-                    onClick={() => openLightbox(index)}
-                    className="group bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
-                  >
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <img
-                        src={screenshot.url}
-                        alt={screenshot.caption || `Screenshot ${index + 1}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+        {/* Screenshots Gallery */}
+        {screenshots.length > 0 && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {screenshots.map((screenshot, index) => (
+                <div key={index} onClick={() => openLightbox(index)} className="group bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl">
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <img src={screenshot.url} alt={screenshot.caption || `Screenshot ${index + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute bottom-4 left-4 right-4 text-white transform translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <p className="text-sm font-medium">Click to enlarge</p>
                     </div>
-                    {screenshot.caption && (
-                      <div className="p-3">
-                        <p className="text-sm text-gray-700">{screenshot.caption}</p>
-                      </div>
-                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Empty state when no post links and no screenshots */}
-          {(!report.postLinks || report.postLinks.length === 0) && (!report.screenshots || report.screenshots.length === 0) && (
-            <div className="max-w-4xl mx-auto px-6 py-8">
-              <div className="text-center py-12 bg-white/50 rounded-xl border-2 border-dashed border-gray-200">
-                <LinkIcon className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500">No post links added</p>
-              </div>
-            </div>
-          )}
-
-          {/* Footer */}
-          <footer className="bg-white border-t border-gray-200 mt-8">
-            <div className="max-w-4xl mx-auto px-6 py-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img 
-                    src="/Luxury-listings-logo-CLR.png" 
-                    alt="Luxury Listings" 
-                    className="h-6 w-auto"
-                  />
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">Luxury Listings</p>
-                    <p className="text-xs text-gray-500">Social Media Management</p>
-                  </div>
+                  {screenshot.caption && <div className="p-5"><p className="text-gray-700 font-medium">{screenshot.caption}</p></div>}
                 </div>
-                <p className="text-xs text-gray-500">
-                  Preview generated {format(new Date(), 'MMMM d, yyyy')}
-                </p>
-              </div>
+              ))}
             </div>
-          </footer>
-        </div>
+          </div>
+        )}
+
+        {/* Instagram Post Links */}
+        {report.postLinks && report.postLinks.filter(l => l.url).length > 0 && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Instagram Content</h2>
+              <p className="text-gray-600 text-sm">Featured posts and reels from this period</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              {report.postLinks.filter(l => l.url).map((link, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col">
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-4 p-5 flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                      <Instagram className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 truncate group-hover:text-purple-600">{link.label || 'View post'}</p>
+                      <p className="text-xs text-gray-500 truncate">{link.url}</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </a>
+                  {link.comment && <p className="p-5 pt-2 text-sm text-gray-600 whitespace-pre-wrap border-t border-gray-100">{link.comment}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer style={{ background: '#0d0d14' }}>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="flex flex-col items-center text-center gap-4">
+              <img src="/Luxury-listings-logo-WHT.png" alt="Luxury Listings" className="h-10 w-auto object-contain opacity-80" />
+              <div>
+                <p className="text-sm font-semibold text-white/80 tracking-wide">Luxury Listings</p>
+                <p className="text-xs text-white/40 mt-0.5">Social Media Management</p>
+              </div>
+              <div className="w-12 h-px bg-white/10 my-1" />
+              <p className="text-xs text-white/30">Preview — not yet published</p>
+            </div>
+          </div>
+        </footer>
       </div>
 
       {/* Lightbox */}
       {lightboxImage && (
-        <div 
-          className="fixed inset-0 bg-black/95 z-[70] flex items-center justify-center"
-          onClick={closeLightbox}
-        >
-          <button
-            onClick={closeLightbox}
-            className="absolute top-4 right-4 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-
-          {screenshots.length > 0 && lightboxIndex > 0 && (
-            <button
-              onClick={(e) => { e.stopPropagation(); navigateLightbox(-1); }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-            >
-              <ChevronLeft className="w-8 h-8" />
-            </button>
+        <div className="fixed inset-0 bg-black/95 z-[210] flex items-center justify-center" onClick={closeLightbox}>
+          <button onClick={closeLightbox} className="absolute top-4 right-4 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"><X className="w-6 h-6" /></button>
+          {lightboxIndex > 0 && (
+            <button onClick={(e) => { e.stopPropagation(); navigateLightbox(-1); }} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"><ChevronLeft className="w-8 h-8" /></button>
           )}
-          
-          {screenshots.length > 0 && lightboxIndex < screenshots.length - 1 && (
-            <button
-              onClick={(e) => { e.stopPropagation(); navigateLightbox(1); }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-            >
-              <ChevronRight className="w-8 h-8" />
-            </button>
+          {lightboxIndex < screenshots.length - 1 && (
+            <button onClick={(e) => { e.stopPropagation(); navigateLightbox(1); }} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"><ChevronRight className="w-8 h-8" /></button>
           )}
-
-          <div 
-            className="max-w-[90vw] max-h-[85vh] relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={lightboxImage.url}
-              alt={lightboxImage.caption || 'Screenshot'}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg"
-            />
+          <div className="max-w-[90vw] max-h-[85vh] relative" onClick={(e) => e.stopPropagation()}>
+            <img src={lightboxImage.url} alt={lightboxImage.caption || 'Screenshot'} className="max-w-full max-h-[85vh] object-contain rounded-lg" />
+            {lightboxImage.caption && (
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 rounded-b-lg">
+                <p className="text-white text-center">{lightboxImage.caption}</p>
+              </div>
+            )}
           </div>
-
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-            <p className="text-white text-sm">
-              {lightboxIndex + 1} / {screenshots.length}
-            </p>
+            <p className="text-white text-sm">{lightboxIndex + 1} / {screenshots.length}</p>
           </div>
         </div>
       )}
