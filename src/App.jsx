@@ -181,15 +181,19 @@ function LoginPage() {
 function ProtectedApp() {
   const { currentUser, loading, authHydrated } = useAuth();
 
-  // Show spinner while:
-  //  1. Auth is loading (no display cache exists yet)
-  //  2. An OAuth redirect is being processed (URL has #access_token= hash)
-  //  3. We have no currentUser AND auth hasn't hydrated yet — this prevents
-  //     a premature redirect to /login while handleUserSignIn is still fetching
-  //     permissions from the DB (the window between displayCache being null and
-  //     the first onAuthStateChange → handleUserSignIn cycle completing).
+  // Show spinner while auth is still loading. Once authHydrated is true,
+  // the auth flow has definitively completed (either successfully with a
+  // currentUser, or failed / timed out). We trust authHydrated as the final
+  // signal and stop spinning — even if OAuth hash tokens are still in the URL
+  // (they'll be cleaned up below or on next navigation).
+  //
+  // Also clean up stale OAuth tokens from the URL hash if auth has finished
+  // without processing them (e.g. safety timeout fired, or token was expired).
   const hashHasAuthTokens = window.location.hash?.includes('access_token=');
-  if (loading || (!currentUser && hashHasAuthTokens) || (!authHydrated && !currentUser)) {
+  if (authHydrated && hashHasAuthTokens) {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+  if (loading || (!authHydrated && (!currentUser || hashHasAuthTokens))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
         <div className="text-center">

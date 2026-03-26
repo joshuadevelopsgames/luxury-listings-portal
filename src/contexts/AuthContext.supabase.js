@@ -323,29 +323,92 @@ export function AuthProvider({ children }) {
     // first DB query, so handleUserSignIn works fine with a stale token.
     // This lets us start the sign-in flow ~instantly instead of waiting
     // for onAuthStateChange.
+    // Helper: extract OAuth tokens from URL hash (e.g. #access_token=…&refresh_token=…)
+    function extractHashTokens() {
+      const hash = window.location.hash;
+      if (!hash || !hash.includes('access_token=')) return null;
+      const params = new URLSearchParams(hash.substring(1));
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+      if (!access_token || !refresh_token) return null;
+      return { access_token, refresh_token };
+    }
+
+    // Helper: manually set session from hash tokens (bypasses navigator lock)
+    async function setSessionFromHash() {
+      const tokens = extractHashTokens();
+      if (!tokens) return null;
+      console.log('[Auth] Attempting manual setSession from URL hash tokens…');
+      const { data, error } = await supabase.auth.setSession({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+      });
+      if (error) {
+        console.error('[Auth] setSession from hash failed:', error.message);
+        return null;
+      }
+      console.log('[Auth] setSession from hash succeeded:', data.session?.user?.email);
+      return data.session;
+    }
+
+    console.log('[Auth] Proactive restore — calling getSession()…');
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (hasCompletedFullSignIn.current) return; // onAuthStateChange beat us
+      console.log('[Auth] Proactive restore — getSession returned:', session ? `user=${session.user?.email}` : 'null');
+      if (hasCompletedFullSignIn.current) return;
+
+      // If getSession() returned no session but URL has OAuth hash tokens,
+      // the URL detection may not have run yet. Try setSession as fallback.
+      if (!session?.user && extractHashTokens()) {
+        console.log('[Auth] No session from getSession but URL has hash tokens — trying setSession…');
+        session = await setSessionFromHash();
+      }
+
       if (!session?.user) {
-        // No stored session — user is signed out. Unblock immediately.
+        console.log('[Auth] Proactive restore — no session, unblocking as signed-out');
         setAuthHydrated(true);
         setLoading(false);
         return;
       }
       try {
-        console.log('[Auth] Proactive session restore — starting handleUserSignIn');
+        console.log('[Auth] Proactive restore — starting handleUserSignIn for', session.user.email);
         await handleUserSignIn(session.user);
         hasCompletedFullSignIn.current = true;
         setAuthHydrated(true);
         setLoading(false);
-        console.log('[Auth] Proactive session restore — complete');
-        // Clean up OAuth tokens from URL hash
+        console.log('[Auth] Proactive restore — complete');
         if (window.location.hash?.includes('access_token=')) {
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
       } catch (err) {
-        console.warn('[Auth] Proactive restore failed, falling back to onAuthStateChange:', err.message);
-        // Don't unblock here — let onAuthStateChange or safety timeout handle it
+        console.error('[Auth] Proactive restore FAILED:', err);
+        setAuthHydrated(true);
+        setLoading(false);
       }
+    }).catch(async (err) => {
+      console.error('[Auth] getSession() threw:', err.message);
+      // getSession() can fail with AbortError when the Supabase navigator lock
+      // times out (stale lock from previous tab/page reload). If URL has OAuth
+      // hash tokens, try to establish the session manually — this bypasses the
+      // lock entirely.
+      if (hasCompletedFullSignIn.current) return;
+      try {
+        const session = await setSessionFromHash();
+        if (session?.user) {
+          console.log('[Auth] Fallback setSession succeeded after getSession failure');
+          await handleUserSignIn(session.user);
+          hasCompletedFullSignIn.current = true;
+          setAuthHydrated(true);
+          setLoading(false);
+          if (window.location.hash?.includes('access_token=')) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error('[Auth] Fallback setSession also failed:', fallbackErr.message);
+      }
+      setAuthHydrated(true);
+      setLoading(false);
     });
 
     // ── Standard auth listener (handles sign-in, sign-out, token refresh) ──
