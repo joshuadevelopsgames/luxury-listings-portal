@@ -2186,13 +2186,17 @@ class SupabaseService {
   async getGraphicProjects() {
     try {
       const { data } = await supabase.from('graphic_projects').select('*').order('created_at', { ascending: false });
-      return (data || []).map(r => ({ id: r.id, title: r.title, description: r.description, type: r.type || r.project_type, status: r.status, clientId: r.client_id_legacy || r.client_id, requestedBy: r.requested_by_email, assignedTo: r.assigned_to_email, dueDate: r.due_date, deliveredAt: normalizeTs(r.delivered_at), assetUrls: r.asset_urls || [], feedback: r.feedback, notes: r.notes, createdAt: normalizeTs(r.created_at) }));
+      return (data || []).map(r => {
+        const meta = r.meta || {};
+        return { id: r.id, title: r.title, description: r.description, client: r.title, task: r.description, type: r.type || r.project_type, status: r.status, priority: meta.priority || 'medium', startDate: meta.startDate || null, endDate: meta.endDate || r.due_date || null, hours: meta.hours || 0, clientId: r.client_id_legacy || r.client_id, requestedBy: r.requested_by_email, assignedTo: r.assigned_to_email, dueDate: r.due_date, deliveredAt: normalizeTs(r.delivered_at), assetUrls: r.asset_urls || [], feedback: r.feedback, notes: r.notes, createdAt: normalizeTs(r.created_at), meta };
+      });
     } catch { return []; }
   }
 
   async addGraphicProject(projectData) {
     try {
-      const { data, error } = await supabase.from('graphic_projects').insert([clean({ title: projectData.title, description: projectData.description, type: projectData.type, project_type: projectData.type, status: projectData.status || 'requested', client_id_legacy: projectData.clientId || null, requested_by_email: projectData.requestedBy || null, assigned_to_email: projectData.assignedTo || null, due_date: projectData.dueDate || null, feedback: projectData.feedback || null, notes: projectData.notes || null, created_at: ts() })]).select().single();
+      const meta = { ...(projectData.meta || {}), priority: projectData.priority || 'medium', startDate: projectData.startDate || null, endDate: projectData.endDate || null, hours: parseFloat(projectData.hours) || 0 };
+      const { data, error } = await supabase.from('graphic_projects').insert([clean({ title: projectData.client || projectData.title, description: projectData.task || projectData.description, type: projectData.type, project_type: projectData.type, status: projectData.status || 'requested', client_id_legacy: projectData.clientId || null, requested_by_email: projectData.requestedBy || projectData.createdBy || null, assigned_to_email: projectData.assignedTo || null, due_date: projectData.endDate || projectData.dueDate || null, feedback: projectData.feedback || null, notes: projectData.notes || null, meta, created_at: ts() })]).select().single();
       if (error) throw error;
       return data.id;
     } catch (error) { throw error; }
@@ -2200,7 +2204,8 @@ class SupabaseService {
 
   async updateGraphicProject(projectId, projectData) {
     try {
-      const { error } = await supabase.from('graphic_projects').update(clean({ title: projectData.title, description: projectData.description, type: projectData.type, status: projectData.status, assigned_to_email: projectData.assignedTo, due_date: projectData.dueDate, delivered_at: projectData.deliveredAt, asset_urls: projectData.assetUrls, feedback: projectData.feedback, notes: projectData.notes, updated_at: ts() })).eq('id', projectId);
+      const meta = { ...(projectData.meta || {}), priority: projectData.priority || undefined, startDate: projectData.startDate || undefined, endDate: projectData.endDate || undefined, hours: projectData.hours !== undefined ? parseFloat(projectData.hours) || 0 : undefined };
+      const { error } = await supabase.from('graphic_projects').update(clean({ title: projectData.client || projectData.title, description: projectData.task || projectData.description, type: projectData.type, status: projectData.status, assigned_to_email: projectData.assignedTo, due_date: projectData.endDate || projectData.dueDate, delivered_at: projectData.deliveredAt, asset_urls: projectData.assetUrls, feedback: projectData.feedback, notes: projectData.notes, meta, updated_at: ts() })).eq('id', projectId);
       if (error) throw error;
     } catch (error) { throw error; }
   }
