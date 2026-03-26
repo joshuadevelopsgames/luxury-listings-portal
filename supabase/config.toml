@@ -1,0 +1,20 @@
+[functions.generate-caption]
+verify_jwt = false
+
+[functions.extract-instagram-metrics]
+verify_jwt = false
+
+[functions.generate-report-summary]
+verify_jwt = false
+
+[functions.run-health-check]
+verify_jwt = false
+
+[functions.canvas-assist]
+verify_jwt = false
+
+[functions.scrape-listing]
+verify_jwt = false
+
+[functions.rank-listing-photos]
+verify_jwt = false

@@ -2,6 +2,7 @@
  * Supabase Edge Function: scrape-listing
  *
  * Extracts structured property data from a listing URL.
+ * verify_jwt = false in config.toml — auth handled inside.
  *
  * Strategy:
  *   1. Zillow URLs  → Apify `maxcopell/zillow-detail-scraper` actor (rich structured data)
@@ -10,6 +11,8 @@
  * POST body: { url: string }
  * Response:  { title, address, price, beds, baths, squareFeet, description, sourceDomain, photos }
  */
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -237,6 +240,21 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   try {
+    // Auth — verify the caller has a valid Supabase session
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return json({ error: 'Missing Authorization header' }, 401);
+    }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
+
     const { url } = await req.json();
     if (!url || typeof url !== 'string') {
       return json({ error: 'url is required' }, 400);
