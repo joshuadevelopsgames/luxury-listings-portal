@@ -94,16 +94,17 @@ export default function Dashboard() {
     }
   }, [currentRole]);
 
-  // Check for Instagram report reminders on the 1st of the month
+  // Check for Instagram report reminders during the last week of each month
   useEffect(() => {
     if (!currentUser?.email || !currentUser?.uid) return;
-    
+
     // Defer reminder check to not block initial render
     const checkReminders = async () => {
       try {
         const result = await instagramReportReminderService.checkAndSendReminders(
           currentUser.email,
-          currentUser.uid
+          currentUser.uid,
+          currentRole
         );
         if (result.sent) {
           console.log('📸 Instagram report reminder sent for', result.clientsNotified, 'clients');
@@ -116,7 +117,7 @@ export default function Dashboard() {
     // Run after a short delay to not impact page load
     const timeoutId = setTimeout(checkReminders, 2000);
     return () => clearTimeout(timeoutId);
-  }, [currentUser?.email, currentUser?.uid]);
+  }, [currentUser?.email, currentUser?.uid, currentRole]);
 
   // Friday: post-log reminder banner for SMMs + optional in-app notification
   useEffect(() => {
