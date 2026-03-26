@@ -1821,7 +1821,7 @@ class SupabaseService {
     // Use client_id (UUID) first, fall back to client_id_legacy (Firebase ID)
     const clientId = r.client_id || r.client_id_legacy || null;
     const userId = r.created_by_id || r.user_id_legacy || null;
-    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], metrics: r.metrics || r.raw_ocr_data, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
+    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], screenshots: r.screenshot_urls || [], metrics: r.metrics || r.raw_ocr_data, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
   }
 
   async getInstagramReports() {
@@ -1898,6 +1898,7 @@ class SupabaseService {
       }
       if (updates.postLinks !== undefined) { processed.post_links = updates.postLinks; delete processed.postLinks; }
       if (updates.reportType !== undefined) { processed.report_type = updates.reportType; delete processed.reportType; }
+      if (updates.screenshots !== undefined) { processed.screenshot_urls = updates.screenshots; delete processed.screenshots; }
       const { error } = await supabase.from('instagram_reports').update(clean(processed)).eq('id', reportId);
       if (error) throw error;
       cacheInvalidate('instagram_reports:');
