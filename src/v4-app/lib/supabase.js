@@ -1,22 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables.\n' +
-    'Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env file.'
-  );
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-  realtime: {
-    params: { eventsPerSecond: 10 },
-  },
-});
+// Single shared Supabase client for the entire app.
+// The root client (src/lib/supabase.js) has the navigator-lock bypass which
+// prevents the "sign-in in progress" auth deadlock. Re-exporting from here
+// ensures v4-app code shares the same instance as supabaseFirestoreService.
+export { supabase } from '../../lib/supabase';
