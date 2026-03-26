@@ -122,6 +122,12 @@ const ContentCalendar = () => {
   const [bestTimes, setBestTimes] = useState(null); // { monday: ['9:00 AM', '6:00 PM'], ... }
   const [showBestTimesPanel, setShowBestTimesPanel] = useState(false);
 
+  // ─── Header dropdown popovers ───────────────────────────────────────────────
+  const [showCalendarsDropdown, setShowCalendarsDropdown] = useState(false);
+  const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
+  const calendarsDropdownRef = useRef(null);
+  const filtersDropdownRef = useRef(null);
+
   // ─── Approval / Comments ────────────────────────────────────────────────────
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvalPost, setApprovalPost] = useState(null);
@@ -300,7 +306,21 @@ const ContentCalendar = () => {
     setBestTimes(grouped);
   }, [contentItems, selectedCalendarId]);
 
-  // ─── Calendar helpers ─────────────────────────────────────────────────────────
+   // ─── Outside-click dismissal for header dropdowns ────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      if (calendarsDropdownRef.current && !calendarsDropdownRef.current.contains(e.target)) {
+        setShowCalendarsDropdown(false);
+      }
+      if (filtersDropdownRef.current && !filtersDropdownRef.current.contains(e.target)) {
+        setShowFiltersDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // ─── Calendar helpers ─────────────────────────────────────────────────────
   const getCalendarDays = () => {
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
@@ -974,6 +994,131 @@ const ContentCalendar = () => {
             ))}
           </div>
 
+          {/* Calendars dropdown */}
+          <div className="relative" ref={calendarsDropdownRef}>
+            <button
+              onClick={() => { setShowCalendarsDropdown(v => !v); setShowFiltersDropdown(false); }}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors border ${
+                showCalendarsDropdown ? 'bg-[#0071e3]/10 border-[#0071e3]/30 text-[#0071e3]' : 'bg-white dark:bg-[#2d2d2d] border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white hover:bg-[#f5f5f7] dark:hover:bg-[#3d3d3d]'
+              }`}
+            >
+              <Folder className="w-4 h-4" />
+              <span className="hidden sm:inline">{calendars.find(c => c.id === selectedCalendarId)?.name || 'Calendars'}</span>
+              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showCalendarsDropdown ? 'rotate-90' : ''}`} />
+            </button>
+            {showCalendarsDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#1d1d1f] rounded-2xl border border-black/10 dark:border-white/10 shadow-xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/10">
+                  <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">Calendars</h4>
+                </div>
+                <div className="p-3 space-y-1.5 max-h-72 overflow-y-auto">
+                  {calendars.map((cal) => {
+                    const count = contentItems.filter(ci => ci.calendarId === cal.id).length;
+                    const isActive = cal.id === selectedCalendarId;
+                    const isEditing = editingCalendarId === cal.id;
+                    const isLinking = linkingCalendarId === cal.id;
+                    const isDefault = cal.id === 'default' || cal.id === 'client-ll';
+                    return (
+                      <div key={cal.id} className={`px-3 py-2.5 rounded-xl border transition-all ${isActive ? 'border-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/20' : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <input value={editingCalendarName} onChange={(e) => setEditingCalendarName(e.target.value)} className="flex-1 h-8 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCalendarName(); if (e.key === 'Escape') handleCancelEditCalendar(); }} />
+                            <button onClick={handleSaveCalendarName} className="p-1.5 hover:bg-[#34c759]/20 rounded-lg"><Check className="w-4 h-4 text-[#34c759]" /></button>
+                            <button onClick={handleCancelEditCalendar} className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg"><X className="w-4 h-4 text-[#ff3b30]" /></button>
+                          </div>
+                        ) : isLinking ? (
+                          <div className="space-y-2">
+                            <input value={linkSheetUrl} onChange={(e) => setLinkSheetUrl(e.target.value)} className="w-full h-8 px-3 text-[12px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" placeholder="Paste Google Sheets URL..." autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLinkSheet(); if (e.key === 'Escape') handleCancelLinkSheet(); }} />
+                            <div className="flex gap-2">
+                              <button onClick={handleSaveLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-[#0071e3] text-white hover:bg-[#0077ed]">Link</button>
+                              <button onClick={handleCancelLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => { setSelectedCalendarId(cal.id); setShowCalendarsDropdown(false); }} className="flex-1 flex items-center justify-between text-left min-w-0">
+                              <span className={`truncate text-[13px] ${isActive ? 'text-[#0071e3] dark:text-white font-medium' : 'text-[#1d1d1f] dark:text-white'}`}>{cal.name}</span>
+                              <span className={`ml-2 text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${isActive ? 'bg-[#0071e3] text-white' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'}`}>{count}</span>
+                            </button>
+                            {!isDefault && (
+                              <div className="flex gap-0.5 flex-shrink-0">
+                                {cal.sheetUrl ? (
+                                  <button onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl, cal.sheetTitle)} disabled={refreshingCalendarId === cal.id} className={`p-1.5 hover:bg-[#34c759]/20 rounded-lg ${refreshingCalendarId === cal.id ? 'animate-spin' : ''}`} title="Refresh from Google Sheets"><RefreshCw className="w-3.5 h-3.5 text-[#34c759]" /></button>
+                                ) : (
+                                  <button onClick={() => handleLinkSheet(cal.id)} className="p-1.5 hover:bg-[#af52de]/20 rounded-lg" title="Link to Google Sheet"><LinkIcon className="w-3.5 h-3.5 text-[#af52de]" /></button>
+                                )}
+                                <button onClick={() => handleEditCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-[#0071e3]/20 rounded-lg"><Edit className="w-3.5 h-3.5 text-[#0071e3]" /></button>
+                                <button onClick={() => handleDeleteCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg"><Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" /></button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="px-3 pb-3">
+                  {showAddCalendar ? (
+                    <div className="space-y-2">
+                      <input value={newCalendarName} onChange={(e) => setNewCalendarName(e.target.value)} placeholder="Calendar name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <div className="flex gap-2">
+                        <button onClick={() => { const name = newCalendarName.trim(); if (!name) return; const id = `cal-${Date.now()}`; setCalendars(prev => [...prev, { id, name }]); setSelectedCalendarId(id); setNewCalendarName(''); setShowAddCalendar(false); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed]">Create</button>
+                        <button onClick={() => { setShowAddCalendar(false); setNewCalendarName(''); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setShowAddCalendar(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                      <FolderPlus className="w-4 h-4" /> New Calendar
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Filters dropdown */}
+          <div className="relative" ref={filtersDropdownRef}>
+            <button
+              onClick={() => { setShowFiltersDropdown(v => !v); setShowCalendarsDropdown(false); }}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors border ${
+                (filterPlatform !== 'all' || filterStatus !== 'all')
+                  ? 'bg-[#0071e3]/10 border-[#0071e3]/30 text-[#0071e3]'
+                  : showFiltersDropdown
+                  ? 'bg-black/10 dark:bg-white/15 border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white'
+                  : 'bg-white dark:bg-[#2d2d2d] border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white hover:bg-[#f5f5f7] dark:hover:bg-[#3d3d3d]'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">Filters{(filterPlatform !== 'all' || filterStatus !== 'all') ? ' •' : ''}</span>
+            </button>
+            {showFiltersDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#1d1d1f] rounded-2xl border border-black/10 dark:border-white/10 shadow-xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
+                  <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">Filters</h4>
+                  {(filterPlatform !== 'all' || filterStatus !== 'all') && (
+                    <button onClick={() => { setFilterPlatform('all'); setFilterStatus('all'); }} className="text-[11px] text-[#0071e3] hover:underline">Clear all</button>
+                  )}
+                </div>
+                <div className="p-4 space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#86868b] mb-1.5">Platform</label>
+                    <select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none">
+                      <option value="all">All Platforms</option>
+                      {platforms.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#86868b] mb-1.5">Status</label>
+                    <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none">
+                      <option value="all">All Status</option>
+                      {statuses.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Best Times button */}
           {bestTimes && (
             <button
@@ -1068,104 +1213,8 @@ const ContentCalendar = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-        {/* Left: Calendars panel */}
-        <div className="lg:sticky lg:top-20 h-fit space-y-4">
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-            <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
-              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
-                <Folder className="w-4 h-4 text-[#0071e3]" /> Calendars
-              </h3>
-            </div>
-            <div className="p-4 space-y-3">
-              <div className="space-y-1.5">
-                {calendars.map((cal) => {
-                  const count = contentItems.filter(ci => ci.calendarId === cal.id).length;
-                  const isActive = cal.id === selectedCalendarId;
-                  const isEditing = editingCalendarId === cal.id;
-                  const isLinking = linkingCalendarId === cal.id;
-                  const isDefault = cal.id === 'default' || cal.id === 'client-ll';
-                  return (
-                    <div key={cal.id} className={`px-3 py-2.5 rounded-xl border transition-all ${isActive ? 'border-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/20' : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}>
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <input value={editingCalendarName} onChange={(e) => setEditingCalendarName(e.target.value)} className="flex-1 h-8 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCalendarName(); if (e.key === 'Escape') handleCancelEditCalendar(); }} />
-                          <button onClick={handleSaveCalendarName} className="p-1.5 hover:bg-[#34c759]/20 rounded-lg"><Check className="w-4 h-4 text-[#34c759]" /></button>
-                          <button onClick={handleCancelEditCalendar} className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg"><X className="w-4 h-4 text-[#ff3b30]" /></button>
-                        </div>
-                      ) : isLinking ? (
-                        <div className="space-y-2">
-                          <input value={linkSheetUrl} onChange={(e) => setLinkSheetUrl(e.target.value)} className="w-full h-8 px-3 text-[12px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" placeholder="Paste Google Sheets URL..." autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLinkSheet(); if (e.key === 'Escape') handleCancelLinkSheet(); }} />
-                          <div className="flex gap-2">
-                            <button onClick={handleSaveLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-[#0071e3] text-white hover:bg-[#0077ed]">Link</button>
-                            <button onClick={handleCancelLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setSelectedCalendarId(cal.id)} className="flex-1 flex items-center justify-between text-left min-w-0">
-                            <span className={`truncate text-[13px] ${isActive ? 'text-[#0071e3] dark:text-white font-medium' : 'text-[#1d1d1f] dark:text-white'}`}>{cal.name}</span>
-                            <span className={`ml-2 text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${isActive ? 'bg-[#0071e3] text-white' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'}`}>{count}</span>
-                          </button>
-                          {!isDefault && (
-                            <div className="flex gap-0.5 flex-shrink-0">
-                              {cal.sheetUrl ? (
-                                <button onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl, cal.sheetTitle)} disabled={refreshingCalendarId === cal.id} className={`p-1.5 hover:bg-[#34c759]/20 rounded-lg ${refreshingCalendarId === cal.id ? 'animate-spin' : ''}`} title="Refresh from Google Sheets"><RefreshCw className="w-3.5 h-3.5 text-[#34c759]" /></button>
-                              ) : (
-                                <button onClick={() => handleLinkSheet(cal.id)} className="p-1.5 hover:bg-[#af52de]/20 rounded-lg" title="Link to Google Sheet"><LinkIcon className="w-3.5 h-3.5 text-[#af52de]" /></button>
-                              )}
-                              <button onClick={() => handleEditCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-[#0071e3]/20 rounded-lg"><Edit className="w-3.5 h-3.5 text-[#0071e3]" /></button>
-                              <button onClick={() => handleDeleteCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg"><Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" /></button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {showAddCalendar ? (
-                <div className="space-y-2">
-                  <input value={newCalendarName} onChange={(e) => setNewCalendarName(e.target.value)} placeholder="Calendar name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
-                  <div className="flex gap-2">
-                    <button onClick={() => { const name = newCalendarName.trim(); if (!name) return; const id = `cal-${Date.now()}`; setCalendars(prev => [...prev, { id, name }]); setSelectedCalendarId(id); setNewCalendarName(''); setShowAddCalendar(false); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed]">Create</button>
-                    <button onClick={() => { setShowAddCalendar(false); setNewCalendarName(''); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
-                  </div>
-                </div>
-              ) : (
-                <button onClick={() => setShowAddCalendar(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
-                  <FolderPlus className="w-4 h-4" /> New Calendar
-                </button>
-              )}
-              <p className="text-[11px] text-[#86868b]">Posts you create will be saved in the selected calendar.</p>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[#86868b]" />
-              <span className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">Filters</span>
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-[#86868b] mb-1.5">Platform</label>
-              <select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none">
-                <option value="all">All Platforms</option>
-                {platforms.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-[#86868b] mb-1.5">Status</label>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none">
-                <option value="all">All Status</option>
-                {statuses.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Main content area */}
-        <div className="space-y-6 min-w-0">
+      {/* Full-width main content area */}
+      <div className="space-y-6">
 
           {/* ── MONTH VIEW ─────────────────────────────────────────────────────── */}
           {viewMode === 'month' && (
@@ -1468,9 +1517,7 @@ const ContentCalendar = () => {
               )}
             </div>
           </div>
-        </div>
       </div>
-
       {/* ═══════════════════════════════════════════════════════════════════════
           MODALS
       ═══════════════════════════════════════════════════════════════════════ */}
