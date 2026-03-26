@@ -26,7 +26,14 @@ export default async function handler(req, res) {
       },
     });
     if (!response.ok) {
-      res.status(422).json({ error: `Failed to fetch listing (${response.status})` });
+      // Some listing sites block bot/user-agent scraping (403/429/etc).
+      // Return a soft-success so saving the listing link can continue.
+      res.status(200).json({
+        sourceDomain: parsed.hostname,
+        title: '',
+        description: '',
+        scrapeError: `Failed to fetch listing (${response.status})`,
+      });
       return;
     }
 
