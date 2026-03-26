@@ -78,6 +78,43 @@ function formatDateRangeDisplay(startYYYYMMDD, endYYYYMMDD) {
     : `${fmt(start)}, ${start.year} - ${fmt(end)}, ${end.year}`;
 }
 
+// Parse the START date from a dateRange string like "Feb 24 - Mar 2, 2025", "Feb 24th - March 2nd",
+// "Dec 28, 2024 - Jan 3, 2025", "MARCH 3RD - MARCH 9TH", etc.
+const MONTH_MAP = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+  january: 0, february: 1, march: 2, april: 3, june: 5, july: 6, august: 7, september: 8, october: 9, november: 10, december: 11 };
+function parseDateFromRange(dateRange) {
+  if (!dateRange || typeof dateRange !== 'string') return null;
+  // Extract start portion (before the dash separator)
+  const parts = dateRange.split(/\s*[-–—]\s*/);
+  const startPart = (parts[0] || '').trim();
+  // Also grab the end portion to find a year if start doesn't have one
+  const endPart = (parts.slice(1).join('-') || '').trim();
+  // Find month name
+  const monthMatch = startPart.match(/([a-zA-Z]+)/);
+  if (!monthMatch) return null;
+  const monthKey = monthMatch[1].toLowerCase().replace(/\.$/, '');
+  const monthIdx = MONTH_MAP[monthKey] ?? MONTH_MAP[monthKey.slice(0, 3)];
+  if (monthIdx == null) return null;
+  // Find day number (strip ordinal suffixes)
+  const dayMatch = startPart.match(/(\d+)/);
+  if (!dayMatch) return null;
+  const day = parseInt(dayMatch[1], 10);
+  // Find year: check startPart first, then endPart, then dateRange as a whole
+  let year = null;
+  const yearMatch = startPart.match(/\b(20\d{2})\b/) || endPart.match(/\b(20\d{2})\b/) || dateRange.match(/\b(20\d{2})\b/);
+  if (yearMatch) year = parseInt(yearMatch[1], 10);
+  else year = new Date().getFullYear(); // fallback to current year
+  return new Date(year, monthIdx, day);
+}
+
+// Get the sorting date for a report: prefer startDate, then parse dateRange, then createdAt
+function getReportSortDate(report) {
+  if (report.startDate) return new Date(report.startDate);
+  const parsed = parseDateFromRange(report.dateRange);
+  if (parsed && !isNaN(parsed.getTime())) return parsed;
+  return report.createdAt?.toDate?.() || new Date(0);
+}
+
 // Build a Date at noon UTC for YYYY-MM-DD so the calendar day is correct in Vancouver (and elsewhere)
 function dateFromYYYYMMDD(yyyyMmDd) {
   if (!yyyyMmDd || typeof yyyyMmDd !== 'string') return null;
@@ -107,13 +144,13 @@ const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
 const getReportYear = (report) => {
   if (!report || typeof report !== 'object') return 0;
   if (report.year != null && !Number.isNaN(Number(report.year))) return Number(report.year);
-  const d = report.startDate?.toDate?.() || report.createdAt?.toDate?.();
+  const d = getReportSortDate(report);
   return d ? getYear(d) : 0;
 };
 const getReportMonth = (report) => {
   if (!report || typeof report !== 'object') return 0;
   if (report.month != null && report.month >= 1 && report.month <= 12) return report.month;
-  const d = report.startDate?.toDate?.() || report.createdAt?.toDate?.();
+  const d = getReportSortDate(report);
   return d ? getMonth(d) + 1 : 0;
 };
 
@@ -1072,22 +1109,15 @@ const InstagramReportsPage = () => {
                                 Monthly Reports ({monthlyReports.length})
                               </h4>
                               {(() => {
-                                const sortedMonthly = [...monthlyReports].sort((a, b) => {
-                                  const da = a.startDate ? new Date(a.startDate) : a.createdAt?.toDate?.() || new Date(0);
-                                  const db = b.startDate ? new Date(b.startDate) : b.createdAt?.toDate?.() || new Date(0);
-                                  return da - db;
-                                });
+                                // Sort by the report's date range (period covered), not creation time
+                                const sortedMonthly = [...monthlyReports].sort((a, b) => getReportSortDate(a) - getReportSortDate(b));
                                 const findPrev = (report) => {
                                   const idx = sortedMonthly.findIndex(r => r.id === report.id);
                                   return idx > 0 ? sortedMonthly[idx - 1] : null;
                                 };
                                 return groupReportsByYearMonth(monthlyReports).map(({ year, month, reports: groupReports }) => {
                                   // Newest report first within each month group
-                                  const sortedGroup = [...groupReports].sort((a, b) => {
-                                    const da = a.startDate ? new Date(a.startDate) : a.createdAt?.toDate?.() || new Date(0);
-                                    const db = b.startDate ? new Date(b.startDate) : b.createdAt?.toDate?.() || new Date(0);
-                                    return db - da;
-                                  });
+                                  const sortedGroup = [...groupReports].sort((a, b) => getReportSortDate(b) - getReportSortDate(a));
                                   return (
                                     <div key={`m-${year}-${month}`} className="mb-4">
                                       <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
