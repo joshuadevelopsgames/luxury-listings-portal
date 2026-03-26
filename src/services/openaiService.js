@@ -373,40 +373,44 @@ Return ONLY the JSON array, no other text.`;
     }));
 
     const systemPrompt = `You are an expert at extracting Instagram analytics metrics from screenshots.
-Analyze ALL provided screenshots and extract every metric you can find.
-Return a single JSON object combining data from all images. Use these exact field names:
+Analyze ALL provided screenshots and extract ONLY the metrics you can visually read from the images.
+
+CRITICAL RULES:
+- NEVER invent, guess, estimate, or infer any values. If a number is not clearly visible in a screenshot, DO NOT include that field.
+- If you cannot read a value with certainty, OMIT the field entirely.
+- DO NOT hallucinate follower counts, growth numbers, or change percentages unless they are explicitly shown on screen.
+- Numbers should be plain integers (no commas, no strings) unless the field type is string.
+- For percentage changes, keep the sign and % symbol as a string.
+- Combine data from multiple screenshots. If the same metric appears in multiple screenshots, use the most detailed version.
+- Return ONLY the JSON object, no markdown, no explanation.
+
+Use these exact field names (include ONLY fields you can actually see):
 
 {
-  "followers": <number>,
-  "followerChange": <number, positive or negative>,
+  "followers": <total follower count, ONLY if explicitly shown>,
+  "followerChange": <net change number, ONLY if explicitly shown>,
   "accountsReached": <number>,
-  "accountsReachedChange": "<string, e.g. '+12.4%'>",
+  "accountsReachedChange": "<string, e.g. '+12.4%', ONLY if shown>",
   "views": <number>,
-  "viewsFollowerPercent": <number, 0-100>,
-  "nonFollowerPercent": <number, 0-100>,
+  "viewsFollowerPercent": <number, the "Followers" percentage under the Views section>,
   "interactions": <number>,
-  "interactionsFollowerPercent": <number, 0-100>,
+  "interactionsFollowerPercent": <number, the "Followers" percentage under the Interactions section>,
   "profileVisits": <number>,
-  "profileVisitsChange": "<string, e.g. '+8.2%'>",
+  "profileVisitsChange": "<string, ONLY if shown>",
   "likes": <number>,
   "comments": <number>,
   "shares": <number>,
   "saves": <number>,
   "reposts": <number>,
+  "follows": <number under "Follows" in profile activity, ONLY if shown>,
   "growth": { "follows": <number>, "unfollows": <number>, "overall": <number> },
   "topCities": [ { "name": "<string>", "percentage": <number> }, ... ],
   "ageRanges": [ { "range": "<string, e.g. '18-24'>", "percentage": <number> }, ... ],
   "gender": { "men": <number, percentage>, "women": <number, percentage> },
+  "topSourcesOfViews": [ { "source": "<string, e.g. 'Profile'>", "percentage": <number> }, ... ],
   "contentBreakdown": [ { "type": "<string, e.g. 'Reels'>", "percentage": <number> }, ... ],
   "activeTimes": [ { "hour": "<string>", "activity": <number, 0-100> }, ... ]
-}
-
-Rules:
-- Only include fields you can actually find in the screenshots. Omit fields with no data.
-- Numbers should be plain integers (no commas, no strings) unless the field type is string.
-- For percentage changes, keep the sign and % symbol as a string.
-- Combine data from multiple screenshots into one object. If the same field appears in multiple screenshots, prefer the most detailed or complete version.
-- Return ONLY the JSON object, no markdown, no explanation.`;
+}`;
 
     try {
       const response = await fetch(API_URL, {

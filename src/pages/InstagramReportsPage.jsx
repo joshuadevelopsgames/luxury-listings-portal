@@ -2095,7 +2095,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.reach || ''}
                           onChange={(e) => updateMetric('reach', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="Optional"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2105,7 +2105,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.impressions || ''}
                           onChange={(e) => updateMetric('impressions', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="Optional"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2115,7 +2115,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.saves || ''}
                           onChange={(e) => updateMetric('saves', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="Optional"
+                          placeholder="—"
                         />
                       </div>
                       <div>
@@ -2125,7 +2125,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.shares || ''}
                           onChange={(e) => updateMetric('shares', parseInt(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="Optional"
+                          placeholder="—"
                         />
                       </div>
                     </div>
@@ -2190,7 +2190,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           value={formData.metrics?.engagementRatePercent || ''}
                           onChange={(e) => updateMetric('engagementRatePercent', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="Optional"
+                          placeholder="—"
                         />
                       </div>
                     </div>
