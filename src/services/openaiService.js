@@ -9,8 +9,13 @@
 
 import { invokeEdgeFunction } from './edgeFunctionService';
 
+// Use OpenRouter (CORS-friendly) with fallback to OpenAI direct
+const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const API_KEY = OPENROUTER_API_KEY || OPENAI_API_KEY;
+const API_URL = OPENROUTER_API_KEY
+  ? 'https://openrouter.ai/api/v1/chat/completions'
+  : 'https://api.openai.com/v1/chat/completions';
 
 class OpenAIService {
   /**
@@ -22,9 +27,9 @@ class OpenAIService {
   async analyzeColumnMapping(headers, sampleRows) {
     console.log('🤖 Analyzing columns with AI...', { headers, sampleRows });
 
-    if (!OPENAI_API_KEY) {
+    if (!API_KEY) {
       console.error('❌ OpenAI API key not found');
-      throw new Error('OpenAI API key is not configured. Please add REACT_APP_OPENAI_API_KEY to your environment variables.');
+      throw new Error('API key is not configured. Please add REACT_APP_OPENROUTER_API_KEY to your environment variables.');
     }
 
     try {
@@ -32,14 +37,15 @@ class OpenAIService {
       const prompt = this.buildMappingPrompt(headers, sampleRows);
 
       // Call OpenAI API
-      const response = await fetch(OPENAI_API_URL, {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
+          'Authorization': `Bearer ${API_KEY}`,
+          ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {})
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini', // Using mini for cost-effectiveness
+          model: OPENROUTER_API_KEY ? 'openai/gpt-4o-mini' : 'gpt-4o-mini', // Using mini for cost-effectiveness
           messages: [
             {
               role: 'system',
@@ -137,8 +143,8 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
    * @returns {Promise<Array<Object>>} - Array of enrichment objects, one per row: { platform?, contentType?, hashtags?, postDate?, caption?, notes? }
    */
   async enrichSheetRowsForCalendar(headers, rows, columnMappings, maxRowsPerChunk = 25) {
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured. Add REACT_APP_OPENAI_API_KEY to use enrichment.');
+    if (!API_KEY) {
+      throw new Error('API key is not configured. Add REACT_APP_OPENROUTER_API_KEY to use enrichment.');
     }
     if (!rows || rows.length === 0) return [];
 
@@ -175,14 +181,15 @@ Return a JSON array with one object per row, in order. Each object may contain a
 Return ONLY the JSON array, no other text.`;
 
     try {
-      const response = await fetch(OPENAI_API_URL, {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
+          'Authorization': `Bearer ${API_KEY}`,
+          ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {})
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: OPENROUTER_API_KEY ? 'openai/gpt-4o-mini' : 'gpt-4o-mini',
           messages: [
             { role: 'system', content: 'You output only valid JSON arrays. No markdown, no explanation.' },
             { role: 'user', content: prompt }
@@ -344,8 +351,8 @@ Return ONLY the JSON array, no other text.`;
   async extractInstagramMetrics(images, onProgress = null) {
     console.log(`🤖 Extracting Instagram metrics with AI (direct OpenAI Vision) (${images.length} images)...`);
 
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured. Please add REACT_APP_OPENAI_API_KEY to your environment variables.');
+    if (!API_KEY) {
+      throw new Error('API key is not configured. Please add REACT_APP_OPENROUTER_API_KEY to your environment variables.');
     }
 
     if (onProgress) onProgress(0, images.length, 'Preparing images...');
@@ -403,14 +410,15 @@ Rules:
 - Return ONLY the JSON object, no markdown, no explanation.`;
 
     try {
-      const response = await fetch(OPENAI_API_URL, {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${API_KEY}`,
+          ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {}),
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: OPENROUTER_API_KEY ? 'openai/gpt-4o' : 'gpt-4o',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: [

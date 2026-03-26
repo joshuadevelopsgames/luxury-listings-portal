@@ -5,8 +5,13 @@
  * unreliable — this approach uses the client-side REACT_APP_OPENAI_API_KEY.
  */
 
+// Use OpenRouter (CORS-friendly) with fallback to OpenAI direct
+const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const API_KEY = OPENROUTER_API_KEY || OPENAI_API_KEY;
+const API_URL = OPENROUTER_API_KEY
+  ? 'https://openrouter.ai/api/v1/chat/completions'
+  : 'https://api.openai.com/v1/chat/completions';
 
 class CloudVisionOCRService {
   /**
@@ -82,7 +87,7 @@ class CloudVisionOCRService {
       onProgress(0, images.length, 'Preparing images...');
     }
 
-    if (!OPENAI_API_KEY) {
+    if (!API_KEY) {
       throw new Error('OpenAI API key is not configured.');
     }
 
@@ -158,14 +163,15 @@ Rules:
 - Combine data from multiple screenshots into one object.
 - Return ONLY the JSON object, no markdown.`;
 
-      const response = await fetch(OPENAI_API_URL, {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${API_KEY}`,
+          ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {}),
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: OPENROUTER_API_KEY ? 'openai/gpt-4o' : 'gpt-4o',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: [

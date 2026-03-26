@@ -16,6 +16,9 @@ export default function NewVersionNotifier() {
   const toastDelayTimeoutRef = useRef(null);
 
   useEffect(() => {
+    // Don't show version toast on public report pages
+    if (window.location.pathname.startsWith('/report/')) return;
+
     let cancelled = false;
     let intervalId = null;
 
