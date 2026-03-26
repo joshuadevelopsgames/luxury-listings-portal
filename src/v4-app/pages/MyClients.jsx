@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   X,
@@ -105,7 +106,7 @@ function ClientAvatar({ name, size = 40 }) {
 
 // ── Side Panel ─────────────────────────────────────────────────────────────────
 
-function ClientSidePanel({ client, onClose }) {
+function ClientSidePanel({ client, onClose, onOpenWorkspace }) {
   const snapshot  = latestSnapshot(client.client_health_snapshots);
   const health    = normalizeHealth(snapshot?.status);
   const healthCfg = HEALTH_CONFIG[health];
@@ -243,6 +244,12 @@ function ClientSidePanel({ client, onClose }) {
           />
           <p className="text-[12px] text-[#86868b]">Auto-saves on blur</p>
         </div>
+        <button
+          onClick={() => onOpenWorkspace(client)}
+          className="w-full py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+        >
+          Open Client Workspace
+        </button>
       </div>
     </div>
   );
@@ -259,7 +266,7 @@ function Row({ label, value }) {
 
 // ── Client Card ────────────────────────────────────────────────────────────────
 
-function ClientCard({ client, onViewDetails }) {
+function ClientCard({ client, onViewDetails, onOpenWorkspace }) {
   const snapshot  = latestSnapshot(client.client_health_snapshots);
   const health    = normalizeHealth(snapshot?.status);
   const healthCfg = HEALTH_CONFIG[health];
@@ -330,6 +337,12 @@ function ClientCard({ client, onViewDetails }) {
         View Details
         <ChevronRight className="w-3.5 h-3.5" />
       </button>
+      <button
+        onClick={() => onOpenWorkspace(client)}
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+      >
+        Client Workspace
+      </button>
     </div>
   );
 }
@@ -338,6 +351,7 @@ function ClientCard({ client, onViewDetails }) {
 
 export default function MyClients() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = ADMIN_ROLES.includes(profile?.role);
 
   const [loading, setLoading]         = useState(true);
@@ -346,6 +360,10 @@ export default function MyClients() {
   const [search, setSearch]           = useState('');
   const [activeFilter, setActiveFilter] = useState('Active');
   const [selectedClient, setSelectedClient] = useState(null);
+  const openWorkspace = useCallback((client) => {
+    if (!client?.id) return;
+    navigate(`/v4/my-clients/${client.id}`);
+  }, [navigate]);
 
   const loadClients = useCallback(async () => {
     if (!user?.id) return;
@@ -431,6 +449,7 @@ export default function MyClients() {
         <ClientSidePanel
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
+          onOpenWorkspace={openWorkspace}
         />
       )}
 
@@ -519,6 +538,7 @@ export default function MyClients() {
                 key={client.id}
                 client={client}
                 onViewDetails={setSelectedClient}
+                onOpenWorkspace={openWorkspace}
               />
             ))}
           </div>

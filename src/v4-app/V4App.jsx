@@ -40,6 +40,7 @@ const Features          = React.lazy(() => import('./pages/Features'));
 const HRCalendar        = React.lazy(() => import('./pages/HRCalendar'));
 const HRAnalytics       = React.lazy(() => import('./pages/HRAnalytics'));
 const MyClients         = React.lazy(() => import('./pages/MyClients'));
+const ClientWorkspace   = React.lazy(() => import('./pages/ClientWorkspace'));
 const MyTimeOff         = React.lazy(() => import('./pages/MyTimeOff'));
 const SelfService       = React.lazy(() => import('./pages/SelfService'));
 const TeamDirectory     = React.lazy(() => import('./pages/TeamDirectory'));
@@ -105,6 +106,7 @@ function V4Routes() {
           <Route path="hr-calendar"        element={<HRCalendar />} />
           <Route path="hr-analytics"       element={<HRAnalytics />} />
           <Route path="my-clients"         element={<MyClients />} />
+          <Route path="my-clients/:clientId" element={<ClientWorkspace />} />
           <Route path="my-time-off"        element={<MyTimeOff />} />
           <Route path="self-service"       element={<SelfService />} />
           <Route path="team-directory"     element={<TeamDirectory />} />

@@ -1576,6 +1576,205 @@ class SupabaseService {
     console.log('ℹ️ migrateContentCalendarFromLocalStorage: no-op in Supabase mode');
   }
 
+  // ===== CLIENT ASSET WORKFLOW =====
+
+  async getClientListings(clientId) {
+    if (!clientId) return [];
+    try {
+      const { data } = await supabase
+        .from('client_listings')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+      return (data || []).map((r) => ({
+        id: r.id,
+        clientId: r.client_id,
+        listingUrl: r.listing_url,
+        sourceDomain: r.source_domain,
+        title: r.title || '',
+        description: r.description || '',
+        address: r.address || '',
+        price: r.price || '',
+        beds: r.beds || '',
+        baths: r.baths || '',
+        squareFeet: r.square_feet || '',
+        rawPayload: r.raw_payload || {},
+        createdAt: normalizeTs(r.created_at),
+        updatedAt: normalizeTs(r.updated_at),
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async createClientListing(data) {
+    try {
+      const session = await supabase.auth.getSession();
+      const userId = session?.data?.session?.user?.id || null;
+      const { data: row, error } = await supabase
+        .from('client_listings')
+        .insert([clean({
+          client_id: data.clientId,
+          listing_url: data.listingUrl,
+          source_domain: data.sourceDomain,
+          title: data.title || null,
+          description: data.description || null,
+          address: data.address || null,
+          price: data.price || null,
+          beds: data.beds || null,
+          baths: data.baths || null,
+          square_feet: data.squareFeet || null,
+          raw_payload: data.rawPayload || {},
+          created_by_id: userId,
+          created_at: ts(),
+          updated_at: ts(),
+        })])
+        .select('*')
+        .single();
+      if (error) throw error;
+      return row;
+    } catch (error) { throw error; }
+  }
+
+  async getClientAssetFolders(clientId) {
+    if (!clientId) return [];
+    try {
+      const { data } = await supabase
+        .from('client_asset_folders')
+        .select('*, listing:client_listings(id, listing_url, title)')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+      return (data || []).map((r) => ({
+        id: r.id,
+        clientId: r.client_id,
+        listingId: r.listing_id,
+        name: r.name,
+        notes: r.notes || '',
+        listing: r.listing || null,
+        createdAt: normalizeTs(r.created_at),
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async createClientAssetFolder(data) {
+    try {
+      const session = await supabase.auth.getSession();
+      const userId = session?.data?.session?.user?.id || null;
+      const { data: row, error } = await supabase
+        .from('client_asset_folders')
+        .insert([clean({
+          client_id: data.clientId,
+          listing_id: data.listingId || null,
+          name: data.name,
+          notes: data.notes || null,
+          created_by_id: userId,
+          created_at: ts(),
+          updated_at: ts(),
+        })])
+        .select('*')
+        .single();
+      if (error) throw error;
+      return row;
+    } catch (error) { throw error; }
+  }
+
+  async getClientAssets(folderId) {
+    if (!folderId) return [];
+    try {
+      const { data } = await supabase
+        .from('client_assets')
+        .select('*')
+        .eq('folder_id', folderId)
+        .order('created_at', { ascending: false });
+      return (data || []).map((r) => ({
+        id: r.id,
+        clientId: r.client_id,
+        folderId: r.folder_id,
+        listingId: r.listing_id,
+        fileName: r.file_name || '',
+        filePath: r.file_path,
+        fileUrl: r.file_url,
+        mediaType: r.media_type || 'image',
+        width: r.width,
+        height: r.height,
+        aiScore: Number(r.ai_score || 0),
+        scoreFlags: r.score_flags || {},
+        createdAt: normalizeTs(r.created_at),
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async createClientAsset(data) {
+    try {
+      const session = await supabase.auth.getSession();
+      const userId = session?.data?.session?.user?.id || null;
+      const { data: row, error } = await supabase
+        .from('client_assets')
+        .insert([clean({
+          client_id: data.clientId,
+          folder_id: data.folderId,
+          listing_id: data.listingId || null,
+          file_name: data.fileName || null,
+          file_path: data.filePath,
+          file_url: data.fileUrl,
+          media_type: data.mediaType || 'image',
+          width: data.width || null,
+          height: data.height || null,
+          ai_score: data.aiScore || 0,
+          score_flags: data.scoreFlags || {},
+          uploaded_by_id: userId,
+          created_at: ts(),
+        })])
+        .select('*')
+        .single();
+      if (error) throw error;
+      return row;
+    } catch (error) { throw error; }
+  }
+
+  async getContentPostComments(postId) {
+    if (!postId) return [];
+    try {
+      const { data } = await supabase
+        .from('content_post_comments')
+        .select('*')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+      return (data || []).map((r) => ({
+        id: r.id,
+        postId: r.post_id,
+        author: r.author_email || 'unknown',
+        text: r.body || '',
+        type: r.is_internal ? 'internal' : 'comment',
+        ts: normalizeTs(r.created_at)?.toISOString() || new Date().toISOString(),
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async addContentPostComment({ postId, authorEmail, body, isInternal = false }) {
+    try {
+      const { data, error } = await supabase
+        .from('content_post_comments')
+        .insert([clean({
+          post_id: postId,
+          author_email: authorEmail || null,
+          body,
+          is_internal: isInternal,
+          created_at: ts(),
+        })])
+        .select('*')
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (error) { throw error; }
+  }
+
   // ===== TASK REQUESTS =====
 
   async createTaskRequest(requestData) {
