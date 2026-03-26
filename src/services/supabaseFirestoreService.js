@@ -280,6 +280,7 @@ class SupabaseService {
   _profileToApprovedUser(p) {
     return {
       id: p.email || p.id,
+      uid: p.id, // Supabase UUID — needed for View As mode (canvas/task ownership queries)
       email: p.email || '',
       name: p.full_name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.email,
       displayName: p.full_name || p.email,
