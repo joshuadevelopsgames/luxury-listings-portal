@@ -108,10 +108,23 @@ export async function canvasAssist({ action, content, tone }) {
   return result;
 }
 
+// ── Listing Photo Ranking ──────────────────────────────────────────────────────
+
+/**
+ * Rank listing photos using GPT-4o Vision.
+ * @param {Array<{ id: string, url: string }>} images - Assets to rank
+ * @returns {Promise<Array<{ id: string, score: number, flags: string[], rationale: string }>>}
+ */
+export async function rankListingPhotos(images) {
+  const result = await callEdgeFunction('rank-listing-photos', { images });
+  return result;
+}
+
 export default {
   generateCaption,
   extractInstagramMetrics,
   generateReportSummary,
   runHealthCheck,
   canvasAssist,
+  rankListingPhotos,
 };

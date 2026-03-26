@@ -5,7 +5,7 @@
  * (see edgeFunctionsService.js).
  */
 
-import { generateCaption, generateReportSummary, canvasAssist, runHealthCheck } from './edgeFunctionsService';
+import { generateCaption, generateReportSummary, canvasAssist, runHealthCheck, rankListingPhotos } from './edgeFunctionsService';
 
 export const openaiService = {
   async generateCaption(prompt, options = {}) {
@@ -55,6 +55,21 @@ export const openaiService = {
   async chat(messages) {
     console.warn('[V4] Direct OpenAI chat not available — use edge functions');
     return { message: 'AI chat is being migrated to V4.' };
+  },
+
+  /**
+   * Rank listing photos via GPT-4o Vision edge function.
+   * Falls back gracefully if the edge function isn't deployed yet.
+   * @param {Array<{ id: string, url: string }>} images
+   * @returns {Promise<Array<{ id: string, score: number, flags: string[], rationale: string }>>}
+   */
+  async rankListingPhotos(images) {
+    try {
+      return await rankListingPhotos(images);
+    } catch (e) {
+      console.warn('[V4] rankListingPhotos edge function not available:', e.message);
+      throw e;
+    }
   },
 };
 

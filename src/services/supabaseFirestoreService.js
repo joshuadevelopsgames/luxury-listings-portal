@@ -1598,6 +1598,8 @@ class SupabaseService {
         beds: r.beds || '',
         baths: r.baths || '',
         squareFeet: r.square_feet || '',
+        notes: r.notes || '',
+        status: r.status || 'active',
         rawPayload: r.raw_payload || {},
         createdAt: normalizeTs(r.created_at),
         updatedAt: normalizeTs(r.updated_at),
@@ -1605,6 +1607,27 @@ class SupabaseService {
     } catch {
       return [];
     }
+  }
+
+  async updateClientListing(id, data) {
+    try {
+      const { error } = await supabase
+        .from('client_listings')
+        .update(clean({
+          title: data.title,
+          description: data.description,
+          address: data.address,
+          price: data.price,
+          beds: data.beds,
+          baths: data.baths,
+          square_feet: data.squareFeet,
+          notes: data.notes,
+          status: data.status,
+          updated_at: ts(),
+        }))
+        .eq('id', id);
+      if (error) throw error;
+    } catch (error) { throw error; }
   }
 
   async createClientListing(data) {
@@ -1650,6 +1673,8 @@ class SupabaseService {
         listingId: r.listing_id,
         name: r.name,
         notes: r.notes || '',
+        folderSource: r.folder_source || 'upload',
+        externalUrl: r.external_url || null,
         listing: r.listing || null,
         createdAt: normalizeTs(r.created_at),
       }));
@@ -1669,6 +1694,8 @@ class SupabaseService {
           listing_id: data.listingId || null,
           name: data.name,
           notes: data.notes || null,
+          folder_source: data.folderSource || 'upload',
+          external_url: data.externalUrl || null,
           created_by_id: userId,
           created_at: ts(),
           updated_at: ts(),
@@ -1701,6 +1728,9 @@ class SupabaseService {
         height: r.height,
         aiScore: Number(r.ai_score || 0),
         scoreFlags: r.score_flags || {},
+        isTopPick: r.is_top_pick || false,
+        isSelected: r.is_selected || false,
+        aiRationale: r.ai_rationale || '',
         createdAt: normalizeTs(r.created_at),
       }));
     } catch {
@@ -1726,6 +1756,9 @@ class SupabaseService {
           height: data.height || null,
           ai_score: data.aiScore || 0,
           score_flags: data.scoreFlags || {},
+          is_top_pick: data.isTopPick || false,
+          is_selected: data.isSelected || false,
+          ai_rationale: data.aiRationale || null,
           uploaded_by_id: userId,
           created_at: ts(),
         })])
@@ -1733,6 +1766,63 @@ class SupabaseService {
         .single();
       if (error) throw error;
       return row;
+    } catch (error) { throw error; }
+  }
+
+  async updateClientAsset(id, data) {
+    try {
+      const { error } = await supabase
+        .from('client_assets')
+        .update(clean({
+          ai_score: data.aiScore,
+          score_flags: data.scoreFlags,
+          is_top_pick: data.isTopPick,
+          is_selected: data.isSelected,
+          ai_rationale: data.aiRationale,
+        }))
+        .eq('id', id);
+      if (error) throw error;
+    } catch (error) { throw error; }
+  }
+
+  async pushToContentCalendar({ clientId, listingId, platform, caption, hashtags, assetUrls, scheduledDate }) {
+    try {
+      // Find or create a content calendar for this client
+      let { data: cal } = await supabase
+        .from('content_calendars')
+        .select('id')
+        .eq('client_id', clientId)
+        .maybeSingle();
+
+      if (!cal) {
+        const { data: newCal, error: calErr } = await supabase
+          .from('content_calendars')
+          .insert([clean({ client_id: clientId, created_at: ts(), updated_at: ts() })])
+          .select('id')
+          .single();
+        if (calErr) throw calErr;
+        cal = newCal;
+      }
+
+      const fullCaption = hashtags ? `${caption}\n\n${hashtags}` : caption;
+      const { data: item, error: itemErr } = await supabase
+        .from('content_items')
+        .insert([clean({
+          calendar_id: cal.id,
+          client_id: clientId,
+          listing_id: listingId || null,
+          platform: platform || 'instagram',
+          caption: fullCaption,
+          asset_urls: assetUrls || [],
+          scheduled_date: scheduledDate || null,
+          status: 'draft',
+          created_at: ts(),
+          updated_at: ts(),
+        })])
+        .select('id')
+        .single();
+      if (itemErr) throw itemErr;
+      return item;
     } catch (error) { throw error; }
   }
 
