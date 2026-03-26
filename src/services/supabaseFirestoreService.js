@@ -1633,61 +1633,33 @@ class SupabaseService {
   }
 
   async createClientListing(data) {
-    // ZERO calls to supabase.auth.* — getSession() hangs indefinitely.
-    // Read JWT directly from localStorage instead.
-    const url = process.env.REACT_APP_SUPABASE_URL;
-    const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-    let token = anonKey;
     try {
-      const storageKey = `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        token = parsed?.access_token || parsed?.currentSession?.access_token || anonKey;
-      }
-    } catch { /* fall back to anon key */ }
-
-    const payload = {
-      client_id: data.clientId,
-      listing_url: data.listingUrl,
-      source_domain: data.sourceDomain || null,
-      title: data.title || null,
-      description: data.description || null,
-      address: data.address || null,
-      price: data.price || null,
-      beds: data.beds || null,
-      baths: data.baths || null,
-      square_feet: data.squareFeet || null,
-      created_at: ts(),
-      updated_at: ts(),
-    };
-
-    console.log('[createClientListing] direct POST (no getSession)', { hasToken: token !== anonKey });
-    const t0 = Date.now();
-
-    const resp = await fetch(`${url}/rest/v1/client_listings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': anonKey,
-        'Authorization': `Bearer ${token}`,
-        'Prefer': 'return=representation',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const elapsed = Date.now() - t0;
-    console.log(`[createClientListing] response ${resp.status} in ${elapsed}ms`);
-
-    if (!resp.ok) {
-      const err = await resp.text();
-      console.error('[createClientListing] error:', err);
-      throw new Error(`Insert failed (${resp.status}): ${err}`);
-    }
-
-    const rows = await resp.json();
-    return Array.isArray(rows) ? rows[0] : rows;
+      // The custom fetch in src/lib/supabase.js injects the JWT from
+      // localStorage directly, so the Supabase client never needs to call
+      // the hanging getSession(). Safe to use the normal client API now.
+      const { data: row, error } = await supabase
+        .from('client_listings')
+        .insert([clean({
+          client_id: data.clientId,
+          listing_url: data.listingUrl,
+          source_domain: data.sourceDomain,
+          title: data.title || null,
+          description: data.description || null,
+          address: data.address || null,
+          price: data.price || null,
+          beds: data.beds || null,
+          baths: data.baths || null,
+          square_feet: data.squareFeet || null,
+          notes: data.notes || null,
+          raw_payload: data.rawPayload || {},
+          created_at: ts(),
+          updated_at: ts(),
+        })])
+        .select('*')
+        .single();
+      if (error) throw error;
+      return row;
+    } catch (error) { throw error; }
   }
 
   async getClientAssetFolders(clientId) {
