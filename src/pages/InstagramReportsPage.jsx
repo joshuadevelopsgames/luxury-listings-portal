@@ -107,12 +107,25 @@ function parseDateFromRange(dateRange) {
   return new Date(year, monthIdx, day);
 }
 
-// Get the sorting date for a report: prefer startDate, then parse dateRange, then createdAt
+// Get the sorting date for a report: prefer parsing the dateRange (the period it covers),
+// then try startDate field, then createdAt as last resort
 function getReportSortDate(report) {
-  if (report.startDate) return new Date(report.startDate);
+  // 1) Parse the dateRange string first — this is the most reliable indicator of the period
   const parsed = parseDateFromRange(report.dateRange);
   if (parsed && !isNaN(parsed.getTime())) return parsed;
-  return report.createdAt?.toDate?.() || new Date(0);
+  // 2) Fall back to startDate (period_start from DB)
+  if (report.startDate) {
+    const d = typeof report.startDate === 'string' ? new Date(report.startDate + (report.startDate.includes('T') ? '' : 'T12:00:00'))
+      : report.startDate?.toDate?.() || new Date(report.startDate);
+    if (!isNaN(d.getTime())) return d;
+  }
+  // 3) Fall back to createdAt
+  if (report.createdAt) {
+    const d = typeof report.createdAt === 'string' ? new Date(report.createdAt)
+      : report.createdAt?.toDate?.() || new Date(report.createdAt);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return new Date(0);
 }
 
 // Build a Date at noon UTC for YYYY-MM-DD so the calendar day is correct in Vancouver (and elsewhere)
@@ -446,38 +459,55 @@ const InstagramReportsPage = () => {
   }, [clientsWithReportsForTab, searchQuery]);
 
   // Get reports for a specific time period
-  const getReportsForPeriod = (clientId, startDate, endDate) => {
+  const getReportsForPeriod = (clientId, periodStart, periodEnd) => {
     return reports.filter(r => {
       if (r.clientId !== clientId) return false;
-      const reportStart = r.startDate?.toDate?.() || r.createdAt?.toDate?.();
-      if (!reportStart) return false;
-      return isWithinInterval(reportStart, { start: startDate, end: endDate });
+      if (r.reportType && r.reportType !== 'monthly') return false; // only aggregate monthly reports
+      const reportDate = getReportSortDate(r);
+      if (!reportDate || isNaN(reportDate.getTime())) return false;
+      return isWithinInterval(reportDate, { start: periodStart, end: periodEnd });
     });
   };
 
-  // Aggregate metrics from multiple reports
+  // Aggregate metrics from multiple reports — sums additive metrics, takes latest snapshot values
   const aggregateMetrics = (reportsToAggregate) => {
     if (!reportsToAggregate.length) return null;
-    
+
+    // Sort by date range so "latest" = last in array
+    const sorted = [...reportsToAggregate].sort((a, b) => getReportSortDate(a) - getReportSortDate(b));
+
     const aggregated = {
       views: 0,
       interactions: 0,
       profileVisits: 0,
+      accountsReached: 0,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      saves: 0,
+      reposts: 0,
       followers: null,
       followerChange: 0,
-      reportCount: reportsToAggregate.length
+      reportCount: sorted.length
     };
-    
-    reportsToAggregate.forEach(r => {
+
+    sorted.forEach(r => {
       const m = r.metrics || {};
-      if (m.views) aggregated.views += Number(m.views) || 0;
-      if (m.interactions) aggregated.interactions += Number(m.interactions) || 0;
-      if (m.profileVisits) aggregated.profileVisits += Number(m.profileVisits) || 0;
+      // Additive metrics — sum across all reports in the period
+      aggregated.views += Number(m.views) || 0;
+      aggregated.interactions += Number(m.interactions) || 0;
+      aggregated.profileVisits += Number(m.profileVisits) || 0;
+      aggregated.accountsReached += Number(m.accountsReached) || 0;
+      aggregated.likes += Number(m.likes) || 0;
+      aggregated.comments += Number(m.comments) || 0;
+      aggregated.shares += Number(m.shares) || 0;
+      aggregated.saves += Number(m.saves) || 0;
+      aggregated.reposts += Number(m.reposts) || 0;
       if (m.followerChange != null) aggregated.followerChange += parseInt(m.followerChange) || 0;
-      // Take latest followers count
+      // Snapshot metric — take the latest value (last in sorted order)
       if (m.followers) aggregated.followers = Number(m.followers);
     });
-    
+
     return aggregated;
   };
 
@@ -505,7 +535,7 @@ const InstagramReportsPage = () => {
       endDate: qEnd,
       reportType: 'quarterly',
       metrics,
-      notes: `Aggregated from ${periodReports.length} monthly report(s).\n\nTotal Views: ${metrics.views.toLocaleString()}\nTotal Interactions: ${metrics.interactions.toLocaleString()}\nProfile Visits: ${metrics.profileVisits.toLocaleString()}\nNet Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}`,
+      notes: `Aggregated from ${periodReports.length} monthly report(s).\n\nTotal Views: ${metrics.views.toLocaleString()}\nAccounts Reached: ${metrics.accountsReached.toLocaleString()}\nTotal Interactions: ${metrics.interactions.toLocaleString()}\nProfile Visits: ${metrics.profileVisits.toLocaleString()}\nLikes: ${metrics.likes.toLocaleString()} | Comments: ${metrics.comments.toLocaleString()} | Shares: ${metrics.shares.toLocaleString()} | Saves: ${metrics.saves.toLocaleString()} | Reposts: ${metrics.reposts.toLocaleString()}\nFollowers: ${metrics.followers?.toLocaleString() || 'N/A'}\nNet Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}`,
       sourceReportIds: periodReports.map(r => r.id)
     };
     
@@ -539,8 +569,8 @@ const InstagramReportsPage = () => {
       const qStart = startOfQuarter(new Date(year, (q - 1) * 3, 1));
       const qEnd = endOfQuarter(qStart);
       const qReports = periodReports.filter(r => {
-        const d = r.startDate?.toDate?.() || r.createdAt?.toDate?.();
-        return d && isWithinInterval(d, { start: qStart, end: qEnd });
+        const d = getReportSortDate(r);
+        return d && !isNaN(d.getTime()) && isWithinInterval(d, { start: qStart, end: qEnd });
       });
       return {
         quarter: q,
@@ -1111,14 +1141,15 @@ const InstagramReportsPage = () => {
                               {(() => {
                                 // Sort by the report's date range (period covered), not creation time
                                 const sortedMonthly = [...monthlyReports].sort((a, b) => getReportSortDate(a) - getReportSortDate(b));
-                                console.log('[COMPARE_DEBUG_V2] sortedMonthly order:', sortedMonthly.map(r => ({
+                                console.log('[COMPARE_DEBUG_V3] sortedMonthly order:', sortedMonthly.map(r => ({
                                   title: r.title, dateRange: r.dateRange, startDate: r.startDate,
+                                  parsedFromRange: parseDateFromRange(r.dateRange)?.toISOString?.(),
                                   sortDate: getReportSortDate(r)?.toISOString?.(), id: r.id
                                 })));
                                 const findPrev = (report) => {
                                   const idx = sortedMonthly.findIndex(r => r.id === report.id);
                                   const prev = idx > 0 ? sortedMonthly[idx - 1] : null;
-                                  console.log('[COMPARE_DEBUG_V2] findPrev for', report.title, '→ idx=', idx, '→ prev=', prev?.title || 'NULL');
+                                  console.log('[COMPARE_DEBUG_V3] findPrev for', report.title, '→ idx=', idx, '→ prev=', prev?.title || 'NULL');
                                   return prev;
                                 };
                                 return groupReportsByYearMonth(monthlyReports).map(({ year, month, reports: groupReports }) => {
