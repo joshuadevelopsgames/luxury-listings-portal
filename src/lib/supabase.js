@@ -37,38 +37,6 @@ try {
     .forEach((k) => localStorage.removeItem(k));
 }
 
-// ── Custom fetch: inject JWT from localStorage for non-auth requests ─────────
-// The Supabase JS client internally calls getSession() before every PostgREST
-// request to attach the JWT. getSession() can hang for 10+ seconds when the
-// internal session refresh promise is pending (even with the lock bypass).
-//
-// This custom fetch reads the access_token directly from localStorage and
-// injects it as the Authorization header for PostgREST/storage/realtime calls,
-// completely bypassing the hanging getSession() path.
-const nativeFetch = window.fetch.bind(window);
-
-function supabaseFetch(input, init) {
-  const url = typeof input === 'string' ? input : input?.url || '';
-
-  // Only inject token for non-auth API calls (PostgREST, Storage, Realtime, Functions)
-  if (!url.includes('/auth/')) {
-    try {
-      const raw = localStorage.getItem(SB_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        const token = parsed?.access_token;
-        if (token) {
-          const headers = new Headers(init?.headers || {});
-          headers.set('Authorization', `Bearer ${token}`);
-          init = { ...init, headers };
-        }
-      }
-    } catch { /* fall through — use whatever header the client set */ }
-  }
-
-  return nativeFetch(input, init);
-}
-
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     persistSession: true,
@@ -76,10 +44,34 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
     detectSessionInUrl: true,
     lock: (name, acquireTimeout, fn) => fn(),
   },
-  global: {
-    fetch: supabaseFetch,
-  },
   realtime: {
     params: { eventsPerSecond: 10 },
   },
 });
+
+// ── Override _getAccessToken to bypass the hanging getSession() ──────────────
+//
+// The Supabase JS client calls getSession() internally before EVERY PostgREST,
+// Storage, and Realtime request. getSession() hangs because the internal
+// _refreshSessionPromise gets corrupted when the lock bypass allows concurrent
+// token refreshes.
+//
+// The custom fetch approach doesn't work because the hang occurs BEFORE
+// fetch() is called (in the client's _getAccessToken → getSession chain).
+//
+// Fix: override _getAccessToken to read the JWT directly from localStorage.
+// Auth module still works normally (login/logout/onAuthStateChange/refresh) —
+// this only affects how PostgREST/Storage/Functions get their bearer token.
+if (typeof supabase._getAccessToken === 'function') {
+  supabase._getAccessToken = async () => {
+    try {
+      const raw = localStorage.getItem(SB_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return parsed?.access_token || null;
+      }
+    } catch { /* fall through */ }
+    return null;
+  };
+  console.log('[Supabase] Patched _getAccessToken to read from localStorage');
+}
