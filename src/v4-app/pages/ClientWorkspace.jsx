@@ -152,6 +152,8 @@ export default function ClientWorkspace() {
   const [newListingDesc, setNewListingDesc] = useState('');
   const [newListingNotes, setNewListingNotes] = useState('');
   const [savingListing, setSavingListing]   = useState(false);
+  // IDs of listings currently being enriched in the background
+  const [scrapingIds, setScrapingIds] = useState(new Set());
 
   // ── Form state: Attach Folder ────────────────────────────────────────────
   const [showAttachFolder, setShowAttachFolder] = useState(false);
@@ -260,33 +262,62 @@ export default function ClientWorkspace() {
     if (!newListingUrl.trim()) return;
     setSavingListing(true);
     try {
-      // Scrape via edge function (Apify for Zillow, OG+GPT for everything else)
-      let scraped = {};
-      try {
-        scraped = await openaiService.scrapeListing(newListingUrl.trim()) || {};
-      } catch { /* non-fatal */ }
-
+      // 1. Save immediately with just the URL — no waiting for scraper
       const created = await supabaseService.createClientListing({
         clientId,
         listingUrl: newListingUrl.trim(),
-        sourceDomain: scraped.sourceDomain || '',
-        title: scraped.title || '',
-        address: scraped.address || '',
-        price: scraped.price || '',
-        beds: scraped.beds || '',
-        baths: scraped.baths || '',
-        squareFeet: scraped.squareFeet || '',
-        description: newListingDesc.trim() || scraped.description || '',
+        sourceDomain: '',
+        title: '',
+        address: '',
+        price: '',
+        beds: '',
+        baths: '',
+        squareFeet: '',
+        description: newListingDesc.trim(),
         notes: newListingNotes.trim(),
-        rawPayload: scraped,
+        rawPayload: {},
       });
+
+      // 2. Reset form + navigate immediately
       setNewListingUrl('');
       setNewListingDesc('');
       setNewListingNotes('');
       setShowAddListing(false);
       await loadBase();
       if (created?.id) setSelectedListingId(created.id);
-      toast.success('Listing added');
+      toast.success('Listing added — scraping details…');
+
+      // 3. Fire-and-forget background scrape to enrich the listing
+      if (created?.id) {
+        const listingId = created.id;
+        const urlToScrape = created.listingUrl || '';  // captured before state reset
+        setScrapingIds((prev) => new Set(prev).add(listingId));
+        openaiService.scrapeListing(urlToScrape)
+          .then(async (scraped) => {
+            if (!scraped || !Object.keys(scraped).length) return;
+            await supabaseService.updateClientListing(listingId, {
+              sourceDomain: scraped.sourceDomain || '',
+              title: scraped.title || '',
+              address: scraped.address || '',
+              price: scraped.price || '',
+              beds: scraped.beds || '',
+              baths: scraped.baths || '',
+              squareFeet: scraped.squareFeet || '',
+              description: scraped.description || '',
+              rawPayload: scraped,
+            });
+            await loadBase();
+            toast.success('Listing details filled in ✓');
+          })
+          .catch(() => { /* scrape failed — listing still usable */ })
+          .finally(() => {
+            setScrapingIds((prev) => {
+              const next = new Set(prev);
+              next.delete(listingId);
+              return next;
+            });
+          });
+      }
     } catch {
       toast.error('Failed to save listing');
     } finally {
@@ -583,6 +614,7 @@ export default function ClientWorkspace() {
             listings.map((listing) => {
               const active = selectedListingId === listing.id;
               const status = listingStatuses[listing.id] || 'needs_folder';
+              const isScraping = scrapingIds.has(listing.id);
               return (
                 <button
                   key={listing.id}
@@ -598,11 +630,14 @@ export default function ClientWorkspace() {
                 >
                   <div className="flex items-start gap-2.5">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${active ? 'bg-white/20' : 'bg-[#0071e3]/10'}`}>
-                      <Globe className={`w-4 h-4 ${active ? 'text-white' : 'text-[#0071e3]'}`} />
+                      {isScraping
+                        ? <RefreshCw className={`w-4 h-4 animate-spin ${active ? 'text-white' : 'text-[#0071e3]'}`} />
+                        : <Globe className={`w-4 h-4 ${active ? 'text-white' : 'text-[#0071e3]'}`} />
+                      }
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-[13px] font-semibold truncate leading-tight ${active ? 'text-white' : 'text-[#1d1d1f] dark:text-white'}`}>
-                        {listing.title || listing.address || 'Untitled Listing'}
+                        {listing.title || listing.address || (isScraping ? 'Fetching details…' : 'Untitled Listing')}
                       </p>
                       {listing.address && listing.title && (
                         <p className={`text-[11px] truncate mt-0.5 ${active ? 'text-white/70' : 'text-[#86868b]'}`}>
