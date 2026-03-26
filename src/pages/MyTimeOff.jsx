@@ -84,7 +84,7 @@ const MyTimeOff = () => {
   const [showArchived, setShowArchived] = useState(false);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
 
-  // Leave balances - loaded from Firestore (only vacation and sick have balances; remote is type-only)
+  // Leave balances
   const [leaveBalances, setLeaveBalances] = useState({
     vacation: {
       total: 0,
@@ -93,6 +93,12 @@ const MyTimeOff = () => {
       pending: 0
     },
     sick: {
+      total: 0,
+      used: 0,
+      remaining: 0,
+      pending: 0
+    },
+    remote: {
       total: 0,
       used: 0,
       remaining: 0,
@@ -150,23 +156,29 @@ const MyTimeOff = () => {
         const storedBalances = await supabaseService.getUserLeaveBalances(currentUser.email);
         
         // Calculate pending from current requests
-        const pendingCounts = { vacation: 0, sick: 0 };
+        const pendingCounts = { vacation: 0, sick: 0, remote: 0 };
         myRequests.forEach(request => {
           if (request.status === 'pending' && pendingCounts[request.type] !== undefined) {
             pendingCounts[request.type] += request.days || 1;
           }
         });
-        
+
+        const remoteBal = storedBalances.remote || { total: 10, used: 0 };
         const balances = {
-          vacation: { 
+          vacation: {
             ...storedBalances.vacation,
-            remaining: storedBalances.vacation.total - storedBalances.vacation.used,
-            pending: pendingCounts.vacation 
+            remaining: (storedBalances.vacation?.total || 0) - (storedBalances.vacation?.used || 0),
+            pending: pendingCounts.vacation
           },
-          sick: { 
+          sick: {
             ...storedBalances.sick,
-            remaining: storedBalances.sick.total - storedBalances.sick.used,
-            pending: pendingCounts.sick 
+            remaining: (storedBalances.sick?.total || 0) - (storedBalances.sick?.used || 0),
+            pending: pendingCounts.sick
+          },
+          remote: {
+            ...remoteBal,
+            remaining: (remoteBal.total || 0) - (remoteBal.used || 0),
+            pending: pendingCounts.remote
           }
         };
         

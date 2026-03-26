@@ -20,10 +20,11 @@ const TimeOffSummaryWidget = () => {
   const isAdmin = canApproveByFeature || firestoreTimeOffAdmin;
   const [pendingApprovals, setPendingApprovals] = useState(0);
   
-  // Leave balances from Firestore
+  // Leave balances
   const [balances, setBalances] = useState({
     vacation: { used: 0, total: 15 },
-    sick: { used: 0, total: 3 }
+    sick: { used: 0, total: 3 },
+    remote: { used: 0, total: 10 }
   });
 
   useEffect(() => {
@@ -65,8 +66,9 @@ const TimeOffSummaryWidget = () => {
     loadData();
   }, [currentUser?.email, canApproveByFeature]);
 
-  const vacationRemaining = balances.vacation.total - balances.vacation.used;
-  const sickRemaining = balances.sick.total - balances.sick.used;
+  const vacationRemaining = (balances.vacation?.total || 0) - (balances.vacation?.used || 0);
+  const sickRemaining = (balances.sick?.total || 0) - (balances.sick?.used || 0);
+  const remoteRemaining = (balances.remote?.total || 0) - (balances.remote?.used || 0);
 
   if (loading) {
     return (
@@ -120,9 +122,22 @@ const TimeOffSummaryWidget = () => {
           </span>
         </div>
         <div className="h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-          <div 
+          <div
             className="h-full bg-[#ff9500] rounded-full transition-all"
-            style={{ width: `${(sickRemaining / balances.sick.total) * 100}%` }}
+            style={{ width: `${balances.sick?.total ? (sickRemaining / balances.sick.total) * 100 : 0}%` }}
+          />
+        </div>
+
+        <div className="flex items-center justify-between mt-4">
+          <span className="text-[13px] text-[#86868b]">Remote Days</span>
+          <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+            {remoteRemaining} remaining
+          </span>
+        </div>
+        <div className="h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#5856d6] rounded-full transition-all"
+            style={{ width: `${balances.remote?.total ? (remoteRemaining / balances.remote.total) * 100 : 0}%` }}
           />
         </div>
       </div>

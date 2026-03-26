@@ -20,7 +20,7 @@ const TimeOffWidget = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [leaveBalances, setLeaveBalances] = useState({ vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 10, used: 0, remaining: 10 } });
+  const [leaveBalances, setLeaveBalances] = useState({ vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 }, remote: { total: 10, used: 0, remaining: 10 } });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [upcomingTimeOff, setUpcomingTimeOff] = useState([]);
 
@@ -30,8 +30,9 @@ const TimeOffWidget = () => {
       try {
         const balances = await supabaseService.getUserLeaveBalances(currentUser.email);
         setLeaveBalances({
-          vacation: { ...balances.vacation, remaining: balances.vacation.total - balances.vacation.used },
-          sick: { ...balances.sick, remaining: balances.sick.total - balances.sick.used }
+          vacation: { ...balances.vacation, remaining: (balances.vacation?.total || 0) - (balances.vacation?.used || 0) },
+          sick: { ...balances.sick, remaining: (balances.sick?.total || 0) - (balances.sick?.used || 0) },
+          remote: { ...(balances.remote || { total: 10, used: 0 }), remaining: (balances.remote?.total || 10) - (balances.remote?.used || 0) }
         });
         
         const requests = await supabaseService.getLeaveRequests(currentUser.email);
@@ -68,7 +69,7 @@ const TimeOffWidget = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Quick Balances */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div className="bg-blue-50 rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
               <Plane className="w-4 h-4 text-blue-600" />
@@ -77,7 +78,7 @@ const TimeOffWidget = () => {
             <p className="text-2xl font-bold text-blue-900">{leaveBalances.vacation.remaining}</p>
             <p className="text-xs text-blue-700">days remaining</p>
           </div>
-          
+
           <div className="bg-red-50 rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
               <Heart className="w-4 h-4 text-red-600" />
@@ -85,6 +86,15 @@ const TimeOffWidget = () => {
             </div>
             <p className="text-2xl font-bold text-red-900">{leaveBalances.sick.remaining}</p>
             <p className="text-xs text-red-700">days remaining</p>
+          </div>
+
+          <div className="bg-purple-50 rounded-lg p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <Clock className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-purple-900">Remote</span>
+            </div>
+            <p className="text-2xl font-bold text-purple-900">{leaveBalances.remote.remaining}</p>
+            <p className="text-xs text-purple-700">days remaining</p>
           </div>
         </div>
 
