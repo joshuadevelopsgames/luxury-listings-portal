@@ -80,6 +80,7 @@ import SlackCallback from './pages/SlackCallback';
 import GraphicProjectTracker from './pages/GraphicProjectTracker';
 import CanvasPage from './pages/CanvasPage';
 import MyClientsPage from './modules/my-clients/pages/MyClientsPage';
+import ClientWorkspace from './v4-app/pages/ClientWorkspace';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -160,6 +161,7 @@ function V3SupabaseRoutes() {
           {/* Permission-gated pages */}
           <Route path="tasks" element={<PermissionRoute pageId="tasks" pageName="Tasks"><TasksPage /></PermissionRoute>} />
           <Route path="my-clients" element={<PermissionRoute pageId="my-clients" pageName="My Clients"><MyClientsPage /></PermissionRoute>} />
+          <Route path="my-clients/:clientId" element={<PermissionRoute pageId="my-clients" pageName="My Clients"><ClientWorkspace /></PermissionRoute>} />
           <Route path="clients" element={<PermissionRoute pageId="clients" pageName="Client Management"><ClientsPage /></PermissionRoute>} />
           <Route path="posting-packages" element={<PermissionRoute pageId="posting-packages" pageName="Posting Packages"><PostingPackages /></PermissionRoute>} />
           <Route path="pending-clients" element={<Navigate to="/v4/clients?tab=pending" replace />} />
