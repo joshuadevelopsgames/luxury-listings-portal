@@ -331,8 +331,8 @@ const MyClientsPage = () => {
                 className="group bg-white dark:bg-[#1c1c1e] rounded-[24px] border border-black/5 dark:border-white/5 p-6 hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer"
               >
                 {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-4 mb-4">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0">
                       {client.profilePhoto ? (
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover rounded-xl" />
@@ -353,20 +353,20 @@ const MyClientsPage = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2.5 flex-shrink-0">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/my-clients/${client.id}`);
                       }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3]/10 text-[#0071e3] hover:bg-[#0071e3]/20 text-[12px] font-medium transition-colors shadow-sm"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3]/10 text-[#0071e3] hover:bg-[#0071e3]/20 text-[12px] font-medium transition-colors shadow-sm whitespace-nowrap"
                     >
                       <Building2 className="w-4 h-4" strokeWidth={2} />
                       Workspace
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setLogPostClient(client); setLogPlatform('instagram'); }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#34c759] text-white hover:bg-[#2db84e] text-[12px] font-medium transition-colors shadow-sm"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#34c759] text-white hover:bg-[#2db84e] text-[12px] font-medium transition-colors shadow-sm whitespace-nowrap"
                     >
                       <Plus className="w-4 h-4" strokeWidth={2} />
                       Log post
@@ -374,7 +374,7 @@ const MyClientsPage = () => {
                     {canManageAllClients && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditPostsClient(client); setShowEditPostsModal(true); }}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15 text-[12px] font-medium transition-colors"
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15 text-[12px] font-medium transition-colors whitespace-nowrap"
                       >
                         <Pencil className="w-4 h-4" strokeWidth={2} />
                         Edit posts
@@ -389,7 +389,7 @@ const MyClientsPage = () => {
                           }
                           setShowAiTooltip(showAiTooltip === client.id ? null : client.id);
                         }}
-                        className={`px-3 py-2 rounded-xl text-[12px] font-medium flex items-center gap-1.5 ${health.color} ${health.bgColor} hover:opacity-80 transition-opacity`}
+                        className={`px-3 py-2 rounded-xl text-[12px] font-medium inline-flex items-center gap-1.5 whitespace-nowrap ${health.color} ${health.bgColor} hover:opacity-80 transition-opacity`}
                       >
                         {isLoadingAi ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
