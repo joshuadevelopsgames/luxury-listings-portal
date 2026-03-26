@@ -1112,6 +1112,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
   const [dragOver, setDragOver] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractionProgress, setExtractionProgress] = useState({ current: 0, total: 0, status: '' });
+  const [slowExtraction, setSlowExtraction] = useState(false);
+  const slowExtractionTimerRef = useRef(null);
   const [metricsSectionCollapsed, setMetricsSectionCollapsed] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
@@ -1209,6 +1211,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
   const runExtraction = async () => {
     if (formData.screenshots.length === 0) return;
     setExtracting(true);
+    setSlowExtraction(false);
+    slowExtractionTimerRef.current = setTimeout(() => setSlowExtraction(true), 15000);
     setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Analyzing screenshots...' });
     try {
       const images = formData.screenshots.map(s => ({ localFile: s.localFile, url: s.previewUrl }));
@@ -1288,6 +1292,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
         return { ...prev, screenshots: [] };
       });
     } finally {
+      clearTimeout(slowExtractionTimerRef.current);
+      setSlowExtraction(false);
       setExtracting(false);
     }
   };
@@ -1654,11 +1660,16 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 {extracting && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <Sparkles className="w-5 h-5 text-amber-600" />
+                      <Sparkles className="w-5 h-5 text-amber-600 animate-pulse" />
                       <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
                         {extractionProgress.status}
                       </span>
                     </div>
+                    {slowExtraction && (
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mb-2 italic">
+                        ⏳ Thinking longer than usual — the AI is processing multiple images. Hang tight…
+                      </p>
+                    )}
                     <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2">
                       <div 
                         className="bg-amber-600 h-2 rounded-full transition-all duration-300"

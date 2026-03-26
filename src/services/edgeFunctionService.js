@@ -13,10 +13,12 @@ import { supabase } from '../lib/supabase';
  * @param {object} body - JSON body to send
  * @returns {Promise<any>} - Parsed JSON response data
  */
-export async function invokeEdgeFunction(fnName, body = {}) {
-  const { data, error } = await supabase.functions.invoke(fnName, {
-    body,
-  });
+export async function invokeEdgeFunction(fnName, body = {}, timeoutMs = 60000) {
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Edge function ${fnName} timed out after ${timeoutMs / 1000}s`)), timeoutMs)
+  );
+  const invokePromise = supabase.functions.invoke(fnName, { body });
+  const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
   if (error) {
     console.error(`[EdgeFunction] ${fnName} error:`, error);
     throw new Error(error.message || `Edge function ${fnName} failed`);

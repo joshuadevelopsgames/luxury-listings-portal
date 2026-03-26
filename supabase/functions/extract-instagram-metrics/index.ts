@@ -150,18 +150,27 @@ Return ONLY the JSON object.`;
     let data: any;
     let provider: string;
 
+    // Helper: fetch with a 45-second AbortController timeout
+    const fetchWithTimeout = (url: string, init: RequestInit, timeoutMs = 45000) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      return fetch(url, { ...init, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+    };
+
     if (openRouterKey) {
       try {
-        const resp = await fetch(OPENROUTER_API_URL, {
+        const resp = await fetchWithTimeout(OPENROUTER_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openRouterKey}` },
           body: JSON.stringify({ ...body, model: MODEL }),
         });
         if (resp.ok) { data = await resp.json(); provider = 'openrouter'; }
         else throw new Error(await resp.text());
-      } catch {
-        if (!openAIKey) throw new Error('OpenRouter failed and no OpenAI key configured');
-        const resp = await fetch(OPENAI_API_URL, {
+      } catch (e: any) {
+        if (!openAIKey) throw new Error(`OpenRouter failed and no OpenAI key configured: ${e.message}`);
+        console.warn('OpenRouter failed, falling back to OpenAI:', e.message);
+        const resp = await fetchWithTimeout(OPENAI_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openAIKey}` },
           body: JSON.stringify({ ...body, model: OPENAI_MODEL }),
@@ -170,7 +179,7 @@ Return ONLY the JSON object.`;
         data = await resp.json(); provider = 'openai';
       }
     } else {
-      const resp = await fetch(OPENAI_API_URL, {
+      const resp = await fetchWithTimeout(OPENAI_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openAIKey!}` },
         body: JSON.stringify({ ...body, model: OPENAI_MODEL }),
