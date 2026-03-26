@@ -1647,6 +1647,7 @@ class SupabaseService {
           beds: data.beds || null,
           baths: data.baths || null,
           square_feet: data.squareFeet || null,
+          notes: data.notes || null,
           raw_payload: data.rawPayload || {},
           created_by_id: userId,
           created_at: ts(),

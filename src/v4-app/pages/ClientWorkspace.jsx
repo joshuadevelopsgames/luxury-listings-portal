@@ -262,9 +262,15 @@ export default function ClientWorkspace() {
     try {
       let scraped = {};
       try {
-        const res = await fetch(`/api/scrape-listing?url=${encodeURIComponent(newListingUrl.trim())}`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(
+          `/api/scrape-listing?url=${encodeURIComponent(newListingUrl.trim())}`,
+          { signal: controller.signal }
+        );
+        clearTimeout(timeout);
         if (res.ok) scraped = await res.json();
-      } catch { /* non-fatal */ }
+      } catch { /* non-fatal — route missing or timed out */ }
       const created = await supabaseService.createClientListing({
         clientId,
         listingUrl: newListingUrl.trim(),
