@@ -2,6 +2,9 @@
 /**
  * Restore canvases from Firestore → Supabase
  *
+ * Prefer the combined script (also migrates tasks + legacy_firebase_id):
+ *   node scripts/restore-firebase-workspaces-tasks.mjs [--dry-run]
+ *
  * Firestore schema: { userId (Firebase UID), emoji, title, blocks[], created, updated }
  * Supabase schema:  { id (UUID), title, content (JSONB), owner_id (UUID FK→profiles.id),
  *                     is_shared, emoji, user_id_legacy, created_at, updated_at }

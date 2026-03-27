@@ -44,6 +44,31 @@ const clean = (obj) => {
   return out;
 };
 
+/** DATE columns reject ''; use null */
+const normalizeProfileStartDate = (v) => {
+  if (v === undefined) return undefined;
+  if (v === null || v === '') return null;
+  const s = String(v).trim();
+  return s ? s : null;
+};
+
+/** Ensure leave_balances JSON matches DB shape (avoids partial objects) */
+function normalizeLeaveBalancesForDb(balances) {
+  if (!balances || typeof balances !== 'object') return null;
+  const bucket = (b) => {
+    const total = Number(b?.total);
+    const used = Number(b?.used);
+    const t = Number.isFinite(total) ? total : 0;
+    const u = Number.isFinite(used) ? used : 0;
+    return { total: t, used: u, remaining: Math.max(0, t - u) };
+  };
+  return {
+    vacation: bucket(balances.vacation),
+    sick: bucket(balances.sick),
+    remote: bucket(balances.remote),
+  };
+}
+
 // ─── Simple TTL cache ────────────────────────────────────────────────────────
 // Eliminates redundant refetches on navigation — entries expire after 5 min.
 // Write operations call cacheInvalidate() for the affected table.
@@ -437,18 +462,20 @@ class SupabaseService {
         ...(safe.leaveBalances !== undefined ? { leave_balances: safe.leaveBalances } : {}),
         ...(safe.isTimeOffAdmin !== undefined ? { is_time_off_admin: safe.isTimeOffAdmin } : {}),
         ...(safe.onboardingCompleted !== undefined ? { onboarding_completed: safe.onboardingCompleted } : {}),
-        ...(safe.startDate !== undefined ? { start_date: safe.startDate } : {}),
+        ...(safe.startDate !== undefined ? { start_date: normalizeProfileStartDate(safe.startDate) } : {}),
+        ...(safe.location !== undefined ? { location: safe.location || null } : {}),
         ...(safe.skills !== undefined ? { skills: safe.skills } : {}),
         ...(safe.isApproved !== undefined ? { is_approved: safe.isApproved } : {}),
         ...(safe.slackUserId !== undefined ? { slack_user_id: safe.slackUserId } : {}),
         ...(safe.slackWorkspaceId !== undefined ? { slack_workspace_id: safe.slackWorkspaceId } : {}),
         updated_at: ts(),
       });
-      const { error } = await supabase.from('profiles').update(payload).ilike('email', emailKey);
+      const { error } = await supabase.from('profiles').update(payload).eq('email', emailKey);
       if (error) throw error;
       cacheInvalidate('profiles:');
     } catch (error) {
-      console.error('❌ Error updating approved user:', error);
+      const e = error;
+      console.error('❌ Error updating approved user:', e?.message || e, e?.details || '', e?.hint || '', e?.code || '');
       throw error;
     }
   }
@@ -961,9 +988,21 @@ class SupabaseService {
 
   async updateUserLeaveBalances(userEmail, balances) {
     try {
-      const { error } = await supabase.from('profiles').update({ leave_balances: balances, updated_at: ts() }).ilike('email', userEmail);
+      const emailKey = (userEmail || '').trim().toLowerCase();
+      if (!emailKey) throw new Error('updateUserLeaveBalances: missing email');
+      const leave_balances = normalizeLeaveBalancesForDb(balances);
+      if (!leave_balances) throw new Error('updateUserLeaveBalances: invalid balances');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ leave_balances, updated_at: ts() })
+        .eq('email', emailKey);
       if (error) throw error;
-    } catch (error) { throw error; }
+      cacheInvalidate('profiles:');
+    } catch (error) {
+      const e = error;
+      console.error('❌ Error updating leave balances:', e?.message || e, e?.details || '', e?.code || '');
+      throw error;
+    }
   }
 
   async getAllUsersWithLeaveBalances() {

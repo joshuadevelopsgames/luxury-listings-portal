@@ -18,6 +18,20 @@ import { toast } from 'react-hot-toast';
 
 const DEPARTMENTS = ['Executive', 'Content Team', 'Design Team', 'Sales', 'Marketing', 'Operations', 'HR', 'IT', 'Finance', 'General'];
 
+/** Always return complete vacation/sick/remote buckets (avoids crash when state is partial). */
+function normalizeLeaveEditForm(form) {
+  const f = form && typeof form === 'object' ? form : {};
+  const num = (v, fallback) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  return {
+    vacation: { total: num(f.vacation?.total, 15), used: num(f.vacation?.used, 0) },
+    sick: { total: num(f.sick?.total, 3), used: num(f.sick?.used, 0) },
+    remote: { total: num(f.remote?.total, 10), used: num(f.remote?.used, 0) },
+  };
+}
+
 function normalizeToEmployee(user) {
   if (!user) return null;
   const name = user.name || user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
@@ -62,6 +76,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
   const [saving, setSaving] = useState(false);
   const [isEditingLeave, setIsEditingLeave] = useState(false);
   const [savingLeave, setSavingLeave] = useState(false);
+  const leaveEdit = normalizeLeaveEditForm(editLeaveForm);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,11 +115,13 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
       manager: employee.manager ?? '',
       startDate: employee.startDate ?? ''
     });
-    setEditLeaveForm({
-      vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
-      sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 },
-      remote: { total: employee.leaveBalance?.remote?.total ?? 10, used: employee.leaveBalance?.remote?.used ?? 0 }
-    });
+    setEditLeaveForm(
+      normalizeLeaveEditForm({
+        vacation: employee.leaveBalance?.vacation,
+        sick: employee.leaveBalance?.sick,
+        remote: employee.leaveBalance?.remote,
+      })
+    );
   }, [employee?.email, isEditMode]);
 
   const openEditMode = () => {
@@ -119,11 +136,13 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
       manager: employee.manager ?? '',
       startDate: employee.startDate ?? ''
     });
-    setEditLeaveForm({
-      vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
-      sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 },
-      remote: { total: employee.leaveBalance?.remote?.total ?? 10, used: employee.leaveBalance?.remote?.used ?? 0 }
-    });
+    setEditLeaveForm(
+      normalizeLeaveEditForm({
+        vacation: employee.leaveBalance?.vacation,
+        sick: employee.leaveBalance?.sick,
+        remote: employee.leaveBalance?.remote,
+      })
+    );
     setIsEditMode(true);
   };
 
@@ -147,10 +166,12 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
         manager: editProfileForm.manager,
         startDate: editProfileForm.startDate
       });
-      await supabaseService.updateUserLeaveBalances(employee.email, editLeaveForm);
+      const bal = normalizeLeaveEditForm(editLeaveForm);
+      await supabaseService.updateUserLeaveBalances(employee.email, bal);
       const nextLeave = {
-        vacation: { ...editLeaveForm.vacation, remaining: editLeaveForm.vacation.total - editLeaveForm.vacation.used },
-        sick: { ...editLeaveForm.sick, remaining: editLeaveForm.sick.total - editLeaveForm.sick.used }
+        vacation: { ...bal.vacation, remaining: bal.vacation.total - bal.vacation.used },
+        sick: { ...bal.sick, remaining: bal.sick.total - bal.sick.used },
+        remote: { ...bal.remote, remaining: bal.remote.total - bal.remote.used }
       };
       const updated = {
         ...employee,
@@ -183,10 +204,12 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
     if (!employee?.email) return;
     setSavingLeave(true);
     try {
-      await supabaseService.updateUserLeaveBalances(employee.email, editLeaveForm);
+      const bal = normalizeLeaveEditForm(editLeaveForm);
+      await supabaseService.updateUserLeaveBalances(employee.email, bal);
       const nextLeave = {
-        vacation: { ...editLeaveForm.vacation, remaining: editLeaveForm.vacation.total - editLeaveForm.vacation.used },
-        sick: { ...editLeaveForm.sick, remaining: editLeaveForm.sick.total - editLeaveForm.sick.used }
+        vacation: { ...bal.vacation, remaining: bal.vacation.total - bal.vacation.used },
+        sick: { ...bal.sick, remaining: bal.sick.total - bal.sick.used },
+        remote: { ...bal.remote, remaining: bal.remote.total - bal.remote.used }
       };
       setEmployee((prev) => ({ ...prev, leaveBalance: nextLeave }));
       onEmployeeUpdate?.({ ...employee, leaveBalance: nextLeave });
@@ -442,10 +465,13 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                       <button
                         type="button"
                         onClick={() => {
-                          setEditLeaveForm({
-                            vacation: { total: employee.leaveBalance?.vacation?.total ?? 15, used: employee.leaveBalance?.vacation?.used ?? 0 },
-                            sick: { total: employee.leaveBalance?.sick?.total ?? 3, used: employee.leaveBalance?.sick?.used ?? 0 }
-                          });
+                          setEditLeaveForm(
+                            normalizeLeaveEditForm({
+                              vacation: employee.leaveBalance?.vacation,
+                              sick: employee.leaveBalance?.sick,
+                              remote: employee.leaveBalance?.remote,
+                            })
+                          );
                           setIsEditingLeave(true);
                         }}
                         className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
@@ -470,8 +496,8 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
                           <input
                             type="number" min="0"
-                            value={editLeaveForm.vacation.total}
-                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, total: parseInt(e.target.value, 10) || 0 } }))}
+                            value={leaveEdit.vacation.total}
+                            onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, vacation: { ...n.vacation, total: parseInt(e.target.value, 10) || 0 } }; })}
                             className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                           />
                         </div>
@@ -479,14 +505,14 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
                           <input
                             type="number" min="0"
-                            value={editLeaveForm.vacation.used}
-                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, used: parseInt(e.target.value, 10) || 0 } }))}
+                            value={leaveEdit.vacation.used}
+                            onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, vacation: { ...n.vacation, used: parseInt(e.target.value, 10) || 0 } }; })}
                             className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                           />
                         </div>
                       </div>
                       <p className="text-[11px] text-[#86868b] mt-2">
-                        Remaining: <span className="font-semibold text-[#0071e3]">{editLeaveForm.vacation.total - editLeaveForm.vacation.used}</span> days
+                        Remaining: <span className="font-semibold text-[#0071e3]">{leaveEdit.vacation.total - leaveEdit.vacation.used}</span> days
                       </p>
                     </div>
                     <div className="bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 rounded-xl p-4">
@@ -499,8 +525,8 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
                           <input
                             type="number" min="0"
-                            value={editLeaveForm.sick.total}
-                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, total: parseInt(e.target.value, 10) || 0 } }))}
+                            value={leaveEdit.sick.total}
+                            onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, sick: { ...n.sick, total: parseInt(e.target.value, 10) || 0 } }; })}
                             className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                           />
                         </div>
@@ -508,14 +534,14 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
                           <input
                             type="number" min="0"
-                            value={editLeaveForm.sick.used}
-                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, used: parseInt(e.target.value, 10) || 0 } }))}
+                            value={leaveEdit.sick.used}
+                            onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, sick: { ...n.sick, used: parseInt(e.target.value, 10) || 0 } }; })}
                             className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                           />
                         </div>
                       </div>
                       <p className="text-[11px] text-[#86868b] mt-2">
-                        Remaining: <span className="font-semibold text-[#ff3b30]">{editLeaveForm.sick.total - editLeaveForm.sick.used}</span> days
+                        Remaining: <span className="font-semibold text-[#ff3b30]">{leaveEdit.sick.total - leaveEdit.sick.used}</span> days
                       </p>
                     </div>
                     <div className="bg-[#5856d6]/5 dark:bg-[#5856d6]/10 rounded-xl p-4">
@@ -528,8 +554,8 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
                           <input
                             type="number" min="0"
-                            value={editLeaveForm.remote.total}
-                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, total: parseInt(e.target.value, 10) || 0 } }))}
+                            value={leaveEdit.remote.total}
+                            onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, remote: { ...n.remote, total: parseInt(e.target.value, 10) || 0 } }; })}
                             className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
                           />
                         </div>
@@ -537,14 +563,14 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
                           <input
                             type="number" min="0"
-                            value={editLeaveForm.remote.used}
-                            onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, used: parseInt(e.target.value, 10) || 0 } }))}
+                            value={leaveEdit.remote.used}
+                            onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, remote: { ...n.remote, used: parseInt(e.target.value, 10) || 0 } }; })}
                             className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
                           />
                         </div>
                       </div>
                       <p className="text-[11px] text-[#86868b] mt-2">
-                        Remaining: <span className="font-semibold text-[#5856d6]">{editLeaveForm.remote.total - editLeaveForm.remote.used}</span> days
+                        Remaining: <span className="font-semibold text-[#5856d6]">{leaveEdit.remote.total - leaveEdit.remote.used}</span> days
                       </p>
                     </div>
                   </div>

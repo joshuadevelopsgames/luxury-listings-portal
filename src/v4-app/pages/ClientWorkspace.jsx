@@ -259,7 +259,6 @@ export default function ClientWorkspace() {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const saveListing = async () => {
-<<<<<<< HEAD
     if (!newListingUrl.trim()) return;
     setSavingListing(true);
 
@@ -305,7 +304,7 @@ export default function ClientWorkspace() {
       // 3. Fire-and-forget background scrape to enrich the listing
       if (created?.id) {
         const listingId = created.id;
-        const urlToScrape = created.listing_url || created.listingUrl || '';  // raw Supabase row uses snake_case
+        const urlToScrape = created.listing_url || created.listingUrl || '';
         setScrapingIds((prev) => new Set(prev).add(listingId));
         openaiService.scrapeListing(urlToScrape)
           .then(async (scraped) => {
@@ -367,55 +366,6 @@ export default function ClientWorkspace() {
     } finally {
       setSavingFolder(false);
     }
-=======
-    if (!listingUrl.trim()) return;
-    const url = listingUrl.trim();
-    const desc = listingDescription.trim();
-    let sourceDomain = '';
-    try { sourceDomain = new URL(url).hostname; } catch {}
-
-    // Step 1: Save the listing immediately (no scraping delay)
-    let listing;
-    try {
-      listing = await supabaseService.createClientListing({
-        clientId,
-        listingUrl: url,
-        sourceDomain,
-        title: '',
-        description: desc,
-        rawPayload: {},
-      });
-    } catch (err) {
-      toast.error('Failed to save listing: ' + (err?.message || 'Unknown error'));
-      return;
-    }
-    setListingUrl('');
-    setListingDescription('');
-    await loadBase();
-    toast.success('Listing saved');
-
-    // Step 2: Try to enrich with scraped data in the background (non-blocking)
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(`/api/scrape-listing?url=${encodeURIComponent(url)}`, { signal: controller.signal });
-      clearTimeout(timer);
-      if (res.ok) {
-        const scraped = await res.json();
-        if (scraped.title || scraped.description) {
-          await supabaseService.updateClientListing(listing.id, {
-            title: scraped.title || '',
-            description: desc || scraped.description || '',
-            rawPayload: scraped,
-          });
-          await loadBase();
-          toast.success('Listing enriched with scraped data');
-        }
-      }
-    } catch {
-      // Scraping failed or timed out — listing is already saved, no action needed
-    }
->>>>>>> f2ef841 (Fix: listing save timeout - save listing immediately then enrich with scrape data in background, add 5s abort timeout to scrape API, add updateClientListing method)
   };
 
   const uploadAssets = async (files) => {

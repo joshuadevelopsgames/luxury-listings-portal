@@ -166,7 +166,8 @@ export default function CanvasPage() {
   const [restoreKey, setRestoreKey] = useState(0); // bump on undo/redo so contenteditable remounts with restored content
   const MAX_UNDO = 50;
 
-  const userId = currentUser?.uid ?? null;
+  // Profile UUID (Supabase) or legacy Firebase uid — View As merges uid from profiles.id
+  const userId = currentUser?.uid ?? currentUser?.id ?? null;
   const userEmail = currentUser?.email ?? null;
   const activeCanvas = canvases.find((c) => c.id === activeId) ?? sharedCanvases.find((c) => c.id === activeId);
   const filteredCanvases = search.trim()
