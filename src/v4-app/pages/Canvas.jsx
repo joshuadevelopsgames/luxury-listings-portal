@@ -205,7 +205,9 @@ export default function CanvasPage() {
       if (persistBlocksTimerRef.current) clearTimeout(persistBlocksTimerRef.current);
       persistBlocksTimerRef.current = setTimeout(() => {
         persistBlocksTimerRef.current = null;
-        if (activeId && (userId || activeCanvas?.userId)) {
+        void (async () => {
+          if (!activeId || !(userId || activeCanvas?.userId)) return;
+          const canvasRowId = (await supabaseService.resolveCanvasId(activeId)) || activeId;
           const ownerId = activeCanvas?.userId ?? userId;
           supabaseService.updateCanvas(ownerId, activeId, { blocks }).catch((err) => {
             console.error('Canvas save error (blocks):', err);
@@ -243,7 +245,7 @@ export default function CanvasPage() {
                 type: 'workspace_mention',
                 title: 'Mentioned you in a workspace',
                 message: excerpt || 'You were mentioned.',
-                link: `/workspaces?id=${activeId}&block=${blockIdForLink}`,
+                link: `/v4/canvas?id=${canvasRowId}&block=${blockIdForLink}`,
                 read: false,
               }).catch(() => {});
             }
@@ -251,9 +253,12 @@ export default function CanvasPage() {
           for (const email of prevEmails) {
             if (email && !newEmails.has(email)) {
               supabaseService.deleteWorkspaceMentionNotifications(email, activeId).catch(() => {});
+              if (canvasRowId !== activeId) {
+                supabaseService.deleteWorkspaceMentionNotifications(email, canvasRowId).catch(() => {});
+              }
             }
           }
-        }
+        })();
       }, 1200);
     },
     [activeId, userId, activeCanvas?.blocks, activeCanvas?.userId, pushUndo, sharedCanvases]
@@ -414,18 +419,36 @@ export default function CanvasPage() {
     const id = searchParams.get('id');
     const block = searchParams.get('block');
     if (!id) return;
-    setActiveId(id);
-    if (block) setHighlightBlockId(block);
-    if (id && block) setSearchParams({}, { replace: true });
-    const inMine = canvases.some((c) => c.id === id);
-    const inShared = sharedCanvases.some((c) => c.id === id);
-    if (!inMine && !inShared) {
-      supabaseService.getCanvasById(id).then((c) => {
-        if (!c) return;
-        if (c.userId === userId) setCanvases((prev) => [c, ...prev]);
-        else setSharedCanvases((prev) => [c, ...prev]);
-      }).catch(() => {});
-    }
+    let cancelled = false;
+    (async () => {
+      const resolved = (await supabaseService.resolveCanvasId(id)) || id;
+      if (cancelled) return;
+      if (resolved !== id) {
+        setSearchParams(
+          (prev) => {
+            const n = new URLSearchParams(prev);
+            n.set('id', resolved);
+            return n;
+          },
+          { replace: true }
+        );
+      }
+      setActiveId(resolved);
+      if (block) setHighlightBlockId(block);
+      if (id && block) setSearchParams({}, { replace: true });
+      const inMine = canvases.some((c) => c.id === resolved);
+      const inShared = sharedCanvases.some((c) => c.id === resolved);
+      if (!inMine && !inShared) {
+        supabaseService.getCanvasById(resolved).then((c) => {
+          if (!c || cancelled) return;
+          if (c.userId === userId) setCanvases((prev) => [c, ...prev]);
+          else setSharedCanvases((prev) => [c, ...prev]);
+        }).catch(() => {});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams, setSearchParams, userId, canvases, sharedCanvases]);
 
   useEffect(() => {
@@ -539,7 +562,8 @@ export default function CanvasPage() {
     if (ownerId !== userId) return;
     setShareSubmitting(true);
     try {
-      await supabaseService.shareCanvas(userId, activeId, { email, role: 'editor' });
+      const canvasRowId = (await supabaseService.resolveCanvasId(activeId)) || activeId;
+      await supabaseService.shareCanvas(userId, canvasRowId, { email, role: 'editor' });
       setShareCollaborators((prev) => [...prev.filter((c) => c.email !== email), { email, role: 'editor' }]);
       setShareSelectedUser('');
       const workspaceTitle = activeCanvas?.title || 'Untitled workspace';
@@ -549,7 +573,7 @@ export default function CanvasPage() {
         type: 'workspace_shared',
         title: 'Workspace shared with you',
         message: `${inviterName} invited you to edit "${workspaceTitle}".`,
-        link: `/workspaces?id=${activeId}`,
+        link: `/v4/canvas?id=${canvasRowId}`,
         read: false,
       });
       toast.success(`Invited ${email}`);

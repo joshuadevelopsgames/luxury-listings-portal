@@ -1488,14 +1488,44 @@ class SupabaseService {
   async createNotification(notificationData) {
     if (!notificationData?.userEmail) return { success: false };
     try {
-      const existing = await this.getNotifications(notificationData.userEmail);
-      const dup = existing.find(n => n.type === notificationData.type && !n.read);
+      const emailKey = String(notificationData.userEmail).trim().toLowerCase();
+      const { data: recipient, error: pe } = await supabase.from('profiles').select('id').eq('email', emailKey).maybeSingle();
+      if (pe) console.warn('createNotification profile lookup:', pe.message);
+      if (!recipient?.id) return { success: false };
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const isSelf = session?.user?.id === recipient.id;
+      let dup = null;
+      if (isSelf) {
+        const existing = await this.getNotifications(notificationData.userEmail);
+        dup = existing.find((n) => n.type === notificationData.type && !n.read);
+      }
       if (dup) {
-        const { error } = await supabase.from('notifications').update({ count: (dup.count || 1) + 1, title: notificationData.title || dup.title, message: notificationData.message || dup.message, link: notificationData.link !== undefined ? notificationData.link : dup.link, updated_at: ts() }).eq('id', dup.id);
+        const { error } = await supabase.from('notifications').update({
+          count: (dup.count || 1) + 1,
+          title: notificationData.title || dup.title,
+          message: notificationData.message || dup.message,
+          body: notificationData.message ?? dup.body ?? dup.message,
+          link: notificationData.link !== undefined ? notificationData.link : dup.link,
+          updated_at: ts(),
+        }).eq('id', dup.id);
         if (error) throw error;
         return { success: true, id: dup.id };
       }
-      const { data, error } = await supabase.from('notifications').insert([clean({ user_email: notificationData.userEmail, type: notificationData.type, title: notificationData.title, body: notificationData.message, message: notificationData.message, link: notificationData.link || null, read: false, count: 1, task_request_id: notificationData.taskRequestId || null, created_at: ts(), updated_at: ts() })]).select().single();
+      const { data, error } = await supabase.from('notifications').insert([clean({
+        user_id: recipient.id,
+        user_email: emailKey,
+        type: notificationData.type,
+        title: notificationData.title,
+        body: notificationData.message,
+        message: notificationData.message,
+        link: notificationData.link || null,
+        read: false,
+        count: 1,
+        task_request_id: notificationData.taskRequestId || null,
+        created_at: ts(),
+        updated_at: ts(),
+      })]).select().single();
       if (error) throw error;
       return { success: true, id: data.id };
     } catch (error) { console.error('❌ Error creating notification:', error); throw error; }
@@ -1503,7 +1533,11 @@ class SupabaseService {
 
   async getNotifications(userEmail) {
     try {
-      const { data } = await supabase.from('notifications').select('*').eq('user_email', userEmail).order('created_at', { ascending: false });
+      const emailKey = String(userEmail || '').trim().toLowerCase();
+      if (!emailKey) return [];
+      const { data: prof } = await supabase.from('profiles').select('id').eq('email', emailKey).maybeSingle();
+      if (!prof?.id) return [];
+      const { data } = await supabase.from('notifications').select('*').eq('user_id', prof.id).order('created_at', { ascending: false });
       return (data || []).map(r => ({ id: r.id, userEmail: r.user_email, type: r.type, title: r.title, message: r.message || r.body, body: r.body || r.message, link: r.link, read: r.read, count: r.count || 1, taskRequestId: r.task_request_id, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
     } catch { return []; }
   }
@@ -1521,7 +1555,10 @@ class SupabaseService {
 
   async markAllNotificationsRead(userEmail) {
     try {
-      const { error } = await supabase.from('notifications').update({ read: true, updated_at: ts() }).eq('user_email', userEmail).eq('read', false);
+      const emailKey = String(userEmail || '').trim().toLowerCase();
+      const { data: prof } = await supabase.from('profiles').select('id').eq('email', emailKey).maybeSingle();
+      if (!prof?.id) return;
+      const { error } = await supabase.from('notifications').update({ read: true, updated_at: ts() }).eq('user_id', prof.id).eq('read', false);
       if (error) throw error;
     } catch (error) { throw error; }
   }
@@ -2700,6 +2737,16 @@ class SupabaseService {
 
   // ===== CANVASES =====
 
+  /** Resolve V4/Supabase UUID or Firestore legacy doc id → canvases.id (UUID) */
+  async resolveCanvasId(canvasId) {
+    if (canvasId == null || canvasId === '') return null;
+    const s = String(canvasId).trim();
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) return s;
+    const { data, error } = await supabase.from('canvases').select('id').eq('legacy_firebase_id', s).maybeSingle();
+    if (error && error.code !== 'PGRST116') console.warn('[resolveCanvasId]', error.message);
+    return data?.id || null;
+  }
+
   async getCanvases(userId) {
     try {
       // Verify we have an authenticated session — RLS requires 'authenticated' role.
@@ -2738,7 +2785,9 @@ class SupabaseService {
 
   async updateCanvas(userId, canvasId, patch) {
     try {
-      const { error } = await supabase.from('canvases').update({ ...patch, updated_at: ts() }).eq('id', canvasId);
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) throw new Error('Workspace not found');
+      const { error } = await supabase.from('canvases').update({ ...patch, updated_at: ts() }).eq('id', rid);
       if (error) throw error;
     } catch (error) { throw error; }
   }
@@ -2752,36 +2801,56 @@ class SupabaseService {
 
   async shareCanvas(ownerUserId, canvasId, { email, role = 'editor' }) {
     try {
-      const { data } = await supabase.from('canvases').select('shared_with').eq('id', canvasId).maybeSingle();
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) throw new Error('Workspace not found');
+      const { data } = await supabase.from('canvases').select('shared_with').eq('id', rid).maybeSingle();
       const sharedWith = [...(data?.shared_with || []).filter(s => (s.email || s) !== email), { email, role }];
-      await supabase.from('canvases').update({ shared_with: sharedWith, is_shared: true, updated_at: ts() }).eq('id', canvasId);
+      await supabase.from('canvases').update({ shared_with: sharedWith, is_shared: true, updated_at: ts() }).eq('id', rid);
     } catch (error) { throw error; }
   }
 
   async unshareCanvas(ownerUserId, canvasId, email) {
     try {
-      const { data } = await supabase.from('canvases').select('shared_with').eq('id', canvasId).maybeSingle();
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) throw new Error('Workspace not found');
+      const { data } = await supabase.from('canvases').select('shared_with').eq('id', rid).maybeSingle();
       const sharedWith = (data?.shared_with || []).filter(s => (s.email || s) !== email);
-      await supabase.from('canvases').update({ shared_with: sharedWith, is_shared: sharedWith.length > 0, updated_at: ts() }).eq('id', canvasId);
+      await supabase.from('canvases').update({ shared_with: sharedWith, is_shared: sharedWith.length > 0, updated_at: ts() }).eq('id', rid);
     } catch (error) { throw error; }
   }
 
   async getCanvasById(canvasId) {
     try {
-      const { data } = await supabase.from('canvases').select('*').eq('id', canvasId).maybeSingle();
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return null;
+      const { data } = await supabase.from('canvases').select('*').eq('id', rid).maybeSingle();
       return data ? { id: data.id, title: data.title, content: data.content, userId: data.user_id_legacy, isShared: data.is_shared, sharedWith: data.shared_with, history: data.history || [], createdAt: normalizeTs(data.created_at) } : null;
     } catch { return null; }
   }
 
+  /** Own-property arrow so bundled `supabaseService.deleteCanvas` is always callable (not dropped from prototype). */
+  deleteCanvas = async (ownerUserId, canvasId) => {
+    try {
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return;
+      const { error } = await supabase.from('canvases').delete().eq('id', rid);
+      if (error) throw error;
+    } catch (error) { throw error; }
+  };
+
   async addCanvasFormResponse(canvasId, blockId, respondentEmail, respondentName, answers) {
     try {
-      await supabase.from('canvas_form_responses').insert([{ canvas_id: canvasId, block_id: blockId, respondent_email: respondentEmail, respondent_name: respondentName, answers, created_at: ts() }]);
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return;
+      await supabase.from('canvas_form_responses').insert([{ canvas_id: rid, block_id: blockId, respondent_email: respondentEmail, respondent_name: respondentName, answers, created_at: ts() }]);
     } catch { /* non-fatal */ }
   }
 
   async getCanvasHistory(canvasId, limit = 50) {
     try {
-      const { data } = await supabase.from('canvases').select('history').eq('id', canvasId).maybeSingle();
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return [];
+      const { data } = await supabase.from('canvases').select('history').eq('id', rid).maybeSingle();
       const history = data?.history || [];
       return history.slice(-limit);
     } catch { return []; }
@@ -2789,25 +2858,31 @@ class SupabaseService {
 
   async saveCanvasHistorySnapshot(canvasId, snapshot) {
     try {
-      const { data } = await supabase.from('canvases').select('history').eq('id', canvasId).maybeSingle();
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return;
+      const { data } = await supabase.from('canvases').select('history').eq('id', rid).maybeSingle();
       const history = [...(data?.history || []).slice(-49), { ...snapshot, savedAt: ts() }];
-      await supabase.from('canvases').update({ history, updated_at: ts() }).eq('id', canvasId);
+      await supabase.from('canvases').update({ history, updated_at: ts() }).eq('id', rid);
     } catch { /* non-fatal */ }
   }
 
   async restoreCanvasVersion(ownerUserId, canvasId, versionId) {
     try {
-      const history = await this.getCanvasHistory(canvasId);
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return;
+      const history = await this.getCanvasHistory(rid);
       const version = history.find(h => h.id === versionId || h.savedAt === versionId);
       if (version?.content) {
-        await supabase.from('canvases').update({ content: version.content, updated_at: ts() }).eq('id', canvasId);
+        await supabase.from('canvases').update({ content: version.content, updated_at: ts() }).eq('id', rid);
       }
     } catch (error) { throw error; }
   }
 
   async getBlockComments(canvasId, blockId) {
     try {
-      const { data } = await supabase.from('canvases').select('content').eq('id', canvasId).maybeSingle();
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return [];
+      const { data } = await supabase.from('canvases').select('content').eq('id', rid).maybeSingle();
       const block = (data?.content || []).find(b => b.id === blockId);
       return block?.comments || [];
     } catch { return []; }
@@ -2815,19 +2890,23 @@ class SupabaseService {
 
   async addBlockComment(canvasId, blockId, { user, userName, text }) {
     try {
-      const { data } = await supabase.from('canvases').select('content').eq('id', canvasId).maybeSingle();
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return;
+      const { data } = await supabase.from('canvases').select('content').eq('id', rid).maybeSingle();
       const content = (data?.content || []).map(b => {
         if (b.id !== blockId) return b;
         const comments = [...(b.comments || []), { id: `c-${Date.now()}`, user, userName, text, createdAt: ts() }];
         return { ...b, comments };
       });
-      await supabase.from('canvases').update({ content, updated_at: ts() }).eq('id', canvasId);
+      await supabase.from('canvases').update({ content, updated_at: ts() }).eq('id', rid);
     } catch (error) { throw error; }
   }
 
   async toggleBlockReaction(canvasId, blockId, emoji, userId) {
     try {
-      const { data } = await supabase.from('canvases').select('content').eq('id', canvasId).maybeSingle();
+      const rid = await this.resolveCanvasId(canvasId);
+      if (!rid) return;
+      const { data } = await supabase.from('canvases').select('content').eq('id', rid).maybeSingle();
       const content = (data?.content || []).map(b => {
         if (b.id !== blockId) return b;
         const reactions = b.reactions || {};
@@ -2835,7 +2914,7 @@ class SupabaseService {
         reactions[emoji] = users.includes(userId) ? users.filter(u => u !== userId) : [...users, userId];
         return { ...b, reactions };
       });
-      await supabase.from('canvases').update({ content, updated_at: ts() }).eq('id', canvasId);
+      await supabase.from('canvases').update({ content, updated_at: ts() }).eq('id', rid);
     } catch (error) { throw error; }
   }
 }
