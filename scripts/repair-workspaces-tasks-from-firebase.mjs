@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * 1) Sync canvas content/history from Firestore (source of truth)
- * 2) Deduplicate Supabase canvases per Firestore doc (legacy id + title/owner match)
- * 3) Upsert tasks: update existing by legacy_firebase_id, insert missing
+ * 1) Sync canvas content + history from Firestore (including canvases/{id}/history subcollection)
+ * 2) Resolve owner: profiles.uid + approved_users + Firebase Auth email → profiles.id
+ * 3) Deduplicate Supabase canvases per Firestore doc (legacy id + title/owner match)
+ * 4) Upsert tasks: update existing by legacy_firebase_id, insert missing
  *
  * Requires: Firebase Admin creds + SUPABASE_SERVICE_ROLE_KEY (same as restore-firebase-workspaces-tasks.mjs)
  *
@@ -118,9 +119,69 @@ async function buildFirebaseUidToOwnerId() {
   return map;
 }
 
-function firestoreCanvasRow(fsId, d, ownerId, uid) {
+/** When profiles.uid / approved_users miss a Firebase Auth UID, resolve via Auth email → profiles.email. */
+async function resolveOwnerIdFromAuth(uid) {
+  if (!uid) return null;
+  try {
+    const rec = await admin.auth().getUser(uid);
+    const email = (rec.email || '').toLowerCase().trim();
+    if (!email) return null;
+    const { data, error } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
+    if (error) return null;
+    return data?.id || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** Ensure every canvas owner UID in Firestore maps to a Supabase profile (mutates map). */
+async function enrichUidMapForCanvasOwners(fsDocs, uidToOwnerId) {
+  const uids = [...new Set(fsDocs.map(({ d }) => d.userId).filter(Boolean))];
+  let added = 0;
+  for (const uid of uids) {
+    if (uidToOwnerId[uid]) continue;
+    const pid = await resolveOwnerIdFromAuth(uid);
+    if (pid) {
+      uidToOwnerId[uid] = pid;
+      added += 1;
+    }
+  }
+  if (added) console.log(`   Auth email fallback: resolved ${added} extra owner UID(s) → profiles.id`);
+}
+
+/** Firestore stores version history in canvases/{id}/history/* — parent doc may omit `history`. */
+async function loadCanvasHistoryMerged(fsId, d) {
+  const fromDoc = Array.isArray(d.history) ? sanitizeForJson(d.history) : [];
+  try {
+    const histSnap = await firestore.collection('canvases').doc(fsId).collection('history').get();
+    if (histSnap.empty) return fromDoc;
+    const sub = histSnap.docs.map((doc) => {
+      const data = doc.data();
+      let updatedMs = Date.now();
+      if (typeof data.updated?.toMillis === 'function') updatedMs = data.updated.toMillis();
+      else if (data.updated?._seconds != null) updatedMs = data.updated._seconds * 1000;
+      else if (data.updated?.seconds != null) updatedMs = data.updated.seconds * 1000;
+      else if (typeof data.updated === 'number') updatedMs = data.updated;
+      return {
+        id: doc.id,
+        blocks: sanitizeForJson(data.blocks || []),
+        title: data.title,
+        updated: updatedMs,
+        createdBy: data.createdBy ?? null,
+      };
+    });
+    sub.sort((a, b) => b.updated - a.updated);
+    return sub.slice(0, 50);
+  } catch (e) {
+    console.warn(`   history subcollection ${fsId}:`, e.message);
+    return fromDoc;
+  }
+}
+
+async function firestoreCanvasRow(fsId, d, ownerId, uid) {
   const emails = sharedEmailsFromCanvas(d);
   const blocksRaw = Array.isArray(d.blocks) ? d.blocks : (Array.isArray(d.content) ? d.content : []);
+  const history = await loadCanvasHistoryMerged(fsId, d);
   return {
     title: d.title || 'Untitled',
     content: sanitizeForJson(blocksRaw),
@@ -130,7 +191,7 @@ function firestoreCanvasRow(fsId, d, ownerId, uid) {
     user_id_legacy: uid,
     shared_with: Array.isArray(d.sharedWith) ? d.sharedWith : [],
     shared_with_emails: emails,
-    history: Array.isArray(d.history) ? sanitizeForJson(d.history) : [],
+    history,
     legacy_firebase_id: fsId,
     created_at: fireTs(d.created) || fireTs(d.createdAt) || undefined,
     updated_at: fireTs(d.updated) || fireTs(d.updatedAt) || new Date().toISOString(),
@@ -329,7 +390,7 @@ async function repairCanvases(uidToOwnerId, fsDocs) {
       continue;
     }
 
-    const patch = firestoreCanvasRow(fsId, d, ownerId, uid);
+    const patch = await firestoreCanvasRow(fsId, d, ownerId, uid);
     const g = groups.get(fsId);
     const groupRows = g?.rows || [];
 
@@ -460,6 +521,8 @@ async function main() {
   const canvasSnap = await firestore.collection('canvases').get();
   const fsDocs = canvasSnap.docs.map((doc) => ({ id: doc.id, d: doc.data() }));
   console.log(`Firestore canvases: ${fsDocs.length}`);
+
+  await enrichUidMapForCanvasOwners(fsDocs, uidToOwnerId);
 
   const canvasStats = await repairCanvases(uidToOwnerId, fsDocs);
   console.log('\nCanvases:', canvasStats);

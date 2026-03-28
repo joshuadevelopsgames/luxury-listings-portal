@@ -124,13 +124,69 @@ async function buildFirebaseUidToOwnerId() {
       const d = doc.data();
       const email = (doc.id || d.email || '').toLowerCase().trim();
       if (!d.uid || !email) return;
-      const hit = (profiles || []).find((x) => x.email === email);
+      const hit = (profiles || []).find((x) => (x.email || '').toLowerCase() === email);
       if (hit) map[d.uid] = hit.id;
     });
   } catch (e) {
     console.warn('⚠️ approved_users scan:', e.message);
   }
   return map;
+}
+
+async function resolveOwnerIdFromAuth(uid) {
+  if (!uid) return null;
+  try {
+    const rec = await admin.auth().getUser(uid);
+    const email = (rec.email || '').toLowerCase().trim();
+    if (!email) return null;
+    const { data, error } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
+    if (error) return null;
+    return data?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+async function enrichUidMapForCanvasOwners(fsDocs, uidToOwnerId) {
+  const uids = [...new Set(fsDocs.map(({ d }) => d.userId).filter(Boolean))];
+  let added = 0;
+  for (const uid of uids) {
+    if (uidToOwnerId[uid]) continue;
+    const pid = await resolveOwnerIdFromAuth(uid);
+    if (pid) {
+      uidToOwnerId[uid] = pid;
+      added += 1;
+    }
+  }
+  if (added) console.log(`   Auth email fallback: ${added} UID(s) → profiles.id`);
+}
+
+async function loadCanvasHistoryMerged(fsId, d) {
+  const fromDoc = Array.isArray(d.history) ? sanitizeForJson(d.history) : [];
+  try {
+    const histSnap = await firestore.collection('canvases').doc(fsId).collection('history').get();
+    if (histSnap.empty) return fromDoc;
+    const sub = histSnap.docs.map((doc) => {
+      const data = doc.data();
+      let updatedMs = Date.now();
+      if (typeof data.updated?.toMillis === 'function') updatedMs = data.updated.toMillis();
+      else if (data.updated?._seconds != null) updatedMs = data.updated._seconds * 1000;
+      else if (data.updated?.seconds != null) updatedMs = data.updated.seconds * 1000;
+      else if (typeof data.updated === 'number') updatedMs = data.updated;
+      return {
+        id: doc.id,
+        blocks: sanitizeForJson(data.blocks || []),
+        title: data.title,
+        updated: updatedMs,
+        createdBy: data.createdBy ?? null,
+      };
+    });
+    sub.sort((a, b) => b.updated - a.updated);
+    return sub.slice(0, 50);
+  } catch (e) {
+    console.warn(`   history ${fsId}:`, e.message);
+    return fromDoc;
+  }
 }
 
 async function existingLegacyIds(table) {
@@ -151,17 +207,18 @@ async function restoreCanvases(uidToOwnerId, already) {
   const snap = await firestore.collection('canvases').get();
   console.log(`\n📁 Firestore canvases: ${snap.size} documents`);
 
+  const fsDocs = snap.docs.map((doc) => ({ id: doc.id, d: doc.data() }));
+  await enrichUidMapForCanvasOwners(fsDocs, uidToOwnerId);
+
   const rows = [];
   const skipped = [];
 
-  for (const doc of snap.docs) {
-    const id = doc.id;
+  for (const { id, d } of fsDocs) {
     if (already.has(id)) {
       skipped.push({ id, reason: 'already in Supabase (legacy_firebase_id)' });
       continue;
     }
 
-    const d = doc.data();
     const uid = d.userId;
     const ownerId = uid ? uidToOwnerId[uid] : null;
     if (!ownerId) {
@@ -171,6 +228,7 @@ async function restoreCanvases(uidToOwnerId, already) {
 
     const emails = sharedEmailsFromCanvas(d);
     const blocksRaw = Array.isArray(d.blocks) ? d.blocks : (Array.isArray(d.content) ? d.content : []);
+    const history = await loadCanvasHistoryMerged(id, d);
     rows.push({
       title: d.title || 'Untitled',
       content: sanitizeForJson(blocksRaw),
@@ -180,7 +238,7 @@ async function restoreCanvases(uidToOwnerId, already) {
       user_id_legacy: uid,
       shared_with: Array.isArray(d.sharedWith) ? d.sharedWith : [],
       shared_with_emails: emails,
-      history: Array.isArray(d.history) ? d.history : [],
+      history,
       legacy_firebase_id: id,
       created_at: fireTs(d.created) || fireTs(d.createdAt) || new Date().toISOString(),
       updated_at: fireTs(d.updated) || fireTs(d.updatedAt) || new Date().toISOString(),

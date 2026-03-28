@@ -31,7 +31,9 @@
     "build": "node scripts/write-version.js && DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy:edge-functions": "cd supabase && supabase functions deploy"
+    "deploy:edge-functions": "cd supabase && supabase functions deploy",
+    "repair:workspaces": "node scripts/repair-workspaces-tasks-from-firebase.mjs",
+    "restore:firebase-workspaces": "node scripts/restore-firebase-workspaces-tasks.mjs"
   },
   "eslintConfig": {
     "extends": [
@@ -52,6 +54,7 @@
     ]
   },
   "devDependencies": {
+    "firebase-admin": "^13.0.0",
     "vercel": "^46.0.2"
   }
 }
