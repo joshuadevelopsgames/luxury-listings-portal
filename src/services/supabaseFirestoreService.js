@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { normalizeTaskPriorityToInt, taskPriorityToLabel } from '../utils/taskPriority';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -510,7 +511,7 @@ class SupabaseService {
         title: taskData.title || 'Untitled Task',
         description: taskData.description || null,
         status: taskData.status || 'todo',
-        priority: taskData.priority ?? 2,
+        priority: normalizeTaskPriorityToInt(taskData.priority, 2),
         source: taskData.source || 'task',
         assigned_to: taskData.assigned_to || null,
         assigned_by: taskData.assigned_by || null,
@@ -541,7 +542,7 @@ class SupabaseService {
       title: row.title,
       description: row.description,
       status: row.status,
-      priority: row.priority,
+      priority: taskPriorityToLabel(row.priority),
       source: row.source,
       assigned_to: row.assigned_to,
       assigned_by: row.assigned_by,
@@ -657,7 +658,7 @@ class SupabaseService {
       if (clean2.title !== undefined) payload.title = clean2.title;
       if (clean2.description !== undefined) payload.description = clean2.description;
       if (clean2.status !== undefined) payload.status = clean2.status;
-      if (clean2.priority !== undefined) payload.priority = clean2.priority;
+      if (clean2.priority !== undefined) payload.priority = normalizeTaskPriorityToInt(clean2.priority, 2);
       if (clean2.assigned_to !== undefined) payload.assigned_to = clean2.assigned_to;
       if (clean2.assigned_by !== undefined) payload.assigned_by = clean2.assigned_by;
       if (clean2.task_type !== undefined) payload.task_type = clean2.task_type;
@@ -704,7 +705,7 @@ class SupabaseService {
     try {
       const { data, error } = await supabase.from('task_requests').select('*').eq('from_user_email', userEmail).order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map(r => ({ id: r.id, fromUserEmail: r.from_user_email, toUserEmail: r.to_user_email, title: r.title, description: r.description, priority: r.priority, dueDate: r.due_date, dueTime: r.due_time, status: r.status, rejectionReason: r.rejection_reason, taskId: r.task_id, createdAt: normalizeTs(r.created_at) }));
+      return (data || []).map(r => ({ id: r.id, fromUserEmail: r.from_user_email, toUserEmail: r.to_user_email, title: r.title, description: r.description, priority: taskPriorityToLabel(r.priority), dueDate: r.due_date, dueTime: r.due_time, status: r.status, rejectionReason: r.rejection_reason, taskId: r.task_id, createdAt: normalizeTs(r.created_at) }));
     } catch { return []; }
   }
 
@@ -1973,7 +1974,7 @@ class SupabaseService {
 
   async createTaskRequest(requestData) {
     try {
-      const { data, error } = await supabase.from('task_requests').insert([clean({ from_user_email: requestData.fromUserEmail, to_user_email: requestData.toUserEmail, title: requestData.title, description: requestData.description, priority: requestData.priority || 'medium', due_date: requestData.dueDate || null, due_time: requestData.dueTime || null, status: 'pending', created_at: ts(), updated_at: ts() })]).select().single();
+      const { data, error } = await supabase.from('task_requests').insert([clean({ from_user_email: requestData.fromUserEmail, to_user_email: requestData.toUserEmail, title: requestData.title, description: requestData.description, priority: normalizeTaskPriorityToInt(requestData.priority, 2), due_date: requestData.dueDate || null, due_time: requestData.dueTime || null, status: 'pending', created_at: ts(), updated_at: ts() })]).select().single();
       if (error) throw error;
       return data.id;
     } catch (error) { throw error; }
@@ -1982,7 +1983,7 @@ class SupabaseService {
   async getTaskRequests(userEmail) {
     try {
       const { data } = await supabase.from('task_requests').select('*').eq('to_user_email', userEmail).order('created_at', { ascending: false });
-      return (data || []).map(r => ({ id: r.id, fromUserEmail: r.from_user_email, toUserEmail: r.to_user_email, title: r.title, description: r.description, priority: r.priority, dueDate: r.due_date, dueTime: r.due_time, status: r.status, rejectionReason: r.rejection_reason, taskId: r.task_id, createdAt: normalizeTs(r.created_at) }));
+      return (data || []).map(r => ({ id: r.id, fromUserEmail: r.from_user_email, toUserEmail: r.to_user_email, title: r.title, description: r.description, priority: taskPriorityToLabel(r.priority), dueDate: r.due_date, dueTime: r.due_time, status: r.status, rejectionReason: r.rejection_reason, taskId: r.task_id, createdAt: normalizeTs(r.created_at) }));
     } catch { return []; }
   }
 
@@ -2016,20 +2017,20 @@ class SupabaseService {
   async getTaskTemplates(userEmail) {
     try {
       const { data } = await supabase.from('task_templates').select('*').or(`user_email.eq.${userEmail},is_default.eq.true`).order('created_at');
-      return (data || []).map(r => ({ id: r.id, title: r.title, description: r.description, priority: r.priority, source: r.source, userEmail: r.user_email, isDefault: r.is_default, sharedWith: r.shared_with || [], createdAt: normalizeTs(r.created_at), ...(r.meta || {}) }));
+      return (data || []).map(r => ({ id: r.id, title: r.title, description: r.description, priority: taskPriorityToLabel(r.priority), source: r.source, userEmail: r.user_email, isDefault: r.is_default, sharedWith: r.shared_with || [], createdAt: normalizeTs(r.created_at), ...(r.meta || {}) }));
     } catch { return []; }
   }
 
   async getTaskTemplate(templateId) {
     try {
       const { data } = await supabase.from('task_templates').select('*').eq('id', templateId).maybeSingle();
-      return data ? { id: data.id, title: data.title, description: data.description, priority: data.priority, source: data.source, userEmail: data.user_email, isDefault: data.is_default, sharedWith: data.shared_with || [], createdAt: normalizeTs(data.created_at), ...(data.meta || {}) } : null;
+      return data ? { id: data.id, title: data.title, description: data.description, priority: taskPriorityToLabel(data.priority), source: data.source, userEmail: data.user_email, isDefault: data.is_default, sharedWith: data.shared_with || [], createdAt: normalizeTs(data.created_at), ...(data.meta || {}) } : null;
     } catch { return null; }
   }
 
   async createTaskTemplate(templateData) {
     try {
-      const { data, error } = await supabase.from('task_templates').insert([clean({ title: templateData.title, description: templateData.description, priority: templateData.priority || 2, source: templateData.source || 'task', user_email: templateData.userEmail, is_default: templateData.isDefault || false, shared_with: templateData.sharedWith || [], meta: templateData, created_at: ts() })]).select().single();
+      const { data, error } = await supabase.from('task_templates').insert([clean({ title: templateData.title, description: templateData.description, priority: normalizeTaskPriorityToInt(templateData.priority, 2), source: templateData.source || 'task', user_email: templateData.userEmail, is_default: templateData.isDefault || false, shared_with: templateData.sharedWith || [], meta: templateData, created_at: ts() })]).select().single();
       if (error) throw error;
       return data.id;
     } catch (error) { throw error; }
@@ -2037,7 +2038,9 @@ class SupabaseService {
 
   async updateTaskTemplate(templateId, updates) {
     try {
-      const { error } = await supabase.from('task_templates').update(clean({ title: updates.title, description: updates.description, priority: updates.priority, source: updates.source, updated_at: ts() })).eq('id', templateId);
+      const payload = clean({ title: updates.title, description: updates.description, source: updates.source, updated_at: ts() });
+      if (updates.priority !== undefined) payload.priority = normalizeTaskPriorityToInt(updates.priority, 2);
+      const { error } = await supabase.from('task_templates').update(payload).eq('id', templateId);
       if (error) throw error;
     } catch (error) { throw error; }
   }

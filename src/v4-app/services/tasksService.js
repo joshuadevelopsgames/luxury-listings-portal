@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { normalizeTaskPriorityToInt } from '../../utils/taskPriority';
 
 /**
  * Unified task service — aggregates tasks from all sources:
@@ -42,9 +43,11 @@ export const tasksService = {
   },
 
   async create(task) {
+    const row = { ...task };
+    if (row.priority !== undefined) row.priority = normalizeTaskPriorityToInt(row.priority, 2);
     const { data, error } = await supabase
       .from('tasks')
-      .insert({ ...task, created_at: new Date().toISOString() })
+      .insert({ ...row, created_at: new Date().toISOString() })
       .select()
       .single();
     if (error) throw error;
@@ -63,9 +66,11 @@ export const tasksService = {
   },
 
   async update(id, updates) {
+    const patch = { ...updates };
+    if (patch.priority !== undefined) patch.priority = normalizeTaskPriorityToInt(patch.priority, 2);
     const { data, error } = await supabase
       .from('tasks')
-      .update(updates)
+      .update(patch)
       .eq('id', id)
       .select()
       .single();

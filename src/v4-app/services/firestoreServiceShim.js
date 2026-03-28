@@ -9,6 +9,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { normalizeTaskPriorityToInt, taskPriorityToLabel } from '../../utils/taskPriority';
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -253,7 +254,7 @@ export const firestoreService = {
         title: taskData.title,
         description: taskData.description,
         status: taskData.status || 'todo',
-        priority: taskData.priority || 2,
+        priority: normalizeTaskPriorityToInt(taskData.priority, 2),
         assigned_to_id: assignedId,
         created_by_id: userId,
         due_date: taskData.due_date || null,
@@ -273,6 +274,7 @@ export const firestoreService = {
     if (error) throw error;
     return (data || []).map((t) => ({
       ...t,
+      priority: taskPriorityToLabel(t.priority),
       assigned_to: t.assigned_to?.email || '',
       assigned_to_name: t.assigned_to?.full_name || '',
       assigned_by: t.created_by?.email || '',
@@ -291,6 +293,7 @@ export const firestoreService = {
     if (error) throw error;
     return (data || []).map((t) => ({
       ...t,
+      priority: taskPriorityToLabel(t.priority),
       assigned_to: t.assigned_to?.email || '',
       assigned_by: t.created_by?.email || '',
       createdAt: t.created_at,
@@ -300,7 +303,8 @@ export const firestoreService = {
   async getTaskById(taskId) {
     const { data, error } = await supabase.from('tasks').select('*').eq('id', taskId).maybeSingle();
     if (error) throw error;
-    return data;
+    if (!data) return null;
+    return { ...data, priority: taskPriorityToLabel(data.priority) };
   },
 
   async updateTask(taskId, updates) {
@@ -310,6 +314,7 @@ export const firestoreService = {
       delete patch.assigned_to;
     }
     if (updates.status === 'completed') patch.completed_at = new Date().toISOString();
+    if (patch.priority !== undefined) patch.priority = normalizeTaskPriorityToInt(patch.priority, 2);
     delete patch.createdAt;
     delete patch.assigned_by;
     await supabase.from('tasks').update(patch).eq('id', taskId);
@@ -1048,7 +1053,7 @@ export const firestoreService = {
     const toId = await profileIdByEmail(requestData.toUserEmail);
     const { data, error } = await supabase
       .from('task_requests')
-      .insert({ from_user_id: fromId, to_user_id: toId, title: requestData.title, description: requestData.description, priority: requestData.priority, status: 'pending' })
+      .insert({ from_user_id: fromId, to_user_id: toId, title: requestData.title, description: requestData.description, priority: normalizeTaskPriorityToInt(requestData.priority, 2), status: 'pending' })
       .select('id')
       .single();
     if (error) throw error;
@@ -1120,7 +1125,7 @@ export const firestoreService = {
     const userId = await uid();
     const { data, error } = await supabase
       .from('task_templates')
-      .insert({ title: templateData.title, description: templateData.description, priority: templateData.priority, source: templateData.source || 'task', created_by_id: userId })
+      .insert({ title: templateData.title, description: templateData.description, priority: normalizeTaskPriorityToInt(templateData.priority, 2), source: templateData.source || 'task', created_by_id: userId })
       .select('id')
       .single();
     if (error) throw error;
@@ -1128,7 +1133,9 @@ export const firestoreService = {
   },
 
   async updateTaskTemplate(templateId, updates) {
-    await supabase.from('task_templates').update(updates).eq('id', templateId);
+    const patch = { ...updates };
+    if (patch.priority !== undefined) patch.priority = normalizeTaskPriorityToInt(patch.priority, 2);
+    await supabase.from('task_templates').update(patch).eq('id', templateId);
   },
 
   async deleteTaskTemplate(templateId) {
