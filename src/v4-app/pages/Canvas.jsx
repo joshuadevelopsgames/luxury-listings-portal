@@ -112,6 +112,7 @@ function uid() {
 
 function dateStr(ts) {
   const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return '—';
   const now = new Date();
   if (d.toDateString() === now.toDateString()) return 'Today';
   const y = new Date(now);
