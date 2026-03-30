@@ -2739,6 +2739,34 @@ class SupabaseService {
   }
 
   // ===== CANVASES =====
+  /** UI expects `blocks` + numeric `created`/`updated`; DB column is `content` + timestamps. */
+  _canvasRowToClient(r) {
+    if (!r) return null;
+    const blocks = Array.isArray(r.content) ? r.content : [];
+    const createdAt = normalizeTs(r.created_at);
+    const updatedAt = normalizeTs(r.updated_at);
+    const toMs = (iso) => {
+      if (!iso) return Date.now();
+      const n = new Date(iso).getTime();
+      return Number.isFinite(n) ? n : Date.now();
+    };
+    return {
+      id: r.id,
+      title: r.title,
+      emoji: r.emoji || '📄',
+      content: blocks,
+      blocks,
+      userId: r.user_id_legacy || r.owner_id,
+      ownerId: r.owner_id,
+      isShared: r.is_shared,
+      sharedWith: r.shared_with || [],
+      history: r.history || [],
+      createdAt,
+      updatedAt,
+      created: toMs(createdAt),
+      updated: toMs(updatedAt),
+    };
+  }
 
   /** Resolve V4/Supabase UUID or Firestore legacy doc id → canvases.id (UUID) */
   async resolveCanvasId(canvasId) {
@@ -2774,15 +2802,16 @@ class SupabaseService {
         return [];
       }
       console.log('[getCanvases] returned', (data || []).length, 'rows for userId:', userId, '| session.user.id:', session.user?.id);
-      return (data || []).map(r => ({ id: r.id, title: r.title, content: r.content || [], userId: r.user_id_legacy || r.owner_id, ownerId: r.owner_id, isShared: r.is_shared, sharedWith: r.shared_with || [], emoji: r.emoji || '📄', createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
+      return (data || []).map((r) => this._canvasRowToClient(r));
     } catch (e) { console.error('[getCanvases] exception:', e); return []; }
   }
 
   async createCanvas(userId, canvas) {
     try {
-      const { data, error } = await supabase.from('canvases').insert([{ title: canvas.title || 'Untitled', content: canvas.content || [], owner_id: userId, user_id_legacy: userId, is_shared: canvas.isShared || false, shared_with: canvas.sharedWith || [], emoji: canvas.emoji || '📄', created_at: ts(), updated_at: ts() }]).select().single();
+      const initialBlocks = canvas.blocks || canvas.content || [];
+      const { data, error } = await supabase.from('canvases').insert([{ title: canvas.title || 'Untitled', content: initialBlocks, owner_id: userId, user_id_legacy: userId, is_shared: canvas.isShared || false, shared_with: canvas.sharedWith || [], emoji: canvas.emoji || '📄', created_at: ts(), updated_at: ts() }]).select().single();
       if (error) throw error;
-      return { id: data.id, title: data.title, content: data.content, userId, ownerId: data.owner_id, isShared: data.is_shared, sharedWith: data.shared_with, emoji: data.emoji, createdAt: normalizeTs(data.created_at) };
+      return this._canvasRowToClient(data);
     } catch (error) { throw error; }
   }
 
@@ -2790,15 +2819,25 @@ class SupabaseService {
     try {
       const rid = await this.resolveCanvasId(canvasId);
       if (!rid) throw new Error('Workspace not found');
-      const { error } = await supabase.from('canvases').update({ ...patch, updated_at: ts() }).eq('id', rid);
+      const payload = { updated_at: ts() };
+      if (patch.title !== undefined) payload.title = patch.title;
+      if (patch.emoji !== undefined) payload.emoji = patch.emoji;
+      if (patch.blocks !== undefined) payload.content = patch.blocks;
+      if (patch.content !== undefined) payload.content = patch.content;
+      if (patch.sharedWith !== undefined) payload.shared_with = patch.sharedWith;
+      if (patch.isShared !== undefined) payload.is_shared = patch.isShared;
+      const { error } = await supabase.from('canvases').update(payload).eq('id', rid);
       if (error) throw error;
     } catch (error) { throw error; }
   }
 
   async getCanvasesSharedWith(userEmail) {
     try {
+      const lower = String(userEmail || '').toLowerCase().trim();
       const { data } = await supabase.from('canvases').select('*').eq('is_shared', true).order('updated_at', { ascending: false });
-      return (data || []).filter(r => (r.shared_with || []).some(s => (s.email || s) === userEmail)).map(r => ({ id: r.id, title: r.title, content: r.content, userId: r.user_id_legacy, isShared: r.is_shared, sharedWith: r.shared_with, createdAt: normalizeTs(r.created_at) }));
+      return (data || [])
+        .filter((r) => (r.shared_with || []).some((s) => String(s.email || s).toLowerCase() === lower))
+        .map((r) => this._canvasRowToClient(r));
     } catch { return []; }
   }
 
@@ -2827,7 +2866,7 @@ class SupabaseService {
       const rid = await this.resolveCanvasId(canvasId);
       if (!rid) return null;
       const { data } = await supabase.from('canvases').select('*').eq('id', rid).maybeSingle();
-      return data ? { id: data.id, title: data.title, content: data.content, userId: data.user_id_legacy, isShared: data.is_shared, sharedWith: data.shared_with, history: data.history || [], createdAt: normalizeTs(data.created_at) } : null;
+      return data ? this._canvasRowToClient(data) : null;
     } catch { return null; }
   }
 
@@ -2872,12 +2911,15 @@ class SupabaseService {
   async restoreCanvasVersion(ownerUserId, canvasId, versionId) {
     try {
       const rid = await this.resolveCanvasId(canvasId);
-      if (!rid) return;
+      if (!rid) return { blocks: [] };
       const history = await this.getCanvasHistory(rid);
-      const version = history.find(h => h.id === versionId || h.savedAt === versionId);
-      if (version?.content) {
-        await supabase.from('canvases').update({ content: version.content, updated_at: ts() }).eq('id', rid);
+      const version = history.find((h) => h.id === versionId || h.savedAt === versionId);
+      const blocks = version?.blocks || version?.content;
+      if (blocks && Array.isArray(blocks)) {
+        await supabase.from('canvases').update({ content: blocks, updated_at: ts() }).eq('id', rid);
+        return { blocks };
       }
+      return { blocks: [] };
     } catch (error) { throw error; }
   }
 
