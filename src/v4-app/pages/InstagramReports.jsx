@@ -239,6 +239,10 @@ const Delta = ({ current, previous, label, prefix = '', suffix = '' }) => {
   );
 };
 
+function isClientStatusArchived(client) {
+  return (client?.status || 'active') === 'archived';
+}
+
 /** Match instagram_reports.client_id / client_id_legacy (UUID + Firebase doc ids from meta). */
 function collectClientReportLinkIds(client) {
   if (!client) return [];
@@ -278,7 +282,7 @@ const InstagramReportsPage = () => {
   const [expandedClient, setExpandedClient] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
   const [preSelectedClientId, setPreSelectedClientId] = useState(null);
-  const [activeTab, setActiveTab] = useState('clients'); // 'clients' | 'internal' | 'archive'
+  const [activeTab, setActiveTab] = useState('clients'); // 'clients' | 'internal' | 'archivedClients' | 'archive'
   const [archivedReports, setArchivedReports] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
   
@@ -362,6 +366,14 @@ const InstagramReportsPage = () => {
   }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, permissionsLoading, assignedReportClientIdsKey]);
 
   const myClientsOnly = useMemo(() => myClients.filter(c => !c.isInternal), [myClients]);
+  const myClientsOnlyActive = useMemo(
+    () => myClientsOnly.filter((c) => !isClientStatusArchived(c)),
+    [myClientsOnly]
+  );
+  const myClientsOnlyArchived = useMemo(
+    () => myClientsOnly.filter((c) => isClientStatusArchived(c)),
+    [myClientsOnly]
+  );
   const myInternalAccounts = useMemo(() => myClients.filter(c => c.isInternal), [myClients]);
 
   // Group reports by client
@@ -415,12 +427,19 @@ const InstagramReportsPage = () => {
     });
   }, [reports, effectiveIsAdmin]);
 
-  // List for current tab: clients (non-internal) or internal accounts only
+  // List for current tab: active clients | internal | archived CRM clients
   const clientsWithReportsForTab = useMemo(() => {
     if (activeTab === 'internal') {
       return clientsWithReports.filter(({ client }) => !!client.isInternal);
     }
-    return clientsWithReports.filter(({ client }) => !client.isInternal);
+    if (activeTab === 'archivedClients') {
+      return clientsWithReports.filter(
+        ({ client }) => !client.isInternal && isClientStatusArchived(client)
+      );
+    }
+    return clientsWithReports.filter(
+      ({ client }) => !client.isInternal && !isClientStatusArchived(client)
+    );
   }, [clientsWithReports, activeTab]);
 
   // Apply search filter on top of the tab filter
@@ -783,7 +802,7 @@ const InstagramReportsPage = () => {
             <Building2 className="w-4 h-4 text-[#0071e3]" />
             <span className="text-[11px] sm:text-[12px] text-[#86868b]">Clients</span>
           </div>
-          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{myClientsOnly.length}</p>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{myClientsOnlyActive.length}</p>
         </div>
         <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2 mb-1">
@@ -863,7 +882,7 @@ const InstagramReportsPage = () => {
                 : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
-            Clients
+            Clients ({myClientsOnlyActive.length})
           </button>
           <button
             type="button"
@@ -874,9 +893,22 @@ const InstagramReportsPage = () => {
                 : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
             }`}
           >
-            Internal
+            Internal ({myInternalAccounts.length})
           </button>
-          {hasCapability(CAPABILITIES.MANAGE_INSTAGRAM_REPORTS) && (
+          {myClientsOnlyArchived.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('archivedClients')}
+              className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${
+                activeTab === 'archivedClients'
+                  ? 'bg-white dark:bg-[#3a3a3c] text-[#1d1d1f] dark:text-white shadow-sm'
+                  : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+              }`}
+            >
+              Archived clients ({myClientsOnlyArchived.length})
+            </button>
+          )}
+          {effectiveIsAdmin && (
             <button
               type="button"
               onClick={() => setActiveTab('archive')}
@@ -886,7 +918,7 @@ const InstagramReportsPage = () => {
                   : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
               }`}
             >
-              Archive
+              Archived reports ({archivedReports.length})
             </button>
           )}
         </div>
@@ -901,7 +933,7 @@ const InstagramReportsPage = () => {
               <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Archived Reports</h3>
             </div>
             <span className="text-[13px] text-[#86868b] sm:ml-auto">
-              Deleted by users; visible to system admins only.
+              Deleted by users; visible here only to system admins.
             </span>
           </div>
           <div className="p-4 sm:p-5">
@@ -937,6 +969,14 @@ const InstagramReportsPage = () => {
             Add internal accounts in Clients to create analytics reports for them here.
           </p>
         </div>
+      ) : (activeTab === 'archivedClients' && myClientsOnlyArchived.length === 0) ? (
+        <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
+          <FolderOpen className="w-16 h-16 mx-auto text-[#86868b] opacity-40 mb-4" />
+          <h3 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white">No archived clients</h3>
+          <p className="text-[14px] text-[#86868b] mt-2 max-w-md mx-auto">
+            Clients marked archived in Client Management appear here with their analytics history.
+          </p>
+        </div>
       ) : myClients.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
           <Users className="w-16 h-16 mx-auto text-[#86868b] opacity-40 mb-4" />
@@ -955,6 +995,11 @@ const InstagramReportsPage = () => {
         </div>
             ) : (
         <div className="space-y-3">
+          {activeTab === 'archivedClients' && (
+            <p className="text-[13px] text-[#86868b] px-1">
+              Analytics for clients marked <span className="font-medium text-[#1d1d1f] dark:text-white">archived</span> in Client Management. They stay out of the main Clients tab.
+            </p>
+          )}
           {filteredClientsForTab.map(({ client, reports: clientReports }) => {
             const isExpanded = expandedClient === client.id;
             const monthlyReports = clientReports.filter(r => !r.reportType || r.reportType === 'monthly');
@@ -1237,7 +1282,17 @@ const InstagramReportsPage = () => {
         <ReportModal
           report={editingReport}
           preSelectedClientId={preSelectedClientId}
-          clientList={(!editingReport && !preSelectedClientId && activeTab === 'internal') ? myInternalAccounts : myClients}
+          clientList={
+            !editingReport && !preSelectedClientId
+              ? (activeTab === 'internal'
+                  ? myInternalAccounts
+                  : activeTab === 'archivedClients'
+                    ? myClientsOnlyArchived
+                    : activeTab === 'clients'
+                      ? myClientsOnlyActive
+                      : myClients)
+              : myClients
+          }
           onClose={() => {
             setShowCreateModal(false);
             setEditingReport(null);
