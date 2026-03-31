@@ -384,6 +384,59 @@ class SupabaseService {
   async addApprovedUser(userData) {
     try {
       const emailKey = (userData.email || '').trim().toLowerCase();
+      if (!emailKey) throw new Error('Email is required');
+
+      /** profiles.id FK → auth.users: browser cannot insert without service role + auth user */
+      if (typeof window !== 'undefined' && window.location?.origin) {
+        let token;
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          token = session?.access_token;
+        } catch {
+          token = null;
+        }
+        if (!token) throw new Error('You must be signed in to add a user');
+
+        const apiBody = clean({
+          email: emailKey,
+          displayName: userData.displayName || userData.name || userData.full_name,
+          full_name: userData.full_name,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          role: userData.role || 'team_member',
+          roles: userData.roles,
+          position: userData.position,
+          department: userData.department,
+          phone: userData.phone,
+          bio: userData.bio,
+          avatar_url: userData.avatar_url,
+          photoURL: userData.photoURL,
+          avatar: userData.avatar,
+          pagePermissions: userData.pagePermissions || [],
+          featurePermissions: userData.featurePermissions || [],
+          customPermissions: userData.customPermissions || [],
+          isTimeOffAdmin: userData.isTimeOffAdmin || false,
+          onboardingCompleted: userData.onboardingCompleted || false,
+          startDate: normalizeProfileStartDate(userData.startDate),
+          skills: userData.skills || [],
+        });
+
+        const res = await fetch(`${window.location.origin}/api/create-approved-user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(apiBody),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(j.error || `Add user failed (${res.status})`);
+        }
+        cacheInvalidate('profiles:');
+        return;
+      }
+
       const { data: existing } = await supabase.from('profiles').select('id').ilike('email', emailKey).maybeSingle();
       const payload = clean({
         email: emailKey,
@@ -404,7 +457,7 @@ class SupabaseService {
         leave_balances: userData.leaveBalances || null,
         is_time_off_admin: userData.isTimeOffAdmin || false,
         onboarding_completed: userData.onboardingCompleted || false,
-        start_date: userData.startDate || null,
+        start_date: normalizeProfileStartDate(userData.startDate) ?? null,
         skills: userData.skills || [],
         updated_at: ts(),
       });
@@ -413,10 +466,7 @@ class SupabaseService {
         const { error } = await supabase.from('profiles').update(payload).eq('id', existing.id);
         if (error) throw error;
       } else {
-        // profiles.id must match auth.users.id — but for approved users without auth, use email-based UUID
-        // We insert without an id and let the trigger create it, or upsert by email
-        const { error } = await supabase.from('profiles').upsert({ ...payload, created_at: ts() }, { onConflict: 'email' });
-        if (error) throw error;
+        throw new Error('addApprovedUser server path: use /api/create-approved-user (needs auth user id)');
       }
       cacheInvalidate('profiles:');
     } catch (error) {

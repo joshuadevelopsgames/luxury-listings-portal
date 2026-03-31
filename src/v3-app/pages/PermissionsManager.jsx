@@ -368,7 +368,7 @@ const PermissionsManager = () => {
       setNewUserForm({ email: '', displayName: '', role: 'content_director' });
     } catch (error) {
       console.error('Error adding user:', error);
-      toast.error('Failed to add user');
+      toast.error(error?.message || 'Failed to add user');
     } finally {
       setAddingUser(false);
     }
