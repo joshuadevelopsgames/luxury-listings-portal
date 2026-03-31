@@ -302,6 +302,29 @@ const Delta = ({ current, previous, label, prefix = '' }) => {
   );
 };
 
+/** Match instagram_reports.client_id / client_id_legacy (UUID + Firebase doc ids from meta). */
+function collectClientReportLinkIds(client) {
+  if (!client) return [];
+  const ids = new Set();
+  const add = (v) => {
+    if (v == null || v === '') return;
+    const s = String(v).trim();
+    if (s) ids.add(s);
+  };
+  add(client.id);
+  add(client.clientId);
+  add(client.firebaseId);
+  add(client.firestoreId);
+  const meta = client.meta;
+  if (meta && typeof meta === 'object') {
+    add(meta.firebaseId);
+    add(meta.firestoreId);
+    add(meta.clientId);
+    add(meta.id);
+  }
+  return [...ids];
+}
+
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
@@ -334,20 +357,6 @@ const InstagramReportsPage = () => {
   // Search/filter
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Load reports - admins see all, others see only their own; when View As, load by effective user.
-  useEffect(() => {
-    const uid = currentUser?.uid;
-    if (!uid || permissionsLoading) {
-      if (!uid) { setReports([]); setLoading(false); }
-      return () => {};
-    }
-    const unsubscribe = supabaseService.onInstagramReportsChange((data) => {
-      setReports(data);
-      setLoading(false);
-    }, { loadAll: effectiveIsAdmin, userId: isViewingAs ? currentUser?.uid : undefined });
-    return () => unsubscribe();
-  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, permissionsLoading]);
-
   // Load archived reports (system admin only)
   useEffect(() => {
     if (!effectiveIsAdmin) {
@@ -366,7 +375,7 @@ const InstagramReportsPage = () => {
   useEffect(() => {
     const loadClients = async () => {
       try {
-        const clientsList = await supabaseService.getClients();
+        const clientsList = await supabaseService.getClients({ includeArchived: true });
         setAllClients(clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '')));
       } catch (error) {
         console.error('Error loading clients:', error);
@@ -391,6 +400,36 @@ const InstagramReportsPage = () => {
     return allClients.filter(isAssignedToMe);
   }, [allClients, currentUser?.email, currentUser?.uid, effectiveIsAdmin]);
 
+  /** Pass to instagram_reports query: assigned clients' UUIDs + legacy ids (migrated Firestore). */
+  const assignedReportClientIds = useMemo(() => {
+    if (effectiveIsAdmin) return [];
+    const s = new Set();
+    for (const c of myClients) {
+      collectClientReportLinkIds(c).forEach((id) => s.add(id));
+    }
+    return [...s];
+  }, [myClients, effectiveIsAdmin]);
+
+  const assignedReportClientIdsKey = assignedReportClientIds.join(',');
+
+  // Load reports - admins: all; others: own + reports for assigned clients.
+  useEffect(() => {
+    const uid = currentUser?.uid;
+    if (!uid || permissionsLoading) {
+      if (!uid) { setReports([]); setLoading(false); }
+      return () => {};
+    }
+    const unsubscribe = supabaseService.onInstagramReportsChange((data) => {
+      setReports(data);
+      setLoading(false);
+    }, {
+      loadAll: effectiveIsAdmin,
+      userId: isViewingAs ? currentUser?.uid : undefined,
+      clientIds: assignedReportClientIds,
+    });
+    return () => unsubscribe();
+  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, permissionsLoading, assignedReportClientIdsKey]);
+
   const myClientsOnly = useMemo(() => myClients.filter(c => !c.isInternal), [myClients]);
   const myInternalAccounts = useMemo(() => myClients.filter(c => c.isInternal), [myClients]);
 
@@ -398,12 +437,13 @@ const InstagramReportsPage = () => {
   const clientsWithReports = useMemo(() => {
     const clientMap = new Map();
     
-    // Initialize with my clients (even if they have no reports)
-    myClients.forEach(client => {
-      clientMap.set(client.id, {
-        client,
-        reports: []
-      });
+    // Initialize with my clients (UUID + legacy id keys so migrated reports match)
+    myClients.forEach((client) => {
+      const bucket = { client, reports: [] };
+      clientMap.set(client.id, bucket);
+      for (const alt of collectClientReportLinkIds(client)) {
+        if (alt && alt !== client.id) clientMap.set(alt, bucket);
+      }
     });
     
     // Add reports to their respective clients
@@ -1476,7 +1516,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
     }
     const loadClients = async () => {
       try {
-        const clientsList = await supabaseService.getClients();
+        const clientsList = await supabaseService.getClients({ includeArchived: true });
         const sortedClients = clientsList.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
         setClients(sortedClients);
         if (preSelectedClientId && !formData.clientName) {

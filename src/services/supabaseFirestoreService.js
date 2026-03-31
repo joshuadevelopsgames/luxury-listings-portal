@@ -2378,6 +2378,8 @@ class SupabaseService {
   }
 
   onInstagramReportsChange(callback, { loadAll = false, userId = null, clientIds = [], archived = false } = {}) {
+    const idKey = [...new Set((clientIds || []).map(String).filter(Boolean))].sort().join('|');
+    const cacheFilter = `${loadAll}-${archived}-${idKey}`;
     const fetcher = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const uid = userId || user?.id;
@@ -2387,19 +2389,25 @@ class SupabaseService {
         q = q.eq('archived', true);
       } else {
         q = q.eq('archived', false);
-        // For non-loadAll, match by any user identifier (covers migrated + new reports)
+        // Non-admins: own reports OR reports for assigned clients (UUID + legacy id on each client).
+        // Migrated rows often have Firebase user_id_legacy only — assigned SMMs still need client-scoped reports.
         if (!loadAll && uid) {
-          q = q.or(`user_id_legacy.eq.${uid},created_by_id.eq.${uid}${email ? `,user_email.eq.${email}` : ''}`);
+          const mine = [
+            `user_id_legacy.eq.${uid}`,
+            `created_by_id.eq.${uid}`,
+            ...(email ? [`user_email.eq.${email}`] : []),
+          ];
+          const byClient = [...new Set((clientIds || []).map(String).filter(Boolean))].flatMap((id) => [
+            `client_id.eq.${id}`,
+            `client_id_legacy.eq.${id}`,
+          ]);
+          q = q.or([...mine, ...byClient].join(','));
         }
       }
       const { data } = await q;
-      let results = (data || []).map(r => this._mapReport(r));
-      if (!loadAll && clientIds?.length > 0) {
-        results = results.filter(r => r.userId === uid || clientIds.includes(r.clientId));
-      }
-      return results;
+      return (data || []).map(r => this._mapReport(r));
     };
-    return realtimeListener('instagram_reports', `${loadAll}-${archived}`, fetcher, callback);
+    return realtimeListener('instagram_reports', cacheFilter, fetcher, callback);
   }
 
   // ===== DASHBOARD PREFERENCES =====
