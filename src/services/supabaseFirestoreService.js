@@ -2270,9 +2270,20 @@ class SupabaseService {
 
   async getInstagramReportByPublicLink(publicLinkId) {
     try {
-      const { data } = await supabase.from('instagram_reports').select('*').eq('public_link_id', publicLinkId).maybeSingle();
-      return data ? this._mapReport(data) : null;
-    } catch { return null; }
+      const id = publicLinkId != null ? String(publicLinkId).trim() : '';
+      if (!id) return null;
+      const { data, error } = await supabase.rpc('get_instagram_report_by_public_link', {
+        p_public_link_id: id,
+      });
+      if (error) {
+        console.warn('[getInstagramReportByPublicLink] rpc:', error.message);
+        return null;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ? this._mapReport(row) : null;
+    } catch {
+      return null;
+    }
   }
 
   async updateInstagramReport(reportId, updates) {

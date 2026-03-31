@@ -769,7 +769,8 @@ export function AuthProvider({ children }) {
       } else {
         // Not approved — sign out
         await logout();
-        if (!window.location.pathname.includes('/login')) {
+        const p = window.location.pathname;
+        if (!p.includes('/login') && !p.startsWith('/report/')) {
           appNavigate('/login?error=access_required', { replace: true });
         }
       }
@@ -789,7 +790,8 @@ export function AuthProvider({ children }) {
         error.status === 403;
       if (isAuthFailure) {
         await logout();
-        if (!window.location.pathname.includes('/login')) {
+        const p = window.location.pathname;
+        if (!p.includes('/login') && !p.startsWith('/report/')) {
           appNavigate('/login?error=access_required', { replace: true });
         }
       } else {

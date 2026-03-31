@@ -16,14 +16,14 @@ export const instagramService = {
   },
 
   async getReportByPublicLink(publicLinkId) {
-    const { data, error } = await supabase
-      .from('instagram_reports')
-      .select('*, client:clients(id, name, instagram_handle, logo_url)')
-      .eq('public_link_id', publicLinkId)
-      .eq('is_public', true)
-      .single();
+    const id = publicLinkId != null ? String(publicLinkId).trim() : '';
+    if (!id) return null;
+    const { data, error } = await supabase.rpc('get_instagram_report_by_public_link', {
+      p_public_link_id: id,
+    });
     if (error) throw error;
-    return data;
+    const row = Array.isArray(data) ? data[0] : data;
+    return row ?? null;
   },
 
   async createReport(report) {

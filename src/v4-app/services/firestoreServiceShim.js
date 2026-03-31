@@ -1370,8 +1370,14 @@ export const firestoreService = {
   },
 
   async getInstagramReportByPublicLink(publicLinkId) {
-    const { data } = await supabase.from('instagram_reports').select('*, client:clients(name, client_name)').eq('public_link_id', publicLinkId).maybeSingle();
-    return data ? igReportToV3(data) : null;
+    const id = publicLinkId != null ? String(publicLinkId).trim() : '';
+    if (!id) return null;
+    const { data, error } = await supabase.rpc('get_instagram_report_by_public_link', {
+      p_public_link_id: id,
+    });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    return row ? igReportToV3(row) : null;
   },
 
   async updateInstagramReport(reportId, updates) {
@@ -2061,7 +2067,7 @@ function igReportToV3(r) {
   return {
     id: r.id,
     clientId: r.client_id,
-    clientName: r.client?.name || r.client?.client_name || '',
+    clientName: r.client?.name || r.client?.client_name || r.client_name || '',
     userId: r.created_by_id,
     publicLinkId: r.public_link_id,
     title: r.title || '',
