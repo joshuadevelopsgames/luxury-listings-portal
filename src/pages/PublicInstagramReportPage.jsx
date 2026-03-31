@@ -237,9 +237,16 @@ const PublicInstagramReportPage = () => {
           </div>
         </div>
 
-        {/* Wave Decoration */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        {/* Wave — block SVG avoids inline baseline gap + sub-pixel hairline under hero */}
+        <div className="absolute bottom-0 left-0 right-0 leading-[0] translate-y-px pointer-events-none">
+          <svg
+            className="block w-full h-auto align-middle"
+            viewBox="0 0 1440 80"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
             <path d="M0 80L60 70C120 60 240 40 360 30C480 20 600 20 720 25C840 30 960 40 1080 45C1200 50 1320 50 1380 50L1440 50V80H0Z" fill="#f8f7ff" />
           </svg>
         </div>
