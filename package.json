@@ -33,7 +33,8 @@
     "eject": "react-scripts eject",
     "deploy:edge-functions": "cd supabase && supabase functions deploy",
     "repair:workspaces": "node scripts/repair-workspaces-tasks-from-firebase.mjs",
-    "restore:firebase-workspaces": "node scripts/restore-firebase-workspaces-tasks.mjs"
+    "restore:firebase-workspaces": "node scripts/restore-firebase-workspaces-tasks.mjs",
+    "migrate:block-comments": "node scripts/migrate-block-comments-from-firebase.mjs"
   },
   "eslintConfig": {
     "extends": [

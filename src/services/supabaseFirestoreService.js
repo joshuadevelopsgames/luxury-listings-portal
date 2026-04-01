@@ -53,6 +53,12 @@ const normalizeProfileStartDate = (v) => {
   return s ? s : null;
 };
 
+/** True if `canvasId` is a Supabase/Postgres UUID string (not a client `uid()` like `c1k2…`). */
+function isCanvasUuidString(canvasId) {
+  if (canvasId == null || canvasId === '') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(canvasId).trim());
+}
+
 /** Ensure leave_balances JSON matches DB shape (avoids partial objects) */
 function normalizeLeaveBalancesForDb(balances) {
   if (!balances || typeof balances !== 'object') return null;
@@ -529,8 +535,18 @@ class SupabaseService {
         ...(safe.slackWorkspaceId !== undefined ? { slack_workspace_id: safe.slackWorkspaceId } : {}),
         updated_at: ts(),
       });
-      const { error } = await supabase.from('profiles').update(payload).eq('email', emailKey);
+      const { data: updated, error } = await supabase
+        .from('profiles')
+        .update(payload)
+        .ilike('email', emailKey)
+        .select('id')
+        .maybeSingle();
       if (error) throw error;
+      if (!updated?.id) {
+        throw new Error(
+          `No profile row updated for "${emailKey}" — verify the email exists, or you may lack permission to edit this user.`,
+        );
+      }
       cacheInvalidate('profiles:');
     } catch (error) {
       const e = error;
@@ -1446,17 +1462,47 @@ class SupabaseService {
   static CRM_DATA_DOC_ID = 'crm_main';
   static CRM_CUSTOM_LOCATIONS_DOC_ID = 'custom_locations';
 
+  /** Legacy DB `warm_leads` merged into cold on read; new saves keep `warm_leads` empty. */
+  _mergeLegacyWarmIntoCold(warmList, coldList) {
+    const out = [...(coldList || [])];
+    const seen = new Set(out.map((c) => String(c?.id)));
+    for (const w of warmList || []) {
+      const id = String(w?.id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push({
+        ...w,
+        status: w?.status === 'warm' || w?.status === 'Warm' ? 'cold' : w?.status,
+        category: w?.category === 'warmLeads' ? 'coldLeads' : w?.category,
+      });
+    }
+    return out;
+  }
+
   async getCrmData() {
     try {
       const { data } = await supabase.from('crm_data').select('*').limit(1).maybeSingle();
-      return { warmLeads: data?.warm_leads || [], contactedClients: data?.contacted_clients || [], coldLeads: data?.cold_leads || [] };
-    } catch { return { warmLeads: [], contactedClients: [], coldLeads: [] }; }
+      const cold = this._mergeLegacyWarmIntoCold(data?.warm_leads || [], data?.cold_leads || []);
+      return {
+        warmLeads: [],
+        contactedClients: data?.contacted_clients || [],
+        coldLeads: cold,
+        notInterestedLeads: data?.not_interested_leads || [],
+      };
+    } catch { return { warmLeads: [], contactedClients: [], coldLeads: [], notInterestedLeads: [] }; }
   }
 
   async setCrmData(payload) {
     try {
       const { data: existing } = await supabase.from('crm_data').select('id').limit(1).maybeSingle();
-      const row = { warm_leads: payload.warmLeads || [], contacted_clients: payload.contactedClients || [], cold_leads: payload.coldLeads || [], last_sync_time: new Date().toISOString(), updated_at: ts() };
+      const row = {
+        warm_leads: [],
+        contacted_clients: payload.contactedClients || [],
+        cold_leads: payload.coldLeads || [],
+        not_interested_leads: payload.notInterestedLeads || [],
+        last_sync_time: new Date().toISOString(),
+        updated_at: ts()
+      };
       if (existing) {
         await supabase.from('crm_data').update(row).eq('id', existing.id);
       } else {
@@ -2035,7 +2081,45 @@ class SupabaseService {
 
   async createTaskRequest(requestData) {
     try {
-      const { data, error } = await supabase.from('task_requests').insert([clean({ from_user_email: requestData.fromUserEmail, to_user_email: requestData.toUserEmail, title: requestData.title, description: requestData.description, priority: normalizeTaskPriorityToInt(requestData.priority, 2), due_date: requestData.dueDate || null, due_time: requestData.dueTime || null, status: 'pending', created_at: ts(), updated_at: ts() })]).select().single();
+      // UI (TasksPage) sends taskTitle / taskDescription / taskPriority / taskDueDate — keep legacy keys too.
+      const title = String(requestData.taskTitle ?? requestData.title ?? '').trim();
+      if (!title) throw new Error('Task title is required');
+
+      const fromEmail = String(requestData.fromUserEmail || '').trim().toLowerCase();
+      const toEmail = String(requestData.toUserEmail || '').trim().toLowerCase();
+      if (!fromEmail || !toEmail) throw new Error('Sender and recipient are required');
+
+      const description = requestData.taskDescription ?? requestData.description ?? '';
+      const priorityRaw = requestData.taskPriority ?? requestData.priority;
+      const dueDate = requestData.taskDueDate ?? requestData.dueDate ?? null;
+      const dueTime = requestData.taskDueTime ?? requestData.dueTime ?? null;
+
+      const [{ data: fromP, error: fromErr }, { data: toP, error: toErr }] = await Promise.all([
+        supabase.from('profiles').select('id').ilike('email', fromEmail).maybeSingle(),
+        supabase.from('profiles').select('id').ilike('email', toEmail).maybeSingle(),
+      ]);
+      if (fromErr) throw fromErr;
+      if (toErr) throw toErr;
+      if (!fromP?.id || !toP?.id) {
+        throw new Error('Could not resolve sender or recipient profile in directory');
+      }
+
+      const row = clean({
+        from_user_email: fromEmail,
+        to_user_email: toEmail,
+        from_user_id: fromP.id,
+        to_user_id: toP.id,
+        title,
+        description: description || null,
+        priority: normalizeTaskPriorityToInt(priorityRaw, 2),
+        due_date: dueDate || null,
+        due_time: dueTime || null,
+        status: 'pending',
+        created_at: ts(),
+        updated_at: ts(),
+      });
+
+      const { data, error } = await supabase.from('task_requests').insert([row]).select().single();
       if (error) throw error;
       return data.id;
     } catch (error) { throw error; }
@@ -2854,7 +2938,7 @@ class SupabaseService {
   async resolveCanvasId(canvasId) {
     if (canvasId == null || canvasId === '') return null;
     const s = String(canvasId).trim();
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) return s;
+    if (isCanvasUuidString(s)) return s;
     const { data, error } = await supabase.from('canvases').select('id').eq('legacy_firebase_id', s).maybeSingle();
     if (error && error.code !== 'PGRST116') console.warn('[resolveCanvasId]', error.message);
     return data?.id || null;
@@ -2891,7 +2975,21 @@ class SupabaseService {
   async createCanvas(userId, canvas) {
     try {
       const initialBlocks = canvas.blocks || canvas.content || [];
-      const { data, error } = await supabase.from('canvases').insert([{ title: canvas.title || 'Untitled', content: initialBlocks, owner_id: userId, user_id_legacy: userId, is_shared: canvas.isShared || false, shared_with: canvas.sharedWith || [], emoji: canvas.emoji || '📄', created_at: ts(), updated_at: ts() }]).select().single();
+      const cid = canvas?.id != null ? String(canvas.id).trim() : '';
+      const row = {
+        title: canvas.title || 'Untitled',
+        content: initialBlocks,
+        owner_id: userId,
+        user_id_legacy: userId,
+        is_shared: canvas.isShared || false,
+        shared_with: canvas.sharedWith || [],
+        emoji: canvas.emoji || '📄',
+        created_at: ts(),
+        updated_at: ts(),
+      };
+      // Optimistic UI ids (`uid()` → e.g. c1k2…) are not UUIDs; store so resolveCanvasId can find the row.
+      if (cid && !isCanvasUuidString(cid)) row.legacy_firebase_id = cid;
+      const { data, error } = await supabase.from('canvases').insert([row]).select().single();
       if (error) throw error;
       return this._canvasRowToClient(data);
     } catch (error) { throw error; }

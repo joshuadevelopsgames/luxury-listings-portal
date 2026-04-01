@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,7 +19,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  Star,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -35,7 +34,8 @@ import {
   UserCheck,
   Download,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Ban
 } from 'lucide-react';
 import { supabaseService } from '../../services/supabaseService';
 import { exportCrmToXlsx } from '../../utils/exportCrmToXlsx';
@@ -45,6 +45,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from '../lib/firebaseStu
 import { CAPABILITIES } from '../../entities/Capabilities';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS, normalizeLocation } from '../services/crmService';
+import { isClientHiddenFromCrmPage } from '../../services/crmService';
 import { useCustomLocations } from '../contexts/CustomLocationsContext';
 import { findPotentialMatchesForContact, findPotentialDuplicateGroups } from '../services/clientDuplicateService';
 import ClientLink from '../../components/ui/ClientLink';
@@ -52,6 +53,30 @@ import LeadLink from '../../components/crm/LeadLink';
 import ClientDetailModal from '../../components/client/ClientDetailModal';
 import LeadDetailModal from '../../components/crm/LeadDetailModal';
 import { LocationSelect } from '../../components/crm/LocationSelect';
+
+const CRM_PIPELINE_LABELS = {
+  contacted: 'Contacted',
+  cold: 'Cold',
+  notInterested: 'Not interested',
+  warm: 'Cold'
+};
+
+function getCrmDateAddedMs(c) {
+  const raw = c?.addedToCrmAt || c?.createdAt || c?.created_at;
+  if (!raw) return 0;
+  const t = new Date(raw).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+function formatCrmDateAdded(c) {
+  const ms = getCrmDateAddedMs(c);
+  if (!ms) return '—';
+  try {
+    return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch {
+    return '—';
+  }
+}
 
 const CRMPage = () => {
   const navigate = useNavigate();
@@ -69,10 +94,13 @@ const CRMPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  useEffect(() => {
+    if (statusFilter === 'warm') setStatusFilter('all');
+  }, [statusFilter]);
   const [typeFilter, setTypeFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortDir, setSortDir] = useState('asc');
+  const [sortBy, setSortBy] = useState('dateAdded');
+  const [sortDir, setSortDir] = useState('desc');
   // Default to card view on mobile, list on desktop
   const [viewMode, setViewMode] = useState(() => 
     typeof window !== 'undefined' && window.innerWidth < 640 ? 'card' : 'list'
@@ -96,6 +124,9 @@ const CRMPage = () => {
   const [exportingCrm, setExportingCrm] = useState(false);
   const [importingCrm, setImportingCrm] = useState(false);
   const [mergingDuplicates, setMergingDuplicates] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const selectAllLeadsRef = useRef(null);
   const [showManageLocationsModal, setShowManageLocationsModal] = useState(false);
   const [deletingLocation, setDeletingLocation] = useState(null);
   const importFileRef = React.useRef(null);
@@ -140,16 +171,16 @@ const CRMPage = () => {
     primaryContact: { name: '', email: '', phone: '', role: '' }
   });
   const [selectedTabs, setSelectedTabs] = useState({
-    warmLeads: false,
     contactedClients: false,
-    coldLeads: false
+    coldLeads: false,
+    notInterestedLeads: false
   });
   const [isAddingLead, setIsAddingLead] = useState(false);
 
-  // CRM data state
-  const [warmLeads, setWarmLeads] = useState([]);
+  // CRM data (legacy warm merged into cold on read in getCrmData)
   const [contactedClients, setContactedClients] = useState([]);
   const [coldLeads, setColdLeads] = useState([]);
+  const [notInterestedLeads, setNotInterestedLeads] = useState([]);
 
 
   // Normalize Firestore client to CRM lead shape for display
@@ -173,18 +204,18 @@ const CRMPage = () => {
   const loadStoredData = async () => {
     if (!currentUser?.uid) return;
     try {
-      const { warmLeads: w, contactedClients: c, coldLeads: cold } = await supabaseService.getCrmData();
-      setWarmLeads(w);
+      const { contactedClients: c, coldLeads: cold, notInterestedLeads: ni } = await supabaseService.getCrmData();
       setContactedClients(c);
       setColdLeads(cold);
-      if (w.length || c.length || cold.length) {
-        console.log('📂 Loaded CRM data from Firebase:', { warm: w.length, contacted: c.length, cold: cold.length });
+      setNotInterestedLeads(ni || []);
+      if (c.length || cold.length || (ni || []).length) {
+        console.log('📂 Loaded CRM data from Firebase:', { contacted: c.length, cold: cold.length, notInterested: (ni || []).length });
       }
     } catch (error) {
       if (!isOfflineError(error)) console.error('Error loading stored CRM data:', error);
-      setWarmLeads([]);
       setContactedClients([]);
       setColdLeads([]);
+      setNotInterestedLeads([]);
     }
   };
 
@@ -226,21 +257,17 @@ const CRMPage = () => {
   useEffect(() => {
     if (!currentUser?.uid) return;
     loadStoredData();
-    const unsubscribe = supabaseService.onCrmDataChange(({ warmLeads: w, contactedClients: c, coldLeads: cold }) => {
-      setWarmLeads(w);
+    const unsubscribe = supabaseService.onCrmDataChange(({ contactedClients: c, coldLeads: cold, notInterestedLeads: ni }) => {
       setContactedClients(c);
       setColdLeads(cold);
+      setNotInterestedLeads(ni || []);
     });
     return () => unsubscribe();
   }, [currentUser?.uid]);
 
-  // Dedupe CRM leads by id (same lead can be in Warm + Contacted etc.); each contact gets _categories: ['warm','contacted'] etc.
+  // Dedupe CRM leads by id; `_categories`: contacted | cold | notInterested
   const crmLeadsDeduped = (() => {
     const byId = new Map();
-    warmLeads.forEach((c) => {
-      if (!byId.has(c.id)) byId.set(c.id, { ...c, _categories: [], isExisting: false });
-      byId.get(c.id)._categories.push('warm');
-    });
     contactedClients.forEach((c) => {
       if (!byId.has(c.id)) byId.set(c.id, { ...c, _categories: [], isExisting: false });
       byId.get(c.id)._categories.push('contacted');
@@ -249,24 +276,51 @@ const CRMPage = () => {
       if (!byId.has(c.id)) byId.set(c.id, { ...c, _categories: [], isExisting: false });
       byId.get(c.id)._categories.push('cold');
     });
+    notInterestedLeads.forEach((c) => {
+      if (!byId.has(c.id)) byId.set(c.id, { ...c, _categories: [], isExisting: false });
+      byId.get(c.id)._categories.push('notInterested');
+    });
     return Array.from(byId.values());
   })();
 
-  const fullContactsList = [
-    ...crmLeadsDeduped,
-    ...existingClients.map(c => ({ ...c, isExisting: true }))
-  ];
+  const existingClientsForCrm = useMemo(
+    () => existingClients.filter((c) => !isClientHiddenFromCrmPage(c)),
+    [existingClients]
+  );
+
+  const contactsForDuplicateCheck = useMemo(
+    () => [
+      ...crmLeadsDeduped,
+      ...existingClients.map((c) => ({ ...c, isExisting: true })),
+    ],
+    [crmLeadsDeduped, existingClients]
+  );
 
   const doAddNewLead = async () => {
-    const addToWarm = selectedTabs.warmLeads;
     const addToContacted = selectedTabs.contactedClients;
     const addToCold = selectedTabs.coldLeads;
+    const addNI = selectedTabs.notInterestedLeads;
     const contactName = [newLead.firstName, newLead.lastName].filter(Boolean).join(' ').trim();
     const types = Array.isArray(newLead.types) && newLead.types.length ? newLead.types : [CLIENT_TYPE.NA];
     const loc = normalizeLocation(newLead.location || '') || null;
     const pc = newLead.primaryContact && (newLead.primaryContact.name || newLead.primaryContact.email || newLead.primaryContact.phone || newLead.primaryContact.role)
       ? { name: newLead.primaryContact.name || '', email: newLead.primaryContact.email || '', phone: newLead.primaryContact.phone || '', role: newLead.primaryContact.role || '' }
       : null;
+    let status = 'contacted';
+    let category = 'contactedClients';
+    if (addNI) {
+      status = 'not_interested';
+      category = 'notInterestedLeads';
+    } else if (addToContacted && addToCold) {
+      status = 'contacted';
+      category = 'contactedClients';
+    } else if (addToCold) {
+      status = 'cold';
+      category = 'coldLeads';
+    } else {
+      status = 'contacted';
+      category = 'contactedClients';
+    }
     const newLeadData = {
       id: `crm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       contactName: contactName || '',
@@ -283,18 +337,18 @@ const CRMPage = () => {
       notes: newLead.notes || '',
       location: loc,
       primaryContact: pc,
-      status: addToWarm ? 'warm' : addToCold ? 'cold' : 'contacted',
+      status,
       lastContact: new Date().toISOString(),
-      category: addToWarm ? 'warmLeads' : addToCold ? 'coldLeads' : 'contactedClients'
+      category
     };
-    const nextWarm = addToWarm ? [newLeadData, ...warmLeads] : warmLeads;
     const nextContacted = addToContacted ? [newLeadData, ...contactedClients] : contactedClients;
     const nextCold = addToCold ? [newLeadData, ...coldLeads] : coldLeads;
-    await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
-    setWarmLeads(nextWarm);
+    const nextNI = addNI ? [newLeadData, ...notInterestedLeads] : notInterestedLeads;
+    await saveCRMDataToFirebase({ contactedClients: nextContacted, coldLeads: nextCold, notInterestedLeads: nextNI });
     setContactedClients(nextContacted);
     setColdLeads(nextCold);
-    const labels = [addToWarm && 'Warm', addToContacted && 'Contacted', addToCold && 'Cold'].filter(Boolean);
+    setNotInterestedLeads(nextNI);
+    const labels = [addToContacted && 'Contacted', addToCold && 'Cold', addNI && 'Not interested'].filter(Boolean);
     showToast(`Lead added to ${labels.join(', ')}`);
     resetNewLeadForm();
     setShowAddModal(false);
@@ -314,7 +368,7 @@ const CRMPage = () => {
     }
 
     const contactName = [newLead.firstName, newLead.lastName].filter(Boolean).join(' ').trim();
-    const matches = findPotentialMatchesForContact(fullContactsList, {
+    const matches = findPotentialMatchesForContact(contactsForDuplicateCheck, {
       name: contactName,
       email: newLead.email
     });
@@ -342,11 +396,12 @@ const CRMPage = () => {
   // Save CRM data to shared Firestore doc (visible to all users)
   const saveCRMDataToFirebase = async (override) => {
     if (!currentUser?.uid) throw new Error('You must be signed in to save CRM data');
-    const data = override ?? { warmLeads, contactedClients, coldLeads };
+    const data = override ?? { contactedClients, coldLeads, notInterestedLeads };
     await supabaseService.setCrmData({
-      warmLeads: data.warmLeads ?? [],
+      warmLeads: [],
       contactedClients: data.contactedClients ?? [],
-      coldLeads: data.coldLeads ?? []
+      coldLeads: data.coldLeads ?? [],
+      notInterestedLeads: data.notInterestedLeads ?? []
     });
     console.log('💾 CRM data saved to Firebase');
   };
@@ -367,9 +422,9 @@ const CRMPage = () => {
       primaryContact: { name: '', email: '', phone: '', role: '' }
     });
     setSelectedTabs({
-      warmLeads: false,
       contactedClients: false,
-      coldLeads: false
+      coldLeads: false,
+      notInterestedLeads: false
     });
   };
 
@@ -380,13 +435,13 @@ const CRMPage = () => {
     try {
       const id = String(updatedLead.id);
       const mapOne = (arr) => arr.map((c) => (String(c.id) === id ? { ...c, ...updatedLead } : c));
-      const nextWarm = mapOne(warmLeads);
       const nextContacted = mapOne(contactedClients);
       const nextCold = mapOne(coldLeads);
-      await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
-      setWarmLeads(nextWarm);
+      const nextNI = mapOne(notInterestedLeads);
+      await saveCRMDataToFirebase({ contactedClients: nextContacted, coldLeads: nextCold, notInterestedLeads: nextNI });
       setContactedClients(nextContacted);
       setColdLeads(nextCold);
+      setNotInterestedLeads(nextNI);
       showToast(`Lead "${updatedLead.contactName}" updated successfully!`);
     } catch (error) {
       console.error('Error updating lead:', error);
@@ -409,13 +464,14 @@ const CRMPage = () => {
 
     try {
       const id = client?.id != null ? String(client.id) : undefined;
-      const nextWarm = id == null ? warmLeads : warmLeads.filter((c) => String(c.id) !== id);
       const nextContacted = id == null ? contactedClients : contactedClients.filter((c) => String(c.id) !== id);
       const nextCold = id == null ? coldLeads : coldLeads.filter((c) => String(c.id) !== id);
-      await saveCRMDataToFirebase({ warmLeads: nextWarm, contactedClients: nextContacted, coldLeads: nextCold });
-      setWarmLeads(nextWarm);
+      const nextNI = id == null ? notInterestedLeads : notInterestedLeads.filter((c) => String(c.id) !== id);
+      await saveCRMDataToFirebase({ contactedClients: nextContacted, coldLeads: nextCold, notInterestedLeads: nextNI });
       setContactedClients(nextContacted);
       setColdLeads(nextCold);
+      setNotInterestedLeads(nextNI);
+      setSelectedLeadIds((prev) => prev.filter((x) => x !== id));
       setSelectedClient(null);
       setSelectedItemType(null);
       showToast(`Lead "${client.contactName}" deleted successfully!`);
@@ -500,9 +556,9 @@ const CRMPage = () => {
       });
       if (graduateScreenshotModal.leadId) {
         await removeLeadFromCRM(graduateScreenshotModal.leadId);
-        setWarmLeads(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
         setContactedClients(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
         setColdLeads(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
+        setNotInterestedLeads(prev => prev.filter(l => l.id !== graduateScreenshotModal.leadId));
       }
       setGraduateScreenshotModal({ show: false, clientId: null, clientName: '', leadId: null });
       showToast(`Day-one screenshot saved. Lead promoted to client.`);
@@ -539,9 +595,10 @@ const CRMPage = () => {
   };
 
   const getStatusColor = (status) => {
-    const s = (status || '').toLowerCase();
+    const s = String(status || '').toLowerCase().replace(/\s+/g, '_');
     const colors = {
-      warm: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      warm: '!bg-blue-100 !text-blue-600 dark:!bg-blue-900/30 dark:!text-blue-300',
+      not_interested: 'bg-stone-200 text-stone-800 dark:bg-stone-800/40 dark:text-stone-300',
       contacted: '!bg-purple-100 !text-purple-800 dark:!bg-purple-900/30 dark:!text-purple-300',
       cold: '!bg-blue-100 !text-blue-600 dark:!bg-blue-900/30 dark:!text-blue-300',
       client: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
@@ -557,19 +614,26 @@ const CRMPage = () => {
   // For existing clients: show "Previous client" when status is paused/cancelled/rejected
   const getClientStatusLabel = (status, isExisting, categories) => {
     if (Array.isArray(categories) && categories.length) {
-      return categories.map((c) => String(c).charAt(0).toUpperCase() + String(c).slice(1)).join(', ');
+      return categories.map((c) => CRM_PIPELINE_LABELS[c] ?? (String(c).charAt(0).toUpperCase() + String(c).slice(1))).join(', ');
     }
     const s = (status || '').toLowerCase();
-    if (!isExisting) return status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : '—';
+    if (!isExisting) {
+      if (s === 'not_interested' || s === 'not interested') return 'Not interested';
+      return status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : '—';
+    }
     if (s === 'paused') return 'Previous client (Paused)';
     if (s === 'cancelled' || s === 'rejected') return 'Previous client (Cancelled)';
     return status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : 'Active';
   };
 
   const getStatusIcon = (status) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'warm':
-        return <Star className="w-4 h-4 text-green-600" />;
+        return <Clock className="w-4 h-4 text-gray-600" />;
+      case 'not_interested':
+      case 'not interested':
+        return <Ban className="w-4 h-4 text-stone-600" />;
       case 'contacted':
         return <CheckCircle className="w-4 h-4 text-purple-600" />;
       case 'cold':
@@ -595,8 +659,8 @@ const CRMPage = () => {
 
   // Single combined list: deduped CRM leads + existing clients
   const allContacts = [
-    ...crmLeadsDeduped.map(c => ({ ...c, _type: c._categories[0] || 'warm' })),
-    ...existingClients.map(c => ({ ...c, _type: 'clients', isExisting: true, type: (c.clientTypes && c.clientTypes[0]) || c.clientType || c.type || CLIENT_TYPE.NA }))
+    ...crmLeadsDeduped.map(c => ({ ...c, _type: c._categories[0] || 'cold' })),
+    ...existingClientsForCrm.map(c => ({ ...c, _type: 'clients', isExisting: true, type: (c.clientTypes && c.clientTypes[0]) || c.clientType || c.type || CLIENT_TYPE.NA }))
   ]
     .filter(c => matchesSearch(c, c.isExisting))
     .filter(c => statusFilter === 'all' || (c._categories && c._categories.includes(statusFilter)) || (c._type === statusFilter && !c._categories))
@@ -611,9 +675,16 @@ const CRMPage = () => {
           case 'location': return ((c.location || '').trim() || '—').toLowerCase();
           case 'phone': return (c.phone || '').toLowerCase();
           case 'status': return (getClientStatusLabel(c.status, c.isExisting, c._categories) || '').toLowerCase();
+          case 'dateAdded': return '';
           default: return '';
         }
       };
+      if (sortBy === 'dateAdded') {
+        const na = getCrmDateAddedMs(a);
+        const nb = getCrmDateAddedMs(b);
+        const cmp = na - nb;
+        return sortDir === 'asc' ? cmp : -cmp;
+      }
       const va = getVal(a, sortBy);
       const vb = getVal(b, sortBy);
       if (sortBy === 'location') {
@@ -630,13 +701,85 @@ const CRMPage = () => {
       return sortDir === 'asc' ? cmp : -cmp;
     });
 
-  const totalWarmLeads = warmLeads.length;
+  const visibleCrmLeads = useMemo(
+    () => allContacts.filter((c) => !c.isExisting),
+    [allContacts]
+  );
+  const selectedLeadIdSet = useMemo(() => new Set(selectedLeadIds), [selectedLeadIds]);
+  const allVisibleLeadsSelected =
+    visibleCrmLeads.length > 0 && visibleCrmLeads.every((c) => selectedLeadIdSet.has(String(c.id)));
+  const someVisibleLeadsSelected = visibleCrmLeads.some((c) => selectedLeadIdSet.has(String(c.id)));
+
+  useEffect(() => {
+    const el = selectAllLeadsRef.current;
+    if (el) {
+      el.indeterminate = someVisibleLeadsSelected && !allVisibleLeadsSelected;
+    }
+  }, [someVisibleLeadsSelected, allVisibleLeadsSelected]);
+
+  const toggleLeadSelected = (rawId) => {
+    const id = String(rawId);
+    setSelectedLeadIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const toggleSelectAllVisibleLeads = () => {
+    const ids = visibleCrmLeads.map((c) => String(c.id));
+    if (allVisibleLeadsSelected) {
+      setSelectedLeadIds((prev) => prev.filter((x) => !ids.includes(x)));
+    } else {
+      setSelectedLeadIds((prev) => [...new Set([...prev, ...ids])]);
+    }
+  };
+
+  const bulkDeleteSelectedLeads = async () => {
+    if (!canManageLeads || selectedLeadIds.length === 0) return;
+    const ids = new Set(selectedLeadIds);
+    const count = ids.size;
+    const nameById = new Map();
+    for (const c of [...contactedClients, ...coldLeads, ...notInterestedLeads]) {
+      const sid = String(c.id);
+      if (!nameById.has(sid)) nameById.set(sid, c.contactName || c.email || '—');
+    }
+    const preview = [...ids].slice(0, 5).map((id) => nameById.get(id) || '—');
+    const extra = count > preview.length ? ` (+${count - preview.length} more)` : '';
+    const confirmed = await confirm({
+      title: 'Delete selected leads',
+      message: `Permanently delete ${count} lead${count !== 1 ? 's' : ''}? This cannot be undone.\n\n${preview.join(', ')}${extra}`,
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
+    setBulkDeleting(true);
+    try {
+      const keep = (c) => !ids.has(String(c.id));
+      const nextContacted = contactedClients.filter(keep);
+      const nextCold = coldLeads.filter(keep);
+      const nextNI = notInterestedLeads.filter(keep);
+      await saveCRMDataToFirebase({ contactedClients: nextContacted, coldLeads: nextCold, notInterestedLeads: nextNI });
+      setContactedClients(nextContacted);
+      setColdLeads(nextCold);
+      setNotInterestedLeads(nextNI);
+      setSelectedLeadIds([]);
+      if (selectedClient && ids.has(String(selectedClient.id)) && selectedItemType === 'lead') {
+        setSelectedClient(null);
+        setSelectedItemType(null);
+      }
+      showToast(`Deleted ${count} lead${count !== 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      showToast(`Error: ${error.message}`, 'error');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const totalContacted = contactedClients.length;
   const totalColdLeads = coldLeads.length;
-  const totalExistingClients = existingClients.length;
+  const totalNotInterested = notInterestedLeads.length;
+  const totalExistingClients = existingClientsForCrm.length;
   const totalLeads = crmLeadsDeduped.length;
 
-  const allContactsForLocations = [...crmLeadsDeduped, ...existingClients];
+  const allContactsForLocations = [...crmLeadsDeduped, ...existingClientsForCrm];
   const uniqueLocationsFromData = [...new Set(allContactsForLocations.map(c => (c.location || '').trim()).filter(Boolean))];
   const canonicalSetLower = new Set(CRM_LOCATIONS.map((l) => l.toLowerCase()));
   const legacyLocations = uniqueLocationsFromData.filter((loc) => !canonicalSetLower.has(loc.toLowerCase())).sort();
@@ -650,11 +793,34 @@ const CRMPage = () => {
   }
   const locationFilterOptions = locationFilterOptionsDeduped.sort();
 
+  const sortSummaryLabel = useMemo(() => {
+    switch (sortBy) {
+      case 'dateAdded':
+        return sortDir === 'desc' ? 'newest first' : 'oldest first';
+      case 'name':
+        return sortDir === 'asc' ? 'A–Z by name' : 'Z–A by name';
+      case 'email':
+        return sortDir === 'asc' ? 'A–Z by email' : 'Z–A by email';
+      default:
+        return 'custom sort';
+    }
+  }, [sortBy, sortDir]);
+
   const renderClientCard = (client, isExisting = false) => (
     <div key={client.id} className="p-5 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/10 hover:shadow-lg transition-shadow">
       <div>
         <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
+          <div className="flex-1 flex gap-3 min-w-0">
+            {!isExisting && canManageLeads && (
+              <input
+                type="checkbox"
+                className="mt-1 w-4 h-4 shrink-0 rounded border-black/20 dark:border-white/30 text-[#0071e3] focus:ring-[#0071e3]"
+                checked={selectedLeadIdSet.has(String(client.id))}
+                onChange={() => toggleLeadSelected(client.id)}
+                aria-label={`Select ${client.contactName || client.email || 'lead'}`}
+              />
+            )}
+            <div className="flex-1 min-w-0">
             {isExisting ? (
               <h4 className="font-medium">
                 <ClientLink client={client} showId />
@@ -685,6 +851,10 @@ const CRMPage = () => {
               <Phone className="w-3 h-3 text-gray-400 dark:text-gray-500" />
               <p className="text-sm text-gray-600 dark:text-gray-400">{client.phone}</p>
             </div>
+            <div className="flex items-center gap-2 mt-2">
+              <Calendar className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">Added {formatCrmDateAdded(client)}</p>
+            </div>
             {client.instagram && (
               <div className="flex items-center gap-2 mt-2">
                 <Instagram className="w-3 h-3 text-gray-400 dark:text-gray-500" />
@@ -699,8 +869,9 @@ const CRMPage = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">{client.website}</p>
               </div>
             )}
+            </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-end gap-1 shrink-0">
             <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
               {getClientStatusLabel(client.status, isExisting, client._categories)}
             </span>
@@ -776,6 +947,17 @@ const CRMPage = () => {
       key={client.id}
       className="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
     >
+      <td className="py-3 px-2 w-11 align-middle">
+        {!isExisting && canManageLeads ? (
+          <input
+            type="checkbox"
+            className="w-4 h-4 rounded border-gray-300 dark:border-white/25 text-[#0071e3] focus:ring-[#0071e3]"
+            checked={selectedLeadIdSet.has(String(client.id))}
+            onChange={() => toggleLeadSelected(client.id)}
+            aria-label={`Select ${client.contactName || client.email || 'lead'}`}
+          />
+        ) : null}
+      </td>
       <td className="py-3 px-4">
         {isExisting ? (
           <div className="font-medium">
@@ -794,6 +976,7 @@ const CRMPage = () => {
           <p className="text-xs text-gray-500 dark:text-gray-400">{client.organization}</p>
         )}
       </td>
+      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{formatCrmDateAdded(client)}</td>
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.email}</td>
       <td className="py-3 px-4">
         <span className="text-[11px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium">
@@ -838,7 +1021,7 @@ const CRMPage = () => {
     if (sortBy === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else {
       setSortBy(key);
-      setSortDir('asc');
+      setSortDir(key === 'dateAdded' ? 'desc' : 'asc');
     }
   };
   const SortHeader = ({ columnKey, label }) => (
@@ -869,7 +1052,20 @@ const CRMPage = () => {
       <table className="w-full">
         <thead>
           <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+            <th className="w-11 py-3 px-2 align-middle" scope="col">
+              {canManageLeads && visibleCrmLeads.length > 0 ? (
+                <input
+                  ref={selectAllLeadsRef}
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-gray-300 dark:border-white/25 text-[#0071e3] focus:ring-[#0071e3]"
+                  checked={allVisibleLeadsSelected}
+                  onChange={toggleSelectAllVisibleLeads}
+                  aria-label="Select all visible leads"
+                />
+              ) : null}
+            </th>
             <SortHeader columnKey="name" label="Name" />
+            <SortHeader columnKey="dateAdded" label="Date added" />
             <SortHeader columnKey="email" label="Email" />
             <SortHeader columnKey="type" label="Type" />
             <SortHeader columnKey="location" label="Location" />
@@ -904,15 +1100,15 @@ const CRMPage = () => {
               if (!file) return;
               setImportingCrm(true);
               try {
-                const { warmLeads: w, contactedClients: c, coldLeads: cold } = await importCrmFromXlsxFile(file);
-                const total = w.length + c.length + cold.length;
+                const { contactedClients: c, coldLeads: cold, notInterestedLeads: ni } = await importCrmFromXlsxFile(file);
+                const total = c.length + cold.length + (ni || []).length;
                 if (total === 0) {
                   showToast('No leads found in file', 'error');
                 } else {
-                  setWarmLeads(w);
                   setContactedClients(c);
                   setColdLeads(cold);
-                  await saveCRMDataToFirebase({ warmLeads: w, contactedClients: c, coldLeads: cold });
+                  setNotInterestedLeads(ni || []);
+                  await saveCRMDataToFirebase({ contactedClients: c, coldLeads: cold, notInterestedLeads: ni || [] });
                   showToast(`Imported ${total} lead${total !== 1 ? 's' : ''} from xlsx`);
                 }
               } catch (err) {
@@ -946,11 +1142,11 @@ const CRMPage = () => {
             onClick={async () => {
               setMergingDuplicates(true);
               try {
-                const { warmLeads: w, contactedClients: c, coldLeads: cold, mergedCount } = mergeCrmDuplicates(warmLeads, contactedClients, coldLeads);
-                setWarmLeads(w);
+                const { contactedClients: c, coldLeads: cold, notInterestedLeads: ni, mergedCount } = mergeCrmDuplicates(contactedClients, coldLeads, notInterestedLeads);
                 setContactedClients(c);
                 setColdLeads(cold);
-                await saveCRMDataToFirebase({ warmLeads: w, contactedClients: c, coldLeads: cold });
+                setNotInterestedLeads(ni || []);
+                await saveCRMDataToFirebase({ contactedClients: c, coldLeads: cold, notInterestedLeads: ni || [] });
                 if (mergedCount > 0) showToast(`Merged ${mergedCount} duplicate${mergedCount !== 1 ? 's' : ''}`);
                 else showToast('No duplicates found');
               } catch (err) {
@@ -969,7 +1165,7 @@ const CRMPage = () => {
             onClick={() => {
               setExportingCrm(true);
               try {
-                exportCrmToXlsx({ warmLeads, contactedClients, coldLeads, existingClients });
+                exportCrmToXlsx({ contactedClients, coldLeads, notInterestedLeads, existingClients: existingClientsForCrm });
                 showToast('CRM exported to spreadsheet');
               } catch (e) {
                 console.error(e);
@@ -1010,18 +1206,6 @@ const CRMPage = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <div className="rounded-2xl bg-[#34c759]/5 border border-[#34c759]/20 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#34c759] mb-1">Warm Leads</p>
-              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalWarmLeads}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#34c759]/10">
-              <Star className="w-5 h-5 text-[#34c759]" />
-            </div>
-          </div>
-        </div>
-
         <div className="rounded-2xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -1042,6 +1226,18 @@ const CRMPage = () => {
             </div>
             <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10">
               <Clock className="w-5 h-5 text-[#86868b]" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-stone-500/10 border border-stone-400/25 dark:border-stone-500/30 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12px] font-medium text-stone-600 dark:text-stone-400 mb-1">Not interested</p>
+              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalNotInterested}</p>
+            </div>
+            <div className="p-2.5 rounded-xl bg-stone-500/15">
+              <Ban className="w-5 h-5 text-stone-600 dark:text-stone-400" />
             </div>
           </div>
         </div>
@@ -1089,8 +1285,8 @@ const CRMPage = () => {
           className="h-10 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 min-w-[140px]"
         >
           <option value="all">All</option>
-          <option value="warm">Warm leads ({totalWarmLeads})</option>
           <option value="cold">Cold leads ({totalColdLeads})</option>
+          <option value="notInterested">Not interested ({totalNotInterested})</option>
           <option value="contacted">Contacted ({totalContacted})</option>
           <option value="clients">Existing clients ({totalExistingClients})</option>
         </select>
@@ -1143,10 +1339,35 @@ const CRMPage = () => {
         </div>
       </div>
 
-      {/* Single list: A–Z by name */}
+      {canManageLeads && visibleCrmLeads.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10">
+          <span className="text-[13px] text-[#86868b] mr-1">
+            {selectedLeadIds.length > 0 ? `${selectedLeadIds.length} selected` : 'Select leads to delete in bulk'}
+          </span>
+          <button
+            type="button"
+            onClick={bulkDeleteSelectedLeads}
+            disabled={selectedLeadIds.length === 0 || bulkDeleting}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/10 text-red-700 dark:text-red-400 text-[13px] font-medium hover:bg-red-600/20 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {bulkDeleting ? 'Deleting…' : `Delete selected${selectedLeadIds.length ? ` (${selectedLeadIds.length})` : ''}`}
+          </button>
+          {selectedLeadIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedLeadIds([])}
+              className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              Clear selection
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="space-y-4">
         <p className="text-[13px] text-[#86868b]">
-          {allContacts.length} contact{allContacts.length !== 1 ? 's' : ''} (A–Z by name)
+          {allContacts.length} contact{allContacts.length !== 1 ? 's' : ''} ({sortSummaryLabel})
         </p>
         {loadingExistingClients && statusFilter === 'all' ? (
           <p className="text-[#86868b] py-8">Loading...</p>
@@ -1355,17 +1576,8 @@ const CRMPage = () => {
                   </div>
                   <div>
                     <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to list(s)</label>
-                    <p className="text-[11px] text-[#86868b] mb-2">Contacted stacks with Warm or Cold. Pick Warm or Cold (or both with Contacted).</p>
+                    <p className="text-[11px] text-[#86868b] mb-2">Pick Contacted, Cold, and/or Not interested (you can add to more than one list).</p>
                     <div className="flex flex-wrap gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedTabs.warmLeads}
-                          onChange={(e) => setSelectedTabs(prev => e.target.checked ? { ...prev, warmLeads: true, coldLeads: false } : { ...prev, warmLeads: false })}
-                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
-                        />
-                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Warm Leads</span>
-                      </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1373,16 +1585,25 @@ const CRMPage = () => {
                           onChange={(e) => setSelectedTabs(prev => ({ ...prev, contactedClients: e.target.checked }))}
                           className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
                         />
-                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Contacted Clients</span>
+                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Contacted</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedTabs.coldLeads}
-                          onChange={(e) => setSelectedTabs(prev => e.target.checked ? { ...prev, coldLeads: true, warmLeads: false } : { ...prev, coldLeads: false })}
+                          onChange={(e) => setSelectedTabs(prev => ({ ...prev, coldLeads: e.target.checked }))}
                           className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
                         />
                         <span className="text-[13px] text-[#1d1d1f] dark:text-white">Cold Leads</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedTabs.notInterestedLeads}
+                          onChange={(e) => setSelectedTabs(prev => ({ ...prev, notInterestedLeads: e.target.checked }))}
+                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                        />
+                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Not interested</span>
                       </label>
                     </div>
                   </div>

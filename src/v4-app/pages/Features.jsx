@@ -54,12 +54,12 @@ const salesCrmFeatures = [
   {
     icon: Target,
     title: 'Lead Management',
-    description: 'Hot / warm / cold lead buckets with scoring, source tracking (website, referral, social, events), and status.',
+    description: 'Contacted, cold, and not-interested lead lists with scoring, source tracking (website, referral, social, events), and status.',
   },
   {
     icon: FileSpreadsheet,
     title: 'Google Sheets CRM Sync',
-    description: 'Two-way sync with your Sheets: Warm Leads, Cold Leads, and Contacted Clients tabs. Use your existing workflow.',
+    description: 'Two-way sync with your Sheets: Contacted, Cold, and Not interested tabs (legacy Warm imports as cold). Use your existing workflow.',
   },
   {
     icon: Star,

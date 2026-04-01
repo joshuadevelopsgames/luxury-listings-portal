@@ -344,6 +344,86 @@ async function restoreTasks(already) {
   return { inserted, skipped };
 }
 
+// ── Block Comments ────────────────────────────────────────────
+async function restoreBlockComments() {
+  // Map Firestore canvas id → Supabase canvas UUID
+  const { data: sbCanvases } = await supabase
+    .from('canvases')
+    .select('id, legacy_firebase_id')
+    .not('legacy_firebase_id', 'is', null);
+  const fsIdToSbId = new Map();
+  for (const r of sbCanvases || []) {
+    if (r.legacy_firebase_id) fsIdToSbId.set(r.legacy_firebase_id, r.id);
+  }
+
+  const canvasSnap = await firestore.collection('canvases').get();
+  console.log(`\n💬 Block comments: scanning ${canvasSnap.size} Firestore canvases`);
+
+  let inserted = 0;
+  let skipped = 0;
+  let errored = 0;
+
+  for (const canvasDoc of canvasSnap.docs) {
+    const fsId = canvasDoc.id;
+    const sbCanvasId = fsIdToSbId.get(fsId);
+    if (!sbCanvasId) continue;
+
+    let bcSnap;
+    try {
+      bcSnap = await firestore.collection('canvases').doc(fsId).collection('block_comments').get();
+    } catch (e) {
+      console.warn(`   block_comments read ${fsId}:`, e.message);
+      errored += 1;
+      continue;
+    }
+    if (bcSnap.empty) continue;
+
+    for (const doc of bcSnap.docs) {
+      const blockId = doc.id;
+      const data = doc.data();
+      const comments = sanitizeForJson(data.comments || []);
+      const reactions = sanitizeForJson(data.reactions || []);
+
+      if (!comments.length && !reactions.length) {
+        skipped += 1;
+        continue;
+      }
+
+      // Skip if already exists (first-time import behaviour)
+      const { data: existing } = await supabase
+        .from('canvas_block_comments')
+        .select('id')
+        .eq('canvas_id', sbCanvasId)
+        .eq('block_id', blockId)
+        .maybeSingle();
+
+      if (existing) {
+        skipped += 1;
+        continue;
+      }
+
+      if (DRY_RUN) {
+        console.log(`   [dry-run] INSERT block_comment canvas=${fsId} block=${blockId} comments=${comments.length} reactions=${reactions.length}`);
+        inserted += 1;
+        continue;
+      }
+
+      const { error } = await supabase
+        .from('canvas_block_comments')
+        .insert({ canvas_id: sbCanvasId, block_id: blockId, comments, reactions });
+      if (error) {
+        console.warn(`   block_comment insert ${blockId}:`, error.message);
+        errored += 1;
+      } else {
+        inserted += 1;
+      }
+    }
+  }
+
+  console.log(`   → Inserted ${inserted}, skipped ${skipped}, errors ${errored}`);
+  return { inserted, skipped, errored };
+}
+
 // ── Main ──────────────────────────────────────────────────────
 async function main() {
   console.log(`\n🔁 Firebase → Supabase restore ${DRY_RUN ? '[DRY RUN]' : ''}\n`);
@@ -359,13 +439,18 @@ async function main() {
     console.log(`Already migrated: ${canvasExisting.size} canvases, ${taskExisting.size} tasks (by legacy_firebase_id)`);
   }
 
-  const out = { canvases: null, tasks: null };
+  const out = { canvases: null, tasks: null, blockComments: null };
 
   if (!TASKS_ONLY) {
     out.canvases = await restoreCanvases(uidToOwnerId, canvasExisting);
   }
   if (!CANVASES_ONLY) {
     out.tasks = await restoreTasks(taskExisting);
+  }
+
+  // Block comments depend on canvases being in Supabase already
+  if (!TASKS_ONLY) {
+    out.blockComments = await restoreBlockComments();
   }
 
   console.log('\nDone.', DRY_RUN ? '(dry run — no writes)' : '');

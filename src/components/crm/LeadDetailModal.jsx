@@ -2,7 +2,7 @@
  * LeadDetailModal - CRM lead profile modal
  * 
  * Displays lead details in the same style as ClientDetailModal.
- * Used for CRM leads (Warm, Contacted, Cold) from Google Sheets.
+ * Used for CRM leads (Contacted, Cold) from Google Sheets.
  */
 
 import React, { useState } from 'react';
@@ -64,7 +64,12 @@ const LeadDetailModal = ({
       organization: lead.organization || '',
       website: lead.website || '',
       notes: lead.notes || '',
-      status: lead.status || 'warm',
+      status: (() => {
+        const raw = lead.status != null ? String(lead.status).toLowerCase().replace(/\s+/g, ' ').trim() : '';
+        if (raw === 'warm') return 'cold';
+        if (raw === 'not interested' || raw === 'not_interested') return 'not_interested';
+        return lead.status || 'cold';
+      })(),
       location: lead.location || '',
       primaryContact: lead.primaryContact ? { name: lead.primaryContact.name || '', email: lead.primaryContact.email || '', phone: lead.primaryContact.phone || '', role: lead.primaryContact.role || '' } : { name: '', email: '', phone: '', role: '' }
     });
@@ -110,10 +115,21 @@ const LeadDetailModal = ({
   if (!lead) return null;
 
   const displayName = lead.contactName || lead.name || 'Unknown Lead';
+  const statusLabelRaw = lead.status ? String(lead.status) : '';
+  const statusDisplay = (() => {
+    const sl = statusLabelRaw.toLowerCase();
+    if (sl === 'warm') return 'Cold';
+    if (sl === 'not_interested' || sl === 'not interested') return 'Not interested';
+    return statusLabelRaw
+      ? statusLabelRaw.charAt(0).toUpperCase() + statusLabelRaw.slice(1).replace(/_/g, ' ')
+      : 'Lead';
+  })();
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'warm': return 'bg-[#ff9500]/10 text-[#ff9500]';
+      case 'warm': return 'bg-[#86868b]/10 text-[#86868b]';
+      case 'not_interested':
+      case 'not interested': return 'bg-stone-400/15 text-stone-700 dark:text-stone-300';
       case 'contacted': return 'bg-[#0071e3]/10 text-[#0071e3]';
       case 'cold': return 'bg-[#86868b]/10 text-[#86868b]';
       case 'converted': return 'bg-[#34c759]/10 text-[#34c759]';
@@ -145,7 +161,7 @@ const LeadDetailModal = ({
                 </h2>
                 <div className="flex items-center gap-2">
                   <span className={`text-[12px] px-2 py-0.5 rounded-md font-medium ${getStatusColor(lead.status)}`}>
-                    {lead.status ? lead.status.charAt(0).toUpperCase() + lead.status.slice(1) : 'Lead'}
+                    {statusDisplay}
                   </span>
                   {lead.organization && (
                     <span className="text-[12px] text-[#86868b]">
@@ -294,9 +310,9 @@ const LeadDetailModal = ({
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                     className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
                   >
-                    <option value="warm">Warm Lead</option>
                     <option value="contacted">Contacted</option>
                     <option value="cold">Cold Lead</option>
+                    <option value="not_interested">Not interested</option>
                     <option value="converted">Converted</option>
                   </select>
                 </div>

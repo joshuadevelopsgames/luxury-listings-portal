@@ -43,7 +43,7 @@ function rowToLead(row, headers, sheetCategory, rowIndex) {
     organization: get('organization') || '',
     website: get('website') || '',
     notes: get('notes') || '',
-    status: get('status') || (sheetCategory === 'warmLeads' ? 'Warm' : sheetCategory === 'coldLeads' ? 'Cold' : 'Contacted'),
+    status: get('status') || (sheetCategory === 'notInterestedLeads' ? 'Not interested' : sheetCategory === 'coldLeads' ? 'Cold' : 'Contacted'),
     lastContact: get('lastcontact') || new Date().toISOString(),
     addedToCrmAt: new Date().toISOString(),
     category: sheetCategory
@@ -63,11 +63,12 @@ function parseSheet(ws, sheetCategory) {
   return leads;
 }
 
-// Aliases per category; longest/full names first so we match "Warm Leads" before "Warm"
+// "Warm" tab names → cold pipeline (warm lead type removed)
 const SHEET_MAP = [
-  { names: ['Warm Leads', 'Warm'], key: 'warmLeads' },
+  { names: ['Warm Leads', 'Warm'], key: 'coldLeads' },
   { names: ['Have Contacted Before with Proposals', 'Have Contacted Before with Prop', 'Contacted', 'Have Contacted'], key: 'contactedClients' },
-  { names: ['Cold Leads', 'Cold'], key: 'coldLeads' }
+  { names: ['Cold Leads', 'Cold'], key: 'coldLeads' },
+  { names: ['Not interested', 'Not Interested', 'Not Interested Leads'], key: 'notInterestedLeads' }
 ];
 
 function categoryForSheetName(sheetName) {
@@ -87,7 +88,7 @@ function categoryForSheetName(sheetName) {
  * One-time import from CRM xlsx file (e.g. "Copy of Luxury Listings Warm Leads.xlsx").
  * Tab names determine category: Warm Leads / Warm → warm, Have Contacted… / Contacted → contacted, Cold Leads / Cold → cold.
  * @param {File} file - The .xlsx file
- * @returns {Promise<{ warmLeads: Array, contactedClients: Array, coldLeads: Array }>}
+ * @returns {Promise<{ warmLeads: [], contactedClients: Array, coldLeads: Array, notInterestedLeads: Array }>}
  */
 export function importCrmFromXlsxFile(file) {
   return new Promise((resolve, reject) => {
@@ -95,26 +96,25 @@ export function importCrmFromXlsxFile(file) {
     reader.onload = (e) => {
       try {
         const wb = XLSX.read(e.target.result, { type: 'array' });
-        const warmLeads = [];
         const contactedClients = [];
         const coldLeads = [];
+        const notInterestedLeads = [];
 
         for (const sheetName of wb.SheetNames) {
           const key = categoryForSheetName(sheetName);
           if (!key) continue;
           const ws = wb.Sheets[sheetName];
           const rows = parseSheet(ws, key);
-          if (key === 'warmLeads') warmLeads.push(...rows);
-          else if (key === 'contactedClients') contactedClients.push(...rows);
+          if (key === 'contactedClients') contactedClients.push(...rows);
+          else if (key === 'notInterestedLeads') notInterestedLeads.push(...rows);
           else coldLeads.push(...rows);
         }
 
-        // If no tab matched, treat first sheet as Warm Leads
-        if (warmLeads.length === 0 && contactedClients.length === 0 && coldLeads.length === 0 && wb.SheetNames.length > 0) {
-          warmLeads.push(...parseSheet(wb.Sheets[wb.SheetNames[0]], 'warmLeads'));
+        if (contactedClients.length === 0 && coldLeads.length === 0 && notInterestedLeads.length === 0 && wb.SheetNames.length > 0) {
+          coldLeads.push(...parseSheet(wb.Sheets[wb.SheetNames[0]], 'coldLeads'));
         }
 
-        resolve({ warmLeads, contactedClients, coldLeads });
+        resolve({ warmLeads: [], contactedClients, coldLeads, notInterestedLeads });
       } catch (err) {
         reject(err);
       }

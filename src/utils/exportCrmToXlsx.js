@@ -23,17 +23,13 @@ const row = (item, sheetName) => {
   };
 };
 
-export function exportCrmToXlsx({ warmLeads = [], contactedClients = [], coldLeads = [], existingClients = [] }) {
+export function exportCrmToXlsx({ contactedClients = [], coldLeads = [], notInterestedLeads = [], existingClients = [] }) {
   const wb = XLSX.utils.book_new();
-  const warmRows = warmLeads.map((c) => row(c, 'Warm Leads'));
   const contactedRows = contactedClients.map((c) => row(c, 'Contacted'));
   const coldRows = coldLeads.map((c) => row(c, 'Cold Leads'));
+  const niRows = notInterestedLeads.map((c) => row(c, 'Not interested'));
   const clientRows = existingClients.map((c) => row(c, 'Clients'));
 
-  if (warmRows.length) {
-    const ws = XLSX.utils.json_to_sheet(warmRows);
-    XLSX.utils.book_append_sheet(wb, ws, 'Warm Leads');
-  }
   if (contactedRows.length) {
     const ws = XLSX.utils.json_to_sheet(contactedRows);
     XLSX.utils.book_append_sheet(wb, ws, 'Contacted');
@@ -41,6 +37,10 @@ export function exportCrmToXlsx({ warmLeads = [], contactedClients = [], coldLea
   if (coldRows.length) {
     const ws = XLSX.utils.json_to_sheet(coldRows);
     XLSX.utils.book_append_sheet(wb, ws, 'Cold Leads');
+  }
+  if (niRows.length) {
+    const ws = XLSX.utils.json_to_sheet(niRows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Not interested');
   }
   if (clientRows.length) {
     const ws = XLSX.utils.json_to_sheet(clientRows);

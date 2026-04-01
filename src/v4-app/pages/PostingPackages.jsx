@@ -1045,7 +1045,7 @@ export default function PostingPackages() {
         website: '',
         notes: `New ${clientData.packageType} package client - ${clientData.notes || 'No additional notes'}`
       };
-      const selectedTabs = { warmLeads: true, contactedClients: false, coldLeads: false };
+      const selectedTabs = { contactedClients: false, coldLeads: true };
       const params = new URLSearchParams({
         action: 'addLead',
         leadData: JSON.stringify(leadData),
@@ -1130,7 +1130,7 @@ export default function PostingPackages() {
           clientEmail: addForm.clientEmail,
           type: addForm.clientType || CLIENT_TYPE.NA,
           notes: addForm.notes
-        }, 'warmLeads');
+        }, 'coldLeads');
         showToast(`New client "${addForm.clientName}" has been added to CRM!`);
       } else {
         showToast(`Package added for ${addForm.clientName}`);

@@ -512,6 +512,106 @@ async function repairTasks(fsTaskDocs) {
   return { updated, inserted };
 }
 
+// ─── Block Comments (canvases/{id}/block_comments subcollection) ───
+
+async function repairBlockComments(fsDocs) {
+  // Build Firestore canvas id → Supabase canvas UUID map
+  const { data: sbCanvases } = await supabase
+    .from('canvases')
+    .select('id, legacy_firebase_id')
+    .not('legacy_firebase_id', 'is', null);
+  const fsIdToSbId = new Map();
+  for (const r of sbCanvases || []) {
+    if (r.legacy_firebase_id) fsIdToSbId.set(r.legacy_firebase_id, r.id);
+  }
+
+  let upserted = 0;
+  let skipped = 0;
+  let errored = 0;
+
+  for (const { id: fsId } of fsDocs) {
+    const sbCanvasId = fsIdToSbId.get(fsId);
+    if (!sbCanvasId) {
+      // Canvas wasn't migrated to Supabase — nothing to attach comments to
+      continue;
+    }
+
+    let bcSnap;
+    try {
+      bcSnap = await firestore.collection('canvases').doc(fsId).collection('block_comments').get();
+    } catch (e) {
+      console.warn(`   block_comments read ${fsId}:`, e.message);
+      errored += 1;
+      continue;
+    }
+    if (bcSnap.empty) continue;
+
+    for (const doc of bcSnap.docs) {
+      const blockId = doc.id;
+      const data = doc.data();
+      const fsComments = sanitizeForJson(data.comments || []);
+      const fsReactions = sanitizeForJson(data.reactions || []);
+
+      if (!fsComments.length && !fsReactions.length) {
+        skipped += 1;
+        continue;
+      }
+
+      if (DRY_RUN) {
+        console.log(`   [dry-run] UPSERT block_comment canvas=${fsId} block=${blockId} comments=${fsComments.length} reactions=${fsReactions.length}`);
+        upserted += 1;
+        continue;
+      }
+
+      // Check if row already exists for this canvas+block
+      const { data: existing } = await supabase
+        .from('canvas_block_comments')
+        .select('id, comments, reactions')
+        .eq('canvas_id', sbCanvasId)
+        .eq('block_id', blockId)
+        .maybeSingle();
+
+      if (existing) {
+        // Merge: deduplicate by comment id, append new ones
+        const existingIds = new Set((existing.comments || []).map((c) => c.id).filter(Boolean));
+        const newComments = fsComments.filter((c) => !c.id || !existingIds.has(c.id));
+        const mergedComments = [...(existing.comments || []), ...newComments];
+
+        const existingReactionKeys = new Set(
+          (existing.reactions || []).map((r) => `${r.emoji}|${r.userId}`)
+        );
+        const newReactions = fsReactions.filter(
+          (r) => !existingReactionKeys.has(`${r.emoji}|${r.userId}`)
+        );
+        const mergedReactions = [...(existing.reactions || []), ...newReactions];
+
+        const { error } = await supabase
+          .from('canvas_block_comments')
+          .update({ comments: mergedComments, reactions: mergedReactions, updated_at: new Date().toISOString() })
+          .eq('id', existing.id);
+        if (error) {
+          console.warn(`   block_comment merge ${blockId}:`, error.message);
+          errored += 1;
+        } else {
+          upserted += 1;
+        }
+      } else {
+        const { error } = await supabase
+          .from('canvas_block_comments')
+          .insert({ canvas_id: sbCanvasId, block_id: blockId, comments: fsComments, reactions: fsReactions });
+        if (error) {
+          console.warn(`   block_comment insert ${blockId}:`, error.message);
+          errored += 1;
+        } else {
+          upserted += 1;
+        }
+      }
+    }
+  }
+
+  return { upserted, skipped, errored };
+}
+
 async function main() {
   console.log(`\n🔧 Repair workspaces + tasks from Firebase ${DRY_RUN ? '(DRY RUN)' : ''}\n`);
 
@@ -526,6 +626,10 @@ async function main() {
 
   const canvasStats = await repairCanvases(uidToOwnerId, fsDocs);
   console.log('\nCanvases:', canvasStats);
+
+  console.log('\n💬 Migrating block comments from Firestore subcollections...');
+  const commentStats = await repairBlockComments(fsDocs);
+  console.log('Block comments:', commentStats);
 
   const taskSnap = await firestore.collection('tasks').get();
   const fsTaskDocs = taskSnap.docs.map((doc) => ({ id: doc.id, raw: doc.data() }));

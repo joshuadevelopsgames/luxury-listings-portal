@@ -293,7 +293,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       primaryContact: newClient.primaryContact,
       phone: newClient.phone,
       notes: newClient.notes
-    }, 'warmLeads');
+    }, 'coldLeads');
     if (!crmResult?.success) {
       toast.success('Client added. Could not add to CRM: ' + (crmResult?.error || 'unknown error'));
     } else {

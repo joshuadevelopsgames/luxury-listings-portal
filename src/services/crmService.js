@@ -106,7 +106,20 @@ export function getContactTypes(contact) {
   return [CLIENT_TYPE.NA];
 }
 
-const DEFAULT_TAB = 'warmLeads';
+/**
+ * Fully onboarded clients (Approved + active row) belong on the Clients list only, not the CRM pipeline.
+ * Pending / paused / cancelled / rejected rows still appear on CRM for sales context.
+ * @param {object} client - Mapped client row (approvalStatus from meta, status from clients table)
+ * @returns {boolean}
+ */
+export function isClientHiddenFromCrmPage(client) {
+  if (!client) return false;
+  const approval = String(client.approvalStatus || '').toLowerCase();
+  const rowStatus = String(client.status || '').toLowerCase();
+  return approval === 'approved' && rowStatus === 'active';
+}
+
+const DEFAULT_TAB = 'coldLeads';
 
 /**
  * Get CRM leads from shared doc (all users see same leads).
@@ -118,7 +131,7 @@ export async function getCrmLeadsForCurrentUser(uid) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return [];
   try {
-    const { warmLeads, contactedClients, coldLeads } = await supabaseService.getCrmData();
+    const { contactedClients, coldLeads, notInterestedLeads } = await supabaseService.getCrmData();
     const mapLead = (c, i, prefix) => ({
       id: String(c.id ?? `${prefix}-${i}`),
       clientName: (c.contactName || c.clientName || c.name || '').trim() || '—',
@@ -126,9 +139,9 @@ export async function getCrmLeadsForCurrentUser(uid) {
       source: 'lead'
     });
     return [
-      ...warmLeads.map((c, i) => mapLead(c, i, 'lead-warm')),
       ...contactedClients.map((c, i) => mapLead(c, i, 'lead-contacted')),
-      ...coldLeads.map((c, i) => mapLead(c, i, 'lead-cold'))
+      ...coldLeads.map((c, i) => mapLead(c, i, 'lead-cold')),
+      ...(notInterestedLeads || []).map((c, i) => mapLead(c, i, 'lead-not-interested'))
     ];
   } catch (err) {
     console.error('CRM getCrmLeadsForCurrentUser error:', err);
@@ -139,7 +152,7 @@ export async function getCrmLeadsForCurrentUser(uid) {
 /**
  * Add a contact to shared CRM (Firestore crm/data). Visible to all users.
  * @param {Object} contact - { contactName?, clientName?, email, type, phone?, ... }
- * @param {string} tab - 'warmLeads' | 'contactedClients' | 'coldLeads'
+ * @param {string} tab - 'contactedClients' | 'coldLeads' | 'notInterestedLeads'
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
 export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
@@ -160,10 +173,15 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
   if (!email) return { success: false, error: 'Email is required for CRM' };
 
   try {
-    const { warmLeads, contactedClients, coldLeads } = await supabaseService.getCrmData();
+    const { contactedClients, coldLeads, notInterestedLeads } = await supabaseService.getCrmData();
+    const ni = notInterestedLeads || [];
     const primaryContact = contact.primaryContact && (contact.primaryContact.name || contact.primaryContact.email || contact.primaryContact.phone || contact.primaryContact.role)
       ? { name: contact.primaryContact.name || '', email: contact.primaryContact.email || '', phone: contact.primaryContact.phone || '', role: contact.primaryContact.role || '' }
       : null;
+    const statusForTab =
+      tab === 'contactedClients' ? 'contacted' : tab === 'notInterestedLeads' ? 'not_interested' : 'cold';
+    const categoryForTab =
+      tab === 'contactedClients' ? 'contactedClients' : tab === 'notInterestedLeads' ? 'notInterestedLeads' : 'coldLeads';
     const newLead = {
       id: `crm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       contactName: name || email.split('@')[0] || '—',
@@ -178,14 +196,14 @@ export async function addContactToCRM(contact, tab = DEFAULT_TAB) {
       notes: contact.notes || '',
       location: normalizeLocation(contact.location || '') || null,
       primaryContact: primaryContact || null,
-      status: tab === 'warmLeads' ? 'warm' : tab === 'contactedClients' ? 'contacted' : 'cold',
+      status: statusForTab,
       lastContact: new Date().toISOString(),
-      category: tab === 'warmLeads' ? 'warmLeads' : tab === 'contactedClients' ? 'contactedClients' : 'coldLeads'
+      category: categoryForTab
     };
-    if (tab === 'warmLeads') warmLeads.unshift(newLead);
-    else if (tab === 'contactedClients') contactedClients.unshift(newLead);
+    if (tab === 'contactedClients') contactedClients.unshift(newLead);
+    else if (tab === 'notInterestedLeads') ni.unshift(newLead);
     else coldLeads.unshift(newLead);
-    await supabaseService.setCrmData({ warmLeads, contactedClients, coldLeads });
+    await supabaseService.setCrmData({ warmLeads: [], contactedClients, coldLeads, notInterestedLeads: ni });
     return { success: true };
   } catch (err) {
     console.error('CRM addContactToCRM error:', err);
@@ -202,11 +220,13 @@ export async function removeLeadFromCRM(leadId) {
   const { data: { session: removeSession } } = await supabase.auth.getSession();
   if (!removeSession?.user) return { success: false, error: 'Not authenticated' };
   try {
-    const { warmLeads, contactedClients, coldLeads } = await supabaseService.getCrmData();
+    const { contactedClients, coldLeads, notInterestedLeads } = await supabaseService.getCrmData();
+    const ni = notInterestedLeads || [];
     await supabaseService.setCrmData({
-      warmLeads: warmLeads.filter(l => l.id !== leadId),
+      warmLeads: [],
       contactedClients: contactedClients.filter(l => l.id !== leadId),
-      coldLeads: coldLeads.filter(l => l.id !== leadId)
+      coldLeads: coldLeads.filter(l => l.id !== leadId),
+      notInterestedLeads: ni.filter(l => l.id !== leadId)
     });
     return { success: true };
   } catch (err) {

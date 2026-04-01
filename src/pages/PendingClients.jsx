@@ -75,7 +75,7 @@ const PendingClients = () => {
         clientEmail: clientData.clientEmail,
         type: CLIENT_TYPE.NA,
         notes: clientData.notes
-      }, 'warmLeads');
+      }, 'coldLeads');
 
       toast.success(`${pendingClient.email} approved and added as client!`);
     } catch (error) {

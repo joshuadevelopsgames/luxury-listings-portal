@@ -35,25 +35,22 @@ function mergedObject(group) {
 }
 
 /**
- * Merge duplicate CRM leads (by name/email) into one per group. Keeps one lead per group with merged fields.
- * @param {Array} warmLeads
- * @param {Array} contactedClients
- * @param {Array} coldLeads
- * @returns {{ warmLeads: Array, contactedClients: Array, coldLeads: Array, mergedCount: number }}
+ * Merge duplicate CRM leads (by name/email) into one per group.
+ * @returns {{ contactedClients: Array, coldLeads: Array, notInterestedLeads: Array, mergedCount: number }}
  */
-export function mergeCrmDuplicates(warmLeads, contactedClients, coldLeads) {
+export function mergeCrmDuplicates(contactedClients, coldLeads, notInterestedLeads = []) {
   const withSource = (arr, source) => (arr || []).map((c) => ({ ...c, _source: source }));
   const all = [
-    ...withSource(warmLeads, 'warm'),
     ...withSource(contactedClients, 'contacted'),
-    ...withSource(coldLeads, 'cold')
+    ...withSource(coldLeads, 'cold'),
+    ...withSource(notInterestedLeads, 'notInterested')
   ];
   const groups = findPotentialDuplicateGroups(all);
   if (groups.length === 0) {
     return {
-      warmLeads: warmLeads || [],
       contactedClients: contactedClients || [],
       coldLeads: coldLeads || [],
+      notInterestedLeads: notInterestedLeads || [],
       mergedCount: 0
     };
   }
@@ -71,17 +68,17 @@ export function mergeCrmDuplicates(warmLeads, contactedClients, coldLeads) {
   }
 
   const drop = (arr) => (arr || []).filter((c) => !idsToRemove.has(c.id));
-  let warm = drop(warmLeads);
   let contacted = drop(contactedClients);
   let cold = drop(coldLeads);
+  let notInterested = drop(notInterestedLeads);
 
   for (const lead of mergedLeads) {
     const { _source, _sources, ...rest } = lead;
     const clean = { ...rest };
     const list = _sources || (_source ? [_source] : []);
-    if (list.includes('warm')) warm = [clean, ...warm];
     if (list.includes('contacted')) contacted = [clean, ...contacted];
-    if (list.includes('cold')) cold = [clean, ...cold];
+    if (list.includes('cold') || list.includes('warm')) cold = [clean, ...cold];
+    if (list.includes('notInterested')) notInterested = [clean, ...notInterested];
   }
 
   const removed = idsToRemove.size;
@@ -89,9 +86,9 @@ export function mergeCrmDuplicates(warmLeads, contactedClients, coldLeads) {
   const mergedCount = removed - kept;
 
   return {
-    warmLeads: warm,
     contactedClients: contacted,
     coldLeads: cold,
+    notInterestedLeads: notInterested,
     mergedCount
   };
 }

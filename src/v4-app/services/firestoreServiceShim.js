@@ -814,19 +814,35 @@ export const firestoreService = {
 
   async getCrmData() {
     const { data } = await supabase.from('crm_data').select('*').eq('id', 'shared').maybeSingle();
+    const warm = data?.warm_leads || [];
+    const coldBase = data?.cold_leads || [];
+    const seen = new Set(coldBase.map((c) => String(c?.id)));
+    const cold = [...coldBase];
+    for (const w of warm) {
+      const id = String(w?.id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      cold.push({
+        ...w,
+        status: w?.status === 'warm' || w?.status === 'Warm' ? 'cold' : w?.status,
+        category: w?.category === 'warmLeads' ? 'coldLeads' : w?.category,
+      });
+    }
     return {
-      warmLeads: data?.warm_leads || [],
+      warmLeads: [],
       contactedClients: data?.contacted_clients || [],
-      coldLeads: data?.cold_leads || [],
+      coldLeads: cold,
+      notInterestedLeads: data?.not_interested_leads || [],
     };
   },
 
   async setCrmData(payload) {
     await supabase.from('crm_data').upsert({
       id: 'shared',
-      warm_leads: payload.warmLeads,
+      warm_leads: [],
       contacted_clients: payload.contactedClients,
       cold_leads: payload.coldLeads,
+      not_interested_leads: payload.notInterestedLeads ?? [],
       last_sync_time: new Date().toISOString(),
     });
   },
@@ -1049,16 +1065,33 @@ export const firestoreService = {
   // ──────────────────────────────────────────────────────────
 
   async createTaskRequest(requestData) {
-    const fromId = await profileIdByEmail(requestData.fromUserEmail);
-    const toId = await profileIdByEmail(requestData.toUserEmail);
+    const title = String(requestData.taskTitle ?? requestData.title ?? '').trim();
+    if (!title) throw new Error('Task title is required');
+    const description = requestData.taskDescription ?? requestData.description ?? '';
+    const priorityRaw = requestData.taskPriority ?? requestData.priority;
+
+    const fromEmail = String(requestData.fromUserEmail || '').trim().toLowerCase();
+    const toEmail = String(requestData.toUserEmail || '').trim().toLowerCase();
+    const fromId = await profileIdByEmail(fromEmail);
+    const toId = await profileIdByEmail(toEmail);
+    if (!fromId || !toId) throw new Error('Could not resolve sender or recipient profile in directory');
     const { data, error } = await supabase
       .from('task_requests')
-      .insert({ from_user_id: fromId, to_user_id: toId, title: requestData.title, description: requestData.description, priority: normalizeTaskPriorityToInt(requestData.priority, 2), status: 'pending' })
+      .insert({
+        from_user_id: fromId,
+        to_user_id: toId,
+        from_user_email: fromEmail,
+        to_user_email: toEmail,
+        title,
+        description: description || null,
+        priority: normalizeTaskPriorityToInt(priorityRaw, 2),
+        status: 'pending',
+      })
       .select('id')
       .single();
     if (error) throw error;
     // Create notification
-    await supabaseService.createNotification({ userEmail: requestData.toUserEmail, type: 'task_request', title: 'New Task Request', message: `You received a task request: ${requestData.title}`, link: '/v4/tasks' });
+    await supabaseService.createNotification({ userEmail: requestData.toUserEmail, type: 'task_request', title: 'New Task Request', message: `You received a task request: ${title}`, link: '/v4/tasks' });
     return { success: true, id: data.id };
   },
 

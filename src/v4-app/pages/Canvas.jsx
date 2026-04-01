@@ -298,13 +298,23 @@ export default function CanvasPage() {
         created: Date.now(),
         updated: Date.now(),
       };
+      const tempId = c.id;
       setCanvases((prev) => [c, ...prev]);
-      setActiveId(c.id);
+      setActiveId(tempId);
       toast.success('Workspace created');
-      supabaseService.createCanvas(userId, c).catch((err) => {
-        console.error('Canvas create error:', err);
-        toast.error('Failed to save workspace');
-      });
+      supabaseService
+        .createCanvas(userId, c)
+        .then((saved) => {
+          if (!saved) return;
+          setCanvases((prev) =>
+            prev.map((x) => (x.id === tempId ? { ...saved, blocks: x.blocks } : x)),
+          );
+          setActiveId((aid) => (aid === tempId ? saved.id : aid));
+        })
+        .catch((err) => {
+          console.error('Canvas create error:', err);
+          toast.error('Failed to save workspace');
+        });
       return c;
     },
     [userId]
@@ -372,12 +382,22 @@ export default function CanvasPage() {
         created: Date.now(),
         updated: Date.now(),
       };
+      const tempId = c.id;
       setCanvases((prev) => [c, ...prev]);
-      setActiveId(c.id);
-      supabaseService.createCanvas(userId, c).catch((err) => {
-        console.error('Canvas duplicate error:', err);
-        toast.error('Failed to duplicate workspace');
-      });
+      setActiveId(tempId);
+      supabaseService
+        .createCanvas(userId, c)
+        .then((saved) => {
+          if (!saved) return;
+          setCanvases((prev) =>
+            prev.map((x) => (x.id === tempId ? { ...saved, blocks: x.blocks } : x)),
+          );
+          setActiveId((aid) => (aid === tempId ? saved.id : aid));
+        })
+        .catch((err) => {
+          console.error('Canvas duplicate error:', err);
+          toast.error('Failed to duplicate workspace');
+        });
       toast.success('Workspace duplicated');
     },
     [canvases, sharedCanvases, userId]
