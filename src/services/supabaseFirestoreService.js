@@ -1620,22 +1620,19 @@ class SupabaseService {
         if (error) throw error;
         return { success: true, id: dup.id };
       }
-      const { data, error } = await supabase.from('notifications').insert([clean({
-        user_id: recipient.id,
-        user_email: emailKey,
-        type: notificationData.type,
-        title: notificationData.title,
-        body: notificationData.message,
-        message: notificationData.message,
-        link: notificationData.link || null,
-        read: false,
-        count: 1,
-        task_request_id: notificationData.taskRequestId || null,
-        created_at: ts(),
-        updated_at: ts(),
-      })]).select().single();
+      // RPC bypasses flaky RLS WITH CHECK on direct INSERT (migration 033 api_create_notification).
+      const { data: newId, error } = await supabase.rpc('api_create_notification', {
+        p_user_id: recipient.id,
+        p_user_email: emailKey,
+        p_type: notificationData.type ?? null,
+        p_title: notificationData.title ?? null,
+        p_body: notificationData.message ?? null,
+        p_message: notificationData.message ?? null,
+        p_link: notificationData.link ?? null,
+        p_task_request_id: notificationData.taskRequestId ?? null,
+      });
       if (error) throw error;
-      return { success: true, id: data.id };
+      return { success: true, id: newId };
     } catch (error) {
       const e = error;
       console.error(

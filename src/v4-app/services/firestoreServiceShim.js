@@ -942,13 +942,19 @@ export const firestoreService = {
   async createNotification(notificationData) {
     const toId = await profileIdByEmail(notificationData.userEmail);
     if (!toId) return { success: false };
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert({ user_id: toId, type: notificationData.type, title: notificationData.title, body: notificationData.message, link: notificationData.link })
-      .select('id')
-      .single();
+    const emailKey = String(notificationData.userEmail).trim().toLowerCase();
+    const { data: newId, error } = await supabase.rpc('api_create_notification', {
+      p_user_id: toId,
+      p_user_email: emailKey,
+      p_type: notificationData.type ?? null,
+      p_title: notificationData.title ?? null,
+      p_body: notificationData.message ?? null,
+      p_message: notificationData.message ?? null,
+      p_link: notificationData.link ?? null,
+      p_task_request_id: notificationData.taskRequestId ?? null,
+    });
     if (error) throw error;
-    return { success: true, id: data.id };
+    return { success: true, id: newId };
   },
 
   async getNotifications(userEmail) {
