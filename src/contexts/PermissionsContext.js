@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { supabaseService } from '../services/supabaseService';
 import { isSystemAdmin as checkIsSystemAdmin, onSystemAdminsChange } from '../utils/systemAdmins';
@@ -94,6 +94,37 @@ export function PermissionsProvider({ children }) {
     // to re-subscribe to realtime every time permissions change. The realtime
     // listener handles live updates. The initial seed happens on email change.
   ]);
+
+  // Stable fingerprint of DB-backed permissions on currentUser — when this
+  // changes (e.g. shell cache had [] and handleUserSignIn then fills real
+  // permissions with the same permissionsVersion as 0), we must sync `pages`
+  // without re-subscribing realtime (Effect 1).
+  const authPagePermissionsKey = useMemo(() => {
+    if (!currentUser?.email || currentUser.isDemoViewOnly) return '';
+    const arr = Array.isArray(currentUser.pagePermissions) ? currentUser.pagePermissions : [];
+    const v = currentUser.permissionsVersion ?? 0;
+    return `${currentUser.email}\0${v}\0${JSON.stringify(arr)}`;
+  }, [
+    currentUser?.email,
+    currentUser?.isDemoViewOnly,
+    currentUser?.permissionsVersion,
+    currentUser?.pagePermissions,
+  ]);
+
+  // Effect 2b: After auth hydration, keep `pages` in sync with AuthContext's
+  // profile-backed pagePermissions. Fixes empty sidebar when Effect 1 seeded
+  // from display cache before the DB merge (permissionsVersion often stays 0).
+  useEffect(() => {
+    if (!authHydrated || !currentUser?.email) return;
+    if (currentUser.isDemoViewOnly) {
+      setPages([]);
+      return;
+    }
+    if (!authPagePermissionsKey) return;
+    const next = Array.isArray(currentUser.pagePermissions) ? currentUser.pagePermissions : [];
+    setPages(next);
+    setPermissionsVersion(currentUser.permissionsVersion || 0);
+  }, [authHydrated, authPagePermissionsKey, currentUser?.email, currentUser?.isDemoViewOnly, currentUser?.pagePermissions, currentUser?.permissionsVersion]);
 
   // Effect 2: Release the loading gate as soon as AuthContext finishes its DB
   // fetch (authHydrated=true). This is a SEPARATE effect so it always fires

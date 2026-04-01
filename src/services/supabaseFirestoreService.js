@@ -131,6 +131,14 @@ function getTableChannel(table) {
   return entry;
 }
 
+/**
+ * `realtimeListener` uses `[]` as the catch-path sentinel for array-shaped data.
+ * That value is truthy; profile subscribers must ignore it — it is not a row object.
+ */
+function isProfileRowResult(result) {
+  return result != null && typeof result === 'object' && !Array.isArray(result);
+}
+
 /** Realtime: fetch + subscribe pattern. Returns unsubscribe fn.
  *  All callers for the same table share one WebSocket channel.
  *  In-flight dedup: if two listeners subscribe simultaneously with an empty
@@ -546,7 +554,10 @@ class SupabaseService {
     return realtimeListener('profiles', lower, async () => {
       const { data } = await supabase.from('profiles').select('*').ilike('email', lower).maybeSingle();
       return data ? this._profileToApprovedUser(data) : null;
-    }, (result) => { if (result) callback(result); });
+    }, (result) => {
+      if (!isProfileRowResult(result)) return;
+      callback(result);
+    });
   }
 
   async deleteApprovedUser(email) {
@@ -2431,7 +2442,9 @@ class SupabaseService {
   // ===== PAGE PERMISSIONS =====
 
   _mapPermissionsFromDoc(userData) {
-    if (!userData) return { pages: [], features: [], capabilities: [], adminPermissions: false, version: 0 };
+    if (!userData || Array.isArray(userData)) {
+      return { pages: [], features: [], capabilities: [], adminPermissions: false, version: 0 };
+    }
     const pages = Array.isArray(userData.pagePermissions) ? userData.pagePermissions
       : Array.isArray(userData.page_permissions) ? userData.page_permissions : [];
     const features = Array.isArray(userData.featurePermissions) ? userData.featurePermissions
