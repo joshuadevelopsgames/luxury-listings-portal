@@ -1597,7 +1597,7 @@ class SupabaseService {
     if (!notificationData?.userEmail) return { success: false };
     try {
       const emailKey = String(notificationData.userEmail).trim().toLowerCase();
-      const { data: recipient, error: pe } = await supabase.from('profiles').select('id').eq('email', emailKey).maybeSingle();
+      const { data: recipient, error: pe } = await supabase.from('profiles').select('id').ilike('email', emailKey).maybeSingle();
       if (pe) console.warn('createNotification profile lookup:', pe.message);
       if (!recipient?.id) return { success: false };
 
@@ -1636,14 +1636,23 @@ class SupabaseService {
       })]).select().single();
       if (error) throw error;
       return { success: true, id: data.id };
-    } catch (error) { console.error('❌ Error creating notification:', error); throw error; }
+    } catch (error) {
+      const e = error;
+      console.error(
+        '❌ Error creating notification:',
+        e?.message || e,
+        e?.code && `code=${e.code}`,
+        e?.details && `details=${e.details}`,
+      );
+      throw error;
+    }
   }
 
   async getNotifications(userEmail) {
     try {
       const emailKey = String(userEmail || '').trim().toLowerCase();
       if (!emailKey) return [];
-      const { data: prof } = await supabase.from('profiles').select('id').eq('email', emailKey).maybeSingle();
+      const { data: prof } = await supabase.from('profiles').select('id').ilike('email', emailKey).maybeSingle();
       if (!prof?.id) return [];
       const { data } = await supabase.from('notifications').select('*').eq('user_id', prof.id).order('created_at', { ascending: false });
       return (data || []).map(r => ({ id: r.id, userEmail: r.user_email, type: r.type, title: r.title, message: r.message || r.body, body: r.body || r.message, link: r.link, read: r.read, count: r.count || 1, taskRequestId: r.task_request_id, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
@@ -1664,7 +1673,7 @@ class SupabaseService {
   async markAllNotificationsRead(userEmail) {
     try {
       const emailKey = String(userEmail || '').trim().toLowerCase();
-      const { data: prof } = await supabase.from('profiles').select('id').eq('email', emailKey).maybeSingle();
+      const { data: prof } = await supabase.from('profiles').select('id').ilike('email', emailKey).maybeSingle();
       if (!prof?.id) return;
       const { error } = await supabase.from('notifications').update({ read: true, updated_at: ts() }).eq('user_id', prof.id).eq('read', false);
       if (error) throw error;

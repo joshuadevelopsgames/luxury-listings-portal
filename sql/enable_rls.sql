@@ -173,6 +173,9 @@ END $$;
 
 -- =============================================================================
 -- NOTIFICATIONS (users own their rows)
+-- NOTE: Repo migrations (023, 029) replace this with split policies so authenticated
+-- users can INSERT notifications for *other* recipients (e.g. workspace share).
+-- Do not re-apply this block after migrations or cross-user inserts return HTTP 403.
 -- =============================================================================
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='notifications') THEN
