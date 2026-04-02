@@ -815,13 +815,17 @@ export function AuthProvider({ children }) {
     loadCurrentRole();
   }, [currentUser?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Presence ping
+  // Presence ping — only fires from the active/visible tab to avoid duplicate PATCHes
+  // when a user has multiple tabs open.
   useEffect(() => {
     if (!currentUser?.email || currentUser?.isDemoViewOnly || !currentUser?.isApproved) return;
-    supabaseService.updateLastSeen(currentUser.email).catch(() => {});
-    const interval = setInterval(() => {
-      supabaseService.updateLastSeen(currentUser.email).catch(() => {});
-    }, 2 * 60 * 1000);
+    const ping = () => {
+      if (!document.hidden) {
+        supabaseService.updateLastSeen(currentUser.email).catch(() => {});
+      }
+    };
+    ping();
+    const interval = setInterval(ping, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, [currentUser?.email, currentUser?.isDemoViewOnly, currentUser?.isApproved]);
 

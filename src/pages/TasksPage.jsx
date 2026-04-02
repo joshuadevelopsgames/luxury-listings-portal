@@ -615,26 +615,17 @@ const TasksPage = () => {
     });
   }, [currentUser?.email]);
 
-  // Unread count for outbox-related notifications (task_accepted, task_completed)
+  // Unread count for outbox-related notifications — realtime subscription, no polling
   useEffect(() => {
     if (!currentUser?.email) return;
-
-    const loadUnread = async () => {
-      try {
-        const notifs = await supabaseService.getNotifications(currentUser.email);
-        const outboxTypes = ['task_accepted', 'task_completed'];
-        const unread = (notifs || []).filter(
-          (n) => !n.read && outboxTypes.includes(n.type)
-        ).length;
-        setOutboxUnreadCount(unread);
-      } catch (error) {
-        console.error('Error loading notification count:', error);
-      }
-    };
-
-    loadUnread();
-    const interval = setInterval(loadUnread, 30000);
-    return () => clearInterval(interval);
+    const outboxTypes = ['task_accepted', 'task_completed'];
+    const unsubscribe = supabaseService.onNotificationsChange(currentUser.email, (notifs) => {
+      const unread = (notifs || []).filter(
+        (n) => !n.read && outboxTypes.includes(n.type)
+      ).length;
+      setOutboxUnreadCount(unread);
+    });
+    return unsubscribe;
   }, [currentUser?.email]);
 
   // Refresh tasks function - call after create/edit/delete actions
@@ -647,21 +638,16 @@ const TasksPage = () => {
     }
   };
 
-  // Load initial data once (no real-time listener for performance)
+  // Load tasks via realtime subscription — fires immediately with current data,
+  // then updates automatically whenever the tasks table changes for this user.
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const tasksData = await DailyTask.filter({ assigned_to: currentUser.email }, '-due_date');
-        setTasks(tasksData);
-      } catch (error) {
-        console.error('Error loading tasks:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    if (!currentUser?.email) return;
+    setLoading(true);
+    const unsubscribe = supabaseService.onUserTasksChange(currentUser.email, (tasksData) => {
+      setTasks(tasksData || []);
+      setLoading(false);
+    });
+    return unsubscribe;
   }, [currentUser?.email]);
 
   // Force re-filter every minute to auto-hide tasks that pass 24-hour mark

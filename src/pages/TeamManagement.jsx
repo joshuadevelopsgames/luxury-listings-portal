@@ -66,7 +66,13 @@ const TeamManagement = () => {
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
-        const raw = await supabaseService.getApprovedUsers();
+        const [raw, allLeaveBalances] = await Promise.all([
+          supabaseService.getApprovedUsers(),
+          canViewLeaveBalance ? supabaseService.getAllUsersWithLeaveBalances() : Promise.resolve([]),
+        ]);
+        const leaveBalanceMap = Object.fromEntries(
+          allLeaveBalances.map(b => [(b.email || '').toLowerCase(), b.leaveBalances])
+        );
         const adminSet = new Set(getSystemAdmins().map(e => e.toLowerCase()));
         const users = raw.filter(u => !adminSet.has((u.email || u.id || '').toLowerCase()));
         const sortedUsers = [...users].sort((a, b) => {
@@ -74,9 +80,12 @@ const TeamManagement = () => {
           const dateB = b.createdAt?.toDate?.() || new Date(0);
           return dateA - dateB;
         });
-        const formattedMembers = await Promise.all(sortedUsers.map(async (user, index) => {
+        const defaultLeaveBalance = { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 }, remote: { total: 10, used: 0, remaining: 10 } };
+        const formattedMembers = sortedUsers.map((user, index) => {
           const email = user.email || user.id;
-          const leaveBalance = canViewLeaveBalance ? await supabaseService.getUserLeaveBalances(email) : { vacation: { total: 15, used: 0, remaining: 15 }, sick: { total: 3, used: 0, remaining: 3 }, remote: { total: 10, used: 0, remaining: 10 } };
+          const leaveBalance = canViewLeaveBalance
+            ? (leaveBalanceMap[(email || '').toLowerCase()] || defaultLeaveBalance)
+            : defaultLeaveBalance;
           return {
             ...user,
             id: user.id || index + 1,
@@ -96,7 +105,7 @@ const TeamManagement = () => {
             manager: user.manager || '',
             employeeId: user.employeeId || generateEmployeeId(index)
           };
-        }));
+        });
         setTeamMembers(formattedMembers);
       } catch (error) {
         console.error('Error loading team members:', error);

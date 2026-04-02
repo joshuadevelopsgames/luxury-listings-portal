@@ -1645,13 +1645,22 @@ class SupabaseService {
     }
   }
 
+  // Module-level cache: email → profile_id. Avoids a redundant profiles lookup on every notification poll.
+  _profileIdCache = {};
+
   async getNotifications(userEmail) {
     try {
       const emailKey = String(userEmail || '').trim().toLowerCase();
       if (!emailKey) return [];
-      const { data: prof } = await supabase.from('profiles').select('id').ilike('email', emailKey).maybeSingle();
-      if (!prof?.id) return [];
-      const { data } = await supabase.from('notifications').select('*').eq('user_id', prof.id).order('created_at', { ascending: false });
+      // Use cached profile id if available; otherwise fetch once and cache it.
+      let profileId = this._profileIdCache[emailKey];
+      if (!profileId) {
+        const { data: prof } = await supabase.from('profiles').select('id').ilike('email', emailKey).maybeSingle();
+        if (!prof?.id) return [];
+        this._profileIdCache[emailKey] = prof.id;
+        profileId = prof.id;
+      }
+      const { data } = await supabase.from('notifications').select('*').eq('user_id', profileId).order('created_at', { ascending: false });
       return (data || []).map(r => ({ id: r.id, userEmail: r.user_email, type: r.type, title: r.title, message: r.message || r.body, body: r.body || r.message, link: r.link, read: r.read, count: r.count || 1, taskRequestId: r.task_request_id, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
     } catch { return []; }
   }
@@ -2341,16 +2350,17 @@ class SupabaseService {
   }
 
   _getCurrentUserId() {
-    return supabase.auth.getUser().then(({ data }) => data?.user?.id);
+    return supabase.auth.getSession().then(({ data }) => data?.session?.user?.id);
   }
 
   _getCurrentUserEmail() {
-    return supabase.auth.getUser().then(({ data }) => data?.user?.email);
+    return supabase.auth.getSession().then(({ data }) => data?.session?.user?.email);
   }
 
   async createInstagramReport(reportData) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('You must be signed in to create an Instagram report');
       const publicLinkId = this.generatePublicLinkId();
       const startDate = reportData.startDate ? (reportData.startDate instanceof Date ? reportData.startDate : new Date(reportData.startDate)) : null;
@@ -2376,7 +2386,8 @@ class SupabaseService {
     const cached = cacheGet(key);
     if (cached) return cached;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return [];
       // Match by user_id_legacy OR created_by_id OR user_email (covers both
       // migrated reports where user_id_legacy may be null, and new reports)
@@ -2390,7 +2401,8 @@ class SupabaseService {
 
   async getInstagramReportsByClient(clientId) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user || !clientId) return [];
       // Match by client_id (UUID) or client_id_legacy (Firebase ID)
       const { data } = await supabase.from('instagram_reports').select('*')
@@ -2439,7 +2451,8 @@ class SupabaseService {
 
   async updateInstagramReport(reportId, updates) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('You must be signed in');
       const processed = { ...updates, updated_at: ts() };
       if ('startDate' in updates && updates.startDate) {
@@ -2469,7 +2482,8 @@ class SupabaseService {
 
   async deleteInstagramReport(reportId) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error('You must be signed in');
       const { error } = await supabase.from('instagram_reports').update({ archived: true, archived_at: ts(), archived_by: user.email, updated_at: ts() }).eq('id', reportId);
       if (error) throw error;
@@ -2482,7 +2496,8 @@ class SupabaseService {
     const idKey = [...new Set((clientIds || []).map(String).filter(Boolean))].sort().join('|');
     const cacheFilter = `${loadAll}-${archived}-${idKey}`;
     const fetcher = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       const uid = userId || user?.id;
       const email = user?.email;
       let q = supabase.from('instagram_reports').select('*').order('created_at', { ascending: false });
@@ -2643,7 +2658,6 @@ class SupabaseService {
 
   async submitErrorReport(reportData) {
     try {
-      await supabase.auth.getUser().catch(() => ({})); // capture user context if available (unused for now)
       const { data, error } = await supabase.from('error_reports').insert([{ error_message: reportData.errorMessage || reportData.message, error_stack: reportData.errorStack || reportData.stack, url: reportData.url || (typeof window !== 'undefined' ? window.location.href : null), console_logs: reportData.consoleLogs ? JSON.stringify(reportData.consoleLogs) : null, created_at: ts() }]).select().single();
       if (error) throw error;
       return { success: true, id: data.id };
