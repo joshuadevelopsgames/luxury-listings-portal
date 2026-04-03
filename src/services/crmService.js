@@ -107,16 +107,19 @@ export function getContactTypes(contact) {
 }
 
 /**
- * Fully onboarded clients (Approved + active row) belong on the Clients list only, not the CRM pipeline.
- * Pending / paused / cancelled / rejected rows still appear on CRM for sales context.
- * @param {object} client - Mapped client row (approvalStatus from meta, status from clients table)
+ * Active clients (Approved) belong on the Clients list only, not the CRM pipeline.
+ * Paused / cancelled / rejected rows still appear on CRM for sales context.
+ * Note: normalizeExistingClient sets `status = approvalStatus || status`, so checking
+ * approvalStatus alone is the reliable signal for "this is a live client".
+ * @param {object} client - Mapped client row
  * @returns {boolean}
  */
 export function isClientHiddenFromCrmPage(client) {
   if (!client) return false;
   const approval = String(client.approvalStatus || '').toLowerCase();
   const rowStatus = String(client.status || '').toLowerCase();
-  return approval === 'approved' && rowStatus === 'active';
+  // Hide if approvalStatus is 'approved' OR the normalized status field is 'approved'/'active'
+  return approval === 'approved' || rowStatus === 'active';
 }
 
 const DEFAULT_TAB = 'coldLeads';

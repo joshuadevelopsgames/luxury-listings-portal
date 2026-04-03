@@ -7,6 +7,8 @@ import { supabaseService } from '../services/supabaseService';
 import { supabase } from '../lib/supabase';
 import { openaiService } from '../services/openaiService';
 import CanvasBlockEditor, { blockId } from './canvas/CanvasBlockEditor';
+import CollaborationCursors from './canvas/CollaborationCursors';
+import { useYjsCanvasCollaboration } from '../hooks/useYjsCanvasCollaboration';
 import {
   PencilRuler,
   Plus,
@@ -180,6 +182,87 @@ export default function CanvasPage() {
   const isOwner = activeCanvas && userId && (canvases.some((c) => c.id === activeId) || activeCanvas.userId === userId);
   const canShare = isOwner;
 
+  const [resolvedCanvasUuid, setResolvedCanvasUuid] = useState(null);
+  useEffect(() => {
+    if (!activeId) {
+      setResolvedCanvasUuid(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const r = (await supabaseService.resolveCanvasId(activeId)) || activeId;
+      if (!cancelled) setResolvedCanvasUuid(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeId]);
+
+  const collabEnabled = Boolean(
+    activeCanvas &&
+      userId &&
+      ((Array.isArray(activeCanvas.sharedWith) && activeCanvas.sharedWith.length > 0) ||
+        sharedCanvases.some((c) => c.id === activeId)),
+  );
+
+  const onPersistCollab = useCallback(
+    (blocks) => {
+      if (!activeId || !userId || !activeCanvas) return;
+      const ownerId = activeCanvas.userId ?? userId;
+      supabaseService.updateCanvas(ownerId, activeId, { blocks }).catch((err) => {
+        console.error('Canvas save error (collab):', err);
+      });
+      if (isOwner) {
+        supabaseService
+          .saveCanvasHistorySnapshot(activeId, {
+            blocks,
+            title: activeCanvas?.title,
+            createdBy: userEmail,
+          })
+          .catch(() => {});
+      }
+      setSharedCanvases((prev) => {
+        if (!prev.some((c) => c.id === activeId)) return prev;
+        return prev.map((c) => (c.id === activeId ? { ...c, blocks, updated: Date.now() } : c));
+      });
+    },
+    [activeId, userId, activeCanvas, isOwner, userEmail],
+  );
+
+  const collab = useYjsCanvasCollaboration(
+    resolvedCanvasUuid,
+    collabEnabled,
+    userId
+      ? {
+          id: userId,
+          email: userEmail,
+          name:
+            currentUser?.firstName && currentUser?.lastName
+              ? `${currentUser.firstName} ${currentUser.lastName}`
+              : currentUser?.displayName || userEmail || 'User',
+        }
+      : null,
+    activeCanvas?.blocks ?? [],
+    onPersistCollab,
+  );
+
+  const editorBlocks =
+    collabEnabled && collab.ready && Array.isArray(collab.mergedBlocks)
+      ? collab.mergedBlocks
+      : activeCanvas?.blocks ?? [];
+
+  useEffect(() => {
+    if (!collabEnabled || !collab.ready || !activeId || !Array.isArray(collab.mergedBlocks)) return;
+    const mb = collab.mergedBlocks;
+    latestBlocksRef.current = mb;
+    setCanvases((prev) =>
+      prev.map((c) => (c.id === activeId ? { ...c, blocks: mb, updated: Date.now() } : c)),
+    );
+    setSharedCanvases((prev) =>
+      prev.map((c) => (c.id === activeId ? { ...c, blocks: mb, updated: Date.now() } : c)),
+    );
+  }, [collab.mergedBlocks, collabEnabled, collab.ready, activeId]);
+
   const pushUndo = useCallback((blocks) => {
     if (!blocks?.length) return;
     const copy = JSON.parse(JSON.stringify(blocks));
@@ -193,6 +276,9 @@ export default function CanvasPage() {
   const updateActiveBlocks = useCallback(
     (blocks, opts = {}) => {
       if (!activeId) return;
+      if (collabEnabled && collab.ready) {
+        collab.syncFromEditor(blocks);
+      }
       latestBlocksRef.current = blocks;
       if (!opts.skipUndoPush && activeCanvas?.blocks) {
         pushUndo(activeCanvas.blocks);
@@ -210,19 +296,22 @@ export default function CanvasPage() {
           if (!activeId || !(userId || activeCanvas?.userId)) return;
           const canvasRowId = (await supabaseService.resolveCanvasId(activeId)) || activeId;
           const ownerId = activeCanvas?.userId ?? userId;
-          supabaseService.updateCanvas(ownerId, activeId, { blocks }).catch((err) => {
-            console.error('Canvas save error (blocks):', err);
-            toast.error('Failed to save');
-          });
-          if (isOwner) {
-            supabaseService.saveCanvasHistorySnapshot(activeId, {
-              blocks,
-              title: activeCanvas?.title,
-              createdBy: userEmail,
-            }).catch(() => {});
-          }
-          if (sharedCanvases.some((c) => c.id === activeId)) {
-            setSharedCanvases((prev) => prev.map((c) => (c.id === activeId ? { ...c, blocks, updated: Date.now() } : c)));
+          const skipHttpPersist = collabEnabled && collab.ready;
+          if (!skipHttpPersist) {
+            supabaseService.updateCanvas(ownerId, activeId, { blocks }).catch((err) => {
+              console.error('Canvas save error (blocks):', err);
+              toast.error('Failed to save');
+            });
+            if (isOwner) {
+              supabaseService.saveCanvasHistorySnapshot(activeId, {
+                blocks,
+                title: activeCanvas?.title,
+                createdBy: userEmail,
+              }).catch(() => {});
+            }
+            if (sharedCanvases.some((c) => c.id === activeId)) {
+              setSharedCanvases((prev) => prev.map((c) => (c.id === activeId ? { ...c, blocks, updated: Date.now() } : c)));
+            }
           }
           const prevEmails = extractMentionedEmails(activeCanvas?.blocks);
           const newEmails = extractMentionedEmails(blocks);
@@ -262,7 +351,21 @@ export default function CanvasPage() {
         })();
       }, 1200);
     },
-    [activeId, userId, activeCanvas?.blocks, activeCanvas?.userId, pushUndo, sharedCanvases]
+    [
+      activeId,
+      userId,
+      activeCanvas?.blocks,
+      activeCanvas?.userId,
+      pushUndo,
+      sharedCanvases,
+      collabEnabled,
+      collab.ready,
+      collab.syncFromEditor,
+      isOwner,
+      userEmail,
+      activeCanvas?.title,
+      currentUser?.email,
+    ]
   );
 
   const handleUndo = useCallback(() => {
@@ -1245,13 +1348,13 @@ export default function CanvasPage() {
 
             {/* Block editor */}
             {(() => {
-              const blocks = activeCanvas?.blocks ?? [];
+              const blocks = editorBlocks;
               latestBlocksRef.current = blocks;
               return null;
             })()}
             <CanvasBlockEditor
               ref={canvasEditorRef}
-              blocks={activeCanvas?.blocks ?? []}
+              blocks={editorBlocks}
               latestBlocksRef={latestBlocksRef}
               onBlocksChange={updateActiveBlocks}
               onWordCountChange={setWordCountStr}
@@ -1265,7 +1368,10 @@ export default function CanvasPage() {
               aiSuggestion={aiSuggestion}
               onAiAccept={handleAiAccept}
               onAiReject={handleAiReject}
+              collaborationEnabled={collabEnabled && collab.ready}
+              onCollaborationCursor={collab.updateCursor}
             />
+            {collabEnabled && collab.ready ? <CollaborationCursors others={collab.others} /> : null}
 
             {/* Word count */}
             <div className="h-7 flex items-center justify-end px-5 border-t border-border bg-[#f5f5f7] dark:bg-[#161617] text-[11px] text-muted-foreground">

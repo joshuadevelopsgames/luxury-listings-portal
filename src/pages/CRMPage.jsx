@@ -206,8 +206,8 @@ const CRMPage = () => {
     if (!currentUser?.uid) return;
     try {
       const { contactedClients: c, coldLeads: cold, notInterestedLeads: ni } = await supabaseService.getCrmData();
-      setContactedClients(c);
-      setColdLeads(cold);
+      setContactedClients(c || []);
+      setColdLeads(cold || []);
       setNotInterestedLeads(ni || []);
       if (c.length || cold.length || (ni || []).length) {
         console.log('📂 Loaded CRM data from Firebase:', { contacted: c.length, cold: cold.length, notInterested: (ni || []).length });
@@ -259,8 +259,8 @@ const CRMPage = () => {
     if (!currentUser?.uid) return;
     loadStoredData();
     const unsubscribe = supabaseService.onCrmDataChange(({ contactedClients: c, coldLeads: cold, notInterestedLeads: ni }) => {
-      setContactedClients(c);
-      setColdLeads(cold);
+      setContactedClients(c || []);
+      setColdLeads(cold || []);
       setNotInterestedLeads(ni || []);
     });
     return () => unsubscribe();
@@ -675,10 +675,9 @@ const CRMPage = () => {
     return !q || name.includes(q) || email.includes(q) || org.includes(q) || ig.includes(q) || web.includes(q) || loc.includes(q) || pcName.includes(q) || pcEmail.includes(q);
   };
 
-  // Single combined list: deduped CRM leads + existing clients
+  // Single combined list: CRM leads only (existing clients are on the Clients page)
   const allContacts = [
-    ...crmLeadsDeduped.map(c => ({ ...c, _type: c._categories[0] || 'cold' })),
-    ...existingClientsForCrm.map(c => ({ ...c, _type: 'clients', isExisting: true, type: (c.clientTypes && c.clientTypes[0]) || c.clientType || c.type || CLIENT_TYPE.NA }))
+    ...crmLeadsDeduped.map(c => ({ ...c, _type: c._categories[0] || 'cold' }))
   ]
     .filter(c => matchesSearch(c, c.isExisting))
     .filter(c => statusFilter === 'all' || (c._categories && c._categories.includes(statusFilter)) || (c._type === statusFilter && !c._categories))
@@ -794,10 +793,9 @@ const CRMPage = () => {
   const totalContacted = contactedClients.length;
   const totalColdLeads = coldLeads.length;
   const totalNotInterested = notInterestedLeads.length;
-  const totalExistingClients = existingClientsForCrm.length;
   const totalLeads = crmLeadsDeduped.length;
 
-  const allContactsForLocations = [...crmLeadsDeduped, ...existingClientsForCrm];
+  const allContactsForLocations = [...crmLeadsDeduped];
   const uniqueLocationsFromData = [...new Set(allContactsForLocations.map(c => (c.location || '').trim()).filter(Boolean))];
   const canonicalSetLower = new Set(CRM_LOCATIONS.map((l) => l.toLowerCase()));
   const legacyLocations = uniqueLocationsFromData.filter((loc) => !canonicalSetLower.has(loc.toLowerCase())).sort();
@@ -1272,17 +1270,6 @@ const CRMPage = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#5856d6]/5 border border-[#5856d6]/20 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#5856d6] mb-1">Existing Clients</p>
-              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalExistingClients}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#5856d6]/10">
-              <UserCheck className="w-5 h-5 text-[#5856d6]" />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Search, filters, and view in one bar */}
@@ -1291,7 +1278,7 @@ const CRMPage = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search leads and clients..."
+            placeholder="Search leads..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-10 pl-9 pr-3 text-[14px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
@@ -1306,7 +1293,6 @@ const CRMPage = () => {
           <option value="cold">Cold leads ({totalColdLeads})</option>
           <option value="notInterested">Not interested ({totalNotInterested})</option>
           <option value="contacted">Contacted ({totalContacted})</option>
-          <option value="clients">Existing clients ({totalExistingClients})</option>
         </select>
         <select
           value={typeFilter}

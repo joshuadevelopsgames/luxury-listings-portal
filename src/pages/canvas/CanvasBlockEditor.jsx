@@ -1023,6 +1023,8 @@ function CanvasBlockEditorInner({
   onAiAccept = null,
   onAiReject = null,
   latestBlocksRef = null,
+  collaborationEnabled = false,
+  onCollaborationCursor = null,
 }, ref) {
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -1053,6 +1055,7 @@ function CanvasBlockEditorInner({
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [addBlockMenuOpen, setAddBlockMenuOpen] = useState(false);
   const addBlockMenuPosRef = useRef({ left: 0, top: 0 });
+  const collabCursorSentAt = useRef(0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -1197,14 +1200,45 @@ function CanvasBlockEditorInner({
       while (node && node !== containerRef.current) {
         if (node.nodeType === 1 && node.getAttribute?.('data-block-id')) {
           setFocusedBlockId(node.getAttribute('data-block-id'));
-          return;
+          break;
         }
         node = node.parentNode;
+      }
+      if (collaborationEnabled && onCollaborationCursor && sel.rangeCount > 0) {
+        const now = Date.now();
+        if (now - collabCursorSentAt.current < 60) return;
+        collabCursorSentAt.current = now;
+        try {
+          const range = sel.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          if (rect.width >= 0 && containerRef.current.contains(range.commonAncestorContainer)) {
+            const bid = sel.anchorNode && containerRef.current.contains(sel.anchorNode)
+              ? (() => {
+                  let n = sel.anchorNode;
+                  while (n && n !== containerRef.current) {
+                    if (n.nodeType === 1 && n.getAttribute?.('data-block-id')) {
+                      return n.getAttribute('data-block-id');
+                    }
+                    n = n.parentNode;
+                  }
+                  return null;
+                })()
+              : null;
+            if (bid && rect.height >= 0) {
+              onCollaborationCursor({
+                blockId: bid,
+                x: rect.left,
+                y: rect.top,
+                height: Math.max(14, rect.height),
+              });
+            }
+          }
+        } catch (_) { /* ignore */ }
       }
     };
     document.addEventListener('selectionchange', onSelectionChange);
     return () => document.removeEventListener('selectionchange', onSelectionChange);
-  }, []);
+  }, [collaborationEnabled, onCollaborationCursor]);
 
   const handleDuplicateBlock = useCallback(
     (blockId) => {
