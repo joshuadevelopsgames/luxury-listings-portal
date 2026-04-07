@@ -278,6 +278,9 @@ const InstagramReportsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
+  // Incrementing this key forces the reports useEffect to re-run and re-fetch
+  // fresh data immediately after a save, instead of waiting for the realtime event.
+  const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
   const [copiedLink, setCopiedLink] = useState(null);
   const [expandedClient, setExpandedClient] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
@@ -363,7 +366,7 @@ const InstagramReportsPage = () => {
       clientIds: assignedReportClientIds,
     });
     return () => unsubscribe();
-  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, permissionsLoading, assignedReportClientIdsKey]);
+  }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, permissionsLoading, assignedReportClientIdsKey, reportsRefreshKey]);
 
   const myClientsOnly = useMemo(() => myClients.filter(c => !c.isInternal), [myClients]);
   const myClientsOnlyActive = useMemo(
@@ -1302,6 +1305,10 @@ const InstagramReportsPage = () => {
             setShowCreateModal(false);
             setEditingReport(null);
             setPreSelectedClientId(null);
+            // Force an immediate re-fetch so the list shows fresh data without
+            // waiting for the Supabase realtime broadcast (which can be delayed
+            // or missed if the WebSocket is briefly disconnected).
+            setReportsRefreshKey(k => k + 1);
           }}
         />
       )}
@@ -1763,6 +1770,14 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') }));
       const metrics = formData.metrics ? JSON.parse(JSON.stringify(formData.metrics)) : null;
 
+      // Guard against oversized payloads (Supabase PostgREST limit ~10MB, warn >500KB)
+      const payloadSize = new Blob([JSON.stringify({ clientId, clientName, title, dateRange, notes, postLinks, metrics })]).size;
+      if (payloadSize > 500_000) {
+        toast.error(`Report data is too large (${Math.round(payloadSize / 1024)}KB). Try shortening the notes or reducing metrics data.`);
+        setSaving(false);
+        return;
+      }
+
       if (report) {
         await supabaseService.updateInstagramReport(report.id, { clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
       } else {
@@ -1771,7 +1786,14 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       onSave();
     } catch (error) {
       console.error('Error saving report:', error);
-      toast.error('Failed to save report. Please try again.');
+      const msg = error?.message || '';
+      if (msg.includes('503') || msg.toLowerCase().includes('service unavailable')) {
+        toast.error('Supabase is temporarily unavailable. Please wait a moment and try again.');
+      } else if (msg.includes('413') || msg.toLowerCase().includes('too large') || msg.toLowerCase().includes('payload')) {
+        toast.error('Report data is too large to save. Try removing some screenshots and retry.');
+      } else {
+        toast.error(msg || 'Failed to save report. Please try again.');
+      }
     } finally {
       setSaving(false);
     }
