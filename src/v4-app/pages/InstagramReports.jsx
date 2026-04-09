@@ -2100,8 +2100,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Views</label>
                         <input
                           type="number"
-                          value={formData.metrics?.views || ''}
-                          onChange={(e) => updateMetric('views', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.views ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('views', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="16493"
                         />
@@ -2110,8 +2110,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Followers</label>
                         <input
                           type="number"
-                          value={formData.metrics?.followers || ''}
-                          onChange={(e) => updateMetric('followers', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.followers ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('followers', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="6649"
                         />
@@ -2120,8 +2120,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Interactions</label>
                         <input
                           type="number"
-                          value={formData.metrics?.interactions || ''}
-                          onChange={(e) => updateMetric('interactions', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.interactions ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('interactions', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="25"
                         />
@@ -2130,8 +2130,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Profile Visits</label>
                         <input
                           type="number"
-                          value={formData.metrics?.profileVisits || ''}
-                          onChange={(e) => updateMetric('profileVisits', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.profileVisits ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('profileVisits', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="907"
                         />
@@ -2140,8 +2140,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Accounts Reached</label>
                         <input
                           type="number"
-                          value={formData.metrics?.accountsReached || ''}
-                          onChange={(e) => updateMetric('accountsReached', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.accountsReached ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('accountsReached', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="858"
                         />
@@ -2150,8 +2150,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Likes</label>
                         <input
                           type="number"
-                          value={formData.metrics?.likes || ''}
-                          onChange={(e) => updateMetric('likes', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.likes ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('likes', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="764"
                         />
@@ -2160,8 +2160,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Comments</label>
                         <input
                           type="number"
-                          value={formData.metrics?.comments || ''}
-                          onChange={(e) => updateMetric('comments', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.comments ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('comments', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="37"
                         />
@@ -2170,8 +2170,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Reposts</label>
                         <input
                           type="number"
-                          value={formData.metrics?.reposts || ''}
-                          onChange={(e) => updateMetric('reposts', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.reposts ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('reposts', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="20"
                         />
@@ -2180,8 +2180,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Reach</label>
                         <input
                           type="number"
-                          value={formData.metrics?.reach || ''}
-                          onChange={(e) => updateMetric('reach', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.reach ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('reach', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="Optional"
                         />
@@ -2190,8 +2190,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Impressions</label>
                         <input
                           type="number"
-                          value={formData.metrics?.impressions || ''}
-                          onChange={(e) => updateMetric('impressions', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.impressions ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('impressions', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="Optional"
                         />
@@ -2200,8 +2200,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Saves</label>
                         <input
                           type="number"
-                          value={formData.metrics?.saves || ''}
-                          onChange={(e) => updateMetric('saves', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.saves ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('saves', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="Optional"
                         />
@@ -2210,8 +2210,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Shares</label>
                         <input
                           type="number"
-                          value={formData.metrics?.shares || ''}
-                          onChange={(e) => updateMetric('shares', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.shares ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('shares', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="Optional"
                         />
@@ -2223,8 +2223,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <input
                           type="number"
                           step="0.1"
-                          value={formData.metrics?.viewsFollowerPercent || ''}
-                          onChange={(e) => updateMetric('viewsFollowerPercent', parseFloat(e.target.value) || 0)}
+                          value={formData.metrics?.viewsFollowerPercent ?? ''}
+                          onChange={(e) => { const v = parseFloat(e.target.value); updateMetric('viewsFollowerPercent', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="52.9"
                         />
@@ -2243,8 +2243,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Profile Visits Change</label>
                         <input
                           type="text"
-                          value={formData.metrics?.profileVisitsChange || ''}
-                          onChange={(e) => updateMetric('profileVisitsChange', e.target.value)}
+                          value={formData.metrics?.profileVisitsChange ?? ''}
+                          onChange={(e) => updateMetric('profileVisitsChange', e.target.value || null)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="+147.1%"
                         />
@@ -2254,8 +2254,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <input
                           type="number"
                           step="0.1"
-                          value={formData.metrics?.interactionsFollowerPercent || ''}
-                          onChange={(e) => updateMetric('interactionsFollowerPercent', parseFloat(e.target.value) || 0)}
+                          value={formData.metrics?.interactionsFollowerPercent ?? ''}
+                          onChange={(e) => { const v = parseFloat(e.target.value); updateMetric('interactionsFollowerPercent', isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="94.5"
                         />
@@ -2264,7 +2264,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Accounts Reached Change</label>
                         <input
                           type="text"
-                          value={formData.metrics?.accountsReachedChange || ''}
+                          value={formData.metrics?.accountsReachedChange ?? ''}
                           onChange={(e) => updateMetric('accountsReachedChange', e.target.value)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="-34.3%"
@@ -2275,7 +2275,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <input
                           type="number"
                           step="0.1"
-                          value={formData.metrics?.engagementRatePercent || ''}
+                          value={formData.metrics?.engagementRatePercent ?? ''}
                           onChange={(e) => updateMetric('engagementRatePercent', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="Optional"

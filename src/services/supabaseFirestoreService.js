@@ -2473,8 +2473,12 @@ class SupabaseService {
       if (updates.postLinks !== undefined) { processed.post_links = updates.postLinks; delete processed.postLinks; }
       if (updates.reportType !== undefined) { processed.report_type = updates.reportType; delete processed.reportType; }
       if (updates.screenshots !== undefined) { processed.screenshot_urls = updates.screenshots; delete processed.screenshots; }
-      const { error } = await supabase.from('instagram_reports').update(clean(processed)).eq('id', reportId);
+      const { data, error } = await supabase.from('instagram_reports').update(clean(processed)).eq('id', reportId).select('id');
       if (error) throw error;
+      if (!data || data.length === 0) {
+        console.warn('[updateInstagramReport] Update matched 0 rows — RLS may have blocked the write.', { reportId, processed: clean(processed) });
+        throw new Error('Report update failed — your account may not have permission to edit this report. Please contact an admin.');
+      }
       cacheInvalidate('instagram_reports:');
       return { success: true };
     } catch (error) { throw error; }
