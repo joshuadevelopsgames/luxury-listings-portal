@@ -2220,26 +2220,6 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">Reach</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.reach ?? ''}
-                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('reach', isNaN(v) ? null : v); }}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="Optional"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Impressions</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.impressions ?? ''}
-                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('impressions', isNaN(v) ? null : v); }}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="Optional"
-                        />
-                      </div>
-                      <div>
                         <label className="text-xs text-gray-500">Saves</label>
                         <input
                           type="number"

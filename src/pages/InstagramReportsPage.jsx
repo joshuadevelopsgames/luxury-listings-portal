@@ -2381,26 +2381,6 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">Reach</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.reach || ''}
-                          onChange={(e) => updateMetric('reach', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Impressions</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.impressions || ''}
-                          onChange={(e) => updateMetric('impressions', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
                         <label className="text-xs text-gray-500">Saves</label>
                         <input
                           type="number"
