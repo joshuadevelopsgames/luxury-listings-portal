@@ -1003,7 +1003,17 @@ class SupabaseService {
 
   async submitLeaveRequest(requestData) {
     try {
+      // Resolve subject user's UUID from email — column is NOT NULL and the
+      // auth.uid() default only works when the requester is the subject.
+      let userId = requestData.userId || null;
+      if (!userId && requestData.userEmail) {
+        const { data: prof } = await supabase.from('profiles').select('id').ilike('email', requestData.userEmail).maybeSingle();
+        userId = prof?.id || null;
+      }
+      if (!userId) throw new Error(`Could not resolve user_id for ${requestData.userEmail}`);
+
       const { data, error } = await supabase.from('time_off_requests').insert([clean({
+        user_id: userId,
         user_email: requestData.userEmail,
         employee_name: requestData.employeeName || null,
         leave_type: requestData.leaveType || requestData.type,
