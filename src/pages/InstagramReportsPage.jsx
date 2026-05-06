@@ -20,6 +20,7 @@ import {
   Check,
   Trash2,
   Eye,
+  EyeOff,
   Edit,
   X,
   Image,
@@ -189,9 +190,12 @@ const groupReportsByYearMonth = (reportList) => {
 const getReportCompletionStatus = (metrics) => {
   if (!metrics || typeof metrics !== 'object') return 'incomplete';
   const keyFields = ['followers', 'accountsReached', 'interactions', 'followerChange'];
-  const filled = keyFields.filter(f => metrics[f] != null && metrics[f] !== '').length;
-  if (filled >= 4) return 'complete';
-  if (filled >= 2) return 'partial';
+  const ignored = Array.isArray(metrics._ignoredFields) ? metrics._ignoredFields : [];
+  const active = keyFields.filter(f => !ignored.includes(f));
+  if (active.length === 0) return 'complete';
+  const filled = active.filter(f => metrics[f] != null && metrics[f] !== '').length;
+  if (filled >= active.length) return 'complete';
+  if (filled >= Math.min(2, active.length)) return 'partial';
   return 'incomplete';
 };
 
@@ -1648,6 +1652,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
   const [metricsSectionCollapsed, setMetricsSectionCollapsed] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [ignoredFields, setIgnoredFields] = useState(() => report?.metrics?._ignoredFields || []);
+  const toggleIgnoreField = (key) => setIgnoredFields(prev => prev.includes(key) ? prev.filter(f => f !== key) : [...prev, key]);
   const fileInputRef = useRef(null);
   const hasAutoExtractedRef = useRef(false);
 
@@ -1965,6 +1971,10 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       const notes = String(formData.notes ?? '');
       const postLinks = (formData.postLinks || []).map((l) => ({ url: String(l?.url ?? ''), label: String(l?.label ?? ''), comment: String(l?.comment ?? '') }));
       const metrics = formData.metrics ? JSON.parse(JSON.stringify(formData.metrics)) : null;
+      if (metrics) {
+        if (ignoredFields.length > 0) metrics._ignoredFields = ignoredFields;
+        else delete metrics._ignoredFields;
+      }
 
       // Guard against oversized payloads (Supabase PostgREST limit ~10MB, warn >200KB)
       const payloadSize = new Blob([JSON.stringify({ clientId, clientName, title, dateRange, notes, postLinks, metrics })]).size;
@@ -1996,6 +2006,23 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
     } finally {
       setSaving(false);
     }
+  };
+
+  const mf = (key, label, inputEl) => {
+    const ignored = ignoredFields.includes(key);
+    return (
+      <div key={key}>
+        <div className="flex items-center justify-between mb-0.5">
+          <label className={`text-xs ${ignored ? 'text-gray-400 dark:text-gray-600 line-through' : 'text-gray-500'}`}>{label}</label>
+          <button type="button" onClick={() => toggleIgnoreField(key)} className={`transition-colors ${ignored ? 'text-orange-400' : 'text-gray-300 hover:text-gray-500 dark:text-white/20 dark:hover:text-white/50'}`} title={ignored ? 'Restore field' : 'Ignore field'}>
+            {ignored ? <Eye size={11} /> : <EyeOff size={11} />}
+          </button>
+        </div>
+        {ignored
+          ? <div className="text-xs text-gray-400 dark:text-gray-600 italic px-3 py-2 rounded border border-dashed border-gray-200 dark:border-white/10">ignored</div>
+          : inputEl}
+      </div>
+    );
   };
 
   return (
@@ -2300,181 +2327,25 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       Numbers are read from your screenshots when possible; add or edit any field below.
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div>
-                        <label className="text-xs text-gray-500">Views</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.views || ''}
-                          onChange={(e) => updateMetric('views', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Followers</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.followers || ''}
-                          onChange={(e) => updateMetric('followers', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Interactions</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.interactions || ''}
-                          onChange={(e) => updateMetric('interactions', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Profile Visits</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.profileVisits || ''}
-                          onChange={(e) => updateMetric('profileVisits', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Accounts Reached</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.accountsReached || ''}
-                          onChange={(e) => updateMetric('accountsReached', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Likes</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.likes || ''}
-                          onChange={(e) => updateMetric('likes', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Comments</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.comments || ''}
-                          onChange={(e) => updateMetric('comments', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Reposts</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.reposts || ''}
-                          onChange={(e) => updateMetric('reposts', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Saves</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.saves || ''}
-                          onChange={(e) => updateMetric('saves', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Shares</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.shares || ''}
-                          onChange={(e) => updateMetric('shares', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
+                      {mf('views', 'Views', <input type="number" value={formData.metrics?.views || ''} onChange={(e) => updateMetric('views', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('followers', 'Followers', <input type="number" value={formData.metrics?.followers || ''} onChange={(e) => updateMetric('followers', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('interactions', 'Interactions', <input type="number" value={formData.metrics?.interactions || ''} onChange={(e) => updateMetric('interactions', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('profileVisits', 'Profile Visits', <input type="number" value={formData.metrics?.profileVisits || ''} onChange={(e) => updateMetric('profileVisits', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('accountsReached', 'Accounts Reached', <input type="number" value={formData.metrics?.accountsReached || ''} onChange={(e) => updateMetric('accountsReached', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('likes', 'Likes', <input type="number" value={formData.metrics?.likes || ''} onChange={(e) => updateMetric('likes', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('comments', 'Comments', <input type="number" value={formData.metrics?.comments || ''} onChange={(e) => updateMetric('comments', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('reposts', 'Reposts', <input type="number" value={formData.metrics?.reposts || ''} onChange={(e) => updateMetric('reposts', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('saves', 'Saves', <input type="number" value={formData.metrics?.saves || ''} onChange={(e) => updateMetric('saves', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('shares', 'Shares', <input type="number" value={formData.metrics?.shares || ''} onChange={(e) => updateMetric('shares', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                      <div>
-                        <label className="text-xs text-gray-500">Views from Followers %</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={formData.metrics?.viewsFollowerPercent || ''}
-                          onChange={(e) => updateMetric('viewsFollowerPercent', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Follower Change</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.followerChange ?? ''}
-                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('followerChange', isNaN(v) ? null : v); }}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Profile Visits Change</label>
-                        <input
-                          type="text"
-                          value={formData.metrics?.profileVisitsChange || ''}
-                          onChange={(e) => updateMetric('profileVisitsChange', e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Interactions from Followers %</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={formData.metrics?.interactionsFollowerPercent || ''}
-                          onChange={(e) => updateMetric('interactionsFollowerPercent', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Accounts Reached Change</label>
-                        <input
-                          type="text"
-                          value={formData.metrics?.accountsReachedChange || ''}
-                          onChange={(e) => updateMetric('accountsReachedChange', e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">External Link Taps</label>
-                        <input
-                          type="number"
-                          value={formData.metrics?.externalLinkTaps ?? ''}
-                          onChange={(e) => { const v = parseInt(e.target.value); updateMetric('externalLinkTaps', isNaN(v) ? null : v); }}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Engagement Rate %</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={formData.metrics?.engagementRatePercent || ''}
-                          onChange={(e) => updateMetric('engagementRatePercent', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                          placeholder="—"
-                        />
-                      </div>
+                      {mf('viewsFollowerPercent', 'Views from Followers %', <input type="number" step="0.1" value={formData.metrics?.viewsFollowerPercent || ''} onChange={(e) => updateMetric('viewsFollowerPercent', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('followerChange', 'Follower Change', <input type="number" value={formData.metrics?.followerChange ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateMetric('followerChange', isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('profileVisitsChange', 'Profile Visits Change', <input type="text" value={formData.metrics?.profileVisitsChange || ''} onChange={(e) => updateMetric('profileVisitsChange', e.target.value)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('interactionsFollowerPercent', 'Interactions from Followers %', <input type="number" step="0.1" value={formData.metrics?.interactionsFollowerPercent || ''} onChange={(e) => updateMetric('interactionsFollowerPercent', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('accountsReachedChange', 'Accounts Reached Change', <input type="text" value={formData.metrics?.accountsReachedChange || ''} onChange={(e) => updateMetric('accountsReachedChange', e.target.value)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('externalLinkTaps', 'External Link Taps', <input type="number" value={formData.metrics?.externalLinkTaps ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateMetric('externalLinkTaps', isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('engagementRatePercent', 'Engagement Rate %', <input type="number" step="0.1" value={formData.metrics?.engagementRatePercent || ''} onChange={(e) => updateMetric('engagementRatePercent', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                     </div>
                   </div>
 
