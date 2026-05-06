@@ -1144,6 +1144,13 @@ class SupabaseService {
     } catch (error) { throw error; }
   }
 
+  async deleteLeaveRequest(requestId) {
+    try {
+      const { error } = await supabase.from('time_off_requests').delete().eq('id', requestId);
+      if (error) throw error;
+    } catch (error) { console.error('❌ Error deleting leave request:', error); throw error; }
+  }
+
   async hasOverlappingRequest(userEmail, startDate, endDate, excludeRequestId = null) {
     try {
       let q = supabase.from('time_off_requests').select('id').eq('user_email', userEmail).in('status', ['pending', 'approved']).lte('start_date', endDate).gte('end_date', startDate);
