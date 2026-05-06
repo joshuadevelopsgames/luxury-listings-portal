@@ -357,6 +357,7 @@ const InstagramReportsPage = () => {
   const [generatingReport, setGeneratingReport] = useState(null); // { clientId, type: 'quarterly' | 'yearly' }
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedQuarter, setSelectedQuarter] = useState(getQuarter(new Date()));
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Search/filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -580,108 +581,115 @@ const InstagramReportsPage = () => {
   const handleGenerateQuarterlyReport = async (clientId, year, quarter) => {
     const client = allClients.find(c => c.id === clientId);
     if (!client) return;
-    
+
     const qStart = startOfQuarter(new Date(year, (quarter - 1) * 3, 1));
     const qEnd = endOfQuarter(qStart);
     const periodReports = getReportsForPeriod(clientId, qStart, qEnd);
-    
+
     if (!periodReports.length) {
       toast.error(`No monthly reports found for Q${quarter} ${year}. Create monthly reports first.`);
       return;
     }
-    
+
     const metrics = aggregateMetrics(periodReports);
-    const reportData = {
-      clientId,
-      clientName: client.clientName || client.name,
-      title: `Q${quarter} ${year} Instagram Report`,
-      dateRange: `Q${quarter} ${year} (${format(qStart, 'MMM d')} - ${format(qEnd, 'MMM d, yyyy')})`,
-      startDate: qStart,
-      endDate: qEnd,
-      reportType: 'quarterly',
-      metrics,
-      notes: `Aggregated from ${periodReports.length} monthly report(s).\n\nTotal Views: ${metrics.views.toLocaleString()}\nAccounts Reached: ${metrics.accountsReached.toLocaleString()}\nTotal Interactions: ${metrics.interactions.toLocaleString()}\nProfile Visits: ${metrics.profileVisits.toLocaleString()}\nLikes: ${metrics.likes.toLocaleString()} | Comments: ${metrics.comments.toLocaleString()} | Shares: ${metrics.shares.toLocaleString()} | Saves: ${metrics.saves.toLocaleString()} | Reposts: ${metrics.reposts.toLocaleString()}\nFollowers: ${metrics.followers?.toLocaleString() || 'N/A'}\nNet Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}`,
-      sourceReportIds: periodReports.map(r => r.id)
-    };
-    
+    const clientName = client.clientName || client.name;
+    const dateRange = `Q${quarter} ${year} (${format(qStart, 'MMM d')} - ${format(qEnd, 'MMM d, yyyy')})`;
+    const fallbackNotes = `Aggregated from ${periodReports.length} monthly report(s).\n\nTotal Views: ${metrics.views.toLocaleString()}\nAccounts Reached: ${metrics.accountsReached.toLocaleString()}\nTotal Interactions: ${metrics.interactions.toLocaleString()}\nProfile Visits: ${metrics.profileVisits.toLocaleString()}\nLikes: ${metrics.likes.toLocaleString()} | Comments: ${metrics.comments.toLocaleString()} | Shares: ${metrics.shares.toLocaleString()} | Saves: ${metrics.saves.toLocaleString()} | Reposts: ${metrics.reposts.toLocaleString()}\nFollowers: ${metrics.followers?.toLocaleString() || 'N/A'}\nNet Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}`;
+
+    setIsGenerating(true);
+    let notes = fallbackNotes;
     try {
-      await supabaseService.createInstagramReport(reportData);
+      notes = await openaiService.generateReportSummary(metrics, { dateRange, clientName });
+    } catch { /* keep fallback */ }
+
+    try {
+      await supabaseService.createInstagramReport({
+        clientId, clientName,
+        title: `Q${quarter} ${year} Instagram Report`,
+        dateRange, startDate: qStart, endDate: qEnd,
+        reportType: 'quarterly', metrics, notes,
+        sourceReportIds: periodReports.map(r => r.id),
+      });
+      toast.success(`Q${quarter} ${year} report created.`);
       setGeneratingReport(null);
     } catch (error) {
       console.error('Error creating quarterly report:', error);
       toast.error('Failed to create quarterly report.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  // Generate yearly report
+  // Generate yearly report — uses existing quarterly reports as source when available
   const handleGenerateYearlyReport = async (clientId, year) => {
     const client = allClients.find(c => c.id === clientId);
     if (!client) return;
-    
+
     const yStart = startOfYear(new Date(year, 0, 1));
     const yEnd = endOfYear(yStart);
-    const periodReports = getReportsForPeriod(clientId, yStart, yEnd);
-    
-    if (!periodReports.length) {
-      toast.error(`No reports found for ${year}. Create monthly reports first.`);
+
+    // Prefer quarterly reports for the year; fall back to monthly if none exist
+    const existingQuarterly = reports.filter(r =>
+      r.clientId === clientId && r.reportType === 'quarterly' && getReportYear(r) === year
+    );
+    const sourceReports = existingQuarterly.length > 0
+      ? existingQuarterly
+      : getReportsForPeriod(clientId, yStart, yEnd);
+    const sourceLabel = existingQuarterly.length > 0
+      ? `${existingQuarterly.length} quarterly report(s)`
+      : `${sourceReports.length} monthly report(s)`;
+
+    if (!sourceReports.length) {
+      toast.error(`No reports found for ${year}. Create monthly or quarterly reports first.`);
       return;
     }
-    
-    const metrics = aggregateMetrics(periodReports);
-    
-    // Calculate quarterly breakdowns
+
+    const metrics = aggregateMetrics(sourceReports);
+    const clientName = client.clientName || client.name;
+    const dateRange = `${year} (Jan 1 – Dec 31)`;
+
+    // Quarterly breakdown always derived from monthly data for accuracy
+    const monthlyForYear = getReportsForPeriod(clientId, yStart, yEnd);
     const quarterlyBreakdown = [1, 2, 3, 4].map(q => {
       const qStart = startOfQuarter(new Date(year, (q - 1) * 3, 1));
       const qEnd = endOfQuarter(qStart);
-      const qReports = periodReports.filter(r => {
+      const qReports = monthlyForYear.filter(r => {
         const d = getReportSortDate(r);
         return d && !isNaN(d.getTime()) && isWithinInterval(d, { start: qStart, end: qEnd });
       });
-      return {
-        quarter: q,
-        metrics: aggregateMetrics(qReports),
-        reportCount: qReports.length
-      };
+      return { quarter: q, metrics: aggregateMetrics(qReports), reportCount: qReports.length };
     });
-    
-    let notes = `Yearly Summary for ${year}\nAggregated from ${periodReports.length} report(s).\n\n`;
-    notes += `YEARLY TOTALS:\n`;
-    notes += `• Total Views: ${metrics.views.toLocaleString()}\n`;
-    notes += `• Total Interactions: ${metrics.interactions.toLocaleString()}\n`;
-    notes += `• Profile Visits: ${metrics.profileVisits.toLocaleString()}\n`;
-    notes += `• Net Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}\n\n`;
-    notes += `QUARTERLY BREAKDOWN:\n`;
-    quarterlyBreakdown.forEach(q => {
-      if (q.metrics) {
-        notes += `\nQ${q.quarter} (${q.reportCount} reports):\n`;
-        notes += `  Views: ${q.metrics.views.toLocaleString()}\n`;
-        notes += `  Interactions: ${q.metrics.interactions.toLocaleString()}\n`;
-        notes += `  Profile Visits: ${q.metrics.profileVisits.toLocaleString()}\n`;
-      } else {
-        notes += `\nQ${q.quarter}: No data\n`;
-      }
-    });
-    
-    const reportData = {
-      clientId,
-      clientName: client.clientName || client.name,
-      title: `${year} Annual Instagram Report`,
-      dateRange: `${year} (Jan 1 - Dec 31)`,
-      startDate: yStart,
-      endDate: yEnd,
-      reportType: 'yearly',
-      metrics,
-      quarterlyBreakdown,
-      notes,
-      sourceReportIds: periodReports.map(r => r.id)
-    };
-    
+
+    const fallbackNotes = [
+      `Yearly Summary for ${year}`, `Aggregated from ${sourceLabel}.`, '',
+      'YEARLY TOTALS:',
+      `• Views: ${metrics.views.toLocaleString()}`,
+      `• Interactions: ${metrics.interactions.toLocaleString()}`,
+      `• Profile Visits: ${metrics.profileVisits.toLocaleString()}`,
+      `• Net Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}`,
+    ].join('\n');
+
+    setIsGenerating(true);
+    let notes = fallbackNotes;
     try {
-      await supabaseService.createInstagramReport(reportData);
+      notes = await openaiService.generateReportSummary(metrics, { dateRange, clientName });
+    } catch { /* keep fallback */ }
+
+    try {
+      await supabaseService.createInstagramReport({
+        clientId, clientName,
+        title: `${year} Annual Instagram Report`,
+        dateRange, startDate: yStart, endDate: yEnd,
+        reportType: 'yearly', metrics, quarterlyBreakdown, notes,
+        sourceReportIds: sourceReports.map(r => r.id),
+      });
+      toast.success(`${year} annual report created.`);
       setGeneratingReport(null);
     } catch (error) {
       console.error('Error creating yearly report:', error);
       toast.error('Failed to create yearly report.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -987,6 +995,52 @@ const InstagramReportsPage = () => {
       </div>
 
       {/* Archive tab: system admin only */}
+      {/* ── Monthly Status Overview Row (Clients tab only) */}
+      {activeTab === 'clients' && !loading && filteredClientsForTab.length > 0 && (() => {
+        const now = new Date();
+        const thisYear = now.getFullYear();
+        const thisMonth = now.getMonth() + 1; // 1-indexed
+        let complete = 0, partial = 0, missing = 0;
+        filteredClientsForTab.forEach(({ reports: cr }) => {
+          const monthReport = cr.find(r => {
+            const ry = getReportYear(r);
+            const rm = getReportMonth(r);
+            return ry === thisYear && rm === thisMonth && (!r.reportType || r.reportType === 'monthly');
+          });
+          if (!monthReport) { missing++; return; }
+          const m = monthReport.metrics || {};
+          const filled = [m.followers, m.reach, m.impressions, m.likes, m.comments].filter(v => v != null && v !== '').length;
+          if (filled >= 4) complete++;
+          else if (filled >= 1) partial++;
+          else missing++;
+        });
+        const total = filteredClientsForTab.length;
+        return (
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-2xl bg-white/70 dark:bg-[#1d1d1f]/70 backdrop-blur-xl border border-black/5 dark:border-white/10">
+            <span className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider flex items-center gap-1.5">
+              <CalendarDays className="w-3.5 h-3.5" />
+              {MONTH_NAMES[(thisMonth - 1)]} {thisYear}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#34c759]" />
+              <span className="text-[13px] font-medium text-[#34c759]">{complete}</span>
+              <span className="text-[12px] text-[#86868b]">complete</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#ff9500]" />
+              <span className="text-[13px] font-medium text-[#ff9500]">{partial}</span>
+              <span className="text-[12px] text-[#86868b]">partial</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#ff3b30]" />
+              <span className="text-[13px] font-medium text-[#ff3b30]">{missing}</span>
+              <span className="text-[12px] text-[#86868b]">missing</span>
+            </div>
+            <span className="ml-auto text-[12px] text-[#86868b]">{total} client{total !== 1 ? 's' : ''} total</span>
+          </div>
+        );
+      })()}
+
       {activeTab === 'archive' && (
         <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
           <div className="p-4 border-b border-black/5 dark:border-white/10 flex items-center gap-2">
@@ -1063,6 +1117,23 @@ const InstagramReportsPage = () => {
             const monthlyReports = clientReports.filter(r => !r.reportType || r.reportType === 'monthly');
             const quarterlyReports = clientReports.filter(r => r.reportType === 'quarterly');
             const yearlyReports = clientReports.filter(r => r.reportType === 'yearly');
+
+            // Current month completion badge
+            const now = new Date();
+            const thisYear = now.getFullYear();
+            const thisMonth = now.getMonth() + 1;
+            const thisMonthReport = clientReports.find(r => {
+              const ry = getReportYear(r);
+              const rm = getReportMonth(r);
+              return ry === thisYear && rm === thisMonth && (!r.reportType || r.reportType === 'monthly');
+            });
+            let monthBadge = { color: '#ff3b30', label: 'Missing this month', bg: 'bg-[#ff3b30]/10' };
+            if (thisMonthReport) {
+              const m = thisMonthReport.metrics || {};
+              const filled = [m.followers, m.reach, m.impressions, m.likes, m.comments].filter(v => v != null && v !== '').length;
+              if (filled >= 4) monthBadge = { color: '#34c759', label: 'Report complete', bg: 'bg-[#34c759]/10' };
+              else monthBadge = { color: '#ff9500', label: 'Report partial', bg: 'bg-[#ff9500]/10' };
+            }
             
             return (
               <div 
@@ -1107,9 +1178,18 @@ const InstagramReportsPage = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Current month completion badge */}
+                    <span
+                      title={monthBadge.label}
+                      className={`hidden sm:flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-lg font-medium ${monthBadge.bg}`}
+                      style={{ color: monthBadge.color }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: monthBadge.color }} />
+                      {MONTH_NAMES[thisMonth - 1]}
+                    </span>
                     <span className={`text-[12px] px-2 py-1 rounded-lg font-medium ${
-                      clientReports.length > 0 
-                        ? 'bg-[#34c759]/10 text-[#34c759]' 
+                      clientReports.length > 0
+                        ? 'bg-[#34c759]/10 text-[#34c759]'
                         : 'bg-[#86868b]/10 text-[#86868b]'
                     }`}>
                       {clientReports.length > 0 ? `${clientReports.length} reports` : 'No reports'}
@@ -1125,6 +1205,19 @@ const InstagramReportsPage = () => {
                         </div>
                       ) : null;
                     })()}
+                    {/* Quick share: copy link of the most recent report */}
+                    {clientReports[0]?.publicLinkId && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleCopyLink(clientReports[0].publicLinkId); }}
+                        title="Copy latest report link"
+                        className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[#86868b] hover:text-[#0071e3]"
+                      >
+                        {copiedLink === clientReports[0].publicLinkId
+                          ? <Check className="w-4 h-4 text-[#34c759]" />
+                          : <LinkIcon className="w-4 h-4" />}
+                      </button>
+                    )}
                     {isExpanded ? (
                       <ChevronUp className="w-5 h-5 text-[#86868b]" />
                     ) : (
@@ -1390,101 +1483,106 @@ const InstagramReportsPage = () => {
       )}
 
       {/* Generate Report Modal */}
-      {generatingReport && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
-                {generatingReport.type === 'quarterly' ? (
-                  <>
-                    <CalendarDays className="w-5 h-5 text-[#34c759]" />
-                    Generate Quarterly Report
-                  </>
-                ) : (
-                  <>
-                    <FileBarChart className="w-5 h-5 text-[#5856d6]" />
-                    Generate Yearly Report
-                  </>
-                )}
-              </h2>
-              <button
-                onClick={() => setGeneratingReport(null)}
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-[#86868b]" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-[13px] text-[#86868b]">
-                This will aggregate data from existing monthly reports to create a {generatingReport.type} summary report.
-              </p>
-
-              <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                  Year
-                </label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#E1306C]"
-                >
-                  {[...Array(5)].map((_, i) => {
-                    const year = new Date().getFullYear() - i;
-                    return <option key={year} value={year}>{year}</option>;
-                  })}
-                </select>
+      {generatingReport && (() => {
+        const accentColor = generatingReport.type === 'quarterly' ? '#34c759' : '#5856d6';
+        const previewSources = (() => {
+          if (generatingReport.type === 'quarterly') {
+            const qStart = startOfQuarter(new Date(selectedYear, (selectedQuarter - 1) * 3, 1));
+            return getReportsForPeriod(generatingReport.clientId, qStart, endOfQuarter(qStart));
+          }
+          const yStart = startOfYear(new Date(selectedYear, 0, 1));
+          const quarterly = reports.filter(r =>
+            r.clientId === generatingReport.clientId && r.reportType === 'quarterly' && getReportYear(r) === selectedYear
+          );
+          return quarterly.length > 0 ? quarterly : getReportsForPeriod(generatingReport.clientId, yStart, endOfYear(yStart));
+        })();
+        return (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                  {generatingReport.type === 'quarterly'
+                    ? <><CalendarDays className="w-5 h-5 text-[#34c759]" />Generate Quarterly Report</>
+                    : <><FileBarChart className="w-5 h-5 text-[#5856d6]" />Generate Yearly Report</>}
+                </h2>
+                <button onClick={() => setGeneratingReport(null)} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors">
+                  <X className="w-5 h-5 text-[#86868b]" />
+                </button>
               </div>
 
-              {generatingReport.type === 'quarterly' && (
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Quarter
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[1, 2, 3, 4].map(q => (
-                      <button
-                        key={q}
-                        onClick={() => setSelectedQuarter(q)}
-                        className={`h-11 rounded-xl text-[14px] font-medium transition-colors ${
-                          selectedQuarter === q
-                            ? 'bg-[#34c759] text-white'
-                            : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
-                        }`}
-                      >
-                        Q{q}
-                      </button>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Year</label>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#E1306C]"
+                  >
+                    {[...Array(5)].map((_, i) => {
+                      const year = new Date().getFullYear() - i;
+                      return <option key={year} value={year}>{year}</option>;
+                    })}
+                  </select>
+                </div>
+
+                {generatingReport.type === 'quarterly' && (
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Quarter</label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[1, 2, 3, 4].map(q => (
+                        <button key={q} onClick={() => setSelectedQuarter(q)}
+                          className={`h-11 rounded-xl text-[14px] font-medium transition-colors ${selectedQuarter === q ? 'text-white' : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'}`}
+                          style={selectedQuarter === q ? { backgroundColor: accentColor } : {}}
+                        >Q{q}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Source report preview */}
+                {previewSources.length > 0 ? (
+                  <div className="rounded-xl bg-black/5 dark:bg-white/5 p-3 space-y-1">
+                    <p className="text-[12px] font-medium text-[#86868b]">
+                      Will aggregate {previewSources.length} report{previewSources.length !== 1 ? 's' : ''}
+                      {generatingReport.type === 'yearly' && reports.some(r => r.clientId === generatingReport.clientId && r.reportType === 'quarterly' && getReportYear(r) === selectedYear) ? ' (from quarterly)' : ''}:
+                    </p>
+                    {previewSources.map(r => (
+                      <p key={r.id} className="text-[12px] text-[#1d1d1f] dark:text-white flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-[#34c759] shrink-0" />
+                        {r.title || r.dateRange || r.id}
+                      </p>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="rounded-xl bg-[#ff3b30]/10 p-3">
+                    <p className="text-[12px] text-[#ff3b30]">No reports found for this period — create monthly reports first.</p>
+                  </div>
+                )}
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setGeneratingReport(null)}
-                  className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (generatingReport.type === 'quarterly') {
-                      handleGenerateQuarterlyReport(generatingReport.clientId, selectedYear, selectedQuarter);
-                    } else {
-                      handleGenerateYearlyReport(generatingReport.clientId, selectedYear);
-                    }
-                  }}
-                  className={`flex-1 h-11 rounded-xl text-white text-[14px] font-medium hover:opacity-90 transition-opacity ${
-                    generatingReport.type === 'quarterly' ? 'bg-[#34c759]' : 'bg-[#5856d6]'
-                  }`}
-                >
-                  Generate Report
-                </button>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setGeneratingReport(null)}
+                    className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  >Cancel</button>
+                  <button
+                    disabled={isGenerating || previewSources.length === 0}
+                    onClick={() => {
+                      if (generatingReport.type === 'quarterly') {
+                        handleGenerateQuarterlyReport(generatingReport.clientId, selectedYear, selectedQuarter);
+                      } else {
+                        handleGenerateYearlyReport(generatingReport.clientId, selectedYear);
+                      }
+                    }}
+                    className="flex-1 h-11 rounded-xl text-white text-[14px] font-medium transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" />Generating…</> : 'Generate Report'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
