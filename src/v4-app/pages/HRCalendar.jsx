@@ -657,20 +657,91 @@ const HRCalendar = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const newRequest = {
-      id: Date.now(),
-      ...leaveForm,
-      days: differenceInDays(new Date(leaveForm.endDate), new Date(leaveForm.startDate)) + 1,
-      status: 'pending',
-      tags: [leaveForm.type, 'pending']
-    };
 
-    setLeaveRequests(prev => [...prev, newRequest]);
-    setShowAddModal(false);
-    resetForm();
+    const employee = teamMembers.find(m => m.id === leaveForm.employeeId);
+    if (!employee) {
+      toast.error('Please select an employee');
+      return;
+    }
+    if (!leaveForm.startDate || !leaveForm.endDate) {
+      toast.error('Please select start and end dates');
+      return;
+    }
+
+    setModalLoading(true);
+    toast.loading('Adding time off...', { id: 'add-leave' });
+
+    try {
+      const days = calculateBusinessDays(leaveForm.startDate, leaveForm.endDate);
+
+      const requestId = await supabaseService.submitLeaveRequest({
+        userEmail: employee.email,
+        employeeName: employee.name,
+        type: leaveForm.type,
+        leaveType: leaveForm.type,
+        startDate: leaveForm.startDate,
+        endDate: leaveForm.endDate,
+        daysRequested: days,
+        reason: leaveForm.reason || leaveForm.description || '',
+      });
+
+      // Admin is adding it directly — auto-approve, no separate approval needed
+      await supabaseService.updateLeaveRequestStatusEnhanced(
+        requestId,
+        'approved',
+        currentUser?.email,
+        'Added & approved by admin'
+      );
+
+      if (leaveForm.type === 'vacation' || leaveForm.type === 'sick') {
+        try {
+          await supabaseService.deductLeaveBalance(employee.email, leaveForm.type, days, requestId);
+        } catch (balanceError) {
+          console.warn('⚠️ Could not deduct balance:', balanceError);
+        }
+      }
+
+      try {
+        await timeOffNotifications.notifyApproved(
+          { id: requestId, employeeEmail: employee.email, employeeName: employee.name, type: leaveForm.type, startDate: leaveForm.startDate, endDate: leaveForm.endDate, days },
+          currentUser?.email
+        );
+      } catch (notifError) {
+        console.warn('⚠️ Could not send notification:', notifError);
+      }
+
+      const syncsToCalendar = leaveForm.type === 'vacation' || leaveForm.type === 'sick' || leaveForm.type === 'other';
+      const approverGetsCalendarSync = currentUser?.email && LEAVE_CALENDAR_SYNC_EMAILS.includes(currentUser.email.toLowerCase());
+      if (isGoogleConnected && syncsToCalendar && approverGetsCalendarSync) {
+        try {
+          const calResult = await googleCalendarService.createLeaveEvent({
+            employeeName: employee.name,
+            employeeEmail: employee.email,
+            type: leaveForm.type,
+            startDate: leaveForm.startDate,
+            endDate: leaveForm.endDate,
+          });
+          if (calResult?.id) {
+            await supabaseService.setLeaveRequestCalendarEventIdForEmail(requestId, currentUser.email, calResult.id);
+          }
+        } catch (calError) {
+          console.warn('⚠️ Calendar sync failed:', calError);
+        }
+      }
+
+      toast.dismiss('add-leave');
+      toast.success(`Time off added & approved for ${employee.name}`);
+      setShowAddModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('❌ Error adding time off:', error);
+      toast.dismiss('add-leave');
+      toast.error(`Failed to add time off: ${error.message || 'Unknown error'}`);
+    } finally {
+      setModalLoading(false);
+    }
   };
 
   const resetForm = () => {
