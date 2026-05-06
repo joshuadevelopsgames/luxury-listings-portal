@@ -9,6 +9,7 @@ import { CAPABILITIES } from '../../entities/Capabilities';
 import { supabaseService } from '../../services/supabaseService';
 import { timeOffNotifications } from '../services/timeOffNotificationService';
 import { calculateBusinessDays, getLeaveTypeDisplayLabel } from '../../utils/timeOffHelpers';
+import { isSystemAdmin } from '../../utils/systemAdmins';
 import { LEAVE_CALENDAR_SYNC_EMAILS } from '../../utils/vancouverTime';
 import { 
   Calendar as CalendarIcon, 
@@ -66,9 +67,7 @@ const HRCalendar = () => {
   const [viewingMember, setViewingMember] = useState(null);
   
   // Admin balance editor state
-  const [showBalanceEditor, setShowBalanceEditor] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [editBalances, setEditBalances] = useState({
     vacation: { total: 15, used: 0 },
@@ -112,19 +111,7 @@ const HRCalendar = () => {
     checkAdminStatus();
   }, [currentUser?.email]);
 
-  // Load all users with balances for admin
-  const loadUsersWithBalances = async () => {
-    setLoadingUsers(true);
-    try {
-      const users = await supabaseService.getAllUsersWithLeaveBalances();
-      setAllUsers(users);
-    } catch (error) {
-      console.error('Error loading users:', error);
-      toast.error('Failed to load users');
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
+
 
   // Start editing a user's balances
   const startEditingUser = (user) => {
@@ -152,8 +139,12 @@ const HRCalendar = () => {
       );
       
       toast.success(`Updated leave balances for ${editingUser.displayName || editingUser.email}`);
+      setTeamMembers(prev => prev.map(m =>
+        m.email === editingUser.email
+          ? { ...m, totalVacationDays: editBalances.vacation?.total ?? 15, usedVacationDays: editBalances.vacation?.used ?? 0, totalSickDays: editBalances.sick?.total ?? 10, usedSickDays: editBalances.sick?.used ?? 0 }
+          : m
+      ));
       setEditingUser(null);
-      loadUsersWithBalances(); // Refresh list
     } catch (error) {
       console.error('Error saving balances:', error);
       toast.error('Failed to save balances');
@@ -1494,20 +1485,15 @@ const HRCalendar = () => {
               <div className="mt-6 pt-4 border-t border-black/5 dark:border-white/10 flex justify-end gap-3">
                 <button
                   onClick={() => {
-                    const user = allUsers.find(u => u.email === viewingMember.email) || {
+                    startEditingUser(allUsers.find(u => u.email === viewingMember.email) || {
                       email: viewingMember.email,
                       displayName: viewingMember.name,
                       leaveBalances: {
                         vacation: { total: viewingMember.totalVacationDays, used: viewingMember.usedVacationDays },
                         sick: { total: viewingMember.totalSickDays, used: viewingMember.usedSickDays }
                       }
-                    };
-                    startEditingUser(user);
-                    setShowBalanceEditor(true);
+                    });
                     setViewingMember(null);
-                    if (allUsers.length === 0) {
-                      loadUsersWithBalances();
-                    }
                   }}
                   className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
                 >
@@ -1624,22 +1610,16 @@ const HRCalendar = () => {
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => {
-                          // Find matching user in allUsers or use member data
-                          const user = allUsers.find(u => u.email === member.email) || {
+                          startEditingUser(allUsers.find(u => u.email === member.email) || {
                             email: member.email,
                             displayName: member.name,
                             leaveBalances: {
                               vacation: { total: member.totalVacationDays, used: member.usedVacationDays },
                               sick: { total: member.totalSickDays, used: member.usedSickDays }
                             }
-                          };
-                          startEditingUser(user);
-                          setShowBalanceEditor(true);
-                          if (allUsers.length === 0) {
-                            loadUsersWithBalances();
-                          }
+                          });
                         }}
                         className="px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors"
                       >
@@ -1659,178 +1639,6 @@ const HRCalendar = () => {
           </table>
         </div>
       </div>
-      )}
-
-      {/* Admin: Team Leave Balances */}
-      {isTimeOffAdmin && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="px-5 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Team Leave Balances</span>
-            </div>
-            <button
-              onClick={() => {
-                setShowBalanceEditor(!showBalanceEditor);
-                if (!showBalanceEditor && allUsers.length === 0) {
-                  loadUsersWithBalances();
-                }
-              }}
-              className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-            >
-              {showBalanceEditor ? 'Hide' : 'Manage Balances'}
-            </button>
-          </div>
-          
-          {showBalanceEditor && (
-            <div className="p-5">
-              {loadingUsers ? (
-                <div className="text-center py-8">
-                  <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-[14px] text-[#86868b]">Loading team members...</p>
-                </div>
-              ) : allUsers.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-[#86868b] mx-auto mb-2 opacity-50" />
-                  <p className="text-[14px] text-[#86868b]">No team members found</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {allUsers.map((user) => {
-                    const balances = user.leaveBalances || {};
-                    const isEditing = editingUser?.email === user.email;
-                    
-                    return (
-                      <div 
-                        key={user.email}
-                        className={`p-4 rounded-xl transition-colors ${isEditing ? 'bg-[#0071e3]/5 border border-[#0071e3]/30' : 'bg-black/[0.02] dark:bg-white/5 border border-transparent hover:bg-black/5 dark:hover:bg-white/10'}`}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{user.displayName || user.email}</p>
-                            <p className="text-[12px] text-[#86868b]">{user.email}</p>
-                          </div>
-                          {!isEditing && (
-                            <button
-                              onClick={() => startEditingUser(user)}
-                              className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-                            >
-                              Edit Balances
-                            </button>
-                          )}
-                        </div>
-                        
-                        {isEditing ? (
-                          <div className="space-y-4">
-                            {/* Vacation */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
-                                  Vacation Total Days
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={editBalances.vacation?.total || 0}
-                                  onChange={(e) => setEditBalances(prev => ({
-                                    ...prev,
-                                    vacation: { ...prev.vacation, total: parseInt(e.target.value) || 0 }
-                                  }))}
-                                  className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
-                                  Vacation Used Days
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={editBalances.vacation?.used || 0}
-                                  onChange={(e) => setEditBalances(prev => ({
-                                    ...prev,
-                                    vacation: { ...prev.vacation, used: parseInt(e.target.value) || 0 }
-                                  }))}
-                                  className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                                />
-                              </div>
-                            </div>
-                            
-                            {/* Sick */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
-                                  Sick Leave Total Days
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={editBalances.sick?.total || 0}
-                                  onChange={(e) => setEditBalances(prev => ({
-                                    ...prev,
-                                    sick: { ...prev.sick, total: parseInt(e.target.value) || 0 }
-                                  }))}
-                                  className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
-                                  Sick Leave Used Days
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={editBalances.sick?.used || 0}
-                                  onChange={(e) => setEditBalances(prev => ({
-                                    ...prev,
-                                    sick: { ...prev.sick, used: parseInt(e.target.value) || 0 }
-                                  }))}
-                                  className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
-                                />
-                              </div>
-                            </div>
-                            
-                            <div className="flex justify-end gap-2 pt-2">
-                              <button
-                                onClick={() => setEditingUser(null)}
-                                disabled={savingBalances}
-                                className="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={saveUserBalances}
-                                disabled={savingBalances}
-                                className="px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
-                              >
-                                {savingBalances ? 'Saving...' : 'Save Changes'}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-[11px] text-[#86868b]">Vacation</p>
-                              <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
-                                {(balances.vacation?.total || 15) - (balances.vacation?.used || 0)} / {balances.vacation?.total || 15} days
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] text-[#86868b]">Sick</p>
-                              <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
-                                {(balances.sick?.total || 10) - (balances.sick?.used || 0)} / {balances.sick?.total || 10} days
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       )}
 
       {/* Leave Request Form Modal */}
@@ -1867,9 +1675,13 @@ const HRCalendar = () => {
                     required
                   >
                     <option value="">Select Employee</option>
-                    {teamMembers.map(emp => (
-                      <option key={emp.id} value={emp.id}>{emp.name} - {emp.department}</option>
-                    ))}
+                    {teamMembers
+                      .filter(emp => !isSystemAdmin(emp.email))
+                      .map(emp => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 
@@ -2149,6 +1961,84 @@ const HRCalendar = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Leave Balances Modal */}
+      {editingUser && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl">
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Edit Leave Balances</h2>
+                <p className="text-[13px] text-[#86868b] mt-0.5">{editingUser.displayName || editingUser.email}</p>
+              </div>
+              <button
+                onClick={() => setEditingUser(null)}
+                disabled={savingBalances}
+                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+              >
+                <XCircle className="w-5 h-5 text-[#86868b]" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">Vacation Total</label>
+                  <input
+                    type="number" min="0"
+                    value={editBalances.vacation?.total ?? 0}
+                    onChange={(e) => setEditBalances(prev => ({ ...prev, vacation: { ...prev.vacation, total: parseInt(e.target.value) || 0 } }))}
+                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">Vacation Used</label>
+                  <input
+                    type="number" min="0"
+                    value={editBalances.vacation?.used ?? 0}
+                    onChange={(e) => setEditBalances(prev => ({ ...prev, vacation: { ...prev.vacation, used: parseInt(e.target.value) || 0 } }))}
+                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">Sick Leave Total</label>
+                  <input
+                    type="number" min="0"
+                    value={editBalances.sick?.total ?? 0}
+                    onChange={(e) => setEditBalances(prev => ({ ...prev, sick: { ...prev.sick, total: parseInt(e.target.value) || 0 } }))}
+                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">Sick Leave Used</label>
+                  <input
+                    type="number" min="0"
+                    value={editBalances.sick?.used ?? 0}
+                    onChange={(e) => setEditBalances(prev => ({ ...prev, sick: { ...prev.sick, used: parseInt(e.target.value) || 0 } }))}
+                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setEditingUser(null)}
+                  disabled={savingBalances}
+                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveUserBalances}
+                  disabled={savingBalances}
+                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                >
+                  {savingBalances ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>,
         document.body
