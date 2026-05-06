@@ -1024,10 +1024,9 @@ const InstagramReportsPage = () => {
             return ry === thisYear && rm === thisMonth && (!r.reportType || r.reportType === 'monthly');
           });
           if (!monthReport) { missing++; return; }
-          const m = monthReport.metrics || {};
-          const filled = [m.followers, m.reach, m.impressions, m.likes, m.comments].filter(v => v != null && v !== '').length;
-          if (filled >= 4) complete++;
-          else if (filled >= 1) partial++;
+          const status = getReportCompletionStatus(monthReport.metrics);
+          if (status === 'complete') complete++;
+          else if (status === 'partial') partial++;
           else missing++;
         });
         const total = filteredClientsForTab.length;
@@ -1147,13 +1146,12 @@ const InstagramReportsPage = () => {
               const rm = getReportMonth(r);
               return ry === thisYear && rm === thisMonth && (!r.reportType || r.reportType === 'monthly');
             });
-            let monthBadge = { color: '#ff3b30', label: 'Missing this month', bg: 'bg-[#ff3b30]/10' };
-            if (thisMonthReport) {
-              const m = thisMonthReport.metrics || {};
-              const filled = [m.followers, m.reach, m.impressions, m.likes, m.comments].filter(v => v != null && v !== '').length;
-              if (filled >= 4) monthBadge = { color: '#34c759', label: 'Report complete', bg: 'bg-[#34c759]/10' };
-              else monthBadge = { color: '#ff9500', label: 'Report partial', bg: 'bg-[#ff9500]/10' };
-            }
+            const reportStatus = getReportCompletionStatus(thisMonthReport?.metrics);
+            const monthBadge = !thisMonthReport
+              ? { color: '#ff3b30', label: `${MONTH_NAMES[thisMonth - 1]} report missing`, bg: 'bg-[#ff3b30]/10' }
+              : reportStatus === 'partial'
+              ? { color: '#ff9500', label: `${MONTH_NAMES[thisMonth - 1]} report partial`, bg: 'bg-[#ff9500]/10' }
+              : null; // complete — no badge
             
             return (
               <div 
@@ -1198,15 +1196,17 @@ const InstagramReportsPage = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Current month completion badge */}
-                    <span
-                      title={monthBadge.label}
-                      className={`hidden sm:flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-lg font-medium ${monthBadge.bg}`}
-                      style={{ color: monthBadge.color }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: monthBadge.color }} />
-                      {MONTH_NAMES[thisMonth - 1]}
-                    </span>
+                    {/* Current month completion badge — only shown when missing or partial */}
+                    {monthBadge && (
+                      <span
+                        title={monthBadge.label}
+                        className={`hidden sm:flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-lg font-medium ${monthBadge.bg}`}
+                        style={{ color: monthBadge.color }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: monthBadge.color }} />
+                        {MONTH_NAMES[thisMonth - 1]}
+                      </span>
+                    )}
                     <span className={`text-[12px] px-2 py-1 rounded-lg font-medium ${
                       clientReports.length > 0
                         ? 'bg-[#34c759]/10 text-[#34c759]'
