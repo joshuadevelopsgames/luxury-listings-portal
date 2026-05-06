@@ -556,6 +556,8 @@ const InstagramReportsPage = () => {
       followerChange: 0,
       reportCount: sorted.length
     };
+    const viewsFollowerPcts = [];
+    const interactionsFollowerPcts = [];
 
     sorted.forEach(r => {
       const m = r.metrics || {};
@@ -572,7 +574,14 @@ const InstagramReportsPage = () => {
       if (m.followerChange != null) aggregated.followerChange += parseInt(m.followerChange) || 0;
       // Snapshot metric — take the latest value (last in sorted order)
       if (m.followers) aggregated.followers = Number(m.followers);
+      if (m.viewsFollowerPercent != null) viewsFollowerPcts.push(Number(m.viewsFollowerPercent));
+      if (m.interactionsFollowerPercent != null) interactionsFollowerPcts.push(Number(m.interactionsFollowerPercent));
     });
+
+    if (viewsFollowerPcts.length > 0)
+      aggregated.viewsFollowerPercent = Math.round(viewsFollowerPcts.reduce((a, b) => a + b, 0) / viewsFollowerPcts.length * 10) / 10;
+    if (interactionsFollowerPcts.length > 0)
+      aggregated.interactionsFollowerPercent = Math.round(interactionsFollowerPcts.reduce((a, b) => a + b, 0) / interactionsFollowerPcts.length * 10) / 10;
 
     return aggregated;
   };
@@ -998,8 +1007,15 @@ const InstagramReportsPage = () => {
       {/* ── Monthly Status Overview Row (Clients tab only) */}
       {activeTab === 'clients' && !loading && filteredClientsForTab.length > 0 && (() => {
         const now = new Date();
-        const thisYear = now.getFullYear();
-        const thisMonth = now.getMonth() + 1; // 1-indexed
+        // Reports aren't typically due until the 4th–5th; show previous month's status until the 15th
+        let statusYear = now.getFullYear();
+        let statusMonth = now.getMonth() + 1; // 1-indexed
+        if (now.getDate() <= 15) {
+          statusMonth -= 1;
+          if (statusMonth === 0) { statusMonth = 12; statusYear -= 1; }
+        }
+        const thisYear = statusYear;
+        const thisMonth = statusMonth;
         let complete = 0, partial = 0, missing = 0;
         filteredClientsForTab.forEach(({ reports: cr }) => {
           const monthReport = cr.find(r => {

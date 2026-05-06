@@ -494,6 +494,8 @@ const InstagramReportsPage = () => {
       followerChange: 0,
       reportCount: sorted.length
     };
+    const viewsFollowerPcts = [];
+    const interactionsFollowerPcts = [];
 
     sorted.forEach(r => {
       const m = r.metrics || {};
@@ -508,7 +510,14 @@ const InstagramReportsPage = () => {
       aggregated.reposts += Number(m.reposts) || 0;
       if (m.followerChange != null) aggregated.followerChange += parseInt(m.followerChange) || 0;
       if (m.followers) aggregated.followers = Number(m.followers);
+      if (m.viewsFollowerPercent != null) viewsFollowerPcts.push(Number(m.viewsFollowerPercent));
+      if (m.interactionsFollowerPercent != null) interactionsFollowerPcts.push(Number(m.interactionsFollowerPercent));
     });
+
+    if (viewsFollowerPcts.length > 0)
+      aggregated.viewsFollowerPercent = Math.round(viewsFollowerPcts.reduce((a, b) => a + b, 0) / viewsFollowerPcts.length * 10) / 10;
+    if (interactionsFollowerPcts.length > 0)
+      aggregated.interactionsFollowerPercent = Math.round(interactionsFollowerPcts.reduce((a, b) => a + b, 0) / interactionsFollowerPcts.length * 10) / 10;
 
     return aggregated;
   };
