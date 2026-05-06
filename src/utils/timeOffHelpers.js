@@ -83,8 +83,9 @@ const MIN_NOTICE_DAYS = {
 /**
  * Validate a leave request before submission
  * Returns { valid: boolean, errors: string[], warnings: string[] }
+ * @param {boolean} isAdmin - When true, notice period requirements are skipped
  */
-export const validateLeaveRequest = (request, userBalances, existingRequests = []) => {
+export const validateLeaveRequest = (request, userBalances, existingRequests = [], isAdmin = false) => {
   const errors = [];
   const warnings = [];
   
@@ -139,10 +140,11 @@ export const validateLeaveRequest = (request, userBalances, existingRequests = [
   }
   
   // Notice period check (blocks submission unless 3 weeks notice for vacation/travel; sick same-day OK)
+  // Admins bypass notice period requirements entirely.
   const daysUntilStart = getDaysUntil(request.startDate);
   const minNotice = MIN_NOTICE_DAYS[leaveType] || 0;
-  
-  if (daysUntilStart < minNotice && request.type !== 'sick' && request.type !== 'other') {
+
+  if (!isAdmin && daysUntilStart < minNotice && request.type !== 'sick' && request.type !== 'other') {
     errors.push(
       `${leaveType.charAt(0).toUpperCase() + leaveType.slice(1)} requests require at least ${minNotice} days (3 weeks) notice. You're requesting with ${daysUntilStart} days notice.`
     );

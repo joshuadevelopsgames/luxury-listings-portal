@@ -43,7 +43,7 @@ import { safeFormatDate } from '../../utils/dateUtils';
 import { toast } from 'react-hot-toast';
 
 const MyTimeOff = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, isSystemAdmin } = useAuth();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -316,7 +316,8 @@ const MyTimeOff = () => {
     e.preventDefault();
     
     // Validate the request before submitting
-    const validation = validateLeaveRequest(leaveForm, leaveBalances, myRequests);
+    const isAdmin = isSystemAdmin || currentUser?.isTimeOffAdmin || false;
+    const validation = validateLeaveRequest(leaveForm, leaveBalances, myRequests, isAdmin);
     setValidationErrors(validation.errors);
     setValidationWarnings(validation.warnings);
     

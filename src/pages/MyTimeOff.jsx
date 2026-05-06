@@ -328,7 +328,8 @@ const MyTimeOff = () => {
     e.preventDefault();
     
     // Validate the request before submitting
-    const validation = validateLeaveRequest(leaveForm, leaveBalances, myRequests);
+    const isAdmin = currentUser?.isAdmin || currentUser?.isTimeOffAdmin || false;
+    const validation = validateLeaveRequest(leaveForm, leaveBalances, myRequests, isAdmin);
     setValidationErrors(validation.errors);
     setValidationWarnings(validation.warnings);
     
