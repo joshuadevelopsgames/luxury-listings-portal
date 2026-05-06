@@ -660,7 +660,7 @@ const HRCalendar = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const employee = teamMembers.find(m => m.id === leaveForm.employeeId);
+    const employee = teamMembers.find(m => String(m.id) === String(leaveForm.employeeId));
     if (!employee) {
       toast.error('Please select an employee');
       return;
