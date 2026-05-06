@@ -1134,10 +1134,14 @@ const InstagramReportsPage = () => {
             const quarterlyReports = clientReports.filter(r => r.reportType === 'quarterly');
             const yearlyReports = clientReports.filter(r => r.reportType === 'yearly');
 
-            // Current month completion badge
+            // Current month completion badge — use previous month until the 15th
             const now = new Date();
-            const thisYear = now.getFullYear();
-            const thisMonth = now.getMonth() + 1;
+            let thisYear = now.getFullYear();
+            let thisMonth = now.getMonth() + 1;
+            if (now.getDate() <= 15) {
+              thisMonth -= 1;
+              if (thisMonth === 0) { thisMonth = 12; thisYear -= 1; }
+            }
             const thisMonthReport = clientReports.find(r => {
               const ry = getReportYear(r);
               const rm = getReportMonth(r);
