@@ -806,7 +806,7 @@ const MyTimeOff = () => {
                                 <p key={idx} className="text-[11px] text-[#86868b]">
                                   <span className="font-medium capitalize">{entry.action}</span>
                                   {' by '}{entry.by}
-                                  {' on '}{safeFormatDate(entry.timestamp, 'MMM dd, yyyy h:mm a')}
+                                  {' on '}{safeFormatDate(entry.timestamp || entry.at, 'MMM dd, yyyy h:mm a')}
                                   {entry.notes && <span className="italic"> - {entry.notes}</span>}
                                 </p>
                               ))}

@@ -45,6 +45,37 @@ const clean = (obj) => {
   return out;
 };
 
+/**
+ * Normalize a JSONB array column (history, chat messages) back to an array of
+ * object entries. Past code JSON.stringify'd these into the JSONB column, so
+ * Postgres stored a string scalar; a later [...spread] then exploded that
+ * string into single-character entries. Parse stringified values and recover
+ * any entries that were spread into characters so callers always get a clean
+ * array of objects (safe to spread and to render).
+ */
+const normalizeEntryArray = (value) => {
+  let arr = value;
+  if (typeof arr === 'string') {
+    try { arr = JSON.parse(arr); } catch { return []; }
+  }
+  if (!Array.isArray(arr)) return [];
+  const entries = [];
+  let chars = '';
+  for (const e of arr) {
+    if (e && typeof e === 'object') entries.push(e);
+    else if (typeof e === 'string') chars += e; // stray char from a spread string
+  }
+  if (chars.trim()) {
+    try {
+      const recovered = JSON.parse(chars);
+      if (Array.isArray(recovered)) {
+        return [...recovered.filter((e) => e && typeof e === 'object'), ...entries];
+      }
+    } catch { /* unrecoverable junk — drop it */ }
+  }
+  return entries;
+};
+
 /** DATE columns reject ''; use null */
 const normalizeProfileStartDate = (v) => {
   if (v === undefined) return undefined;
@@ -946,7 +977,7 @@ class SupabaseService {
       reviewedAt: normalizeTs(r.reviewed_at),
       calendarEventId: r.calendar_event_id,
       requesterCalendarEventId: r.requester_calendar_event_id,
-      history: r.history || [],
+      history: normalizeEntryArray(r.history),
       archived: r.archived || false,
       cancelledAt: normalizeTs(r.cancelled_at),
       cancelledBy: r.cancelled_by,
@@ -1024,7 +1055,7 @@ class SupabaseService {
         days_requested: requestData.daysRequested ?? requestData.days,
         status: 'pending',
         reason: requestData.reason || requestData.notes,
-        history: JSON.stringify([{ action: 'submitted', at: ts(), by: requestData.userEmail }]),
+        history: [{ action: 'submitted', at: ts(), by: email }],
         created_at: ts(),
         updated_at: ts(),
       })]).select().single();
@@ -1036,7 +1067,7 @@ class SupabaseService {
   async updateLeaveRequestStatus(requestId, status, reviewedBy, notes) {
     try {
       const { data: existing } = await supabase.from('time_off_requests').select('history').eq('id', requestId).maybeSingle();
-      const history = [...(existing?.history || []), { action: status, at: ts(), by: reviewedBy, notes }];
+      const history = [...normalizeEntryArray(existing?.history), { action: status, at: ts(), by: reviewedBy, notes }];
       const { error } = await supabase.from('time_off_requests').update(clean({
         status,
         reviewed_by_email: reviewedBy,
@@ -1125,7 +1156,7 @@ class SupabaseService {
   async cancelLeaveRequest(requestId, cancelledBy, reason = null) {
     try {
       const { data: existing } = await supabase.from('time_off_requests').select('history').eq('id', requestId).maybeSingle();
-      const history = [...(existing?.history || []), { action: 'cancelled', at: ts(), by: cancelledBy, reason }];
+      const history = [...normalizeEntryArray(existing?.history), { action: 'cancelled', at: ts(), by: cancelledBy, reason }];
       const { error } = await supabase.from('time_off_requests').update({ status: 'cancelled', cancelled_at: ts(), cancelled_by: cancelledBy, cancellation_reason: reason, history, updated_at: ts() }).eq('id', requestId);
       if (error) throw error;
     } catch (error) { throw error; }
@@ -2899,7 +2930,7 @@ class SupabaseService {
       const initialMessages = chatData.initialMessage
         ? [{ id: `msg-${Date.now()}`, message: chatData.initialMessage, senderEmail: chatData.userEmail, senderName: chatData.userName, createdAt: ts() }]
         : [];
-      const { data, error } = await supabase.from('feedback_chats').insert([{ user_id: userId, user_email: chatData.userEmail, subject: chatData.subject || chatData.title, status: 'open', is_archived: false, messages: JSON.stringify(initialMessages), created_at: ts(), updated_at: ts() }]).select().single();
+      const { data, error } = await supabase.from('feedback_chats').insert([{ user_id: userId, user_email: chatData.userEmail, subject: chatData.subject || chatData.title, status: 'open', is_archived: false, messages: initialMessages, created_at: ts(), updated_at: ts() }]).select().single();
       if (error) throw error;
       return data.id;
     } catch (error) { throw error; }
@@ -2908,21 +2939,21 @@ class SupabaseService {
   async getFeedbackChats(userEmail) {
     try {
       const { data } = await supabase.from('feedback_chats').select('*').eq('user_email', userEmail).eq('is_archived', false).order('updated_at', { ascending: false });
-      return (data || []).map(r => ({ id: r.id, userEmail: r.user_email, subject: r.subject, status: r.status, isArchived: r.is_archived, messages: r.messages || [], userLastReadAt: normalizeTs(r.user_last_read_at), adminLastReadAt: normalizeTs(r.admin_last_read_at), createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
+      return (data || []).map(r => ({ id: r.id, userEmail: r.user_email, subject: r.subject, status: r.status, isArchived: r.is_archived, messages: normalizeEntryArray(r.messages), userLastReadAt: normalizeTs(r.user_last_read_at), adminLastReadAt: normalizeTs(r.admin_last_read_at), createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
     } catch { return []; }
   }
 
   async getAllFeedbackChats() {
     try {
       const { data } = await supabase.from('feedback_chats').select('*').order('updated_at', { ascending: false });
-      return (data || []).map(r => ({ id: r.id, userEmail: r.user_email, subject: r.subject, status: r.status, isArchived: r.is_archived, messages: r.messages || [], createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
+      return (data || []).map(r => ({ id: r.id, userEmail: r.user_email, subject: r.subject, status: r.status, isArchived: r.is_archived, messages: normalizeEntryArray(r.messages), createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) }));
     } catch { return []; }
   }
 
   async getFeedbackChatById(chatId) {
     try {
       const { data } = await supabase.from('feedback_chats').select('*').eq('id', chatId).maybeSingle();
-      return data ? { id: data.id, userEmail: data.user_email, subject: data.subject, status: data.status, messages: data.messages || [], createdAt: normalizeTs(data.created_at) } : null;
+      return data ? { id: data.id, userEmail: data.user_email, subject: data.subject, status: data.status, messages: normalizeEntryArray(data.messages), createdAt: normalizeTs(data.created_at) } : null;
     } catch { return null; }
   }
 
@@ -2933,7 +2964,7 @@ class SupabaseService {
   async addFeedbackChatMessage(chatId, messageData) {
     try {
       const { data: existing } = await supabase.from('feedback_chats').select('messages').eq('id', chatId).maybeSingle();
-      const messages = [...(existing?.messages || []), { ...messageData, createdAt: ts(), id: `msg-${Date.now()}` }];
+      const messages = [...normalizeEntryArray(existing?.messages), { ...messageData, createdAt: ts(), id: `msg-${Date.now()}` }];
       const { error } = await supabase.from('feedback_chats').update({ messages, updated_at: ts() }).eq('id', chatId);
       if (error) throw error;
       return { success: true };
