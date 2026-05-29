@@ -1195,7 +1195,7 @@ class SupabaseService {
   async addToRequestHistory(requestId, action, byEmail, notes = null) {
     try {
       const { data: existing } = await supabase.from('time_off_requests').select('history').eq('id', requestId).maybeSingle();
-      const history = [...(existing?.history || []), { action, at: ts(), by: byEmail, notes }];
+      const history = [...normalizeEntryArray(existing?.history), { action, at: ts(), by: byEmail, notes }];
       await supabase.from('time_off_requests').update({ history, updated_at: ts() }).eq('id', requestId);
     } catch (error) { console.error('Error adding to request history:', error); }
   }
@@ -1205,9 +1205,28 @@ class SupabaseService {
 
   async updateLeaveRequestApproved(requestId, updates, editedBy) {
     try {
-      const { error } = await supabase.from('time_off_requests').update({ ...clean(updates), updated_at: ts() }).eq('id', requestId);
+      // Callers (HRCalendar edit modal, V3 + V4) pass the camelCase editLeaveForm.
+      // DB columns are snake_case, so map explicitly — a raw spread sends unknown
+      // columns (startDate, endDate, days, …) and PostgREST 400s the whole update.
+      const u = updates || {};
+      const { data: existing } = await supabase.from('time_off_requests').select('history').eq('id', requestId).maybeSingle();
+      const history = [...normalizeEntryArray(existing?.history), { action: 'edited', at: ts(), by: editedBy }];
+      const payload = clean({
+        ...(u.startDate !== undefined ? { start_date: u.startDate } : {}),
+        ...(u.endDate !== undefined ? { end_date: u.endDate } : {}),
+        ...(u.daysRequested !== undefined ? { days_requested: u.daysRequested } : {}),
+        ...(u.days !== undefined ? { days_requested: u.days } : {}),
+        ...(u.leaveType !== undefined ? { leave_type: u.leaveType, type: u.leaveType } : {}),
+        ...(u.type !== undefined ? { leave_type: u.type, type: u.type } : {}),
+        ...(u.reason !== undefined ? { reason: u.reason } : {}),
+        ...(u.notes !== undefined ? { notes: u.notes } : {}),
+        ...(u.managerNotes !== undefined ? { manager_notes: u.managerNotes } : {}),
+        history,
+        updated_at: ts(),
+      });
+      const { error } = await supabase.from('time_off_requests').update(payload).eq('id', requestId);
       if (error) throw error;
-    } catch (error) { throw error; }
+    } catch (error) { console.error('❌ Error updating approved leave request:', error); throw error; }
   }
 
   async setLeaveRequestRequesterCalendarEventId(requestId, eventId) {
