@@ -364,13 +364,18 @@ const MyTimeOff = () => {
 
       // Use enhanced submission with history tracking
       const result = await supabaseService.submitLeaveRequestEnhanced(newRequest);
-      
-      if (result.success) {
-        console.log('✅ Leave request submitted to Firestore:', result.id);
-        
-        // Send notifications to admins
-        await timeOffNotifications.notifyNewRequest({ ...newRequest, id: result.id });
-        
+      const requestId = typeof result === 'string' ? result : result?.id;
+
+      if (requestId) {
+        console.log('✅ Leave request submitted:', requestId);
+
+        // Notify admins — never let a notification failure mask a successful request
+        try {
+          await timeOffNotifications.notifyNewRequest({ ...newRequest, id: requestId });
+        } catch (notifyError) {
+          console.warn('⚠️ Could not send time-off notification:', notifyError);
+        }
+
         toast.success('Time off request submitted! Your request has been sent for approval.');
         setShowRequestModal(false);
         resetForm();

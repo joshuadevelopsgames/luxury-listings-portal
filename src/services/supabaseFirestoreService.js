@@ -1005,22 +1005,23 @@ class SupabaseService {
     try {
       // Resolve subject user's UUID from email — column is NOT NULL and the
       // auth.uid() default only works when the requester is the subject.
+      const email = requestData.userEmail || requestData.employeeEmail;
       let userId = requestData.userId || null;
-      if (!userId && requestData.userEmail) {
-        const { data: prof } = await supabase.from('profiles').select('id').ilike('email', requestData.userEmail).maybeSingle();
+      if (!userId && email) {
+        const { data: prof } = await supabase.from('profiles').select('id').ilike('email', email).maybeSingle();
         userId = prof?.id || null;
       }
-      if (!userId) throw new Error(`Could not resolve user_id for ${requestData.userEmail}`);
+      if (!userId) throw new Error(`Could not resolve user_id for ${email}`);
 
       const { data, error } = await supabase.from('time_off_requests').insert([clean({
         user_id: userId,
-        user_email: requestData.userEmail,
+        user_email: email,
         employee_name: requestData.employeeName || null,
         leave_type: requestData.leaveType || requestData.type,
         type: requestData.leaveType || requestData.type,
         start_date: requestData.startDate,
         end_date: requestData.endDate,
-        days_requested: requestData.daysRequested,
+        days_requested: requestData.daysRequested ?? requestData.days,
         status: 'pending',
         reason: requestData.reason || requestData.notes,
         history: JSON.stringify([{ action: 'submitted', at: ts(), by: requestData.userEmail }]),
@@ -2855,7 +2856,9 @@ class SupabaseService {
 
   async createFeedback(feedbackData) {
     try {
-      const { data, error } = await supabase.from('feedback').insert([clean({ user_email: feedbackData.userEmail, type: feedbackData.type || 'feedback', title: feedbackData.title || feedbackData.subject, description: feedbackData.description || feedbackData.message, message: feedbackData.message || feedbackData.description, priority: feedbackData.priority || 'medium', status: 'open', created_at: ts() })]).select().single();
+      // feedback.user_id is NOT NULL and RLS requires user_id = auth.uid()
+      const userId = await this._getCurrentUserId();
+      const { data, error } = await supabase.from('feedback').insert([clean({ user_id: userId, user_email: feedbackData.userEmail, type: feedbackData.type || 'feedback', title: feedbackData.title || feedbackData.subject, description: feedbackData.description || feedbackData.message, message: feedbackData.message || feedbackData.description, priority: feedbackData.priority || 'medium', status: 'open', created_at: ts() })]).select().single();
       if (error) throw error;
       return { success: true, id: data.id };
     } catch (error) { throw error; }
@@ -2891,7 +2894,12 @@ class SupabaseService {
 
   async createFeedbackChat(chatData) {
     try {
-      const { data, error } = await supabase.from('feedback_chats').insert([{ user_email: chatData.userEmail, subject: chatData.subject || chatData.title, status: 'open', is_archived: false, messages: JSON.stringify([]), created_at: ts(), updated_at: ts() }]).select().single();
+      // feedback_chats.user_id is NOT NULL and RLS requires user_id = auth.uid()
+      const userId = await this._getCurrentUserId();
+      const initialMessages = chatData.initialMessage
+        ? [{ id: `msg-${Date.now()}`, message: chatData.initialMessage, senderEmail: chatData.userEmail, senderName: chatData.userName, createdAt: ts() }]
+        : [];
+      const { data, error } = await supabase.from('feedback_chats').insert([{ user_id: userId, user_email: chatData.userEmail, subject: chatData.subject || chatData.title, status: 'open', is_archived: false, messages: JSON.stringify(initialMessages), created_at: ts(), updated_at: ts() }]).select().single();
       if (error) throw error;
       return data.id;
     } catch (error) { throw error; }
