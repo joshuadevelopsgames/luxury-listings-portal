@@ -1359,6 +1359,13 @@ class SupabaseService {
 
   async updateClient(clientId, clientData) {
     try {
+      // meta is the rich JSONB store for fields without dedicated columns
+      // (clientTypes/clientType, packageType, primaryContact, location, …) and
+      // _mapClient surfaces it via spread. addClient writes it but updates must
+      // merge it back or those edits never reach the server. Merge (not replace)
+      // so partial updates (e.g. { assignedManager }) don't wipe other meta.
+      const { data: existing } = await supabase.from('clients').select('meta').eq('id', clientId).maybeSingle();
+      const meta = { ...(existing?.meta || {}), ...clean(clientData) };
       const payload = clean({
         ...(clientData.clientName !== undefined ? { client_name: clientData.clientName, name: clientData.clientName } : {}),
         ...(clientData.name !== undefined ? { name: clientData.name, client_name: clientData.name } : {}),
@@ -1382,6 +1389,7 @@ class SupabaseService {
         ...(clientData.contractValue !== undefined ? { monthly_value: clientData.contractValue } : {}),
         ...(clientData.contractStart !== undefined ? { contract_start: clientData.contractStart } : {}),
         ...(clientData.contractEnd !== undefined ? { contract_end: clientData.contractEnd } : {}),
+        meta,
         updated_at: ts(),
       });
       const { error } = await supabase.from('clients').update(payload).eq('id', clientId);
