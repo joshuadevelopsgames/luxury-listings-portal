@@ -795,7 +795,7 @@ const MyTimeOff = () => {
                         )}
                         
                         {/* History */}
-                        {request.history && request.history.length > 0 && (
+                        {Array.isArray(request.history) && request.history.length > 0 && (
                           <div className="bg-black/[0.02] dark:bg-white/5 rounded-xl p-4">
                             <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-2 flex items-center">
                               <History className="w-4 h-4 mr-2" />
