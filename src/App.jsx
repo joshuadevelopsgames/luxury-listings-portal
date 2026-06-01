@@ -165,9 +165,9 @@ function RootLayout() {
 // LOGIN PAGE - Shows login, redirects if already authenticated
 // ============================================================================
 function LoginPage() {
-  if (DEV_FORCE_BYPASS_LOGIN) return <Navigate to="/dashboard" replace />;
-
   const { currentUser, loading, authHydrated } = useAuth();
+
+  if (DEV_FORCE_BYPASS_LOGIN) return <Navigate to="/dashboard" replace />;
 
   // If auth is still loading or hydrating, show the login form (non-blocking).
   // But if the URL hash contains auth tokens (OAuth redirect landing on /login),

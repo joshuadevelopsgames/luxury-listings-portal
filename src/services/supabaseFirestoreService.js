@@ -1435,15 +1435,19 @@ class SupabaseService {
     if (!clientId) throw new Error('clientId is required');
     if (!template.name || !String(template.name).trim()) throw new Error('Template name is required');
     const existing = await this.getClientCaptionTemplates(clientId);
-    let next;
-    if (template.id && existing.some(t => t.id === template.id)) {
-      next = existing.map(t => (t.id === template.id ? { ...t, ...template } : t));
-    } else {
-      const id = template.id || `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      next = [...existing, { ...template, id, createdAt: new Date().toISOString() }];
-    }
+    const isEdit = template.id && existing.some(t => t.id === template.id);
+    const targetId = isEdit ? template.id : `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const next = isEdit
+      ? existing.map(t => (t.id === template.id ? { ...t, ...template } : t))
+      : [...existing, { ...template, id: targetId, createdAt: new Date().toISOString() }];
     await this.updateClient(clientId, { captionTemplates: next });
-    return next;
+    // Verify it actually persisted — turns a silent RLS/permission failure (update
+    // affects 0 rows but returns no error) into a clear, surfaceable error.
+    const saved = await this.getClientCaptionTemplates(clientId);
+    if (!saved.some(t => t.id === targetId)) {
+      throw new Error("Couldn't save the format — you may not be signed in with permission to update this client.");
+    }
+    return saved;
   }
 
   async deleteClientCaptionTemplate(clientId, templateId) {
