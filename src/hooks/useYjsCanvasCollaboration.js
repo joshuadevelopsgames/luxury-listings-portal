@@ -247,7 +247,18 @@ export function useYjsCanvasCollaboration(canvasUuid, enabled, user, initialBloc
       setDocReady(false);
       ydoc.off('update', onYUpdate);
       yblocks.unobserveDeep(deepObserver);
-      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+      // Flush a pending debounced save instead of dropping it. Without this, an
+      // edit made within the 900ms debounce window right before closing the
+      // canvas (or navigating away) is silently lost.
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = null;
+        try {
+          onPersistRef.current?.(yArrayToPlainBlocks(yblocks));
+        } catch (e) {
+          console.warn('[collab] final persist on unmount failed', e);
+        }
+      }
       supabase.removeChannel(channel);
       channelRef.current = null;
       ydocRef.current = null;

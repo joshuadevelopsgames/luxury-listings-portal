@@ -9,6 +9,7 @@
 
 import { supabase } from '../lib/supabase';
 import { normalizeTaskPriorityToInt, taskPriorityToLabel } from '../utils/taskPriority';
+import { sharedWithToEmails, logCanvasShareAudit } from '../utils/canvasSharing';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -3119,33 +3120,54 @@ class SupabaseService {
   }
 
   async getCanvasesSharedWith(userEmail) {
-    try {
-      const lower = String(userEmail || '').toLowerCase().trim();
-      const { data } = await supabase.from('canvases').select('*').eq('is_shared', true).order('updated_at', { ascending: false });
-      return (data || [])
-        .filter((r) => (r.shared_with || []).some((s) => String(s.email || s).toLowerCase() === lower))
-        .map((r) => this._canvasRowToClient(r));
-    } catch { return []; }
+    const lower = String(userEmail || '').toLowerCase().trim();
+    if (!lower) return [];
+    // Filter server-side on the denormalized `shared_with_emails` array so we
+    // fetch only the canvases shared with THIS user — not every shared canvas
+    // org-wide (the old client-side `.filter()` pulled them all, content+history
+    // included). Errors are propagated so an outage shows a real error toast
+    // instead of masquerading as "nothing shared with you".
+    const { data, error } = await supabase
+      .from('canvases')
+      .select('*')
+      .eq('is_shared', true)
+      .contains('shared_with_emails', [lower])
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map((r) => this._canvasRowToClient(r));
   }
 
   async shareCanvas(ownerUserId, canvasId, { email, role = 'editor' }) {
-    try {
-      const rid = await this.resolveCanvasId(canvasId);
-      if (!rid) throw new Error('Workspace not found');
-      const { data } = await supabase.from('canvases').select('shared_with').eq('id', rid).maybeSingle();
-      const sharedWith = [...(data?.shared_with || []).filter(s => (s.email || s) !== email), { email, role }];
-      await supabase.from('canvases').update({ shared_with: sharedWith, is_shared: true, updated_at: ts() }).eq('id', rid);
-    } catch (error) { throw error; }
+    const rid = await this.resolveCanvasId(canvasId);
+    if (!rid) throw new Error('Workspace not found');
+    const emailLower = String(email || '').toLowerCase().trim();
+    const { data } = await supabase.from('canvases').select('shared_with').eq('id', rid).maybeSingle();
+    const sharedWith = [
+      ...(data?.shared_with || []).filter((s) => String(s.email || s).toLowerCase() !== emailLower),
+      { email: emailLower, role },
+    ];
+    // Maintain the denormalized email array in lockstep with shared_with so the
+    // `contains(shared_with_emails, …)` read path can find this share.
+    const { error } = await supabase
+      .from('canvases')
+      .update({ shared_with: sharedWith, shared_with_emails: sharedWithToEmails(sharedWith), is_shared: true, updated_at: ts() })
+      .eq('id', rid);
+    if (error) throw error;
+    logCanvasShareAudit({ changeType: 'canvas_share_add', targetEmail: emailLower, changedBy: ownerUserId, added: [emailLower] });
   }
 
   async unshareCanvas(ownerUserId, canvasId, email) {
-    try {
-      const rid = await this.resolveCanvasId(canvasId);
-      if (!rid) throw new Error('Workspace not found');
-      const { data } = await supabase.from('canvases').select('shared_with').eq('id', rid).maybeSingle();
-      const sharedWith = (data?.shared_with || []).filter(s => (s.email || s) !== email);
-      await supabase.from('canvases').update({ shared_with: sharedWith, is_shared: sharedWith.length > 0, updated_at: ts() }).eq('id', rid);
-    } catch (error) { throw error; }
+    const rid = await this.resolveCanvasId(canvasId);
+    if (!rid) throw new Error('Workspace not found');
+    const emailLower = String(email || '').toLowerCase().trim();
+    const { data } = await supabase.from('canvases').select('shared_with').eq('id', rid).maybeSingle();
+    const sharedWith = (data?.shared_with || []).filter((s) => String(s.email || s).toLowerCase() !== emailLower);
+    const { error } = await supabase
+      .from('canvases')
+      .update({ shared_with: sharedWith, shared_with_emails: sharedWithToEmails(sharedWith), is_shared: sharedWith.length > 0, updated_at: ts() })
+      .eq('id', rid);
+    if (error) throw error;
+    logCanvasShareAudit({ changeType: 'canvas_share_remove', targetEmail: emailLower, changedBy: ownerUserId, removed: [emailLower] });
   }
 
   async getCanvasById(canvasId) {

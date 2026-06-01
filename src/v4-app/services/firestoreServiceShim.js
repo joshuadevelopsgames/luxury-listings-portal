@@ -10,6 +10,7 @@
 
 import { supabase } from '../lib/supabase';
 import { normalizeTaskPriorityToInt, taskPriorityToLabel } from '../../utils/taskPriority';
+import { sharedWithToEmails, logCanvasShareAudit } from '../../utils/canvasSharing';
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -1885,25 +1886,43 @@ export const firestoreService = {
   },
 
   async getCanvasesSharedWith(userEmail) {
-    const emailLower = userEmail.toLowerCase();
-    const { data } = await supabase.from('canvases').select('*').contains('shared_with_emails', [emailLower]);
+    const emailLower = String(userEmail || '').toLowerCase().trim();
+    if (!emailLower) return [];
+    const { data, error } = await supabase
+      .from('canvases')
+      .select('*')
+      .eq('is_shared', true)
+      .contains('shared_with_emails', [emailLower])
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
     return (data || []).map(canvasToV3);
   },
 
-  async shareCanvas(ownerUserId, canvasId, { email, role }) {
-    const { data: canvas } = await supabase.from('canvases').select('shared_with, shared_with_emails').eq('id', canvasId).single();
-    const emails = [...(canvas.shared_with_emails || []), email.toLowerCase()];
-    const shared = [...(canvas.shared_with || []), { email: email.toLowerCase(), role }];
-    await supabase.from('canvases').update({ shared_with_emails: [...new Set(emails)], shared_with: shared }).eq('id', canvasId);
+  async shareCanvas(ownerUserId, canvasId, { email, role = 'editor' }) {
+    const emailLower = String(email || '').toLowerCase().trim();
+    const { data: canvas } = await supabase.from('canvases').select('shared_with').eq('id', canvasId).single();
+    const shared = [
+      ...((canvas?.shared_with) || []).filter((s) => String(s.email || s).toLowerCase() !== emailLower),
+      { email: emailLower, role },
+    ];
+    const { error } = await supabase
+      .from('canvases')
+      .update({ shared_with: shared, shared_with_emails: sharedWithToEmails(shared), is_shared: true, updated_at: new Date().toISOString() })
+      .eq('id', canvasId);
+    if (error) throw error;
+    logCanvasShareAudit({ changeType: 'canvas_share_add', targetEmail: emailLower, changedBy: ownerUserId, added: [emailLower] });
   },
 
   async unshareCanvas(ownerUserId, canvasId, email) {
-    const { data: canvas } = await supabase.from('canvases').select('shared_with, shared_with_emails').eq('id', canvasId).single();
-    const emailLower = email.toLowerCase();
-    await supabase.from('canvases').update({
-      shared_with_emails: (canvas.shared_with_emails || []).filter((e) => e !== emailLower),
-      shared_with: (canvas.shared_with || []).filter((s) => s.email !== emailLower),
-    }).eq('id', canvasId);
+    const emailLower = String(email || '').toLowerCase().trim();
+    const { data: canvas } = await supabase.from('canvases').select('shared_with').eq('id', canvasId).single();
+    const shared = ((canvas?.shared_with) || []).filter((s) => String(s.email || s).toLowerCase() !== emailLower);
+    const { error } = await supabase
+      .from('canvases')
+      .update({ shared_with: shared, shared_with_emails: sharedWithToEmails(shared), is_shared: shared.length > 0, updated_at: new Date().toISOString() })
+      .eq('id', canvasId);
+    if (error) throw error;
+    logCanvasShareAudit({ changeType: 'canvas_share_remove', targetEmail: emailLower, changedBy: ownerUserId, removed: [emailLower] });
   },
 
   async getCanvasHistory(canvasId, limit = 50) {
