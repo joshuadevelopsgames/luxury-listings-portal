@@ -432,11 +432,15 @@ const ContentCalendar = () => {
           tags,
           media
         });
-        const updated = await supabaseService.getContentItems(currentUser.email);
-        setContentItems(updated);
+        // Optimistically apply the edit so it shows immediately, then sync.
+        setContentItems(prev => prev.map(i => i.id === editingContent.id
+          ? { ...i, calendarId: selectedCalendarId, title: postForm.title, description: postForm.description, platform: postForm.platform, contentType: postForm.contentType, scheduledDate: postForm.scheduledDate, status: postForm.status, tags, media }
+          : i));
         setEditingContent(null);
+        const updated = await supabaseService.getContentItems(currentUser.email);
+        if (Array.isArray(updated) && updated.length) setContentItems(updated);
       } else {
-        await supabaseService.createContentItem({
+        const created = await supabaseService.createContentItem({
           userEmail: currentUser.email,
           calendarId: selectedCalendarId,
           title: postForm.title,
@@ -448,8 +452,18 @@ const ContentCalendar = () => {
           tags,
           media
         });
+        // Show the new post immediately. The post-create refetch can transiently
+        // return [] under an auth race, and blindly setting that would wipe the
+        // calendar — so append optimistically and only replace from a non-empty
+        // refetch. Also jump the view to the post's month so it's never created
+        // "off-screen" in a month the user isn't looking at.
+        if (created?.id) {
+          setContentItems(prev => [...prev.filter(i => i.id !== created.id), created]);
+          const d = created.scheduledDate instanceof Date ? created.scheduledDate : new Date(created.scheduledDate);
+          if (!isNaN(d)) setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+        }
         const updated = await supabaseService.getContentItems(currentUser.email);
-        setContentItems(updated);
+        if (Array.isArray(updated) && updated.length) setContentItems(updated);
       }
     } catch (err) {
       // Surface the real DB error instead of silently no-op'ing (the modal
