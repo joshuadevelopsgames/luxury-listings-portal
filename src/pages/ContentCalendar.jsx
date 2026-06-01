@@ -457,13 +457,13 @@ const ContentCalendar = () => {
         // calendar — so append optimistically and only replace from a non-empty
         // refetch. Also jump the view to the post's month so it's never created
         // "off-screen" in a month the user isn't looking at.
-        console.log('🆕 created content item', {
+        console.log('🆕 created content item ' + JSON.stringify({
           id: created?.id,
           itemCalendarId: created?.calendarId,
           selectedCalendarId,
           match: created?.calendarId === selectedCalendarId,
           scheduledDate: String(created?.scheduledDate),
-        });
+        }));
         if (created?.id) {
           setContentItems(prev => [...prev.filter(i => i.id !== created.id), created]);
           const d = created.scheduledDate instanceof Date ? created.scheduledDate : new Date(created.scheduledDate);
@@ -610,14 +610,14 @@ const ContentCalendar = () => {
 
   // Debug logging for filtered content
   useEffect(() => {
-    console.log('🔍 Filtering content:', {
+    console.log('🔍 Filtering content: ' + JSON.stringify({
       totalItems: contentItems.length,
       selectedCalendarId,
       calendarIdsInState: [...new Set(contentItems.map(i => i.calendarId))],
       filteredCount: filteredContent.length,
       filterPlatform,
       filterStatus
-    });
+    }));
   }, [contentItems, selectedCalendarId, filteredContent.length, filterPlatform, filterStatus]);
 
   const nextMonth = () => {
