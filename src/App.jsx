@@ -96,6 +96,7 @@ const InstagramReportsPage    = lazyRetry(() => import('./pages/InstagramReports
 const MetaCallback            = lazyRetry(() => import('./pages/MetaCallback'));
 const WaitingForApproval      = lazyRetry(() => import('./pages/WaitingForApproval'));
 const ClientLogin             = lazyRetry(() => import('./pages/ClientLogin'));
+const ClientPortal            = lazyRetry(() => import('./pages/ClientPortal'));
 const ClientWaitingForApproval = lazyRetry(() => import('./pages/ClientWaitingForApproval'));
 const ClientPasswordReset     = lazyRetry(() => import('./pages/ClientPasswordReset'));
 const FirebaseAuthHandler     = lazyRetry(() => import('./pages/FirebaseAuthHandler'));
@@ -249,6 +250,7 @@ const router = createBrowserRouter([
       // Public routes (no auth required)
       { path: '/login',                        element: <LoginPage /> },
       { path: '/client-login',                 element: <Suspense fallback={<PageSpinner />}><ClientLogin /></Suspense> },
+      { path: '/client-portal',                element: <Suspense fallback={<PageSpinner />}><ClientPortal /></Suspense> },
       { path: '/client-password-reset',        element: <Suspense fallback={<PageSpinner />}><ClientPasswordReset /></Suspense> },
       { path: '/client-waiting-for-approval',  element: <Suspense fallback={<PageSpinner />}><ClientWaitingForApproval /></Suspense> },
       { path: '/waiting-for-approval',         element: <Suspense fallback={<PageSpinner />}><WaitingForApproval /></Suspense> },
