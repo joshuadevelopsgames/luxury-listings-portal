@@ -169,28 +169,49 @@ const ContentCalendar = () => {
 
     const load = async () => {
       const email = currentUser.email;
+      // Apply a calendar list and choose the active calendar WITHOUT clobbering
+      // the user's current pick: keep it if still present (survives effect
+      // re-runs, e.g. on auth token refresh), then the last-persisted pick, then
+      // the first calendar. This is what stops the view snapping back to the
+      // default "My Calendar" after creating content.
+      const applyCalendars = (list) => {
+        if (cancelled) return;
+        setCalendars(list);
+        let stored = null;
+        try { stored = localStorage.getItem(`contentcal_selected_${email}`); } catch (_) {}
+        setSelectedCalendarId(prev => {
+          if (prev && list.some(c => c.id === prev)) return prev;
+          if (stored && list.some(c => c.id === stored)) return stored;
+          return list[0]?.id ?? null;
+        });
+      };
+
       const [cals, items] = await Promise.all([
         supabaseService.getContentCalendars(email),
         supabaseService.getContentItems(email)
       ]);
       if (cancelled) return;
       if (cals.length === 0) {
-        const defaultNames = [
-          { id: 'default', name: 'My Calendar' },
-          { id: 'client-ll', name: 'Luxury Listings' }
-        ];
-        for (const def of defaultNames) {
-          const res = await supabaseService.createContentCalendar({ userEmail: email, name: def.name });
-          cals.push({ id: res.id, name: def.name });
-        }
-        const refetched = await supabaseService.getContentCalendars(email);
-        if (!cancelled) {
-          setCalendars(refetched);
-          setSelectedCalendarId(refetched[0]?.id ?? null);
+        // Seed default calendars on a genuinely empty account. Guard it: a
+        // transient empty/failed read (or an RLS hiccup) must not throw an
+        // unhandled rejection that aborts the whole load and blanks the page.
+        try {
+          const defaultNames = [
+            { id: 'default', name: 'My Calendar' },
+            { id: 'client-ll', name: 'Luxury Listings' }
+          ];
+          for (const def of defaultNames) {
+            const res = await supabaseService.createContentCalendar({ userEmail: email, name: def.name });
+            cals.push({ id: res.id, name: def.name });
+          }
+          const refetched = await supabaseService.getContentCalendars(email);
+          applyCalendars(refetched.length ? refetched : cals);
+        } catch (err) {
+          console.error('Failed to seed default calendars:', err?.message || err);
+          applyCalendars(cals);
         }
       } else {
-        setCalendars(cals);
-        setSelectedCalendarId(cals[0]?.id ?? null);
+        applyCalendars(cals);
       }
       if (items.length === 0) {
         const storedItems = localStorage.getItem(`content_items_${email}`);
@@ -215,6 +236,13 @@ const ContentCalendar = () => {
     load();
     return () => { cancelled = true; };
   }, [currentUser?.email]);
+
+  // Remember the active calendar per user so a reload restores it instead of
+  // snapping back to the first ("My Calendar").
+  useEffect(() => {
+    if (!currentUser?.email || !selectedCalendarId) return;
+    try { localStorage.setItem(`contentcal_selected_${currentUser.email}`, selectedCalendarId); } catch (_) {}
+  }, [selectedCalendarId, currentUser?.email]);
 
   // Load clients so the manager can choose which one sees a calendar in their portal
   useEffect(() => {
