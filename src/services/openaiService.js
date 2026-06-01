@@ -544,16 +544,34 @@ Write a 3–5 sentence summary in the first-person voice of their dedicated soci
 
   /**
    * Generate a social media caption with hashtags for luxury real estate content.
+   * Pass a format template via options ({ formatExample, formatNotes, formatName })
+   * to make the AI mirror a client's established caption style. The model is told
+   * to use ONLY the facts in `description` — never to invent features (no phantom
+   * pools, views, or room counts).
    */
-  async generateCaption(description, platform = 'instagram', tone = 'luxury') {
+  async generateCaption(description, platform = 'instagram', tone = 'luxury', options = {}) {
     if (!description || description.trim().length < 3) {
       throw new Error('Please provide a description of the content (at least 3 characters)');
     }
-    console.log(`✍️ Generating ${platform} caption...`);
+    const { formatExample = '', formatNotes = '', formatName = '' } = options || {};
+    console.log(`✍️ Generating ${platform} caption${formatName ? ` using format "${formatName}"` : ''}...`);
+
+    let system = `You generate ${tone} social media captions for luxury real estate content on ${platform}.
+
+STRICT FACTUAL RULE — this overrides every other instruction: use ONLY the details explicitly present in the user's description. Never invent, infer, embellish, or add any feature, amenity, room/bathroom count, square footage, price, location, view, or selling point that is not explicitly stated. For example, do NOT mention a pool, ocean view, or number of bedrooms unless the description says so. If a detail isn't provided, leave it out rather than guessing.`;
+
+    if (formatExample.trim() || formatNotes.trim()) {
+      system += `\n\nFORMAT TO FOLLOW — match the structure, length, line breaks, emoji usage, punctuation, hashtag placement, and overall voice of the example below. Reproduce the FORMAT and STYLE only; never reuse the example's specific facts (its addresses, prices, or features). Every fact in your caption must come from the user's description, not the example.`;
+      if (formatNotes.trim()) system += `\nAdditional format notes: ${formatNotes.trim()}`;
+      if (formatExample.trim()) system += `\n\nExample caption to mirror:\n"""\n${formatExample.trim()}\n"""`;
+    }
+
+    system += `\n\nReturn JSON: { "caption": "...", "hashtags": ["...", ...] }`;
+
     const raw = await this._callAI([
-      { role: 'system', content: `You generate ${tone} social media captions for luxury real estate content on ${platform}. Return JSON: { "caption": "...", "hashtags": ["...", ...] }` },
+      { role: 'system', content: system },
       { role: 'user', content: `Write a ${tone} ${platform} caption for: ${description}` },
-    ], { temperature: 0.8, maxTokens: 500, json: true });
+    ], { temperature: 0.7, maxTokens: 500, json: true });
     try {
       const parsed = JSON.parse(raw);
       console.log('✅ Caption generated');

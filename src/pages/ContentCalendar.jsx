@@ -151,6 +151,12 @@ const ContentCalendar = () => {
   const [aiCaptionPrompt, setAiCaptionPrompt] = useState('');
   const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
   const [generatedCaption, setGeneratedCaption] = useState(null);
+  // AI caption format templates (per linked client, stored in clients.meta)
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [showTemplateForm, setShowTemplateForm] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateExample, setTemplateExample] = useState('');
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   // Load content and calendars from Firestore (with one-time localStorage migration)
   useEffect(() => {
@@ -237,6 +243,58 @@ const ContentCalendar = () => {
       toast.error(e?.message || 'Failed to update client link');
     } finally {
       setAssigningClient(false);
+    }
+  };
+
+  const refreshClients = async () => {
+    try { const cs = await supabaseService.getClients(); setClients(Array.isArray(cs) ? cs : []); } catch {}
+  };
+
+  // ─── AI caption format templates (scoped to the calendar's linked client) ─────
+  const aiLinkedClient = linkedClientForCalendar(selectedCalendarId);
+  const aiTemplates = Array.isArray(aiLinkedClient?.captionTemplates) ? aiLinkedClient.captionTemplates : [];
+
+  const closeAICaptionModal = () => {
+    setShowAICaptionModal(false);
+    setAiCaptionPrompt('');
+    setGeneratedCaption(null);
+    setShowTemplateForm(false);
+    setTemplateName('');
+    setTemplateExample('');
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!aiLinkedClient) { toast.error('Link this calendar to a client first'); return; }
+    if (!templateName.trim()) { toast.error('Give the format a name'); return; }
+    if (!templateExample.trim()) { toast.error('Paste an example caption'); return; }
+    setSavingTemplate(true);
+    try {
+      const next = await supabaseService.saveClientCaptionTemplate(aiLinkedClient.id, {
+        name: templateName.trim(),
+        example: templateExample.trim(),
+      });
+      await refreshClients();
+      setSelectedTemplateId(next[next.length - 1]?.id || '');
+      setShowTemplateForm(false);
+      setTemplateName('');
+      setTemplateExample('');
+      toast.success('Format saved');
+    } catch (e) {
+      toast.error(e?.message || 'Failed to save format');
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId) => {
+    if (!aiLinkedClient || !templateId) return;
+    try {
+      await supabaseService.deleteClientCaptionTemplate(aiLinkedClient.id, templateId);
+      await refreshClients();
+      if (selectedTemplateId === templateId) setSelectedTemplateId('');
+      toast.success('Format removed');
+    } catch (e) {
+      toast.error(e?.message || 'Failed to remove format');
     }
   };
 
@@ -1956,11 +2014,7 @@ const ContentCalendar = () => {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  setShowAICaptionModal(false);
-                  setAiCaptionPrompt('');
-                  setGeneratedCaption(null);
-                }}
+                onClick={closeAICaptionModal}
                 className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               >
                 <X className="w-5 h-5 text-[#86868b]" />
@@ -1970,6 +2024,99 @@ const ContentCalendar = () => {
             <div className="p-6 space-y-4">
               {!generatedCaption ? (
                 <>
+                  {/* Caption format / template (per linked client) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                        Caption format
+                        {aiLinkedClient && (
+                          <span className="text-[#86868b] font-normal"> · {aiLinkedClient.clientName || aiLinkedClient.name}</span>
+                        )}
+                      </label>
+                      {aiLinkedClient && (
+                        <button
+                          type="button"
+                          onClick={() => { setTemplateName(''); setTemplateExample(''); setShowTemplateForm(v => !v); }}
+                          className="text-[12px] font-medium text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> New format
+                        </button>
+                      )}
+                    </div>
+                    {aiLinkedClient ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={selectedTemplateId}
+                            onChange={(e) => setSelectedTemplateId(e.target.value)}
+                            disabled={isGeneratingCaption}
+                            className="flex-1 px-4 py-2.5 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          >
+                            <option value="">No format (free-form)</option>
+                            {aiTemplates.map((t) => (
+                              <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                          </select>
+                          {selectedTemplateId && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTemplate(selectedTemplateId)}
+                              title="Delete this format"
+                              className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        {selectedTemplateId && (
+                          <p className="text-[11px] text-[#86868b] mt-1.5">
+                            The AI will mirror this format's style — facts come only from your description below.
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[12px] text-[#86868b]">
+                        Link this calendar to a client (in the Calendars menu) to save and reuse that client's caption formats.
+                      </p>
+                    )}
+
+                    {showTemplateForm && aiLinkedClient && (
+                      <div className="mt-3 p-3 rounded-xl border border-purple-500/20 bg-purple-500/5 space-y-2">
+                        <input
+                          type="text"
+                          value={templateName}
+                          onChange={(e) => setTemplateName(e.target.value)}
+                          placeholder="Format name (e.g. Oceanfront Listing Style)"
+                          className="w-full px-3 py-2 text-[13px] rounded-lg bg-white dark:bg-white/10 border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                        <textarea
+                          value={templateExample}
+                          onChange={(e) => setTemplateExample(e.target.value)}
+                          placeholder="Paste a previous caption that shows the format you want to reuse…"
+                          rows={4}
+                          className="w-full px-3 py-2 text-[13px] rounded-lg bg-white dark:bg-white/10 border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowTemplateForm(false)}
+                            className="px-3 py-1.5 text-[13px] rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveTemplate}
+                            disabled={savingTemplate}
+                            className="px-3 py-1.5 text-[13px] rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                          >
+                            {savingTemplate ? 'Saving…' : 'Save format'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
                       Describe your content
@@ -1990,10 +2137,7 @@ const ContentCalendar = () => {
                   <div className="flex justify-end gap-3">
                     <button
                       type="button"
-                      onClick={() => {
-                        setShowAICaptionModal(false);
-                        setAiCaptionPrompt('');
-                      }}
+                      onClick={closeAICaptionModal}
                       className="px-4 py-2 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
                       disabled={isGeneratingCaption}
                     >
@@ -2008,10 +2152,12 @@ const ContentCalendar = () => {
                         }
                         setIsGeneratingCaption(true);
                         try {
+                          const tpl = aiTemplates.find((t) => t.id === selectedTemplateId);
                           const result = await openaiService.generateCaption(
                             aiCaptionPrompt,
                             postForm.platform,
-                            'luxury'
+                            'luxury',
+                            tpl ? { formatExample: tpl.example || '', formatNotes: tpl.notes || '', formatName: tpl.name } : {}
                           );
                           setGeneratedCaption(result);
                           toast.success('Caption generated!');
@@ -2090,9 +2236,7 @@ const ContentCalendar = () => {
                             ...prev,
                             description: generatedCaption.caption
                           }));
-                          setShowAICaptionModal(false);
-                          setAiCaptionPrompt('');
-                          setGeneratedCaption(null);
+                          closeAICaptionModal();
                           toast.success('Caption added!');
                         }}
                         className="px-4 py-2 text-[14px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors"
@@ -2109,9 +2253,7 @@ const ContentCalendar = () => {
                             description: generatedCaption.caption,
                             tags: hashtagsString
                           }));
-                          setShowAICaptionModal(false);
-                          setAiCaptionPrompt('');
-                          setGeneratedCaption(null);
+                          closeAICaptionModal();
                           toast.success('Caption and hashtags added!');
                         }}
                         className="px-4 py-2 text-[14px] font-medium rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all"

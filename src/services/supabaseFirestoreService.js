@@ -1418,6 +1418,42 @@ class SupabaseService {
     } catch (error) { console.error('❌ Error updating client:', error); throw error; }
   }
 
+  // ─── Per-client AI caption format templates (stored in clients.meta, no DDL) ───
+  // Each template: { id, name, example, notes?, createdAt }. The content calendar's
+  // AI caption generator lets managers save a client's preferred caption format and
+  // reuse it so generated copy matches that client's established voice/structure.
+  async getClientCaptionTemplates(clientId) {
+    if (!clientId) return [];
+    try {
+      const { data } = await supabase.from('clients').select('meta').eq('id', clientId).maybeSingle();
+      const tpls = data?.meta?.captionTemplates;
+      return Array.isArray(tpls) ? tpls : [];
+    } catch { return []; }
+  }
+
+  async saveClientCaptionTemplate(clientId, template = {}) {
+    if (!clientId) throw new Error('clientId is required');
+    if (!template.name || !String(template.name).trim()) throw new Error('Template name is required');
+    const existing = await this.getClientCaptionTemplates(clientId);
+    let next;
+    if (template.id && existing.some(t => t.id === template.id)) {
+      next = existing.map(t => (t.id === template.id ? { ...t, ...template } : t));
+    } else {
+      const id = template.id || `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      next = [...existing, { ...template, id, createdAt: new Date().toISOString() }];
+    }
+    await this.updateClient(clientId, { captionTemplates: next });
+    return next;
+  }
+
+  async deleteClientCaptionTemplate(clientId, templateId) {
+    if (!clientId || !templateId) return [];
+    const existing = await this.getClientCaptionTemplates(clientId);
+    const next = existing.filter(t => t.id !== templateId);
+    await this.updateClient(clientId, { captionTemplates: next });
+    return next;
+  }
+
   /**
    * Soft-delete: marks a client as archived instead of permanently removing the row.
    * The UI treats this as "deleted" but data is preserved for audit / restore.
