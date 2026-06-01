@@ -221,7 +221,12 @@ const ClientPortal = () => {
           </TabsList>
 
           <TabsContent value="calendar" className="mt-0">
-            <ClientCalendarApproval clientId={clientData.id} clientEmail={clientData.clientEmail} />
+            <ClientCalendarApproval
+              clientId={clientData.id}
+              clientEmail={clientData.clientEmail || clientData.email || clientEmail}
+              calendarId={clientData.contentCalendarId}
+              clientName={clientData.clientName}
+            />
           </TabsContent>
 
           <TabsContent value="messages" className="mt-0">

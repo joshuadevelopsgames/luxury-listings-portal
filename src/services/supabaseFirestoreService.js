@@ -1848,6 +1848,42 @@ class SupabaseService {
     } catch (error) { throw error; }
   }
 
+  /** Load every content item for a calendar regardless of owner (used by the client approval portal). */
+  async getCalendarItemsById(calendarId) {
+    if (!calendarId) return [];
+    try {
+      const { data } = await supabase
+        .from('content_items')
+        .select('*')
+        .eq('calendar_id', calendarId)
+        .order('scheduled_date', { ascending: true });
+      return (data || []).map(r => this._normalizeContentItem(r));
+    } catch { return []; }
+  }
+
+  /**
+   * Set a content item's approval state from the client portal.
+   * status: 'approved' | 'needs_revision' (or any other lifecycle status).
+   * An optional reason is stored as a non-internal comment so the manager sees the feedback thread.
+   */
+  async setContentItemApproval(id, { status, reason, authorEmail } = {}) {
+    if (!id || !status) throw new Error('id and status are required');
+    try {
+      const { error } = await supabase
+        .from('content_items')
+        .update(clean({ status, updated_at: ts() }))
+        .eq('id', id);
+      if (error) throw error;
+      if (reason && String(reason).trim()) {
+        try {
+          await this.addContentPostComment({ postId: id, authorEmail, body: String(reason).trim(), isInternal: false });
+        } catch (e) {
+          console.warn('⚠️ content approval comment failed (non-fatal):', e?.message || e);
+        }
+      }
+    } catch (error) { throw error; }
+  }
+
   async migrateContentCalendarFromLocalStorage(userEmail, localStorageItems, localStorageCalendars) {
     console.log('ℹ️ migrateContentCalendarFromLocalStorage: no-op in Supabase mode');
   }

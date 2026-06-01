@@ -109,6 +109,10 @@ const ContentCalendar = () => {
   const [linkingCalendarId, setLinkingCalendarId] = useState(null);
   const [linkSheetUrl, setLinkSheetUrl] = useState('');
 
+  // ─── Client portal linkage (which client sees the selected calendar) ─────────
+  const [clients, setClients] = useState([]);
+  const [assigningClient, setAssigningClient] = useState(false);
+
   // ─── Header dropdown popovers ────────────────────────────────────────────────
   const [showCalendarsDropdown, setShowCalendarsDropdown] = useState(false);
   const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
@@ -206,6 +210,36 @@ const ContentCalendar = () => {
     return () => { cancelled = true; };
   }, [currentUser?.email]);
 
+  // Load clients so the manager can choose which one sees a calendar in their portal
+  useEffect(() => {
+    let cancelled = false;
+    supabaseService.getClients().then((cs) => { if (!cancelled) setClients(Array.isArray(cs) ? cs : []); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const linkedClientForCalendar = (calId) => clients.find(c => c.contentCalendarId === calId) || null;
+
+  const handleAssignCalendarToClient = async (calId, clientId) => {
+    if (!calId) return;
+    setAssigningClient(true);
+    try {
+      const prev = clients.find(c => c.contentCalendarId === calId);
+      if (prev && prev.id !== clientId) {
+        await supabaseService.updateClient(prev.id, { contentCalendarId: null });
+      }
+      if (clientId) {
+        await supabaseService.updateClient(clientId, { contentCalendarId: calId });
+      }
+      const refreshed = await supabaseService.getClients();
+      setClients(Array.isArray(refreshed) ? refreshed : []);
+      toast.success(clientId ? 'Calendar shared with client portal' : 'Client unlinked from calendar');
+    } catch (e) {
+      toast.error(e?.message || 'Failed to update client link');
+    } finally {
+      setAssigningClient(false);
+    }
+  };
+
   // Outside-click dismissal for header dropdowns
   useEffect(() => {
     const handler = (e) => {
@@ -260,6 +294,9 @@ const ContentCalendar = () => {
 
   const statuses = [
     { id: 'draft', name: 'Draft', color: 'bg-[#86868b]' },
+    { id: 'pending_approval', name: 'Pending Approval', color: 'bg-[#ffcc00]' },
+    { id: 'needs_revision', name: 'Needs Revision', color: 'bg-[#ff3b30]' },
+    { id: 'approved', name: 'Approved', color: 'bg-[#30d158]' },
     { id: 'scheduled', name: 'Scheduled', color: 'bg-[#0071e3]' },
     { id: 'published', name: 'Published', color: 'bg-[#34c759]' },
     { id: 'paused', name: 'Paused', color: 'bg-[#ff9500]' }
@@ -1372,6 +1409,27 @@ const ContentCalendar = () => {
                   );
                 })}
               </div>
+              {selectedCalendarId && (
+                <div className="px-4 py-3 border-t border-black/5 dark:border-white/10">
+                  <label className="text-[11px] font-medium text-[#86868b] mb-1.5 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" /> Client portal
+                  </label>
+                  <select
+                    value={linkedClientForCalendar(selectedCalendarId)?.id || ''}
+                    onChange={(e) => handleAssignCalendarToClient(selectedCalendarId, e.target.value || null)}
+                    disabled={assigningClient}
+                    className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none disabled:opacity-50"
+                  >
+                    <option value="">Not shared with a client</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>{c.clientName || c.name || c.email || 'Unnamed client'}</option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-[#86868b] mt-1.5 leading-snug">
+                    This client sees the calendar's posts in their portal and can approve or request changes.
+                  </p>
+                </div>
+              )}
               <div className="px-3 pb-3">
                 {showAddCalendar ? (
                   <div className="space-y-2">

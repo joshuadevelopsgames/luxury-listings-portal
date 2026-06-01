@@ -1,150 +1,155 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { 
-  Calendar, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Calendar,
+  CheckCircle,
+  XCircle,
   Clock,
-  Image,
+  Image as ImageIcon,
   Video,
   FileText,
   Instagram,
   Facebook,
   Twitter,
+  Linkedin,
+  Youtube,
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
   X
 } from 'lucide-react';
 import { format, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { supabaseService } from '../../services/supabaseService';
 
-const ClientCalendarApproval = ({ clientId, clientEmail }) => {
+// Statuses a client is allowed to see in their portal (internal drafts/paused are hidden).
+const VISIBLE_STATUSES = ['pending_approval', 'needs_revision', 'approved', 'scheduled', 'published'];
+const ACTIONABLE_STATUSES = ['pending_approval', 'needs_revision'];
+
+const STATUS_META = {
+  pending_approval: { label: 'Awaiting your review', badge: 'bg-amber-100 text-amber-800', dot: 'bg-amber-500' },
+  needs_revision: { label: 'Changes requested', badge: 'bg-red-100 text-red-800', dot: 'bg-red-500' },
+  approved: { label: 'Approved', badge: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
+  scheduled: { label: 'Scheduled', badge: 'bg-blue-100 text-blue-800', dot: 'bg-blue-500' },
+  published: { label: 'Published', badge: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' },
+};
+
+const platformIcon = (platform) => {
+  switch (platform) {
+    case 'instagram': return <Instagram className="w-4 h-4" />;
+    case 'facebook': return <Facebook className="w-4 h-4" />;
+    case 'twitter': return <Twitter className="w-4 h-4" />;
+    case 'linkedin': return <Linkedin className="w-4 h-4" />;
+    case 'youtube': return <Youtube className="w-4 h-4" />;
+    default: return <FileText className="w-4 h-4" />;
+  }
+};
+
+const firstMedia = (item) => (Array.isArray(item.media) && item.media.length > 0 ? item.media[0] : null);
+
+const ClientCalendarApproval = ({ clientId, clientEmail, calendarId, clientName }) => {
   const [contentItems, setContentItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [selectedItem, setSelectedItem] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [rejectModal, setRejectModal] = useState({ open: false, itemId: null, reason: '' });
 
-  useEffect(() => {
-    loadContentItems();
-  }, [clientEmail, currentWeek]);
-
-  const loadContentItems = async () => {
+  const loadContentItems = useCallback(async () => {
+    if (!calendarId) {
+      setContentItems([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
-      // Load content items for this client
-      // For now, we'll filter by client email or use a client-specific calendar
-      const userStorageKey = `content_items_client_${clientEmail}`;
-      const stored = localStorage.getItem(userStorageKey);
-      
-      if (stored) {
-        const parsedItems = JSON.parse(stored);
-        const itemsWithDates = parsedItems.map(item => ({
-          ...item,
-          scheduledDate: new Date(item.scheduledDate)
-        }));
-        // Filter items that need approval (status: 'pending_approval' or 'draft')
-        const pendingItems = itemsWithDates.filter(item => 
-          item.status === 'pending_approval' || item.status === 'draft'
-        );
-        setContentItems(pendingItems);
-      } else {
-        // Try loading from Firestore if we add that functionality
-        setContentItems([]);
-      }
+      const items = await supabaseService.getCalendarItemsById(calendarId);
+      setContentItems((items || []).filter((i) => VISIBLE_STATUSES.includes(i.status)));
     } catch (error) {
       console.error('Error loading content items:', error);
+      toast.error('Could not load your content calendar.');
     } finally {
       setLoading(false);
     }
+  }, [calendarId]);
+
+  useEffect(() => {
+    loadContentItems();
+  }, [loadContentItems]);
+
+  const openItem = async (item) => {
+    setSelectedItem(item);
+    setComments([]);
+    setCommentsLoading(true);
+    try {
+      const all = await supabaseService.getContentPostComments(item.id);
+      // Never surface internal (manager-only) notes to the client.
+      setComments((all || []).filter((c) => c.type !== 'internal'));
+    } catch {
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
   };
 
-  const handleApprove = async (itemId) => {
+  const closeItem = () => {
+    setSelectedItem(null);
+    setComments([]);
+  };
+
+  const handleApprove = async (item) => {
+    setSubmitting(true);
     try {
-      // Update item status to 'approved'
-      const updatedItems = contentItems.map(item =>
-        item.id === itemId ? { ...item, status: 'approved', approvedAt: new Date() } : item
-      );
-      setContentItems(updatedItems);
-      
-      // Save to localStorage
-      const userStorageKey = `content_items_client_${clientEmail}`;
-      localStorage.setItem(userStorageKey, JSON.stringify(updatedItems));
-      
-      // TODO: Save to Firestore when we implement that
-      
-      toast.success('Content approved successfully!');
+      await supabaseService.setContentItemApproval(item.id, { status: 'approved', authorEmail: clientEmail });
+      toast.success('Post approved!');
+      closeItem();
+      await loadContentItems();
     } catch (error) {
       console.error('Error approving content:', error);
-      toast.error('Failed to approve content. Please try again.');
-    }
-  };
-
-  const openRejectModal = (itemId) => setRejectModal({ open: true, itemId, reason: '' });
-  const closeRejectModal = () => setRejectModal({ open: false, itemId: null, reason: '' });
-
-  const handleReject = async (itemId, reason) => {
-    const rejectionReason = (reason || rejectModal.reason || '').trim();
-    if (!rejectionReason) {
-      toast.error('Please provide a reason for rejection.');
-      return;
-    }
-    if (rejectModal.open) closeRejectModal();
-
-    try {
-      const updatedItems = contentItems.map(item =>
-        item.id === itemId 
-          ? { ...item, status: 'rejected', rejectionReason, rejectedAt: new Date() } 
-          : item
-      );
-      setContentItems(updatedItems);
-      
-      const userStorageKey = `content_items_client_${clientEmail}`;
-      localStorage.setItem(userStorageKey, JSON.stringify(updatedItems));
-      
-      toast.success('Content rejected. Your media manager will be notified.');
-    } catch (error) {
-      console.error('Error rejecting content:', error);
-      toast.error('Failed to reject content. Please try again.');
+      toast.error('Failed to approve. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const submitRejectModal = async () => {
-    if (!rejectModal.itemId) return;
-    await handleReject(rejectModal.itemId, rejectModal.reason);
-    setSelectedItem(null);
+    const reason = (rejectModal.reason || '').trim();
+    if (!reason) {
+      toast.error('Please describe the changes you would like.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await supabaseService.setContentItemApproval(rejectModal.itemId, {
+        status: 'needs_revision',
+        reason,
+        authorEmail: clientEmail,
+      });
+      toast.success('Change request sent to your media manager.');
+      setRejectModal({ open: false, itemId: null, reason: '' });
+      closeItem();
+      await loadContentItems();
+    } catch (error) {
+      console.error('Error requesting changes:', error);
+      toast.error('Failed to send. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const getWeekDays = () => {
+  const weekDays = (() => {
     const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
     const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
     return eachDayOfInterval({ start, end });
-  };
+  })();
 
-  const getContentForDate = (date) => {
-    return contentItems.filter(item => isSameDay(new Date(item.scheduledDate), date));
-  };
-
-  const getPlatformIcon = (platform) => {
-    switch (platform) {
-      case 'instagram': return <Instagram className="w-4 h-4" />;
-      case 'facebook': return <Facebook className="w-4 h-4" />;
-      case 'twitter': return <Twitter className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
-    }
-  };
-
-  const getContentTypeIcon = (type) => {
-    switch (type) {
-      case 'image': return <Image className="w-4 h-4" />;
-      case 'video': return <Video className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
-    }
-  };
-
-  const weekDays = getWeekDays();
+  const itemsForDate = (date) => contentItems.filter((item) => isSameDay(new Date(item.scheduledDate), date));
+  const pendingCount = contentItems.filter((i) => i.status === 'pending_approval').length;
 
   if (loading) {
     return (
@@ -155,199 +160,230 @@ const ClientCalendarApproval = ({ clientId, clientEmail }) => {
     );
   }
 
+  if (!calendarId) {
+    return (
+      <Card className="p-12 text-center">
+        <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-600 font-medium">Your calendar isn't connected yet</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Your media manager hasn't linked a content calendar to your account. Check back soon.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Week Navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentWeek(new Date(currentWeek.getTime() - 7 * 24 * 60 * 60 * 1000))}
-          >
-            Previous Week
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date(currentWeek.getTime() - 7 * 864e5))}>
+            <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h2 className="text-lg font-semibold text-gray-900">
-            {format(weekDays[0], 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 whitespace-nowrap">
+            {format(weekDays[0], 'MMM d')} – {format(weekDays[6], 'MMM d, yyyy')}
           </h2>
-          <Button
-            variant="outline"
-            onClick={() => setCurrentWeek(new Date(currentWeek.getTime() + 7 * 24 * 60 * 60 * 1000))}
-          >
-            Next Week
+          <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date(currentWeek.getTime() + 7 * 864e5))}>
+            <ChevronRight className="w-4 h-4" />
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => setCurrentWeek(new Date())}
-          >
-            Today
-          </Button>
+          <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date())}>Today</Button>
         </div>
-        <Badge className="bg-blue-100 text-blue-800">
-          {contentItems.length} items pending approval
-        </Badge>
+        {pendingCount > 0 && (
+          <Badge className="bg-amber-100 text-amber-800">
+            {pendingCount} awaiting your review
+          </Badge>
+        )}
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {weekDays.map((day, index) => {
-          const dayContent = getContentForDate(day);
+          const dayContent = itemsForDate(day);
           const isToday = isSameDay(day, new Date());
-
           return (
-            <Card key={index} className={`p-4 ${isToday ? 'ring-2 ring-blue-500' : ''}`}>
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-500 uppercase">
-                  {format(day, 'EEE')}
-                </p>
-                <p className={`text-lg font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-                  {format(day, 'd')}
-                </p>
+            <Card key={index} className={`p-3 ${isToday ? 'ring-2 ring-blue-500' : ''}`}>
+              <div className="mb-2">
+                <p className="text-[10px] font-medium text-gray-500 uppercase">{format(day, 'EEE')}</p>
+                <p className={`text-lg font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>{format(day, 'd')}</p>
               </div>
-
               <div className="space-y-2">
-                {dayContent.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => setSelectedItem(item)}
-                    className="p-2 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-1 mb-1">
-                      {getPlatformIcon(item.platform)}
-                      {getContentTypeIcon(item.contentType)}
-                    </div>
-                    <p className="text-xs font-medium text-gray-900 truncate">
-                      {item.title || 'Untitled'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {format(new Date(item.scheduledDate), 'h:mm a')}
-                    </p>
-                  </div>
-                ))}
+                {dayContent.map((item) => {
+                  const meta = STATUS_META[item.status] || STATUS_META.scheduled;
+                  const media = firstMedia(item);
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => openItem(item)}
+                      className="w-full text-left rounded-lg border border-gray-200 overflow-hidden hover:border-blue-400 hover:shadow-sm transition-all"
+                    >
+                      {media && media.type?.startsWith('image') ? (
+                        <img src={media.url} alt={item.title} className="w-full h-16 object-cover" />
+                      ) : media && media.type?.startsWith('video') ? (
+                        <div className="w-full h-16 bg-gray-900 flex items-center justify-center">
+                          <Video className="w-5 h-5 text-white" />
+                        </div>
+                      ) : null}
+                      <div className="p-2">
+                        <div className="flex items-center gap-1 text-gray-500 mb-1">
+                          {platformIcon(item.platform)}
+                          <span className={`ml-auto w-2 h-2 rounded-full ${meta.dot}`} title={meta.label} />
+                        </div>
+                        <p className="text-xs font-medium text-gray-900 truncate">{item.title || 'Untitled'}</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </Card>
           );
         })}
       </div>
 
+      {contentItems.length === 0 && (
+        <Card className="p-12 text-center">
+          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">No content to review yet</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Your media manager will add posts here for your review.
+          </p>
+        </Card>
+      )}
+
       {/* Content Detail Modal */}
-      {selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      {selectedItem && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeItem}>
+          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <div className="min-w-0">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2 break-words">
                     {selectedItem.title || 'Untitled Content'}
                   </h3>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      {getPlatformIcon(selectedItem.platform)}
-                      <span className="capitalize">{selectedItem.platform}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+                    <span className="flex items-center gap-1 capitalize">{platformIcon(selectedItem.platform)} {selectedItem.platform}</span>
+                    <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {format(new Date(selectedItem.scheduledDate), 'MMM d, yyyy h:mm a')}
-                    </div>
+                      {format(new Date(selectedItem.scheduledDate), 'EEE, MMM d, yyyy')}
+                    </span>
+                    <Badge className={(STATUS_META[selectedItem.status] || STATUS_META.scheduled).badge}>
+                      {(STATUS_META[selectedItem.status] || STATUS_META.scheduled).label}
+                    </Badge>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => setSelectedItem(null)}
-                >
-                  ✕
-                </Button>
+                <button onClick={closeItem} className="p-1 rounded hover:bg-gray-100 flex-shrink-0">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {selectedItem.imageUrl && (
-                <div className="mb-4">
-                  <img 
-                    src={selectedItem.imageUrl} 
-                    alt={selectedItem.title}
-                    className="w-full rounded-lg"
-                  />
-                </div>
-              )}
+              {(() => {
+                const media = firstMedia(selectedItem);
+                if (media && media.type?.startsWith('image')) {
+                  return <img src={media.url} alt={selectedItem.title} className="w-full rounded-lg mb-4" />;
+                }
+                if (media && media.type?.startsWith('video')) {
+                  return <video src={media.url} controls className="w-full rounded-lg mb-4 bg-black" />;
+                }
+                return null;
+              })()}
 
               {selectedItem.description && (
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Description</p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Caption</p>
                   <p className="text-gray-600 whitespace-pre-wrap">{selectedItem.description}</p>
                 </div>
               )}
 
-              {selectedItem.tags && selectedItem.tags.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Tags</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedItem.tags.map((tag, idx) => (
-                      <Badge key={idx} variant="secondary">{tag}</Badge>
-                    ))}
-                  </div>
+              {Array.isArray(selectedItem.tags) && selectedItem.tags.length > 0 && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {selectedItem.tags.map((tag, idx) => (
+                    <Badge key={idx} variant="secondary">{tag}</Badge>
+                  ))}
                 </div>
               )}
 
-              <div className="flex gap-3 pt-4 border-t">
-                <Button
-                  onClick={() => {
-                    handleApprove(selectedItem.id);
-                    setSelectedItem(null);
-                  }}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Approve
-                </Button>
-                <Button
-                  onClick={() => openRejectModal(selectedItem.id)}
-                  variant="outline"
-                  className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
-                >
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Request Changes
-                </Button>
+              {/* Conversation */}
+              <div className="mb-4 border-t pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                  <MessageSquare className="w-4 h-4" /> Conversation
+                </p>
+                {commentsLoading ? (
+                  <p className="text-sm text-gray-400">Loading…</p>
+                ) : comments.length === 0 ? (
+                  <p className="text-sm text-gray-400">No messages yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {comments.map((c) => (
+                      <div key={c.id} className="bg-gray-50 rounded-lg px-3 py-2">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-xs font-medium text-gray-700">{c.author}</span>
+                          <span className="text-[11px] text-gray-400">{c.ts ? format(new Date(c.ts), 'MMM d, h:mm a') : ''}</span>
+                        </div>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{c.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          </Card>
-        </div>
-      )}
 
-      {rejectModal.open && createPortal(
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <Card className="max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Reason for rejection</h3>
-              <button type="button" onClick={closeRejectModal} className="p-1 rounded hover:bg-gray-100">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <textarea
-              value={rejectModal.reason}
-              onChange={(e) => setRejectModal((p) => ({ ...p, reason: e.target.value }))}
-              placeholder="Please provide a reason for rejection..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-              autoFocus
-            />
-            <div className="flex gap-2 mt-4">
-              <Button onClick={closeRejectModal} variant="outline" className="flex-1">Cancel</Button>
-              <Button onClick={submitRejectModal} className="flex-1 bg-red-600 hover:bg-red-700 text-white">Submit</Button>
+              {ACTIONABLE_STATUSES.includes(selectedItem.status) ? (
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    onClick={() => handleApprove(selectedItem)}
+                    disabled={submitting}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" /> Approve
+                  </Button>
+                  <Button
+                    onClick={() => setRejectModal({ open: true, itemId: selectedItem.id, reason: '' })}
+                    disabled={submitting}
+                    variant="outline"
+                    className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" /> Request Changes
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 pt-4 border-t text-sm text-gray-500">
+                  {selectedItem.status === 'approved' ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Clock className="w-4 h-4" />}
+                  {(STATUS_META[selectedItem.status] || STATUS_META.scheduled).label}
+                </div>
+              )}
             </div>
           </Card>
         </div>,
         document.body
       )}
 
-      {contentItems.length === 0 && (
-        <Card className="p-12 text-center">
-          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">No content pending approval</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Your media manager will add content for your review here.
-          </p>
-        </Card>
+      {/* Request-changes reason modal */}
+      {rejectModal.open && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <Card className="max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">What would you like changed?</h3>
+              <button type="button" onClick={() => setRejectModal({ open: false, itemId: null, reason: '' })} className="p-1 rounded hover:bg-gray-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <textarea
+              value={rejectModal.reason}
+              onChange={(e) => setRejectModal((p) => ({ ...p, reason: e.target.value }))}
+              placeholder="e.g. Please use the second photo and shorten the caption…"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            <div className="flex gap-2 mt-4">
+              <Button onClick={() => setRejectModal({ open: false, itemId: null, reason: '' })} variant="outline" className="flex-1">Cancel</Button>
+              <Button onClick={submitRejectModal} disabled={submitting} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
+                {submitting ? 'Sending…' : 'Send Request'}
+              </Button>
+            </div>
+          </Card>
+        </div>,
+        document.body
       )}
     </div>
   );
 };
 
 export default ClientCalendarApproval;
-
