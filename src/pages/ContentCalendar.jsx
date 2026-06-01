@@ -391,36 +391,49 @@ const ContentCalendar = () => {
     const tags = postForm.tags.split(',').map(tag => tag.trim()).filter(Boolean);
     const media = (postForm.media || []).slice(0, MAX_MEDIA_PER_POST);
 
-    if (editingContent) {
-      await supabaseService.updateContentItem(editingContent.id, {
-        calendarId: selectedCalendarId,
-        title: postForm.title,
-        description: postForm.description,
-        platform: postForm.platform,
-        contentType: postForm.contentType,
-        scheduledDate: postForm.scheduledDate,
-        status: postForm.status,
-        tags,
-        media
+    try {
+      if (editingContent) {
+        await supabaseService.updateContentItem(editingContent.id, {
+          calendarId: selectedCalendarId,
+          title: postForm.title,
+          description: postForm.description,
+          platform: postForm.platform,
+          contentType: postForm.contentType,
+          scheduledDate: postForm.scheduledDate,
+          status: postForm.status,
+          tags,
+          media
+        });
+        const updated = await supabaseService.getContentItems(currentUser.email);
+        setContentItems(updated);
+        setEditingContent(null);
+      } else {
+        await supabaseService.createContentItem({
+          userEmail: currentUser.email,
+          calendarId: selectedCalendarId,
+          title: postForm.title,
+          description: postForm.description,
+          platform: postForm.platform,
+          contentType: postForm.contentType,
+          scheduledDate: postForm.scheduledDate,
+          status: postForm.status,
+          tags,
+          media
+        });
+        const updated = await supabaseService.getContentItems(currentUser.email);
+        setContentItems(updated);
+      }
+    } catch (err) {
+      // Surface the real DB error instead of silently no-op'ing (the modal
+      // stays open so the user doesn't lose their input). PostgREST errors are
+      // plain objects, so log the structured fields — `details` names the table
+      // a foreign-key violation points at, which pinpoints schema drift.
+      console.error('Failed to save content item:', {
+        code: err?.code, message: err?.message, details: err?.details, hint: err?.hint,
       });
-      const updated = await supabaseService.getContentItems(currentUser.email);
-      setContentItems(updated);
-      setEditingContent(null);
-    } else {
-      const { id } = await supabaseService.createContentItem({
-        userEmail: currentUser.email,
-        calendarId: selectedCalendarId,
-        title: postForm.title,
-        description: postForm.description,
-        platform: postForm.platform,
-        contentType: postForm.contentType,
-        scheduledDate: postForm.scheduledDate,
-        status: postForm.status,
-        tags,
-        media
-      });
-      const updated = await supabaseService.getContentItems(currentUser.email);
-      setContentItems(updated);
+      const msg = [err?.message, err?.details].filter(Boolean).join(' — ');
+      toast.error(msg || 'Failed to save content. Please try again.');
+      return;
     }
 
     setShowAddModal(false);
