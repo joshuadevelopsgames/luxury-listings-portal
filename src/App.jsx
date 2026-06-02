@@ -101,6 +101,8 @@ const ClientWaitingForApproval = lazyRetry(() => import('./pages/ClientWaitingFo
 const ClientPasswordReset     = lazyRetry(() => import('./pages/ClientPasswordReset'));
 const FirebaseAuthHandler     = lazyRetry(() => import('./pages/FirebaseAuthHandler'));
 const PublicInstagramReportPage = lazyRetry(() => import('./pages/PublicInstagramReportPage'));
+const PrivacyPolicy           = lazyRetry(() => import('./pages/PrivacyPolicy'));
+const TermsOfService          = lazyRetry(() => import('./pages/TermsOfService'));
 const DemoInstagramReportPage = lazyRetry(() => import('./pages/DemoInstagramReportPage'));
 const NotificationsPage       = lazyRetry(() => import('./pages/NotificationsPage'));
 const WorkloadPage            = lazyRetry(() => import('./pages/WorkloadPage'));
@@ -254,6 +256,8 @@ const router = createBrowserRouter([
       { path: '/client-password-reset',        element: <Suspense fallback={<PageSpinner />}><ClientPasswordReset /></Suspense> },
       { path: '/client-waiting-for-approval',  element: <Suspense fallback={<PageSpinner />}><ClientWaitingForApproval /></Suspense> },
       { path: '/waiting-for-approval',         element: <Suspense fallback={<PageSpinner />}><WaitingForApproval /></Suspense> },
+      { path: '/privacy-policy',               element: <Suspense fallback={<PageSpinner />}><PrivacyPolicy /></Suspense> },
+      { path: '/terms-of-service',             element: <Suspense fallback={<PageSpinner />}><TermsOfService /></Suspense> },
       { path: '/__/auth/action',               element: <Suspense fallback={<PageSpinner />}><FirebaseAuthHandler /></Suspense> },
 
       // OAuth callbacks

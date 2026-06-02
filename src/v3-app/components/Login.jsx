@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowRight, Shield, Users, TrendingUp, Zap, Calendar, BarChart3, CheckSquare, Briefcase, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -235,9 +235,9 @@ const V3Login = ({ successPath = '/dashboard' }) => {
               <div className="mt-10 pt-8 border-t border-black/5 dark:border-white/10">
                 <p className="text-center text-[12px] text-[#86868b]">
                   By signing in, you agree to our{' '}
-                  <a href="#" className="text-[#0071e3] hover:underline">Terms</a>
+                  <Link to="/terms-of-service" className="text-[#0071e3] hover:underline">Terms</Link>
                   {' '}and{' '}
-                  <a href="#" className="text-[#0071e3] hover:underline">Privacy Policy</a>
+                  <Link to="/privacy-policy" className="text-[#0071e3] hover:underline">Privacy Policy</Link>
                 </p>
               </div>
             </div>
