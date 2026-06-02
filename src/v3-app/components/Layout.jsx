@@ -323,6 +323,8 @@ const V3Layout = ({ basePath = '' }) => {
     currentUser?.email?.toLowerCase() === 'michelle@luxury-listings.com' ||
     (isViewingAs && viewingAsUser?.email?.toLowerCase() === 'michelle@luxury-listings.com');
   const isFeaturesPage = location.pathname === p('/features');
+  // Full-height, no-padding, no-footer pages that manage their own internal layout.
+  const isFullHeightPage = location.pathname === '/workspaces' || location.pathname === '/analytics-template-builder';
 
   // ── Nav item renderer (shared for main list + More section + edit mode)
   const NavItem = ({ pageId, isInMore = false }) => {
@@ -571,7 +573,7 @@ const V3Layout = ({ basePath = '' }) => {
       </aside>
 
       {/* ── Main Content ─────────────────────────────────────────────────────── */}
-      <div className={`min-h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'} ${location.pathname === '/workspaces' ? 'flex flex-col' : ''}`}>
+      <div className={`${isFullHeightPage ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen'} transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'}`}>
 
         {/* View As Banner */}
         {isViewingAs && viewingAsUser && (
@@ -735,7 +737,7 @@ const V3Layout = ({ basePath = '' }) => {
         </header>
 
         {/* Page Content */}
-        {location.pathname === '/workspaces' ? (
+        {isFullHeightPage ? (
           <main className="flex-1 flex flex-col min-h-0">
             <Outlet />
           </main>
@@ -749,7 +751,7 @@ const V3Layout = ({ basePath = '' }) => {
           </main>
         )}
 
-        {location.pathname !== '/workspaces' && (
+        {!isFullHeightPage && (
           <footer className="py-6 px-8 text-center border-t border-black/5 dark:border-white/5">
             <p className="text-[12px] text-[#86868b]">© 2026 Luxury Listings. All rights reserved.</p>
           </footer>

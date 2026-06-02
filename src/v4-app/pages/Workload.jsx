@@ -13,10 +13,10 @@ import ClientLink from '../../components/ui/ClientLink';
 // Formula: total_posts / POSTS_PER_UNIT + 0.1 * client_count + platform bonus (0.2 per client with 3+ platforms).
 const POSTS_PER_UNIT = 7.5;  // 120 posts + 10 clients ≈ 17 units → Heavy
 const CLIENT_WEIGHT = 0.1;
-const MAX_CLIENT_EQUIVALENTS = 11;  // scale out of 11; bar is 100% at this
-const WORKLOAD_AT_MAX = 22;         // raw units at 11 equiv (~165 posts + 1.1)
-const WORKLOAD_LOW = 12;   // Light
-const WORKLOAD_MED = 16;   // Heavy starts here: 120 posts + 10 clients (lighter side of heavy)
+const MAX_CLIENT_EQUIVALENTS = 8;   // scale out of 8; bar is 100% at this
+const WORKLOAD_AT_MAX = 16;         // raw units at 8 equiv (~120 posts + 0.8)
+const WORKLOAD_LOW = 8.7;   // Light (scaled to 8-client ceiling)
+const WORKLOAD_MED = 11.6;  // Heavy starts here (scaled to 8-client ceiling)
 
 function getWorkloadUnits(clients) {
   const n = clients.length;
@@ -37,12 +37,12 @@ function getCapacityColor(workloadUnits) {
   return { bar: 'bg-[#ff3b30]', text: 'text-[#ff3b30]', label: 'Heavy' };
 }
 
-// Bar scale 1–11: 11 = 100%
+// Bar scale 1–8: 8 = 100%
 function getCapacityPercent(workloadUnits) {
   return Math.min(100, Math.round((workloadUnits / WORKLOAD_AT_MAX) * 100));
 }
 
-// Effective client-equivalents (1–11) for display
+// Effective client-equivalents (1–8) for display
 function getEffectiveEquivalents(workloadUnits) {
   return Math.min(MAX_CLIENT_EQUIVALENTS, Math.max(0, (workloadUnits / WORKLOAD_AT_MAX) * MAX_CLIENT_EQUIVALENTS));
 }
@@ -255,7 +255,7 @@ export default function WorkloadPage() {
                   </div>
                 </div>
 
-                {/* Capacity Bar (1–11 scale; 11 = max heaviness) */}
+                {/* Capacity Bar (1–8 scale; 8 = max heaviness) */}
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex-1 h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all ${capacity.bar}`} style={{ width: `${pct}%` }} />

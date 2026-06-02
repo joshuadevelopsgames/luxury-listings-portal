@@ -216,9 +216,10 @@ const HRCalendar = () => {
     { value: '1440', label: '1 day before' }
   ];
 
-  // Combine leave requests with Google Calendar events (multi-day: start/end span full range)
+  // Combine leave requests with Google Calendar events (multi-day: start/end span full range).
+  // Only approved leave appears on the calendar — pending/rejected requests must not show until an admin approves.
   const allEvents = [
-    ...leaveRequests.map(request => {
+    ...leaveRequests.filter(request => request.status === 'approved').map(request => {
       const startDate = request.startDate || '';
       const endDate = request.endDate || startDate;
       const startTime = request.startTime || '00:00';

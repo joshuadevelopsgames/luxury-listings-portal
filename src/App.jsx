@@ -93,6 +93,7 @@ const GraphicDesignerMessage  = lazyRetry(() => import('./pages/GraphicDesignerM
 const HRManagerMessage        = lazyRetry(() => import('./pages/HRManagerMessage'));
 const SalesManagerMessage     = lazyRetry(() => import('./pages/SalesManagerMessage'));
 const InstagramReportsPage    = lazyRetry(() => import('./pages/InstagramReportsPage'));
+const AnalyticsTemplateBuilderPage = lazyRetry(() => import('./pages/analytics-template-builder/AnalyticsTemplateBuilder'));
 const MetaCallback            = lazyRetry(() => import('./pages/MetaCallback'));
 const WaitingForApproval      = lazyRetry(() => import('./pages/WaitingForApproval'));
 const ClientLogin             = lazyRetry(() => import('./pages/ClientLogin'));
@@ -311,6 +312,7 @@ const router = createBrowserRouter([
           { path: 'permissions',        element: <PermissionsManager /> },
           { path: 'announcements',      element: <AnnouncementManager /> },
           { path: 'instagram-reports',  element: <InstagramReportsPage /> },
+          { path: 'analytics-template-builder', element: <AnalyticsTemplateBuilderPage /> },
 
           { path: 'meta-callback',      element: <MetaCallback /> },
 

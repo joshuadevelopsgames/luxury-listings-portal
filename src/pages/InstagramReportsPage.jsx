@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
@@ -338,6 +339,7 @@ const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
   const { isSystemAdmin, loading: permissionsLoading } = usePermissions();
   const { confirm } = useConfirm();
+  const navigate = useNavigate();
   // Admin role users AND system admins can see all clients on this page
   const effectiveIsAdmin = isSystemAdmin || currentUser?.role === 'admin';
   
@@ -890,13 +892,22 @@ const InstagramReportsPage = () => {
           </p>
         </div>
         {activeTab !== 'archive' && (
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[13px] sm:text-[14px] font-medium hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            New Report
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/analytics-template-builder')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white text-[13px] sm:text-[14px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <FileBarChart className="w-4 h-4 text-[#5856d6]" />
+              Build Template
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white text-[13px] sm:text-[14px] font-medium hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" />
+              New Report
+            </button>
+          </div>
         )}
       </div>
 
