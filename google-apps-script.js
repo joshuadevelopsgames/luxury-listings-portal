@@ -1132,7 +1132,7 @@ ${ticketData.description || 'No description provided'}
     }
 
     emailBody += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-View all support tickets: https://smmluxurylistings.info/it-support
+View all support tickets: https://smmluxurylistings.com/it-support
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 This is an automated notification from the Luxury Listings Portal.

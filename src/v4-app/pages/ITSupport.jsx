@@ -1714,7 +1714,7 @@ const ITSupportPage = () => {
                   type="url"
                   value={supportForm.pageUrl}
                   onChange={(e) => handleFormChange('pageUrl', e.target.value)}
-                  placeholder="https://smmluxurylistings.info/dashboard"
+                  placeholder="https://smmluxurylistings.com/dashboard"
                   className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
                 />
                 <p className="text-[11px] text-[#86868b] mt-1">Copy and paste the URL where you're experiencing the issue</p>
