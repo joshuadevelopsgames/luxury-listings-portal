@@ -122,6 +122,42 @@ const NotificationsCenter = () => {
     }
   };
 
+  // Returns { label, path } for actionable notification types, or null
+  const getNotificationCTA = (notification) => {
+    const link = notification.link || null;
+    switch (notification.type) {
+      case 'instagram_report_reminder':
+        return { label: 'Create Report', path: link || '/instagram-reports', style: 'pink' };
+      case 'post_log_reminder_week':
+      case 'team_post_log_support':
+      case 'post_due':
+        return { label: 'Log Post', path: link || '/my-clients', style: 'blue' };
+      case 'task_request':
+        return { label: 'Review Request', path: link || '/tasks', style: 'orange' };
+      case 'time_off_request':
+      case 'leave_request':
+        return { label: 'Review', path: link || '/hr-calendar', style: 'purple' };
+      case 'ticket_comment':
+      case 'ticket_status':
+        return link ? { label: 'View Ticket', path: link, style: 'blue' } : null;
+      case 'bug_report':
+      case 'feature_request':
+        return link ? { label: 'View', path: link, style: 'gray' } : null;
+      default:
+        return link ? { label: 'View', path: link, style: 'blue' } : null;
+    }
+  };
+
+  const ctaClass = (style) => {
+    switch (style) {
+      case 'pink': return 'bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C]/20';
+      case 'orange': return 'bg-[#ff9500]/10 text-[#ff9500] hover:bg-[#ff9500]/20';
+      case 'purple': return 'bg-[#5856d6]/10 text-[#5856d6] hover:bg-[#5856d6]/20';
+      case 'gray': return 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15';
+      default: return 'bg-[#0071e3]/10 text-[#0071e3] hover:bg-[#0071e3]/20';
+    }
+  };
+
   return (
     <div className="relative">
       {/* Bell Icon */}
@@ -208,6 +244,23 @@ const NotificationsCenter = () => {
                           <p className="text-xs text-[#86868b] mb-2">
                             {notification.message}
                           </p>
+                          {(() => {
+                            const cta = getNotificationCTA(notification);
+                            return cta ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!notification.read) supabaseService.markNotificationRead(notification.id);
+                                  navigate(cta.path);
+                                  setIsOpen(false);
+                                }}
+                                className={`mb-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors ${ctaClass(cta.style)}`}
+                              >
+                                {cta.label} →
+                              </button>
+                            ) : null;
+                          })()}
                           <p className="text-xs text-[#86868b]">
                             {notification.updatedAt?.toDate
                               ? format(notification.updatedAt.toDate(), 'MMM dd, h:mm a')

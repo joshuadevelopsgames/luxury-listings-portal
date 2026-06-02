@@ -53,6 +53,7 @@ const HRCalendar = () => {
   const canViewHRData = true;
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showNotesModal, setShowNotesModal] = useState(null); // 'approve' or 'reject' or null
+  const [skipBalanceDeduction, setSkipBalanceDeduction] = useState(false); // approve without charging the balance (e.g. stat/lieu swap)
   const [processingRequest, setProcessingRequest] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -342,46 +343,56 @@ const HRCalendar = () => {
   }, [isTimeOffAdmin]);
 
   // Handle approve leave request with notes and notifications
-  const handleApproveRequest = async (requestId, notes = '') => {
+  const handleApproveRequest = async (requestId, notes = '', skipDeduction = false) => {
     console.log('📝 handleApproveRequest called with ID:', requestId);
-    
+
     if (!requestId) {
       console.error('❌ No request ID provided');
       toast.error('Error: No request ID');
       return;
     }
-    
+
     setModalLoading(true);
     toast.loading('Processing approval...', { id: 'approve-request' });
-    
+
     try {
       // Find the request to get employee info
       const request = leaveRequests.find(r => r.id === requestId);
       console.log('📋 Found request:', request);
-      
+
       if (!request) {
         console.error('❌ Request not found in local state');
         toast.dismiss('approve-request');
         toast.error('Request not found');
         return;
       }
-      
+
+      // Record the no-charge decision in the persisted history note (no schema column for it).
+      const savedNotes = skipDeduction
+        ? `${notes ? `${notes}\n\n` : ''}[Approved without charging ${request.type || 'leave'} balance]`
+        : notes;
+
       // Use enhanced method with history tracking
       console.log('📤 Updating status in Firestore...');
-      await supabaseService.updateLeaveRequestStatusEnhanced(requestId, 'approved', currentUser?.email, notes);
+      await supabaseService.updateLeaveRequestStatusEnhanced(requestId, 'approved', currentUser?.email, savedNotes);
       console.log('✅ Firestore updated successfully');
-      
-      // Deduct from employee's leave balance
-      try {
-        await supabaseService.deductLeaveBalance(
-          request.employeeId || request.employeeEmail,
-          request.type,
-          request.days || 1,
-          requestId
-        );
-        console.log('✅ Leave balance deducted');
-      } catch (balanceError) {
-        console.warn('⚠️ Could not deduct balance:', balanceError);
+
+      // Deduct from employee's leave balance, unless the admin chose not to charge it
+      // (e.g. the employee is working a stat holiday in exchange — a lieu/swap day).
+      if (skipDeduction) {
+        console.log('⏭️ Skipping balance deduction (admin chose not to charge this request)');
+      } else {
+        try {
+          await supabaseService.deductLeaveBalance(
+            request.employeeId || request.employeeEmail,
+            request.type,
+            request.days || 1,
+            requestId
+          );
+          console.log('✅ Leave balance deducted');
+        } catch (balanceError) {
+          console.warn('⚠️ Could not deduct balance:', balanceError);
+        }
       }
       
       // Send notification to employee
@@ -487,6 +498,7 @@ const HRCalendar = () => {
     setProcessingRequest(requestId);
     setShowNotesModal(action);
     setApprovalNotes('');
+    setSkipBalanceDeduction(false);
   };
 
   // Archive a leave request
@@ -2135,7 +2147,25 @@ const HRCalendar = () => {
                   disabled={modalLoading}
                 />
               </div>
-              
+
+              {showNotesModal === 'approve' && (
+                <label className="flex items-start gap-2.5 cursor-pointer select-none rounded-xl bg-black/5 dark:bg-white/10 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={skipBalanceDeduction}
+                    onChange={(e) => setSkipBalanceDeduction(e.target.checked)}
+                    disabled={modalLoading}
+                    className="mt-0.5 h-4 w-4 rounded accent-[#0071e3]"
+                  />
+                  <span className="text-[13px] text-[#1d1d1f] dark:text-white">
+                    Don't deduct from balance
+                    <span className="block text-[12px] text-[#86868b] mt-0.5">
+                      Approve the time off without charging it (e.g. working a stat holiday in exchange).
+                    </span>
+                  </span>
+                </label>
+              )}
+
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => {
@@ -2151,7 +2181,7 @@ const HRCalendar = () => {
                 <button
                   onClick={() => {
                     if (showNotesModal === 'approve') {
-                      handleApproveRequest(processingRequest, approvalNotes);
+                      handleApproveRequest(processingRequest, approvalNotes, skipBalanceDeduction);
                     } else {
                       handleRejectRequest(processingRequest, approvalNotes);
                     }

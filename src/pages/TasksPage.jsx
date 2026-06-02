@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical, Palette, Loader2, Send, Bell, Archive, ArchiveRestore } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical, Palette, Loader2, Send, Bell, Archive, ArchiveRestore, CheckSquare, Bookmark } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -229,6 +229,43 @@ const TasksPage = () => {
   const [showArchivedTasks, setShowArchivedTasks] = useState(false);
   const [showArchivedOutbox, setShowArchivedOutbox] = useState(false);
   const outboxRequestRef = useRef(null);
+
+  // ── Section tabs: 'tasks' | 'requests' | 'archive'
+  const [taskSection, setTaskSection] = useState('tasks');
+  // Auto-switch to completed+archive view when Archive section selected
+  useEffect(() => {
+    if (taskSection === 'archive') {
+      setActiveFilter('completed');
+      setShowArchivedTasks(true);
+    }
+  }, [taskSection]);
+
+  // ── Saved filter presets (persisted per-user in localStorage)
+  const filterPresetsKey = currentUser?.email ? `taskFilterPresets_${currentUser.email}` : null;
+  const [savedFilterPresets, setSavedFilterPresets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`taskFilterPresets_${currentUser?.email || ''}`) || '[]'); } catch { return []; }
+  });
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [presetNameInput, setPresetNameInput] = useState('');
+  const presetNameInputRef = useRef(null);
+
+  const saveCurrentFilterAsPreset = () => {
+    if (!activeSmartFilter || !presetNameInput.trim()) return;
+    const newPreset = { id: Date.now(), name: presetNameInput.trim(), filter: activeSmartFilter };
+    const updated = [...savedFilterPresets, newPreset];
+    setSavedFilterPresets(updated);
+    if (filterPresetsKey) localStorage.setItem(filterPresetsKey, JSON.stringify(updated));
+    setPresetNameInput('');
+    setSavingPreset(false);
+    toast.success(`Saved filter "${newPreset.name}"`);
+  };
+
+  const deleteFilterPreset = (presetId, e) => {
+    e.stopPropagation();
+    const updated = savedFilterPresets.filter(p => p.id !== presetId);
+    setSavedFilterPresets(updated);
+    if (filterPresetsKey) localStorage.setItem(filterPresetsKey, JSON.stringify(updated));
+  };
   const incomingRequestIdRef = useRef(null);
 
   // Toggle task selection
@@ -1212,7 +1249,47 @@ const TasksPage = () => {
               buttonRef={filterButtonRef}
             />
           </div>
-          <button 
+          {/* Save current filter as preset */}
+          {activeSmartFilter && (
+            savingPreset ? (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={presetNameInputRef}
+                  type="text"
+                  placeholder="Preset name…"
+                  value={presetNameInput}
+                  onChange={e => setPresetNameInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') saveCurrentFilterAsPreset();
+                    if (e.key === 'Escape') { setSavingPreset(false); setPresetNameInput(''); }
+                  }}
+                  autoFocus
+                  className="px-3 py-2 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border border-[#0071e3]/30 text-[#1d1d1f] dark:text-white outline-none focus:ring-2 focus:ring-[#0071e3] w-36"
+                />
+                <button
+                  onClick={saveCurrentFilterAsPreset}
+                  className="px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => { setSavingPreset(false); setPresetNameInput(''); }}
+                  className="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSavingPreset(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+              >
+                <Bookmark className="w-4 h-4" />
+                Save Filter
+              </button>
+            )
+          )}
+          <button
             onClick={() => setShowTemplateSelector(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors"
           >
@@ -1255,6 +1332,112 @@ const TasksPage = () => {
         </div>
       </div>
 
+      {/* ── Saved Filter Presets Row */}
+      {savedFilterPresets.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider flex items-center gap-1.5">
+            <Bookmark className="w-3 h-3" />
+            Saved
+          </span>
+          {savedFilterPresets.map(preset => (
+            <button
+              key={preset.id}
+              onClick={() => applySmartFilter(preset.filter)}
+              className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                activeSmartFilter?.name === preset.filter?.name
+                  ? 'bg-[#0071e3] text-white'
+                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-black/10 dark:hover:bg-white/15'
+              }`}
+            >
+              {preset.name}
+              <span
+                role="button"
+                onClick={(e) => deleteFilterPreset(preset.id, e)}
+                className={`opacity-0 group-hover:opacity-100 rounded-sm p-0.5 transition-opacity hover:bg-black/10 dark:hover:bg-white/20 ${activeSmartFilter?.name === preset.filter?.name ? 'hover:bg-white/20' : ''}`}
+              >
+                <X className="w-3 h-3" />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Section Tabs: My Tasks | Requests | Archive */}
+      <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
+        {[
+          { value: 'tasks', label: 'My Tasks', icon: CheckSquare },
+          { value: 'requests', label: 'Requests', icon: Users, badge: taskRequests.length },
+          { value: 'archive', label: 'Archive', icon: Archive },
+        ].map(s => (
+          <button
+            key={s.value}
+            onClick={() => setTaskSection(s.value)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+              taskSection === s.value
+                ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm'
+                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+            }`}
+          >
+            <s.icon className="w-4 h-4" />
+            <span>{s.label}</span>
+            {s.badge > 0 && taskSection !== s.value && (
+              <span className="px-1.5 py-0.5 bg-[#ff3b30] text-white text-[10px] font-medium rounded-full leading-none">{s.badge}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Inline Requests Panel (shown when Requests section is active) */}
+      {taskSection === 'requests' && (
+        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+          <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+              Incoming Requests
+              {taskRequests.length > 0 && (
+                <span className="text-[14px] text-[#86868b] font-normal ml-2">({taskRequests.length} pending)</span>
+              )}
+            </h2>
+            <p className="text-[13px] text-[#86868b] mt-0.5">Tasks your teammates have asked you to take on.</p>
+          </div>
+          <div className="p-6">
+            {taskRequests.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-30" />
+                <p className="text-[15px] text-[#86868b] font-medium">No pending requests</p>
+                <p className="text-[13px] text-[#86868b]/60 mt-1">When teammates send you tasks they'll appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {taskRequests.map((request) => (
+                  <div key={request.id} id={`incoming-request-${request.id}`} className="rounded-xl border border-[#0071e3]/20 bg-[#0071e3]/5 p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{request.taskTitle}</h3>
+                      <span className={`text-[11px] px-2 py-1 rounded-md font-medium ${request.taskPriority === 'high' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' : request.taskPriority === 'medium' ? 'bg-[#ff9500]/10 text-[#ff9500]' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'}`}>{request.taskPriority}</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div><p className="text-[12px] font-medium text-[#86868b]">Requested by:</p><p className="text-[13px] text-[#1d1d1f] dark:text-white">{request.fromUserName}</p></div>
+                      {request.taskDescription && <div><p className="text-[12px] font-medium text-[#86868b]">Description:</p><p className="text-[13px] text-[#1d1d1f] dark:text-white">{request.taskDescription}</p></div>}
+                      {request.taskDueDate && <div><p className="text-[12px] font-medium text-[#86868b]">Due:</p><p className="text-[13px] text-[#1d1d1f] dark:text-white">{format(new Date(request.taskDueDate), 'MMMM dd, yyyy')}</p></div>}
+                      <p className="text-[11px] text-[#86868b]">Sent {request.createdAt?.toDate ? format(request.createdAt.toDate(), 'MMM dd, h:mm a') : 'recently'}</p>
+                      <div className="flex gap-3 pt-3 border-t border-[#0071e3]/20">
+                        <button onClick={() => handleAcceptRequest(request)} disabled={processingRequestId === request.id} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors disabled:opacity-50">
+                          {processingRequestId === request.id ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Accepting...</> : <><Check className="w-4 h-4" />Accept</>}
+                        </button>
+                        <button onClick={() => setDeclineRequestModal({ open: true, request, reason: '' })} disabled={processingRequestId === request.id} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50">
+                          <X className="w-4 h-4" />Decline
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── My Tasks section (filter tabs + task list) */}
+      {taskSection === 'tasks' && (<>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex flex-wrap gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl">
           {[
@@ -1629,6 +1812,7 @@ const TasksPage = () => {
         </SortableContext>
       </DndContext>
       )}
+      </>)}
 
       {/* Task Request Modal */}
       {showRequestModal && createPortal(

@@ -41,7 +41,27 @@
       "Bash(find /Users/joshua/smmluxurylistings -type f -name *firebase* -o -name *firestore*)",
       "Bash(find /Users/joshua/smmluxurylistings -type f \\\\\\(-name *migrat* -o -name *sync* -o -name *transfer* \\\\\\) ! -path */node_modules/* ! -path */.git/*)",
       "Bash(wc -l /Users/joshua/smmluxurylistings/src/v4-app/pages/*.jsx)",
-      "Bash(find /Users/joshua/smmluxurylistings/src/pages -name *.jsx -o -name *.js)"
+      "Bash(find /Users/joshua/smmluxurylistings/src/pages -name *.jsx -o -name *.js)",
+      "Bash(git show:*)",
+      "mcp__obsidian__obsidian_read_note",
+      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless=new --print-to-pdf=\"/Users/joshua/Desktop/invoice-may-2026.pdf\" --no-pdf-header-footer --print-to-pdf-no-header file:///Users/joshua/smmluxurylistings/invoice-may-2026.html)",
+      "Bash(rm /Users/joshua/smmluxurylistings/.git/index.lock *)",
+      "Bash(gh issue *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developers.facebook.com)",
+      "WebFetch(domain:www.facebook.com)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "mcp__Claude_in_Chrome__computer",
+      "Bash(vercel ls *)",
+      "Bash(vercel domains *)",
+      "Bash(vercel project *)",
+      "Bash(vercel inspect *)",
+      "Bash(git remote *)",
+      "Bash(git config *)",
+      "Bash(security delete-internet-password *)",
+      "Bash(security delete-generic-password *)",
+      "Bash(gh auth *)"
     ]
   }
 }

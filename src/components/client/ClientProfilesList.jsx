@@ -678,9 +678,21 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-[13px] font-medium truncate">
-                        <ClientLink client={client} showId />
-                      </h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="text-[13px] font-medium truncate">
+                          <ClientLink client={client} showId />
+                        </h3>
+                        {client.healthStatus && client.healthStatus !== 'monitor' && (
+                          <span
+                            title={`Health: ${client.healthStatus}${client.healthScore != null ? ` (${client.healthScore})` : ''}`}
+                            className={`flex-shrink-0 w-2 h-2 rounded-full ${
+                              client.healthStatus === 'healthy' ? 'bg-[#34c759]' :
+                              client.healthStatus === 'at_risk' ? 'bg-[#ff3b30]' :
+                              'bg-[#ff9500]'
+                            }`}
+                          />
+                        )}
+                      </div>
                       <p className="text-[11px] text-[#86868b] truncate">{client.clientEmail || 'No email'}</p>
                     </div>
                   </div>
@@ -814,9 +826,21 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-[14px] font-medium truncate">
-                        <ClientLink client={client} showId />
-                      </h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="text-[14px] font-medium truncate">
+                          <ClientLink client={client} showId />
+                        </h3>
+                        {client.healthStatus && client.healthStatus !== 'monitor' && (
+                          <span
+                            title={`Health: ${client.healthStatus}${client.healthScore != null ? ` (${client.healthScore})` : ''}`}
+                            className={`flex-shrink-0 w-2 h-2 rounded-full ${
+                              client.healthStatus === 'healthy' ? 'bg-[#34c759]' :
+                              client.healthStatus === 'at_risk' ? 'bg-[#ff3b30]' :
+                              'bg-[#ff9500]'
+                            }`}
+                          />
+                        )}
+                      </div>
                       {client.brokerage && (
                         <p className="text-[11px] text-[#86868b] truncate">{client.brokerage}</p>
                       )}
@@ -824,6 +848,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                         <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#0071e3]/10 text-[#0071e3] font-medium">
                           {client.packageType || 'Standard'}
                         </span>
+                        {client.healthStatus === 'at_risk' && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#ff3b30]/10 text-[#ff3b30] font-medium">At Risk</span>
+                        )}
                       </div>
                     </div>
                   </div>

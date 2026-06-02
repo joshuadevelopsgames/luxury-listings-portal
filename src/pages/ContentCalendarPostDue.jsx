@@ -5,6 +5,7 @@ import { supabaseService } from '../services/supabaseService';
 import PostPreviewCard from '../components/content/PostPreviewCard';
 import { toast } from 'react-hot-toast';
 import { ArrowLeft, Copy, ExternalLink } from 'lucide-react';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 const OPEN_LINKS = {
   instagram: 'https://www.instagram.com/',
@@ -89,6 +90,10 @@ export default function ContentCalendarPostDue() {
   return (
     <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f] p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
+        <Breadcrumb items={[
+          { label: 'Content Calendar', path: '/content-calendar' },
+          { label: 'Post Due Today' }
+        ]} />
         <button
           onClick={() => navigate('/content-calendar')}
           className="flex items-center gap-2 text-[#0071e3] text-sm font-medium mb-6"

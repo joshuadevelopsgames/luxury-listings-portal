@@ -15,6 +15,7 @@ import {
   Filter
 } from 'lucide-react';
 import { safeFormatDate } from '../utils/dateUtils';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 const NotificationsPage = () => {
   const { currentUser } = useAuth();
@@ -138,6 +139,7 @@ const NotificationsPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      <Breadcrumb items={[{ label: 'Dashboard', path: '/' }, { label: 'Notifications' }]} />
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
