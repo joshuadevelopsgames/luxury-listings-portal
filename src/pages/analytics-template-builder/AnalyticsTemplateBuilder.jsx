@@ -6,6 +6,7 @@
 // scoped under `.atb-root`.
 // ============================================================
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { TopBar, Library, Inspector } from './panels';
 import { ReportCanvas, hexToRgba } from './reportCanvas';
@@ -170,16 +171,12 @@ function Builder({ onBack }) {
   const accent = THEME_PRESETS.find((p) => p.key === template.theme.accentKey) || THEME_PRESETS[0];
   const uiVars = { '--ui-accent': accent.solid, '--ui-accent-soft': hexToRgba(accent.solid, 0.12) };
 
-  if (preview) {
-    return <ClientPreview template={template} onClose={() => setPreview(false)} onExport={() => window.print()} />;
-  }
-
   return (
     <div style={{ ...uiVars, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#ececed' }}>
       <TopBar template={template} setName={setName} viewport={viewport} setViewport={setViewport}
         templates={templates} onSelectTemplate={onSelectTemplate} onNewTemplate={onNewTemplate}
         saving={saving} onSave={onSave} onAssign={() => setModal('assign')}
-        onShare={() => setModal('share')} onExport={() => setModal('export')} savedAt={savedAt} onBack={onBack} />
+        onExport={() => setPreview(true)} savedAt={savedAt} onBack={onBack} />
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         <Library template={template} selectedId={selectedId} onSelect={setSelectedId} onToggle={toggleBlock} onReorder={reorder} />
 
@@ -195,8 +192,9 @@ function Builder({ onBack }) {
       </div>
 
       {modal === 'assign' && <AssignModal template={template} clients={clients} setAssignedClients={setAssignedClients} saving={saving} onSave={onSave} onClose={() => setModal(null)} showToast={showToast} />}
-      {modal === 'share' && <ShareModal template={template} onClose={() => setModal(null)} onOpenPreview={() => { setModal(null); setPreview(true); }} showToast={showToast} />}
-      {modal === 'export' && <ExportModal onClose={() => setModal(null)} onPreview={() => { setModal(null); setPreview(true); }} />}
+
+      {/* Export → opens a clean print view of the report and immediately fires the PDF dialog */}
+      {preview && <ClientPreview template={template} onClose={() => setPreview(false)} />}
 
       {toast && (
         <div className="toast"><Icon name="check" className="ic-16" />{toast}</div>
@@ -205,23 +203,47 @@ function Builder({ onBack }) {
   );
 }
 
-/* ---------- Client preview / print view ---------- */
-function ClientPreview({ template, onClose, onExport }) {
-  return (
-    <div className="atb-preview-overlay">
-      <div className="preview-root">
-        <div className="preview-bar no-print">
-          <button className="tb-btn ghost" onClick={onClose}><Icon name="chevLeft" className="ic-15" />Back to builder</button>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#76767c', fontWeight: 600 }}>
-            <Icon name="globe" className="ic-15" />Client preview — {template.client.name}
-          </span>
-          <button className="tb-btn primary" onClick={onExport}><Icon name="download" className="ic-15" />Print / Save as PDF</button>
-        </div>
-        <div className="print-root">
-          <ReportCanvas template={template} data={REPORT_DATA} interactive={false} />
+/* ---------- Print / export view ----------
+   Portaled to <body> and isolated with the `atb-printing` body class so the
+   browser print dialog captures ONLY the report (the @media print rules in
+   builder.css hide the rest of the app and let the full report flow across
+   pages — the on-screen overlay is position:fixed, which would otherwise clip
+   to a single page). Auto-fires the PDF dialog as soon as it renders. */
+function ClientPreview({ template, onClose }) {
+  const onCloseRef = React.useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const doPrint = () => { document.body.classList.add('atb-printing'); window.print(); };
+
+  React.useEffect(() => {
+    const after = () => { document.body.classList.remove('atb-printing'); onCloseRef.current && onCloseRef.current(); };
+    window.addEventListener('afterprint', after);
+    const t = setTimeout(doPrint, 400); // let fonts/layout settle, then export
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('afterprint', after);
+      document.body.classList.remove('atb-printing');
+    };
+  }, []);
+
+  return createPortal(
+    <div className="atb-root atb-print-portal">
+      <div className="atb-preview-overlay">
+        <div className="preview-root">
+          <div className="preview-bar no-print">
+            <button className="tb-btn ghost" onClick={onClose}><Icon name="chevLeft" className="ic-15" />Back to builder</button>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#76767c', fontWeight: 600 }}>
+              <Icon name="globe" className="ic-15" />Print preview — {template.client.name}
+            </span>
+            <button className="tb-btn primary" onClick={doPrint}><Icon name="download" className="ic-15" />Print / Save as PDF</button>
+          </div>
+          <div className="print-root">
+            <ReportCanvas template={template} data={REPORT_DATA} interactive={false} />
+          </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -297,42 +319,6 @@ function AssignModal({ template, clients, setAssignedClients, saving, onSave, on
         <button className="tb-btn primary" style={{ flex: 1, justifyContent: 'center', height: 42 }} disabled={saving} onClick={saveAndClose}>
           {saving ? 'Saving…' : 'Save defaults'}
         </button>
-      </div>
-    </Modal>
-  );
-}
-
-function ShareModal({ template, onClose, onOpenPreview, showToast }) {
-  const slug = template.client.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'client';
-  const link = `https://reports.luxurylistings.app/r/${slug}-${Math.random().toString(36).slice(2, 7)}`;
-  const copy = () => { navigator.clipboard?.writeText(link).catch(() => {}); showToast('Link copied'); };
-  return (
-    <Modal title="Share with client" icon="share" onClose={onClose}>
-      <p style={{ margin: '0 0 16px', fontSize: 13.5, color: '#76767c', lineHeight: 1.6 }}>Anyone with this link can view the live report. It updates automatically when you make changes.</p>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', height: 42, borderRadius: 10, background: '#f4f4f6', border: '1px solid #e6e6e8', fontSize: 13, color: '#52525b', overflow: 'hidden' }}>
-          <Icon name="link" className="ic-15" style={{ flexShrink: 0, color: '#a0a0a6' }} />
-          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{link}</span>
-        </div>
-        <button className="tb-btn primary" style={{ height: 42 }} onClick={copy}><Icon name="copy" className="ic-15" />Copy</button>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '18px 0 0' }}>
-        <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#52525b' }}>
-          <Icon name="check" className="ic-15" style={{ color: '#16a34a' }} /> Password protection enabled
-        </label>
-        <button className="inline-btn sm" onClick={onOpenPreview}><Icon name="globe" className="ic-14" />Open preview</button>
-      </div>
-    </Modal>
-  );
-}
-
-function ExportModal({ onClose, onPreview }) {
-  return (
-    <Modal title="Export PDF" icon="doc" onClose={onClose}>
-      <p style={{ margin: '0 0 16px', fontSize: 13.5, color: '#76767c', lineHeight: 1.6 }}>Opens a clean, full-width version of the report. Use your browser's print dialog to save it as a PDF — section styling, colors and logo are preserved.</p>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button className="tb-btn ghost" style={{ flex: 1, justifyContent: 'center', height: 44 }} onClick={onClose}>Cancel</button>
-        <button className="tb-btn primary" style={{ flex: 1, justifyContent: 'center', height: 44 }} onClick={onPreview}><Icon name="download" className="ic-15" />Open print view</button>
       </div>
     </Modal>
   );

@@ -190,6 +190,13 @@
 .atb-preview-overlay::-webkit-scrollbar-thumb:hover { background: #b6b7bd; background-clip: content-box; }
 
 @media print {
+  /* During an export (body.atb-printing), show ONLY the portaled print view and
+     hide the rest of the app, so the PDF contains just the report. */
+  body.atb-printing > :not(.atb-print-portal) { display: none !important; }
+  /* Neutralise the on-screen overlay's fixed/scroll positioning so the full
+     report flows across pages instead of clipping to one viewport. */
+  .atb-print-portal .atb-preview-overlay { position: static !important; overflow: visible !important; height: auto !important; }
+  .atb-print-portal .preview-root { min-height: 0 !important; }
   .atb-root .no-print, .atb-preview-overlay .no-print { display: none !important; }
   .atb-root .preview-root, .atb-root .print-root, .atb-preview-overlay { background: #fff !important; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

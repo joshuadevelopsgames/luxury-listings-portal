@@ -62,7 +62,7 @@ function Group({ title, icon, children, defaultOpen = true }) {
 /* ============================================================
    TOP BAR
    ============================================================ */
-export function TopBar({ template, setName, viewport, setViewport, templates, onSelectTemplate, onNewTemplate, saving, onSave, onAssign, onShare, onExport, savedAt, onBack }) {
+export function TopBar({ template, setName, viewport, setViewport, templates, onSelectTemplate, onNewTemplate, saving, onSave, onAssign, onExport, savedAt, onBack }) {
   const assignedCount = (template.assignedClientIds || []).length;
   return (
     <header style={{ height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 16, padding: '0 18px', background: '#fff', borderBottom: '1px solid #e8e8ea', zIndex: 20 }}>
@@ -118,7 +118,6 @@ export function TopBar({ template, setName, viewport, setViewport, templates, on
       {savedAt ? <span style={{ fontSize: 12, color: '#a0a0a6', marginRight: 4 }}>Saved {savedAt}</span> : null}
       <button className="tb-btn ghost" onClick={onAssign} title="Set as the default template for clients"><Icon name="users" className="ic-15" />Clients{assignedCount ? ` · ${assignedCount}` : ''}</button>
       <button className="tb-btn ghost" onClick={onSave} disabled={saving}><Icon name="save" className="ic-15" />{saving ? 'Saving…' : 'Save template'}</button>
-      <button className="tb-btn ghost" onClick={onShare}><Icon name="share" className="ic-15" />Share link</button>
       <button className="tb-btn primary" onClick={onExport}><Icon name="download" className="ic-15" />Export PDF</button>
     </header>
   );
