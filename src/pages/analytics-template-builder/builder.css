@@ -199,7 +199,18 @@
   .atb-print-portal .preview-root { min-height: 0 !important; }
   .atb-root .no-print, .atb-preview-overlay .no-print { display: none !important; }
   .atb-root .preview-root, .atb-root .print-root, .atb-preview-overlay { background: #fff !important; }
-  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* Force every report element to print its real colors. Inherited
+     print-color-adjust is unreliable for gradients/background-images, so set
+     it directly (with !important) on the whole report subtree — otherwise the
+     hero gradient, metric tiles, bars and accents drop out and the PDF looks
+     washed out. */
+  html, body,
+  .atb-print-portal, .atb-print-portal *,
+  .atb-root .report-root, .atb-root .report-root * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
 }
 
 /* Real-device mobile: shared report / client preview on a phone */
