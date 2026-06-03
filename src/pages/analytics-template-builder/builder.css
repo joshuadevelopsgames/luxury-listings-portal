@@ -36,10 +36,11 @@
 .atb-root select.ti { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2390909a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 11px center; padding-right: 30px; }
 
 .atb-root .name-input {
-  border: 1px solid transparent; background: transparent; font-size: 14.5px; font-weight: 650; color: #1c1c20;
-  padding: 6px 9px; border-radius: 8px; outline: none; font-family: inherit; width: 280px;
+  border: 1px solid #e2e2e6; background: #fbfbfc; font-size: 14.5px; font-weight: 650; color: #1c1c20;
+  padding: 6px 9px; border-radius: 8px; outline: none; font-family: inherit; width: 230px;
 }
-.atb-root .name-input:hover { background: #f4f4f6; }
+.atb-root .name-input::placeholder { color: #b0b0b6; font-weight: 500; }
+.atb-root .name-input:hover { background: #f4f4f6; border-color: #d7d7db; }
 .atb-root .name-input:focus { background: #fff; border-color: var(--ui-accent, #e1306c); box-shadow: 0 0 0 3px var(--ui-accent-soft); }
 
 /* top bar buttons */

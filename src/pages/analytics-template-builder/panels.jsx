@@ -80,7 +80,18 @@ export function TopBar({ template, setName, viewport, setViewport, templates, on
         </div>
       </div>
       <div style={{ width: 1, height: 26, background: '#e8e8ea' }} />
-      <input value={template.name} onChange={(e) => setName(e.target.value)} className="name-input" spellCheck={false} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }} title="Click to rename this template">
+        <Icon name="type" className="ic-15" style={{ color: '#a0a0a6', flexShrink: 0 }} />
+        <input
+          value={template.name}
+          onChange={(e) => setName(e.target.value)}
+          onFocus={(e) => e.target.select()}
+          className="name-input"
+          spellCheck={false}
+          placeholder="Name this template…"
+          aria-label="Template name"
+        />
+      </div>
       <span style={{ padding: '3px 9px', borderRadius: 6, background: template.id ? '#e8f5ec' : '#f0f0f2', color: template.id ? '#1f8a5b' : '#8a8a90', fontSize: 11, fontWeight: 650 }}>{template.id ? 'SAVED' : 'DRAFT'}</span>
 
       {/* template switcher + new */}

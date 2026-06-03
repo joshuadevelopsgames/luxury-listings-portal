@@ -140,7 +140,7 @@ function Builder({ onBack }) {
     if (saving) return;
     setSaving(true);
     try {
-      const payload = { name: template.name, theme: template.theme, blocks: template.blocks, assignedClientIds: template.assignedClientIds || [] };
+      const payload = { name: (template.name || '').trim() || 'Untitled template', theme: template.theme, blocks: template.blocks, assignedClientIds: template.assignedClientIds || [] };
       if (template.id) {
         await supabaseService.updateReportTemplate(template.id, payload);
       } else {
