@@ -2547,7 +2547,7 @@ class SupabaseService {
     // Use client_id (UUID) first, fall back to client_id_legacy (Firebase ID)
     const clientId = r.client_id || r.client_id_legacy || null;
     const userId = r.created_by_id || r.user_id_legacy || null;
-    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], screenshots: r.screenshot_urls || [], metrics: r.metrics || r.raw_ocr_data, templateId: r.template_id || null, template: r.template || null, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
+    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], screenshots: r.screenshot_urls || [], metrics: r.metrics || r.raw_ocr_data, templateId: r.template_id || null, template: r.template || null, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, isPublic: r.is_public || false, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
   }
 
   async getInstagramReports() {
@@ -2637,6 +2637,7 @@ class SupabaseService {
         delete processed.endDate;
       }
       if (updates.templateId !== undefined) { processed.template_id = updates.templateId; delete processed.templateId; }
+      if (updates.isPublic !== undefined) { processed.is_public = updates.isPublic; delete processed.isPublic; }
       if (updates.clientId !== undefined) { processed.client_id = updates.clientId; processed.client_id_legacy = updates.clientId; delete processed.clientId; }
       if (updates.clientName !== undefined) { processed.client_name = updates.clientName; delete processed.clientName; }
       if (updates.dateRange !== undefined) { processed.date_range = updates.dateRange; delete processed.dateRange; }

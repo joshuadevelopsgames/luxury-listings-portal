@@ -96,6 +96,16 @@ const PublicInstagramReportPage = () => {
     loadReport();
   }, [publicLinkId]);
 
+  // One-click "Export PDF": when opened with ?print=1, fire the print dialog
+  // once the report has rendered. The browser's Save-as-PDF produces the file.
+  useEffect(() => {
+    if (!report) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('print') !== '1') return;
+    const t = setTimeout(() => { try { window.print(); } catch (e) {} }, 600);
+    return () => clearTimeout(t);
+  }, [report]);
+
   const openLightbox = (index) => {
     setLightboxIndex(index);
     setLightboxImage(report.screenshots[index]);

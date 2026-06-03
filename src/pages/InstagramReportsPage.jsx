@@ -58,6 +58,9 @@ import {
   Search,
   GitCompare,
   CheckCircle2,
+  Share2,
+  Globe,
+  Download,
   AlertTriangle,
   XCircle,
 } from 'lucide-react';
@@ -354,6 +357,7 @@ const InstagramReportsPage = () => {
   const [expandedClient, setExpandedClient] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
   const [preSelectedClientId, setPreSelectedClientId] = useState(null);
+  const [sharingReport, setSharingReport] = useState(null); // report whose Share modal is open
   const [activeTab, setActiveTab] = useState('clients'); // 'clients' | 'internal' | 'archivedClients' | 'archive'
   const [archivedReports, setArchivedReports] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
@@ -816,22 +820,18 @@ const InstagramReportsPage = () => {
               </button>
             )}
             <button
-              onClick={() => handleCopyLink(report.publicLinkId)}
-              className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
-              title="Copy link"
-            >
-              {copiedLink === report.publicLinkId ? (
-                <Check className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-[#34c759]`} />
-              ) : (
-                <Copy className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
-              )}
-            </button>
-            <button
               onClick={() => window.open(`${window.location.origin}/report/${report.publicLinkId}`, '_blank')}
               className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
-              title="Preview"
+              title="Preview report"
             >
-              <ExternalLink className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+              <Eye className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+            </button>
+            <button
+              onClick={() => setSharingReport(report)}
+              className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
+              title="Share — publish link & export PDF"
+            >
+              <Share2 className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
             </button>
             {!archiveMode && (
               <>
@@ -1471,6 +1471,11 @@ const InstagramReportsPage = () => {
         />
       )}
 
+      {/* Per-report Share modal (rendered at page level so it survives report-list re-renders) */}
+      {sharingReport && (
+        <ReportShareModal report={sharingReport} onClose={() => setSharingReport(null)} />
+      )}
+
       {/* Share Link Popup — shown after creating or saving a report */}
       {sharePopupLink && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
@@ -1625,6 +1630,95 @@ const InstagramReportsPage = () => {
 };
 
 // Report Create/Edit Modal Component
+// Per-report Share: publish (reveal the client-viewable link), copy link, export PDF.
+const ReportShareModal = ({ report, onClose }) => {
+  const [published, setPublished] = useState(!!report.isPublic);
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const link = `${window.location.origin}/report/${report.publicLinkId}`;
+
+  const togglePublish = async () => {
+    const next = !published;
+    setBusy(true);
+    setPublished(next); // optimistic
+    try {
+      await supabaseService.updateInstagramReport(report.id, { isPublic: next });
+    } catch (e) {
+      setPublished(!next); // revert on failure
+      toast.error('Could not update publish status');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyLink = () => {
+    navigator.clipboard?.writeText(link).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const exportPdf = () => { window.open(`${link}?print=1`, '_blank'); };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[160] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
+          <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Share2 className="w-5 h-5 text-purple-500" />Share report
+          </h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        <div className="p-6 space-y-5">
+          {/* Publish */}
+          <div className="flex items-center justify-between gap-4 p-3 rounded-xl border border-gray-200 dark:border-white/10">
+            <div className="flex items-start gap-3 min-w-0">
+              <Globe className={`w-5 h-5 mt-0.5 flex-shrink-0 ${published ? 'text-[#34c759]' : 'text-gray-400'}`} />
+              <div className="min-w-0">
+                <p className="text-[14px] font-medium text-gray-900 dark:text-white">{published ? 'Published' : 'Draft'}</p>
+                <p className="text-[12.5px] text-gray-500 dark:text-gray-400">
+                  {published ? 'Anyone with the link can view this report.' : 'Publish to create a link your client can open.'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={togglePublish}
+              disabled={busy}
+              title={published ? 'Unpublish' : 'Publish'}
+              className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-60 ${published ? 'bg-[#34c759]' : 'bg-gray-300 dark:bg-white/20'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${published ? 'translate-x-5' : ''}`} />
+            </button>
+          </div>
+
+          {/* Public link — only once published */}
+          {published && (
+            <div className="flex gap-2">
+              <div className="flex-1 flex items-center gap-2 px-3 h-11 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[13px] text-gray-600 dark:text-gray-300 overflow-hidden">
+                <LinkIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                <span className="truncate">{link}</span>
+              </div>
+              <button onClick={copyLink} className="px-4 h-11 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[14px] font-medium flex items-center gap-2 flex-shrink-0">
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}{copied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          )}
+
+          {/* Export PDF */}
+          <div className="pt-1 border-t border-gray-100 dark:border-white/5">
+            <button onClick={exportPdf} className="w-full mt-4 flex items-center justify-center gap-2 h-11 rounded-xl border border-gray-200 dark:border-white/15 text-[14px] font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <Download className="w-4 h-4 text-purple-500" /> Export as PDF
+            </button>
+            <p className="text-[12px] text-gray-400 mt-2 text-center">Opens a print-ready view — choose “Save as PDF” in the dialog.</p>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 // A selectable template card: a scaled-down live preview of THIS report's
 // real data rendered through the given template, with a label + selected state.
 const TemplatePickerCard = ({ label, sub, active, onClick, previewReport, template }) => (
