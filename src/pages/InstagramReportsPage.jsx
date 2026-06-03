@@ -12,6 +12,8 @@ import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 import { instagramOCRService } from '../services/instagramOCRService';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
 import ClientLink from '../components/ui/ClientLink';
+import { ReportTemplateView } from './analytics-template-builder/ReportTemplateView';
+import { classicTemplate } from './analytics-template-builder/reportAdapter';
 import {
   Instagram,
   Plus,
@@ -1623,6 +1625,30 @@ const InstagramReportsPage = () => {
 };
 
 // Report Create/Edit Modal Component
+// A selectable template card: a scaled-down live preview of THIS report's
+// real data rendered through the given template, with a label + selected state.
+const TemplatePickerCard = ({ label, sub, active, onClick, previewReport, template }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`text-left rounded-xl border-2 overflow-hidden transition-colors bg-white dark:bg-[#1c1c1e] ${active ? 'border-purple-500' : 'border-gray-200 dark:border-white/10 hover:border-purple-300'}`}
+  >
+    <div style={{ position: 'relative', height: 190, overflow: 'hidden', background: '#f4f4f6' }}>
+      <div style={{ transform: 'scale(0.34)', transformOrigin: 'top left', width: 900, pointerEvents: 'none' }}>
+        <ReportTemplateView report={previewReport} template={template} />
+      </div>
+    </div>
+    <div className="px-3 py-2 flex items-center justify-between gap-2">
+      <span className="text-[13px] font-medium text-gray-900 dark:text-white truncate">{label}</span>
+      {sub ? (
+        <span className="flex-shrink-0 text-[10.5px] font-semibold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">{sub}</span>
+      ) : active ? (
+        <Check className="w-4 h-4 text-purple-500 flex-shrink-0" />
+      ) : null}
+    </div>
+  </button>
+);
+
 const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave }) => {
   // Parse existing dates if editing
   const parseExistingDate = (dateField) => {
@@ -1667,6 +1693,41 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
   const toggleIgnoreField = (key) => setIgnoredFields(prev => prev.includes(key) ? prev.filter(f => f !== key) : [...prev, key]);
   const fileInputRef = useRef(null);
   const hasAutoExtractedRef = useRef(false);
+
+  // ----- Wizard: step 1 (details) -> step 2 (template) -----
+  const [step, setStep] = useState(1);
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(report?.templateId || null);
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
+  const didAutoPickRef = useRef(false);
+
+  // Load saved templates once (cached in the service layer).
+  useEffect(() => {
+    let alive = true;
+    supabaseService.getReportTemplates().then((t) => { if (alive) setTemplates(t || []); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  // On first arrival at step 2, pre-select this client's default template.
+  useEffect(() => {
+    if (step !== 2 || didAutoPickRef.current) return;
+    didAutoPickRef.current = true;
+    if (!selectedTemplateId && formData.clientId) {
+      const def = templates.find((t) => (t.assignedClientIds || []).map(String).includes(String(formData.clientId)));
+      if (def) setSelectedTemplateId(def.id);
+    }
+  }, [step, templates, selectedTemplateId, formData.clientId]);
+
+  const selectedTemplate = templates.find((t) => String(t.id) === String(selectedTemplateId)) || null;
+  // A lightweight report-shaped object so previews show THIS report's real data.
+  const previewReport = {
+    clientId: formData.clientId,
+    clientName: formData.clientName,
+    title: formData.title,
+    dateRange: formData.dateRange,
+    notes: formData.notes,
+    metrics: formData.metrics,
+  };
 
   const hasMetricsForSummary = formData.metrics && typeof formData.metrics === 'object' && Object.keys(formData.metrics).length > 0;
 
@@ -1986,6 +2047,12 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
         if (ignoredFields.length > 0) metrics._ignoredFields = ignoredFields;
         else delete metrics._ignoredFields;
       }
+      // Chosen template: persist its id + a snapshot so the report's look is
+      // stable even if the template is later edited. null => Classic/client default.
+      const templateId = selectedTemplate ? selectedTemplate.id : null;
+      const templateSnapshot = selectedTemplate
+        ? { id: selectedTemplate.id, name: selectedTemplate.name, theme: selectedTemplate.theme, blocks: selectedTemplate.blocks }
+        : null;
 
       // Guard against oversized payloads (Supabase PostgREST limit ~10MB, warn >200KB)
       const payloadSize = new Blob([JSON.stringify({ clientId, clientName, title, dateRange, notes, postLinks, metrics })]).size;
@@ -1997,10 +2064,10 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
 
       let savedPublicLinkId;
       if (report) {
-        await supabaseService.updateInstagramReport(report.id, { clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
+        await supabaseService.updateInstagramReport(report.id, { clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics, templateId, template: templateSnapshot });
         savedPublicLinkId = report.publicLinkId;
       } else {
-        const result = await supabaseService.createInstagramReport({ clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics });
+        const result = await supabaseService.createInstagramReport({ clientId, clientName, title, startDate, endDate, dateRange, notes, postLinks, metrics, templateId, template: templateSnapshot });
         savedPublicLinkId = result?.publicLinkId;
       }
       onSave(savedPublicLinkId);
@@ -2043,9 +2110,14 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
           <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {report ? 'Edit Report' : 'Create New Report'}
-          </h2>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {report ? 'Edit Report' : 'Create New Report'}
+            </h2>
+            <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">
+              Step {step} of 2 · {step === 1 ? 'Report details' : 'Choose a template'}
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
@@ -2054,8 +2126,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        {/* Modal Body — Step 1: details */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]" style={{ display: step === 1 ? 'block' : 'none' }}>
           <div className="space-y-6">
             {/* Unlinked Report Alert */}
             {report && !report.clientId && (
@@ -2666,52 +2738,136 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
           </div>
         </div>
 
+        {/* Modal Body — Step 2: template */}
+        {step === 2 && (
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                Your report's real data is shown in each template below. {formData.clientName ? `${formData.clientName}'s` : 'The client’s'} default is pre-selected when one is assigned.
+              </p>
+              <button
+                type="button"
+                onClick={() => window.open('/analytics-template-builder', '_blank')}
+                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 text-[13px] font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+              >
+                <FileBarChart className="w-4 h-4" /> Build new template
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <TemplatePickerCard
+                label="Classic"
+                sub={!selectedTemplateId ? 'Default' : null}
+                active={!selectedTemplateId}
+                onClick={() => setSelectedTemplateId(null)}
+                previewReport={previewReport}
+                template={classicTemplate()}
+              />
+              {templates.map((t) => (
+                <TemplatePickerCard
+                  key={t.id}
+                  label={t.name}
+                  sub={(t.assignedClientIds || []).map(String).includes(String(formData.clientId)) ? 'Client default' : null}
+                  active={String(selectedTemplateId) === String(t.id)}
+                  onClick={() => setSelectedTemplateId(t.id)}
+                  previewReport={previewReport}
+                  template={t}
+                />
+              ))}
+            </div>
+            {templates.length === 0 && (
+              <p className="text-[12.5px] text-gray-400 mt-4">No saved templates yet — use “Build new template”, then reopen this step.</p>
+            )}
+          </div>
+        )}
+
         {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
-          <button
-            onClick={() => setShowPreview(true)}
-            disabled={!formData.title || !formData.clientName}
-            className="flex items-center px-4 py-2 rounded-xl border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 text-[14px] font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors disabled:opacity-50"
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            Preview Report
-          </button>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-black/10 dark:border-white/20 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || uploading || extracting}
-              className="flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4 mr-2" />
-                  {report ? 'Save Changes' : 'Create Report'}
-                </>
-              )}
-            </button>
-          </div>
+          {step === 1 ? (
+            <>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl border border-black/10 dark:border-white/20 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setStep(2)}
+                disabled={!formData.title || !formData.startDate || !formData.endDate}
+                className="flex items-center px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setStep(1)}
+                className="flex items-center px-4 py-2 rounded-xl border border-black/10 dark:border-white/20 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Back
+              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowTemplatePreview(true)}
+                  className="flex items-center px-4 py-2 rounded-xl border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 text-[14px] font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Preview
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || uploading || extracting}
+                  className="flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      {report ? 'Save Changes' : 'Create Report'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
         </div>
         </div>
       </div>,
         document.body
       )}
-      {/* Live Preview Modal */}
+      {/* Live Preview Modal (legacy renderer) */}
       {showPreview && createPortal(
         <ReportPreviewModal
           report={formData}
           onClose={() => setShowPreview(false)}
         />,
+        document.body
+      )}
+      {/* Templated full preview — this report rendered through the selected template */}
+      {showTemplatePreview && createPortal(
+        <div className="fixed inset-0 z-[200] flex flex-col" style={{ background: 'rgba(0,0,0,0.85)' }}>
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+            <button
+              onClick={() => setShowTemplatePreview(false)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" /> Back to templates
+            </button>
+            <span className="text-[13px] font-semibold text-gray-500 flex items-center gap-2">
+              <Eye className="w-4 h-4" /> Preview — {formData.clientName || 'Report'} · {selectedTemplate ? selectedTemplate.name : 'Classic'}
+            </span>
+            <span className="w-[140px]" />
+          </div>
+          <div className="flex-1 overflow-y-auto" style={{ background: '#e8e8ea' }}>
+            <ReportTemplateView report={previewReport} template={selectedTemplate || classicTemplate()} />
+          </div>
+        </div>,
         document.body
       )}
     </>

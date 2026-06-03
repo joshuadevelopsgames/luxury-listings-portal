@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
+import { ReportTemplateView } from './analytics-template-builder/ReportTemplateView';
 
 // ─── Compact number formatter (50000 → "50K", 1200000 → "1.2M") ────────────
 const formatCompact = (value) => {
@@ -149,6 +150,16 @@ const PublicInstagramReportPage = () => {
             This report may have been removed or the link is invalid.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Templated reports render through the chosen template (theme + section blocks);
+  // legacy reports without a template snapshot keep the original layout below.
+  if (report && report.template) {
+    return (
+      <div className="min-h-screen" style={{ background: '#e8e8ea' }}>
+        <ReportTemplateView report={report} />
       </div>
     );
   }

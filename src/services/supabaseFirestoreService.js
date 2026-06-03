@@ -46,6 +46,16 @@ const clean = (obj) => {
   return out;
 };
 
+// True when a write failed only because the instagram_reports.template_id /
+// template columns aren't in the deployed schema yet (migration 039 not applied).
+// Lets report writes degrade gracefully instead of breaking entirely.
+const isMissingTemplateColumnErr = (e) => {
+  if (!e) return false;
+  const msg = `${e.message || ''} ${e.details || ''} ${e.hint || ''}`;
+  if (!/template/i.test(msg)) return false;
+  return e.code === 'PGRST204' || e.code === '42703' || /(column|schema cache|does not exist)/i.test(msg);
+};
+
 /**
  * Normalize a JSONB array column (history, chat messages) back to an array of
  * object entries. Past code JSON.stringify'd these into the JSONB column, so
@@ -2518,9 +2528,15 @@ class SupabaseService {
       const publicLinkId = this.generatePublicLinkId();
       const startDate = reportData.startDate ? (reportData.startDate instanceof Date ? reportData.startDate : new Date(reportData.startDate)) : null;
       const endDate = reportData.endDate ? (reportData.endDate instanceof Date ? reportData.endDate : new Date(reportData.endDate)) : null;
-      const { data, error } = await supabase.from('instagram_reports').insert([{
-        user_id_legacy: user.id, created_by_id: user.id, user_email: user.email, client_id: reportData.clientId || null, client_id_legacy: reportData.clientId || null, client_name: reportData.clientName || '', title: reportData.title || '', date_range: reportData.dateRange || '', notes: reportData.notes || '', post_links: reportData.postLinks || [], metrics: reportData.metrics || null, report_type: reportData.reportType || null, source_report_ids: reportData.sourceReportIds || null, quarterly_breakdown: reportData.quarterlyBreakdown || null, public_link_id: publicLinkId, archived: false, year: startDate ? startDate.getFullYear() : null, month: startDate ? startDate.getMonth() + 1 : null, period_start: startDate ? startDate.toISOString().split('T')[0] : null, period_end: endDate ? endDate.toISOString().split('T')[0] : null, created_at: ts(), updated_at: ts()
-      }]).select().single();
+      const row = {
+        user_id_legacy: user.id, created_by_id: user.id, user_email: user.email, client_id: reportData.clientId || null, client_id_legacy: reportData.clientId || null, client_name: reportData.clientName || '', title: reportData.title || '', date_range: reportData.dateRange || '', notes: reportData.notes || '', post_links: reportData.postLinks || [], metrics: reportData.metrics || null, template_id: reportData.templateId || null, template: reportData.template || null, report_type: reportData.reportType || null, source_report_ids: reportData.sourceReportIds || null, quarterly_breakdown: reportData.quarterlyBreakdown || null, public_link_id: publicLinkId, archived: false, year: startDate ? startDate.getFullYear() : null, month: startDate ? startDate.getMonth() + 1 : null, period_start: startDate ? startDate.toISOString().split('T')[0] : null, period_end: endDate ? endDate.toISOString().split('T')[0] : null, created_at: ts(), updated_at: ts()
+      };
+      let { data, error } = await supabase.from('instagram_reports').insert([row]).select().single();
+      if (error && isMissingTemplateColumnErr(error)) {
+        // Migration 039 not applied yet — save the report without the template columns.
+        const { template_id, template, ...rowNoTemplate } = row;
+        ({ data, error } = await supabase.from('instagram_reports').insert([rowNoTemplate]).select().single());
+      }
       if (error) throw error;
       cacheInvalidate('instagram_reports:');
       return { success: true, id: data.id, publicLinkId };
@@ -2531,7 +2547,7 @@ class SupabaseService {
     // Use client_id (UUID) first, fall back to client_id_legacy (Firebase ID)
     const clientId = r.client_id || r.client_id_legacy || null;
     const userId = r.created_by_id || r.user_id_legacy || null;
-    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], screenshots: r.screenshot_urls || [], metrics: r.metrics || r.raw_ocr_data, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
+    return { id: r.id, userId, userEmail: r.user_email, clientId, clientName: r.client_name, title: r.title, dateRange: r.date_range, notes: r.notes, postLinks: r.post_links || [], screenshots: r.screenshot_urls || [], metrics: r.metrics || r.raw_ocr_data, templateId: r.template_id || null, template: r.template || null, reportType: r.report_type, sourceReportIds: r.source_report_ids, quarterlyBreakdown: r.quarterly_breakdown, publicLinkId: r.public_link_id, archived: r.archived || false, year: r.year, month: r.month, startDate: r.period_start, endDate: r.period_end, createdAt: normalizeTs(r.created_at), updatedAt: normalizeTs(r.updated_at) };
   }
 
   async getInstagramReports() {
@@ -2620,13 +2636,19 @@ class SupabaseService {
         processed.period_end = d.toISOString().split('T')[0];
         delete processed.endDate;
       }
+      if (updates.templateId !== undefined) { processed.template_id = updates.templateId; delete processed.templateId; }
       if (updates.clientId !== undefined) { processed.client_id = updates.clientId; processed.client_id_legacy = updates.clientId; delete processed.clientId; }
       if (updates.clientName !== undefined) { processed.client_name = updates.clientName; delete processed.clientName; }
       if (updates.dateRange !== undefined) { processed.date_range = updates.dateRange; delete processed.dateRange; }
       if (updates.postLinks !== undefined) { processed.post_links = updates.postLinks; delete processed.postLinks; }
       if (updates.reportType !== undefined) { processed.report_type = updates.reportType; delete processed.reportType; }
       if (updates.screenshots !== undefined) { processed.screenshot_urls = updates.screenshots; delete processed.screenshots; }
-      const { data, error } = await supabase.from('instagram_reports').update(clean(processed)).eq('id', reportId).select('id');
+      let { data, error } = await supabase.from('instagram_reports').update(clean(processed)).eq('id', reportId).select('id');
+      if (error && isMissingTemplateColumnErr(error)) {
+        // Migration 039 not applied yet — update without the template columns.
+        const { template_id, template, ...processedNoTemplate } = processed;
+        ({ data, error } = await supabase.from('instagram_reports').update(clean(processedNoTemplate)).eq('id', reportId).select('id'));
+      }
       if (error) throw error;
       if (!data || data.length === 0) {
         console.warn('[updateInstagramReport] Update matched 0 rows — RLS may have blocked the write.', { reportId, processed: clean(processed) });
@@ -2681,6 +2703,110 @@ class SupabaseService {
       return (data || []).map(r => this._mapReport(r));
     };
     return realtimeListener('instagram_reports', cacheFilter, fetcher, callback);
+  }
+
+  // ===== REPORT TEMPLATES =====
+  // Shared Analytics Report templates (theme + section blocks) built in
+  // /analytics-template-builder. assignedClientIds makes a template a client's default.
+
+  _mapTemplate(t) {
+    return {
+      id: t.id,
+      name: t.name || 'Untitled template',
+      theme: t.theme || {},
+      blocks: Array.isArray(t.blocks) ? t.blocks : [],
+      assignedClientIds: t.assigned_client_ids || [],
+      createdById: t.created_by_id || null,
+      userEmail: t.user_email || null,
+      createdAt: normalizeTs(t.created_at),
+      updatedAt: normalizeTs(t.updated_at),
+    };
+  }
+
+  async getReportTemplates() {
+    const key = 'report_templates:all';
+    const cached = cacheGet(key);
+    if (cached) return cached;
+    try {
+      const { data, error } = await supabase.from('report_templates').select('*').order('updated_at', { ascending: false });
+      if (error) throw error;
+      return cacheSet(key, (data || []).map(t => this._mapTemplate(t)));
+    } catch (e) {
+      // Before migration 038 is applied the table doesn't exist (PGRST205) —
+      // degrade quietly to "no templates" rather than spamming the console.
+      if (e && (e.code === 'PGRST205' || /report_templates/.test(`${e.message || ''}`))) return [];
+      console.warn('Could not load report templates:', e?.message || e);
+      return [];
+    }
+  }
+
+  async getReportTemplateById(id) {
+    if (!id) return null;
+    try {
+      const { data } = await supabase.from('report_templates').select('*').eq('id', id).maybeSingle();
+      return data ? this._mapTemplate(data) : null;
+    } catch { return null; }
+  }
+
+  async createReportTemplate({ name, theme, blocks, assignedClientIds } = {}) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) throw new Error('You must be signed in to save a template');
+      const { data, error } = await supabase.from('report_templates').insert([{
+        name: name || 'Untitled template',
+        theme: theme || {},
+        blocks: blocks || [],
+        assigned_client_ids: (assignedClientIds || []).map(String),
+        created_by_id: user.id,
+        user_email: user.email,
+        created_at: ts(),
+        updated_at: ts(),
+      }]).select().single();
+      if (error) throw error;
+      cacheInvalidate('report_templates:');
+      return this._mapTemplate(data);
+    } catch (e) { console.error('❌ Error creating report template:', e); throw e; }
+  }
+
+  async updateReportTemplate(id, updates = {}) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) throw new Error('You must be signed in');
+      const processed = { updated_at: ts() };
+      if (updates.name !== undefined) processed.name = updates.name;
+      if (updates.theme !== undefined) processed.theme = updates.theme;
+      if (updates.blocks !== undefined) processed.blocks = updates.blocks;
+      if (updates.assignedClientIds !== undefined) processed.assigned_client_ids = (updates.assignedClientIds || []).map(String);
+      const { data, error } = await supabase.from('report_templates').update(clean(processed)).eq('id', id).select('id');
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        console.warn('[updateReportTemplate] Update matched 0 rows — RLS may have blocked the write.', { id });
+        throw new Error('Template update failed — your account may not have permission to edit this template.');
+      }
+      cacheInvalidate('report_templates:');
+      return { success: true };
+    } catch (e) { console.error('❌ Error updating report template:', e); throw e; }
+  }
+
+  async deleteReportTemplate(id) {
+    try {
+      const { error } = await supabase.from('report_templates').delete().eq('id', id);
+      if (error) throw error;
+      cacheInvalidate('report_templates:');
+      return { success: true };
+    } catch (e) { console.error('❌ Error deleting report template:', e); throw e; }
+  }
+
+  // First template whose assigned_client_ids contains this client id (UUID or legacy).
+  async getDefaultTemplateForClient(clientId) {
+    if (!clientId) return null;
+    try {
+      const templates = await this.getReportTemplates();
+      const id = String(clientId);
+      return templates.find(t => (t.assignedClientIds || []).map(String).includes(id)) || null;
+    } catch { return null; }
   }
 
   // ===== DASHBOARD PREFERENCES =====

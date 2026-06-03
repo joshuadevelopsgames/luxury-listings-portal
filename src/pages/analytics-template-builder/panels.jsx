@@ -62,7 +62,8 @@ function Group({ title, icon, children, defaultOpen = true }) {
 /* ============================================================
    TOP BAR
    ============================================================ */
-export function TopBar({ template, setName, viewport, setViewport, onSave, onShare, onExport, savedAt, onBack }) {
+export function TopBar({ template, setName, viewport, setViewport, templates, onSelectTemplate, onNewTemplate, saving, onSave, onAssign, onShare, onExport, savedAt, onBack }) {
+  const assignedCount = (template.assignedClientIds || []).length;
   return (
     <header style={{ height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 16, padding: '0 18px', background: '#fff', borderBottom: '1px solid #e8e8ea', zIndex: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -80,7 +81,18 @@ export function TopBar({ template, setName, viewport, setViewport, onSave, onSha
       </div>
       <div style={{ width: 1, height: 26, background: '#e8e8ea' }} />
       <input value={template.name} onChange={(e) => setName(e.target.value)} className="name-input" spellCheck={false} />
-      <span style={{ padding: '3px 9px', borderRadius: 6, background: '#f0f0f2', color: '#8a8a90', fontSize: 11, fontWeight: 650 }}>DRAFT</span>
+      <span style={{ padding: '3px 9px', borderRadius: 6, background: template.id ? '#e8f5ec' : '#f0f0f2', color: template.id ? '#1f8a5b' : '#8a8a90', fontSize: 11, fontWeight: 650 }}>{template.id ? 'SAVED' : 'DRAFT'}</span>
+
+      {/* template switcher + new */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <select value={template.id || ''} onChange={(e) => onSelectTemplate(e.target.value || null)} title="Switch template"
+          style={{ height: 32, maxWidth: 180, borderRadius: 8, border: '1px solid #e2e2e6', background: '#fff', color: '#52525b', fontSize: 12.5, fontWeight: 600, padding: '0 26px 0 10px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          {!template.id ? <option value="">Unsaved template</option> : null}
+          {(templates || []).map((t) => <option key={t.id} value={t.id}>{t.name || 'Untitled template'}</option>)}
+        </select>
+        <Icon name="chevDown" className="ic-14" style={{ position: 'absolute', right: 8, pointerEvents: 'none', color: '#a0a0a6' }} />
+      </div>
+      <button className="tb-btn ghost" onClick={onNewTemplate} title="New template" style={{ padding: '0 10px' }}><Icon name="plus" className="ic-15" />New</button>
 
       <div style={{ flex: 1 }} />
 
@@ -89,7 +101,8 @@ export function TopBar({ template, setName, viewport, setViewport, onSave, onSha
       </div>
 
       {savedAt ? <span style={{ fontSize: 12, color: '#a0a0a6', marginRight: 4 }}>Saved {savedAt}</span> : null}
-      <button className="tb-btn ghost" onClick={onSave}><Icon name="save" className="ic-15" />Save template</button>
+      <button className="tb-btn ghost" onClick={onAssign} title="Set as the default template for clients"><Icon name="users" className="ic-15" />Clients{assignedCount ? ` · ${assignedCount}` : ''}</button>
+      <button className="tb-btn ghost" onClick={onSave} disabled={saving}><Icon name="save" className="ic-15" />{saving ? 'Saving…' : 'Save template'}</button>
       <button className="tb-btn ghost" onClick={onShare}><Icon name="share" className="ic-15" />Share link</button>
       <button className="tb-btn primary" onClick={onExport}><Icon name="download" className="ic-15" />Export PDF</button>
     </header>

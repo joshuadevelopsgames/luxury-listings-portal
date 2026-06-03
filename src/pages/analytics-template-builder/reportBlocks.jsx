@@ -112,6 +112,7 @@ function MetricsBlock({ block, data }) {
   const tiles = (block.metrics && block.metrics.length ? block.metrics : []).map((t) => ({
     ...t, up: t.trend === 'up' ? true : t.trend === 'down' ? false : null,
   }));
+  if (!tiles.length) return null;
   const cols = Math.min(4, Math.max(1, tiles.length));
   return (
     <div>
@@ -139,6 +140,7 @@ function MetricsBlock({ block, data }) {
 
 // ---------- HIGHLIGHTS ----------
 function HighlightsBlock({ block }) {
+  if (!block.body) return null;
   return (
     <Card>
       <Heading icon={block.icon || 'message'}>{block.title}</Heading>
@@ -149,7 +151,8 @@ function HighlightsBlock({ block }) {
 
 // ---------- VIEWS / INTERACTIONS BY CONTENT ----------
 function ContentBarsBlock({ block, data, field, icon }) {
-  const items = data.metrics[field];
+  const items = data.metrics?.[field];
+  if (!Array.isArray(items) || !items.length) return null;
   return (
     <Card>
       <Heading icon={block.icon || icon}>{block.title}</Heading>
@@ -160,8 +163,9 @@ function ContentBarsBlock({ block, data, field, icon }) {
 
 // ---------- RANKED LIST (locations / age) ----------
 function RankedBlock({ block, data, field, labelKey, icon }) {
-  const items = data.metrics[field];
-  const max = Math.max(...items.map((i) => i.percentage));
+  const items = data.metrics?.[field];
+  if (!Array.isArray(items) || !items.length) return null;
+  const max = Math.max(...items.map((i) => i.percentage)) || 1;
   return (
     <Card>
       <Heading icon={block.icon || icon}>{block.title}</Heading>
@@ -184,7 +188,8 @@ function RankedBlock({ block, data, field, labelKey, icon }) {
 
 // ---------- GENDER ----------
 function GenderBlock({ block, data }) {
-  const g = data.metrics.gender;
+  const g = data.metrics?.gender;
+  if (!g) return null;
   return (
     <Card>
       <Heading icon={block.icon || 'activity'}>{block.title}</Heading>
@@ -207,11 +212,13 @@ function GenderBlock({ block, data }) {
 
 // ---------- TOP CONTENT ----------
 function TopContentBlock({ block, data }) {
+  const items = data.metrics?.topContent;
+  if (!Array.isArray(items) || !items.length) return null;
   return (
     <Card>
       <Heading icon={block.icon || 'sparkles'}>{block.title}</Heading>
       <div style={{ display: 'flex', gap: 14 }}>
-        {data.metrics.topContent.map((c, i) => (
+        {items.map((c, i) => (
           <div key={i} style={{ flex: 1, textAlign: 'center' }}>
             <div className="ph-slot" style={{ aspectRatio: '1/1', borderRadius: 'calc(var(--r-card) * .55)', display: 'grid', placeItems: 'center', color: 'var(--text-faint)', marginBottom: 10 }}>
               <Icon name={c.icon || 'image'} className="ic-28" style={{ opacity: .55 }} />
@@ -227,25 +234,26 @@ function TopContentBlock({ block, data }) {
 
 // ---------- GROWTH ----------
 function GrowthBlock({ block, data }) {
-  const gr = data.metrics.growth;
-  const up = gr.overall >= 0;
+  const gr = data.metrics?.growth;
+  if (!gr) return null;
+  const up = (gr.overall || 0) >= 0;
   return (
     <Card>
       <Heading icon={block.icon || 'trendUp'}>{block.title}</Heading>
       <div className="growth-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         <div style={{ textAlign: 'center', padding: 16, borderRadius: 'calc(var(--r-card) * .6)', background: 'var(--inset-bg)' }}>
-          <div className="growth-num" style={{ fontSize: 30, fontWeight: 750, color: up ? '#16a34a' : '#ef4444' }}>{up ? '+' : ''}{gr.overall}</div>
+          <div className="growth-num" style={{ fontSize: 30, fontWeight: 750, color: up ? '#16a34a' : '#ef4444' }}>{up ? '+' : ''}{gr.overall ?? 0}</div>
           <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>Net Change</div>
         </div>
         <div style={{ textAlign: 'center', padding: 16, borderRadius: 'calc(var(--r-card) * .6)', background: 'rgba(22,163,74,.10)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 6, minWidth: 0, color: '#16a34a' }}>
-            <Icon name="userPlus" className="ic-18" /><span className="growth-num" style={{ fontSize: 28, fontWeight: 750 }}>{gr.follows.toLocaleString()}</span>
+            <Icon name="userPlus" className="ic-18" /><span className="growth-num" style={{ fontSize: 28, fontWeight: 750 }}>{(gr.follows ?? 0).toLocaleString()}</span>
           </div>
           <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>New Follows</div>
         </div>
         <div style={{ textAlign: 'center', padding: 16, borderRadius: 'calc(var(--r-card) * .6)', background: 'rgba(239,68,68,.10)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 6, minWidth: 0, color: '#ef4444' }}>
-            <Icon name="userMinus" className="ic-18" /><span className="growth-num" style={{ fontSize: 28, fontWeight: 750 }}>{gr.unfollows.toLocaleString()}</span>
+            <Icon name="userMinus" className="ic-18" /><span className="growth-num" style={{ fontSize: 28, fontWeight: 750 }}>{(gr.unfollows ?? 0).toLocaleString()}</span>
           </div>
           <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>Unfollows</div>
         </div>
@@ -256,11 +264,13 @@ function GrowthBlock({ block, data }) {
 
 // ---------- ACTIVE TIMES ----------
 function ActiveTimesBlock({ block, data }) {
+  const items = data.metrics?.activeTimes;
+  if (!Array.isArray(items) || !items.length) return null;
   return (
     <Card>
       <Heading icon={block.icon || 'clock'}>{block.title}</Heading>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, height: 132 }}>
-        {data.metrics.activeTimes.map((t, i) => (
+        {items.map((t, i) => (
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
             <div style={{ width: '100%', maxWidth: 46, height: t.activity + '%', borderRadius: '8px 8px 0 0', background: GRAD, transition: 'height .5s cubic-bezier(.2,.8,.2,1)' }} />
             <span style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 8 }}>{t.hour}</span>
