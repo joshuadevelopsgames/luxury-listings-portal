@@ -94,16 +94,20 @@ export function TopBar({ template, setName, viewport, setViewport, templates, on
       </div>
       <span style={{ padding: '3px 9px', borderRadius: 6, background: template.id ? '#e8f5ec' : '#f0f0f2', color: template.id ? '#1f8a5b' : '#8a8a90', fontSize: 11, fontWeight: 650 }}>{template.id ? 'SAVED' : 'DRAFT'}</span>
 
-      {/* template switcher + new */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <select value={template.id || ''} onChange={(e) => onSelectTemplate(e.target.value || null)} title="Switch template"
-          style={{ height: 32, maxWidth: 180, borderRadius: 8, border: '1px solid #e2e2e6', background: '#fff', color: '#52525b', fontSize: 12.5, fontWeight: 600, padding: '0 26px 0 10px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-          {!template.id ? <option value="">Unsaved template</option> : null}
-          {(templates || []).map((t) => <option key={t.id} value={t.id}>{t.name || 'Untitled template'}</option>)}
-        </select>
-        <Icon name="chevDown" className="ic-14" style={{ position: 'absolute', right: 8, pointerEvents: 'none', color: '#a0a0a6' }} />
-      </div>
-      <button className="tb-btn ghost" onClick={onNewTemplate} title="New template" style={{ padding: '0 10px' }}><Icon name="plus" className="ic-15" />New</button>
+      {/* Open a different saved template. Always shows "Open…" (it's an action,
+          not the current name — that's the editable field on the left). Hidden
+          when there's nothing saved to switch to. */}
+      {(templates && templates.length > 0) ? (
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <select value="" onChange={(e) => { if (e.target.value) onSelectTemplate(e.target.value); }} title="Open a saved template"
+            style={{ height: 32, maxWidth: 200, borderRadius: 8, border: '1px solid #e2e2e6', background: '#fff', color: '#52525b', fontSize: 12.5, fontWeight: 600, padding: '0 26px 0 10px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <option value="">Open template…</option>
+            {templates.map((t) => <option key={t.id} value={t.id}>{t.name || 'Untitled template'}</option>)}
+          </select>
+          <Icon name="chevDown" className="ic-14" style={{ position: 'absolute', right: 8, pointerEvents: 'none', color: '#a0a0a6' }} />
+        </div>
+      ) : null}
+      <button className="tb-btn ghost" onClick={onNewTemplate} title="Start a new blank template" style={{ padding: '0 10px' }}><Icon name="plus" className="ic-15" />New</button>
 
       <div style={{ flex: 1 }} />
 
