@@ -349,6 +349,12 @@ async function importClients() {
           // Update existing - preserve posts used/remaining
           clientRecord.postsUsed = existingClient.postsUsed || 0;
           clientRecord.postsRemaining = existingClient.postsRemaining || tierPackage.packageSize;
+          // Never clobber human-entered notes with the generated template. This
+          // is what silently wiped a manager's Stockton Group notes — only apply
+          // the templated note when the existing record has none.
+          if (existingClient.notes && String(existingClient.notes).trim()) {
+            clientRecord.notes = existingClient.notes;
+          }
           await db.collection('clients').doc(existingClient.id).update(clientRecord);
           console.log(`🔄 Updated: ${clientData.clientName}`);
           updated++;

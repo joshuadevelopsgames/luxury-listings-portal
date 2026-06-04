@@ -108,7 +108,7 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
             type="checkbox"
             checked={isSelected}
             onChange={() => onToggleSelect(task.id)}
-            className="h-5 w-5 rounded-md border-black/20 dark:border-white/20 text-[#0071e3] focus:ring-[#0071e3] cursor-pointer accent-[#0071e3]"
+            className="h-5 w-5 rounded-full border-black/20 dark:border-white/20 text-[#0071e3] focus:ring-[#0071e3] cursor-pointer accent-[#0071e3]"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

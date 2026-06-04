@@ -40,12 +40,11 @@ import {
 import { supabaseService } from '../services/supabaseService';
 import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
 import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
-import { mergeCrmDuplicates } from '../utils/mergeCrmDuplicates';
 import { uploadFile } from '../services/storageService';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { addContactToCRM, removeLeadFromCRM, CLIENT_TYPE, CLIENT_TYPE_OPTIONS, getContactTypes, CRM_LOCATIONS, normalizeLocation, isClientHiddenFromCrmPage } from '../services/crmService';
 import { useCustomLocations } from '../contexts/CustomLocationsContext';
-import { findPotentialMatchesForContact, findPotentialDuplicateGroups } from '../services/clientDuplicateService';
+import { findPotentialMatchesForContact } from '../services/clientDuplicateService';
 import ClientLink from '../components/ui/ClientLink';
 import LeadLink from '../components/crm/LeadLink';
 import ClientDetailModal from '../components/client/ClientDetailModal';
@@ -123,7 +122,6 @@ const CRMPage = () => {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [exportingCrm, setExportingCrm] = useState(false);
   const [importingCrm, setImportingCrm] = useState(false);
-  const [mergingDuplicates, setMergingDuplicates] = useState(false);
   /** Lead row ids (strings) selected for bulk delete — CRM leads only, not existing clients. */
   const [selectedLeadIds, setSelectedLeadIds] = useState([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -1143,39 +1141,6 @@ const CRMPage = () => {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#af52de]/10 text-[#af52de] text-[13px] font-medium hover:bg-[#af52de]/20 transition-colors disabled:opacity-50"
           >
             {importingCrm ? 'Importing…' : 'Import from xlsx'}
-          </button>
-          {(() => {
-            const duplicateGroups = findPotentialDuplicateGroups(crmLeadsDeduped);
-            return duplicateGroups.length > 0 ? (
-              <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[12px] font-medium">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {duplicateGroups.length} possible duplicate group{duplicateGroups.length !== 1 ? 's' : ''} – use Merge duplicates below
-              </span>
-            ) : null;
-          })()}
-          <button
-            type="button"
-            onClick={async () => {
-              setMergingDuplicates(true);
-              try {
-                const { contactedClients: c, coldLeads: cold, notInterestedLeads: ni, mergedCount } = mergeCrmDuplicates(contactedClients, coldLeads, notInterestedLeads);
-                setContactedClients(c);
-                setColdLeads(cold);
-                setNotInterestedLeads(ni || []);
-                await saveCRMDataToFirebase({ contactedClients: c, coldLeads: cold, notInterestedLeads: ni || [] });
-                if (mergedCount > 0) showToast(`Merged ${mergedCount} duplicate${mergedCount !== 1 ? 's' : ''}`);
-                else showToast('No duplicates found');
-              } catch (err) {
-                console.error(err);
-                showToast('Merge failed', 'error');
-              } finally {
-                setMergingDuplicates(false);
-              }
-            }}
-            disabled={mergingDuplicates}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[13px] font-medium hover:bg-amber-500/20 transition-colors disabled:opacity-50"
-          >
-            {mergingDuplicates ? 'Merging…' : 'Merge duplicates'}
           </button>
           <button
             onClick={() => {

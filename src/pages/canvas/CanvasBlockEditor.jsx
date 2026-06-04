@@ -1719,7 +1719,13 @@ function CanvasBlockEditorInner({
               type="button"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
-                addBlockMenuPosRef.current = { left: rect.left, top: rect.bottom + 4 };
+                const MENU_MAX_HEIGHT = 280;
+                const spaceBelow = window.innerHeight - rect.bottom;
+                // If there isn't room to drop down, anchor the menu's bottom edge
+                // just above the button so it grows upward instead of getting clipped.
+                addBlockMenuPosRef.current = spaceBelow < MENU_MAX_HEIGHT + 12
+                  ? { left: rect.left, bottom: window.innerHeight - rect.top + 4 }
+                  : { left: rect.left, top: rect.bottom + 4 };
                 setAddBlockMenuOpen((o) => !o);
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground border border-dashed border-border rounded-md hover:border-primary hover:text-primary"
@@ -1741,7 +1747,12 @@ function CanvasBlockEditorInner({
                 <div className="fixed inset-0 z-40" onClick={() => setAddBlockMenuOpen(false)} aria-hidden />
                 <div
                   className="fixed z-50 w-[230px] max-h-[280px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
-                  style={{ left: addBlockMenuPosRef.current.left, top: addBlockMenuPosRef.current.top }}
+                  style={{
+                    left: addBlockMenuPosRef.current.left,
+                    ...(addBlockMenuPosRef.current.bottom != null
+                      ? { bottom: addBlockMenuPosRef.current.bottom }
+                      : { top: addBlockMenuPosRef.current.top }),
+                  }}
                 >
                   {BLOCK_TYPES.map((c) => (
                     <button

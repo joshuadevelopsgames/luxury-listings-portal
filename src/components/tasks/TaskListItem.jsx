@@ -46,7 +46,7 @@ const TaskListItem = ({ task, onStatusChange, onEdit, isSelected, onToggleSelect
           type="checkbox"
           checked={isSelected}
           onChange={() => onToggleSelect(task.id)}
-          className="h-4 w-4 rounded-md border-black/20 dark:border-white/20 accent-[#0071e3] cursor-pointer"
+          className="h-4 w-4 rounded-full border-black/20 dark:border-white/20 accent-[#0071e3] cursor-pointer"
           onClick={(e) => e.stopPropagation()}
         />
       )}

@@ -1543,7 +1543,7 @@ class SupabaseService {
 
   async logClientMovement(event) {
     try {
-      await supabase.from('client_movements').insert([{ client_id: event.clientId || '', client_name: event.clientName || null, event_type: event.type || event.eventType || 'unknown', performed_by: event.performedBy || null, data: event, created_at: ts() }]);
+      await supabase.from('client_movements').insert([{ client_id: event.clientId || '', client_name: event.clientName || null, type: event.type || event.eventType || 'unknown', performed_by: event.performedBy || null, details: event, created_at: ts() }]);
     } catch { /* non-fatal */ }
   }
 
@@ -1569,7 +1569,33 @@ class SupabaseService {
       if (options.clientId) q = q.eq('client_id', options.clientId);
       if (options.limit) q = q.limit(options.limit);
       const { data } = await q;
-      return (data || []).map(r => ({ id: r.id, type: r.event_type, clientId: r.client_id, clientName: r.client_name, performedBy: r.performed_by, createdAt: normalizeTs(r.created_at), ...r.data }));
+      return (data || []).map(r => ({ id: r.id, type: r.type, clientId: r.client_id, clientName: r.client_name, performedBy: r.performed_by, createdAt: normalizeTs(r.created_at), ...(r.details || {}) }));
+    } catch { return []; }
+  }
+
+  // Field-level audit trail backed by the audit_log trigger (migration 040).
+  // Captures every insert/update/delete to watched tables — including writes
+  // from scripts / the SQL editor that bypass the app — with who/when/old→new.
+  async getAuditLog(options = {}) {
+    try {
+      let q = supabase.from('audit_log').select('*').order('created_at', { ascending: false });
+      if (options.tableName) q = q.eq('table_name', options.tableName);
+      if (options.recordId) q = q.eq('record_id', options.recordId);
+      if (options.operation) q = q.eq('operation', options.operation);
+      q = q.limit(options.limit || 50);
+      const { data } = await q;
+      return (data || []).map(r => ({
+        id: r.id,
+        tableName: r.table_name,
+        recordId: r.record_id,
+        operation: r.operation,
+        actorEmail: r.actor_email,
+        actorRole: r.actor_role,
+        changedColumns: r.changed_columns || [],
+        old: r.old_data,
+        new: r.new_data,
+        createdAt: normalizeTs(r.created_at),
+      }));
     } catch { return []; }
   }
 
@@ -1971,9 +1997,10 @@ class SupabaseService {
     }
   }
 
-  async updateClientListing(id, data) {
+  async updateClientListing(listingId, data) {
+    if (!listingId) throw new Error('Missing listingId');
     try {
-      const { error } = await supabase
+      const { data: row, error } = await supabase
         .from('client_listings')
         .update(clean({
           source_domain: data.sourceDomain,
@@ -1989,8 +2016,11 @@ class SupabaseService {
           raw_payload: data.rawPayload,
           updated_at: ts(),
         }))
-        .eq('id', id);
+        .eq('id', listingId)
+        .select('*')
+        .single();
       if (error) throw error;
+      return row;
     } catch (error) { throw error; }
   }
 
@@ -2017,31 +2047,6 @@ class SupabaseService {
           created_at: ts(),
           updated_at: ts(),
         })])
-        .select('*')
-        .single();
-      if (error) throw error;
-      return row;
-    } catch (error) { throw error; }
-  }
-
-  async updateClientListing(listingId, data) {
-    if (!listingId) throw new Error('Missing listingId');
-    try {
-      const updates = clean({
-        title: data.title,
-        description: data.description,
-        address: data.address,
-        price: data.price,
-        beds: data.beds,
-        baths: data.baths,
-        square_feet: data.squareFeet,
-        raw_payload: data.rawPayload,
-        updated_at: ts(),
-      });
-      const { data: row, error } = await supabase
-        .from('client_listings')
-        .update(updates)
-        .eq('id', listingId)
         .select('*')
         .single();
       if (error) throw error;

@@ -37,6 +37,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     description: '',
     category: '',
     priority: 'medium',
+    status: 'pending',
     dueDate: '',
     dueTime: '',
     estimatedTime: '',
@@ -184,6 +185,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
         description: task.description || '',
         category: task.category || '',
         priority: task.priority || 'medium',
+        status: task.status || 'pending',
         dueDate: task.due_date || '',
         dueTime: task.due_time || '',
         estimatedTime: task.estimated_time || '',
@@ -197,22 +199,18 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     }
   }, [task, isOpen]);
 
-  const handleSubmit = async () => {
-    await onSave({
-      ...task,
-      title: editForm.title,
-      description: editForm.description,
-      category: editForm.category,
-      priority: editForm.priority,
-      due_date: editForm.dueDate || null,
-      due_time: editForm.dueTime || null,
-      estimated_time: editForm.estimatedTime || null,
-      project: editForm.project || 'Inbox',
-      labels: editForm.labels || [],
-      reminders: editForm.reminders || [],
-      subtasks: editForm.subtasks || [],
-      attachments: editForm.attachments || []
-    });
+  // Auto-save a single field inline without closing the modal — matches how
+  // date / labels / project / subtasks already persist. Routing title/priority
+  // through onSave (handleSubmit) instead closed the modal on every edit, which
+  // looked like the task "disappearing".
+  const persistInline = async (updates) => {
+    if (!task?.id) return;
+    try {
+      await DailyTask.update(task.id, updates);
+      onTaskCreated?.(); // refresh the parent list; keep the modal open
+    } catch (error) {
+      console.error('Error saving task edit:', error);
+    }
   };
 
   const uid = currentUser?.uid || (currentUser?.email || 'anon').replace(/[^a-zA-Z0-9]/g, '_');
@@ -641,11 +639,13 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
             <div className="flex items-start gap-3 mb-6">
               <div className="pt-1" data-no-drag>
                 <Checkbox
-                  checked={task.status === 'completed'}
+                  checked={editForm.status === 'completed'}
                   onCheckedChange={(checked) => {
-                    onSave({
-                      ...task,
-                      status: checked ? 'completed' : 'pending'
+                    const status = checked ? 'completed' : 'pending';
+                    setEditForm(prev => ({ ...prev, status }));
+                    persistInline({
+                      status,
+                      completed_date: checked ? new Date().toISOString() : null
                     });
                   }}
                 />
@@ -654,7 +654,10 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 type="text"
                 value={editForm.title}
                 onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                onBlur={handleSubmit}
+                onBlur={() => {
+                  const next = editForm.title.trim();
+                  if (next && next !== task.title) persistInline({ title: next });
+                }}
                 className="flex-1 text-lg font-semibold border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                 placeholder="Task name"
               />
@@ -678,7 +681,11 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 <textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                  onBlur={handleSubmit}
+                  onBlur={() => {
+                    if ((editForm.description || '') !== (task.description || '')) {
+                      persistInline({ description: editForm.description });
+                    }
+                  }}
                   className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 resize-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
                   placeholder="Description"
                   rows={3}
@@ -1108,7 +1115,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       onClick={() => {
                         setEditForm(prev => ({ ...prev, priority: priority.value }));
                         setShowPriorityDropdown(false);
-                        handleSubmit();
+                        persistInline({ priority: priority.value });
                       }}
                       className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/10 text-sm text-left text-gray-900 dark:text-white"
                     >

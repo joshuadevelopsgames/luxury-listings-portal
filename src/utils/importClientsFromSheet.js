@@ -325,7 +325,12 @@ export const importClients = async () => {
             postsUsed: existingClient.postsUsed || 0,
             postsRemaining: existingClient.postsRemaining || DEFAULT_PACKAGE.packageSize
           };
-          
+          // Never clobber human-entered notes with the generated template — only
+          // apply the templated note when the existing record has none.
+          if (existingClient.notes && String(existingClient.notes).trim()) {
+            updateData.notes = existingClient.notes;
+          }
+
           await supabaseService.updateClient(existingClient.id, updateData);
           console.log(`🔄 Updated: ${clientData.clientName}`);
           updated++;
