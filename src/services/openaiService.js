@@ -9,6 +9,57 @@
  */
 
 import { aiChatCompletion, aiChatContent } from './aiProxyClient';
+import { uploadFileForVision, removeFiles } from './storageService';
+
+// Provider per-request image cap is ~20 (OpenRouter; varies by model). Stay under
+// it so ANY number of screenshots works: small batches are a single request,
+// larger ones are split across requests and their metrics merged.
+const MAX_IMAGES_PER_VISION_REQUEST = 12;
+
+function chunkArray(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+// Array fields keyed by the property identifying a duplicate row, so merging
+// per-batch results unions them by identity instead of clobbering.
+const MERGE_ARRAY_KEYS = {
+  topCities: 'name', topCountries: 'name', ageRanges: 'range',
+  contentBreakdown: 'type', interactionsByContent: 'type',
+  topSourcesOfViews: 'source', activeTimes: 'hour',
+};
+
+// Merge per-batch Instagram metrics: first-defined wins for scalars, shallow
+// merge for nested objects (gender/growth), union-by-key for the array fields.
+function mergeInstagramMetrics(list) {
+  const out = {};
+  for (const m of list) {
+    if (!m || typeof m !== 'object') continue;
+    for (const [k, v] of Object.entries(m)) {
+      if (v === null || v === undefined) continue;
+      if (Array.isArray(v)) {
+        const keyField = MERGE_ARRAY_KEYS[k];
+        const acc = Array.isArray(out[k]) ? out[k] : [];
+        if (keyField) {
+          const seen = new Set(acc.map((it) => String(it?.[keyField] ?? '').toLowerCase()));
+          for (const it of v) {
+            const id = String(it?.[keyField] ?? '').toLowerCase();
+            if (!id || !seen.has(id)) { acc.push(it); if (id) seen.add(id); }
+          }
+        } else {
+          acc.push(...v);
+        }
+        out[k] = acc;
+      } else if (typeof v === 'object') {
+        out[k] = { ...(out[k] && typeof out[k] === 'object' ? out[k] : {}), ...v };
+      } else if (out[k] === undefined || out[k] === null) {
+        out[k] = v;
+      }
+    }
+  }
+  return out;
+}
 
 class OpenAIService {
   /**
@@ -305,14 +356,12 @@ Return ONLY the JSON array, no other text.`;
    * @returns {Promise<Object>} - Extracted metrics
    */
   async extractInstagramMetrics(images, onProgress = null) {
-    console.log(`🤖 Extracting Instagram metrics with AI (direct OpenAI Vision) (${images.length} images)...`);
+    console.log(`🤖 Extracting Instagram metrics with AI Vision (${images.length} images)...`);
 
     if (onProgress) onProgress(0, images.length, 'Preparing images...');
 
-    // Convert images to base64 data URLs, then downscale to keep the whole
-    // request under the serverless proxy's ~4.5 MB body limit. The bounds
-    // (long side ≤ 2000px) are at/above what GPT-4o actually consumes at
-    // high detail, so extraction fidelity is preserved.
+    // Downscale each screenshot (long side ≤ 2000px, JPEG) so text stays legible
+    // while keeping the uploaded files small.
     const base64Images = await Promise.all(
       images.map(async (img) => {
         const dataUrl = await this.imageToBase64(img);
@@ -320,13 +369,105 @@ Return ONLY the JSON array, no other text.`;
       })
     );
 
-    if (onProgress) onProgress(0, images.length, 'Analyzing with AI Vision...');
+    // PREFERRED PATH: upload the screenshots to storage and send the model their
+    // URLs instead of inline base64. The /api/ai request body stays a few KB, so
+    // it never hits Vercel's ~4.5 MB body cap no matter how many screenshots are
+    // added. Images are batched to stay under the provider's per-request image
+    // limit (~20 on OpenRouter), the per-batch results are merged, and the temp
+    // uploads are deleted afterwards.
+    let uploaded = [];
+    try {
+      if (onProgress) onProgress(0, images.length, 'Uploading images...');
+      uploaded = await this.uploadForVision(base64Images);
+      const metrics = await this.runVisionBatched(uploaded.map((u) => u.url), onProgress);
+      if (onProgress) onProgress(images.length, images.length, 'Complete!');
+      console.log(`✅ AI extraction (uploaded URLs):`, Object.keys(metrics).length, 'fields');
+      return metrics;
+    } catch (err) {
+      console.warn('⚠️ URL-based Vision failed, falling back to inline base64:', err?.message || err);
+    } finally {
+      if (uploaded.length) this.cleanupUploads(uploaded.map((u) => u.path));
+    }
 
-    // Build content array with all images for GPT-4o Vision
+    // FALLBACK PATH: inline base64 in a single request (original behaviour). Fine
+    // for small batches; a very large batch may exceed the body cap, in which case
+    // the caller drops to the Cloud Vision / OCR fallbacks.
+    if (onProgress) onProgress(0, images.length, 'Analyzing with AI Vision...');
     const imageContent = base64Images.map((dataUrl) => ({
       type: 'image_url',
       image_url: { url: dataUrl, detail: 'high' },
     }));
+    const metrics = await this.callVision(imageContent, images.length);
+    if (onProgress) onProgress(images.length, images.length, 'Complete!');
+    console.log(`✅ AI extraction (inline base64):`, Object.keys(metrics).length, 'fields');
+    return metrics;
+  }
+
+  /**
+   * Upload downscaled screenshots to storage and return [{ url, path }] so the
+   * Vision request can reference them by URL instead of embedding base64.
+   */
+  async uploadForVision(base64Images) {
+    const sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    return Promise.all(
+      base64Images.map(async (dataUrl, i) => {
+        const blob = await (await fetch(dataUrl)).blob();
+        const path = `report-extractions/${sessionId}/${i}.jpg`;
+        const url = await uploadFileForVision(path, blob);
+        return { url, path };
+      })
+    );
+  }
+
+  /** Best-effort deletion of the temp extraction uploads (never throws). */
+  cleanupUploads(paths) {
+    try { removeFiles(paths); } catch { /* ignore cleanup errors */ }
+  }
+
+  /**
+   * Run Vision over image URLs, batching so each request stays under the
+   * provider's per-request image cap, then merge the per-batch metrics.
+   */
+  async runVisionBatched(urls, onProgress = null) {
+    const batches = chunkArray(urls, MAX_IMAGES_PER_VISION_REQUEST);
+    const partials = [];
+    for (let b = 0; b < batches.length; b++) {
+      if (onProgress) {
+        onProgress(b, batches.length, batches.length > 1
+          ? `Analyzing batch ${b + 1} of ${batches.length}...`
+          : 'Analyzing with AI Vision...');
+      }
+      const imageContent = batches[b].map((url) => ({
+        type: 'image_url',
+        image_url: { url, detail: 'high' },
+      }));
+      partials.push(await this.callVision(imageContent, batches[b].length));
+    }
+    return partials.length === 1 ? partials[0] : mergeInstagramMetrics(partials);
+  }
+
+  /** Single Vision call for a prepared image-content array → parsed metrics. */
+  async callVision(imageContent, count) {
+    const data = await aiChatCompletion({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: this.buildInstagramSystemPrompt() },
+        { role: 'user', content: [
+          { type: 'text', text: `Extract all Instagram analytics metrics from these ${count} screenshot(s).` },
+          ...imageContent,
+        ]},
+      ],
+      temperature: 0.1,
+      max_tokens: 3500,
+      response_format: { type: 'json_object' },
+    });
+    const raw = data.choices?.[0]?.message?.content;
+    if (!raw) throw new Error('No response from Vision');
+    return JSON.parse(raw);
+  }
+
+  /** The Instagram extraction system prompt (shared by every Vision path). */
+  buildInstagramSystemPrompt() {
 
     const systemPrompt = `You are an expert at extracting Instagram analytics metrics from screenshots.
 Analyze ALL provided screenshots and extract ONLY the metrics you can visually read from the images.
@@ -387,33 +528,7 @@ Use these exact field names (include ONLY fields you can actually see):
   "activeTimes": [ { "hour": "<string, e.g. '9a'>", "activity": <number, 0-100 relative bar height> }, ... ]
 }`;
 
-    try {
-      const data = await aiChatCompletion({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: [
-            { type: 'text', text: `Extract all Instagram analytics metrics from these ${images.length} screenshot(s).` },
-            ...imageContent,
-          ]},
-        ],
-        temperature: 0.1,
-        max_tokens: 2000,
-        response_format: { type: 'json_object' },
-      });
-
-      const raw = data.choices?.[0]?.message?.content;
-      if (!raw) throw new Error('No response from OpenAI Vision');
-
-      const metrics = JSON.parse(raw);
-
-      if (onProgress) onProgress(images.length, images.length, 'Complete!');
-      console.log(`✅ AI extraction (direct OpenAI Vision):`, Object.keys(metrics).length, 'fields');
-      return metrics;
-    } catch (error) {
-      console.error('❌ AI extraction failed:', error);
-      throw error;
-    }
+    return systemPrompt;
   }
 
   /**

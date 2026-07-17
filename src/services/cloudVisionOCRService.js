@@ -188,7 +188,7 @@ Use these exact field names (include ONLY fields you can actually see):
           ]},
         ],
         temperature: 0.1,
-        max_tokens: 2000,
+        max_tokens: 3500,
         response_format: { type: 'json_object' },
       });
 
