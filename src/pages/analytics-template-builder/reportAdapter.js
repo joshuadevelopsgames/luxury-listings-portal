@@ -57,6 +57,9 @@ export function buildMetricTiles(m = {}) {
     tiles.push({ icon: 'globe', label: 'Accounts Reached', value: fmtNum(m.accountsReached),
       sub: m.accountsReachedChange != null ? String(m.accountsReachedChange) : '', trend: trendOf(m.accountsReachedChange) });
   }
+  if ('contentShared' in m) {
+    tiles.push({ icon: 'image', label: 'Content Shared', value: fmtNum(m.contentShared), sub: '', trend: 'none' });
+  }
   return tiles;
 }
 

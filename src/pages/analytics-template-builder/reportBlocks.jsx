@@ -46,12 +46,24 @@ function Heading({ icon, children }) {
   );
 }
 
-function Bar({ label, value, max = 100, suffix = '%', thin = false }) {
+// Compact number for content-type counts: 18000 -> "18K", 6300 -> "6.3K", 479 -> "479".
+function fmtCompact(n) {
+  const num = Number(n);
+  if (n == null || n === '' || Number.isNaN(num)) return '—';
+  const abs = Math.abs(num);
+  if (abs >= 1000) {
+    const v = num / 1000;
+    return (abs >= 10000 ? Math.round(v) : Math.round(v * 10) / 10) + 'K';
+  }
+  return num.toLocaleString();
+}
+
+function Bar({ label, value, max = 100, suffix = '%', thin = false, display = null }) {
   return (
     <div style={{ marginBottom: thin ? 0 : 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, marginBottom: 6 }}>
         <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-        <span style={{ fontWeight: 650, color: 'var(--text)' }}>{value}{suffix}</span>
+        <span style={{ fontWeight: 650, color: 'var(--text)' }}>{display != null ? display : value}{suffix}</span>
       </div>
       <div style={{ width: '100%', height: 10, borderRadius: 999, background: 'var(--track)', overflow: 'hidden' }}>
         <div style={{ height: '100%', borderRadius: 999, background: GRAD, width: Math.min(100, (value / max) * 100) + '%', transition: 'width .5s cubic-bezier(.2,.8,.2,1)' }} />
@@ -113,7 +125,7 @@ function MetricsBlock({ block, data }) {
     ...t, up: t.trend === 'up' ? true : t.trend === 'down' ? false : null,
   }));
   if (!tiles.length) return null;
-  const cols = Math.min(4, Math.max(1, tiles.length));
+  const cols = tiles.length <= 4 ? Math.max(1, tiles.length) : 3;
   return (
     <div>
       {block.title ? <Heading icon={block.icon || 'zap'}>{block.title}</Heading> : null}
@@ -153,10 +165,18 @@ function HighlightsBlock({ block }) {
 function ContentBarsBlock({ block, data, field, icon }) {
   const items = data.metrics?.[field];
   if (!Array.isArray(items) || !items.length) return null;
+  // Newer Instagram layout gives raw counts (e.g. Posts 18K); older layout gives
+  // percentages. Render whichever each row carries, scaling bars to the max count.
+  const useCount = items.some((it) => it.count != null && it.count !== '');
+  const max = useCount ? (Math.max(...items.map((it) => Number(it.count) || 0)) || 1) : 100;
   return (
     <Card>
       <Heading icon={block.icon || icon}>{block.title}</Heading>
-      <div>{items.map((it, i) => <Bar key={i} label={it.type} value={it.percentage} />)}</div>
+      <div>{items.map((it, i) => (
+        useCount
+          ? <Bar key={i} label={it.type} value={Number(it.count) || 0} max={max} suffix="" display={fmtCompact(it.count)} />
+          : <Bar key={i} label={it.type} value={Number(it.percentage) || 0} suffix="%" />
+      ))}</div>
     </Card>
   );
 }
@@ -309,7 +329,10 @@ export function RenderBlock({ block, data, client, logo }) {
     case 'highlights': return <HighlightsBlock block={block} />;
     case 'viewsByContent': return <ContentBarsBlock block={block} data={data} field="contentBreakdown" icon="bar" />;
     case 'interactionsByContent': return <ContentBarsBlock block={block} data={data} field="interactionsByContent" icon="heart" />;
-    case 'locations': return <RankedBlock block={block} data={data} field="topCities" labelKey="name" icon="pin" />;
+    case 'locations': {
+      const hasCities = Array.isArray(data.metrics?.topCities) && data.metrics.topCities.length > 0;
+      return <RankedBlock block={block} data={data} field={hasCities ? 'topCities' : 'topCountries'} labelKey="name" icon="pin" />;
+    }
     case 'age': return <RankedBlock block={block} data={data} field="ageRanges" labelKey="range" icon="users" />;
     case 'gender': return <GenderBlock block={block} data={data} />;
     case 'topContent': return <TopContentBlock block={block} data={data} />;

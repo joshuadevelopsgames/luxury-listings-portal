@@ -582,31 +582,44 @@ const PublicInstagramReportPage = () => {
               )}
 
               {/* By content type */}
-              {report.metrics.contentBreakdown && report.metrics.contentBreakdown.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-purple-500" />
-                    By content type
-                  </h3>
-                  <div className="space-y-3">
-                    {report.metrics.contentBreakdown.map((item, idx) => {
-                      const barPct = Math.min(100, item.percentage ?? 0);
-                      return (
-                        <div key={idx} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>
-                          <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-[#E040FB] transition-all duration-500"
-                              style={{ width: `${barPct}%` }}
-                            />
+              {report.metrics.contentBreakdown && report.metrics.contentBreakdown.length > 0 && (() => {
+                // Newer IG layout carries raw counts (e.g. Posts 18K); older layout carries percentages.
+                const items = report.metrics.contentBreakdown;
+                const useCount = items.some((it) => it.count != null && it.count !== '');
+                const maxCount = useCount ? (Math.max(...items.map((it) => Number(it.count) || 0)) || 1) : 100;
+                const fmtCount = (n) => {
+                  const num = Number(n) || 0; const abs = Math.abs(num);
+                  if (abs >= 1000) return (abs >= 10000 ? Math.round(num / 1000) : Math.round(num / 100) / 10) + 'K';
+                  return num.toLocaleString();
+                };
+                return (
+                  <div className="mt-8">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-purple-500" />
+                      By content type
+                    </h3>
+                    <div className="space-y-3">
+                      {items.map((item, idx) => {
+                        const barPct = useCount
+                          ? Math.min(100, ((Number(item.count) || 0) / maxCount) * 100)
+                          : Math.min(100, item.percentage ?? 0);
+                        return (
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>
+                            <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-[#E040FB] transition-all duration-500"
+                                style={{ width: `${barPct}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium text-gray-900 w-12 text-right">{useCount ? fmtCount(item.count) : `${item.percentage}%`}</span>
                           </div>
-                          <span className="text-sm font-medium text-gray-900 w-12 text-right">{item.percentage}%</span>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Gender */}
               {report.metrics.gender && (report.metrics.gender.men != null || report.metrics.gender.women != null) && (

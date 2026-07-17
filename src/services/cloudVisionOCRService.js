@@ -1,17 +1,11 @@
 /**
  * Cloud Vision OCR Service
- * Calls OpenAI GPT-4o Vision directly from the client for fast OCR.
- * Previously used Supabase Edge Functions but 401 auth issues made that
- * unreliable — this approach uses the client-side REACT_APP_OPENAI_API_KEY.
+ * Runs GPT-4o Vision OCR through the server-side proxy at /api/ai so the
+ * API key stays off the client. Images are compressed to 1024px JPEG before
+ * upload (see compressForUpload), keeping requests small.
  */
 
-// Use OpenRouter (CORS-friendly) with fallback to OpenAI direct
-const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
-const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
-const API_KEY = OPENROUTER_API_KEY || OPENAI_API_KEY;
-const API_URL = OPENROUTER_API_KEY
-  ? 'https://openrouter.ai/api/v1/chat/completions'
-  : 'https://api.openai.com/v1/chat/completions';
+import { aiChatCompletion } from './aiProxyClient';
 
 class CloudVisionOCRService {
   /**
@@ -87,10 +81,6 @@ class CloudVisionOCRService {
       onProgress(0, images.length, 'Preparing images...');
     }
 
-    if (!API_KEY) {
-      throw new Error('OpenAI API key is not configured.');
-    }
-
     try {
       // Convert images to base64 data URLs for OpenAI Vision
       const base64Images = await Promise.all(
@@ -131,34 +121,45 @@ class CloudVisionOCRService {
 
       const systemPrompt = `You are an expert at extracting Instagram analytics metrics from screenshots.
 Analyze ALL provided screenshots and extract ONLY the metrics you can visually read from the images.
+Screenshots may come from EITHER Instagram's older Insights layout OR the newer "Professional dashboard" / "Insights" layout (with Overview / Content / Audience tabs). Handle BOTH — the field names below are the same regardless of which layout a screenshot uses.
 
 CRITICAL RULES:
 - NEVER invent, guess, estimate, or infer any values. If a number is not clearly visible in a screenshot, DO NOT include that field.
 - If you cannot read a value with certainty, OMIT the field entirely.
 - DO NOT hallucinate follower counts, growth numbers, or change percentages unless they are explicitly shown on screen.
-- Numbers should be plain integers (no commas, no strings) unless the field type is string.
+- Numbers should be plain integers (no commas, no strings) unless the field type is string. Expand abbreviated values only when unambiguous (e.g. "6.3K" -> 6300, "18K" -> 18000). If both a rounded value and an exact value are shown for the same metric, use the exact one.
+- Prefer EXACT numbers from the Overview / Insights tabs over the ROUNDED summary numbers on the "Professional dashboard" home screen (e.g. use Views "24,807" from Overview, not "24.8K" from the dashboard).
 - For percentage changes, keep the sign and % symbol as a string.
-- Combine data from multiple screenshots. If the same metric appears in multiple screenshots, use the most detailed version.
+- Combine data from multiple screenshots. If the same metric appears in multiple screenshots, use the most detailed / most exact version.
 - Return ONLY the JSON object, no markdown, no explanation.
+
+NEWER-LAYOUT LABELS — map these onto the fields below:
+- "Net followers" (e.g. "+64") -> followerChange. When the "Net followers" card is selected it also shows "+X follows" and "-Y unfollows" -> growth.follows = X, growth.unfollows = Y, growth.overall = the net number.
+- "New followers" on the Professional dashboard home screen is a GROSS count, NOT the net change — do NOT use it as followerChange. Only "Net followers" is the net change.
+- "Bio link taps" -> externalLinkTaps (the older layout calls this "External link taps"; same field).
+- "Accounts reached" (shown under the "Views by content type" heading) -> accountsReached.
+- FOLLOWER / NON-FOLLOWER SPLIT: in the newer layout the "X% followers / Y% non-followers" line sits directly under the row of metric cards and describes whichever card is CURRENTLY SELECTED (the card with the dark rounded border). If the selected card is "Views" -> viewsFollowerPercent = X. If the selected card is "Interactions" -> interactionsFollowerPercent = X. Never assign a follower % to a metric whose card is not the selected one in that screenshot.
+
 - IMPORTANT: "likes", "comments", "shares", "saves", "reposts" should ONLY be included if Instagram shows an explicit interaction-type breakdown screen listing those individual counts. If only a total "Interactions" number is shown, do NOT populate these fields — a single total does NOT imply individual breakdowns.
-- For "topCities" and "topCountries": include ALL cities/countries you can read from any screenshot, not just the top one.
+- CONTENT-TYPE BREAKDOWNS: map "Views by content type" -> contentBreakdown, and "Interactions by content type" -> interactionsByContent. For each row, use "count" for a raw number (newer layout, e.g. Posts "18K" -> count 18000, "6.3K" -> 6300) and "percentage" for a percentage split (older layout). NEVER store a count in the "percentage" field. Include a row only if it is shown; keep "Live videos" even when its count is 0.
+- For "topCities" and "topCountries": include ALL cities/countries you can read from any screenshot (newer layout: "Top locations" with a Countries / Cities toggle), not just the top one.
 - For "ageRanges": include ALL age brackets visible across any screenshot. Instagram typically shows: 13-17, 18-24, 25-34, 35-44, 45-54, 55-64, 65+. Look carefully for 55-64 — it is often shown in smaller text at the bottom of the age chart and is easy to miss. Do NOT skip it if it appears.
-- For "activeTimes": ONLY include this field if a "Most active times" bar chart is explicitly visible in one of the screenshots. Do NOT guess or invent time activity data. If no such chart appears, omit "activeTimes" entirely.
+- For "activeTimes": ONLY include this field if an hourly activity bar chart is explicitly visible ("Most active times" in the older layout, or "Follower active times" in the newer one). The newer chart has a day-of-week selector (Su-Sa) above the bars and only shows the selected day. Do NOT guess or invent time activity data. If no such chart appears, omit "activeTimes" entirely.
 
 Use these exact field names (include ONLY fields you can actually see):
 
 {
   "followers": <total follower count, ONLY if explicitly shown>,
-  "followerChange": <net change number, ONLY if explicitly shown>,
+  "followerChange": <net change number ("Net followers"), ONLY if explicitly shown>,
   "accountsReached": <number>,
-  "accountsReachedChange": "<string, ONLY if shown>",
+  "accountsReachedChange": "<string, e.g. '+12.4%', ONLY if shown>",
   "views": <number>,
-  "viewsFollowerPercent": <number, the "Followers" percentage under the Views section>,
+  "viewsFollowerPercent": <number, the "% followers" shown while the Views card/section is selected>,
   "interactions": <number>,
-  "interactionsFollowerPercent": <number, the "Followers" percentage under the Interactions section>,
+  "interactionsFollowerPercent": <number, the "% followers" shown while the Interactions card/section is selected>,
   "profileVisits": <number>,
   "profileVisitsChange": "<string, ONLY if shown>",
-  "externalLinkTaps": <number, ONLY if explicitly shown as "External link taps" or similar>,
+  "externalLinkTaps": <number, from "External link taps" or "Bio link taps", ONLY if explicitly shown>,
   "likes": <number, ONLY if an explicit interaction breakdown screen shows this count>,
   "comments": <number, ONLY if an explicit interaction breakdown screen shows this count>,
   "shares": <number, ONLY if an explicit interaction breakdown screen shows this count>,
@@ -170,39 +171,27 @@ Use these exact field names (include ONLY fields you can actually see):
   "topCountries": [ { "name": "<string>", "percentage": <number> } ],
   "ageRanges": [ { "range": "<string>", "percentage": <number> } ],
   "gender": { "men": <number>, "women": <number> },
+  "contentShared": <number, "Content you shared" count from the Professional dashboard, ONLY if shown>,
   "topSourcesOfViews": [ { "source": "<string, e.g. 'Profile'>", "percentage": <number> } ],
-  "contentBreakdown": [ { "type": "<string>", "percentage": <number> } ],
+  "contentBreakdown": [ { "type": "<e.g. 'Posts'>", "count": <number, newer "Views by content type" count e.g. 18000>, "percentage": <number, older % split> } ],
+  "interactionsByContent": [ { "type": "<e.g. 'Posts'>", "count": <number, newer "Interactions by content type" count e.g. 928>, "percentage": <number, older % split> } ],
   "activeTimes": [ { "hour": "<string, e.g. '9a'>", "activity": <number, 0-100 relative bar height> } ]
 }`;
 
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-          ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {}),
-        },
-        body: JSON.stringify({
-          model: OPENROUTER_API_KEY ? 'openai/gpt-4o' : 'gpt-4o',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: [
-              { type: 'text', text: `Extract all Instagram analytics metrics from these ${images.length} screenshot(s).` },
-              ...imageContent,
-            ]},
-          ],
-          temperature: 0.1,
-          max_tokens: 2000,
-          response_format: { type: 'json_object' },
-        }),
+      const data = await aiChatCompletion({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: [
+            { type: 'text', text: `Extract all Instagram analytics metrics from these ${images.length} screenshot(s).` },
+            ...imageContent,
+          ]},
+        ],
+        temperature: 0.1,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
       });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error?.message || `OpenAI API error (${response.status})`);
-      }
-
-      const data = await response.json();
       const raw = data.choices?.[0]?.message?.content;
       if (!raw) throw new Error('No response from OpenAI Vision');
 

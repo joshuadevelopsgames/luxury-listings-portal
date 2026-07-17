@@ -2,19 +2,13 @@
  * OpenAI Service for AI-powered features
  * Used for smart column mapping in Google Sheets imports
  *
- * SECURITY: AI extraction, caption generation, health prediction, and
- * canvas assist all run via Supabase Edge Functions to keep API keys
- * server-side and enforce rate limits.
+ * SECURITY: every AI call goes through the server-side proxy at /api/ai
+ * (see api/ai.js + services/aiProxyClient.js) so the OpenRouter/OpenAI key
+ * never ships in the browser bundle. Model names here are provider-neutral
+ * logical names ('gpt-4o', 'gpt-4o-mini'); the proxy maps them per provider.
  */
 
-
-// Use OpenRouter (CORS-friendly) with fallback to OpenAI direct
-const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY;
-const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
-const API_KEY = OPENROUTER_API_KEY || OPENAI_API_KEY;
-const API_URL = OPENROUTER_API_KEY
-  ? 'https://openrouter.ai/api/v1/chat/completions'
-  : 'https://api.openai.com/v1/chat/completions';
+import { aiChatCompletion, aiChatContent } from './aiProxyClient';
 
 class OpenAIService {
   /**
@@ -26,47 +20,27 @@ class OpenAIService {
   async analyzeColumnMapping(headers, sampleRows) {
     console.log('🤖 Analyzing columns with AI...', { headers, sampleRows });
 
-    if (!API_KEY) {
-      console.error('❌ OpenAI API key not found');
-      throw new Error('API key is not configured. Please add REACT_APP_OPENROUTER_API_KEY to your environment variables.');
-    }
-
     try {
       // Build the prompt
       const prompt = this.buildMappingPrompt(headers, sampleRows);
 
-      // Call OpenAI API
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-          ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {})
-        },
-        body: JSON.stringify({
-          model: OPENROUTER_API_KEY ? 'openai/gpt-4o-mini' : 'gpt-4o-mini', // Using mini for cost-effectiveness
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert at analyzing spreadsheet data and mapping columns to structured fields. Always respond with valid JSON only, no additional text.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.3, // Lower temperature for more consistent results
-          response_format: { type: "json_object" }
-        })
+      // Call AI via the server-side proxy (/api/ai)
+      const data = await aiChatCompletion({
+        model: 'gpt-4o-mini', // Using mini for cost-effectiveness
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at analyzing spreadsheet data and mapping columns to structured fields. Always respond with valid JSON only, no additional text.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.3, // Lower temperature for more consistent results
+        response_format: { type: "json_object" }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ OpenAI API error:', errorData);
-        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
-      }
-
-      const data = await response.json();
       const result = JSON.parse(data.choices[0].message.content);
       
       console.log('✅ AI mapping suggestions:', result);
@@ -142,9 +116,6 @@ Column indices should be strings. Confidence levels: "high", "medium", "low".`;
    * @returns {Promise<Array<Object>>} - Array of enrichment objects, one per row: { platform?, contentType?, hashtags?, postDate?, caption?, notes? }
    */
   async enrichSheetRowsForCalendar(headers, rows, columnMappings, maxRowsPerChunk = 25) {
-    if (!API_KEY) {
-      throw new Error('API key is not configured. Add REACT_APP_OPENROUTER_API_KEY to use enrichment.');
-    }
     if (!rows || rows.length === 0) return [];
 
     const fieldToCol = {};
@@ -180,29 +151,15 @@ Return a JSON array with one object per row, in order. Each object may contain a
 Return ONLY the JSON array, no other text.`;
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-          ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {})
-        },
-        body: JSON.stringify({
-          model: OPENROUTER_API_KEY ? 'openai/gpt-4o-mini' : 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: 'You output only valid JSON arrays. No markdown, no explanation.' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.2
-        })
+      const data = await aiChatCompletion({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You output only valid JSON arrays. No markdown, no explanation.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2
       });
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || 'OpenAI API error');
-      }
-
-      const data = await response.json();
       let content = data.choices[0].message.content;
       if (typeof content !== 'string') return rows.map(() => ({}));
       content = content.replace(/```\w*\n?/g, '').trim();
@@ -350,17 +307,16 @@ Return ONLY the JSON array, no other text.`;
   async extractInstagramMetrics(images, onProgress = null) {
     console.log(`🤖 Extracting Instagram metrics with AI (direct OpenAI Vision) (${images.length} images)...`);
 
-    if (!API_KEY) {
-      throw new Error('API key is not configured. Please add REACT_APP_OPENROUTER_API_KEY to your environment variables.');
-    }
-
     if (onProgress) onProgress(0, images.length, 'Preparing images...');
 
-    // Convert images to base64 data URLs for OpenAI Vision
+    // Convert images to base64 data URLs, then downscale to keep the whole
+    // request under the serverless proxy's ~4.5 MB body limit. The bounds
+    // (long side ≤ 2000px) are at/above what GPT-4o actually consumes at
+    // high detail, so extraction fidelity is preserved.
     const base64Images = await Promise.all(
       images.map(async (img) => {
         const dataUrl = await this.imageToBase64(img);
-        return dataUrl;
+        return this.downscaleForVision(dataUrl);
       })
     );
 
@@ -374,34 +330,45 @@ Return ONLY the JSON array, no other text.`;
 
     const systemPrompt = `You are an expert at extracting Instagram analytics metrics from screenshots.
 Analyze ALL provided screenshots and extract ONLY the metrics you can visually read from the images.
+Screenshots may come from EITHER Instagram's older Insights layout OR the newer "Professional dashboard" / "Insights" layout (with Overview / Content / Audience tabs). Handle BOTH — the field names below are the same regardless of which layout a screenshot uses.
 
 CRITICAL RULES:
 - NEVER invent, guess, estimate, or infer any values. If a number is not clearly visible in a screenshot, DO NOT include that field.
 - If you cannot read a value with certainty, OMIT the field entirely.
 - DO NOT hallucinate follower counts, growth numbers, or change percentages unless they are explicitly shown on screen.
-- Numbers should be plain integers (no commas, no strings) unless the field type is string.
+- Numbers should be plain integers (no commas, no strings) unless the field type is string. Expand abbreviated values only when unambiguous (e.g. "6.3K" -> 6300, "18K" -> 18000). If both a rounded value and an exact value are shown for the same metric, use the exact one.
+- Prefer EXACT numbers from the Overview / Insights tabs over the ROUNDED summary numbers on the "Professional dashboard" home screen (e.g. use Views "24,807" from Overview, not "24.8K" from the dashboard).
 - For percentage changes, keep the sign and % symbol as a string.
-- Combine data from multiple screenshots. If the same metric appears in multiple screenshots, use the most detailed version.
+- Combine data from multiple screenshots. If the same metric appears in multiple screenshots, use the most detailed / most exact version.
 - Return ONLY the JSON object, no markdown, no explanation.
+
+NEWER-LAYOUT LABELS — map these onto the fields below:
+- "Net followers" (e.g. "+64") -> followerChange. When the "Net followers" card is selected it also shows "+X follows" and "-Y unfollows" -> growth.follows = X, growth.unfollows = Y, growth.overall = the net number.
+- "New followers" on the Professional dashboard home screen is a GROSS count, NOT the net change — do NOT use it as followerChange. Only "Net followers" is the net change.
+- "Bio link taps" -> externalLinkTaps (the older layout calls this "External link taps"; same field).
+- "Accounts reached" (shown under the "Views by content type" heading) -> accountsReached.
+- FOLLOWER / NON-FOLLOWER SPLIT: in the newer layout the "X% followers / Y% non-followers" line sits directly under the row of metric cards and describes whichever card is CURRENTLY SELECTED (the card with the dark rounded border). If the selected card is "Views" -> viewsFollowerPercent = X. If the selected card is "Interactions" -> interactionsFollowerPercent = X. Never assign a follower % to a metric whose card is not the selected one in that screenshot.
+
 - IMPORTANT: "likes", "comments", "shares", "saves", "reposts" should ONLY be included if Instagram shows an explicit interaction-type breakdown screen listing those individual counts. If only a total "Interactions" number is shown, do NOT populate these fields — a single total does NOT imply individual breakdowns.
-- For "topCities" and "topCountries": include ALL cities/countries you can read from any screenshot, not just the top one.
+- CONTENT-TYPE BREAKDOWNS: map "Views by content type" -> contentBreakdown, and "Interactions by content type" -> interactionsByContent. For each row, use "count" for a raw number (newer layout, e.g. Posts "18K" -> count 18000, "6.3K" -> 6300) and "percentage" for a percentage split (older layout). NEVER store a count in the "percentage" field. Include a row only if it is shown; keep "Live videos" even when its count is 0.
+- For "topCities" and "topCountries": include ALL cities/countries you can read from any screenshot (newer layout: "Top locations" with a Countries / Cities toggle), not just the top one.
 - For "ageRanges": include ALL age brackets visible across any screenshot. Instagram typically shows: 13-17, 18-24, 25-34, 35-44, 45-54, 55-64, 65+. Look carefully for 55-64 — it is often shown in smaller text at the bottom of the age chart and is easy to miss. Do NOT skip it if it appears.
-- For "activeTimes": ONLY include this field if a "Most active times" bar chart is explicitly visible in one of the screenshots. Do NOT guess or invent time activity data. If no such chart appears, omit "activeTimes" entirely.
+- For "activeTimes": ONLY include this field if an hourly activity bar chart is explicitly visible ("Most active times" in the older layout, or "Follower active times" in the newer one). The newer chart has a day-of-week selector (Su-Sa) above the bars and only shows the selected day. Do NOT guess or invent time activity data. If no such chart appears, omit "activeTimes" entirely.
 
 Use these exact field names (include ONLY fields you can actually see):
 
 {
   "followers": <total follower count, ONLY if explicitly shown>,
-  "followerChange": <net change number, ONLY if explicitly shown>,
+  "followerChange": <net change number ("Net followers"), ONLY if explicitly shown>,
   "accountsReached": <number>,
   "accountsReachedChange": "<string, e.g. '+12.4%', ONLY if shown>",
   "views": <number>,
-  "viewsFollowerPercent": <number, the "Followers" percentage under the Views section>,
+  "viewsFollowerPercent": <number, the "% followers" shown while the Views card/section is selected>,
   "interactions": <number>,
-  "interactionsFollowerPercent": <number, the "Followers" percentage under the Interactions section>,
+  "interactionsFollowerPercent": <number, the "% followers" shown while the Interactions card/section is selected>,
   "profileVisits": <number>,
   "profileVisitsChange": "<string, ONLY if shown>",
-  "externalLinkTaps": <number, ONLY if explicitly shown as "External link taps" or similar>,
+  "externalLinkTaps": <number, from "External link taps" or "Bio link taps", ONLY if explicitly shown>,
   "likes": <number, ONLY if an explicit interaction breakdown screen shows this count>,
   "comments": <number, ONLY if an explicit interaction breakdown screen shows this count>,
   "shares": <number, ONLY if an explicit interaction breakdown screen shows this count>,
@@ -413,40 +380,28 @@ Use these exact field names (include ONLY fields you can actually see):
   "topCountries": [ { "name": "<string>", "percentage": <number> }, ... ],
   "ageRanges": [ { "range": "<string, e.g. '18-24'>", "percentage": <number> }, ... ],
   "gender": { "men": <number, percentage>, "women": <number, percentage> },
+  "contentShared": <number, "Content you shared" count from the Professional dashboard, ONLY if shown>,
   "topSourcesOfViews": [ { "source": "<string, e.g. 'Profile'>", "percentage": <number> }, ... ],
-  "contentBreakdown": [ { "type": "<string, e.g. 'Reels'>", "percentage": <number> }, ... ],
+  "contentBreakdown": [ { "type": "<e.g. 'Posts'>", "count": <number, newer "Views by content type" count e.g. 18000>, "percentage": <number, older % split> }, ... ],
+  "interactionsByContent": [ { "type": "<e.g. 'Posts'>", "count": <number, newer "Interactions by content type" count e.g. 928>, "percentage": <number, older % split> }, ... ],
   "activeTimes": [ { "hour": "<string, e.g. '9a'>", "activity": <number, 0-100 relative bar height> }, ... ]
 }`;
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-          ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {}),
-        },
-        body: JSON.stringify({
-          model: OPENROUTER_API_KEY ? 'openai/gpt-4o' : 'gpt-4o',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: [
-              { type: 'text', text: `Extract all Instagram analytics metrics from these ${images.length} screenshot(s).` },
-              ...imageContent,
-            ]},
-          ],
-          temperature: 0.1,
-          max_tokens: 2000,
-          response_format: { type: 'json_object' },
-        }),
+      const data = await aiChatCompletion({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: [
+            { type: 'text', text: `Extract all Instagram analytics metrics from these ${images.length} screenshot(s).` },
+            ...imageContent,
+          ]},
+        ],
+        temperature: 0.1,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
       });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error?.message || `OpenAI API error (${response.status})`);
-      }
-
-      const data = await response.json();
       const raw = data.choices?.[0]?.message?.content;
       if (!raw) throw new Error('No response from OpenAI Vision');
 
@@ -508,24 +463,52 @@ Use these exact field names (include ONLY fields you can actually see):
     });
   }
 
-  // ─── Helper: direct OpenRouter/OpenAI call (bypasses edge functions for reliability) ───
-  async _callAI(messages, { model = null, temperature = 0.7, maxTokens = 1000, json = false } = {}) {
-    if (!API_KEY) throw new Error('API key is not configured.');
-    const chosenModel = model || (OPENROUTER_API_KEY ? 'openai/gpt-4o-mini' : 'gpt-4o-mini');
-    const body = { model: chosenModel, messages, temperature, max_tokens: maxTokens };
-    if (json) body.response_format = { type: 'json_object' };
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
-        ...(OPENROUTER_API_KEY ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {}),
-      },
-      body: JSON.stringify(body),
+  /**
+   * Downscale a base64 image data URL so the AI request stays under the
+   * serverless proxy's ~4.5 MB body limit. Scales the longest side down to
+   * `maxLongSide` (default 2000px — at/above what GPT-4o consumes at high
+   * detail, so text stays legible) and re-encodes as JPEG. Any failure falls
+   * back to the original data URL so extraction never breaks.
+   */
+  downscaleForVision(dataUrl, maxLongSide = 2000, quality = 0.92) {
+    return new Promise((resolve) => {
+      try {
+        if (typeof document === 'undefined' || typeof Image === 'undefined') {
+          resolve(dataUrl);
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const longSide = Math.max(img.width, img.height);
+            const scale = longSide > maxLongSide ? maxLongSide / longSide : 1;
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; // flatten any alpha (screenshots have none)
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          } catch {
+            resolve(dataUrl);
+          }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      } catch {
+        resolve(dataUrl);
+      }
     });
-    if (!res.ok) throw new Error(`AI request failed: ${res.status}`);
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || '';
+  }
+
+  // ─── Helper: AI call via the server-side proxy (/api/ai) ───
+  async _callAI(messages, { model = null, temperature = 0.7, maxTokens = 1000, json = false } = {}) {
+    const body = { model: model || 'gpt-4o-mini', messages, temperature, max_tokens: maxTokens };
+    if (json) body.response_format = { type: 'json_object' };
+    return aiChatContent(body);
   }
 
   /**
