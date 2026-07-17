@@ -2118,6 +2118,92 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
     }));
   };
 
+  // Views / Interactions by content type editor — count-aware. The newer IG layout
+  // gives raw counts (e.g. Posts 18K); the older layout gave percentages. Each row
+  // edits whichever it carries; new rows default to counts.
+  const renderContentTypeSection = (arrayKey, title) => {
+    const rows = formData.metrics?.[arrayKey] || [];
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" /> {title}
+          </h5>
+          <button
+            onClick={() => addArrayItem(arrayKey, { type: '', count: 0 })}
+            className="text-xs text-purple-600 hover:text-purple-700"
+          >
+            + Add Type
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {rows.map((content, idx) => {
+            const countMode = content.count != null || content.percentage == null;
+            return (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={content.type || ''}
+                  onChange={(e) => updateArrayMetric(arrayKey, idx, 'type', e.target.value)}
+                  className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                  placeholder="Posts"
+                />
+                <input
+                  type="number"
+                  step={countMode ? '1' : '0.1'}
+                  value={countMode ? (content.count ?? '') : (content.percentage ?? '')}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (countMode) { const v = parseInt(raw); updateArrayMetric(arrayKey, idx, 'count', isNaN(v) ? null : v); }
+                    else { updateArrayMetric(arrayKey, idx, 'percentage', parseFloat(raw) || 0); }
+                  }}
+                  className="w-24 px-2 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                  placeholder={countMode ? 'views' : '%'}
+                />
+                <button
+                  onClick={() => removeArrayItem(arrayKey, idx)}
+                  className="p-1 text-red-500 hover:bg-red-50 rounded"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Compact count formatter for the in-form preview bars (18000 -> "18K").
+  const fmtCountPreview = (n) => {
+    const num = Number(n) || 0; const abs = Math.abs(num);
+    if (abs >= 1000) return (abs >= 10000 ? Math.round(num / 1000) : Math.round(num / 100) / 10) + 'K';
+    return num.toLocaleString();
+  };
+
+  const renderContentTypePreview = (items, title) => {
+    if (!Array.isArray(items) || !items.length) return null;
+    const useCount = items.some((it) => it.count != null);
+    const max = useCount ? (Math.max(...items.map((it) => Number(it.count) || 0)) || 1) : 100;
+    return (
+      <div className="mt-8">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-purple-500" />{title}</h3>
+        <div className="space-y-3">
+          {items.map((item, idx) => {
+            const barPct = useCount ? Math.min(100, ((Number(item.count) || 0) / max) * 100) : Math.min(100, item.percentage ?? 0);
+            return (
+              <div key={idx} className="flex items-center gap-3">
+                <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>
+                <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
+                <span className="text-sm font-medium text-gray-900 w-12 text-right">{useCount ? fmtCountPreview(item.count) : `${item.percentage}%`}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const handleSave = async () => {
     if (!formData.title || !formData.startDate || !formData.endDate) {
       toast.error('Please fill in Report Title and Date Range (start and end dates)');
@@ -2523,6 +2609,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       {mf('accountsReachedChange', 'Accounts Reached Change', <input type="text" value={formData.metrics?.accountsReachedChange || ''} onChange={(e) => updateMetric('accountsReachedChange', e.target.value)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('externalLinkTaps', 'External Link Taps', <input type="number" value={formData.metrics?.externalLinkTaps ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateMetric('externalLinkTaps', isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('engagementRatePercent', 'Engagement Rate %', <input type="number" step="0.1" value={formData.metrics?.engagementRatePercent || ''} onChange={(e) => updateMetric('engagementRatePercent', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('contentShared', 'Content Shared', <input type="number" value={formData.metrics?.contentShared ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateMetric('contentShared', isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                     </div>
                   </div>
 
@@ -2722,47 +2809,9 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                     </div>
                   </div>
 
-                  {/* Content Breakdown */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                        <Heart className="w-4 h-4" /> Content Breakdown
-                      </h5>
-                      <button
-                        onClick={() => addArrayItem('contentBreakdown', { type: '', percentage: 0 })}
-                        className="text-xs text-purple-600 hover:text-purple-700"
-                      >
-                        + Add Type
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(formData.metrics?.contentBreakdown || []).map((content, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={content.type}
-                            onChange={(e) => updateArrayMetric('contentBreakdown', idx, 'type', e.target.value)}
-                            className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                            placeholder="Posts"
-                          />
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={content.percentage}
-                            onChange={(e) => updateArrayMetric('contentBreakdown', idx, 'percentage', parseFloat(e.target.value) || 0)}
-                            className="w-16 px-2 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
-                            placeholder="%"
-                          />
-                          <button
-                            onClick={() => removeArrayItem('contentBreakdown', idx)}
-                            className="p-1 text-red-500 hover:bg-red-50 rounded"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Views / Interactions by content type (count-aware for the new IG layout) */}
+                  {renderContentTypeSection('contentBreakdown', 'Views by Content Type')}
+                  {renderContentTypeSection('interactionsByContent', 'Interactions by Content Type')}
                 </div>
                 )}
               </div>
@@ -3329,23 +3378,8 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 )}
 
                 {/* Content breakdown */}
-                {m.contentBreakdown && m.contentBreakdown.length > 0 && (
-                  <div className="mt-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-purple-500" />By content type</h3>
-                    <div className="space-y-3">
-                      {m.contentBreakdown.map((item, idx) => {
-                        const barPct = Math.min(100, item.percentage ?? 0);
-                        return (
-                          <div key={idx} className="flex items-center gap-3">
-                            <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>
-                            <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
-                            <span className="text-sm font-medium text-gray-900 w-12 text-right">{item.percentage}%</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                {renderContentTypePreview(m.contentBreakdown, 'Views by content type')}
+                {renderContentTypePreview(m.interactionsByContent, 'Interactions by content type')}
 
                 {/* Gender */}
                 {m.gender && (m.gender.men != null || m.gender.women != null) && (
