@@ -2335,7 +2335,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Client
+                  Client <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.clientId}
@@ -2344,7 +2344,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
                 >
                   <option value="">
-                    {loadingClients ? 'Loading clients...' : 'Select a client (optional)'}
+                    {loadingClients ? 'Loading clients...' : 'Select a client'}
                   </option>
                   {clients.map(client => (
                     <option key={client.id} value={client.id}>
