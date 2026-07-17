@@ -1,6 +1,9 @@
 // AI Service for the Luxury Listings Portal
 // This service provides intelligent responses about the app using OpenAI API
-// with strict focus on only discussing the software application
+// with strict focus on only discussing the software application.
+// Calls go through the server-side proxy (/api/ai) so no key ships to the client.
+
+import { aiChatContent } from './aiProxyClient';
 
 class AIService {
   constructor() {
@@ -73,18 +76,11 @@ class AIService {
   // Main method to get AI response using OpenAI API
   async getResponse(userMessage, userRole = null) {
     try {
-      // Check if OpenAI API key is available
-      if (!process.env.REACT_APP_OPENROUTER_API_KEY && !process.env.REACT_APP_OPENAI_API_KEY) {
-        // Fallback to rule-based responses if no API key
-        return this.generateRuleBasedResponse(userMessage, userRole);
-      }
-
-      // Use OpenAI API for intelligent responses
+      // AI runs through the server-side proxy (/api/ai). If it's unavailable or
+      // errors for any reason, gracefully fall back to rule-based responses.
       return await this.getOpenAIResponse(userMessage, userRole);
     } catch (error) {
       console.error('AI Service Error:', error);
-      
-      // Fallback to rule-based responses on error
       return this.generateRuleBasedResponse(userMessage, userRole);
     }
   }
@@ -94,40 +90,24 @@ class AIService {
     try {
       // Create the system prompt that keeps AI focused on the software
       const systemPrompt = this.createSystemPrompt(userRole);
-      
-      // Use OpenRouter (CORS-friendly) with fallback to OpenAI
-      const orKey = process.env.REACT_APP_OPENROUTER_API_KEY;
-      const apiKey = orKey || process.env.REACT_APP_OPENAI_API_KEY;
-      const apiUrl = orKey ? 'https://openrouter.ai/api/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions';
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          ...(orKey ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Luxury Listings Portal' } : {}),
-        },
-        body: JSON.stringify({
-          model: orKey ? 'openai/gpt-4o-mini' : 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage }
-          ],
-          max_tokens: 500,
-          temperature: 0.7,
-          top_p: 1,
-          frequency_penalty: 0,
-          presence_penalty: 0
-        })
+
+      const content = await aiChatContent({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.choices[0].message.content;
+      if (!content) throw new Error('Empty AI response');
+      return content;
     } catch (error) {
-      console.error('OpenAI API Error:', error);
+      console.error('AI proxy error:', error);
       throw error;
     }
   }
@@ -688,9 +668,12 @@ What would you like to know about the platform?`;
     }
   }
 
-  // Method to check if OpenAI is available
+  // AI availability is now determined server-side (the /api/ai proxy). The
+  // client optimistically assumes it's available and falls back to rule-based
+  // responses if a call fails. (Never reference the key here — CRA would inline
+  // it into the public bundle.)
   isOpenAIAvailable() {
-    return !!process.env.REACT_APP_OPENAI_API_KEY;
+    return true;
   }
 
   // Method to upgrade to real AI API (for future use)

@@ -12,9 +12,9 @@ export const API_KEYS = {
   // ImgBB API Key (for image uploads)
   IMGBB_API_KEY: process.env.REACT_APP_IMGBB_API_KEY || '1e52042b16f9d095084295e32d073030',
   
-  // AI API Keys (OpenRouter preferred, OpenAI fallback)
-  OPENROUTER_API_KEY: process.env.REACT_APP_OPENROUTER_API_KEY || '',
-  OPENAI_API_KEY: process.env.REACT_APP_OPENAI_API_KEY || '',
+  // AI API keys are intentionally NOT exposed to the client. All AI calls go
+  // through the server-side proxy at /api/ai (see api/ai.js). Referencing the
+  // REACT_APP_ vars here would inline the key into the public bundle.
 };
 
 // Google Sheets Configuration

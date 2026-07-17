@@ -23,6 +23,32 @@ REACT_APP_SLACK_REDIRECT_URI=http://localhost:3000/slack-callback
 # Note: SLACK_CLIENT_SECRET should be set as a Firebase secret, not in .env
 # Run: npx firebase functions:secrets:set SLACK_CLIENT_SECRET --project your-project-id
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Server-only vars (Vercel Environment Variables — do NOT use a REACT_APP_ prefix;
+# that would inline them into the public JS bundle). Not needed for local `npm start`.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# AI proxy (api/ai.js) — the server-side key the browser no longer holds.
+# Set the rotated OpenRouter key here and DELETE any REACT_APP_OPENROUTER/OPENAI key.
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# Monthly Instagram report reminder cron (api/cron/monthly-report-reminder.js)
+# CRON_SECRET: Vercel Cron sends it as `Authorization: Bearer <value>`; the route
+#   rejects requests without it. Generate a random string.
+CRON_SECRET=generate_a_long_random_string
+# RESEND_API_KEY: from https://resend.com (API Keys). REMINDER_EMAIL_FROM must use
+#   a domain VERIFIED in Resend. juststartdev.com is verified (2026-07-17).
+# NOTE ON QUOTING: in .env.local the value MUST be quoted (the < > in the display
+#   name breaks shell sourcing otherwise). In the Vercel dashboard, paste it WITHOUT
+#   quotes — Vercel treats the raw value literally.
+RESEND_API_KEY=your_resend_api_key_here
+REMINDER_EMAIL_FROM="Luxury Listings <smmluxurylistings@juststartdev.com>"
+# Optional — defaults to matthew@ + michelle@ if unset:
+REPORT_REMINDER_SUMMARY_RECIPIENTS=matthew@luxury-listings.com,michelle@luxury-listings.com
+# Optional — set to false to disable the per-manager emails (summary still sends):
+# REPORT_REMINDER_SEND_MANAGER_EMAILS=true
+# (SUPABASE_SERVICE_ROLE_KEY + SUPABASE_URL are already configured in Vercel.)
+
 # Note: Replace placeholder values with your actual keys
 # The REACT_APP_ prefix is required for React to access the environment variable
 
