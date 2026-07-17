@@ -2210,6 +2210,11 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       return;
     }
 
+    if (!formData.clientId) {
+      toast.error('Please choose a client for this report before saving.');
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -2258,8 +2263,10 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
         toast.error('Supabase is temporarily unavailable (503). Please wait a moment and try again.');
       } else if (msg.includes('413') || msg.toLowerCase().includes('too large') || msg.toLowerCase().includes('payload')) {
         toast.error('Report data is too large to save. Try removing some screenshots and retry.');
+      } else if (msg.toLowerCase().includes('client_id') && (msg.toLowerCase().includes('not-null') || msg.toLowerCase().includes('null value'))) {
+        toast.error('Please choose a client for this report before saving.');
       } else {
-        toast.error(msg || 'Failed to save report. Please try again.');
+        toast.error('Something went wrong saving the report. Please try again.');
       }
     } finally {
       setSaving(false);
