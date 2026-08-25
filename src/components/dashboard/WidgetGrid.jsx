@@ -116,10 +116,19 @@ function SortableWidgetCell({ widgetId, isEditMode, children }) {
  * @param {string[]} widgetOrder - Optional array of widgetIds for custom order (saved from Edit Dashboard)
  * @param {boolean} isEditMode - Show drag handles and allow reorder
  * @param {function} onWidgetOrderChange - Callback (newOrder: string[]) when order changes
+ * @param {string[]} excludeWidgets - Widget ids to omit (already shown elsewhere on the page)
  * @param {string} className - Additional CSS classes
  */
-const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = false, onWidgetOrderChange, className = '' }) => {
-  const rawWidgets = getWidgetsForModules(enabledModules);
+const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = false, onWidgetOrderChange, excludeWidgets = [], className = '' }) => {
+  const allWidgets = getWidgetsForModules(enabledModules);
+  const excludeKey = excludeWidgets.join(',');
+  // Widgets promoted elsewhere on the page (e.g. the dashboard hero) are dropped
+  // here so they don't render twice.
+  const rawWidgets = useMemo(
+    () => (excludeWidgets.length ? allWidgets.filter((w) => !excludeWidgets.includes(w.widgetId)) : allWidgets),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allWidgets, excludeKey]
+  );
   const widgets = useMemo(() => {
     if (!widgetOrder?.length) return rawWidgets;
     const orderMap = new Map(widgetOrder.map((id, i) => [id, i]));

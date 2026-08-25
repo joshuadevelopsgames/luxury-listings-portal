@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
@@ -64,10 +64,19 @@ import {
   AlertTriangle,
   XCircle,
 } from 'lucide-react';
-import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, getMonth, parseISO, isWithinInterval } from 'date-fns';
+import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, getQuarter, getYear, parseISO, isWithinInterval } from 'date-fns';
+import {
+  MONTH_NAMES,
+  parseDateFromRange,
+  getReportSortDate,
+  getReportYear,
+  getReportMonth,
+  getReportCompletionStatus,
+  getReportStatusPeriod,
+  isClientStatusArchived,
+  collectClientReportLinkIds,
+} from '../utils/instagramReportStatus';
 
-// Vancouver-friendly: parse YYYY-MM-DD as calendar date (no UTC shift). Month names for display.
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function formatDateRangeDisplay(startYYYYMMDD, endYYYYMMDD) {
   const parse = (s) => {
     if (!s || typeof s !== 'string') return null;
@@ -84,56 +93,6 @@ function formatDateRangeDisplay(startYYYYMMDD, endYYYYMMDD) {
   return start.year === end.year
     ? `${fmt(start)} - ${fmt(end)}, ${end.year}`
     : `${fmt(start)}, ${start.year} - ${fmt(end)}, ${end.year}`;
-}
-
-// Parse the START date from a dateRange string like "Feb 24 - Mar 2, 2025", "Feb 24th - March 2nd",
-// "Dec 28, 2024 - Jan 3, 2025", "MARCH 3RD - MARCH 9TH", etc.
-const MONTH_MAP = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
-  january: 0, february: 1, march: 2, april: 3, june: 5, july: 6, august: 7, september: 8, october: 9, november: 10, december: 11 };
-function parseDateFromRange(dateRange) {
-  if (!dateRange || typeof dateRange !== 'string') return null;
-  // Extract start portion (before the dash separator)
-  const parts = dateRange.split(/\s*[-–—]\s*/);
-  const startPart = (parts[0] || '').trim();
-  // Also grab the end portion to find a year if start doesn't have one
-  const endPart = (parts.slice(1).join('-') || '').trim();
-  // Find month name
-  const monthMatch = startPart.match(/([a-zA-Z]+)/);
-  if (!monthMatch) return null;
-  const monthKey = monthMatch[1].toLowerCase().replace(/\.$/, '');
-  const monthIdx = MONTH_MAP[monthKey] ?? MONTH_MAP[monthKey.slice(0, 3)];
-  if (monthIdx == null) return null;
-  // Find day number (strip ordinal suffixes)
-  const dayMatch = startPart.match(/(\d+)/);
-  if (!dayMatch) return null;
-  const day = parseInt(dayMatch[1], 10);
-  // Find year: check startPart first, then endPart, then dateRange as a whole
-  let year = null;
-  const yearMatch = startPart.match(/\b(20\d{2})\b/) || endPart.match(/\b(20\d{2})\b/) || dateRange.match(/\b(20\d{2})\b/);
-  if (yearMatch) year = parseInt(yearMatch[1], 10);
-  else year = new Date().getFullYear(); // fallback to current year
-  return new Date(year, monthIdx, day);
-}
-
-// Get the sorting date for a report: prefer parsing the dateRange (the period it covers),
-// then try startDate field, then createdAt as last resort
-function getReportSortDate(report) {
-  // 1) Parse the dateRange string first — this is the most reliable indicator of the period
-  const parsed = parseDateFromRange(report.dateRange);
-  if (parsed && !isNaN(parsed.getTime())) return parsed;
-  // 2) Fall back to startDate (period_start from DB)
-  if (report.startDate) {
-    const d = typeof report.startDate === 'string' ? new Date(report.startDate + (report.startDate.includes('T') ? '' : 'T12:00:00'))
-      : report.startDate?.toDate?.() || new Date(report.startDate);
-    if (!isNaN(d.getTime())) return d;
-  }
-  // 3) Fall back to createdAt
-  if (report.createdAt) {
-    const d = typeof report.createdAt === 'string' ? new Date(report.createdAt)
-      : report.createdAt?.toDate?.() || new Date(report.createdAt);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return new Date(0);
 }
 
 // Build a Date at noon UTC for YYYY-MM-DD so the calendar day is correct in Vancouver (and elsewhere)
@@ -161,20 +120,6 @@ const nonFollowersPercent = (followersPercent, storedNonFollowers) => {
   return formatPercent(stored);
 };
 
-// Year/month from report date (user input). Uses stored year/month if present, else derives from startDate/createdAt.
-const getReportYear = (report) => {
-  if (!report || typeof report !== 'object') return 0;
-  if (report.year != null && !Number.isNaN(Number(report.year))) return Number(report.year);
-  const d = getReportSortDate(report);
-  return d ? getYear(d) : 0;
-};
-const getReportMonth = (report) => {
-  if (!report || typeof report !== 'object') return 0;
-  if (report.month != null && report.month >= 1 && report.month <= 12) return report.month;
-  const d = getReportSortDate(report);
-  return d ? getMonth(d) + 1 : 0;
-};
-
 // Group reports by year then month. Returns { year, month, reports }[] sorted year desc, month desc.
 const groupReportsByYearMonth = (reportList) => {
   const byYearMonth = new Map();
@@ -190,19 +135,6 @@ const groupReportsByYearMonth = (reportList) => {
     if (a.year !== b.year) return b.year - a.year;
     return b.month - a.month;
   });
-};
-
-// ─── Report completion helper ───────────────────────────────────────────────
-const getReportCompletionStatus = (metrics) => {
-  if (!metrics || typeof metrics !== 'object') return 'incomplete';
-  const keyFields = ['followers', 'accountsReached', 'interactions', 'followerChange'];
-  const ignored = Array.isArray(metrics._ignoredFields) ? metrics._ignoredFields : [];
-  const active = keyFields.filter(f => !ignored.includes(f));
-  if (active.length === 0) return 'complete';
-  const filled = active.filter(f => metrics[f] != null && metrics[f] !== '').length;
-  if (filled >= active.length) return 'complete';
-  if (filled >= Math.min(2, active.length)) return 'partial';
-  return 'incomplete';
 };
 
 // ─── Compact number formatter (50000 → "50K", 1200000 → "1.2M") ────────────
@@ -312,39 +244,13 @@ const Delta = ({ current, previous, label, prefix = '' }) => {
   );
 };
 
-function isClientStatusArchived(client) {
-  return (client?.status || 'active') === 'archived';
-}
-
-/** Match instagram_reports.client_id / client_id_legacy (UUID + Firebase doc ids from meta). */
-function collectClientReportLinkIds(client) {
-  if (!client) return [];
-  const ids = new Set();
-  const add = (v) => {
-    if (v == null || v === '') return;
-    const s = String(v).trim();
-    if (s) ids.add(s);
-  };
-  add(client.id);
-  add(client.clientId);
-  add(client.firebaseId);
-  add(client.firestoreId);
-  const meta = client.meta;
-  if (meta && typeof meta === 'object') {
-    add(meta.firebaseId);
-    add(meta.firestoreId);
-    add(meta.clientId);
-    add(meta.id);
-  }
-  return [...ids];
-}
-
 // Who sees all reports: system admin OR the "See All Reports" permission on Users & Permissions.
 const InstagramReportsPage = () => {
   const { currentUser, realUser, isViewingAs } = useAuth();
   const { isSystemAdmin, loading: permissionsLoading } = usePermissions();
   const { confirm } = useConfirm();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Admin role users AND system admins can see all clients on this page
   const effectiveIsAdmin = isSystemAdmin || currentUser?.role === 'admin';
   
@@ -402,6 +308,18 @@ const InstagramReportsPage = () => {
   }, []);
 
   // Filter clients: admins see all, others see only assigned clients (currentUser is effective when View As)
+  // Deep link from the dashboard's Instagram card: /instagram-reports?newReport=<clientId>
+  // opens the create modal with that client pre-selected.
+  useEffect(() => {
+    const clientId = searchParams.get('newReport');
+    if (!clientId) return;
+    setPreSelectedClientId(clientId);
+    setShowCreateModal(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete('newReport');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
   const isAssignedToMe = (client) => {
     const am = (client.assignedManager || '').trim().toLowerCase();
     if (!am) return false;
@@ -1023,16 +941,8 @@ const InstagramReportsPage = () => {
       {/* Archive tab: system admin only */}
       {/* ── Monthly Status Overview Row (Clients tab only) */}
       {activeTab === 'clients' && !loading && filteredClientsForTab.length > 0 && (() => {
-        const now = new Date();
         // Reports aren't typically due until the 4th–5th; show previous month's status until the 15th
-        let statusYear = now.getFullYear();
-        let statusMonth = now.getMonth() + 1; // 1-indexed
-        if (now.getDate() <= 15) {
-          statusMonth -= 1;
-          if (statusMonth === 0) { statusMonth = 12; statusYear -= 1; }
-        }
-        const thisYear = statusYear;
-        const thisMonth = statusMonth;
+        const { year: thisYear, month: thisMonth } = getReportStatusPeriod();
         let complete = 0, partial = 0, missing = 0;
         filteredClientsForTab.forEach(({ reports: cr }) => {
           const monthReport = cr.find(r => {
@@ -1151,13 +1061,7 @@ const InstagramReportsPage = () => {
             const yearlyReports = clientReports.filter(r => r.reportType === 'yearly');
 
             // Current month completion badge — use previous month until the 15th
-            const now = new Date();
-            let thisYear = now.getFullYear();
-            let thisMonth = now.getMonth() + 1;
-            if (now.getDate() <= 15) {
-              thisMonth -= 1;
-              if (thisMonth === 0) { thisMonth = 12; thisYear -= 1; }
-            }
+            const { year: thisYear, month: thisMonth } = getReportStatusPeriod();
             const thisMonthReport = clientReports.find(r => {
               const ry = getReportYear(r);
               const rm = getReportMonth(r);

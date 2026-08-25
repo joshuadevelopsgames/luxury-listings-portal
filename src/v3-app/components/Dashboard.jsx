@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { DndContext, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
@@ -9,6 +9,9 @@ import { CAPABILITIES } from '../../entities/Capabilities';
 import { useClients } from '../../contexts/ClientsContext';
 import { supabaseService } from '../../services/supabaseService';
 import WidgetGrid from '../../components/dashboard/WidgetGrid';
+import InstagramAnalyticsHero from '../../components/dashboard/InstagramAnalyticsHero';
+import TimeOffHero from '../../components/dashboard/TimeOffHero';
+import MyClientsStrip from '../../components/dashboard/MyClientsStrip';
 import ClientLink from '../../components/ui/ClientLink';
 import { getBaseModuleIds, getAllModuleIds } from '../../modules/registry';
 import {
@@ -47,6 +50,10 @@ import { format, isToday, isTomorrow, addDays, parseISO, isPast, isFuture, isWit
  * - Overview stats
  */
 // Default layout (stashed for revert) – used when user has no saved preferences
+// Widgets already shown higher up the page (hero row + My Clients strip) —
+// hidden from "Your Modules" so they don't render twice.
+const PROMOTED_WIDGET_IDS = ['recentReports', 'timeOffSummary', 'clientOverview'];
+
 const DEFAULT_MAIN_CONTENT_BLOCK_ORDER = ['priorities', 'deadlines', 'deliverables', 'quickLinks', 'overview'];
 const DEFAULT_MAIN_CONTENT_SPANS = { priorities: 2, deliverables: 1, deadlines: 1, quickLinks: 1, overview: 1 };
 
@@ -71,23 +78,6 @@ function SortableMainBlock({ id, span, isEditMode, renderBlock }) {
   );
 }
 
-function AnimatedStat({ value }) {
-  const prevValueRef = useRef(value);
-  const [bump, setBump] = useState(false);
-
-  useEffect(() => {
-    if (prevValueRef.current !== value) {
-      setBump(true);
-      const t = setTimeout(() => setBump(false), 450);
-      prevValueRef.current = value;
-      return () => clearTimeout(t);
-    }
-    return undefined;
-  }, [value]);
-
-  return <span className={bump ? 'kpi-bump inline-block' : 'inline-block'}>{value}</span>;
-}
-
 const V3Dashboard = () => {
   const { currentUser, isViewingAs } = useAuth();
   const { permissions, isSystemAdmin } = usePermissions();
@@ -110,6 +100,10 @@ const V3Dashboard = () => {
   
   // Check if tasks module is enabled (affects dashboard display)
   const hasTasksModule = enabledModules.includes('tasks');
+  // The two features the team actually lives in — pinned to the top of the dashboard
+  const hasInstagramReports = enabledModules.includes('instagram-reports');
+  const hasTimeOff = enabledModules.includes('time-off');
+  const heroCount = (hasInstagramReports ? 1 : 0) + (hasTimeOff ? 1 : 0);
   // Client-related access: any of these means show Client Status / client stats
   const hasClientAccess = enabledModules.some((id) => ['my-clients', 'clients'].includes(id));
   // Full client access = can see all clients; only my-clients = see assigned count only
@@ -665,23 +659,29 @@ const V3Dashboard = () => {
         </div>
       </div>
 
-      {/* Quick Stats - Real Data (only show stats for enabled modules) */}
-      <div className={`grid grid-cols-2 ${(hasTasksModule ? 2 : 0) + (hasClientAccess ? 1 : 0) > 2 ? 'sm:grid-cols-4' : 'sm:grid-cols-2'} gap-3 sm:gap-4`}>
-        {[
-          { label: clientLabelForDisplay, value: clientCountForDisplay, icon: Users, color: 'text-[#0071e3]', show: hasClientAccess },
-          { label: 'Pending Tasks', value: tasks.filter(t => t.status !== 'completed').length, icon: Clock, color: 'text-[#ff9500]', show: hasTasksModule },
-          { label: 'Due Today', value: todaysTasks.length, icon: Calendar, color: 'text-[#ff3b30]', show: hasTasksModule },
-          { label: 'Completed', value: tasks.filter(t => t.status === 'completed').length, icon: CheckCircle2, color: 'text-[#34c759]', show: hasTasksModule },
-        ].filter(item => item.show).map((item, idx) => (
-          <div key={idx} className="stagger-in ui-transition ui-lift p-3 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 cursor-pointer group isolate">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${item.color}`} strokeWidth={1.5} />
+      {/* ── Front and centre: Instagram Analytics + Time Off ─────────────── */}
+      {heroCount > 0 && (
+        <div className={`grid gap-4 sm:gap-6 grid-cols-1 ${heroCount === 2 ? 'lg:grid-cols-3' : ''}`}>
+          {hasInstagramReports && (
+            <div className={heroCount === 2 ? 'lg:col-span-2' : ''}>
+              <InstagramAnalyticsHero />
             </div>
-            <p className="text-[22px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]"><AnimatedStat value={item.value} /></p>
-            <p className="text-[11px] sm:text-[13px] text-[#86868b]">{item.label}</p>
-          </div>
-        ))}
-      </div>
+          )}
+          {hasTimeOff && (
+            <div className="lg:col-span-1">
+              <TimeOffHero />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* My Clients — replaces the old quick-stat tiles */}
+      {hasClientAccess && (
+        <MyClientsStrip
+          clientsPath={hasFullClientAccess ? '/clients' : '/my-clients'}
+          showReportStatus={hasInstagramReports}
+        />
+      )}
 
       {/* Module Widgets - Dynamic based on enabled modules; drag-and-drop when Edit Dashboard is on */}
       <div>
@@ -690,6 +690,7 @@ const V3Dashboard = () => {
           enabledModules={enabledModules}
           widgetOrder={widgetOrder}
           isEditMode={isEditMode}
+          excludeWidgets={PROMOTED_WIDGET_IDS}
           onWidgetOrderChange={(nextOrder) => {
             setWidgetOrder(nextOrder);
             if (currentUser?.uid && !isViewingAs) {
